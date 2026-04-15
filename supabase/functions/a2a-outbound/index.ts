@@ -141,17 +141,40 @@ Deno.serve(async (req) => {
 
     // Determine protocol from peer capabilities
     const caps = (peer.capabilities as Record<string, unknown>) || {};
-    const protocol = (caps.protocol as string) || 'jsonrpc';
+    // Auto-detect: if peer has gateway_token, use /v1/responses (OpenAI-compatible)
+    const hasGatewayToken = !!(peer.gateway_token);
+    const protocol = hasGatewayToken ? 'responses' : ((caps.protocol as string) || 'jsonrpc');
     const peerUrl = peer.url.replace(/\/$/, '');
 
     let endpoint: string;
     let requestBody: Record<string, unknown>;
+    let authHeader = `Bearer ${peer.outbound_token}`;
 
-    if (protocol === 'jsonrpc' || protocol === 'a2a') {
+    if (protocol === 'responses') {
+      // OpenAI-compatible /v1/responses — used for orchestrator agents (e.g. OpenClaw)
+      endpoint = (caps.endpoint as string) || '/v1/responses';
+      authHeader = `Bearer ${peer.gateway_token}`;
+      const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
+      requestBody = {
+        model: (caps.model as string) || 'gpt-4o-mini',
+        input: textPayload,
+      };
+      // Include MCP tools if peer has mcp_api_key
+      if (peer.mcp_api_key) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        (requestBody as any).tools = [
+          {
+            type: 'mcp',
+            server_label: 'flowwink',
+            server_url: `${supabaseUrl}/functions/v1/mcp-server`,
+            headers: { 'x-api-key': peer.mcp_api_key },
+          },
+        ];
+      }
+    } else if (protocol === 'jsonrpc' || protocol === 'a2a') {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
       const messageId = activityRow?.id || crypto.randomUUID();
-      // For 'message' skill: send raw text, not serialized skill:message {}
       const textPayload = rawMessage
         ? rawMessage
         : (effectiveSkill === 'message' && Object.keys(args).length === 0)
