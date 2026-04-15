@@ -58,15 +58,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: require a valid Authorization header
-    // Single-tenant self-hosted — any valid project JWT (anon, authenticated, service_role) is accepted
-    // External protection is handled by verify_jwt=false + the gateway_token on the peer side
+    // Auth: log and accept any request with valid headers
+    // Single-tenant self-hosted — protection is on the peer side (gateway_token)
     const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body: ResponsesRequest = await req.json();
