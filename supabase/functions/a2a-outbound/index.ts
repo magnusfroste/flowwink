@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       outboundAuth = `Bearer ${peer.gateway_token}`;
       const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
       requestBody = {
-        model: (caps.model as string) || 'gpt-4o-mini',
+        model: (caps.model as string) || 'openclaw',
         input: textPayload,
       };
       // Include MCP tools only if peer capabilities explicitly opt in
