@@ -57,12 +57,10 @@ export function A2AActivityLog() {
 
   const clearAllMutation = useMutation({
     mutationFn: async () => {
-      const ids = activity?.map(a => a.id) || [];
-      if (ids.length === 0) return;
       const { error } = await supabase
         .from('a2a_activity')
         .delete()
-        .in('id', ids);
+        .not('id', 'is', null);
       if (error) throw error;
     },
     onSuccess: () => {
