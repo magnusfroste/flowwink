@@ -132,6 +132,28 @@ export function useUpdateA2APeer() {
   });
 }
 
+export function useDeleteA2APeer() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (peerId: string) => {
+      const { error } = await supabase
+        .from('a2a_peers' as any)
+        .delete()
+        .eq('id', peerId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['a2a-peers'] });
+      toast({ title: 'Peer deleted', description: 'The peer has been permanently removed.' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to delete peer', variant: 'destructive' });
+    },
+  });
+}
+
 export function useRegenerateInboundToken() {
   const qc = useQueryClient();
   const { toast } = useToast();
