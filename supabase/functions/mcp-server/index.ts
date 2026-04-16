@@ -127,6 +127,32 @@ function isCategoryActive(category: string, activeModules: Set<string>): boolean
 // All valid toolset groups — used for validation and discovery
 const TOOLSET_GROUPS = Object.keys(SKILL_CATEGORY_MODULES) as string[];
 
+// Reverse map: module-id → category, so ?groups=leads resolves to "crm".
+// Built once from SKILL_CATEGORY_MODULES.
+const MODULE_TO_CATEGORY: Record<string, string> = (() => {
+  const out: Record<string, string> = {};
+  for (const [cat, mods] of Object.entries(SKILL_CATEGORY_MODULES)) {
+    for (const m of mods) out[m.toLowerCase()] = cat;
+  }
+  return out;
+})();
+
+/** Resolve a list of group/module tokens to their underlying skill categories. */
+function resolveGroupTokens(tokens: string[]): Set<string> {
+  const cats = new Set<string>();
+  for (const raw of tokens) {
+    const t = raw.toLowerCase().trim();
+    if (!t) continue;
+    if (SKILL_CATEGORY_MODULES[t]) {
+      cats.add(t); // already a category
+    } else if (MODULE_TO_CATEGORY[t]) {
+      cats.add(MODULE_TO_CATEGORY[t]); // module name → its category
+    }
+    // unknown tokens silently dropped
+  }
+  return cats;
+}
+
 async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
@@ -147,10 +173,10 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
   let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
 
-  // Apply toolset group filter if requested
+  // Apply toolset group filter if requested — accepts both category ids and module ids
   if (filterGroups && filterGroups.length > 0) {
-    const groupSet = new Set(filterGroups.map((g) => g.toLowerCase().trim()));
-    filtered = filtered.filter((s) => groupSet.has(s.category));
+    const catSet = resolveGroupTokens(filterGroups);
+    filtered = filtered.filter((s) => catSet.has(s.category));
   }
 
   console.log(
@@ -431,7 +457,17 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           status: a.status,
           at: a.created_at,
         })),
-        active_modules: bModules.data?.value ?? {},
+        active_modules: (() => {
+          const raw = (bModules.data?.value ?? {}) as Record<string, { enabled?: boolean }>;
+          const enabled = Object.entries(raw)
+            .filter(([, v]) => v?.enabled === true)
+            .map(([k]) => k);
+          return {
+            enabled,
+            count: enabled.length,
+            available_count: Object.keys(raw).length,
+          };
+        })(),
         automations: {
           active: (bAutomations.data ?? []).map((a: any) => ({
             name: a.name,
