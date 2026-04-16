@@ -159,71 +159,79 @@ export function ApiKeysContent() {
             </div>
           ) : (
             <div className="divide-y">
-              {keys.map((key) => (
-                <div key={key.id} className="flex items-center justify-between py-3 gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{key.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <code className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded break-all select-all">
-                        {key.key_raw || `${key.key_prefix}…`}
-                      </code>
-                      {key.key_raw && (
+              {keys.map((key) => {
+                const fullKey = key.key_raw || `${key.key_prefix}…`;
+                const canCopy = !!key.key_raw;
+
+                return (
+                  <div key={key.id} className="flex items-center justify-between py-3 gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{key.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <code className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded break-all select-all">
+                          {fullKey}
+                        </code>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
+                          className="h-6 w-6 shrink-0"
+                          disabled={!canCopy}
+                          title={canCopy ? 'Copy full key' : 'Full key not available'}
                           onClick={() => {
-                            navigator.clipboard.writeText(key.key_raw!);
-                            toast.success('API key copied');
+                            if (key.key_raw) {
+                              navigator.clipboard.writeText(key.key_raw);
+                              toast.success('API key copied');
+                            }
                           }}
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
-                      )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span>Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}</span>
+                        {key.last_used_at && (
+                          <span>Last used {formatDistanceToNow(new Date(key.last_used_at), { addSuffix: true })}</span>
+                        )}
+                        {key.expires_at && (
+                          <Badge variant="outline" className="text-[10px]">
+                            Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
+                          </Badge>
+                        )}
+                        {key.scopes && key.scopes.length > 0 && key.scopes.map(scope => (
+                          <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}</span>
-                      {key.last_used_at && (
-                        <span>Last used {formatDistanceToNow(new Date(key.last_used_at), { addSuffix: true })}</span>
-                      )}
-                      {key.expires_at && (
-                        <Badge variant="outline" className="text-[10px]">
-                          Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
-                        </Badge>
-                      )}
-                      {key.scopes && key.scopes.length > 0 && key.scopes.map(scope => (
-                        <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will immediately disable access for any client using the key "{key.name}".
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => revokeKey.mutate(key.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive shrink-0">
+                          <Trash2 className="h-3.5 w-3.5" />
                           Revoke
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will immediately disable access for any client using the key "{key.name}". This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => revokeKey.mutate(key.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Revoke Key
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
