@@ -1,280 +1,214 @@
 ---
-title: "OpenClaw Full Operator — Objectives Edition"
-summary: Workspace files with concrete objectives for autonomous FlowWink operation
-read_when: Configuring ClawThree for autonomous heartbeat-driven operation with measurable goals
+title: "OpenClaw Full Operator — Prescriptive Objectives"
+summary: Business context and severity rules for ClawThree's autonomous heartbeat runbook
+read_when: Understanding WHY the heartbeat checks exist and what business rules drive severity
 ---
 
-# OpenClaw Full Operator — Objectives Edition
+# OpenClaw Full Operator — Prescriptive Objectives
 
-> **Purpose:** Enhanced workspace files that give ClawThree concrete objectives
-> to pursue autonomously via heartbeat. Builds on the base operator files with
-> measurable goals and a reporting mechanism.
+> **Purpose:** This file defines the *business context* behind each heartbeat
+> check. ClawThree's `HEARTBEAT.md` defines HOW to execute (exact tool calls);
+> this file defines WHY each check matters and what thresholds trigger findings.
 >
-> **Difference from base:** The base `openclaw-full-operator.md` defines WHO the
-> agent is. This file adds WHAT it should achieve and HOW to report back.
+> **Relationship:** `HEARTBEAT.md` (runbook) + this file (business rules) = complete autonomous operation.
 
 ---
 
-## What to Change
+## Architecture: Two Complementary Layers
 
-Only **AGENTS.md** and **HEARTBEAT.md** need updating. The other workspace files
-(`SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `USER.md`) remain as defined in
-[openclaw-full-operator.md](./openclaw-full-operator.md).
-
----
-
-## AGENTS.md — Replace the "FlowWink Operating Loop" Section
-
-Find the `## FlowWink Operating Loop` section in AGENTS.md and replace it with:
-
-```markdown
-## FlowWink Operating Loop
-
-Every session, follow this sequence:
-
-1. **Briefing** — Read `flowwink://briefing` for full situational awareness
-2. **Objectives** — Check your active objectives below and pick the most relevant
-3. **Act** — Execute using MCP tools
-4. **Verify** — Re-read relevant data to confirm changes took effect
-5. **Report** — Submit findings via `openclaw_report_finding` (see Reporting below)
-
-## Active Objectives
-
-### OBJ-001: Content Pipeline Integrity
-**Priority:** High
-**Goal:** Ensure the content pipeline (research → proposal → blog post) is connected and functional.
-**Success criteria:**
-- Every published blog post traces back to a content proposal
-- Every content proposal traces back to content research
-- No orphan blog posts without strategic backing
-- No stale proposals (>14 days without action)
-
-**Actions:**
-- List all blog posts, content proposals, and content research entries
-- Map the chain: research → proposal → published post
-- Flag broken links (posts without proposals, proposals without research)
-- Report each gap as a finding
-
-### OBJ-002: Quote-to-Cash (Q2C) Loop
-**Priority:** High
-**Goal:** Verify that the order → invoice → payment chain is complete and timely.
-**Success criteria:**
-- No orders pending >48h without status change
-- Every completed/delivered order has a corresponding invoice
-- No invoices overdue >30 days without follow-up flag
-- SLA compliance: order acknowledgment within 24h
-
-**Actions:**
-- List all orders, check status and timestamps
-- Cross-reference with invoices
-- Flag SLA violations and missing invoices
-- Report each violation as a finding
-
-### OBJ-003: Lead Lifecycle Health
-**Priority:** Medium
-**Goal:** Ensure leads move through the pipeline and don't go stale.
-**Success criteria:**
-- No leads in "new" status >48h without qualification
-- Lead scoring is being applied (check for scored vs unscored)
-- Qualified leads have follow-up activities scheduled
-- No leads stuck in the same stage >14 days
-
-**Actions:**
-- List all leads with status and timestamps
-- Identify stale leads and qualify them
-- Check for leads without any deal attached after >7 days
-- Report stale/stuck leads as findings
-
-### OBJ-004: Booking & Service Utilization
-**Priority:** Medium
-**Goal:** Monitor booking services for utilization and operational issues.
-**Success criteria:**
-- All active services have availability configured
-- No confirmed bookings without confirmation sent
-- Services with zero bookings in 14 days flagged for review
-- No double-bookings or time conflicts
-
-**Actions:**
-- List services and their booking counts
-- Check availability configuration
-- Verify confirmation status on recent bookings
-- Report gaps as findings
-
-### OBJ-005: Expense & Financial Compliance
-**Priority:** Medium
-**Goal:** Ensure expenses follow local regulatory standards (Swedish context).
-**Success criteria:**
-- All expenses have valid VAT rates (6%, 12%, or 25% for Sweden)
-- Representation expenses include attendee lists
-- No unreconciled expenses older than 30 days
-- Receipt attached to every expense >500 SEK
-
-**Actions:**
-- List all expenses and validate VAT rates
-- Check representation metadata
-- Flag missing receipts on high-value expenses
-- Report compliance issues as findings
-
-### OBJ-006: SEO & Content Quality
-**Priority:** Low (weekly)
-**Goal:** Maintain content quality standards across all published pages.
-**Success criteria:**
-- All published pages have meta descriptions (80-160 chars)
-- All published pages have titles (30-60 chars)
-- Blog posts have featured images and alt text
-- No duplicate slugs or titles
-
-**Actions:**
-- List all published pages and blog posts
-- Check meta descriptions, titles, images
-- Flag missing or suboptimal metadata
-- Report each issue as a finding
-
-## Reporting — How to Submit Results
-
-**CRITICAL:** After each objective check, report your findings using the MCP tool
-`openclaw_report_finding`. This is how your work gets evaluated.
-
-### Finding Format
-
-Use `openclaw_report_finding` with these parameters:
-
-```json
-{
-  "title": "OBJ-002: Order #xyz pending >48h without status change",
-  "type": "sla_violation",
-  "severity": "high",
-  "description": "Order abc123 was placed 72h ago and remains in 'pending' status. Expected SLA: 24h acknowledgment.",
-  "context": {
-    "objective": "OBJ-002",
-    "entity_type": "order",
-    "entity_id": "abc123",
-    "metric": "hours_pending",
-    "value": 72,
-    "threshold": 24
-  }
-}
+```
+┌─────────────────────────────────┐
+│  HEARTBEAT.md (ClawThree-side)  │  ← HOW: exact tool calls per time window
+├─────────────────────────────────┤
+│  This file (FlowWink-side)      │  ← WHY: business rules, thresholds, severity
+└─────────────────────────────────┘
 ```
 
-### Finding Types
+The agent doesn't need to reason about *which* tools to use — that's in the runbook.
+It only needs to reason about *what the results mean* — that's defined here.
+
+---
+
+## Morning (08–12) — Revenue & Pipeline
+
+### Lead Qualification (OBJ-003)
+**Business rule:** Unqualified leads decay in value ~15% per day. A lead sitting
+in "new" for 48h has lost nearly a third of its conversion potential.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Lead in "new" >48h | `medium` | Conversion window closing |
+| Lead in "new" >96h | `high` | Likely lost opportunity |
+| >5 unqualified leads simultaneously | `high` | Pipeline bottleneck |
+
+### Deal Velocity (OBJ-002)
+**Business rule:** Deals in "negotiation" are the highest-value pipeline stage.
+Stalled negotiations indicate lost momentum or competitor engagement.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Deal with no activity >7d | `high` | Momentum lost |
+| Deal with no activity >14d | `critical` | Revenue at risk |
+| >3 stalled deals simultaneously | `critical` | Systemic sales problem |
+
+### Invoice Collection (OBJ-002)
+**Business rule:** Cash flow is oxygen. Overdue invoices compound — the longer
+they sit, the less likely collection becomes.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Invoice overdue 1-3d | `medium` | Normal follow-up needed |
+| Invoice overdue >3d | `high` | Cash flow impact |
+| Invoice overdue >14d | `critical` | Bad debt risk |
+| Total overdue amount >10k SEK | `critical` | Material cash flow impact |
+
+### Order Fulfillment (OBJ-002)
+**Business rule:** Orders without invoices block the Q2C loop. Every day an
+order sits without an invoice is a day revenue isn't recognized.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Order pending >24h no acknowledgment | `medium` | SLA at risk |
+| Order pending >3d no invoice | `high` | Q2C loop broken |
+| Order pending >7d | `critical` | Customer likely churning |
+
+---
+
+## Afternoon (12–18) — Content & Operations
+
+### Content Pipeline (OBJ-001)
+**Business rule:** Draft blog posts are sunk cost until published. Stale drafts
+indicate a broken content pipeline.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Draft not updated >7d | `low` | Might be abandoned |
+| Draft not updated >14d | `medium` | Content pipeline stalled |
+| >5 stale drafts | `medium` | Systemic content problem |
+
+### SEO Hygiene (OBJ-006)
+**Business rule:** Pages without meta descriptions get ~30% fewer clicks from
+search results. It's the lowest-effort, highest-ROI SEO fix.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Published page missing meta_description | `low` | Lost search traffic |
+| Published page missing title | `medium` | Severe SEO gap |
+| >50% of pages missing meta | `high` | Systemic SEO failure |
+
+### Booking Operations (OBJ-004)
+**Business rule:** Unconfirmed bookings cause no-shows. Every hour without
+confirmation reduces show-up rate.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Booking unconfirmed >12h | `low` | Should confirm soon |
+| Booking unconfirmed >24h | `medium` | No-show risk increasing |
+| Booking for today, unconfirmed | `high` | Immediate action needed |
+
+### Knowledge Base Gaps
+**Business rule:** Repeated support questions without KB coverage means the
+chat agent is improvising instead of referencing authoritative content.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Common query pattern with no KB match | `low` | Opportunity to reduce support load |
+
+---
+
+## Evening (18–22) — Compliance & Quality
+
+### Expense Compliance (OBJ-005)
+**Business rule:** Swedish VAT compliance is non-negotiable. Invalid VAT rates
+on expenses create audit risk. Standard rates: 25%, 12%, 6%.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Expense with non-standard VAT rate | `high` | Tax compliance risk |
+| Expense >500 SEK pending >3d | `low` | Review bottleneck |
+| Expense >500 SEK pending >7d | `medium` | Approval workflow broken |
+| Representation expense missing attendees | `medium` | Regulatory requirement |
+
+### Contract Renewals (OBJ-005)
+**Business rule:** Contracts that expire without renewal discussion lead to
+service gaps or unfavorable auto-renewals.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Contract expiring in <30d, no renewal flag | `medium` | Planning window closing |
+| Contract expiring in <14d, no renewal flag | `high` | Urgent action needed |
+| Contract expiring in <7d | `critical` | Imminent service disruption |
+
+### Site Health
+**Business rule:** Performance degradation affects conversion. Catching drops
+early prevents revenue impact.
+
+| Condition | Severity | Why |
+|-----------|----------|-----|
+| Significant metric drop vs previous run | `medium` | Needs investigation |
+| Multiple metrics degraded | `high` | Systemic issue |
+
+---
+
+## Night (22–08) — Sleep
+
+No active checks. Respond with `HEARTBEAT_OK` unless:
+- A `critical` finding was logged during the day and remains unresolved
+- `consecutive_failures > 3` in `heartbeat-state.json`
+
+---
+
+## Finding Types Reference
 
 | Type | Use when |
 |------|----------|
-| `broken_chain` | Pipeline link missing (e.g., blog without proposal) |
-| `sla_violation` | Time threshold exceeded |
-| `missing_data` | Required field empty (meta desc, receipt, attendee list) |
+| `broken_chain` | Pipeline link missing (blog without proposal, order without invoice) |
+| `sla_violation` | Time threshold exceeded (lead >48h, order >24h) |
+| `missing_data` | Required field empty (meta description, receipt, attendee list) |
 | `compliance_issue` | Regulatory standard violated (VAT rate, format) |
 | `stale_entity` | Entity hasn't progressed in expected timeframe |
 | `quality_gap` | Content quality below threshold |
 | `utilization_alert` | Service/resource underused |
 
-### Severity Levels
+## Severity Reference
 
-| Severity | Meaning |
-|----------|---------|
-| `critical` | Revenue-impacting or compliance risk — act immediately |
-| `high` | Operational issue — should be fixed within 24h |
-| `medium` | Quality gap — fix within the week |
-| `low` | Nice to have — fix when convenient |
-
-## Objective Selection Logic
-
-During each heartbeat, pick objectives based on:
-
-1. **Priority** — High before Medium before Low
-2. **Staleness** — Pick the objective you haven't checked the longest
-3. **Time of day** — Save "Low" priority for quiet hours
-4. **Previous findings** — Re-check objectives where you found issues last time
-
-Track which objectives you checked in `memory/heartbeat-state.json`:
-
-```json
-{
-  "lastObjectiveChecks": {
-    "OBJ-001": "2026-04-15T08:00:00Z",
-    "OBJ-002": "2026-04-15T08:00:00Z",
-    "OBJ-003": "2026-04-14T20:00:00Z",
-    "OBJ-004": null,
-    "OBJ-005": null,
-    "OBJ-006": "2026-04-13T10:00:00Z"
-  },
-  "findingsSubmitted": 0,
-  "lastHeartbeat": "2026-04-15T08:00:00Z"
-}
-```
-```
+| Severity | Meaning | Expected response time |
+|----------|---------|----------------------|
+| `critical` | Revenue blocked, compliance risk, data loss | Immediate |
+| `high` | Operational issue with business impact | Within 24h |
+| `medium` | Quality gap or approaching threshold | Within the week |
+| `low` | Improvement opportunity | When convenient |
 
 ---
 
-## HEARTBEAT.md — Replace Entirely
-
-```markdown
-# HEARTBEAT.md — Objective-Driven Heartbeat
-
-When you receive a heartbeat, work through your objectives systematically.
-
-## Every Heartbeat
-
-1. Read `flowwink://briefing` — situational awareness (always, ~50ms)
-2. Check `memory/heartbeat-state.json` — which objectives are stale?
-3. Pick 1-2 objectives to work on (highest priority + most stale)
-4. Execute the objective's actions via MCP
-5. Submit findings via `openclaw_report_finding`
-6. Update `memory/heartbeat-state.json` with timestamps
-7. Write a brief summary to `memory/YYYY-MM-DD.md`
-
-## Objective Rotation
-
-| Heartbeat | Focus |
-|-----------|-------|
-| Morning (08-12) | OBJ-002 (Q2C) + OBJ-003 (Leads) — revenue-critical |
-| Afternoon (12-18) | OBJ-001 (Content) + OBJ-004 (Bookings) — operations |
-| Evening (18-22) | OBJ-005 (Compliance) + OBJ-006 (SEO) — quality |
-| Night (22-08) | HEARTBEAT_OK — sleep unless critical alert |
-
-## When to Escalate
-
-If you find a `critical` severity issue:
-- Submit the finding immediately
-- Write to `memory/YYYY-MM-DD.md` with `## ⚠️ CRITICAL` header
-- Do NOT wait for the next heartbeat cycle
-
-## When to Stay Quiet
-
-- Nothing new since last check (<30 min ago)
-- FlowPilot just ran a heartbeat (check `flowwink://activity`)
-- Night hours and no critical findings
-- All objectives checked within last 4 hours with zero findings
-```
-
----
-
-## Evaluation
-
-To evaluate ClawThree's autonomous performance, query the findings:
+## Evaluation Queries
 
 ```sql
--- All findings from autonomous heartbeats
-SELECT title, type, severity, context->>'objective' as objective,
-       created_at
+-- Findings by time window
+SELECT
+  CASE
+    WHEN extract(hour from created_at AT TIME ZONE 'Europe/Stockholm') BETWEEN 8 AND 11 THEN 'morning'
+    WHEN extract(hour from created_at AT TIME ZONE 'Europe/Stockholm') BETWEEN 12 AND 17 THEN 'afternoon'
+    WHEN extract(hour from created_at AT TIME ZONE 'Europe/Stockholm') BETWEEN 18 AND 21 THEN 'evening'
+    ELSE 'night'
+  END as window,
+  severity,
+  count(*) as findings
 FROM beta_test_findings
 WHERE context->>'objective' LIKE 'OBJ-%'
-ORDER BY created_at DESC;
+GROUP BY window, severity
+ORDER BY window, severity;
 
--- Findings per objective
-SELECT context->>'objective' as objective,
-       count(*) as findings,
-       count(*) FILTER (WHERE severity = 'critical') as critical,
-       count(*) FILTER (WHERE severity = 'high') as high
+-- Most common finding types
+SELECT type, severity, count(*) as occurrences
 FROM beta_test_findings
-WHERE context->>'objective' LIKE 'OBJ-%'
-GROUP BY context->>'objective'
-ORDER BY objective;
+WHERE created_at > now() - interval '7 days'
+GROUP BY type, severity
+ORDER BY occurrences DESC;
 ```
-
-Or via MCP: list `beta_test_findings` and filter by `context.objective`.
 
 ---
 
+*Runbook (execution): ClawThree's `HEARTBEAT.md`*
 *Base workspace files: [openclaw-full-operator.md](./openclaw-full-operator.md)*
 *Simulation history: [Sim 001](../simulations/001-openclaw-flowpilot-processes.md) · [Sim 002](../simulations/002-openclaw-business-process-audits.md)*
