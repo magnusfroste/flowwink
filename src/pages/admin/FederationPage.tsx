@@ -945,6 +945,20 @@ export default function FederationPage() {
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
+                          {peer.outbound_token && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(peer.outbound_token);
+                                toast({ title: 'Copied', description: 'A2A outbound token copied to clipboard' });
+                              }}
+                              title="Copy A2A outbound token"
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              A2A Token
+                            </Button>
+                          )}
                           {peer.mcp_api_key && (
                             <Button
                               variant="outline"
@@ -953,10 +967,10 @@ export default function FederationPage() {
                                 navigator.clipboard.writeText(peer.mcp_api_key!);
                                 toast({ title: 'Copied', description: 'MCP API key copied to clipboard' });
                               }}
-                              title="Copy this peer's MCP API key"
+                              title="Copy MCP API key"
                             >
                               <Copy className="h-3 w-3 mr-1" />
-                              Copy Key
+                              MCP Key
                             </Button>
                           )}
                           <Switch
