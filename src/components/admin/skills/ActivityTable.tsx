@@ -20,7 +20,27 @@ import {
 } from '@/components/ui/table';
 import { useActivity, useApproveActivity } from '@/hooks/useSkillHub';
 import { ExecutionTimeline } from './ExecutionTimeline';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import type { AgentActivity, AgentActivityStatus } from '@/types/agent';
+
+function useDistinctAgents() {
+  return useQuery({
+    queryKey: ['agent-activity-distinct-agents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_activity')
+        .select('agent')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => r?.agent && set.add(r.agent));
+      return Array.from(set).sort();
+    },
+    refetchInterval: 30_000,
+  });
+}
 
 const STATUS_BADGE: Record<AgentActivityStatus, string> = {
   success: 'bg-green-500/10 text-green-700 border-green-200',
@@ -44,6 +64,7 @@ export function ActivityTable() {
   };
 
   const { data: activities = [], isLoading } = useActivity(filters);
+  const { data: distinctAgents = [] } = useDistinctAgents();
   const approve = useApproveActivity();
 
   return (
@@ -65,8 +86,9 @@ export function ActivityTable() {
           <SelectTrigger className="w-40"><SelectValue placeholder="Agent" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All agents</SelectItem>
-            <SelectItem value="flowpilot">FlowPilot</SelectItem>
-            <SelectItem value="chat">Chat</SelectItem>
+            {distinctAgents.map((a) => (
+              <SelectItem key={a} value={a} className="capitalize">{a}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
