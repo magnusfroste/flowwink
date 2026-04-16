@@ -3269,6 +3269,197 @@ async function executeLeadsAction(
 }
 
 // =============================================================================
+// send_email_to_lead — Send a transactional outreach email to a single lead
+// =============================================================================
+// Uses AI (Gemini → OpenAI) to draft subject + body when not provided.
+// Sends via Resend. Logs result to lead_activities for audit + future
+// suppression checks. Supports dry_run for safe previews.
+
+async function executeSendEmailToLead(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const {
+    lead_id,
+    subject: providedSubject,
+    body_html: providedBody,
+    purpose = 'outreach', // outreach | follow_up | nurture | reply
+    tone = 'professional',
+    language = 'en',
+    custom_instructions,
+    dry_run = false,
+  } = args as any;
+
+  if (!lead_id) throw new Error('lead_id is required');
+
+  // 1. Fetch lead
+  const { data: lead, error: leadErr } = await supabase
+    .from('leads')
+    .select('id, email, name, status, source, score, ai_summary')
+    .eq('id', lead_id)
+    .maybeSingle();
+  if (leadErr) throw new Error(`Lead lookup failed: ${leadErr.message}`);
+  if (!lead) throw new Error(`Lead ${lead_id} not found`);
+  if (!lead.email) throw new Error(`Lead ${lead_id} has no email address`);
+
+  // 2. Suppression check — has this lead unsubscribed previously?
+  const { data: suppressionActivity } = await supabase
+    .from('lead_activities')
+    .select('id, type')
+    .eq('lead_id', lead_id)
+    .in('type', ['unsubscribed', 'bounced', 'complained'])
+    .limit(1)
+    .maybeSingle();
+  if (suppressionActivity) {
+    return {
+      sent: false,
+      suppressed: true,
+      reason: `Lead has prior ${suppressionActivity.type} event — not sending`,
+      lead_email: lead.email,
+    };
+  }
+
+  // 3. Generate subject + body via AI if not provided
+  let subject = providedSubject as string | undefined;
+  let bodyHtml = providedBody as string | undefined;
+
+  if (!subject || !bodyHtml) {
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const prompt = `Write a ${purpose} email to a lead.
+Lead: ${lead.name || 'unknown'} <${lead.email}>
+Source: ${lead.source || 'website'}
+Status: ${lead.status}
+${lead.ai_summary ? `Context: ${lead.ai_summary}` : ''}
+${custom_instructions ? `Special instructions: ${custom_instructions}` : ''}
+
+Tone: ${tone}. Language: ${language}.
+Keep it short (under 150 words), personal, and end with one clear call to action.
+Return ONLY a JSON object: {"subject": "...", "body_html": "<p>...</p>"}.
+The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.`;
+
+    try {
+      let aiResp: any;
+      if (geminiKey) {
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1024,
+                responseMimeType: 'application/json',
+              },
+            }),
+          },
+        );
+        const data = await r.json();
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        aiResp = JSON.parse(raw);
+      } else if (openaiKey) {
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${openaiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4.1-mini',
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        const data = await r.json();
+        aiResp = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+      } else {
+        throw new Error('No AI provider configured (GEMINI_API_KEY or OPENAI_API_KEY)');
+      }
+      subject = subject || aiResp?.subject;
+      bodyHtml = bodyHtml || aiResp?.body_html;
+    } catch (e) {
+      console.error('[send_email_to_lead] AI generation failed:', e);
+      throw new Error(`Email draft generation failed: ${(e as Error).message}`);
+    }
+  }
+
+  if (!subject || !bodyHtml) {
+    throw new Error('Could not produce subject and body for email');
+  }
+
+  // 4. Dry-run — return draft without sending
+  if (dry_run) {
+    return {
+      sent: false,
+      dry_run: true,
+      lead_email: lead.email,
+      lead_name: lead.name,
+      subject,
+      body_html: bodyHtml,
+      preview: bodyHtml.replace(/<[^>]+>/g, ' ').slice(0, 200),
+    };
+  }
+
+  // 5. Send via Resend
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
+  const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+  const resendRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [lead.email],
+      subject,
+      html: bodyHtml,
+    }),
+  });
+
+  const resendData = await resendRes.json();
+  if (!resendRes.ok) {
+    // Log failure
+    await supabase.from('lead_activities').insert({
+      lead_id,
+      type: 'email_failed',
+      metadata: { subject, error: resendData?.message || 'Unknown error', purpose },
+      points: 0,
+    });
+    throw new Error(`Resend API error: ${resendData?.message || resendRes.statusText}`);
+  }
+
+  // 6. Log success activity
+  await supabase.from('lead_activities').insert({
+    lead_id,
+    type: 'email_sent',
+    metadata: {
+      subject,
+      purpose,
+      provider: 'resend',
+      message_id: resendData?.id,
+      from: fromEmail,
+    },
+    points: 5,
+  });
+
+  return {
+    sent: true,
+    lead_email: lead.email,
+    lead_name: lead.name,
+    subject,
+    message_id: resendData?.id,
+    purpose,
+  };
+}
+
+// =============================================================================
 // Blog posts management (update/publish/delete existing)
 // =============================================================================
 
