@@ -653,6 +653,37 @@ GET /mcp-server/rest/groups
 Authorization: Bearer <api-key>
 ```
 
+Returns a transparent view of every toolset group:
+
+```json
+{
+  "groups": [
+    {
+      "id": "crm",
+      "available_modules": ["leads", "deals", "companies", "forms", "bookings", "hr", "projects", "salesIntelligence", "tickets"],
+      "active_modules": ["leads", "deals", "bookings"],
+      "tool_count": 14,
+      "is_active": true
+    },
+    {
+      "id": "system",
+      "available_modules": [],
+      "active_modules": [],
+      "tool_count": 6,
+      "is_active": true
+    }
+  ],
+  "note": "available_modules = catalog. active_modules = currently on. tool_count = skills exposed right now via ?groups=<id>."
+}
+```
+
+- **`available_modules`** — the full catalog (what *could* be enabled in this group)
+- **`active_modules`** — modules currently enabled in `site_settings`
+- **`tool_count`** — exact number of skills `?groups=<id>` would return right now (respects `enabled`, `mcp_exposed`, and module-active filters)
+- **`is_active`** — `true` if the group has ≥1 active module (or has no module gating, like `system`)
+
+This lets external agents (ClawThree, OpenClaw) plan context budgets accurately: they see both what *could* be turned on and what's actually live right now.
+
 #### List tools (filtered)
 ```http
 GET /mcp-server/rest/tools?groups=crm,commerce
