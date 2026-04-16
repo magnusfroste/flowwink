@@ -4149,6 +4149,38 @@ When generating social posts:
 },
   },
   {
+    name: 'send_email_to_lead',
+    description: 'Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided. Use when: reaching out to a specific lead, following up after lead activity, sending personalized nurture. NOT for: bulk newsletters (use manage_newsletters), creating drafts only (use lead_nurture_sequence). Always supports dry_run for safe preview.',
+    handler: 'module:crm',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    mcp_exposed: true,
+    instructions: `Use dry_run=true first to preview before sending. Provide custom_instructions for context-aware drafts. The skill auto-checks lead_activities for prior unsubscribed/bounced/complained events and refuses to send. Logs every send to lead_activities (type=email_sent or email_failed).`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_email_to_lead',
+        description: 'Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided.',
+        parameters: {
+          type: 'object',
+          required: ['lead_id'],
+          properties: {
+            lead_id: { type: 'string', description: 'Lead UUID' },
+            subject: { type: 'string', description: 'Email subject (auto-generated if omitted)' },
+            body_html: { type: 'string', description: 'Email body HTML (auto-generated if omitted)' },
+            purpose: { type: 'string', enum: ['outreach', 'follow_up', 'nurture', 'reply'], description: 'Email purpose — guides AI tone' },
+            tone: { type: 'string', description: 'Tone (professional, friendly, casual)' },
+            language: { type: 'string', description: 'Language code (en, sv, etc.)' },
+            custom_instructions: { type: 'string', description: 'Extra context for the AI draft' },
+            dry_run: { type: 'boolean', description: 'If true, returns the draft without sending. Default false.' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'lead_pipeline_review',
     description: 'Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads).',
     handler: 'module:crm',
