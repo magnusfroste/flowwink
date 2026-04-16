@@ -1,0 +1,2 @@
+ALTER TABLE public.beta_test_findings DROP CONSTRAINT IF EXISTS beta_test_findings_type_check;
+ALTER TABLE public.beta_test_findings ADD CONSTRAINT beta_test_findings_type_check CHECK (type = ANY (ARRAY['bug','ux_issue','suggestion','positive','performance','missing_feature','quality_gap','sla_violation','broken_chain','missing_data','compliance_issue','stale_entity','utilization_alert']));
