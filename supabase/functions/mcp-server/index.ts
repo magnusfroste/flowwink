@@ -641,13 +641,49 @@ app.use("/*", async (c, next) => {
 // REST compatibility layer — for agents without MCP clients
 // ══════════════════════════════════════════════════════════
 
-// Toolset groups discovery
-app.get("/rest/groups", (c) => {
-  const groups = TOOLSET_GROUPS.map((g) => ({
-    id: g,
-    modules: SKILL_CATEGORY_MODULES[g] || [],
-  }));
-  return c.json({ groups }, 200, corsHeaders);
+// Toolset groups discovery — transparent: shows catalog + live state
+app.get("/rest/groups", async (c) => {
+  const sb = serviceClient();
+  const [activeModules, skillsResult] = await Promise.all([
+    loadActiveModules(),
+    sb
+      .from("agent_skills")
+      .select("category")
+      .eq("enabled", true)
+      .eq("mcp_exposed", true),
+  ]);
+
+  // Count exposed tools per category, respecting module-active filter
+  const toolCountByCategory: Record<string, number> = {};
+  for (const row of (skillsResult.data ?? []) as Array<{ category: string }>) {
+    if (!isCategoryActive(row.category, activeModules)) continue;
+    toolCountByCategory[row.category] = (toolCountByCategory[row.category] ?? 0) + 1;
+  }
+
+  const allActive = activeModules.has("__all__");
+  const groups = TOOLSET_GROUPS.map((g) => {
+    const available = SKILL_CATEGORY_MODULES[g] || [];
+    const active = available.length === 0
+      ? [] // system: no module gating
+      : available.filter((m) => allActive || activeModules.has(m));
+    const toolCount = toolCountByCategory[g] ?? 0;
+    return {
+      id: g,
+      available_modules: available,
+      active_modules: active,
+      tool_count: toolCount,
+      is_active: available.length === 0 ? true : active.length > 0,
+    };
+  });
+
+  return c.json(
+    {
+      groups,
+      note: "available_modules = catalog (what could be enabled). active_modules = currently on. tool_count = skills actually exposed right now via ?groups=<id>. system has no module gating.",
+    },
+    200,
+    corsHeaders,
+  );
 });
 
 app.get("/rest/tools", async (c) => {
