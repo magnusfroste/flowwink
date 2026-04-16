@@ -770,19 +770,31 @@ app.post("/rest/execute", async (c) => {
 // Native MCP transport (JSON-RPC over POST)
 // ══════════════════════════════════════════════════════════
 
-let mcpHandler: ((req: Request) => Promise<Response>) | null = null;
+// Cache MCP handlers by group key
+const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
 
-async function getMcpHandler() {
-  if (!mcpHandler) {
-    const server = await createMcpServer();
+async function getMcpHandler(filterGroups?: string[]) {
+  const cacheKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
+  let handler = mcpHandlerCache.get(cacheKey);
+  if (!handler) {
+    const server = await createMcpServer(filterGroups);
     const transport = new StreamableHttpTransport();
-    mcpHandler = transport.bind(server);
+    handler = transport.bind(server);
+    mcpHandlerCache.set(cacheKey, handler);
+    // Expire cache after 5 minutes to pick up skill changes
+    setTimeout(() => mcpHandlerCache.delete(cacheKey), 5 * 60 * 1000);
   }
-  return mcpHandler;
+  return handler;
 }
 
 app.all("/*", async (c) => {
-  const handler = await getMcpHandler();
+  // Support ?groups=crm,commerce for MCP native clients
+  const groupsParam = new URL(c.req.url).searchParams.get("groups");
+  const filterGroups = groupsParam
+    ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
+    : undefined;
+
+  const handler = await getMcpHandler(filterGroups);
   const response = await handler(c.req.raw);
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
