@@ -124,7 +124,10 @@ function isCategoryActive(category: string, activeModules: Set<string>): boolean
   return requiredModules.some((m) => activeModules.has(m));
 }
 
-async function loadExposedSkills(): Promise<SkillRow[]> {
+// All valid toolset groups — used for validation and discovery
+const TOOLSET_GROUPS = Object.keys(SKILL_CATEGORY_MODULES) as string[];
+
+async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
     sb
@@ -142,8 +145,19 @@ async function loadExposedSkills(): Promise<SkillRow[]> {
   }
 
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
-  const filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
-  console.log(`MCP: ${filtered.length}/${all.length} skills exposed (${activeModules.size} active modules)`);
+  let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
+
+  // Apply toolset group filter if requested
+  if (filterGroups && filterGroups.length > 0) {
+    const groupSet = new Set(filterGroups.map((g) => g.toLowerCase().trim()));
+    filtered = filtered.filter((s) => groupSet.has(s.category));
+  }
+
+  console.log(
+    `MCP: ${filtered.length}/${all.length} skills exposed` +
+    (filterGroups ? ` (groups: ${filterGroups.join(",")})` : "") +
+    ` (${activeModules.size} active modules)`,
+  );
   return filtered;
 }
 
