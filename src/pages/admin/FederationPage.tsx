@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2, Send } from 'lucide-react';
+import { Globe, Plus, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2, Send } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { AgentInvites } from '@/components/admin/federation/AgentInvites';
@@ -38,7 +38,7 @@ import { McpCollaborators } from '@/components/admin/federation/McpCollaborators
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { useToast } from '@/hooks/use-toast';
-import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
+import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -49,7 +49,7 @@ export default function FederationPage() {
   const createPeer = useCreateA2APeer();
   const updatePeer = useUpdateA2APeer();
   const deletePeer = useDeleteA2APeer();
-  const regenerateToken = useRegenerateInboundToken();
+  
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -339,13 +339,6 @@ export default function FederationPage() {
 
   const handleRevoke = async (peerId: string) => {
     await updatePeer.mutateAsync({ id: peerId, status: 'revoked' });
-  };
-
-  const handleRegenerate = async (peerId: string) => {
-    const rawToken = await regenerateToken.mutateAsync(peerId);
-    if (rawToken) {
-      setShowToken(rawToken);
-    }
   };
 
   const openEditDialog = (peer: any) => {
@@ -952,16 +945,20 @@ export default function FederationPage() {
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRegenerate(peer.id)}
-                            disabled={regenerateToken.isPending}
-                            title="Generate a new inbound token for this peer to authenticate with"
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            New Inbound Token
-                          </Button>
+                          {peer.mcp_api_key && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(peer.mcp_api_key!);
+                                toast({ title: 'Copied', description: 'MCP API key copied to clipboard' });
+                              }}
+                              title="Copy this peer's MCP API key"
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy Key
+                            </Button>
+                          )}
                           <Switch
                             checked={peer.status === 'active'}
                             onCheckedChange={() => handleToggleStatus(peer.id, peer.status)}

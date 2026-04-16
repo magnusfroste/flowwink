@@ -9,6 +9,7 @@ export interface A2APeer {
   outbound_token: string;
   gateway_token: string;
   inbound_token_hash: string | null;
+  mcp_api_key: string | null;
   status: 'active' | 'paused' | 'revoked';
   capabilities: unknown;
   last_seen_at: string | null;
