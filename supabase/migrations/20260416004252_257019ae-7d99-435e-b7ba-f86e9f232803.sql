@@ -1,0 +1,1 @@
+ALTER TABLE public.beta_test_findings DROP CONSTRAINT IF EXISTS beta_test_findings_type_check;
