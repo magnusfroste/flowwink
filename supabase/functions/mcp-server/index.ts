@@ -464,20 +464,20 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
 
 // ---------- MCP server factory ----------
 
-async function createMcpServer(): Promise<McpServer> {
+async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
   const server = new McpServer({
     name: "flowwink",
     version: "1.0.0",
   });
 
-  const skills = await loadExposedSkills();
+  const skills = await loadExposedSkills(filterGroups);
 
   for (const skill of skills) {
     const fn = skill.tool_definition?.function;
     if (!fn?.name) continue;
 
     server.tool(fn.name, {
-      description: fn.description || skill.description || skill.name,
+      description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
       inputSchema: (fn.parameters as any) || {
         type: "object" as const,
         properties: {},
