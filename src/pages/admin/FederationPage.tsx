@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2, Send } from 'lucide-react';
+import { Globe, Plus, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2, Send } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { AgentInvites } from '@/components/admin/federation/AgentInvites';
@@ -38,7 +38,7 @@ import { McpCollaborators } from '@/components/admin/federation/McpCollaborators
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { useToast } from '@/hooks/use-toast';
-import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
+import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
