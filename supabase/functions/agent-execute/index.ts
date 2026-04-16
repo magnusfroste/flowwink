@@ -1725,9 +1725,348 @@ async function executePagesAction(
       });
     }
 
+    case 'generate_meta_description': {
+      return await executeGenerateMetaDescription(supabase, args);
+    }
+
+    case 'generate_alt_text': {
+      return await executeGenerateAltText(supabase, args);
+    }
+
     default:
       return { error: `Unknown pages skill: ${skillName}` };
   }
+}
+
+// =============================================================================
+// SEO Maintenance helpers — generate_meta_description, generate_alt_text
+// =============================================================================
+
+/**
+ * Shared text-generation helper. Tries Gemini first, then OpenAI.
+ * Returns trimmed text or null on failure.
+ */
+async function generateShortText(prompt: string, maxTokens = 256): Promise<string | null> {
+  const geminiKey = Deno.env.get('GEMINI_API_KEY');
+  const openaiKey = Deno.env.get('OPENAI_API_KEY');
+
+  if (geminiKey) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 },
+        }),
+      });
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return String(text).trim();
+    } catch (e) {
+      console.error('[generateShortText] Gemini failed:', e);
+    }
+  }
+
+  if (openaiKey) {
+    try {
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: maxTokens,
+          temperature: 0.4,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      const data = await resp.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (text) return String(text).trim();
+    } catch (e) {
+      console.error('[generateShortText] OpenAI failed:', e);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract plain text from a page's content_json blocks for context.
+ * Pulls headings/text/paragraphs from common block types, capped to ~2000 chars.
+ */
+function extractPageText(blocks: any[]): string {
+  if (!Array.isArray(blocks)) return '';
+  const parts: string[] = [];
+  for (const b of blocks) {
+    if (!b || typeof b !== 'object') continue;
+    const d = b.data || {};
+    const candidates = [d.title, d.subtitle, d.heading, d.subheading, d.text, d.body, d.content, d.description];
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.trim()) parts.push(c.trim());
+    }
+    // List/feature items
+    const items = d.items || d.features || d.cards;
+    if (Array.isArray(items)) {
+      for (const it of items) {
+        if (it?.title) parts.push(String(it.title));
+        if (it?.description) parts.push(String(it.description));
+      }
+    }
+  }
+  return parts.join(' ').slice(0, 2000);
+}
+
+async function executeGenerateMetaDescription(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { page_id, slug, scan_all = false, limit = 10, dry_run = false } = args as any;
+
+  // Targeted single-page mode
+  if (page_id || slug) {
+    let query = supabase.from('pages').select('id, title, slug, content_json, meta_json').is('deleted_at', null);
+    if (page_id) query = query.eq('id', page_id);
+    else query = query.eq('slug', slug);
+    const { data: rows, error } = await query.limit(1);
+    if (error) throw new Error(`Lookup failed: ${error.message}`);
+    if (!rows?.length) throw new Error(`Page not found: ${page_id || slug}`);
+    const result = await processOnePageMeta(supabase, rows[0], dry_run);
+    return { mode: 'single', ...result };
+  }
+
+  // Scan mode — find published pages without meta_description
+  const cap = Math.min(Math.max(Number(limit) || 10, 1), 50);
+  const { data: pages, error } = await supabase
+    .from('pages')
+    .select('id, title, slug, content_json, meta_json, status')
+    .is('deleted_at', null)
+    .eq('status', 'published')
+    .limit(200);
+
+  if (error) throw new Error(`Scan failed: ${error.message}`);
+
+  const missing = (pages || []).filter((p: any) => {
+    const desc = p.meta_json?.description || p.meta_json?.meta_description;
+    return !desc || String(desc).trim().length < 20;
+  }).slice(0, cap);
+
+  if (!scan_all && missing.length === 0) {
+    return { mode: 'scan', scanned: pages?.length || 0, missing: 0, message: 'No pages need meta descriptions.' };
+  }
+
+  const results: any[] = [];
+  for (const p of missing) {
+    try {
+      const r = await processOnePageMeta(supabase, p, dry_run);
+      results.push(r);
+    } catch (e) {
+      results.push({ page_id: p.id, slug: p.slug, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  return {
+    mode: 'scan',
+    scanned: pages?.length || 0,
+    missing: missing.length,
+    processed: results.length,
+    updated: results.filter((r) => r.updated).length,
+    dry_run,
+    results,
+  };
+}
+
+async function processOnePageMeta(supabase: SupabaseClient, page: any, dryRun: boolean) {
+  const context = extractPageText(page.content_json || []);
+  const prompt = `Write an SEO meta description for this page.
+Title: "${page.title}"
+Page content excerpt: ${context || '(no body content available — write based on title)'}
+
+Requirements:
+- 140-160 characters
+- Compelling, includes the main topic
+- No quotes, no trailing period unless natural
+- Plain text only, no markdown
+- Match the language of the title/content
+
+Output ONLY the meta description, nothing else.`;
+
+  const description = await generateShortText(prompt, 200);
+  if (!description) {
+    return { page_id: page.id, slug: page.slug, title: page.title, updated: false, error: 'AI generation failed (no key configured or API error)' };
+  }
+
+  const cleaned = description.replace(/^["']|["']$/g, '').trim().slice(0, 160);
+
+  if (dryRun) {
+    return { page_id: page.id, slug: page.slug, title: page.title, generated: cleaned, updated: false, dry_run: true };
+  }
+
+  const newMeta = { ...(page.meta_json || {}), description: cleaned };
+  const { error } = await supabase
+    .from('pages')
+    .update({ meta_json: newMeta, updated_at: new Date().toISOString() })
+    .eq('id', page.id);
+
+  if (error) {
+    return { page_id: page.id, slug: page.slug, updated: false, error: error.message };
+  }
+  return { page_id: page.id, slug: page.slug, title: page.title, generated: cleaned, updated: true };
+}
+
+async function executeGenerateAltText(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { page_id, slug, limit = 20, dry_run = false } = args as any;
+
+  // Single-page mode
+  if (page_id || slug) {
+    let query = supabase.from('pages').select('id, title, slug, content_json').is('deleted_at', null);
+    if (page_id) query = query.eq('id', page_id);
+    else query = query.eq('slug', slug);
+    const { data: rows, error } = await query.limit(1);
+    if (error) throw new Error(`Lookup failed: ${error.message}`);
+    if (!rows?.length) throw new Error(`Page not found: ${page_id || slug}`);
+    const r = await processOnePageAlt(supabase, rows[0], dry_run);
+    return { mode: 'single', ...r };
+  }
+
+  // Scan mode — published pages, find images missing alt
+  const cap = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const { data: pages, error } = await supabase
+    .from('pages')
+    .select('id, title, slug, content_json')
+    .is('deleted_at', null)
+    .eq('status', 'published')
+    .limit(100);
+
+  if (error) throw new Error(`Scan failed: ${error.message}`);
+
+  const results: any[] = [];
+  let totalFixed = 0;
+  for (const p of pages || []) {
+    try {
+      const r = await processOnePageAlt(supabase, p, dry_run, cap - totalFixed);
+      if (r.images_fixed > 0) {
+        results.push(r);
+        totalFixed += r.images_fixed;
+      }
+      if (totalFixed >= cap) break;
+    } catch (e) {
+      results.push({ page_id: p.id, slug: p.slug, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  return {
+    mode: 'scan',
+    scanned: pages?.length || 0,
+    pages_updated: results.filter((r) => r.updated).length,
+    images_fixed: totalFixed,
+    dry_run,
+    results,
+  };
+}
+
+/**
+ * Walk a page's blocks, find images without alt-text, generate alt for each, save.
+ * Looks for: block.data.image, block.data.imageUrl, block.data.images[].url, block.data.src
+ * Saves alt at block.data.imageAlt, block.data.alt, or block.data.images[].alt accordingly.
+ */
+async function processOnePageAlt(
+  supabase: SupabaseClient,
+  page: any,
+  dryRun: boolean,
+  remainingBudget = 100,
+) {
+  const blocks = Array.isArray(page.content_json) ? JSON.parse(JSON.stringify(page.content_json)) : [];
+  const pageContext = `Page title: "${page.title}". ${extractPageText(blocks).slice(0, 500)}`;
+  let fixed = 0;
+  const fixes: any[] = [];
+
+  for (const b of blocks) {
+    if (!b || typeof b !== 'object' || !b.data) continue;
+    const d = b.data;
+
+    // Pattern 1: single image with imageAlt/alt sibling
+    const singleImageUrl = d.image || d.imageUrl || d.src || d.backgroundImage;
+    const singleAltKey = d.imageAlt !== undefined ? 'imageAlt' : (d.alt !== undefined ? 'alt' : 'imageAlt');
+    if (singleImageUrl && (!d[singleAltKey] || String(d[singleAltKey]).trim() === '')) {
+      if (fixed >= remainingBudget) break;
+      const alt = await generateAltForImage(singleImageUrl, pageContext);
+      if (alt) {
+        d[singleAltKey] = alt;
+        fixed++;
+        fixes.push({ block_type: b.type, image: singleImageUrl, alt });
+      }
+    }
+
+    // Pattern 2: images[] array
+    if (Array.isArray(d.images)) {
+      for (const img of d.images) {
+        if (fixed >= remainingBudget) break;
+        if (img && typeof img === 'object') {
+          const url = img.url || img.src;
+          if (url && (!img.alt || String(img.alt).trim() === '')) {
+            const alt = await generateAltForImage(url, pageContext);
+            if (alt) {
+              img.alt = alt;
+              fixed++;
+              fixes.push({ block_type: b.type, image: url, alt });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (fixed === 0) {
+    return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: 0, updated: false };
+  }
+
+  if (dryRun) {
+    return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: fixed, updated: false, dry_run: true, fixes };
+  }
+
+  const { error } = await supabase
+    .from('pages')
+    .update({ content_json: blocks, updated_at: new Date().toISOString() })
+    .eq('id', page.id);
+
+  if (error) {
+    return { page_id: page.id, slug: page.slug, updated: false, error: error.message };
+  }
+  return { page_id: page.id, slug: page.slug, title: page.title, images_fixed: fixed, updated: true, fixes };
+}
+
+async function generateAltForImage(imageUrl: string, pageContext: string): Promise<string | null> {
+  // Extract filename hint from URL
+  let filenameHint = '';
+  try {
+    const u = new URL(imageUrl);
+    const last = u.pathname.split('/').pop() || '';
+    filenameHint = decodeURIComponent(last.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ')).trim();
+  } catch (_) {
+    // Ignore — relative URLs etc.
+  }
+
+  const prompt = `Write a concise alt-text description for an image used on a webpage.
+${pageContext}
+Image filename hint: "${filenameHint || '(unknown)'}"
+Image URL: ${imageUrl}
+
+Requirements:
+- 5-15 words, descriptive and specific
+- No "image of" / "picture of" prefix
+- Plain text, no quotes, no period at end
+- Match the language of the page
+
+Output ONLY the alt text, nothing else.`;
+
+  const alt = await generateShortText(prompt, 80);
+  if (!alt) return null;
+  return alt.replace(/^["']|["']$/g, '').replace(/\.$/, '').trim().slice(0, 125);
 }
 
 // =============================================================================
