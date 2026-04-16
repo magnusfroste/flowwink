@@ -278,6 +278,91 @@ BEGIN DELETE FROM agent_locks WHERE lane = p_lane; END; $$;
 
 const DEFAULT_SKILLS = [
   {
+    name: 'generate_meta_description',
+    description: 'Scan published pages for missing SEO meta descriptions and generate them via AI. Use when: improving site SEO; doing a content audit; filling gaps in meta_json. NOT for: writing page body content (manage_page); generating blog excerpts (write_blog_post).',
+    handler: 'module:pages',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## generate_meta_description
+### What
+Scans published pages, finds those missing a meta description in meta_json, and generates one using AI based on the page title and content.
+### When to use
+- SEO maintenance heartbeat
+- After a content migration that left meta_json empty
+- When user reports low search visibility
+- Targeted: when fixing a specific page
+### Parameters
+- **page_id** or **slug**: Optional. Process a single page only.
+- **scan_all**: Optional boolean. If true, returns results even when nothing is missing (for reporting).
+- **limit**: Optional, default 10, max 50. How many pages to process per run.
+- **dry_run**: Optional. If true, generates but does not save — returns proposed text.
+### Returns
+Per-page results with generated text and updated/false. Cap is enforced server-side.
+### Edge cases
+- Skips pages where meta_json.description already exists and is >= 20 chars.
+- Generates max 160 chars, language-matched to the title.
+- If neither GEMINI_API_KEY nor OPENAI_API_KEY is set, returns error per page.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'generate_meta_description',
+        description: 'Scan published pages for missing SEO meta descriptions and generate them via AI. Use when: improving site SEO; doing a content audit; filling gaps in meta_json. NOT for: writing page body content (manage_page); generating blog excerpts (write_blog_post).',
+        parameters: {
+          type: 'object',
+          properties: {
+            page_id: { type: 'string', description: 'Optional UUID of a single page to process.' },
+            slug: { type: 'string', description: 'Optional slug of a single page to process (alternative to page_id).' },
+            scan_all: { type: 'boolean', description: 'If true, return results even when nothing is missing.' },
+            limit: { type: 'number', description: 'Max pages to process per run (1-50, default 10).' },
+            dry_run: { type: 'boolean', description: 'If true, generate without saving — returns proposed text.' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'generate_alt_text',
+    description: 'Scan published pages for images missing alt-text and generate accessible alt descriptions via AI. Use when: improving accessibility (WCAG); SEO maintenance; auditing image content. NOT for: writing image captions or hero copy (manage_page_blocks).',
+    handler: 'module:pages',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## generate_alt_text
+### What
+Walks page content_json blocks, finds images without alt-text (image, imageUrl, src, images[].url patterns), and generates concise alt descriptions using AI.
+### When to use
+- Accessibility audit
+- SEO maintenance heartbeat
+- After bulk image upload that left alt empty
+### Parameters
+- **page_id** or **slug**: Optional. Process a single page only.
+- **limit**: Optional, default 20, max 100. Max number of images to fix per run (across all pages).
+- **dry_run**: Optional. If true, generates but does not save — returns proposed alt-text per image.
+### Returns
+Per-page summary with images_fixed count and the actual alt strings generated.
+### Edge cases
+- Uses image filename + page title/content as context for relevance.
+- Caps at 125 chars per alt-text. No "image of" / "picture of" prefixes.
+- Skips images with non-empty alt already set.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'generate_alt_text',
+        description: 'Scan published pages for images missing alt-text and generate accessible alt descriptions via AI. Use when: improving accessibility (WCAG); SEO maintenance; auditing image content. NOT for: writing image captions or hero copy (manage_page_blocks).',
+        parameters: {
+          type: 'object',
+          properties: {
+            page_id: { type: 'string', description: 'Optional UUID of a single page to process.' },
+            slug: { type: 'string', description: 'Optional slug of a single page to process.' },
+            limit: { type: 'number', description: 'Max images to fix per run across all pages (1-100, default 20).' },
+            dry_run: { type: 'boolean', description: 'If true, generate without saving — returns proposed alt-text.' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'write_blog_post',
     description: 'Create a draft blog post with title, topic, tone, and optional pre-written content. If content is provided it will be used directly; otherwise AI generates it. Use when: writing a new article; generating blog content from a topic; creating a draft for review. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal).',
     handler: 'module:blog',
