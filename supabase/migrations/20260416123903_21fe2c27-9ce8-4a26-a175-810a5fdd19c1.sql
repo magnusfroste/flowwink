@@ -1,0 +1,1 @@
+UPDATE public.a2a_peers SET capabilities = '{}'::jsonb WHERE id = '6de7bc55-324c-49b7-9b5e-a9336146d029';
