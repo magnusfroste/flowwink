@@ -124,7 +124,10 @@ function isCategoryActive(category: string, activeModules: Set<string>): boolean
   return requiredModules.some((m) => activeModules.has(m));
 }
 
-async function loadExposedSkills(): Promise<SkillRow[]> {
+// All valid toolset groups — used for validation and discovery
+const TOOLSET_GROUPS = Object.keys(SKILL_CATEGORY_MODULES) as string[];
+
+async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
     sb
@@ -142,8 +145,19 @@ async function loadExposedSkills(): Promise<SkillRow[]> {
   }
 
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
-  const filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
-  console.log(`MCP: ${filtered.length}/${all.length} skills exposed (${activeModules.size} active modules)`);
+  let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
+
+  // Apply toolset group filter if requested
+  if (filterGroups && filterGroups.length > 0) {
+    const groupSet = new Set(filterGroups.map((g) => g.toLowerCase().trim()));
+    filtered = filtered.filter((s) => groupSet.has(s.category));
+  }
+
+  console.log(
+    `MCP: ${filtered.length}/${all.length} skills exposed` +
+    (filterGroups ? ` (groups: ${filterGroups.join(",")})` : "") +
+    ` (${activeModules.size} active modules)`,
+  );
   return filtered;
 }
 
@@ -450,20 +464,20 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
 
 // ---------- MCP server factory ----------
 
-async function createMcpServer(): Promise<McpServer> {
+async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
   const server = new McpServer({
     name: "flowwink",
     version: "1.0.0",
   });
 
-  const skills = await loadExposedSkills();
+  const skills = await loadExposedSkills(filterGroups);
 
   for (const skill of skills) {
     const fn = skill.tool_definition?.function;
     if (!fn?.name) continue;
 
     server.tool(fn.name, {
-      description: fn.description || skill.description || skill.name,
+      description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
       inputSchema: (fn.parameters as any) || {
         type: "object" as const,
         properties: {},
@@ -627,17 +641,35 @@ app.use("/*", async (c, next) => {
 // REST compatibility layer — for agents without MCP clients
 // ══════════════════════════════════════════════════════════
 
+// Toolset groups discovery
+app.get("/rest/groups", (c) => {
+  const groups = TOOLSET_GROUPS.map((g) => ({
+    id: g,
+    modules: SKILL_CATEGORY_MODULES[g] || [],
+  }));
+  return c.json({ groups }, 200, corsHeaders);
+});
+
 app.get("/rest/tools", async (c) => {
-  const skills = await loadExposedSkills();
+  // ?groups=crm,commerce filters to only those categories
+  const groupsParam = c.req.query("groups");
+  const filterGroups = groupsParam
+    ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
+    : undefined;
+
+  const skills = await loadExposedSkills(filterGroups);
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
     .map((s) => ({
       name: s.tool_definition.function.name,
       description: s.tool_definition.function.description || s.description,
-      category: s.category,
+      group: s.category,
       parameters: s.tool_definition.function.parameters || {},
     }));
-  return c.json({ tools, count: tools.length }, 200, corsHeaders);
+  return c.json(
+    { tools, count: tools.length, available_groups: TOOLSET_GROUPS },
+    200, corsHeaders,
+  );
 });
 
 app.get("/rest/resources", (c) => {
@@ -738,19 +770,31 @@ app.post("/rest/execute", async (c) => {
 // Native MCP transport (JSON-RPC over POST)
 // ══════════════════════════════════════════════════════════
 
-let mcpHandler: ((req: Request) => Promise<Response>) | null = null;
+// Cache MCP handlers by group key
+const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
 
-async function getMcpHandler() {
-  if (!mcpHandler) {
-    const server = await createMcpServer();
+async function getMcpHandler(filterGroups?: string[]) {
+  const cacheKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
+  let handler = mcpHandlerCache.get(cacheKey);
+  if (!handler) {
+    const server = await createMcpServer(filterGroups);
     const transport = new StreamableHttpTransport();
-    mcpHandler = transport.bind(server);
+    handler = transport.bind(server);
+    mcpHandlerCache.set(cacheKey, handler);
+    // Expire cache after 5 minutes to pick up skill changes
+    setTimeout(() => mcpHandlerCache.delete(cacheKey), 5 * 60 * 1000);
   }
-  return mcpHandler;
+  return handler;
 }
 
 app.all("/*", async (c) => {
-  const handler = await getMcpHandler();
+  // Support ?groups=crm,commerce for MCP native clients
+  const groupsParam = new URL(c.req.url).searchParams.get("groups");
+  const filterGroups = groupsParam
+    ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
+    : undefined;
+
+  const handler = await getMcpHandler(filterGroups);
   const response = await handler(c.req.raw);
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
