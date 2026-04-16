@@ -83,20 +83,68 @@ interface SkillRow {
   };
 }
 
-async function loadExposedSkills(): Promise<SkillRow[]> {
+// Skill category → module IDs that must be enabled for the category to be exposed
+const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
+  content: ["pages", "blog", "knowledgeBase", "handbook", "resume", "mediaLibrary", "siteMigration"],
+  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "projects", "salesIntelligence", "tickets"],
+  communication: ["newsletter", "chat", "liveSupport", "webinars"],
+  automation: ["flowpilot"],
+  search: ["flowpilot", "browserControl"],
+  analytics: ["analytics", "sla"],
+  system: [], // always available
+  commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
+  growth: ["paidGrowth"],
+};
+
+async function loadActiveModules(): Promise<Set<string>> {
   const sb = serviceClient();
   const { data, error } = await sb
-    .from("agent_skills")
-    .select("name, description, category, tool_definition")
-    .eq("enabled", true)
-    .eq("mcp_exposed", true)
-    .order("category");
+    .from("site_settings")
+    .select("value")
+    .eq("key", "modules")
+    .maybeSingle();
 
-  if (error) {
-    console.error("Failed to load skills:", error.message);
+  if (error || !data?.value) {
+    console.warn("Could not load modules settings, exposing all skills");
+    return new Set(["__all__"]);
+  }
+
+  const modules = data.value as Record<string, { enabled?: boolean }>;
+  const active = new Set<string>();
+  for (const [id, config] of Object.entries(modules)) {
+    if (config?.enabled) active.add(id);
+  }
+  return active;
+}
+
+function isCategoryActive(category: string, activeModules: Set<string>): boolean {
+  if (activeModules.has("__all__")) return true;
+  const requiredModules = SKILL_CATEGORY_MODULES[category];
+  if (!requiredModules || requiredModules.length === 0) return true; // system = always
+  return requiredModules.some((m) => activeModules.has(m));
+}
+
+async function loadExposedSkills(): Promise<SkillRow[]> {
+  const sb = serviceClient();
+  const [skillsResult, activeModules] = await Promise.all([
+    sb
+      .from("agent_skills")
+      .select("name, description, category, tool_definition")
+      .eq("enabled", true)
+      .eq("mcp_exposed", true)
+      .order("category"),
+    loadActiveModules(),
+  ]);
+
+  if (skillsResult.error) {
+    console.error("Failed to load skills:", skillsResult.error.message);
     return [];
   }
-  return (data ?? []) as unknown as SkillRow[];
+
+  const all = (skillsResult.data ?? []) as unknown as SkillRow[];
+  const filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
+  console.log(`MCP: ${filtered.length}/${all.length} skills exposed (${activeModules.size} active modules)`);
+  return filtered;
 }
 
 // ---------- execute skill ----------
