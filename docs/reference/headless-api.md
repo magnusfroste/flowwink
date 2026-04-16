@@ -618,3 +618,71 @@ Responses include standard HTTP caching headers. For production use, consider im
 ## Rate Limiting
 
 The API does not currently enforce rate limits, but excessive usage may be throttled. For high-traffic applications, implement client-side caching.
+
+---
+
+## MCP Server — Toolset Groups
+
+The MCP server exposes FlowWink's SaaS capabilities as tools for external AI agents. To solve the **tool-bloat problem** (LLM accuracy drops from 95% → 71% at 46+ tools), the server supports **toolset groups** — letting agents selectively load only the tool categories they need.
+
+### The Principle
+
+> The SaaS platform never censors its own API. The agent manages its own context budget.
+
+This follows the SEP-1300 proposal and industry patterns from Supabase, GitHub MCP, and Google Toolbox.
+
+### Available Groups
+
+| Group | Modules Covered |
+|-------|----------------|
+| `crm` | leads, deals, companies, forms, bookings, HR, projects |
+| `content` | pages, blog, knowledge base, handbook, resume, media |
+| `commerce` | ecommerce, orders, accounting, expenses, contracts, inventory |
+| `communication` | newsletter, chat, live support, webinars |
+| `analytics` | analytics, SLA monitoring |
+| `system` | settings, configuration (always available) |
+| `automation` | FlowPilot orchestration |
+| `search` | browser fetch, web search |
+| `growth` | paid advertising campaigns |
+
+### REST API
+
+#### Discover groups
+```http
+GET /mcp-server/rest/groups
+Authorization: Bearer <api-key>
+```
+
+#### List tools (filtered)
+```http
+GET /mcp-server/rest/tools?groups=crm,commerce
+Authorization: Bearer <api-key>
+```
+
+Without `?groups=`, all active tools are returned.
+
+### MCP Native (Streamable HTTP)
+
+Append `?groups=` to the MCP server URL:
+
+```
+https://<project>.supabase.co/functions/v1/mcp-server?groups=crm,commerce
+```
+
+The agent receives only the tools from the requested groups. Without the parameter, all active tools are loaded.
+
+### Example: ClawThree Configuration
+
+```yaml
+# OpenClaw TOOLS.md — load only what the runbook needs
+mcp_url: https://example.supabase.co/functions/v1/mcp-server?groups=crm,commerce,content,analytics,system
+```
+
+This reduces ~70 tools down to ~25, keeping accuracy high while maintaining full operational coverage.
+
+### Research References
+
+- **Context Rot** (Chroma Research): Transformer attention dilution from distractor tokens
+- **Jenova AI**: Tool selection accuracy 95% → 71% with 4 → 46 tools
+- **SEP-1300**: Official MCP proposal for tool filtering with groups and tags
+- **kvg.dev**: "Stop Drowning Your Agent in Tools" — Progressive Discovery patterns
