@@ -406,6 +406,9 @@ async function executeModuleAction(
       if (skillName === 'manage_leads') {
         return await executeLeadsAction(supabase, args);
       }
+      if (skillName === 'send_email_to_lead') {
+        return await executeSendEmailToLead(supabase, args);
+      }
       // add_lead — upsert to handle duplicate emails gracefully
       const { email, name, source = 'chat', phone } = args as any;
       // Check if lead already exists
