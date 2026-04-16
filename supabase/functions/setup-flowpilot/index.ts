@@ -5185,7 +5185,7 @@ Deno.serve(async (req) => {
             knowledgeBase: ['manage_kb_article'],
             mediaLibrary: ['media_browse'],
             handbook: ['handbook_search'],
-            leads: ['add_lead','manage_leads','lead_pipeline_review','lead_nurture_sequence','crm_task_list','crm_task_create','crm_task_update'],
+            leads: ['add_lead','manage_leads','lead_pipeline_review','lead_nurture_sequence','send_email_to_lead','crm_task_list','crm_task_create','crm_task_update'],
             deals: ['manage_deal','deal_stale_check'],
             companies: ['manage_company'],
             forms: ['manage_form_submissions'],
