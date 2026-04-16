@@ -641,17 +641,35 @@ app.use("/*", async (c, next) => {
 // REST compatibility layer — for agents without MCP clients
 // ══════════════════════════════════════════════════════════
 
+// Toolset groups discovery
+app.get("/rest/groups", (c) => {
+  const groups = TOOLSET_GROUPS.map((g) => ({
+    id: g,
+    modules: SKILL_CATEGORY_MODULES[g] || [],
+  }));
+  return c.json({ groups }, 200, corsHeaders);
+});
+
 app.get("/rest/tools", async (c) => {
-  const skills = await loadExposedSkills();
+  // ?groups=crm,commerce filters to only those categories
+  const groupsParam = c.req.query("groups");
+  const filterGroups = groupsParam
+    ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
+    : undefined;
+
+  const skills = await loadExposedSkills(filterGroups);
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
     .map((s) => ({
       name: s.tool_definition.function.name,
       description: s.tool_definition.function.description || s.description,
-      category: s.category,
+      group: s.category,
       parameters: s.tool_definition.function.parameters || {},
     }));
-  return c.json({ tools, count: tools.length }, 200, corsHeaders);
+  return c.json(
+    { tools, count: tools.length, available_groups: TOOLSET_GROUPS },
+    200, corsHeaders,
+  );
 });
 
 app.get("/rest/resources", (c) => {
