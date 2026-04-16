@@ -341,13 +341,6 @@ export default function FederationPage() {
     await updatePeer.mutateAsync({ id: peerId, status: 'revoked' });
   };
 
-  const handleRegenerate = async (peerId: string) => {
-    const rawToken = await regenerateToken.mutateAsync(peerId);
-    if (rawToken) {
-      setShowToken(rawToken);
-    }
-  };
-
   const openEditDialog = (peer: any) => {
     setEditingPeer(peer);
     setEditName(peer.name);
