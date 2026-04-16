@@ -49,7 +49,7 @@ export default function FederationPage() {
   const createPeer = useCreateA2APeer();
   const updatePeer = useUpdateA2APeer();
   const deletePeer = useDeleteA2APeer();
-  const regenerateToken = useRegenerateInboundToken();
+  
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
