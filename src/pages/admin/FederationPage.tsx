@@ -952,16 +952,20 @@ export default function FederationPage() {
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRegenerate(peer.id)}
-                            disabled={regenerateToken.isPending}
-                            title="Generate a new inbound token for this peer to authenticate with"
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            New Inbound Token
-                          </Button>
+                          {peer.mcp_api_key && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(peer.mcp_api_key!);
+                                toast({ title: 'Copied', description: 'MCP API key copied to clipboard' });
+                              }}
+                              title="Copy this peer's MCP API key"
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy Key
+                            </Button>
+                          )}
                           <Switch
                             checked={peer.status === 'active'}
                             onCheckedChange={() => handleToggleStatus(peer.id, peer.status)}
