@@ -6,7 +6,7 @@ import templateAuditData from "./template-audit.json" with { type: "json" };
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, x-api-key, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // ---------- helpers ----------
@@ -564,7 +564,10 @@ app.options("/*", (c) => {
 app.use("/*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
 
-  const auth = await authenticateApiKey(c.req.header("Authorization"));
+  // Support both Authorization: Bearer <key> and x-api-key: <key> (OpenAI MCP format)
+  const xApiKey = c.req.header("x-api-key");
+  const authHeader = xApiKey ? `Bearer ${xApiKey}` : c.req.header("Authorization");
+  const auth = await authenticateApiKey(authHeader);
   if (!auth.valid) {
     return c.json({ error: "Invalid or expired API key" }, 401);
   }
