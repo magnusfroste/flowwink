@@ -617,6 +617,25 @@ export default function FederationPage() {
               </div>
               <div className="space-y-2">
                 <Label>Outbound Token (leave empty to keep current)</Label>
+                {editingPeer && (editingPeer as any).outbound_token && (
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
+                    <code className="text-xs font-mono text-muted-foreground break-all flex-1 select-all">
+                      {(editingPeer as any).outbound_token}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-7 w-7 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText((editingPeer as any).outbound_token);
+                        toast({ title: 'Copied', description: 'Current outbound token copied' });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
                 <Input
                   placeholder="Paste new token to update"
                   value={editOutboundToken}
