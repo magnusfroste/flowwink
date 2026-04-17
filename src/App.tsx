@@ -102,6 +102,7 @@ import HRPage from "./pages/admin/HRPage";
 import DocumentsPage from "./pages/admin/DocumentsPage";
 import ProjectsPage from "./pages/admin/ProjectsPage";
 import CalendarPage from "./pages/admin/CalendarPage";
+import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
@@ -238,6 +239,7 @@ const router = createBrowserRouter([
       { path: "/admin/documents", element: <DocumentsPage /> },
       { path: "/admin/projects", element: <ProjectsPage /> },
       { path: "/admin/calendar", element: <CalendarPage /> },
+      { path: "/admin/subscriptions", element: <SubscriptionsPage /> },
       { path: "/admin/api-keys", element: <Navigate to="/admin/developer?tab=mcp-keys" replace /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },

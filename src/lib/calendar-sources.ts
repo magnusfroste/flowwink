@@ -21,6 +21,7 @@ import {
   Plane,
   FolderKanban,
   FileSignature,
+  RefreshCw,
 } from 'lucide-react';
 import type { ModulesSettings } from '@/hooks/useModules';
 
@@ -77,6 +78,7 @@ const COLORS = {
   leave: '#f59e0b',        // amber
   projectTasks: '#8b5cf6', // violet
   contracts: '#ef4444',    // red
+  renewals: '#06b6d4',     // cyan
 };
 
 registerCalendarSource({
@@ -240,6 +242,38 @@ registerCalendarSource({
       allDay: true,
       url: '/admin/contracts',
       meta: { renewal_type: c.renewal_type, status: c.status },
+    }));
+  },
+});
+
+registerCalendarSource({
+  id: 'subscription_renewals',
+  label: 'Subscription renewals',
+  color: COLORS.renewals,
+  icon: RefreshCw,
+  moduleId: 'subscriptions',
+  async fetch({ start, end }) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('id, customer_name, customer_email, product_name, current_period_end, status, cancel_at_period_end')
+      .in('status', ['active', 'trialing'])
+      .not('current_period_end', 'is', null)
+      .gte('current_period_end', start.toISOString())
+      .lte('current_period_end', end.toISOString())
+      .limit(500);
+    if (error) {
+      logger.error('[calendar:subscription_renewals]', error);
+      return [];
+    }
+    return (data ?? []).map((s: any): CalendarEvent => ({
+      id: `subscription:${s.id}`,
+      sourceId: 'subscription_renewals',
+      title: `${s.cancel_at_period_end ? 'Ends' : 'Renews'}: ${s.customer_name ?? s.customer_email ?? 'Customer'}${s.product_name ? ` — ${s.product_name}` : ''}`,
+      start: s.current_period_end,
+      allDay: true,
+      url: '/admin/subscriptions',
+      color: s.cancel_at_period_end ? '#ef4444' : COLORS.renewals,
+      meta: { status: s.status },
     }));
   },
 });

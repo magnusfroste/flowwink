@@ -150,7 +150,105 @@ serve(async (req: Request) => {
 
     console.log("Received Stripe event:", event.type);
 
+    // Helper: upsert subscription from Stripe object
+    async function upsertSubscription(sub: Stripe.Subscription) {
+      let customer: Stripe.Customer | null = null;
+      try {
+        const c = await stripe.customers.retrieve(sub.customer as string);
+        if (!(c as any).deleted) customer = c as Stripe.Customer;
+      } catch { /* ignore */ }
+
+      const item = sub.items.data[0];
+      const price = item?.price;
+      const userIdMeta = (sub.metadata as any)?.user_id ?? null;
+
+      // Try to map provider price → local product
+      let productId: string | null = null;
+      let productName: string | null = null;
+      if (price?.id) {
+        const { data: prod } = await supabase
+          .from("products").select("id, name")
+          .eq("stripe_price_id", price.id).maybeSingle();
+        if (prod) { productId = prod.id; productName = prod.name; }
+      }
+
+      const row = {
+        user_id: userIdMeta,
+        customer_email: customer?.email ?? null,
+        customer_name: customer?.name ?? null,
+        product_id: productId,
+        product_name: productName,
+        status: sub.status,
+        quantity: item?.quantity ?? 1,
+        unit_amount_cents: price?.unit_amount ?? 0,
+        currency: price?.currency ?? "usd",
+        billing_interval: price?.recurring?.interval ?? null,
+        current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        trial_start: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
+        trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+        cancel_at_period_end: sub.cancel_at_period_end,
+        cancel_at: sub.cancel_at ? new Date(sub.cancel_at * 1000).toISOString() : null,
+        canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+        ended_at: sub.ended_at ? new Date(sub.ended_at * 1000).toISOString() : null,
+        provider: "stripe",
+        provider_subscription_id: sub.id,
+        provider_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
+        provider_price_id: price?.id ?? null,
+        metadata: sub.metadata ?? {},
+      };
+
+      const { data: existing } = await supabase
+        .from("subscriptions").select("id")
+        .eq("provider", "stripe").eq("provider_subscription_id", sub.id).maybeSingle();
+
+      let subscriptionId: string | null = existing?.id ?? null;
+      if (existing) {
+        await supabase.from("subscriptions").update(row).eq("id", existing.id);
+      } else {
+        const { data: inserted } = await supabase
+          .from("subscriptions").insert(row).select("id").single();
+        subscriptionId = inserted?.id ?? null;
+      }
+
+      if (subscriptionId) {
+        await supabase.from("subscription_events").insert({
+          subscription_id: subscriptionId,
+          event_type: event.type,
+          provider: "stripe",
+          provider_event_id: event.id,
+          data: { status: sub.status },
+        });
+      }
+    }
+
     switch (event.type) {
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+      case "customer.subscription.paused":
+      case "customer.subscription.resumed":
+      case "customer.subscription.trial_will_end": {
+        const sub = event.data.object as Stripe.Subscription;
+        await upsertSubscription(sub);
+        break;
+      }
+
+      case "invoice.payment_failed":
+      case "invoice.payment_succeeded": {
+        const inv = event.data.object as Stripe.Invoice;
+        const subId = inv.subscription as string | null;
+        if (subId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subId);
+            await upsertSubscription(sub);
+          } catch (e) {
+            console.error("Failed to fetch subscription for invoice:", e);
+          }
+        }
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
