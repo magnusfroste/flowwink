@@ -242,8 +242,94 @@ serve(async (req: Request) => {
           try {
             const sub = await stripe.subscriptions.retrieve(subId);
             await upsertSubscription(sub);
+
+            // Look up local subscription row to attach dunning
+            const { data: localSub } = await supabase
+              .from("subscriptions")
+              .select("id, customer_email, customer_name, unit_amount_cents, quantity, billing_interval, currency")
+              .eq("provider", "stripe")
+              .eq("provider_subscription_id", sub.id)
+              .maybeSingle();
+
+            if (localSub) {
+              if (event.type === "invoice.payment_failed") {
+                // Compute MRR at risk
+                const monthly =
+                  localSub.billing_interval === "year" ? (localSub.unit_amount_cents * localSub.quantity) / 12 :
+                  localSub.billing_interval === "week" ? localSub.unit_amount_cents * localSub.quantity * 4.33 :
+                  localSub.billing_interval === "day"  ? localSub.unit_amount_cents * localSub.quantity * 30 :
+                  localSub.unit_amount_cents * localSub.quantity;
+
+                const lastErr = (inv as any).last_finalization_error
+                  ?? (inv as any).last_payment_error
+                  ?? null;
+                const failureReason = lastErr?.message ?? "Payment failed";
+                const failureCode = lastErr?.code ?? lastErr?.decline_code ?? null;
+
+                // Upsert active dunning sequence — restart timeline at step 0
+                const { data: existing } = await supabase
+                  .from("dunning_sequences")
+                  .select("id, attempt_count")
+                  .eq("subscription_id", localSub.id)
+                  .eq("status", "active")
+                  .maybeSingle();
+
+                if (existing) {
+                  await supabase
+                    .from("dunning_sequences")
+                    .update({
+                      attempt_count: (existing.attempt_count ?? 0) + 1,
+                      failure_reason: failureReason,
+                      failure_code: failureCode,
+                      provider_invoice_id: inv.id,
+                      next_action_at: new Date().toISOString(), // process immediately on next cron tick
+                    })
+                    .eq("id", existing.id);
+                } else {
+                  await supabase.from("dunning_sequences").insert({
+                    subscription_id: localSub.id,
+                    status: "active",
+                    current_step: 0,
+                    next_action_at: new Date().toISOString(),
+                    failure_reason: failureReason,
+                    failure_code: failureCode,
+                    provider_invoice_id: inv.id,
+                    mrr_at_risk_cents: Math.round(monthly),
+                    currency: localSub.currency ?? "usd",
+                    attempt_count: 1,
+                  });
+                }
+              } else if (event.type === "invoice.payment_succeeded") {
+                // Recover any active dunning sequence for this subscription
+                const { data: active } = await supabase
+                  .from("dunning_sequences")
+                  .select("id, current_step")
+                  .eq("subscription_id", localSub.id)
+                  .eq("status", "active")
+                  .maybeSingle();
+
+                if (active) {
+                  await supabase
+                    .from("dunning_sequences")
+                    .update({
+                      status: "recovered",
+                      recovered_at: new Date().toISOString(),
+                      next_action_at: null,
+                    })
+                    .eq("id", active.id);
+
+                  await supabase.from("dunning_actions").insert({
+                    sequence_id: active.id,
+                    step_number: active.current_step,
+                    action_type: "recovered",
+                    triggered_by: "stripe-webhook",
+                    metadata: { invoice_id: inv.id },
+                  });
+                }
+              }
+            }
           } catch (e) {
-            console.error("Failed to fetch subscription for invoice:", e);
+            console.error("Failed to process invoice event:", e);
           }
         }
         break;

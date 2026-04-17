@@ -22,6 +22,7 @@ import {
   FolderKanban,
   FileSignature,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import type { ModulesSettings } from '@/hooks/useModules';
 
@@ -79,6 +80,7 @@ const COLORS = {
   projectTasks: '#8b5cf6', // violet
   contracts: '#ef4444',    // red
   renewals: '#06b6d4',     // cyan
+  dunning: '#dc2626',      // red-600
 };
 
 registerCalendarSource({
@@ -275,5 +277,43 @@ registerCalendarSource({
       color: s.cancel_at_period_end ? '#ef4444' : COLORS.renewals,
       meta: { status: s.status },
     }));
+  },
+});
+
+registerCalendarSource({
+  id: 'dunning_actions',
+  label: 'Dunning actions',
+  color: COLORS.dunning,
+  icon: AlertTriangle,
+  moduleId: 'subscriptions',
+  async fetch({ start, end }) {
+    const { data, error } = await supabase
+      .from('dunning_sequences')
+      .select('id, next_action_at, current_step, mrr_at_risk_cents, currency, subscriptions(customer_name, customer_email, product_name)')
+      .eq('status', 'active')
+      .not('next_action_at', 'is', null)
+      .gte('next_action_at', start.toISOString())
+      .lte('next_action_at', end.toISOString())
+      .limit(500);
+    if (error) {
+      logger.error('[calendar:dunning_actions]', error);
+      return [];
+    }
+    const stepLabels = ['Notice', 'Reminder', 'Urgent', 'Final', 'Cancel'];
+    return (data ?? []).map((d: any): CalendarEvent => {
+      const sub = d.subscriptions;
+      const who = sub?.customer_name ?? sub?.customer_email ?? 'Customer';
+      const step = stepLabels[d.current_step] ?? `Step ${d.current_step}`;
+      return {
+        id: `dunning:${d.id}`,
+        sourceId: 'dunning_actions',
+        title: `Dunning ${step}: ${who}`,
+        start: d.next_action_at,
+        allDay: false,
+        url: '/admin/subscriptions/dunning',
+        color: COLORS.dunning,
+        meta: { mrr: d.mrr_at_risk_cents, currency: d.currency },
+      };
+    });
   },
 });

@@ -2170,6 +2170,127 @@ export type Database = {
         }
         Relationships: []
       }
+      dunning_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          email_message_id: string | null
+          email_template: string | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          recipient_email: string | null
+          sequence_id: string
+          step_number: number
+          triggered_by: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          email_message_id?: string | null
+          email_template?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          recipient_email?: string | null
+          sequence_id: string
+          step_number: number
+          triggered_by?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          email_message_id?: string | null
+          email_template?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          recipient_email?: string | null
+          sequence_id?: string
+          step_number?: number
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_actions_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "dunning_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_sequences: {
+        Row: {
+          attempt_count: number
+          cancelled_at: string | null
+          created_at: string
+          currency: string
+          current_step: number
+          failure_code: string | null
+          failure_reason: string | null
+          id: string
+          metadata: Json
+          mrr_at_risk_cents: number
+          next_action_at: string | null
+          paused_reason: string | null
+          paused_until: string | null
+          provider_invoice_id: string | null
+          recovered_at: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_step?: number
+          failure_code?: string | null
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json
+          mrr_at_risk_cents?: number
+          next_action_at?: string | null
+          paused_reason?: string | null
+          paused_until?: string | null
+          provider_invoice_id?: string | null
+          recovered_at?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_step?: number
+          failure_code?: string | null
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json
+          mrr_at_risk_cents?: number
+          next_action_at?: string | null
+          paused_reason?: string | null
+          paused_until?: string | null
+          provider_invoice_id?: string | null
+          recovered_at?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_sequences_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_documents: {
         Row: {
           category: string
