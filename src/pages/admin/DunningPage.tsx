@@ -53,13 +53,18 @@ function formatMoney(cents: number, currency: string) {
 
 export default function DunningPage() {
   const [filter, setFilter] = useState<DunningStatus | 'all'>('active');
+  const [tab, setTab] = useState<'sequences' | 'preview' | 'settings'>('sequences');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const { toast } = useToast();
 
   const { data: seqs, isLoading } = useDunningSequences(filter);
   const { data: metrics } = useDunningMetrics();
+  const { data: settings } = useDunningSettings();
+  const updateSettings = useUpdateDunningSettings();
   const control = useDunningControl();
+
+  const enabled = settings?.enabled ?? false;
 
   const runNow = async () => {
     setRunning(true);
@@ -84,15 +89,41 @@ export default function DunningPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dunning</h1>
           <p className="text-muted-foreground mt-1 max-w-2xl">
-            Automated recovery sequences for failed subscription payments. Each failure starts a 14-day,
-            5-step timeline of branded reminders before the subscription is cancelled.
+            Automated recovery for failed subscription payments. Optional feature within the
+            Subscriptions module — toggle off to skip dunning entirely.
           </p>
         </div>
-        <Button onClick={runNow} disabled={running} variant="outline">
-          <PlayIcon className="h-4 w-4 mr-2" />
-          {running ? 'Running…' : 'Run processor now'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="dunning-enabled"
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                updateSettings.mutate({ ...(settings ?? { enabled: false, highValueThresholdCents: 50000 }), enabled: checked })
+              }
+            />
+            <Label htmlFor="dunning-enabled" className="text-sm">
+              {enabled ? 'Enabled' : 'Disabled'}
+            </Label>
+          </div>
+          <Button onClick={runNow} disabled={running || !enabled} variant="outline">
+            <PlayIcon className="h-4 w-4 mr-2" />
+            {running ? 'Running…' : 'Run processor now'}
+          </Button>
+        </div>
       </div>
+
+      {!enabled && (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">
+              Dunning is currently disabled. Failed payments won't trigger recovery sequences and the
+              processor cron job will skip work. Enable it above when you're ready to start automated
+              recovery.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard
@@ -121,56 +152,69 @@ export default function DunningPage() {
         />
       </div>
 
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="recovered">Recovered</TabsTrigger>
-          <TabsTrigger value="failed">Failed</TabsTrigger>
-          <TabsTrigger value="paused">Paused</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="sequences">Sequences</TabsTrigger>
+          <TabsTrigger value="preview">Email preview</TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{seqs?.length ?? 0} sequence(s)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : !seqs || seqs.length === 0 ? (
-            <EmptyState filter={filter} />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>At risk</TableHead>
-                  <TableHead>Step</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Next action</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {seqs.map((seq) => (
-                  <SeqRow
-                    key={seq.id}
-                    seq={seq}
-                    onOpen={() => setSelectedId(seq.id)}
-                    onPause={() => control.mutate({ sequenceId: seq.id, action: 'pause' })}
-                    onResume={() => control.mutate({ sequenceId: seq.id, action: 'resume' })}
-                    onCancel={() => control.mutate({ sequenceId: seq.id, action: 'cancel' })}
-                    onEscalate={() => control.mutate({ sequenceId: seq.id, action: 'escalate' })}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="sequences" className="space-y-4 mt-4">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as DunningStatus | 'all')}>
+            <TabsList>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="recovered">Recovered</TabsTrigger>
+              <TabsTrigger value="failed">Failed</TabsTrigger>
+              <TabsTrigger value="paused">Paused</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{seqs?.length ?? 0} sequence(s)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                </div>
+              ) : !seqs || seqs.length === 0 ? (
+                <EmptyState filter={filter} />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>At risk</TableHead>
+                      <TableHead>Step</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Next action</TableHead>
+                      <TableHead className="w-12" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {seqs.map((seq) => (
+                      <SeqRow
+                        key={seq.id}
+                        seq={seq}
+                        onOpen={() => setSelectedId(seq.id)}
+                        onPause={() => control.mutate({ sequenceId: seq.id, action: 'pause' })}
+                        onResume={() => control.mutate({ sequenceId: seq.id, action: 'resume' })}
+                        onCancel={() => control.mutate({ sequenceId: seq.id, action: 'cancel' })}
+                        onEscalate={() => control.mutate({ sequenceId: seq.id, action: 'escalate' })}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="preview" className="mt-4">
+          <DunningPreview />
+        </TabsContent>
+      </Tabs>
 
       <DetailSheet sequence={selected} onClose={() => setSelectedId(null)} />
     </div>
