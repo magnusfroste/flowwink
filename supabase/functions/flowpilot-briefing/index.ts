@@ -332,6 +332,10 @@ serve(async (req) => {
       content_drafts: draftsReady,
       flowpilot_actions: actions.length,
       flowpilot_success_rate: actions.length > 0 ? Math.round((successActions / actions.length) * 100) : 0,
+      dunning_active: activeDunning.length,
+      dunning_mrr_at_risk: dunningMrrAtRisk,
+      dunning_recovered_7d: dunningRecovered.count ?? 0,
+      dunning_recovered_mrr_7d: recoveredMrr,
     };
 
     // ─── Save briefing ──────────────────────────────────────────────
