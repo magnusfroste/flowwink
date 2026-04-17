@@ -5323,7 +5323,14 @@ export type Database = {
         | "expired"
         | "terminated"
       contract_type: "service" | "nda" | "employment" | "lease" | "other"
-      deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
+      deal_stage:
+        | "lead"
+        | "prospecting"
+        | "qualified"
+        | "proposal"
+        | "negotiation"
+        | "closed_won"
+        | "closed_lost"
       invoice_status: "draft" | "sent" | "paid" | "cancelled" | "overdue"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
@@ -5560,7 +5567,15 @@ export const Constants = {
         "terminated",
       ],
       contract_type: ["service", "nda", "employment", "lease", "other"],
-      deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
+      deal_stage: [
+        "lead",
+        "prospecting",
+        "qualified",
+        "proposal",
+        "negotiation",
+        "closed_won",
+        "closed_lost",
+      ],
       invoice_status: ["draft", "sent", "paid", "cancelled", "overdue"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
