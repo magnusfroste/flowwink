@@ -541,8 +541,20 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
       required: ["lane"],
     },
     handler: async (args: Record<string, unknown>) => {
-      const lane = args.lane as string;
-      const lockedBy = (args.locked_by as string) || "mcp";
+      const lane = typeof args.lane === "string" ? args.lane.trim() : "";
+      if (!lane) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "Missing required argument 'lane'",
+              hint: "Pass a non-empty string identifier like 'lead_abc123' or 'page_xyz'.",
+            }),
+          }],
+          isError: true,
+        };
+      }
+      const lockedBy = (typeof args.locked_by === "string" && args.locked_by) || "mcp";
       const ttl = Math.min(Number(args.ttl_seconds) || 60, 300);
       const result = await acquireLock(lane, lockedBy, ttl);
       return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
@@ -559,7 +571,20 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
       required: ["lane"],
     },
     handler: async (args: Record<string, unknown>) => {
-      const result = await releaseLock(args.lane as string);
+      const lane = typeof args.lane === "string" ? args.lane.trim() : "";
+      if (!lane) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "Missing required argument 'lane'",
+              hint: "Pass the same lane string you used in acquire_lock.",
+            }),
+          }],
+          isError: true,
+        };
+      }
+      const result = await releaseLock(lane);
       return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
     },
   });
