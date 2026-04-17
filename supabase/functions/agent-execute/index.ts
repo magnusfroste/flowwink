@@ -4734,8 +4734,14 @@ async function executeDbAction(
       }
 
       if (action === 'create') {
-        const { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
-        if (!user_id) throw new Error('user_id is required');
+        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        // Agent fallback: if no user_id provided, use the first admin user
+        if (!user_id) {
+          const { data: adminRole } = await supabase.from('user_roles')
+            .select('user_id').eq('role', 'admin').limit(1).maybeSingle();
+          user_id = adminRole?.user_id;
+          if (!user_id) throw new Error('user_id is required (no admin user found for agent fallback)');
+        }
         if (is_representation && (!attendees || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees [{name, company}]');
         }
