@@ -697,6 +697,7 @@ app.use("/*", async (c, next) => {
     return c.json({ error: "Invalid or expired API key" }, 401);
   }
   c.set("apiKeyScopes" as any, auth.scopes);
+  c.set("apiKeyCreatedBy" as any, auth.createdBy);
   return next();
 });
 
