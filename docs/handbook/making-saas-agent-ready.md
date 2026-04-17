@@ -616,4 +616,31 @@ The answer depends on the same factors as any API economy: **richness of capabil
 
 ---
 
+## Battle-Tested Learnings (Scenario B audit, april 2026)
+
+Den första riktiga externa skribenten mot vår MCP-yta (ClawThree, en OpenClaw-orkestrator) körde en write-audit över alla exponerade skills. 7/10 fungerade direkt. De 3 som failade — och varför — säger mer om "agent-readiness" än någon teori:
+
+### 1. Argument-shape varierar mellan agenter
+Externa agenter skickar `{action, data:{...}}`, `{value}` istället för `{value_cents}`, eller `{vat_rate}` istället för `{vat_cents}`. **Filosofin "agenten filtrerar, servern anpassar sig inte" gäller intentionsval — inte argumenttolerans.** Alla entry-punkter i `agent-execute` normaliserar nu defensivt (unwrap `data`, alias enheter) innan validering.
+
+### 2. JSON Schema MÅSTE matcha DB-constraints
+NOT NULL-kolumner som inte finns i `required` failar tyst. Enum-värden som listas i tool_definition men saknas i DB-enumet ger "invalid input value". Se [Skills Taxonomy → Schema-DB Parity](../orchestrating/skills-taxonomy-saas-vs-agent.md#schema-db-parity--en-hård-regel).
+
+### 3. Auth-context är inte portabel
+`manage_expenses` antog `user_id` från JWT — fungerar för admin-UI, failar för externa agenter. Mönster: write-skills som behöver en mänsklig "ägare" ska falla tillbaka till första admin-user när inget user_id skickas.
+
+### 4. Edge function-deploys är inte deterministiska
+Lovables auto-deploy missade ändringar 2 gånger i rad under audit-cykeln. **Krav:** explicit redeploy + verifierande curl-anrop innan "klart" rapporteras till orkestratorn. Anta inte att en commit = en live function.
+
+### 5. Bridge/coordination-kanaler kan tappa meddelanden
+Vid intermittenta leveranser missades 3 audit-rapporter eftersom `since_id=last+1` hoppade över hål. **Polla med `since_id=0`** under aktiva audit-cykler — kostnaden är försumbar mot risken att missa en bug-rapport.
+
+### Den övergripande lärdomen
+
+> **Att exponera ett skill via MCP är att publicera ett API-kontrakt.** Det räcker inte att skillen "fungerar internt" — schemat måste vara skarpt nog att en agent som *aldrig sett din kod* kan anropa det rätt på första försöket.
+
+Den dagen FlowPilot är den enda konsumenten är schemat en intern hjälpreda. Den dagen ClawThree, ClawOne eller en kunds custom-agent skriver mot samma yta är schemat det enda som finns mellan dem och en korrupt databas.
+
+---
+
 *This chapter documents FlowWink's actual implementation of MCP skill exposure, agent governance analysis, and forward-looking plugin architecture (April 2026), serving as both a guide and a reference architecture for agentic SaaS platforms.*
