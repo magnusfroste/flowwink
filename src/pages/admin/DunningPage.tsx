@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
@@ -17,6 +19,8 @@ import {
   useDunningSequences, useDunningMetrics, useDunningActions, useDunningControl,
   runDunningProcessor, type DunningStatus, type DunningSequence,
 } from '@/hooks/useDunning';
+import { useDunningSettings, useUpdateDunningSettings } from '@/hooks/useDunningSettings';
+import { DunningPreview } from '@/components/admin/subscriptions/DunningPreview';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Clock, MoreHorizontal, Pause, Play, Play as PlayIcon, RefreshCw, XCircle, Zap } from 'lucide-react';
