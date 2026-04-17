@@ -78,7 +78,7 @@ export interface UseBlogPostsOptions {
 }
 
 export function useBlogPosts(options: UseBlogPostsOptions = {}) {
-  const { status, categorySlug, tagSlug, authorId, featured, page = 1, limit = 10 } = options;
+  const { status, categorySlug, tagSlug, authorId, featured, page = 1, limit = 50 } = options;
   
   return useQuery({
     queryKey: ['blog-posts', options],
