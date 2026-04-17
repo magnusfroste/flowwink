@@ -383,7 +383,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
     case "briefing": {
       // Aggregated context briefing — one call for full situational awareness
       const [
-        bHealth, bIdentity, bObjectives, bActivity, bModules, bAutomations, bHeartbeat, bSkillCount
+        bHealth, bIdentity, bObjectives, bActivity, bModules, bAutomations, bHeartbeat, bSkillCount, bCompanyProfile, bBranding
       ] = await Promise.all([
         // Health counts
         (async () => {
@@ -459,12 +459,12 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .select("value")
           .eq("key", "branding")
           .maybeSingle(),
-      ]) as any;
-      const bCompanyProfile = arguments[0]?.[8] ?? (await Promise.resolve({ data: null }));
-      const bBranding = arguments[0]?.[9] ?? (await Promise.resolve({ data: null }));
+      ]);
 
       return {
         identity: bIdentity,
+        company_profile: (bCompanyProfile as any)?.data?.value ?? null,
+        branding: (bBranding as any)?.data?.value ?? null,
         health: bHealth,
         objectives: (bObjectives.data ?? []).map((o: any) => ({
           id: o.id,
