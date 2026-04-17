@@ -98,6 +98,7 @@ const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
   system: [], // always available
   commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
   growth: ["paidGrowth"],
+  subscriptions: ["subscriptions"],
 };
 
 async function loadActiveModules(): Promise<Set<string>> {
