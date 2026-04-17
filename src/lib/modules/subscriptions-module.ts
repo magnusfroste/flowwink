@@ -23,7 +23,7 @@ type Output = z.infer<typeof outputSchema>;
  * MRR, churn and self-service customer flows.
  */
 export const subscriptionsModule = defineModule<Input, Output>({
-  id: 'subscriptions' as any,
+  id: 'subscriptions',
   name: 'Subscriptions',
   version: '1.0.0',
   description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, plan changes',
