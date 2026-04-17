@@ -89,6 +89,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
+import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 
 
 export function AdminSidebar() {

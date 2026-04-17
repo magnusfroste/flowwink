@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/command';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
+import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { navigationGroups } from './adminNavigation';
 
 export function useAdminSearch() {
