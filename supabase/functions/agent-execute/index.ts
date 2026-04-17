@@ -129,9 +129,12 @@ serve(async (req) => {
     }
 
     // 3. Check trust level (auto → execute, notify → execute + notify, approve → block)
+    //    `_approved: true` is the bypass flag set when an admin approves a pending activity.
     const trustLevel = skill.trust_level || (skill.requires_approval ? 'approve' : 'auto');
+    const bypassApproval = (args as any)?._approved === true;
+    if (bypassApproval) delete (args as any)._approved;
 
-    if (trustLevel === 'approve') {
+    if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
         agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         input: args, output: {}, status: 'pending_approval',

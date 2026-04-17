@@ -145,22 +145,22 @@ export function useApproveActivity() {
         .single();
       if (fetchErr || !activity) throw new Error('Activity not found');
 
-      // Mark as approved first
-      await supabase
-        .from('agent_activity')
-        .update({ status: 'success' } as any)
-        .eq('id', id);
-
-      // Re-execute the skill
+      // Re-execute the skill with bypass flag (admin approved)
       const { error: execErr } = await supabase.functions.invoke('agent-execute', {
         body: {
           skill_name: activity.skill_name,
-          arguments: activity.input || {},
+          arguments: { ...(activity.input as any || {}), _approved: true },
           agent_type: (activity as any).agent || 'flowpilot',
           conversation_id: activity.conversation_id,
         },
       });
       if (execErr) throw new Error(execErr.message);
+
+      // Mark original pending row as approved
+      await supabase
+        .from('agent_activity')
+        .update({ status: 'success' } as any)
+        .eq('id', id);
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['agent-activity'] });
