@@ -445,6 +445,8 @@ async function executeModuleAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // Defensive normalize — guarantees `data:{}` is always unwrapped
+  args = normalizeSkillArgs(args as Record<string, unknown>);
   switch (moduleName) {
     case 'blog': {
       if (skillName === 'manage_blog_posts') {
