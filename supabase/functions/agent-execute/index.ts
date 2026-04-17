@@ -22,6 +22,51 @@ interface ExecuteRequest {
   };
 }
 
+/**
+ * Normalize skill arguments from external callers (MCP, Claude, etc.):
+ *  - Unwrap `{action, data: {...}}` → flat `{action, ...data}`
+ *  - Map common aliases to canonical column names
+ *    (amount→amount_cents, value→value_cents, vat_rate→derive vat_cents)
+ * Top-level fields take precedence over `data` fields when both exist.
+ */
+function normalizeSkillArgs(raw: Record<string, unknown>): Record<string, unknown> {
+  if (!raw || typeof raw !== 'object') return {};
+  let merged: Record<string, unknown> = { ...raw };
+  const inner = (raw as any).data;
+  if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+    merged = { ...inner, ...merged };
+    delete merged.data;
+  }
+
+  // Friendly aliases — only set canonical key if not already provided
+  const aliasMap: Record<string, string> = {
+    amount: 'amount_cents',
+    value: 'value_cents',
+    price: 'price_cents',
+    budget: 'budget_cents',
+    total: 'total_cents',
+  };
+  for (const [from, to] of Object.entries(aliasMap)) {
+    if (merged[from] !== undefined && merged[to] === undefined) {
+      const v = merged[from];
+      // If looks like whole units (small int), upscale to cents
+      merged[to] = typeof v === 'number' && Number.isInteger(v) && v < 1_000_000 ? v * 100 : v;
+      delete merged[from];
+    }
+  }
+
+  // vat_rate (percent) → vat_cents derived from amount_cents
+  if (merged.vat_rate !== undefined && merged.vat_cents === undefined && typeof merged.amount_cents === 'number') {
+    const rate = Number(merged.vat_rate);
+    if (!Number.isNaN(rate)) {
+      merged.vat_cents = Math.round((merged.amount_cents as number) * (rate / 100));
+    }
+    delete merged.vat_rate;
+  }
+
+  return merged;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -34,7 +79,13 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: args = {}, agent_type, conversation_id, objective_context, trace_id } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id } = body;
+
+    // ─── Argument normalization ──────────────────────────────────────────
+    // External callers (Claude/MCP) often wrap fields in `data: {...}` and
+    // use friendly aliases (`amount`, `value`, `vat_rate`). Unwrap + alias
+    // so handlers receive a flat, canonical shape regardless of caller.
+    const args: Record<string, unknown> = normalizeSkillArgs(rawArgs);
 
     if (!skill_id && !skill_name) {
       return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
@@ -4683,8 +4734,14 @@ async function executeDbAction(
       }
 
       if (action === 'create') {
-        const { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
-        if (!user_id) throw new Error('user_id is required');
+        let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        // Agent fallback: if no user_id provided, use the first admin user
+        if (!user_id) {
+          const { data: adminRole } = await supabase.from('user_roles')
+            .select('user_id').eq('role', 'admin').limit(1).maybeSingle();
+          user_id = adminRole?.user_id;
+          if (!user_id) throw new Error('user_id is required (no admin user found for agent fallback)');
+        }
         if (is_representation && (!attendees || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees [{name, company}]');
         }
