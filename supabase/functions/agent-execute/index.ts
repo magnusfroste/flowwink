@@ -5408,6 +5408,9 @@ async function executeGenericCrud(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // Defensive: re-normalize in case caller bypassed the top-level normalizer
+  // (e.g. nested data:{} that survived). Never let `data` reach insert().
+  args = normalizeSkillArgs(args as Record<string, unknown>);
   // Block tables that have dedicated business-logic skills
   if (DEDICATED_SKILL_TABLES[table]) {
     return { 
