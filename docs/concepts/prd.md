@@ -206,6 +206,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Orders** | Order management with Stripe webhooks, confirmation emails, and **fulfillment tracking** (unfulfilled → picked → packed → shipped → delivered) | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
 | **Invoices** | Quote-to-invoice lifecycle, timesheet billing, overdue tracking, PDF generation, and autonomous payment follow-up | Enabled |
+| **Subscriptions** | Provider-agnostic recurring revenue (Stripe today, Paddle next): MRR/ARR, trialing, churn, customer portal, cancel/resume/change-plan, and **automated dunning** for failed payments (5-step recovery, MRR-at-risk dashboard) | Disabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
@@ -247,6 +248,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 - **Purchasing** → Inventory (optional, for auto-reorder)
 - **Timesheets** → Invoicing (optional, for billable hours → invoice)
 - **Contracts** → Invoicing (optional, for contract value → invoice)
+- **Subscriptions** → Products (optional, for is_subscription catalog entries)
 
 ### Module Autonomy Levels
 
