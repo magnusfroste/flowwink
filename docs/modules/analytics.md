@@ -1,58 +1,58 @@
 ---
-title: "Business Identity Module"
-module_id: "companyInsights"
+title: "Analytics Module"
+module_id: "analytics"
 version: "1.0.0"
 category: "insights"
-autonomy: "agent-capable"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Business Identity
+# Analytics
 
-> Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.
+> Dashboard with insights on leads, deals, and newsletter performance
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `companyInsights` |
+| **Module ID** | `analytics` |
 | **Version** | 1.0.0 |
 | **Category** | insights |
-| **Autonomy** | agent-capable |
+| **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read` |
 
 ## Integrations
 
-**Optional:** `firecrawl`
+**Optional:** `google_analytics`, `meta_pixel`
 
 ## API Contract
 
-**Actions:** `enrich`, `get_identity`
+**Actions:** `dashboard`, `seo_audit`, `feedback_analysis`, `weekly_digest`
 
 ### Input Fields
 
 | Field | Source |
 |-------|--------|
-| `action` | `src/lib/modules/company-insights-module.ts` |
-| `company_id` | `src/lib/modules/company-insights-module.ts` |
+| `action` | `src/lib/modules/analytics-module.ts` |
+| `page_url` | `src/lib/modules/analytics-module.ts` |
+| `period_days` | `src/lib/modules/analytics-module.ts` |
 
 ### Output Fields
 
 | Field | Source |
 |-------|--------|
-| `success` | `src/lib/modules/company-insights-module.ts` |
-| `message` | `src/lib/modules/company-insights-module.ts` |
-| `error` | `src/lib/modules/company-insights-module.ts` |
+| `success` | `src/lib/modules/analytics-module.ts` |
+| `message` | `src/lib/modules/analytics-module.ts` |
+| `error` | `src/lib/modules/analytics-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/company-insights-module.ts` |
-| Hook | `src/hooks/useCompanyInsights.ts` |
-| Admin page | `src/pages/admin/CompanyInsightsPage.tsx` |
+| Module definition | `src/lib/modules/analytics-module.ts` |
+| Hook | `src/hooks/useAnalytics.ts` |
 
 ## Contributing
 

@@ -1,53 +1,55 @@
 ---
-title: "Agentic Handbook Module"
-module_id: "handbook"
+title: "Calendar Module"
+module_id: "calendar"
 version: "1.0.0"
-category: "content"
-autonomy: "agent-capable"
+category: "insights"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Agentic Handbook
+# Calendar
 
-> Agentic methodology handbook with search and reader capabilities
+> Unified calendar aggregating bookings, tasks, leave and renewals
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `handbook` |
+| **Module ID** | `calendar` |
 | **Version** | 1.0.0 |
-| **Category** | content |
-| **Autonomy** | agent-capable |
+| **Category** | insights |
+| **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read` |
 
 ## API Contract
 
-**Actions:** `list`, `search`
+**Actions:** `list_events`
 
 ### Input Fields
 
 | Field | Source |
 |-------|--------|
-| `action` | `src/lib/modules/handbook-module.ts` |
-| `query` | `src/lib/modules/handbook-module.ts` |
+| `action` | `src/lib/modules/calendar-module.ts` |
+| `start` | `src/lib/modules/calendar-module.ts` |
+| `end` | `src/lib/modules/calendar-module.ts` |
+| `sources` | `src/lib/modules/calendar-module.ts` |
 
 ### Output Fields
 
 | Field | Source |
 |-------|--------|
-| `success` | `src/lib/modules/handbook-module.ts` |
-| `message` | `src/lib/modules/handbook-module.ts` |
+| `success` | `src/lib/modules/calendar-module.ts` |
+| `events` | `src/lib/modules/calendar-module.ts` |
+| `error` | `src/lib/modules/calendar-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/handbook-module.ts` |
-| Hook | `src/hooks/useHandbook.ts` |
-| Admin page | `src/pages/admin/HandbookPage.tsx` |
+| Module definition | `src/lib/modules/calendar-module.ts` |
+| Admin page | `src/pages/admin/CalendarPage.tsx` |
 
 ## Contributing
 

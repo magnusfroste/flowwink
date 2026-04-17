@@ -1,31 +1,31 @@
 ---
-title: "Newsletter Module"
-module_id: "newsletter"
+title: "Booking Module"
+module_id: "bookings"
 version: "1.0.0"
-category: "communication"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Newsletter
+# Booking
 
-> Create newsletter drafts for sending
+> Create and manage bookings/appointments
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `newsletter` |
+| **Module ID** | `bookings` |
 | **Version** | 1.0.0 |
-| **Category** | communication |
+| **Category** | data |
 | **Autonomy** | config-required |
 | **Core** | No |
-| **Capabilities** | `content:receive`, `data:write` |
+| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## Integrations
 
-**Required:** `resend`
+**Optional:** `resend`, `stripe`
 
 ## API Contract
 
@@ -33,9 +33,11 @@ generated_at: "2026-04-17"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/newsletter-module.ts` |
-| Admin page | `src/pages/admin/NewsletterPage.tsx` |
-| Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
+| Module definition | `src/lib/modules/booking-module.ts` |
+| Hook | `src/hooks/useBookings.ts` |
+| Admin page | `src/pages/admin/BookingsPage.tsx` |
+| Public block | `src/components/public/blocks/BookingBlock.tsx` |
+| Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
 
 ## Contributing
 

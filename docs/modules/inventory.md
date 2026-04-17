@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Inventory
@@ -41,15 +41,6 @@ generated_at: "2026-04-12"
 |-------|--------|
 | `success` | `src/lib/modules/inventory-module.ts` |
 | `message` | `src/lib/modules/inventory-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `stock.adjusted` | Stock was adjusted |
-| `stock.low` | Stock fell below threshold |
 
 ## File Map
 

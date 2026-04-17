@@ -1,40 +1,52 @@
 ---
-title: "Paid Growth Module"
-module_id: "paidGrowth"
+title: "FlowPilot Module"
+module_id: "flowpilot"
 version: "1.0.0"
-category: "insights"
+category: "system"
 autonomy: "agent-capable"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Paid Growth
+# FlowPilot
 
-> Manage ad campaigns and track paid growth performance
+> Autonomous AI operator — skills, objectives, automations and workflows
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `paidGrowth` |
+| **Module ID** | `flowpilot` |
 | **Version** | 1.0.0 |
-| **Category** | insights |
+| **Category** | system |
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 
-## Integrations
-
-**Required:** `meta_ads`
-**Optional:** `openai`, `gemini`
-
 ## API Contract
+
+**Actions:** `status`, `heartbeat`
+
+### Input Fields
+
+| Field | Source |
+|-------|--------|
+| `action` | `src/lib/modules/flowpilot-module.ts` |
+
+### Output Fields
+
+| Field | Source |
+|-------|--------|
+| `success` | `src/lib/modules/flowpilot-module.ts` |
+| `message` | `src/lib/modules/flowpilot-module.ts` |
+| `error` | `src/lib/modules/flowpilot-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/growth-module.ts` |
+| Module definition | `src/lib/modules/flowpilot-module.ts` |
+| Migration | `supabase/migrations/20260312130000_content_hub_flowpilot_skills.sql` |
 
 ## Contributing
 

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Browser Control

@@ -1,53 +1,54 @@
 ---
-title: "Templates Module"
-module_id: "templates"
+title: "Live Support Module"
+module_id: "liveSupport"
 version: "1.0.0"
-category: "system"
-autonomy: "config-required"
+category: "communication"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Templates
+# Live Support
 
-> Template gallery, export current site as reusable template, and import templates from file
+> Human agent takeover for escalated chat conversations
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `templates` |
+| **Module ID** | `liveSupport` |
 | **Version** | 1.0.0 |
-| **Category** | system |
-| **Autonomy** | config-required |
+| **Category** | communication |
+| **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 
 ## API Contract
 
-**Actions:** `export`, `import`, `install`
+**Actions:** `list_conversations`, `assign`
 
 ### Input Fields
 
 | Field | Source |
 |-------|--------|
-| `action` | `src/lib/modules/templates-module.ts` |
-| `templateId` | `src/lib/modules/templates-module.ts` |
-| `meta` | `src/lib/modules/templates-module.ts` |
+| `action` | `src/lib/modules/live-support-module.ts` |
+| `conversation_id` | `src/lib/modules/live-support-module.ts` |
+| `agent_id` | `src/lib/modules/live-support-module.ts` |
 
 ### Output Fields
 
 | Field | Source |
 |-------|--------|
-| `success` | `src/lib/modules/templates-module.ts` |
-| `error` | `src/lib/modules/templates-module.ts` |
-| `templateId` | `src/lib/modules/templates-module.ts` |
+| `success` | `src/lib/modules/live-support-module.ts` |
+| `message` | `src/lib/modules/live-support-module.ts` |
+| `error` | `src/lib/modules/live-support-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/templates-module.ts` |
+| Module definition | `src/lib/modules/live-support-module.ts` |
+| Admin page | `src/pages/admin/LiveSupportPage.tsx` |
 
 ## Contributing
 

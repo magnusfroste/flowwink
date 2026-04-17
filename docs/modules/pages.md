@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Pages
@@ -24,16 +24,6 @@ generated_at: "2026-04-12"
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## API Contract
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `page.published` | A page was published |
-| `page.updated` | A page was updated |
-| `page.deleted` | A page was deleted |
 
 ## File Map
 

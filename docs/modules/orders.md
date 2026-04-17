@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Orders
@@ -28,20 +28,6 @@ generated_at: "2026-04-12"
 **Optional:** `stripe`, `resend`, `stripe_webhook`
 
 ## API Contract
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `order.created` | An order was placed |
-| `order.paid` | An order was paid |
-| `order.cancelled` | An order was cancelled |
-| `order.refunded` | An order was refunded |
-| `product.created` | A product was created |
-| `product.updated` | A product was updated |
-| `product.deleted` | A product was deleted |
 
 ## File Map
 

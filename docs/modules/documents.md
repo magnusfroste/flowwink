@@ -1,16 +1,16 @@
 ---
-title: "Documents Module"
+title: "manage_document Module"
 module_id: "documents"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Documents
+# manage_document
 
-> Document management with categorization, entity linking, and version tracking
+> Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use manage_media), blog content.
 
 ## Quick Facts
 
@@ -47,15 +47,6 @@ generated_at: "2026-04-12"
 | `success` | `src/lib/modules/documents-module.ts` |
 | `document_id` | `src/lib/modules/documents-module.ts` |
 | `message` | `src/lib/modules/documents-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `document.uploaded` | A document was uploaded |
-| `document.updated` | A document was updated |
 
 ## File Map
 
