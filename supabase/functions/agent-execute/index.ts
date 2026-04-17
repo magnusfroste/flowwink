@@ -1739,6 +1739,103 @@ async function executePagesAction(
       return await executeGenerateAltText(supabase, args);
     }
 
+    case 'landing_page_compose':
+    case 'generate_site_from_identity': {
+      // Compose a draft page from inputs. Generates a hero + content sections
+      // using AI text generation (Gemini → OpenAI fallback) and saves as draft.
+      const {
+        title,
+        slug,
+        goal,
+        audience,
+        topic,
+        campaign_id,
+        identity,
+      } = args as any;
+
+      const pageTitle = title || topic || goal || 'New page';
+      const baseSlug = (slug || pageTitle).toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 80) || `page-${Date.now()}`;
+
+      // Build a context prompt from whatever we got
+      const contextParts: string[] = [];
+      if (goal) contextParts.push(`Goal: ${goal}`);
+      if (audience) contextParts.push(`Audience: ${audience}`);
+      if (topic) contextParts.push(`Topic: ${topic}`);
+      if (identity && typeof identity === 'object') {
+        contextParts.push(`Brand identity: ${JSON.stringify(identity).slice(0, 800)}`);
+      }
+      if (campaign_id) contextParts.push(`Campaign reference: ${campaign_id}`);
+
+      const prompt = `Compose a landing page in JSON for a website. ${contextParts.join('. ')}.
+Return ONLY valid JSON with this shape:
+{"hero_headline":"...","hero_sub":"...","cta":"...","sections":[{"heading":"...","body":"..."}]}
+3-4 sections, concise, conversion-oriented.`;
+
+      let composed: any = null;
+      try {
+        const text = await generateShortText(prompt, 700);
+        if (text) {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) composed = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.warn('[landing_page_compose] AI compose failed, using stub:', e);
+      }
+
+      const c = composed || {
+        hero_headline: pageTitle,
+        hero_sub: goal || 'Welcome',
+        cta: 'Get started',
+        sections: [{ heading: 'About', body: 'Add your content here.' }],
+      };
+
+      const blocks: any[] = [
+        {
+          id: crypto.randomUUID(),
+          type: 'hero',
+          data: { title: c.hero_headline, subtitle: c.hero_sub, cta_label: c.cta },
+        },
+      ];
+      for (const s of (c.sections || []).slice(0, 6)) {
+        blocks.push({
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: { heading: s.heading, body: s.body },
+        });
+      }
+      blocks.push({
+        id: crypto.randomUUID(),
+        type: 'cta',
+        data: { title: c.cta || 'Ready?', cta_label: c.cta || 'Contact us' },
+      });
+
+      // Ensure unique slug
+      const { data: existing } = await supabase.from('pages')
+        .select('id').eq('slug', baseSlug).is('deleted_at', null).maybeSingle();
+      const finalSlug = existing ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug;
+
+      const { data: page, error } = await supabase.from('pages').insert({
+        title: pageTitle,
+        slug: finalSlug,
+        status: 'draft',
+        content_json: blocks,
+        meta_json: { description: c.hero_sub || pageTitle, generated_by: skillName },
+      }).select('id, title, slug, status').single();
+
+      if (error) throw new Error(`Compose page failed: ${error.message}`);
+      return {
+        composed: true,
+        page,
+        block_count: blocks.length,
+        ai_used: !!composed,
+        message: `Draft page created at /${finalSlug}. Edit in admin to refine before publishing.`,
+      };
+    }
+
     default:
       return { error: `Unknown pages skill: ${skillName}` };
   }
