@@ -416,8 +416,9 @@ export async function loadSkillTools(
       _score: (usageCounts[s.name] || 0) + (s.category === 'content' || s.category === 'analytics' ? 2 : 0),
     }));
     scored.sort((a: any, b: any) => b._score - a._score);
+    const originalCount = filteredSkills.length;
     gatedSkills = scored.slice(0, 20);
-    console.log(`[skill-budget] DROP tier: reduced to ${gatedSkills.length} skills from ${skills.length}`);
+    console.log(`[skill-budget] DROP tier: reduced to ${gatedSkills.length} skills from ${originalCount}`);
   }
 
   const tier = budgetTier || 'full';

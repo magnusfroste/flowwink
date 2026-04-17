@@ -4573,6 +4573,18 @@ async function executeDbAction(
         return { expenses: data, count: (data || []).length };
       }
 
+      if (action === 'get') {
+        const { expense_id } = args as any;
+        if (!expense_id) throw new Error('expense_id is required for get action');
+        const { data, error } = await supabase.from('expenses')
+          .select('*')
+          .eq('id', expense_id)
+          .maybeSingle();
+        if (error) throw new Error(`Get expense failed: ${error.message}`);
+        if (!data) return { error: `Expense ${expense_id} not found` };
+        return { expense: data };
+      }
+
       if (action === 'create') {
         const { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
         if (!user_id) throw new Error('user_id is required');
