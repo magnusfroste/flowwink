@@ -220,7 +220,23 @@ serve(async (req) => {
       ],
     });
 
-    // ─── Build action items ─────────────────────────────────────────
+    // 5. Dunning — recurring revenue at risk
+    const activeDunning = dunningActive.data ?? [];
+    const dunningMrrAtRisk = activeDunning.reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
+    const recoveredMrr = (dunningRecovered.data ?? []).reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
+    if (activeDunning.length > 0 || (dunningRecovered.count ?? 0) > 0) {
+      sections.push({
+        title: "💸 Recurring Revenue (Dunning)",
+        type: "dunning",
+        items: [
+          { label: "Customers in dunning", value: activeDunning.length },
+          { label: "MRR at risk", value: dunningMrrAtRisk / 100, format: "currency" },
+          { label: "Recovered (7d)", value: dunningRecovered.count ?? 0 },
+          { label: "Recovered MRR (7d)", value: recoveredMrr / 100, format: "currency" },
+        ],
+      });
+    }
+
     const actionItems: any[] = [];
 
     if (newLeadsToday > 0) {
@@ -255,6 +271,15 @@ serve(async (req) => {
         priority: "medium",
         text: `Traffic down ${Math.abs(trafficTrend)}% vs last week — consider new content`,
         link: "/admin/analytics",
+      });
+    }
+
+    if (activeDunning.length > 0) {
+      const highValue = activeDunning.filter((d: any) => (d.mrr_at_risk_cents || 0) >= 50000).length;
+      actionItems.push({
+        priority: highValue > 0 ? "high" : "medium",
+        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${(dunningMrrAtRisk / 100).toFixed(0)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
+        link: "/admin/subscriptions/dunning",
       });
     }
 
