@@ -268,4 +268,27 @@ Att *inte* exponera skills via MCP är att välja Oracles strategi från 2005: s
 
 ---
 
+## Schema-DB Parity — en hård regel
+
+När skills exponeras via MCP är `tool_definition` (JSON Schema) den *enda* kontraktytan en extern agent ser. Servern anpassar sig inte längre — agenten filtrerar och formar sina anrop utifrån schemat. Det betyder:
+
+| DB-constraint | MÅSTE reflekteras i tool_definition |
+|---------------|-------------------------------------|
+| `NOT NULL`-kolumn | Fältet listas i `required` (eller via `allOf/if-then` per action) |
+| `CHECK`/enum-värden | `enum`-arrayen i schemat är **identisk** med DB-enumets värden |
+| Numeriska enheter (cents, basis points) | Fältnamnet bär enheten (`value_cents`, inte `value`) + `description` förklarar |
+| Default-värden | Anges i `description` ("defaults to SEK") så agenten vet att den kan utelämna |
+
+**Anti-patterns vi sett i praktiken** (audit april 2026 mot ClawThree):
+
+- `manage_contract.counterparty_name` saknade `required` → externa agenter fick tysta NOT NULL-fel.
+- `deal_stage`-enum i tool_definition listade fler värden än DB-enumet → "invalid input value" vid create.
+- `manage_expenses` antog auth-context (`user_id` från JWT) → externa anrop saknade fältet helt utan att schemat varnade.
+
+**Konsekvensen:** Schema-drift mot DB är inte en kosmetisk bugg — det är ett **brutet kontrakt** som gör skillen oanvändbar för externa agenter, även om FlowPilot internt klarar sig via fallbacks.
+
+**Operativ regel:** När en DB-migration ändrar enum, NOT NULL eller default → uppdatera motsvarande `tool_definition` i samma PR. Behandla skills som ett publikt API.
+
+---
+
 *Se även: [Access Gap Analysis](./flowpilot-vs-clawone-access-gap.md) · [Embedded vs Orchestrated](./embedded-vs-orchestrated-autonomy.md)*
