@@ -46,6 +46,8 @@ serve(async (req) => {
       objectivesActive,
       chatConversations,
       proposals,
+      dunningActive,
+      dunningRecovered,
     ] = await Promise.all([
       // Traffic
       supabase.from("page_views").select("id", { count: "exact", head: true })
@@ -123,8 +125,6 @@ serve(async (req) => {
         .gte("recovered_at", weekAgo.toISOString()),
     ]);
 
-    // Reassign destructured aliases — Promise.all returns in order
-    const dunningActive = (arguments as any); // placeholder to keep TS happy below
 
 
     // ─── Compute metrics ────────────────────────────────────────────
