@@ -99,6 +99,7 @@ const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
   commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
   growth: ["paidGrowth"],
   subscriptions: ["subscriptions"],
+  identity: ["companyInsights"],
 };
 
 async function loadActiveModules(): Promise<Set<string>> {
@@ -448,7 +449,19 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .select("id", { count: "exact", head: true })
           .eq("enabled", true)
           .eq("mcp_exposed", true),
-      ]);
+        // Company profile (Business Identity) — affärssanningen för externa agenter
+        sb.from("site_settings")
+          .select("value")
+          .eq("key", "company_profile")
+          .maybeSingle(),
+        // Branding (tone, colors) — företagets röst, inte agentens
+        sb.from("site_settings")
+          .select("value")
+          .eq("key", "branding")
+          .maybeSingle(),
+      ]) as any;
+      const bCompanyProfile = arguments[0]?.[8] ?? (await Promise.resolve({ data: null }));
+      const bBranding = arguments[0]?.[9] ?? (await Promise.resolve({ data: null }));
 
       return {
         identity: bIdentity,
