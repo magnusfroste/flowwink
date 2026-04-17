@@ -12,10 +12,12 @@ interface ExecuteRequest {
   skill_id?: string;
   skill_name?: string;
   arguments: Record<string, unknown>;
-  agent_type: 'flowpilot' | 'chat';
+  agent_type: 'flowpilot' | 'chat' | 'mcp';
   conversation_id?: string;
   /** Trace ID from the parent reason() loop for end-to-end observability */
   trace_id?: string;
+  /** When called via MCP, the user who owns the api_key. Used for ownership/created_by. */
+  caller_user_id?: string;
   objective_context?: {
     goal: string;
     step: string;
