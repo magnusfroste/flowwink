@@ -81,6 +81,7 @@ export interface ModulesSettings {
   hr: ModuleConfig;
   documents: ModuleConfig;
   projects: ModuleConfig;
+  calendar: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -485,6 +486,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  calendar: {
+    enabled: false,
+    name: 'Calendar',
+    description: 'Unified calendar that aggregates bookings, CRM tasks, leave, project deadlines and contract renewals — view-only, owns no data',
+    icon: 'CalendarDays',
+    category: 'insights',
+    autonomy: 'view-required',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -534,6 +544,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/hr': 'hr',
   '/admin/documents': 'documents',
   '/admin/projects': 'projects',
+  '/admin/calendar': 'calendar',
 };
 
 export function useModules() {

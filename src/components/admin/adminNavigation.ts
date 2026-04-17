@@ -73,6 +73,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Consultants", href: "/admin/resume", icon: FileUser, moduleId: "resume" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
+      { name: "Calendar", href: "/admin/calendar", icon: CalendarDays, moduleId: "calendar" },
     ],
   },
   {
