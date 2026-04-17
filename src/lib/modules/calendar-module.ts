@@ -26,7 +26,7 @@ type Output = z.infer<typeof outputSchema>;
  * CalendarSource registry (src/lib/calendar-sources.ts).
  */
 export const calendarModule = defineModule<Input, Output>({
-  id: 'calendar' as any, // added to ModulesSettings in useModules.tsx
+  id: 'calendar',
   name: 'Calendar',
   version: '1.0.0',
   description: 'Unified calendar aggregating bookings, tasks, leave and renewals',
