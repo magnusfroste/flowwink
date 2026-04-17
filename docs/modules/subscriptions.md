@@ -214,3 +214,29 @@ supabase/functions/subscriptions-portal/
 supabase/functions/subscriptions-manage/
 supabase/functions/dunning-processor/                 # Recovery engine
 ```
+
+---
+
+## 10. Phase 3 — FlowPilot Skills & Automation (shipped)
+
+### Skills (registered via `setup-flowpilot`)
+| Skill | Handler | Approval | Purpose |
+|---|---|---|---|
+| `list_subscriptions` | `edge:subscriptions-skills` | auto | List subs by status |
+| `subscription_mrr` | `edge:subscriptions-skills` | auto | MRR/ARR/churn aggregate |
+| `list_dunning_sequences` | `edge:subscriptions-skills` | auto | Active recovery queue + MRR at risk |
+| `pause_dunning` | `edge:subscriptions-skills` | approve | Pause N days after manual contact |
+| `escalate_dunning` | `edge:subscriptions-skills` | approve | Jump to final cancel step |
+
+All five route through one edge function (`subscriptions-skills`) which dispatches by `_skill` (injected by `agent-execute`).
+
+### Cron
+`pg_cron` job `dunning-processor-every-30min` calls `dunning-processor` every 30 min via `pg_net`.
+
+### Briefing integration
+`flowpilot-briefing` now collects active dunning + 7-day recovered, renders a "💸 Recurring Revenue" section, surfaces a high-priority action item when MRR is at risk, and adds `dunning_*` keys to the metrics payload.
+
+### Remaining (Phase 4)
+- 5 React Email templates (`dunning-step-1`…`dunning-step-5`) — requires email-domain setup first.
+- Paddle adapter.
+- Per-customer revenue analytics view.

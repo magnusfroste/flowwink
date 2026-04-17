@@ -46,6 +46,8 @@ serve(async (req) => {
       objectivesActive,
       chatConversations,
       proposals,
+      dunningActive,
+      dunningRecovered,
     ] = await Promise.all([
       // Traffic
       supabase.from("page_views").select("id", { count: "exact", head: true })
@@ -108,7 +110,22 @@ serve(async (req) => {
       supabase.from("content_proposals").select("id, topic, status")
         .in("status", ["draft", "ready"])
         .limit(5),
+
+      // Dunning — failed payment recovery sequences
+      supabase.from("dunning_sequences")
+        .select("id, status, current_step, mrr_at_risk_cents, currency, next_action_at, subscriptions:subscription_id(customer_email, customer_name)")
+        .eq("status", "active")
+        .order("mrr_at_risk_cents", { ascending: false })
+        .limit(10),
+
+      // Recovered dunning in last 7 days (success metric)
+      supabase.from("dunning_sequences")
+        .select("mrr_at_risk_cents", { count: "exact" })
+        .eq("status", "recovered")
+        .gte("recovered_at", weekAgo.toISOString()),
     ]);
+
+
 
     // ─── Compute metrics ────────────────────────────────────────────
     const trafficToday = viewsToday.count ?? 0;
@@ -203,7 +220,23 @@ serve(async (req) => {
       ],
     });
 
-    // ─── Build action items ─────────────────────────────────────────
+    // 5. Dunning — recurring revenue at risk
+    const activeDunning = dunningActive.data ?? [];
+    const dunningMrrAtRisk = activeDunning.reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
+    const recoveredMrr = (dunningRecovered.data ?? []).reduce((s: number, d: any) => s + (d.mrr_at_risk_cents || 0), 0);
+    if (activeDunning.length > 0 || (dunningRecovered.count ?? 0) > 0) {
+      sections.push({
+        title: "💸 Recurring Revenue (Dunning)",
+        type: "dunning",
+        items: [
+          { label: "Customers in dunning", value: activeDunning.length },
+          { label: "MRR at risk", value: dunningMrrAtRisk / 100, format: "currency" },
+          { label: "Recovered (7d)", value: dunningRecovered.count ?? 0 },
+          { label: "Recovered MRR (7d)", value: recoveredMrr / 100, format: "currency" },
+        ],
+      });
+    }
+
     const actionItems: any[] = [];
 
     if (newLeadsToday > 0) {
@@ -238,6 +271,15 @@ serve(async (req) => {
         priority: "medium",
         text: `Traffic down ${Math.abs(trafficTrend)}% vs last week — consider new content`,
         link: "/admin/analytics",
+      });
+    }
+
+    if (activeDunning.length > 0) {
+      const highValue = activeDunning.filter((d: any) => (d.mrr_at_risk_cents || 0) >= 50000).length;
+      actionItems.push({
+        priority: highValue > 0 ? "high" : "medium",
+        text: `${activeDunning.length} subscription${activeDunning.length > 1 ? "s" : ""} in dunning · ${(dunningMrrAtRisk / 100).toFixed(0)} MRR at risk${highValue > 0 ? ` · ${highValue} high-value` : ""}`,
+        link: "/admin/subscriptions/dunning",
       });
     }
 
@@ -290,6 +332,10 @@ serve(async (req) => {
       content_drafts: draftsReady,
       flowpilot_actions: actions.length,
       flowpilot_success_rate: actions.length > 0 ? Math.round((successActions / actions.length) * 100) : 0,
+      dunning_active: activeDunning.length,
+      dunning_mrr_at_risk: dunningMrrAtRisk,
+      dunning_recovered_7d: dunningRecovered.count ?? 0,
+      dunning_recovered_mrr_7d: recoveredMrr,
     };
 
     // ─── Save briefing ──────────────────────────────────────────────

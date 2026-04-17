@@ -31,7 +31,13 @@ export const subscriptionsModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['list_subscriptions', 'subscription_mrr'],
+  skills: [
+    'list_subscriptions',
+    'subscription_mrr',
+    'list_dunning_sequences',
+    'pause_dunning',
+    'escalate_dunning',
+  ],
 
   async publish(input: Input): Promise<Output> {
     try {

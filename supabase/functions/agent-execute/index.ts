@@ -159,7 +159,8 @@ serve(async (req) => {
         const fnName = handler.replace('edge:', '');
         
         // For composio-proxy, map skill_name to the expected action/params format
-        let edgeBody = args;
+        // For other multi-skill routers, inject `_skill` so the function can dispatch.
+        let edgeBody: Record<string, any> = { ...args, _skill: skill.name };
         if (fnName === 'composio-proxy') {
           const skillToAction: Record<string, string> = {
             composio_gmail_read: 'gmail_read',
