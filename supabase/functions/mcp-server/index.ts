@@ -99,6 +99,7 @@ const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
   commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
   growth: ["paidGrowth"],
   subscriptions: ["subscriptions"],
+  identity: ["companyInsights"],
 };
 
 async function loadActiveModules(): Promise<Set<string>> {
@@ -382,7 +383,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
     case "briefing": {
       // Aggregated context briefing — one call for full situational awareness
       const [
-        bHealth, bIdentity, bObjectives, bActivity, bModules, bAutomations, bHeartbeat, bSkillCount
+        bHealth, bIdentity, bObjectives, bActivity, bModules, bAutomations, bHeartbeat, bSkillCount, bCompanyProfile, bBranding
       ] = await Promise.all([
         // Health counts
         (async () => {
@@ -448,10 +449,22 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
           .select("id", { count: "exact", head: true })
           .eq("enabled", true)
           .eq("mcp_exposed", true),
+        // Company profile (Business Identity) — affärssanningen för externa agenter
+        sb.from("site_settings")
+          .select("value")
+          .eq("key", "company_profile")
+          .maybeSingle(),
+        // Branding (tone, colors) — företagets röst, inte agentens
+        sb.from("site_settings")
+          .select("value")
+          .eq("key", "branding")
+          .maybeSingle(),
       ]);
 
       return {
         identity: bIdentity,
+        company_profile: (bCompanyProfile as any)?.data?.value ?? null,
+        branding: (bBranding as any)?.data?.value ?? null,
         health: bHealth,
         objectives: (bObjectives.data ?? []).map((o: any) => ({
           id: o.id,
@@ -663,7 +676,7 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
     { key: "objectives",  uri: "flowwink://objectives",  name: "Active Objectives",    description: "FlowPilot's active, pending and paused objectives with progress, success criteria, and lock status. Use to understand what the embedded agent is working towards and coordinate." },
     { key: "automations", uri: "flowwink://automations", name: "Automations",          description: "All configured automations with trigger type, schedule, last run, and error status. Use to avoid duplicating scheduled work." },
     { key: "heartbeat",   uri: "flowwink://heartbeat",   name: "Heartbeat Status",     description: "FlowPilot's last heartbeat run: timing, token usage, and current state. Use to understand when FlowPilot last operated and what it prioritized." },
-    { key: "briefing",    uri: "flowwink://briefing",    name: "Context Briefing",      description: "Aggregated situational awareness in ONE call: identity, health metrics, active objectives, recent activity, modules, automations, heartbeat status, and skill count. Use this FIRST to understand the full system state before taking action. ~50ms latency vs ~500ms+ for individual resource calls." },
+    { key: "briefing",    uri: "flowwink://briefing",    name: "Context Briefing",      description: "Aggregated situational awareness in ONE call: agent identity (soul), company_profile (what the business sells, ICP, value prop, services, clients), branding (tone, colors), health metrics, active objectives, recent activity, modules, automations, heartbeat status, and skill count. Use this FIRST to understand both WHO you operate as AND WHAT business you operate for. ~50ms latency vs ~500ms+ for individual resource calls." },
   ];
 
   for (const r of resourceDefs) {

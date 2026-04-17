@@ -20,12 +20,17 @@ export const companyInsightsModule = defineModule<Input, Output>({
   name: 'Business Identity',
   version: '1.0.0',
   description: 'Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.',
-  capabilities: ['data:read'],
+  capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
 
   skills: [
-    // Shares salesIntelligence skills — no unique skills
+    'get_company_profile',
+    'update_company_profile',
+    'enrich_company',
+    'manage_company',
+    'weekly_business_digest',
+    'generate_site_from_identity',
   ],
 
   async publish(input: Input): Promise<Output> {
