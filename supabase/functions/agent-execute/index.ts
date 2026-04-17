@@ -3463,6 +3463,196 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
 }
 
 // =============================================================================
+// send_invoice_for_order — Quote-to-cash: convert an order into a sent invoice
+// =============================================================================
+// Creates an invoice from an order's line items, marks it as sent, and emails
+// the customer a link via Resend. Idempotent: if an invoice already exists for
+// the order (matched on metadata.order_id), it is reused instead of duplicated.
+// Supports dry_run for safe preview.
+
+async function executeSendInvoiceForOrder(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const {
+    order_id,
+    due_days = 14,
+    tax_rate,
+    notes,
+    payment_terms,
+    dry_run = false,
+  } = args as any;
+
+  if (!order_id) throw new Error('order_id is required');
+
+  // 1. Fetch order + items
+  const { data: order, error: orderErr } = await supabase
+    .from('orders')
+    .select('id, customer_email, customer_name, currency, total_cents, status, metadata, user_id')
+    .eq('id', order_id)
+    .maybeSingle();
+  if (orderErr) throw new Error(`Order lookup failed: ${orderErr.message}`);
+  if (!order) throw new Error(`Order ${order_id} not found`);
+  if (!order.customer_email) throw new Error(`Order ${order_id} has no customer_email`);
+
+  const { data: items, error: itemsErr } = await supabase
+    .from('order_items')
+    .select('product_name, quantity, price_cents')
+    .eq('order_id', order_id);
+  if (itemsErr) throw new Error(`Order items lookup failed: ${itemsErr.message}`);
+  if (!items || items.length === 0) throw new Error(`Order ${order_id} has no line items`);
+
+  // 2. Build invoice line items
+  const lineItems = items.map((it: any) => ({
+    description: it.product_name,
+    qty: it.quantity,
+    unit_price_cents: it.price_cents,
+  }));
+  const subtotal = lineItems.reduce((s: number, i: any) => s + i.qty * i.unit_price_cents, 0);
+  const effectiveTaxRate = typeof tax_rate === 'number' ? tax_rate : 0.25;
+  const taxCents = Math.round(subtotal * effectiveTaxRate);
+  const totalCents = subtotal + taxCents;
+
+  // 3. Idempotency — reuse existing invoice for this order if present
+  const { data: existingByMeta } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, status, total_cents')
+    .contains('line_items', [{ order_id: order_id }] as any)
+    .maybeSingle()
+    .then((r: any) => r, () => ({ data: null }));
+
+  // Fallback: scan recent invoices with notes referencing the order
+  let existingInvoice = existingByMeta;
+  if (!existingInvoice) {
+    const { data: byNotes } = await supabase
+      .from('invoices')
+      .select('id, invoice_number, status')
+      .eq('customer_email', order.customer_email)
+      .ilike('notes', `%order:${order_id}%`)
+      .limit(1)
+      .maybeSingle();
+    existingInvoice = byNotes;
+  }
+
+  // 4. Dry-run preview
+  if (dry_run) {
+    return {
+      sent: false,
+      dry_run: true,
+      order_id,
+      customer_email: order.customer_email,
+      reuse_existing: !!existingInvoice,
+      existing_invoice: existingInvoice || null,
+      preview: {
+        line_items: lineItems,
+        subtotal_cents: subtotal,
+        tax_rate: effectiveTaxRate,
+        tax_cents: taxCents,
+        total_cents: totalCents,
+        currency: order.currency || 'SEK',
+      },
+    };
+  }
+
+  // 5. Create or reuse invoice
+  let invoice = existingInvoice;
+  if (!invoice) {
+    const { count } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
+    const invoiceNumber = `INV-${String((count || 0) + 1).padStart(4, '0')}`;
+    const dueDate = new Date(Date.now() + due_days * 86400000).toISOString().slice(0, 10);
+
+    const { data: created, error: createErr } = await supabase
+      .from('invoices')
+      .insert({
+        invoice_number: invoiceNumber,
+        customer_email: order.customer_email,
+        customer_name: order.customer_name || '',
+        line_items: lineItems as any,
+        subtotal_cents: subtotal,
+        tax_rate: effectiveTaxRate,
+        tax_cents: taxCents,
+        total_cents: totalCents,
+        currency: order.currency || 'SEK',
+        due_date: dueDate,
+        payment_terms: payment_terms || `Net ${due_days}`,
+        notes: `${notes ? notes + '\n' : ''}order:${order_id}`,
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+      })
+      .select('id, invoice_number, total_cents, currency, due_date')
+      .single();
+    if (createErr) throw new Error(`Invoice create failed: ${createErr.message}`);
+    invoice = created;
+  } else if (invoice.status === 'draft') {
+    await supabase
+      .from('invoices')
+      .update({ status: 'sent', sent_at: new Date().toISOString() })
+      .eq('id', invoice.id);
+  }
+
+  // 6. Email customer
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
+  if (RESEND_API_KEY) {
+    const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const pdfUrl = `${supabaseUrl}/functions/v1/generate-invoice-pdf?invoice_id=${invoice.id}`;
+    const fmt = (cents: number) =>
+      new Intl.NumberFormat('sv-SE', { style: 'currency', currency: order.currency || 'SEK' }).format(cents / 100);
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">
+        <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
+        <p>Hi ${order.customer_name || 'there'},</p>
+        <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong> below.</p>
+        <p><a href="${pdfUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice</a></p>
+        <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>
+      </div>`;
+
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [order.customer_email],
+        subject: `Invoice ${invoice.invoice_number} from FlowPilot`,
+        html,
+      }),
+    });
+    const resendData = await resendRes.json();
+    emailResult = resendRes.ok
+      ? { sent: true, message_id: resendData?.id }
+      : { sent: false, error: resendData?.message || resendRes.statusText };
+  }
+
+  // 7. Audit trail
+  await supabase.from('audit_logs').insert({
+    action: 'invoice_sent',
+    entity_type: 'invoice',
+    entity_id: invoice.id,
+    metadata: {
+      order_id,
+      invoice_number: invoice.invoice_number,
+      total_cents: totalCents,
+      currency: order.currency || 'SEK',
+      customer_email: order.customer_email,
+      email: emailResult,
+    },
+  });
+
+  return {
+    sent: true,
+    order_id,
+    invoice_id: invoice.id,
+    invoice_number: invoice.invoice_number,
+    total_cents: totalCents,
+    currency: order.currency || 'SEK',
+    customer_email: order.customer_email,
+    email: emailResult,
+  };
+}
+
+// =============================================================================
 // Blog posts management (update/publish/delete existing)
 // =============================================================================
 
