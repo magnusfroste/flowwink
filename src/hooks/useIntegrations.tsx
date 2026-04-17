@@ -34,6 +34,15 @@ export interface IntegrationProviderConfig {
   emailConfig?: EmailConfig;
   // Newsletter tracking (for resend integration)
   newsletterTracking?: NewsletterTrackingConfig;
+  // SMTP — values that aren't secrets (host/port/user/secure live here for visibility; password is in SMTP_PASS)
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  user?: string;
+  // Email router (which provider system emails use)
+  provider?: 'smtp' | 'resend';
+  fromEmail?: string;
+  fromName?: string;
   // Google Analytics
   measurementId?: string;
   // Meta Pixel
@@ -69,6 +78,8 @@ export interface IntegrationsSettings {
   stripe: IntegrationConfig;
   stripe_webhook: IntegrationConfig;
   resend: IntegrationConfig;
+  smtp: IntegrationConfig;
+  email: IntegrationConfig;
   openai: IntegrationConfig;
   gemini: IntegrationConfig;
   anthropic: IntegrationConfig;
@@ -112,10 +123,10 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
   resend: {
 
     name: 'Resend',
-    description: 'Email delivery service',
+    description: 'Hosted email API — drop-in alternative to SMTP.',
     icon: 'Mail',
     category: 'communication',
-    features: ['Newsletter', 'Order confirmations', 'Booking confirmations'],
+    features: ['Newsletter', 'Order confirmations', 'Booking confirmations', 'Dunning'],
     secretName: 'RESEND_API_KEY',
     docsUrl: 'https://resend.com/docs/introduction',
     docsLabel: 'Get API key',
@@ -128,6 +139,39 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
         enableOpenTracking: false,
         enableClickTracking: false,
       },
+    },
+  },
+  smtp: {
+    name: 'SMTP',
+    description:
+      'Self-host friendly email transport. Works with Postfix, Mailgun SMTP, SES SMTP, Gmail SMTP, and any standards-compliant server.',
+    icon: 'Mail',
+    category: 'communication',
+    features: ['Dunning', 'Newsletter', 'Order/booking confirmations', 'No vendor lock-in'],
+    secretName: 'SMTP_PASS',
+    docsUrl: 'https://nodemailer.com/smtp/',
+    docsLabel: 'SMTP setup guide',
+    config: {
+      host: '',
+      port: 587,
+      secure: false,
+      user: '',
+    },
+  },
+  email: {
+    name: 'Email Router',
+    description:
+      'Selects which provider system emails (dunning, newsletter, receipts) are sent through.',
+    icon: 'Mail',
+    category: 'communication',
+    features: ['Provider switching', 'From-address override', 'Auto-detect available providers'],
+    secretName: '',
+    docsUrl: '',
+    docsLabel: '',
+    config: {
+      provider: 'smtp',
+      fromEmail: 'noreply@example.com',
+      fromName: 'FlowWink',
     },
   },
   openai: {

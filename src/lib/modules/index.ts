@@ -64,6 +64,9 @@ export { flowpilotModule } from './flowpilot-module';
 // ── Recurring revenue ──
 export { subscriptionsModule } from './subscriptions-module';
 
+// ── Email transport (provider-agnostic) ──
+export { emailModule } from './email-module';
+
 // ── Legacy (not in ModulesSettings — kept for registry compatibility) ──
 export { globalBlocksModule } from './global-blocks-module';
 export { ordersModule } from './orders-module';
