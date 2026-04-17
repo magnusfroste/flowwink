@@ -443,6 +443,9 @@ async function executeModuleAction(
     }
 
     case 'orders': {
+      if (skillName === 'send_invoice_for_order') {
+        return await executeSendInvoiceForOrder(supabase, args);
+      }
       return await executeOrdersAction(supabase, skillName, args);
     }
 
