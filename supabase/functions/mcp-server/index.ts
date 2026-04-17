@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
+
+// Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
