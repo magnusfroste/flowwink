@@ -4181,6 +4181,36 @@ When generating social posts:
     },
   },
   {
+    name: 'send_invoice_for_order',
+    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent — reuses existing invoice for the same order.',
+    handler: 'module:orders',
+    category: 'commerce',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    mcp_exposed: true,
+    instructions: `Builds an invoice from order_items (qty × price_cents), applies tax_rate (default 0.25), marks status=sent, and emails the customer a link to /functions/v1/generate-invoice-pdf. Idempotent via notes "order:<id>". Use dry_run=true to preview totals before sending. Logs invoice_sent to audit_logs.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_invoice_for_order',
+        description: 'Generate and send an invoice for an existing order. Reuses any existing invoice for the same order.',
+        parameters: {
+          type: 'object',
+          required: ['order_id'],
+          properties: {
+            order_id: { type: 'string', description: 'Order UUID to invoice' },
+            due_days: { type: 'number', description: 'Days until due date (default 14)' },
+            tax_rate: { type: 'number', description: 'Tax rate as decimal e.g. 0.25 for 25% (default 0.25)' },
+            payment_terms: { type: 'string', description: 'Payment terms text (default "Net <due_days>")' },
+            notes: { type: 'string', description: 'Extra notes prepended to the invoice' },
+            dry_run: { type: 'boolean', description: 'If true, returns preview totals without creating the invoice or sending email' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'lead_pipeline_review',
     description: 'Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads).',
     handler: 'module:crm',
