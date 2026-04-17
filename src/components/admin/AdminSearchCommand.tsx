@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/command';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
+import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { navigationGroups } from './adminNavigation';
 
 export function useAdminSearch() {
@@ -39,6 +40,7 @@ export function AdminSearchCommand({ open, onOpenChange }: AdminSearchCommandPro
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: modules } = useModules();
+  const { data: featureFlags } = useNavFeatureFlags();
 
   const roleFilteredGroups = navigationGroups.filter(
     (group) => !group.adminOnly || isAdmin
@@ -50,13 +52,16 @@ export function AdminSearchCommand({ open, onOpenChange }: AdminSearchCommandPro
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
-            if (!item.moduleId) return true;
-            if (!modules) return true;
-            return modules[item.moduleId]?.enabled ?? true;
+            if (item.moduleId) {
+              if (!modules) return true;
+              if (!(modules[item.moduleId]?.enabled ?? true)) return false;
+            }
+            if (!isFeatureFlagOn(featureFlags, item.featureFlag)) return false;
+            return true;
           }),
         }))
         .filter((group) => group.items.length > 0),
-    [roleFilteredGroups, modules]
+    [roleFilteredGroups, modules, featureFlags]
   );
 
   const handleSelect = (href: string) => {

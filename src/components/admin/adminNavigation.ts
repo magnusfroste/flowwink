@@ -12,6 +12,12 @@ export type NavItem = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   moduleId?: string;
+  /**
+   * Optional feature-flag inside a module's settings (site_settings row).
+   * Item is only shown when the corresponding flag is truthy.
+   * Format: 'site_settings_key.field' — e.g. 'dunning.enabled'.
+   */
+  featureFlag?: string;
 };
 
 export type NavGroup = {
@@ -84,7 +90,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Quotes", href: "/admin/quotes", icon: FileQuote, moduleId: "invoicing" },
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
       { name: "Subscriptions", href: "/admin/subscriptions", icon: RefreshCw, moduleId: "subscriptions" },
-      { name: "Dunning", href: "/admin/subscriptions/dunning", icon: AlertTriangle, moduleId: "subscriptions" },
+      { name: "Dunning", href: "/admin/subscriptions/dunning", icon: AlertTriangle, moduleId: "subscriptions", featureFlag: "dunning.enabled" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
       { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
       { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },

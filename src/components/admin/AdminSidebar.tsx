@@ -89,6 +89,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
+import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 
 
 export function AdminSidebar() {
@@ -134,18 +135,23 @@ export function AdminSidebar() {
   const roleFilteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
   
   // Filter by enabled modules
+  const { data: featureFlags } = useNavFeatureFlags();
+
   const filteredGroups = useMemo(() => roleFilteredGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
-        if (!item.moduleId) return true;
-        if (!modules) return true;
-        const mod = modules[item.moduleId];
-        if (!mod?.enabled) return false;
-        return mod.adminUI !== false;
+        if (item.moduleId) {
+          if (!modules) return true;
+          const mod = modules[item.moduleId];
+          if (!mod?.enabled) return false;
+          if (mod.adminUI === false) return false;
+        }
+        if (!isFeatureFlagOn(featureFlags, item.featureFlag)) return false;
+        return true;
       }),
     }))
-    .filter(group => group.items.length > 0), [roleFilteredGroups, modules]);
+    .filter(group => group.items.length > 0), [roleFilteredGroups, modules, featureFlags]);
 
   // All items for search
   const allSearchItems = useMemo(() =>

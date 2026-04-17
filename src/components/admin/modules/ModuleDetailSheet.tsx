@@ -44,6 +44,7 @@ import { useExtensionRelay } from "@/hooks/useExtensionRelay";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { FlowPilotDetails } from "./FlowPilotDetails";
+import { SubscriptionsDunningToggle } from "./SubscriptionsDunningToggle";
 import { ComposioPanel } from "./ComposioPanel";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -691,6 +692,13 @@ export function ModuleDetailSheet({
               </>
             )}
 
+            {/* Subscriptions: Dunning feature flag */}
+            {moduleId === 'subscriptions' && (
+              <>
+                <Separator />
+                <SubscriptionsDunningToggle />
+              </>
+            )}
 
             <div className="rounded-lg border p-3 bg-muted/20">
               <div className="flex items-center gap-2 mb-2">

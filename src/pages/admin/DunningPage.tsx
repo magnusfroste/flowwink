@@ -90,7 +90,8 @@ export default function DunningPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dunning</h1>
           <p className="text-muted-foreground mt-1 max-w-2xl">
             Automated recovery for failed subscription payments. Optional feature within the
-            Subscriptions module — toggle off to skip dunning entirely.
+            Subscriptions module — also configurable from the module's right-panel.
+            When disabled, this page is hidden from the sidebar.
           </p>
         </div>
         <div className="flex items-center gap-3">
