@@ -91,8 +91,7 @@ export function useBlogPosts(options: UseBlogPostsOptions = {}) {
           categories:blog_post_categories(category:blog_categories(*)),
           tags:blog_post_tags(tag:blog_tags(*))
         `, { count: 'exact' })
-        .order('published_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
       
       if (status) {
         query = query.eq('status', status);
