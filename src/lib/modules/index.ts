@@ -61,6 +61,9 @@ export { siteMigrationModule, siteMigrationMeta } from './site-migration-module'
 export { developerModule } from './developer-module';
 export { flowpilotModule } from './flowpilot-module';
 
+// ── Recurring revenue ──
+export { subscriptionsModule } from './subscriptions-module';
+
 // ── Legacy (not in ModulesSettings — kept for registry compatibility) ──
 export { globalBlocksModule } from './global-blocks-module';
 export { ordersModule } from './orders-module';

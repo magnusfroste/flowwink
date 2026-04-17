@@ -4,6 +4,7 @@ import {
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield,
   Network, Snowflake, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
+  RefreshCw,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -82,6 +83,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Quotes", href: "/admin/quotes", icon: FileQuote, moduleId: "invoicing" },
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
+      { name: "Subscriptions", href: "/admin/subscriptions", icon: RefreshCw, moduleId: "subscriptions" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
       { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
       { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },

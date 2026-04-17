@@ -21,6 +21,7 @@ import {
   Plane,
   FolderKanban,
   FileSignature,
+  RefreshCw,
 } from 'lucide-react';
 import type { ModulesSettings } from '@/hooks/useModules';
 
@@ -77,6 +78,7 @@ const COLORS = {
   leave: '#f59e0b',        // amber
   projectTasks: '#8b5cf6', // violet
   contracts: '#ef4444',    // red
+  renewals: '#06b6d4',     // cyan
 };
 
 registerCalendarSource({

@@ -82,6 +82,7 @@ export interface ModulesSettings {
   documents: ModuleConfig;
   projects: ModuleConfig;
   calendar: ModuleConfig;
+  subscriptions: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -495,6 +496,17 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'view-required',
     adminUI: true,
   },
+  subscriptions: {
+    enabled: false,
+    name: 'Subscriptions',
+    description: 'Recurring revenue lifecycle — MRR, churn, dunning, trials and customer self-service portal. Synced from your payment provider via webhooks. Provider-agnostic (Stripe today, Paddle next).',
+    icon: 'RefreshCw',
+    category: 'data',
+    autonomy: 'view-required',
+    adminUI: true,
+    optionalIntegrations: ['stripe', 'stripe_webhook'],
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -545,6 +557,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/documents': 'documents',
   '/admin/projects': 'projects',
   '/admin/calendar': 'calendar',
+  '/admin/subscriptions': 'subscriptions',
 };
 
 export function useModules() {
