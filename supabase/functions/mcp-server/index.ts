@@ -525,7 +525,8 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
         properties: {},
       },
       handler: async (args: Record<string, unknown>) => {
-        const result = await executeSkill(skill.name, args);
+        const ctx = requestContext.getStore();
+        const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null);
         return {
           content: [{ type: "text" as const, text: result }],
         };
@@ -862,7 +863,8 @@ app.post("/rest/execute", async (c) => {
     );
   }
 
-  const result = await executeSkill(match.name, args || {});
+  const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
+  const result = await executeSkill(match.name, args || {}, callerUserId);
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
@@ -899,7 +901,8 @@ app.all("/*", async (c) => {
     : undefined;
 
   const handler = await getMcpHandler(filterGroups);
-  const response = await handler(c.req.raw);
+  const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
+  const response = await requestContext.run({ callerUserId }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);
