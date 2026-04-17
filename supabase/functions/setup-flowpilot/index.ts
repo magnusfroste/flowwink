@@ -4921,6 +4921,7 @@ Each template has:
     category: 'subscriptions',
     scope: 'internal',
     requires_approval: false,
+    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -4943,6 +4944,7 @@ Each template has:
     category: 'subscriptions',
     scope: 'internal',
     requires_approval: false,
+    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -4959,6 +4961,7 @@ Each template has:
     category: 'subscriptions',
     scope: 'internal',
     requires_approval: false,
+    mcp_exposed: true,
     instructions: `# Dunning Sequences
 
 Returns sequences with status (active | paused | recovered | failed | cancelled), current step (0-4), MRR at risk, and the related subscription. The 5-step timeline runs Day 0/3/7/10/14 with auto-cancel at the end.
@@ -4986,6 +4989,7 @@ Use this skill proactively in morning briefings: if total_mrr_at_risk_cents > 0,
     category: 'subscriptions',
     scope: 'internal',
     requires_approval: true,
+    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -5010,6 +5014,7 @@ Use this skill proactively in morning briefings: if total_mrr_at_risk_cents > 0,
     category: 'subscriptions',
     scope: 'internal',
     requires_approval: true,
+    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
