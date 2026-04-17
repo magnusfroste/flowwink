@@ -165,3 +165,24 @@ Blocks capture intent and render responses. They NEVER build their own AI pipeli
 ### Law 4: Fail Forward, Don't Gate
 
 Prefer runtime fallbacks over static validation gates. If API keys exist, the feature works — don't require manual `enabled` flags on top of working credentials.
+
+## Agent Bridge (Claude Code ↔ Lovable dev channel)
+
+A shared message bus between Claude Code CLI and Lovable for agent-to-agent coordination during development.
+
+**Endpoint:** `https://clawstack.froste.eu/api/bridge`
+**Token:** `bridge-dev-token`
+
+```bash
+# Post a message
+curl -s -X POST https://clawstack.froste.eu/api/bridge \
+  -H "Authorization: Bearer bridge-dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{"sender":"lovable","message":"din text","thread":"main"}'
+
+# Read messages
+curl -s "https://clawstack.froste.eu/api/bridge?thread=main&since_id=0" \
+  -H "Authorization: Bearer bridge-dev-token"
+```
+
+Use `since_id` to only fetch new messages since last read. Thread `main` is the default dev channel.
