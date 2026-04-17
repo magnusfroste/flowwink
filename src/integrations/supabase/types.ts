@@ -4495,6 +4495,139 @@ export type Database = {
           },
         ]
       }
+      subscription_events: {
+        Row: {
+          created_at: string
+          data: Json
+          event_type: string
+          id: string
+          provider: string
+          provider_event_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          event_type: string
+          id?: string
+          provider?: string
+          provider_event_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          event_type?: string
+          id?: string
+          provider?: string
+          provider_event_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          billing_interval: string | null
+          cancel_at: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          current_period_start: string | null
+          customer_email: string | null
+          customer_name: string | null
+          ended_at: string | null
+          id: string
+          metadata: Json
+          product_id: string | null
+          product_name: string | null
+          provider: string
+          provider_customer_id: string | null
+          provider_price_id: string | null
+          provider_subscription_id: string | null
+          quantity: number
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_end: string | null
+          trial_start: string | null
+          unit_amount_cents: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          billing_interval?: string | null
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json
+          product_id?: string | null
+          product_name?: string | null
+          provider?: string
+          provider_customer_id?: string | null
+          provider_price_id?: string | null
+          provider_subscription_id?: string | null
+          quantity?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          trial_start?: string | null
+          unit_amount_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          billing_interval?: string | null
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json
+          product_id?: string | null
+          product_name?: string | null
+          provider?: string
+          provider_customer_id?: string | null
+          provider_price_id?: string | null
+          provider_subscription_id?: string | null
+          quantity?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          trial_start?: string | null
+          unit_amount_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_agents: {
         Row: {
           created_at: string
@@ -5348,6 +5481,15 @@ export type Database = {
       renewal_type: "none" | "auto" | "manual"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "paused"
+        | "incomplete"
+        | "incomplete_expired"
+        | "unpaid"
       ticket_category: "bug" | "feature" | "question" | "billing" | "other"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status:
@@ -5594,6 +5736,16 @@ export const Constants = {
       renewal_type: ["none", "auto", "manual"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "paused",
+        "incomplete",
+        "incomplete_expired",
+        "unpaid",
+      ],
       ticket_category: ["bug", "feature", "question", "billing", "other"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: [
