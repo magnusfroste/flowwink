@@ -92,7 +92,7 @@ serve(async (req) => {
       });
     }
 
-    return json({ success: false, error: `Unknown action: ${action}` }, 400);
+    return json({ success: false, error: `Unknown action: ${inferredAction}` }, 400);
   } catch (err) {
     console.error("[company-profile] error:", err);
     return json(
