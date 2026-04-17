@@ -36,7 +36,7 @@ function serviceClient() {
 
 async function authenticateApiKey(
   authHeader: string | null,
-): Promise<{ valid: boolean; keyId?: string; scopes?: string[] }> {
+): Promise<{ valid: boolean; keyId?: string; scopes?: string[]; createdBy?: string | null }> {
   if (!authHeader?.startsWith("Bearer ")) {
     console.error("Auth: missing or malformed header");
     return { valid: false };
@@ -50,7 +50,7 @@ async function authenticateApiKey(
 
   const { data, error } = await sb
     .from("api_keys")
-    .select("id, scopes, expires_at")
+    .select("id, scopes, expires_at, created_by")
     .eq("key_hash", hash)
     .single();
 
@@ -68,7 +68,7 @@ async function authenticateApiKey(
     .eq("id", data.id)
     .then();
 
-  return { valid: true, keyId: data.id, scopes: data.scopes ?? [] };
+  return { valid: true, keyId: data.id, scopes: data.scopes ?? [], createdBy: data.created_by ?? null };
 }
 
 // ---------- load tools ----------
