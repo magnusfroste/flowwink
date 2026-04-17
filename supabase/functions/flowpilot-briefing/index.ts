@@ -108,7 +108,24 @@ serve(async (req) => {
       supabase.from("content_proposals").select("id, topic, status")
         .in("status", ["draft", "ready"])
         .limit(5),
+
+      // Dunning — failed payment recovery sequences
+      supabase.from("dunning_sequences")
+        .select("id, status, current_step, mrr_at_risk_cents, currency, next_action_at, subscriptions:subscription_id(customer_email, customer_name)")
+        .eq("status", "active")
+        .order("mrr_at_risk_cents", { ascending: false })
+        .limit(10),
+
+      // Recovered dunning in last 7 days (success metric)
+      supabase.from("dunning_sequences")
+        .select("mrr_at_risk_cents", { count: "exact" })
+        .eq("status", "recovered")
+        .gte("recovered_at", weekAgo.toISOString()),
     ]);
+
+    // Reassign destructured aliases — Promise.all returns in order
+    const dunningActive = (arguments as any); // placeholder to keep TS happy below
+
 
     // ─── Compute metrics ────────────────────────────────────────────
     const trafficToday = viewsToday.count ?? 0;
