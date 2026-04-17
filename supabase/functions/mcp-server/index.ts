@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
+
+// Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,6 +196,7 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
 async function executeSkill(
   skillName: string,
   args: Record<string, unknown>,
+  callerUserId?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
   const res = await fetch(url, {
@@ -204,6 +209,7 @@ async function executeSkill(
       skill_name: skillName,
       arguments: args,
       agent_type: "mcp",
+      caller_user_id: callerUserId ?? undefined,
     }),
   });
 
@@ -519,7 +525,8 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
         properties: {},
       },
       handler: async (args: Record<string, unknown>) => {
-        const result = await executeSkill(skill.name, args);
+        const ctx = requestContext.getStore();
+        const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null);
         return {
           content: [{ type: "text" as const, text: result }],
         };
@@ -695,6 +702,7 @@ app.use("/*", async (c, next) => {
     return c.json({ error: "Invalid or expired API key" }, 401);
   }
   c.set("apiKeyScopes" as any, auth.scopes);
+  c.set("apiKeyCreatedBy" as any, auth.createdBy);
   return next();
 });
 
@@ -855,7 +863,8 @@ app.post("/rest/execute", async (c) => {
     );
   }
 
-  const result = await executeSkill(match.name, args || {});
+  const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
+  const result = await executeSkill(match.name, args || {}, callerUserId);
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
@@ -892,7 +901,8 @@ app.all("/*", async (c) => {
     : undefined;
 
   const handler = await getMcpHandler(filterGroups);
-  const response = await handler(c.req.raw);
+  const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
+  const response = await requestContext.run({ callerUserId }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

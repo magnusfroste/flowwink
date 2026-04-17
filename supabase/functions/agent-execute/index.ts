@@ -12,10 +12,12 @@ interface ExecuteRequest {
   skill_id?: string;
   skill_name?: string;
   arguments: Record<string, unknown>;
-  agent_type: 'flowpilot' | 'chat';
+  agent_type: 'flowpilot' | 'chat' | 'mcp';
   conversation_id?: string;
   /** Trace ID from the parent reason() loop for end-to-end observability */
   trace_id?: string;
+  /** When called via MCP, the user who owns the api_key. Used for ownership/created_by. */
+  caller_user_id?: string;
   objective_context?: {
     goal: string;
     step: string;
@@ -80,11 +82,15 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id } = body;
 
     // ─── Argument normalization ──────────────────────────────────────────
     const _rawHasData = rawArgs && typeof rawArgs === 'object' && 'data' in (rawArgs as any);
     const args: Record<string, unknown> = normalizeSkillArgs(rawArgs);
+    // Forward caller identity to handlers (used to set created_by/author_id for MCP-originated writes)
+    if (caller_user_id && !(args as any)._caller_user_id) {
+      (args as any)._caller_user_id = caller_user_id;
+    }
     if (_rawHasData) {
       console.log('[normalize-debug] rawKeys:', Object.keys(rawArgs as any), 'flatKeys:', Object.keys(args), 'sample:', JSON.stringify(args).slice(0,200));
     }
@@ -2796,65 +2802,47 @@ async function executeBlogAction(
     return { error: `Unknown blog categories action: ${action}` };
   }
 
-  // write_blog_post — original handler
-  const { title: rawTitle, topic, tone = 'professional', language = 'en', content } = args as any;
-  const resolvedTitle = rawTitle || topic || 'Untitled Post';
-  const slug = String(resolvedTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  let tiptapDoc: any = { type: 'doc', content: [{ type: 'paragraph' }] };
-  let excerpt = `Blog post about: ${topic || resolvedTitle}`;
-  let markdownContent = content as string | undefined;
+  // write_blog_post — PURE SENSOR
+  // Reasoning (topic→title/content) belongs in FlowPilot or the external agent (ClawThree),
+  // not inside this skill. See docs/pilot/sensors-vs-reasoning.md (Law 3).
+  // Required: title + content. Optional: excerpt, featured_image, status, tone, language metadata.
+  const {
+    title: rawTitle,
+    content,
+    excerpt: rawExcerpt,
+    featured_image: providedImage,
+    featured_image_alt: providedImageAlt,
+    status: requestedStatus,
+    tone,
+    language = 'en',
+    topic,
+    _caller_user_id,
+  } = args as any;
 
-  if (!markdownContent) {
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    if (geminiKey) {
-      try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-        const genPrompt = `Write a comprehensive blog post about: "${topic}"\nTitle: "${resolvedTitle}"\nTone: ${tone}\nLanguage: ${language}\n\nWrite 600-1200 words. Use markdown with ## headings, paragraphs, and bullet points where appropriate. Do NOT include the title as an H1 — start with the first section. Output ONLY the markdown content, no preamble.`;
-        const genResp = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: genPrompt }] }],
-            generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
-          }),
-        });
-        const genData = await genResp.json();
-        markdownContent = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      } catch (e) {
-        console.error('[write_blog_post] Gemini generation failed:', e);
-      }
-    } else if (openaiKey) {
-      try {
-        const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini', max_tokens: 4096,
-            messages: [
-              { role: 'system', content: `You are a blog writer. Tone: ${tone}. Language: ${language}.` },
-              { role: 'user', content: `Write a blog post about "${topic}" titled "${resolvedTitle}". 600-1200 words. Use markdown with ## headings. Do NOT include the title. Output ONLY markdown.` }
-            ],
-          }),
-        });
-        const genData = await genResp.json();
-        markdownContent = genData.choices?.[0]?.message?.content || '';
-      } catch (e) {
-        console.error('[write_blog_post] OpenAI generation failed:', e);
-      }
-    }
+  if (!rawTitle || typeof rawTitle !== 'string' || !rawTitle.trim()) {
+    return { error: "title is required (string). write_blog_post is a pure sensor — generate title and content via your own reasoning (or via FlowPilot's chat/reason flow) before calling." };
+  }
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return { error: "content is required (markdown or plain text string). write_blog_post no longer generates content from a topic — call your reasoning loop first to produce the content, then pass it here." };
   }
 
-  if (markdownContent && markdownContent.trim()) {
-    tiptapDoc = markdownToTiptap(markdownContent);
-    const plainText = markdownContent.replace(/[#*_\[\]()>`-]/g, '').replace(/\n+/g, ' ').trim();
-    excerpt = plainText.substring(0, 160) + (plainText.length > 160 ? '...' : '');
+  const resolvedTitle = rawTitle.trim();
+  const slug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+
+  // Convert markdown content → Tiptap doc
+  const tiptapDoc = markdownToTiptap(content);
+
+  // Derive excerpt if not provided
+  let excerpt = rawExcerpt;
+  if (!excerpt) {
+    const plainText = content.replace(/[#*_\[\]()>`-]/g, '').replace(/\n+/g, ' ').trim();
+    excerpt = plainText.substring(0, 160) + (plainText.length > 160 ? '…' : '');
   }
 
-  // --- Auto-fetch featured image ---
-  let featuredImage: string | null = null;
-  let featuredImageAlt: string | null = null;
-  const imageQuery = topic || title;
+  // --- Optional auto-fetch featured image (sensor: just looks up an image, no reasoning) ---
+  let featuredImage: string | null = providedImage || null;
+  let featuredImageAlt: string | null = providedImageAlt || null;
+  const imageQuery = topic || resolvedTitle;
 
   // Strategy 1: Unsplash (free, fast, high quality photos)
   const unsplashKey = Deno.env.get('UNSPLASH_ACCESS_KEY');
@@ -2881,63 +2869,41 @@ async function executeBlogAction(
     }
   }
 
-  // Strategy 2: Gemini image generation (direct API, self-hosted)
-  const geminiKeyImg = Deno.env.get('GEMINI_API_KEY');
-  if (!featuredImage && geminiKeyImg) {
-    try {
-      const imgPrompt = `Generate a professional, modern blog header image for an article titled "${resolvedTitle}" about "${topic}". The image should be visually striking, landscape oriented, suitable as a blog featured image. No text in the image.`;
-      const imgResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKeyImg}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: imgPrompt }] }],
-            generationConfig: {
-              responseModalities: ['IMAGE', 'TEXT'],
-            },
-          }),
-        }
-      );
-      if (imgResp.ok) {
-        const imgData = await imgResp.json();
-        const parts = imgData.candidates?.[0]?.content?.parts || [];
-        const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
-        if (imagePart?.inlineData?.data) {
-          const mimeType = imagePart.inlineData.mimeType || 'image/png';
-          const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
-          const imageBytes = Uint8Array.from(atob(imagePart.inlineData.data), c => c.charCodeAt(0));
-          const fileName = `blog/${slug}-${Date.now()}.${ext}`;
-          const { error: uploadErr } = await supabase.storage
-            .from('cms-images')
-            .upload(fileName, imageBytes, { contentType: mimeType, upsert: true });
-          if (!uploadErr) {
-            const { data: urlData } = supabase.storage.from('cms-images').getPublicUrl(fileName);
-            featuredImage = urlData.publicUrl;
-            featuredImageAlt = `Featured image for ${title}`;
-            console.log(`[write_blog_post] Gemini image generated and uploaded: ${featuredImage}`);
-          } else {
-            console.error('[write_blog_post] Image upload failed:', uploadErr.message);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('[write_blog_post] Gemini image generation failed:', e);
-    }
-  }
+  // Determine status (default draft; allow 'published' if explicitly requested)
+  const status = requestedStatus === 'published' ? 'published' : 'draft';
 
   const insertData: Record<string, unknown> = {
-    title: resolvedTitle, slug, status: 'draft', excerpt, content_json: tiptapDoc,
-    meta_json: { tone, language, generated_by: 'flowpilot', topic },
+    title: resolvedTitle,
+    slug,
+    status,
+    excerpt,
+    content_json: tiptapDoc,
+    meta_json: { tone, language, generated_by: 'external_agent', topic },
   };
+  if (status === 'published') {
+    insertData.published_at = new Date().toISOString();
+  }
   if (featuredImage) {
     insertData.featured_image = featuredImage;
     insertData.featured_image_alt = featuredImageAlt;
   }
+  // Ownership — set from caller (MCP api_key owner) so admin UI shows the post
+  if (_caller_user_id) {
+    insertData.created_by = _caller_user_id;
+    insertData.updated_by = _caller_user_id;
+    insertData.author_id = _caller_user_id;
+  }
 
   const { data, error } = await supabase.from('blog_posts').insert(insertData).select().single();
   if (error) throw new Error(`Blog insert failed: ${error.message}`);
-  return { blog_post_id: data.id, slug: data.slug, title: data.title, status: 'draft', has_content: !!markdownContent, has_featured_image: !!featuredImage };
+  return {
+    blog_post_id: data.id,
+    slug: data.slug,
+    title: data.title,
+    status: data.status,
+    url: `/blog/${data.slug}`,
+    has_featured_image: !!featuredImage,
+  };
 }
 
 // =============================================================================
