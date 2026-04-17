@@ -34,7 +34,13 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: args = {}, agent_type, conversation_id, objective_context, trace_id } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id } = body;
+
+    // ─── Argument normalization ──────────────────────────────────────────
+    // External callers (Claude/MCP) often wrap fields in `data: {...}` and
+    // use friendly aliases (`amount`, `value`, `vat_rate`). Unwrap + alias
+    // so handlers receive a flat, canonical shape regardless of caller.
+    const args: Record<string, unknown> = normalizeSkillArgs(rawArgs);
 
     if (!skill_id && !skill_name) {
       return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
