@@ -1,3 +1,4 @@
+// agent-execute v2026-04-17-fix-3 (deal_stage enum + defensive normalize)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
