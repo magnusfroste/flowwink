@@ -3940,6 +3940,8 @@ async function executeDbAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // Defensive normalize — guarantees `data:{}` is always unwrapped
+  args = normalizeSkillArgs(args as Record<string, unknown>);
   switch (table) {
     case 'site_settings': {
       // Skill-specific routing for branding skills
