@@ -158,12 +158,11 @@ serve(async (req) => {
     const handler = skill.handler as string;
 
     try {
-      if (handler.startsWith('edge:')) {
-        const fnName = handler.replace('edge:', '');
+      if (handler.startsWith('edge:') || handler.startsWith('function:')) {
+        const fnName = handler.startsWith('edge:')
+          ? handler.replace('edge:', '')
+          : handler.replace('function:', '');
         
-        // For composio-proxy, map skill_name to the expected action/params format
-        // For other multi-skill routers, inject `_skill` so the function can dispatch.
-        let edgeBody: Record<string, any> = { ...args, _skill: skill.name };
         if (fnName === 'composio-proxy') {
           const skillToAction: Record<string, string> = {
             composio_gmail_read: 'gmail_read',

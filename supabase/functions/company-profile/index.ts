@@ -9,9 +9,11 @@ const corsHeaders = {
 };
 
 interface Body {
-  action: "get" | "update";
+  action?: "get" | "update";
   data?: Record<string, unknown>;
   merge?: boolean; // when update: shallow-merge instead of replace (default true)
+  _skill?: string;
+  [key: string]: unknown;
 }
 
 serve(async (req) => {
@@ -19,14 +21,18 @@ serve(async (req) => {
 
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
-    const action = body.action ?? "get";
+    const inferredAction =
+      body.action ??
+      (body._skill === "update_company_profile" ? "update" : undefined) ??
+      (body._skill === "get_company_profile" ? "get" : undefined) ??
+      "get";
 
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    if (action === "get") {
+    if (inferredAction === "get") {
       const { data, error } = await sb
         .from("site_settings")
         .select("value, updated_at")
@@ -40,12 +46,24 @@ serve(async (req) => {
       });
     }
 
-    if (action === "update") {
-      if (!body.data || typeof body.data !== "object") {
+    if (inferredAction === "update") {
+      const fallbackData = Object.fromEntries(
+        Object.entries(body).filter(([key, value]) => {
+          if (key === "action" || key === "merge" || key === "_skill") return false;
+          if (key.startsWith("_")) return false;
+          return value !== undefined;
+        }),
+      );
+
+      const incomingData = body.data && typeof body.data === "object"
+        ? body.data
+        : fallbackData;
+
+      if (!incomingData || typeof incomingData !== "object" || Object.keys(incomingData).length === 0) {
         return json({ success: false, error: "data object is required for update" }, 400);
       }
 
-      let next: Record<string, unknown> = body.data as Record<string, unknown>;
+      let next: Record<string, unknown> = incomingData as Record<string, unknown>;
       if (body.merge !== false) {
         const { data: existing } = await sb
           .from("site_settings")
@@ -53,7 +71,7 @@ serve(async (req) => {
           .eq("key", "company_profile")
           .maybeSingle();
         const current = (existing?.value ?? {}) as Record<string, unknown>;
-        next = { ...current, ...body.data };
+        next = { ...current, ...incomingData };
       }
 
       const { data, error } = await sb
@@ -74,7 +92,7 @@ serve(async (req) => {
       });
     }
 
-    return json({ success: false, error: `Unknown action: ${action}` }, 400);
+    return json({ success: false, error: `Unknown action: ${inferredAction}` }, 400);
   } catch (err) {
     console.error("[company-profile] error:", err);
     return json(
