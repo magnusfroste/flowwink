@@ -1,16 +1,16 @@
 ---
-title: "Expense Reporting Module"
+title: "manage_expenses Module"
 module_id: "expenses"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Expense Reporting
+# manage_expenses
 
-> Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot
+> Full lifecycle management for employee expenses: create individual expenses (with optional receipt data), submit monthly reports, approve/reject reports, and book approved reports as journal entries. Use when: employee adds an expense, FlowPilot processes monthly expense reports, admin approves/rejects expenses. NOT for: receipt image analysis (use analyze_receipt), journal entries not related to expenses (use manage_journal_entry).
 
 ## Quick Facts
 
@@ -43,8 +43,6 @@ generated_at: "2026-04-12"
 | `account_code` | `src/lib/modules/expenses-module.ts` |
 | `is_representation` | `src/lib/modules/expenses-module.ts` |
 | `attendees` | `src/lib/modules/expenses-module.ts` |
-| `name` | `src/lib/modules/expenses-module.ts` |
-| `company` | `src/lib/modules/expenses-module.ts` |
 | `receipt_url` | `src/lib/modules/expenses-module.ts` |
 | `period` | `src/lib/modules/expenses-module.ts` |
 | `report_id` | `src/lib/modules/expenses-module.ts` |
@@ -58,16 +56,6 @@ generated_at: "2026-04-12"
 | `report_id` | `src/lib/modules/expenses-module.ts` |
 | `message` | `src/lib/modules/expenses-module.ts` |
 | `error` | `src/lib/modules/expenses-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `expense.submitted` | An expense was submitted |
-| `expense.approved` | An expense was approved |
-| `expense.rejected` | An expense was rejected |
 
 ## File Map
 

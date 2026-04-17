@@ -1,16 +1,16 @@
 ---
-title: "Projects Module"
+title: "manage_project Module"
 module_id: "projects"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Projects
+# manage_project
 
-> Project and task management with Kanban boards, assignments, and time tracking integration
+> Create, update, search, and close projects. Use when: starting new client work, updating project status, reviewing active projects. NOT for: individual tasks (use manage_project_task), timesheets (use log_time).
 
 ## Quick Facts
 
@@ -51,15 +51,6 @@ generated_at: "2026-04-12"
 | `project_id` | `src/lib/modules/projects-module.ts` |
 | `task_id` | `src/lib/modules/projects-module.ts` |
 | `message` | `src/lib/modules/projects-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `project.created` | A project was created |
-| `task.completed` | A task was completed |
 
 ## File Map
 

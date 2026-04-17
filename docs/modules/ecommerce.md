@@ -1,31 +1,31 @@
 ---
-title: "Newsletter Module"
-module_id: "newsletter"
+title: "Products Module"
+module_id: "ecommerce"
 version: "1.0.0"
-category: "communication"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Newsletter
+# Products
 
-> Create newsletter drafts for sending
+> Create and manage e-commerce products
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `newsletter` |
+| **Module ID** | `ecommerce` |
 | **Version** | 1.0.0 |
-| **Category** | communication |
+| **Category** | data |
 | **Autonomy** | config-required |
 | **Core** | No |
-| **Capabilities** | `content:receive`, `data:write` |
+| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## Integrations
 
-**Required:** `resend`
+**Optional:** `stripe`, `resend`, `stripe_webhook`
 
 ## API Contract
 
@@ -33,9 +33,10 @@ generated_at: "2026-04-17"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/newsletter-module.ts` |
-| Admin page | `src/pages/admin/NewsletterPage.tsx` |
-| Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
+| Module definition | `src/lib/modules/products-module.ts` |
+| Hook | `src/hooks/useProducts.ts` |
+| Admin page | `src/pages/admin/ProductsPage.tsx` |
+| Public block | `src/components/public/blocks/ProductsBlock.tsx` |
 
 ## Contributing
 

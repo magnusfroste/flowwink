@@ -1,16 +1,16 @@
 ---
-title: "Contracts Module"
+title: "manage_contract Module"
 module_id: "contracts"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Contracts
+# manage_contract
 
-> Contract lifecycle management with renewal tracking and document storage
+> Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), project management (use manage_projects).
 
 ## Quick Facts
 
@@ -50,17 +50,6 @@ generated_at: "2026-04-12"
 | `success` | `src/lib/modules/contracts-module.ts` |
 | `contract_id` | `src/lib/modules/contracts-module.ts` |
 | `message` | `src/lib/modules/contracts-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `contract.created` | A contract was created |
-| `contract.signed` | A contract was signed |
-| `contract.expired` | A contract expired |
-| `contract.renewed` | A contract was renewed |
 
 ## File Map
 

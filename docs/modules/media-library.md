@@ -1,31 +1,27 @@
 ---
-title: "Newsletter Module"
-module_id: "newsletter"
+title: "Media Library Module"
+module_id: "mediaLibrary"
 version: "1.0.0"
-category: "communication"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Newsletter
+# Media Library
 
-> Create newsletter drafts for sending
+> Manage media assets and files
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `newsletter` |
+| **Module ID** | `mediaLibrary` |
 | **Version** | 1.0.0 |
-| **Category** | communication |
+| **Category** | data |
 | **Autonomy** | config-required |
-| **Core** | No |
-| **Capabilities** | `content:receive`, `data:write` |
-
-## Integrations
-
-**Required:** `resend`
+| **Core** | Yes |
+| **Capabilities** | `data:read`, `data:write` |
 
 ## API Contract
 
@@ -33,9 +29,9 @@ generated_at: "2026-04-17"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/newsletter-module.ts` |
-| Admin page | `src/pages/admin/NewsletterPage.tsx` |
-| Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
+| Module definition | `src/lib/modules/media-module.ts` |
+| Hook | `src/hooks/useMediaLibrary.ts` |
+| Admin page | `src/pages/admin/MediaLibraryPage.tsx` |
 
 ## Contributing
 

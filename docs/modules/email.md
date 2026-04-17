@@ -1,6 +1,6 @@
 ---
-title: "Templates Module"
-module_id: "templates"
+title: "Email Module"
+module_id: "email"
 version: "1.0.0"
 category: "system"
 autonomy: "config-required"
@@ -8,46 +8,48 @@ generated: true
 generated_at: "2026-04-17"
 ---
 
-# Templates
+# Email
 
-> Template gallery, export current site as reusable template, and import templates from file
+> Provider-agnostic email sender. Routes system emails through SMTP or Resend.
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `templates` |
+| **Module ID** | `email` |
 | **Version** | 1.0.0 |
-| **Category** | system |
-| **Autonomy** | config-required |
+| **Category** | — |
+| **Autonomy** | — |
 | **Core** | No |
-| **Capabilities** | `data:read`, `data:write` |
+| **Capabilities** | `data:write` |
 
 ## API Contract
-
-**Actions:** `export`, `import`, `install`
 
 ### Input Fields
 
 | Field | Source |
 |-------|--------|
-| `action` | `src/lib/modules/templates-module.ts` |
-| `templateId` | `src/lib/modules/templates-module.ts` |
-| `meta` | `src/lib/modules/templates-module.ts` |
+| `to` | `src/lib/modules/email-module.ts` |
+| `subject` | `src/lib/modules/email-module.ts` |
+| `html` | `src/lib/modules/email-module.ts` |
+| `text` | `src/lib/modules/email-module.ts` |
+| `fromOverride` | `src/lib/modules/email-module.ts` |
+| `replyTo` | `src/lib/modules/email-module.ts` |
+| `tags` | `src/lib/modules/email-module.ts` |
 
 ### Output Fields
 
 | Field | Source |
 |-------|--------|
-| `success` | `src/lib/modules/templates-module.ts` |
-| `error` | `src/lib/modules/templates-module.ts` |
-| `templateId` | `src/lib/modules/templates-module.ts` |
+| `success` | `src/lib/modules/email-module.ts` |
+| `provider` | `src/lib/modules/email-module.ts` |
+| `error` | `src/lib/modules/email-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/templates-module.ts` |
+| Module definition | `src/lib/modules/email-module.ts` |
 
 ## Contributing
 

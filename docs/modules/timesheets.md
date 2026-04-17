@@ -1,16 +1,16 @@
 ---
-title: "Timesheets Module"
+title: "log_time Module"
 module_id: "timesheets"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Timesheets
+# log_time
 
-> Time tracking for employees and projects with billable/non-billable categorization
+> Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says 
 
 ## Quick Facts
 
@@ -47,14 +47,6 @@ generated_at: "2026-04-12"
 | `success` | `src/lib/modules/timesheets-module.ts` |
 | `entry_id` | `src/lib/modules/timesheets-module.ts` |
 | `message` | `src/lib/modules/timesheets-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `time_entry.created` | A time entry was logged |
 
 ## File Map
 

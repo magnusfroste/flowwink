@@ -1,53 +1,58 @@
 ---
-title: "Agentic Handbook Module"
-module_id: "handbook"
+title: "Chat Module"
+module_id: "chat"
 version: "1.0.0"
-category: "content"
-autonomy: "agent-capable"
+category: "communication"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Agentic Handbook
+# Chat
 
-> Agentic methodology handbook with search and reader capabilities
+> AI-powered visitor chat widget using FlowPilot intelligence
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `handbook` |
+| **Module ID** | `chat` |
 | **Version** | 1.0.0 |
-| **Category** | content |
-| **Autonomy** | agent-capable |
+| **Category** | communication |
+| **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read` |
 
+## Integrations
+
+**Optional:** `openai`, `gemini`, `local_llm`, `n8n`
+
 ## API Contract
 
-**Actions:** `list`, `search`
+**Actions:** `get_config`
 
 ### Input Fields
 
 | Field | Source |
 |-------|--------|
-| `action` | `src/lib/modules/handbook-module.ts` |
-| `query` | `src/lib/modules/handbook-module.ts` |
+| `action` | `src/lib/modules/chat-module.ts` |
 
 ### Output Fields
 
 | Field | Source |
 |-------|--------|
-| `success` | `src/lib/modules/handbook-module.ts` |
-| `message` | `src/lib/modules/handbook-module.ts` |
+| `success` | `src/lib/modules/chat-module.ts` |
+| `error` | `src/lib/modules/chat-module.ts` |
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/handbook-module.ts` |
-| Hook | `src/hooks/useHandbook.ts` |
-| Admin page | `src/pages/admin/HandbookPage.tsx` |
+| Module definition | `src/lib/modules/chat-module.ts` |
+| Hook | `src/hooks/useChat.tsx` |
+| Public block | `src/components/public/blocks/ChatBlock.tsx` |
+| Public block | `src/components/public/blocks/ChatLauncherBlock.tsx` |
+| Migration | `supabase/migrations/20260402161500_fix_a2a_chat_instructions.sql` |
 
 ## Contributing
 

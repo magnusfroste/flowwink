@@ -1,31 +1,27 @@
 ---
-title: "Newsletter Module"
-module_id: "newsletter"
+title: "CRM Module"
+module_id: "leads"
 version: "1.0.0"
-category: "communication"
-autonomy: "config-required"
+category: "data"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-17"
 ---
 
-# Newsletter
+# CRM
 
-> Create newsletter drafts for sending
+> Create and manage leads
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `newsletter` |
+| **Module ID** | `leads` |
 | **Version** | 1.0.0 |
-| **Category** | communication |
-| **Autonomy** | config-required |
+| **Category** | data |
+| **Autonomy** | view-required |
 | **Core** | No |
-| **Capabilities** | `content:receive`, `data:write` |
-
-## Integrations
-
-**Required:** `resend`
+| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## API Contract
 
@@ -33,9 +29,9 @@ generated_at: "2026-04-17"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/newsletter-module.ts` |
-| Admin page | `src/pages/admin/NewsletterPage.tsx` |
-| Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
+| Module definition | `src/lib/modules/crm-module.ts` |
+| Hook | `src/hooks/useLeads.ts` |
+| Admin page | `src/pages/admin/LeadsPage.tsx` |
 
 ## Contributing
 

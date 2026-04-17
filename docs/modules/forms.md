@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Forms
@@ -24,14 +24,6 @@ generated_at: "2026-04-12"
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## API Contract
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `form.submitted` | A form was submitted |
 
 ## File Map
 

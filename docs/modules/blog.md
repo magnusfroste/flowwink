@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Blog
@@ -28,16 +28,6 @@ generated_at: "2026-04-12"
 **Optional:** `openai`, `gemini`, `unsplash`
 
 ## API Contract
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `blog_post.published` | A blog post was published |
-| `blog_post.updated` | A blog post was updated |
-| `blog_post.deleted` | A blog post was deleted |
 
 ## File Map
 

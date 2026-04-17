@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
 # Companies
@@ -24,15 +24,6 @@ generated_at: "2026-04-12"
 | **Capabilities** | `content:receive`, `data:write` |
 
 ## API Contract
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `company.created` | A company was created |
-| `company.updated` | A company was updated |
 
 ## File Map
 

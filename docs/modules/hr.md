@@ -1,16 +1,16 @@
 ---
-title: "HR & Employees Module"
+title: "manage_employee Module"
 module_id: "hr"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# HR & Employees
+# manage_employee
 
-> Employee directory, leave management, and organizational structure
+> Create, update, search, and deactivate employee records. Use when: adding new team members, updating roles/departments, offboarding. NOT for: leave requests (use manage_leave), documents.
 
 ## Quick Facts
 
@@ -42,17 +42,6 @@ generated_at: "2026-04-12"
 |-------|--------|
 | `success` | `src/lib/modules/hr-module.ts` |
 | `message` | `src/lib/modules/hr-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `employee.created` | An employee was added |
-| `leave.requested` | Leave was requested |
-| `leave.approved` | Leave was approved |
-| `leave.denied` | Leave was denied |
 
 ## File Map
 

@@ -1,16 +1,16 @@
 ---
-title: "Invoicing Module"
+title: "manage_invoice Module"
 module_id: "invoicing"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Invoicing
+# manage_invoice
 
-> Create and manage invoices with line items, tax computation, and status tracking
+> Create, update, list, or send invoices. Use when: user wants to create an invoice, change status (draft→sent→paid), update line items, or look up invoice details. NOT for: quotes (use manage_quote), accounting entries (use manage_journal_entry), timesheets (use log_time).
 
 ## Quick Facts
 
@@ -53,17 +53,6 @@ generated_at: "2026-04-12"
 | `success` | `src/lib/modules/invoicing-module.ts` |
 | `invoice_id` | `src/lib/modules/invoicing-module.ts` |
 | `message` | `src/lib/modules/invoicing-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `invoice.created` | An invoice was created |
-| `invoice.sent` | An invoice was sent |
-| `invoice.paid` | An invoice was paid |
-| `invoice.overdue` | An invoice became overdue |
 
 ## File Map
 

@@ -1,16 +1,16 @@
 ---
-title: "Purchasing Module"
+title: "manage_vendor Module"
 module_id: "purchasing"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-12"
+generated_at: "2026-04-17"
 ---
 
-# Purchasing
+# manage_vendor
 
-> Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt
+> Create, list, update, or deactivate vendors/suppliers. Use when: admin asks to add a new supplier, update vendor details, or review the vendor list. NOT for: creating purchase orders (use create_purchase_order).
 
 ## Quick Facts
 
@@ -52,19 +52,6 @@ generated_at: "2026-04-12"
 | `po_id` | `src/lib/modules/purchasing-module.ts` |
 | `po_number` | `src/lib/modules/purchasing-module.ts` |
 | `message` | `src/lib/modules/purchasing-module.ts` |
-
-## Webhook Events
-
-These events can be subscribed to via Developer → Webhooks or n8n.
-
-| Event | Description |
-|-------|-------------|
-| `purchase_order.created` | A PO was created |
-| `purchase_order.sent` | A PO was sent to vendor |
-| `purchase_order.received` | All goods received for PO |
-| `goods_receipt.created` | Goods were received |
-| `vendor.created` | A vendor was added |
-| `vendor.updated` | A vendor was updated |
 
 ## File Map
 
