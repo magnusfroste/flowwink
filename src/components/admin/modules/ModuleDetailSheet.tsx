@@ -691,6 +691,13 @@ export function ModuleDetailSheet({
               </>
             )}
 
+            {/* Subscriptions: Dunning feature flag */}
+            {moduleId === 'subscriptions' && (
+              <>
+                <Separator />
+                <SubscriptionsDunningToggle />
+              </>
+            )}
 
             <div className="rounded-lg border p-3 bg-muted/20">
               <div className="flex items-center gap-2 mb-2">
