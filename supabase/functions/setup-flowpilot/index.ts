@@ -4913,8 +4913,120 @@ Each template has:
       },
     },
   },
+  // ─── Subscriptions & Dunning ─────────────────────────────────────
+  {
+    name: 'list_subscriptions',
+    description: 'List recurring subscriptions with filters. Use when: admin asks "who is subscribed?", reviewing billing, auditing customer base. NOT for: one-off orders (lookup_order); MRR/ARR aggregates (subscription_mrr).',
+    handler: 'edge:subscriptions-skills',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_subscriptions',
+        description: 'List subscriptions, optionally filtered by status (active, trialing, past_due, canceled).',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'Filter by status: active | trialing | past_due | canceled | unpaid' },
+            limit: { type: 'number', description: 'Max rows (default 50, max 200)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'subscription_mrr',
+    description: 'Compute current MRR, ARR, active subscriber count, and 30-day churn. Use when: reviewing recurring revenue, weekly briefings, business health checks. NOT for: listing individual subs (list_subscriptions).',
+    handler: 'edge:subscriptions-skills',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'subscription_mrr',
+        description: 'Returns aggregated recurring revenue metrics: MRR, ARR, active subscriber count, churn 30d.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'list_dunning_sequences',
+    description: 'List active or historical dunning (failed-payment recovery) sequences with MRR at risk. Use when: monitoring failed payments, reviewing involuntary churn, daily revenue health. NOT for: subscription listing (list_subscriptions).',
+    handler: 'edge:subscriptions-skills',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `# Dunning Sequences
+
+Returns sequences with status (active | paused | recovered | failed | cancelled), current step (0-4), MRR at risk, and the related subscription. The 5-step timeline runs Day 0/3/7/10/14 with auto-cancel at the end.
+
+Use this skill proactively in morning briefings: if total_mrr_at_risk_cents > 0, surface it as an action item. High-value sequences (>500/mo) auto-create CRM tasks at step 3.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_dunning_sequences',
+        description: 'List dunning sequences. Filter by status (default: active).',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'active | paused | recovered | failed | cancelled (default active)' },
+            limit: { type: 'number', description: 'Max rows (default 50, max 200)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'pause_dunning',
+    description: 'Pause an active dunning sequence (e.g. after talking to the customer). Stops emails for N days. Use when: admin spoke to customer, customer promised to fix payment, manual handling needed. NOT for: cancelling subscription (escalate_dunning).',
+    handler: 'edge:subscriptions-skills',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'pause_dunning',
+        description: 'Pause a dunning sequence. Provide either subscription_id or sequence_id.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subscription_id: { type: 'string' },
+            sequence_id: { type: 'string' },
+            reason: { type: 'string', description: 'Why paused (audit trail)' },
+            pause_days: { type: 'number', description: 'Days to pause (default 7, max 30)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'escalate_dunning',
+    description: 'Jump a dunning sequence directly to the final step (auto-cancel) and trigger immediately. Use when: customer told us to cancel, payment definitively unrecoverable, abuse detected. NOT for: pausing temporarily (pause_dunning).',
+    handler: 'edge:subscriptions-skills',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'escalate_dunning',
+        description: 'Skip remaining dunning steps and cancel the subscription. Provide either subscription_id or sequence_id.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subscription_id: { type: 'string' },
+            sequence_id: { type: 'string' },
+            reason: { type: 'string', description: 'Why escalated (audit trail)' },
+          },
+        },
+      },
+    },
+  },
 ];
-const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
   values: [
     'Outcome over output — every action must tie to a measurable goal',
