@@ -1,6 +1,6 @@
-# FlowPilot Docs
+# FlowWink Concepts
 
-FlowPilot architecture documentation has been migrated to the canonical research repo:
+Architecture and concept documentation has been migrated to the canonical research repo:
 
 **https://github.com/magnusfroste/clawable/tree/main/research/flowwink**
 
