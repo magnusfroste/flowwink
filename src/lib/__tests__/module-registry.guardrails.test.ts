@@ -61,9 +61,12 @@ const nonToggleableUnifiedModules = new Set(['email']);
 describe('module registry guardrails', () => {
   it('exports every defineModule module from src/lib/modules/index.ts', () => {
     for (const mod of parsedModules) {
-      expect(modulesIndexSource, `${mod.fileName} is not exported from src/lib/modules/index.ts`).toContain(
-        `export { ${mod.exportName} }`,
-      );
+      // Allow either `export { foo }` or `export { foo, ...other }` from the same barrel.
+      const exportRegex = new RegExp(`export\\s*\\{[^}]*\\b${mod.exportName}\\b[^}]*\\}`);
+      expect(
+        exportRegex.test(modulesIndexSource),
+        `${mod.fileName} is not exported from src/lib/modules/index.ts`,
+      ).toBe(true);
     }
   });
 
