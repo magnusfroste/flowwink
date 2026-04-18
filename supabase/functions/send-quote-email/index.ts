@@ -1,5 +1,6 @@
-// Send a quote to the customer via Resend with a public signing link.
-// Self-hosted: uses RESEND_API_KEY directly (no Lovable email infra).
+// Send a quote to the customer via the provider-agnostic `email-send` router.
+// Provider selection (SMTP / Resend) is handled centrally in `email-send`,
+// driven by `site_settings.integrations.email.config.provider`.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
