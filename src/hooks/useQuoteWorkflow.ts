@@ -118,12 +118,13 @@ export function useRequestQuoteApproval() {
   });
 }
 
-/** Send the quote to the customer: ensures accept_token, sets status=sent, snapshots version. */
+/** Send the quote to the customer: ensures accept_token, sets status=sent, snapshots version, and emails customer. */
 export function useSendQuote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (quote: Quote) => {
-      // Block if pending approval
+    mutationFn: async (input: Quote | { quote: Quote; custom_message?: string }) => {
+      const quote = 'quote' in input ? input.quote : input;
+      const custom_message = 'quote' in input ? input.custom_message : undefined;
       if ((quote.status as string) === 'pending_approval') {
         throw new Error('Quote is pending approval — cannot send yet');
       }
@@ -139,14 +140,49 @@ export function useSendQuote() {
         } as never)
         .eq('id', quote.id);
       if (error) throw error;
-      return { token, url: publicQuoteUrl(token), version: versionNum };
+
+      const url = publicQuoteUrl(token);
+      let emailSent = false;
+      let emailError: string | undefined;
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('send-quote-email', {
+          body: { quote_id: quote.id, public_url: url, custom_message },
+        });
+        if (fnErr) throw fnErr;
+        emailSent = !!(data as { success?: boolean })?.success;
+      } catch (e) {
+        emailError = e instanceof Error ? e.message : 'Email send failed';
+      }
+      return { token, url, version: versionNum, emailSent, emailError };
     },
-    onSuccess: ({ url }) => {
+    onSuccess: ({ url, emailSent, emailError }) => {
       qc.invalidateQueries({ queryKey: ['quotes'] });
       qc.invalidateQueries({ queryKey: ['quote'] });
       navigator.clipboard?.writeText(url).catch(() => {});
-      toast.success('Quote sent — public link copied');
+      if (emailSent) {
+        toast.success('Quote sent to customer — link copied');
+      } else {
+        toast.warning(`Quote marked as sent, but email failed: ${emailError ?? 'unknown'}. Link copied.`);
+      }
     },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/** Resend a reminder email for an already-sent quote (does not change status/version). */
+export function useSendQuoteReminder() {
+  return useMutation({
+    mutationFn: async (input: { quote: Quote; custom_message?: string }) => {
+      const token = (input.quote as unknown as { accept_token?: string }).accept_token;
+      if (!token) throw new Error('Quote has no public link yet — send it first');
+      const url = publicQuoteUrl(token);
+      const { data, error } = await supabase.functions.invoke('send-quote-email', {
+        body: { quote_id: input.quote.id, public_url: url, reminder: true, custom_message: input.custom_message },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => toast.success('Reminder sent to customer'),
     onError: (e: Error) => toast.error(e.message),
   });
 }
