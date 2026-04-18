@@ -23,9 +23,10 @@ import {
   liveSupportModule, webinarsModule, analyticsModule, companyInsightsModule,
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
   purchasingModule, contractsModule, hrModule, documentsModule, projectsModule,
-  slaModule, salesIntelligenceModule, growthModule, resumeModule,
-  browserControlModule, federationModule, composioModule, ticketsModule,
-  siteMigrationModule, developerModule, flowpilotModule,
+  slaModule, calendarModule, subscriptionsModule, salesIntelligenceModule,
+  growthModule, resumeModule, browserControlModule, federationModule,
+  composioModule, ticketsModule, siteMigrationModule, developerModule,
+  flowpilotModule, emailModule,
   // Legacy modules (manual registration)
   globalBlocksModule, ordersModule,
 } from '@/lib/modules';
