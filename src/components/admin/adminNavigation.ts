@@ -95,6 +95,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
       { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },
       { name: "Approvals", href: "/admin/approvals", icon: ShieldCheck, moduleId: "approvals" },
+      { name: "Reconciliation", href: "/admin/reconciliation", icon: RefreshCw, moduleId: "reconciliation" },
     ],
   },
   {
