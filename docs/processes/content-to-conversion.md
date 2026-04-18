@@ -1,27 +1,27 @@
 # Content-to-Conversion
 
-> Från idé till publicerad artikel till mätbart resultat. FlowWinks "agent-shines"-process.
+> From idea to published article to measurable outcome. FlowWink's "agent-shines" process.
 
-**Mognadsnivå:** L4 — Agent-augmented
-**Status:** ✅ FlowPilots starkaste autonoma flöde
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **Pages** | Landningssidor (block-baserade) |
-| **Blog** | Artiklar, kategorier, taggar |
-| **Knowledge Base** | Self-service support-artiklar |
-| **Newsletter** | Distribution till prenumeranter |
-| **Paid Growth** | Annonskampanjer för förstärkning |
-| **Analytics** | Mätning av trafik, konvertering, SEO |
-| **Sales Intelligence** | Konkurrent- och ämnesresearch |
+**Maturity level:** L4 — Agent-augmented
+**Status:** ✅ FlowPilot's strongest autonomous flow
 
 ---
 
-## Steg-för-steg flöde (Content Pipeline — 5 steg)
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **Pages** | Landing pages (block-based) |
+| **Blog** | Articles, categories, tags |
+| **Knowledge Base** | Self-service support articles |
+| **Newsletter** | Distribution to subscribers |
+| **Paid Growth** | Ad campaigns to amplify reach |
+| **Analytics** | Tracking traffic, conversion, SEO |
+| **Sales Intelligence** | Competitor and topic research |
+
+---
+
+## Step-by-step flow (Content Pipeline — 5 steps)
 
 ```
 1. Research (research_content + competitor_monitor)
@@ -34,48 +34,48 @@
        ↓
 5. Measure (analyze_analytics + seo_audit_page)
        ↓
-   → Loop tillbaka till Research
+   → Loop back to Research
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Konkurrent-research | ✅ | ✅ (`competitor_monitor`, `research_content`) | 🔗 Delegering möjlig |
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Competitor research | ✅ | ✅ (`competitor_monitor`, `research_content`) | 🔗 Delegation possible |
 | Content brief | ✅ | ✅ (`seo_content_brief`) | — |
-| Förslag-generering | — | ✅ (`generate_content_proposal`) | 🔗 Audit via peer |
-| Artikelskrivning | ✅ | ✅ (`write_blog_post`) | 🔗 Review via peer |
-| Landningssida-komposition | ✅ | ✅ (`landing_page_compose`) | — |
-| Sociala inlägg | ✅ | ✅ (`social_post_batch`, `generate_social_post`) | — |
-| Newsletter-utskick | ✅ | ✅ (`send_newsletter`) | — |
-| Annonskreativ | ✅ | ✅ (`ad_creative_generate`) | — |
-| Performance-analys | ✅ | ✅ (`analyze_analytics`, `ad_performance_check`) | — |
-| KB gap-analys | — | ✅ (`kb_gap_analysis`) | — |
+| Proposal generation | — | ✅ (`generate_content_proposal`) | 🔗 Audit via peer |
+| Article writing | ✅ | ✅ (`write_blog_post`) | 🔗 Review via peer |
+| Landing page composition | ✅ | ✅ (`landing_page_compose`) | — |
+| Social posts | ✅ | ✅ (`social_post_batch`, `generate_social_post`) | — |
+| Newsletter sends | ✅ | ✅ (`send_newsletter`) | — |
+| Ad creative | ✅ | ✅ (`ad_creative_generate`) | — |
+| Performance analysis | ✅ | ✅ (`analyze_analytics`, `ad_performance_check`) | — |
+| KB gap analysis | — | ✅ (`kb_gap_analysis`) | — |
 
 ---
 
-## Kända luckor (saknas för L5)
+## Known gaps (missing for L5)
 
-- ❌ A/B-testning av rubriker/CTAs (infrastruktur saknas)
+- ❌ A/B testing of headlines/CTAs (infrastructure missing)
 - ❌ Multi-language content management
-- ❌ Editorial calendar med deadlines / approvals
+- ❌ Editorial calendar with deadlines / approvals
 - ❌ Influencer / partnership outreach
-- ⚠️ Bildgenerering kräver extern AI (Lovable AI / OpenAI)
+- ⚠️ Image generation requires external AI (OpenAI / Gemini / local)
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `blog.published`, `newsletter.sent`
 
 ---
 
-## Bäst för
+## Best for
 
-Inbound marketing-driven SMB. Konsultbyråer, SaaS-startups, B2B-tjänster där content är primär lead-källa.
+Inbound-marketing-driven SMBs. Consultancies, SaaS startups, B2B services where content is the primary lead source.
 
-## Inte för
+## Not for
 
-Brand-tunga D2C-varumärken som behöver Figma-driven design + komplex DAM, eller PR-tunga organisationer.
+Brand-heavy D2C labels needing Figma-driven design + complex DAM, or PR-heavy organizations.

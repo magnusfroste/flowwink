@@ -1,84 +1,84 @@
 # Record-to-Report
 
-> Från transaktion till finansiell rapport. Bokföring + period-end close.
+> From transaction to financial report. Bookkeeping + period-end close.
 
-**Mognadsnivå:** L2 — Manual (delar L3 via templates)
-**Status:** ⚠️ Grundläggande dubbel bokföring; saknar period-end automation
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **Accounting** | Kontoplan (BAS 2024), verifikat, mallar |
-| **Invoicing** | Källa för AR-bokningar |
-| **Expenses** | Källa för AP/utläggsbokningar |
-| **Analytics** | Finansiella nyckeltal-rapporter |
-| **Documents** | Verifikationsunderlag-arkiv |
+**Maturity level:** L2 — Manual (parts L3 via templates)
+**Status:** ⚠️ Basic double-entry bookkeeping; lacks period-end automation
 
 ---
 
-## Steg-för-steg flöde
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **Accounting** | Chart of accounts (BAS 2024), journal entries, templates |
+| **Invoicing** | Source for AR bookings |
+| **Expenses** | Source for AP / expense bookings |
+| **Analytics** | Financial KPI reports |
+| **Documents** | Voucher / supporting document archive |
+
+---
+
+## Step-by-step flow
 
 ```
-Affärshändelse (faktura, utlägg, lönekörning)
+Business event (invoice, expense, payroll run)
        ↓
-suggest_accounting_template → matchar mot mall
+suggest_accounting_template → matches against template
        ↓
-Verifikat skapas (manage_journal_entry)
+Journal entry created (manage_journal_entry)
        ↓
-Granskning (manuell)
+Review (manual)
        ↓
-Bokföring sparas
+Booking saved
        ↓
-[Periodvis] Avstämningar
+[Periodic] Reconciliations
        ↓
-[Periodvis] Period-end close
+[Periodic] Period-end close
        ↓
-accounting_reports (BR, RR, huvudbok)
+accounting_reports (BS, P&L, general ledger)
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Kontoplan-setup | ✅ | ✅ (`manage_chart_of_accounts`) | — |
-| Mall-hantering | ✅ | ✅ (`manage_accounting_template`) | — |
-| Konteringsförslag | — | ✅ (`suggest_accounting_template`) | — |
-| Verifikatregistrering | ✅ | ✅ (`manage_journal_entry`) | — |
-| Ingående balanser | ✅ | ✅ (`manage_opening_balances`) | — |
-| Avstämningar | ✅ | ⚠️ Delvis (autonomous reconciliation) | — |
-| Rapporter | ✅ | ✅ (`accounting_reports`) | — |
-| Period-end close | ❌ Saknas | — | — |
-| Skatterapportering | ❌ Saknas | — | — |
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Chart of accounts setup | ✅ | ✅ (`manage_chart_of_accounts`) | — |
+| Template management | ✅ | ✅ (`manage_accounting_template`) | — |
+| Booking suggestion | — | ✅ (`suggest_accounting_template`) | — |
+| Journal entries | ✅ | ✅ (`manage_journal_entry`) | — |
+| Opening balances | ✅ | ✅ (`manage_opening_balances`) | — |
+| Reconciliations | ✅ | ⚠️ Partial (autonomous reconciliation) | — |
+| Reports | ✅ | ✅ (`accounting_reports`) | — |
+| Period-end close | ❌ Missing | — | — |
+| Tax reporting | ❌ Missing | — | — |
 
 ---
 
-## Kända luckor (saknas för L3+)
+## Known gaps (missing for L3+)
 
-- ❌ **Period-end close-workflow** (lock period, justeringar, reversering)
-- ❌ Skatterapportering (moms, AGI, K10)
-- ❌ SIE-export (för revisor)
-- ❌ Bankkoppling / automatisk avstämning mot bankkontoutdrag
+- ❌ **Period-end close workflow** (lock period, adjustments, reversal)
+- ❌ Tax reporting (VAT, employer reports, K10)
+- ❌ SIE export (for accountants)
+- ❌ Bank feed / automatic reconciliation against bank statements
 - ❌ Multi-currency revaluation
-- ❌ Cost center / projektbokföring
-- ❌ Konsolidering (multi-entity)
+- ❌ Cost center / project-level bookkeeping
+- ❌ Consolidation (multi-entity)
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `invoice.created`, `invoice.paid`, `expense.status_changed`
 
 ---
 
-## Bäst för
+## Best for
 
-Mindre bolag som vill ha översikt över sin ekonomi internt, kompletterar med extern revisor/redovisningsbyrå för deklaration.
+Smaller companies that want internal visibility into their finances, complementing an external accountant for filings.
 
-## Inte för
+## Not for
 
-Bolag som vill ersätta Fortnox/Visma helt — vi är inte ett komplett redovisningssystem ännu. Positionera oss som "operativ ekonomi" snarare än "deklaration".
+Companies looking to fully replace Fortnox/Visma — we are not a complete accounting system yet. Position us as "operational finance" rather than "filings".

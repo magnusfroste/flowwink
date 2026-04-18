@@ -1,83 +1,83 @@
 # Order-to-Delivery
 
-> Från kundorder till levererad produkt. E-handelns kärnflöde.
+> From customer order to delivered product. The core e-commerce flow.
 
-**Mognadsnivå:** L3 — Operational
-**Status:** ✅ Happy path fungerar; SLA-monitor täcker manuella steg
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **E-commerce** | Order-records, fulfillment-stadier |
-| **Products** | Produktkatalog, varianter, pris |
-| **Inventory** | Lagerreservation, plockning, justering |
-| **SLA** | Övervakar att manuella steg sker i tid |
-| **Documents** | Följesedel, fraktetiketter |
-| **Newsletter** | Order-bekräftelser, leveransnotiser |
+**Maturity level:** L3 — Operational
+**Status:** ✅ Happy path works; SLA monitor covers manual steps
 
 ---
 
-## Steg-för-steg flöde
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **E-commerce** | Order records, fulfillment stages |
+| **Products** | Product catalog, variants, pricing |
+| **Inventory** | Stock reservation, picking, adjustments |
+| **SLA** | Monitors that manual steps happen on time |
+| **Documents** | Delivery notes, shipping labels |
+| **Newsletter** | Order confirmations, delivery notifications |
+
+---
+
+## Step-by-step flow
 
 ```
-Customer checkout (Stripe-integration)
+Customer checkout (Stripe integration)
        ↓
-Order skapas — status: unfulfilled (E-commerce)
+Order created — status: unfulfilled (E-commerce)
        ↓
 Stripe webhook → order.paid
        ↓
-Lagerreservation (Inventory)
+Stock reservation (Inventory)
        ↓
-[Manuell] Plockning → status: picked
+[Manual] Picking → status: picked
        ↓
-[Manuell] Packning → status: packed
+[Manual] Packing → status: packed
        ↓
-[Manuell] Frakt → status: shipped + tracking
+[Manual] Shipping → status: shipped + tracking
        ↓
-Leverans → status: delivered
+Delivery → status: delivered
        ↓
-SLA-monitor varnar om något steg fastnar
+SLA monitor warns if a step gets stuck
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Order-mottagning | — | ✅ Auto (Stripe webhook) | — |
-| Stock-check | ✅ | ✅ (`check_stock`) | — |
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Order intake | — | ✅ Auto (Stripe webhook) | — |
+| Stock check | ✅ | ✅ (`check_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
-| Plock/pack/ship | ✅ | — | — |
-| Order status-uppdatering | ✅ | ✅ (`manage_orders`) | — |
-| Kundnotiser | ✅ | ✅ (Newsletter automation) | — |
-| SLA-eskalering | — | ✅ (SLA-modulen) | — |
+| Pick/pack/ship | ✅ | — | — |
+| Order status updates | ✅ | ✅ (`manage_orders`) | — |
+| Customer notifications | ✅ | ✅ (Newsletter automation) | — |
+| SLA escalation | — | ✅ (SLA module) | — |
 
 ---
 
-## Kända luckor (saknas för L5)
+## Known gaps (missing for L5)
 
-- ❌ Integration mot WMS / fraktbolag (Postnord, DHL APIs)
-- ❌ Returer / RMA-flöde
-- ❌ Multi-warehouse fulfillment-routing
-- ❌ Pre-orders / backorder-hantering (delvis via `back_in_stock_requests`)
-- ❌ Picklists / pack-stationer i UI
+- ❌ Integrations with WMS / carriers (Postnord, DHL APIs)
+- ❌ Returns / RMA flow
+- ❌ Multi-warehouse fulfillment routing
+- ❌ Pre-orders / backorder handling (partly via `back_in_stock_requests`)
+- ❌ Picklists / pack stations in the UI
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `order.created`, `order.paid`, `order.fulfilled`, `stock.low`, `stock.adjusted`
 
 ---
 
-## Bäst för
+## Best for
 
-D2C / e-handel med fysiska produkter, måttlig volym (< 1000 ordrar/dag), egen fulfillment eller enkel 3PL.
+D2C / e-commerce with physical products, moderate volume (< 1000 orders/day), self-fulfillment or simple 3PL.
 
-## Inte för
+## Not for
 
-Marketplace med många säljare, eller höggradigt automatiserade fulfillment-centers (kräver WMS).
+Marketplaces with many sellers, or highly automated fulfillment centers (require WMS).
