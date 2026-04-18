@@ -4480,14 +4480,224 @@ export type Database = {
           },
         ]
       }
-      quotes: {
+      quote_items: {
         Row: {
-          accepted_at: string | null
+          created_at: string
+          description: string
+          discount_pct: number
+          id: string
+          line_subtotal_cents: number
+          line_tax_cents: number
+          line_total_cents: number
+          position: number
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          tax_rate_pct: number
+          unit: string | null
+          unit_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_pct?: number
+          id?: string
+          line_subtotal_cents?: number
+          line_tax_cents?: number
+          line_total_cents?: number
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          tax_rate_pct?: number
+          unit?: string | null
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          id?: string
+          line_subtotal_cents?: number
+          line_tax_cents?: number
+          line_total_cents?: number
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          tax_rate_pct?: number
+          unit?: string | null
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_signatures: {
+        Row: {
+          action: string
+          comment: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          quote_id: string
+          signature_data: string | null
+          signer_email: string | null
+          signer_name: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          quote_id: string
+          signature_data?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          quote_id?: string
+          signature_data?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_signatures_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_templates: {
+        Row: {
           created_at: string
           created_by: string | null
           currency: string
-          deal_id: string | null
+          default_valid_days: number | null
+          description: string | null
           id: string
+          intro_text: string | null
+          is_active: boolean
+          items: Json
+          name: string
+          terms_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_valid_days?: number | null
+          description?: string | null
+          id?: string
+          intro_text?: string | null
+          is_active?: boolean
+          items?: Json
+          name: string
+          terms_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_valid_days?: number | null
+          description?: string | null
+          id?: string
+          intro_text?: string | null
+          is_active?: boolean
+          items?: Json
+          name?: string
+          terms_text?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quote_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          quote_id: string
+          reason: string | null
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          quote_id: string
+          reason?: string | null
+          snapshot: Json
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          quote_id?: string
+          reason?: string | null
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_versions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          accept_token: string | null
+          accepted_at: string | null
+          approval_request_id: string | null
+          company_id: string | null
+          converted_at: string | null
+          converted_to_invoice_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_address: string | null
+          customer_company: string | null
+          customer_email: string | null
+          customer_name: string | null
+          deal_id: string | null
+          discount_cents: number
+          id: string
+          intro_text: string | null
           invoice_id: string | null
           lead_id: string | null
           line_items: Json
@@ -4499,17 +4709,33 @@ export type Database = {
           subtotal_cents: number
           tax_cents: number
           tax_rate: number
+          template_id: string | null
+          terms_text: string | null
+          title: string | null
           total_cents: number
           updated_at: string
           valid_until: string | null
+          version: number
+          viewed_at: string | null
         }
         Insert: {
+          accept_token?: string | null
           accepted_at?: string | null
+          approval_request_id?: string | null
+          company_id?: string | null
+          converted_at?: string | null
+          converted_to_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          customer_address?: string | null
+          customer_company?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
           deal_id?: string | null
+          discount_cents?: number
           id?: string
+          intro_text?: string | null
           invoice_id?: string | null
           lead_id?: string | null
           line_items?: Json
@@ -4521,17 +4747,33 @@ export type Database = {
           subtotal_cents?: number
           tax_cents?: number
           tax_rate?: number
+          template_id?: string | null
+          terms_text?: string | null
+          title?: string | null
           total_cents?: number
           updated_at?: string
           valid_until?: string | null
+          version?: number
+          viewed_at?: string | null
         }
         Update: {
+          accept_token?: string | null
           accepted_at?: string | null
+          approval_request_id?: string | null
+          company_id?: string | null
+          converted_at?: string | null
+          converted_to_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          customer_address?: string | null
+          customer_company?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
           deal_id?: string | null
+          discount_cents?: number
           id?: string
+          intro_text?: string | null
           invoice_id?: string | null
           lead_id?: string | null
           line_items?: Json
@@ -4543,11 +4785,30 @@ export type Database = {
           subtotal_cents?: number
           tax_cents?: number
           tax_rate?: number
+          template_id?: string | null
+          terms_text?: string | null
+          title?: string | null
           total_cents?: number
           updated_at?: string
           valid_until?: string | null
+          version?: number
+          viewed_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_approval_request_id_fkey"
+            columns: ["approval_request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_deal_id_fkey"
             columns: ["deal_id"]
@@ -4567,6 +4828,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "quote_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -5788,7 +6056,15 @@ export type Database = {
         | "partially_received"
         | "received"
         | "cancelled"
-      quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
+      quote_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "pending_approval"
+        | "viewed"
+        | "cancelled"
       renewal_type: "none" | "auto" | "manual"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
@@ -6046,7 +6322,16 @@ export const Constants = {
         "received",
         "cancelled",
       ],
-      quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
+      quote_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "rejected",
+        "expired",
+        "pending_approval",
+        "viewed",
+        "cancelled",
+      ],
       renewal_type: ["none", "auto", "manual"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],

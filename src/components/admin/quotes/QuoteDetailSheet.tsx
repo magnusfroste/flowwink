@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, Building2, FileCheck } from 'lucide-react';
+import { Trash2, Plus, Building2, FileCheck, Send, ShieldCheck, Link as LinkIcon } from 'lucide-react';
 import { computeInvoiceTotals, type InvoiceLineItem } from '@/hooks/useInvoices';
 import {
   useQuote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice,
   getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName,
   type QuoteStatus,
 } from '@/hooks/useQuotes';
+import { useRequestQuoteApproval, useSendQuote, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
+import { toast } from 'sonner';
 
 interface Props {
   quoteId: string | null;
@@ -38,6 +40,8 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const updateQuote = useUpdateQuote();
   const deleteQuote = useDeleteQuote();
   const convertToInvoice = useConvertQuoteToInvoice();
+  const requestApproval = useRequestQuoteApproval();
+  const sendQuote = useSendQuote();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
@@ -228,11 +232,45 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             </div>
           )}
 
+          {/* Public link (when sent) */}
+          {(quote as unknown as { accept_token?: string }).accept_token && (
+            <div className="rounded-md border p-3 text-sm flex items-center gap-2 bg-muted/50">
+              <LinkIcon className="h-4 w-4" />
+              <span className="flex-1 truncate font-mono text-xs">
+                {publicQuoteUrl((quote as unknown as { accept_token: string }).accept_token)}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const url = publicQuoteUrl((quote as unknown as { accept_token: string }).accept_token);
+                  navigator.clipboard.writeText(url);
+                  toast.success('Link copied');
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={handleSave} disabled={updateQuote.isPending}>
               Save Changes
             </Button>
+            {quote.status === 'draft' && (
+              <>
+                <Button variant="outline" onClick={() => requestApproval.mutate(quote)} disabled={requestApproval.isPending}>
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Request Approval
+                </Button>
+                <Button onClick={() => sendQuote.mutate(quote)} disabled={sendQuote.isPending}>
+                  <Send className="h-4 w-4 mr-1" /> Send to Customer
+                </Button>
+              </>
+            )}
+            {(quote.status as string) === 'pending_approval' && (
+              <Badge variant="outline" className="self-center">Awaiting approval</Badge>
+            )}
             {actions.map((action) => (
               <Button
                 key={action.next}
