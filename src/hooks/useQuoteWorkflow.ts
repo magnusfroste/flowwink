@@ -205,46 +205,53 @@ export function usePublicQuote(token: string | undefined) {
   });
 }
 
-/** Public accept/reject. Records signature audit. */
+/** Public accept/reject. Calls quote-sign edge function which atomically records
+ *  signature, updates status, auto-creates an invoice on accept, and sends emails. */
 export function useSignQuote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
-      quote_id: string;
+      accept_token: string;
       action: 'accept' | 'reject';
       signer_name: string;
       signer_email: string;
       signature_data?: string;
       comment?: string;
     }) => {
-      // Record signature
-      const { error: sigErr } = await supabase.from('quote_signatures').insert({
-        quote_id: input.quote_id,
-        action: input.action,
-        signer_name: input.signer_name,
-        signer_email: input.signer_email,
-        signature_data: input.signature_data ?? null,
-        comment: input.comment ?? null,
-        user_agent: navigator.userAgent,
-      });
-      if (sigErr) throw sigErr;
-
-      // Update quote status
-      const updates: Record<string, unknown> = {};
-      if (input.action === 'accept') {
-        updates.status = 'accepted';
-        updates.accepted_at = new Date().toISOString();
-      } else {
-        updates.status = 'rejected';
-        updates.rejected_at = new Date().toISOString();
-      }
-      const { error } = await supabase.from('quotes').update(updates as never).eq('id', input.quote_id);
-      if (error) throw error;
-      return { ok: true };
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quote-sign`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            accept_token: input.accept_token,
+            action: input.action,
+            signer_name: input.signer_name,
+            signer_email: input.signer_email,
+            signature_data: input.signature_data,
+            comment: input.comment,
+            user_agent: navigator.userAgent,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to sign quote');
+      return data as { success: true; action: 'accept' | 'reject'; invoice: any | null };
     },
-    onSuccess: (_res, vars) => {
+    onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ['public-quote'] });
-      toast.success(vars.action === 'accept' ? 'Quote accepted — thank you!' : 'Quote declined');
+      if (vars.action === 'accept') {
+        toast.success(
+          res.invoice
+            ? `Thank you! Invoice ${res.invoice.invoice_number} has been issued.`
+            : 'Quote accepted — thank you!'
+        );
+      } else {
+        toast.success('Quote declined');
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
