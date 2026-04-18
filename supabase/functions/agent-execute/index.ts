@@ -476,8 +476,19 @@ async function executeModuleAction(
       if (skillName === 'send_email_to_lead') {
         return await executeSendEmailToLead(supabase, args);
       }
+      if (skillName === 'lead_pipeline_review') {
+        return await executeLeadPipelineReview(supabase, args);
+      }
+      // Only add_lead falls through to insert. Guard against accidental routing
+      // of read-only skills (e.g. lead_pipeline_review) into the insert path.
+      if (skillName !== 'add_lead') {
+        return { error: `Unknown CRM skill routed to module:crm: ${skillName}` };
+      }
       // add_lead — upsert to handle duplicate emails gracefully
       const { email, name, source = 'chat', phone } = args as any;
+      if (!email) {
+        return { error: 'email is required for add_lead' };
+      }
       // Check if lead already exists
       const { data: existing } = await supabase.from('leads')
         .select('id, email, status, name').eq('email', email).maybeSingle();
