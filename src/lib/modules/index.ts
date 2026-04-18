@@ -46,6 +46,7 @@ export { documentsModule } from './documents-module';
 export { projectsModule } from './projects-module';
 export { slaModule } from './sla-module';
 export { calendarModule } from './calendar-module';
+export { approvalsModule } from './approvals-module';
 
 // ── Growth ──
 export { salesIntelligenceModule } from './sales-intelligence-module';

@@ -703,6 +703,151 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_decisions: {
+        Row: {
+          comment: string | null
+          created_at: string
+          decided_by: string
+          decided_role: Database["public"]["Enums"]["app_role"]
+          decision: Database["public"]["Enums"]["approval_decision_kind"]
+          id: string
+          request_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          decided_by: string
+          decided_role: Database["public"]["Enums"]["app_role"]
+          decision: Database["public"]["Enums"]["approval_decision_kind"]
+          id?: string
+          request_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          decided_by?: string
+          decided_role?: Database["public"]["Enums"]["app_role"]
+          decision?: Database["public"]["Enums"]["approval_decision_kind"]
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_decisions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_requests: {
+        Row: {
+          amount_cents: number | null
+          context: Json | null
+          created_at: string
+          currency: string
+          entity_id: string
+          entity_type: string
+          id: string
+          reason: string | null
+          requested_by: string | null
+          required_role: Database["public"]["Enums"]["app_role"]
+          resolved_at: string | null
+          resolved_by: string | null
+          rule_id: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          context?: Json | null
+          created_at?: string
+          currency?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          required_role?: Database["public"]["Enums"]["app_role"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number | null
+          context?: Json | null
+          created_at?: string
+          currency?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          required_role?: Database["public"]["Enums"]["app_role"]
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_requests_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "approval_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_rules: {
+        Row: {
+          amount_threshold_cents: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          entity_type: string
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          required_role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          amount_threshold_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          entity_type: string
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          required_role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          amount_threshold_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          required_role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -5460,6 +5605,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      evaluate_approval_required: {
+        Args: {
+          p_amount_cents?: number
+          p_currency?: string
+          p_entity_type: string
+        }
+        Returns: {
+          required_role: Database["public"]["Enums"]["app_role"]
+          rule_id: string
+          rule_name: string
+        }[]
+      }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -5480,6 +5637,36 @@ export type Database = {
         Returns: Json
       }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
+      resolve_approval: {
+        Args: {
+          p_comment?: string
+          p_decision: Database["public"]["Enums"]["approval_decision_kind"]
+          p_request_id: string
+        }
+        Returns: {
+          amount_cents: number | null
+          context: Json | null
+          created_at: string
+          currency: string
+          entity_id: string
+          entity_type: string
+          id: string
+          reason: string | null
+          requested_by: string | null
+          required_role: Database["public"]["Enums"]["app_role"]
+          resolved_at: string | null
+          resolved_by: string | null
+          rule_id: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "approval_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       schedule_cron_job: {
         Args: {
           p_body: string
@@ -5570,6 +5757,8 @@ export type Database = {
         | "subscriptions"
       agent_type: "flowpilot" | "chat" | "mcp"
       app_role: "writer" | "approver" | "admin" | "customer"
+      approval_decision_kind: "approve" | "reject"
+      approval_status: "pending" | "approved" | "rejected" | "cancelled"
       automation_trigger_type: "cron" | "event" | "signal"
       contract_status:
         | "draft"
@@ -5823,6 +6012,8 @@ export const Constants = {
       ],
       agent_type: ["flowpilot", "chat", "mcp"],
       app_role: ["writer", "approver", "admin", "customer"],
+      approval_decision_kind: ["approve", "reject"],
+      approval_status: ["pending", "approved", "rejected", "cancelled"],
       automation_trigger_type: ["cron", "event", "signal"],
       contract_status: [
         "draft",
