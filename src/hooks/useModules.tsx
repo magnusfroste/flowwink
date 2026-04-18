@@ -513,7 +513,7 @@ export const defaultModulesSettings: ModulesSettings = {
     name: 'Approvals',
     description: 'Generic approval engine — define rules (entity type + amount + required role) and route requests for sign-off. Used by Purchasing, Expenses, Invoicing and Quotes.',
     icon: 'ShieldCheck',
-    category: 'operations',
+    category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
     enhancedByFlowPilot: true,
