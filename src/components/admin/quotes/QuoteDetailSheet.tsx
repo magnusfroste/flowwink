@@ -12,7 +12,7 @@ import {
   getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName,
   type QuoteStatus,
 } from '@/hooks/useQuotes';
-import { useRequestQuoteApproval, useSendQuote, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
+import { useRequestQuoteApproval, useSendQuote, useSendQuoteReminder, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
 import { toast } from 'sonner';
 
 interface Props {
