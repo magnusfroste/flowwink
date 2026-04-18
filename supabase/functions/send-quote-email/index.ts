@@ -62,13 +62,6 @@ function escapeHtml(s: string) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: 'RESEND_API_KEY not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const body: Body = await req.json();
     if (!body.quote_id || !body.public_url) {
       return new Response(JSON.stringify({ error: 'quote_id and public_url required' }), {
@@ -89,14 +82,23 @@ Deno.serve(async (req) => {
     if (qErr || !quote) throw new Error(qErr?.message || 'Quote not found');
     if (!quote.customer_email) throw new Error('Quote has no customer_email');
 
-    // Resolve site name
+    // Resolve site name + optional from/reply-to override from settings
     const { data: settings } = await supabase
       .from('site_settings')
       .select('value')
       .eq('key', 'general')
       .maybeSingle();
     const siteName = (settings?.value as any)?.site_name || 'FlowWink';
-    const fromEmail = Deno.env.get('QUOTE_FROM_EMAIL') || 'FlowWink <quotes@news.flowwink.com>';
+
+    const { data: integ } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+    const quoteCfg = ((integ?.value as any)?.quotes ?? {}) as {
+      fromOverride?: string;
+      replyTo?: string;
+    };
 
     const html = buildHtml({
       quote,
@@ -110,34 +112,29 @@ Deno.serve(async (req) => {
       ? `Reminder: Quote ${quote.quote_number} from ${siteName}`
       : `Quote ${quote.quote_number} from ${siteName}`;
 
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [quote.customer_email],
+    // Route via the provider-agnostic email-send function.
+    const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
+      body: {
+        to: quote.customer_email,
         subject,
         html,
-        reply_to: Deno.env.get('QUOTE_REPLY_TO') || undefined,
-      }),
+        fromOverride: quoteCfg.fromOverride,
+        replyTo: quoteCfg.replyTo,
+        tags: { kind: body.reminder ? 'quote_reminder' : 'quote', quote_id: quote.id },
+      },
     });
-    const resendData = await resendRes.json();
-    if (!resendRes.ok) {
-      throw new Error(`Resend error: ${resendData?.message || resendRes.statusText}`);
-    }
+    if (sendErr) throw new Error(sendErr.message || 'email-send failed');
+    if (!sendData?.success) throw new Error(sendData?.error || 'email-send returned failure');
 
     // Audit
     await supabase.from('audit_logs').insert({
       action: body.reminder ? 'quote.reminder_sent' : 'quote.email_sent',
       entity_type: 'quote',
       entity_id: quote.id,
-      metadata: { message_id: resendData?.id, to: quote.customer_email, subject },
+      metadata: { provider: sendData.provider, to: quote.customer_email, subject },
     });
 
-    return new Response(JSON.stringify({ success: true, message_id: resendData?.id }), {
+    return new Response(JSON.stringify({ success: true, provider: sendData.provider }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
