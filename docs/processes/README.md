@@ -1,44 +1,44 @@
 # Business Processes — FlowWink Coverage Map
 
-> **Vad är detta?** En process går oftast tvärs över flera moduler. Den här mappen visar vilka **affärsprocesser** FlowWink stödjer, vilka moduler som ingår, och på vilken **mognadsnivå** de befinner sig.
+> **What is this?** A business process usually spans multiple modules. This folder maps which **business processes** FlowWink supports, which modules participate, and at what **maturity level** each one currently sits.
 >
-> **Målgrupp (initialt):** Internt — för att hålla koll på vad vi faktiskt kan leverera när vi pratar med kunder. Senare kan utdrag publiceras eller delas som PDF.
+> **Audience (initially):** Internal — to keep track of what we can actually deliver in customer conversations. Excerpts can later be published or shared as PDF.
 
 ---
 
-## Mognadsskala (5 nivåer)
+## Maturity Scale (5 levels)
 
-| Nivå | Namn | Betydelse |
-|------|------|-----------|
-| **L1** | **Stub** | Datamodell finns. Ingen UI, ingen logik. |
-| **L2** | **Manual** | Admin kan CRUDa via UI. Ingen automation. |
-| **L3** | **Operational** | Happy path fungerar end-to-end. Kunden kan köra processen i produktion. |
-| **L4** | **Agent-augmented** | En agent (FlowPilot eller extern) kan exekvera delar av processen autonomt. |
-| **L5** | **Production-grade** | Edge cases, godkännanden, audit trail, multi-entity. ERP-mässigt. |
+| Level | Name | Meaning |
+|-------|------|---------|
+| **L1** | **Stub** | Data model exists. No UI, no logic. |
+| **L2** | **Manual** | Admin can CRUD via UI. No automation. |
+| **L3** | **Operational** | Happy path works end-to-end. Customer can run the process in production. |
+| **L4** | **Agent-augmented** | An agent (FlowPilot or external) can execute parts of the process autonomously. |
+| **L5** | **Production-grade** | Edge cases, approvals, audit trail, multi-entity. ERP-grade. |
 
-**Tumregel för säljet:**
-- L3 = "Ja, vi stödjer det"
-- L4 = "Ja, och agenten kan köra delar autonomt"
-- L5 = "Ja, även för komplexa fall" (få processer är här idag)
+**Rule of thumb for sales:**
+- L3 = "Yes, we support it"
+- L4 = "Yes, and the agent can run parts autonomously"
+- L5 = "Yes, even for complex cases" (few processes are here today)
 
 ---
 
-## Agent-täckning
+## Agent Coverage
 
-För varje process anges **vem som gör vad**:
+For each process we mark **who does what**:
 
-| Aktör | Beskrivning |
+| Actor | Description |
 |-------|-------------|
-| 👤 **Manuell** | Människa via admin-UI |
-| 🤖 **FlowPilot** | Plattformens inbyggda agent |
-| 🔗 **Extern agent** | Federerad peer (t.ex. ClawThree, OpenClaw) via A2A/MCP |
+| 👤 **Manual** | Human via admin UI |
+| 🤖 **FlowPilot** | The platform's built-in agent |
+| 🔗 **External agent** | Federated peer (e.g. ClawThree, OpenClaw) via A2A/MCP |
 
 ---
 
-## Kärnprocesser
+## Core Processes
 
-| Process | Mognad | Moduler | Doc |
-|---------|--------|---------|-----|
+| Process | Maturity | Modules | Doc |
+|---------|----------|---------|-----|
 | **Lead-to-Customer** | L4 | Forms, Leads, Sales Intelligence, Deals, Companies | [lead-to-customer.md](./lead-to-customer.md) |
 | **Quote-to-Cash** | L3 | Deals, Projects, Timesheets, Invoicing, Accounting | [quote-to-cash.md](./quote-to-cash.md) |
 | **Procure-to-Pay** | L3 | Purchasing, Inventory, Expenses, Invoicing, Accounting | [procure-to-pay.md](./procure-to-pay.md) |
@@ -50,13 +50,13 @@ För varje process anges **vem som gör vad**:
 
 ---
 
-## Hur vi använder detta i sälj
+## How we use this in sales
 
-1. **Discovery:** "Vilka processer kör ni idag?" → matcha mot listan ovan
-2. **Coverage:** Visa mognadsnivån ärligt — L3 räcker för de flesta SMB
-3. **Gap-analys:** Synliggör vad agenten täcker (L4+) vs. manuell admin (L3)
-4. **Roadmap:** Vad som flyttas från L3 → L4 → L5 nästa kvartal
+1. **Discovery:** "Which processes do you run today?" → match against the list above
+2. **Coverage:** Show the maturity level honestly — L3 is enough for most SMBs
+3. **Gap analysis:** Make explicit what the agent covers (L4+) vs. manual admin (L3)
+4. **Roadmap:** What moves from L3 → L4 → L5 next quarter
 
 ---
 
-*Dokumentationen uppdateras manuellt initialt. När `defineModule()` får `processes` + `maturity`-metadata kan vi auto-generera en `/admin/process-coverage`-sida.*
+*Documentation is maintained manually for now. Once `defineModule()` gains `processes` + `maturity` metadata we can auto-generate an `/admin/process-coverage` page.*

@@ -1,79 +1,79 @@
 # Lead-to-Customer
 
-> Från första kontakt till vunnet avtal. Hela top-of-funnel + CRM-pipeline.
+> From first touch to closed-won. The full top-of-funnel + CRM pipeline.
 
-**Mognadsnivå:** L4 — Agent-augmented
-**Status:** ✅ Production-ready för SMB
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **Forms** | Fångar inbound leads från webbformulär |
-| **Leads** | Lead-records, scoring, pipeline-stadier |
-| **Companies** | B2B-företagsregister med firmografisk data |
-| **Sales Intelligence** | Prospect research, enrichment, fit-analys |
-| **Deals** | Sales pipeline med stadier (qualified → won/lost) |
-| **Newsletter** | Nurture-sekvenser till leads som inte är säljklara |
+**Maturity level:** L4 — Agent-augmented
+**Status:** ✅ Production-ready for SMB
 
 ---
 
-## Steg-för-steg flöde
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **Forms** | Captures inbound leads from web forms |
+| **Leads** | Lead records, scoring, pipeline stages |
+| **Companies** | B2B company registry with firmographic data |
+| **Sales Intelligence** | Prospect research, enrichment, fit analysis |
+| **Deals** | Sales pipeline with stages (qualified → won/lost) |
+| **Newsletter** | Nurture sequences for leads not yet sales-ready |
+
+---
+
+## Step-by-step flow
 
 ```
 [Form submit / Manual entry]
        ↓
-   Lead skapas (Leads)
+   Lead created (Leads)
        ↓
    Auto-enrichment (Sales Intelligence + Companies)
        ↓
    Lead scoring + qualification
        ↓
-   Konvertera till Deal (Deals)
+   Convert to Deal (Deals)
        ↓
    Pipeline progression
        ↓
-   Won → handover till Quote-to-Cash
-   Lost → tillbaka till Newsletter nurture
+   Won → handover to Quote-to-Cash
+   Lost → back to Newsletter nurture
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Form-fångst | ✅ | ✅ (`process_signal`) | — |
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Form capture | ✅ | ✅ (`process_signal`) | — |
 | Enrichment | ✅ | ✅ (`enrich_company`, `prospect_research`) | ✅ via A2A |
 | Lead scoring | ✅ | ✅ (`qualify_lead`) | — |
 | Pipeline review | ✅ | ✅ (`lead_pipeline_review`) | — |
 | Nurture sequencing | ✅ | ✅ (`lead_nurture_sequence`) | — |
-| Deal-konvertering | ✅ | ✅ (`manage_deal`) | — |
-| Stale deal-detection | — | ✅ (`deal_stale_check`) | — |
+| Deal conversion | ✅ | ✅ (`manage_deal`) | — |
+| Stale deal detection | — | ✅ (`deal_stale_check`) | — |
 
 ---
 
-## Kända luckor (saknas för L5)
+## Known gaps (missing for L5)
 
-- ❌ Multi-touch attribution (vilken kanal stängde dealen?)
-- ❌ Forecasting / pipeline-prognos
-- ❌ Dubbletthantering vid lead-merge är basic
-- ❌ Round-robin lead assignment till säljare
+- ❌ Multi-touch attribution (which channel closed the deal?)
+- ❌ Forecasting / pipeline projection
+- ❌ Duplicate handling on lead merge is basic
+- ❌ Round-robin lead assignment to reps
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `form.submitted`, `lead.created`, `lead.score_updated`, `lead.status_changed`, `deal.won`, `deal.lost`
 
 ---
 
-## Bäst för
+## Best for
 
-SMB med inbound + lätt outbound. Konsultbolag, B2B-tjänster, agentbyråer.
+SMBs with inbound + light outbound. Consultancies, B2B services, agencies.
 
-## Inte för
+## Not for
 
-Enterprise med komplexa godkännandeprocesser, eller renodlad outbound-SDR-organisation som behöver dialer/sequencer-features.
+Enterprise with complex approval workflows, or pure outbound SDR organizations needing dialer/sequencer features.

@@ -1,81 +1,81 @@
 # Hire-to-Retire
 
-> Hela medarbetarlivscykeln — från anställning till offboarding.
+> The full employee lifecycle — from hire to offboarding.
 
-**Mognadsnivå:** L2 — Manual (med agent-stöd för checklists)
-**Status:** ⚠️ Grundläggande HR-funktioner; saknar payroll och performance management
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **HR** | Employee-records, leave-hantering, onboarding-checklists |
-| **Contracts** | Anställningsavtal, livscykel |
-| **Documents** | HR-dokument (avtal, intyg, policies) |
-| **Expenses** | Utläggshantering för anställda |
-| **Resume** | Konsultprofiler / talent-matching |
+**Maturity level:** L2 — Manual (with agent assistance for checklists)
+**Status:** ⚠️ Basic HR functions; lacks payroll and performance management
 
 ---
 
-## Steg-för-steg flöde
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **HR** | Employee records, leave handling, onboarding checklists |
+| **Contracts** | Employment agreements, lifecycle |
+| **Documents** | HR documents (contracts, certificates, policies) |
+| **Expenses** | Employee expense claims |
+| **Resume** | Consultant profiles / talent matching |
+
+---
+
+## Step-by-step flow
 
 ```
-Kandidat → Hire decision
+Candidate → Hire decision
        ↓
-Employee skapas (HR)
+Employee created (HR)
        ↓
-Anställningsavtal genereras (Contracts) → signering
+Employment contract generated (Contracts) → signing
        ↓
-Onboarding checklist startas (HR)
+Onboarding checklist started (HR)
        ↓
-Dokument arkiveras (Documents — relaterade till employee_id)
+Documents archived (Documents — related to employee_id)
        ↓
-[Pågående] Leave-requests, expense-claims
+[Ongoing] Leave requests, expense claims
        ↓
-[Pågående] Contract renewals (årsvis)
+[Ongoing] Contract renewals (annually)
        ↓
-Offboarding → kontrakt avslutas, åtkomst stängs
+Offboarding → contracts terminated, access revoked
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Employee-registrering | ✅ | ✅ (`manage_employee`) | — |
-| Avtalshantering | ✅ | ✅ (`manage_contract`) | — |
-| Onboarding-checklist | ✅ | ✅ (`onboarding_checklist`) | — |
-| Leave-requests | ✅ | ✅ (`manage_leave`) | — |
-| Contract renewal-check | — | ✅ (`contract_renewal_check`) | — |
-| Performance reviews | ❌ Saknas | — | — |
-| Payroll | ❌ Saknas | — | — |
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Employee registration | ✅ | ✅ (`manage_employee`) | — |
+| Contract handling | ✅ | ✅ (`manage_contract`) | — |
+| Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
+| Leave requests | ✅ | ✅ (`manage_leave`) | — |
+| Contract renewal check | — | ✅ (`contract_renewal_check`) | — |
+| Performance reviews | ❌ Missing | — | — |
+| Payroll | ❌ Missing | — | — |
 
 ---
 
-## Kända luckor (saknas för L3+)
+## Known gaps (missing for L3+)
 
-- ❌ **Payroll-integration** (Fortnox Lön, Visma, Hogia)
-- ❌ Performance management / PDP / 1:1-anteckningar
+- ❌ **Payroll integration** (Fortnox Lön, Visma, Hogia)
+- ❌ Performance management / PDP / 1:1 notes
 - ❌ Compensation planning
-- ❌ Time-off accrual rules (semesterdagar enligt kollektivavtal)
+- ❌ Time-off accrual rules (vacation days per collective agreement)
 - ❌ Org chart / reporting structure
-- ❌ Anställningsavtal-mallar med svenska kollektivavtal
+- ❌ Employment contract templates with Swedish collective agreements
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `employee.created`, `leave.requested`, `leave.status_changed`, `contract.created`, `contract.signed`, `contract.status_changed`, `expense.submitted`
 
 ---
 
-## Bäst för
+## Best for
 
-Mindre konsultbolag (< 30 anställda) som vill ha enkel HR-data + dokumentarkiv på ett ställe.
+Smaller consultancies (< 30 employees) wanting simple HR data + document archive in one place.
 
-## Inte för
+## Not for
 
-Bolag som behöver fullt HR-system med lön, performance management, eller kollektivavtalslogik. Komplettera med Fortnox/Visma för payroll.
+Companies that need a full HRIS with payroll, performance management, or collective-agreement logic. Pair with Fortnox/Visma for payroll.

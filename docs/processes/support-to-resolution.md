@@ -1,81 +1,81 @@
 # Support-to-Resolution
 
-> Från kundfråga till löst ärende. Self-service + human handoff.
+> From customer question to resolved case. Self-service + human handoff.
 
-**Mognadsnivå:** L3 — Operational
-**Status:** ✅ AI Chat + KB + ticketing fungerar; SLA-monitor varnar vid eskalering
-
----
-
-## Moduler som ingår
-
-| Modul | Roll i processen |
-|-------|------------------|
-| **AI Chat** | Frontline — agenten svarar visitors direkt |
-| **Knowledge Base** | Källa för agent-svar, self-service-portal |
-| **Tickets** | Strukturerade ärenden för komplexa fall |
-| **Live Support** | Handoff till mänsklig agent |
-| **SLA** | Övervakar svarstider, eskalerar vid fördröjning |
+**Maturity level:** L3 — Operational
+**Status:** ✅ AI Chat + KB + ticketing work; SLA monitor warns on escalation
 
 ---
 
-## Steg-för-steg flöde
+## Modules involved
+
+| Module | Role in the process |
+|--------|---------------------|
+| **AI Chat** | Frontline — the agent answers visitors directly |
+| **Knowledge Base** | Source for agent answers, self-service portal |
+| **Tickets** | Structured cases for complex issues |
+| **Live Support** | Handoff to a human agent |
+| **SLA** | Monitors response/resolution times, escalates on delay |
+
+---
+
+## Step-by-step flow
 
 ```
-Visitor frågar (chat-widget)
+Visitor asks (chat widget)
        ↓
-FlowPilot svarar med KB-grounding
+FlowPilot answers with KB grounding
        ↓
-   ├── Löst → conversation closes
-   ├── Komplext → ticket_triage skapar ärende
-   └── Akut → escalate till support_assign_conversation
+   ├── Resolved → conversation closes
+   ├── Complex → ticket_triage creates a case
+   └── Urgent → escalate via support_assign_conversation
        ↓
-Mänsklig agent övertar (Live Support)
+Human agent takes over (Live Support)
        ↓
-Lösning → svar tillbaka till kund
+Resolution → response back to customer
        ↓
-SLA-monitor mäter response time + resolution time
+SLA monitor measures response time + resolution time
        ↓
-analyze_chat_feedback → KB gap-analys
+analyze_chat_feedback → KB gap analysis
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
-| Frontline-svar | — | ✅ (chat-completion) | — |
-| KB-sökning | ✅ | ✅ (KB embedded i context) | — |
-| Ticket-triage | ✅ | ✅ (`ticket_triage`) | — |
-| Konversationstilldelning | ✅ | ✅ (`support_assign_conversation`) | — |
-| Mänsklig respons | ✅ | — | — |
-| SLA-eskalering | — | ✅ (SLA-monitor automation) | — |
-| Feedback-analys | — | ✅ (`analyze_chat_feedback`, `support_get_feedback`) | — |
-| KB gap → ny artikel | ✅ | ✅ (`kb_gap_analysis` + `manage_kb_article`) | — |
-
----
-
-## Kända luckor (saknas för L5)
-
-- ❌ Multi-channel inbox (email, WhatsApp, Slack i samma vy)
-- ❌ Customer satisfaction (CSAT) surveys efter ärende
-- ❌ Macros / canned responses för human agents
-- ❌ Skill-based routing till specifika agenter
-- ❌ Internal knowledge base (separat från publik KB)
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
+| Frontline answers | — | ✅ (chat-completion) | — |
+| KB lookup | ✅ | ✅ (KB embedded in context) | — |
+| Ticket triage | ✅ | ✅ (`ticket_triage`) | — |
+| Conversation assignment | ✅ | ✅ (`support_assign_conversation`) | — |
+| Human response | ✅ | — | — |
+| SLA escalation | — | ✅ (SLA monitor automation) | — |
+| Feedback analysis | — | ✅ (`analyze_chat_feedback`, `support_get_feedback`) | — |
+| KB gap → new article | ✅ | ✅ (`kb_gap_analysis` + `manage_kb_article`) | — |
 
 ---
 
-## Webhook-events
+## Known gaps (missing for L5)
 
-(Inga dedicerade än — kan utökas med `ticket.created`, `ticket.resolved`)
+- ❌ Multi-channel inbox (email, WhatsApp, Slack in one view)
+- ❌ Customer satisfaction (CSAT) surveys after a case
+- ❌ Macros / canned responses for human agents
+- ❌ Skill-based routing to specific agents
+- ❌ Internal knowledge base (separate from public KB)
 
 ---
 
-## Bäst för
+## Webhook events
 
-SMB med inbound support-frågor där 60-80% kan lösas via self-service / AI. Konsultbyråer, SaaS i tidig fas.
+(None dedicated yet — could be extended with `ticket.created`, `ticket.resolved`)
 
-## Inte för
+---
 
-High-volume call centers, eller B2B-enterprise med dedikerade Customer Success Managers per konto.
+## Best for
+
+SMBs with inbound support questions where 60–80% can be resolved via self-service / AI. Consultancies, early-stage SaaS.
+
+## Not for
+
+High-volume call centers, or B2B enterprises with dedicated Customer Success Managers per account.

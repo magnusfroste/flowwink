@@ -1,83 +1,83 @@
 # Procure-to-Pay
 
-> Från behovsidentifiering till betald leverantörsfaktura.
+> From need identification to paid vendor invoice.
 
-**Mognadsnivå:** L3 — Operational
-**Status:** ✅ Happy path fungerar; saknar approval-flöden
+**Maturity level:** L3 — Operational
+**Status:** ✅ Happy path works; lacks approval workflows
 
 ---
 
-## Moduler som ingår
+## Modules involved
 
-| Modul | Roll i processen |
-|-------|------------------|
+| Module | Role in the process |
+|--------|---------------------|
 | **Purchasing** | Vendors, purchase orders, goods receipt |
-| **Inventory** | Lagernivåer, reorder-trigger |
-| **Expenses** | Anställdas utlägg (sidoflöde) |
-| **Invoicing** | Inkommande leverantörsfakturor (AP) |
-| **Accounting** | Bokning mot leverantörsskuld + kostnadskonto |
-| **Documents** | Lagring av PO, följesedel, faktura-PDF |
+| **Inventory** | Stock levels, reorder triggers |
+| **Expenses** | Employee expense claims (side flow) |
+| **Invoicing** | Incoming vendor invoices (AP) |
+| **Accounting** | Booking against accounts payable + cost accounts |
+| **Documents** | Storage of PO, delivery note, invoice PDF |
 
 ---
 
-## Steg-för-steg flöde
+## Step-by-step flow
 
 ```
-[Lågt lager / Manuellt behov]
+[Low stock / Manual need]
        ↓
-purchase_reorder_check (auto eller manuell)
+purchase_reorder_check (auto or manual)
        ↓
-Purchase Order skapas (Purchasing)
+Purchase Order created (Purchasing)
        ↓
-PO skickas till vendor (send_purchase_order)
+PO sent to vendor (send_purchase_order)
        ↓
-Leverans → Goods Receipt (receive_goods)
+Delivery → Goods Receipt (receive_goods)
        ↓
-Lager uppdateras (Inventory)
+Stock updated (Inventory)
        ↓
-Vendor invoice in → matchning mot PO + GR
+Vendor invoice in → matched against PO + GR
        ↓
-Bokning (Accounting)
+Booking (Accounting)
        ↓
-Betalning
+Payment
 ```
 
 ---
 
-## Agent-täckning
+## Agent coverage
 
-| Steg | 👤 Manuell | 🤖 FlowPilot | 🔗 Extern agent |
-|------|-----------|-------------|-----------------|
+| Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
+|------|----------|-------------|-------------------|
 | Vendor onboarding | ✅ | ✅ (`manage_vendor`) | — |
-| Reorder-detection | — | ✅ (`purchase_reorder_check`) | — |
-| PO-skapande | ✅ | ✅ (`create_purchase_order`) | — |
-| PO-utskick | ✅ | ✅ (`send_purchase_order`) | — |
+| Reorder detection | — | ✅ (`purchase_reorder_check`) | — |
+| PO creation | ✅ | ✅ (`create_purchase_order`) | — |
+| PO dispatch | ✅ | ✅ (`send_purchase_order`) | — |
 | Goods receipt | ✅ | ✅ (`receive_goods`) | — |
-| Utläggshantering | ✅ | ✅ (`manage_expenses`, `analyze_receipt`) | — |
-| 3-way match | ⚠️ Manuell | ❌ | 🔗 Möjlig delegering |
+| Expense handling | ✅ | ✅ (`manage_expenses`, `analyze_receipt`) | — |
+| 3-way match | ⚠️ Manual | ❌ | 🔗 Delegation possible |
 
 ---
 
-## Kända luckor (saknas för L5)
+## Known gaps (missing for L5)
 
-- ❌ **3-way match approval workflow** (PO ↔ GR ↔ Invoice automatiskt)
-- ❌ Multi-step approval baserat på beloppsgränser
-- ❌ Vendor portal (vendor loggar in själv)
-- ❌ EDI-integration för stora leverantörer
+- ❌ **3-way match approval workflow** (PO ↔ GR ↔ Invoice automatically)
+- ❌ Multi-step approval based on amount thresholds
+- ❌ Vendor portal (vendor self-service login)
+- ❌ EDI integration for large suppliers
 - ❌ Multi-currency vendor invoices
 
 ---
 
-## Webhook-events
+## Webhook events
 
 `purchase_order.created`, `purchase_order.received`, `stock.low`, `stock.adjusted`, `expense.submitted`, `expense.status_changed`
 
 ---
 
-## Bäst för
+## Best for
 
-SMB med fysiskt lager eller återkommande inköp. Konsultbyråer för utläggshantering.
+SMBs with physical inventory or recurring purchasing. Consultancies for expense handling.
 
-## Inte för
+## Not for
 
-Tillverkning med komplex BOM/MRP, eller koncerner med multi-entity intercompany-flöden.
+Manufacturing with complex BOM/MRP, or groups with multi-entity intercompany flows.
