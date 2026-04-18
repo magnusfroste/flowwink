@@ -12,7 +12,7 @@ import {
   getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName,
   type QuoteStatus,
 } from '@/hooks/useQuotes';
-import { useRequestQuoteApproval, useSendQuote, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
+import { useRequestQuoteApproval, useSendQuote, useSendQuoteReminder, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
 import { toast } from 'sonner';
 
 interface Props {
@@ -42,6 +42,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const convertToInvoice = useConvertQuoteToInvoice();
   const requestApproval = useRequestQuoteApproval();
   const sendQuote = useSendQuote();
+  const sendReminder = useSendQuoteReminder();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
@@ -270,6 +271,15 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             )}
             {(quote.status as string) === 'pending_approval' && (
               <Badge variant="outline" className="self-center">Awaiting approval</Badge>
+            )}
+            {quote.status === 'sent' && (quote as unknown as { accept_token?: string }).accept_token && (
+              <Button
+                variant="outline"
+                onClick={() => sendReminder.mutate({ quote })}
+                disabled={sendReminder.isPending}
+              >
+                <Send className="h-4 w-4 mr-1" /> Send Reminder
+              </Button>
             )}
             {actions.map((action) => (
               <Button
