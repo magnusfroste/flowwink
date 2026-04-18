@@ -3356,6 +3356,69 @@ function groupBy(items: any[], key: string): Record<string, number> {
 }
 
 // =============================================================================
+// Lead pipeline review — read-only summary for proactive heartbeat use
+// =============================================================================
+
+async function executeLeadPipelineReview(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { status_filter = 'all', limit = 25, stale_days = 14 } = args as any;
+  const cap = Math.min(Math.max(Number(limit) || 25, 1), 100);
+
+  let query = supabase
+    .from('leads')
+    .select('id, email, name, status, score, source, created_at, updated_at')
+    .order('score', { ascending: false, nullsFirst: false })
+    .order('updated_at', { ascending: false })
+    .limit(200);
+
+  if (status_filter && status_filter !== 'all') {
+    query = query.eq('status', status_filter);
+  }
+
+  const { data: leads, error } = await query;
+  if (error) {
+    return { error: `lead_pipeline_review failed: ${error.message}` };
+  }
+
+  const all = leads || [];
+  const now = Date.now();
+  const staleMs = Number(stale_days) * 24 * 60 * 60 * 1000;
+
+  const byStatus = groupBy(all, 'status');
+  const stale = all.filter((l: any) =>
+    l.updated_at && (now - new Date(l.updated_at).getTime()) > staleMs
+  );
+  const highScore = all
+    .filter((l: any) => (l.score ?? 0) >= 50)
+    .slice(0, cap);
+  const neglected = stale
+    .filter((l: any) => l.status === 'lead' || l.status === 'contacted')
+    .slice(0, cap);
+
+  const suggestions: string[] = [];
+  if (highScore.length > 0) {
+    suggestions.push(`${highScore.length} high-scoring lead(s) ready for direct outreach.`);
+  }
+  if (neglected.length > 0) {
+    suggestions.push(`${neglected.length} lead(s) inactive >${stale_days}d — send nurture or task a follow-up.`);
+  }
+  if (suggestions.length === 0) {
+    suggestions.push('Pipeline is healthy — no urgent action required.');
+  }
+
+  return {
+    total: all.length,
+    by_status: byStatus,
+    stale_count: stale.length,
+    high_score_leads: highScore.slice(0, 10),
+    neglected_leads: neglected.slice(0, 10),
+    suggestions,
+  };
+}
+
+// =============================================================================
 // Leads management handler
 // =============================================================================
 
