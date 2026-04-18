@@ -83,8 +83,9 @@ export default function PublicQuotePage() {
 
   const handleSubmit = async () => {
     if (!signerName.trim() || !signerEmail.trim()) return;
+    if (!token) return;
     await signQuote.mutateAsync({
-      quote_id: quote.id,
+      accept_token: token,
       action: mode === 'accept' ? 'accept' : 'reject',
       signer_name: signerName,
       signer_email: signerEmail,

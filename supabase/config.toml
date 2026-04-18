@@ -251,3 +251,9 @@ verify_jwt = false
 
 [functions.mcp-server]
 verify_jwt = false
+
+[functions.quote-sign]
+verify_jwt = false
+
+[functions.invoice-reminders]
+verify_jwt = false
