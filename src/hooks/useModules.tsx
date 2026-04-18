@@ -84,6 +84,7 @@ export interface ModulesSettings {
   calendar: ModuleConfig;
   subscriptions: ModuleConfig;
   approvals: ModuleConfig;
+  reconciliation: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -518,6 +519,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  reconciliation: {
+    enabled: true,
+    name: 'Reconciliation',
+    description: 'Bank reconciliation — sync Stripe payouts, import CSV/CAMT.053/SIE bank files, auto-match against invoices, expenses and orders. Live bank connectivity (GoCardless/Tink/Plaid) coming in v0.5.',
+    icon: 'RefreshCw',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    optionalIntegrations: ['stripe'],
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -570,6 +582,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/calendar': 'calendar',
   '/admin/subscriptions': 'subscriptions',
   '/admin/approvals': 'approvals',
+  '/admin/reconciliation': 'reconciliation',
 };
 
 export function useModules() {

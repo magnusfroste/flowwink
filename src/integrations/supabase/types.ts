@@ -943,6 +943,113 @@ export type Database = {
           },
         ]
       }
+      bank_import_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error_count: number
+          error_message: string | null
+          file_name: string | null
+          id: string
+          imported_count: number
+          metadata: Json
+          skipped_count: number
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error_count?: number
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          imported_count?: number
+          metadata?: Json
+          skipped_count?: number
+          source: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error_count?: number
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          imported_count?: number
+          metadata?: Json
+          skipped_count?: number
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      bank_transactions: {
+        Row: {
+          amount_cents: number
+          batch_id: string | null
+          counterparty: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          external_id: string | null
+          id: string
+          matched_amount_cents: number
+          raw_data: Json
+          reference: string | null
+          source: string
+          status: string
+          transaction_date: string
+          updated_at: string
+          value_date: string | null
+        }
+        Insert: {
+          amount_cents: number
+          batch_id?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          matched_amount_cents?: number
+          raw_data?: Json
+          reference?: string | null
+          source: string
+          status?: string
+          transaction_date: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          batch_id?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          matched_amount_cents?: number
+          raw_data?: Json
+          reference?: string | null
+          source?: string
+          status?: string
+          transaction_date?: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "bank_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_test_exchanges: {
         Row: {
           content: string
@@ -4835,6 +4942,53 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "quote_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliation_matches: {
+        Row: {
+          amount_cents: number
+          bank_transaction_id: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          match_type: string
+          notes: string | null
+        }
+        Insert: {
+          amount_cents: number
+          bank_transaction_id: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          match_type?: string
+          notes?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          bank_transaction_id?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          match_type?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_matches_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
             referencedColumns: ["id"]
           },
         ]
