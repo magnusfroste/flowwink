@@ -83,6 +83,7 @@ export interface ModulesSettings {
   projects: ModuleConfig;
   calendar: ModuleConfig;
   subscriptions: ModuleConfig;
+  approvals: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -507,6 +508,16 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['stripe', 'stripe_webhook'],
     enhancedByFlowPilot: true,
   },
+  approvals: {
+    enabled: true,
+    name: 'Approvals',
+    description: 'Generic approval engine — define rules (entity type + amount + required role) and route requests for sign-off. Used by Purchasing, Expenses, Invoicing and Quotes.',
+    icon: 'ShieldCheck',
+    category: 'operations',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -558,6 +569,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/projects': 'projects',
   '/admin/calendar': 'calendar',
   '/admin/subscriptions': 'subscriptions',
+  '/admin/approvals': 'approvals',
 };
 
 export function useModules() {
