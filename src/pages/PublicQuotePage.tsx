@@ -220,7 +220,7 @@ export default function PublicQuotePage() {
             {isFinal && (
               <div className="border-t pt-4">
                 {status === 'accepted' ? (
-                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <div className="flex items-center gap-2 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="font-medium">This quote has been accepted. Thank you!</span>
                   </div>

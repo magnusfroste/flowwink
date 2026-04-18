@@ -93,6 +93,8 @@ import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
 import TicketsPage from "./pages/admin/TicketsPage";
 import InvoicesPage from "./pages/admin/InvoicesPage";
 import QuotesPage from "./pages/admin/QuotesPage";
+import QuoteTemplatesPage from "./pages/admin/QuoteTemplatesPage";
+import PublicQuotePage from "./pages/PublicQuotePage";
 import AccountingPage from "./pages/admin/AccountingPage";
 import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
@@ -232,6 +234,8 @@ const router = createBrowserRouter([
       { path: "/admin/tickets", element: <TicketsPage /> },
       { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/quotes", element: <QuotesPage /> },
+      { path: "/admin/quotes/templates", element: <QuoteTemplatesPage /> },
+      { path: "/quote/:token", element: <PublicQuotePage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
