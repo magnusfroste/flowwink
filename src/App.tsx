@@ -104,6 +104,7 @@ import ProjectsPage from "./pages/admin/ProjectsPage";
 import CalendarPage from "./pages/admin/CalendarPage";
 import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 import DunningPage from "./pages/admin/DunningPage";
+import ApprovalsPage from "./pages/admin/ApprovalsPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
