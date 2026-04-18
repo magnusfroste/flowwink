@@ -620,8 +620,11 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
         title: { type: "string", description: "Short finding title, e.g. 'OBJ-002: Order #xyz pending >48h'" },
         type: {
           type: "string",
-          enum: ["broken_chain", "sla_violation", "missing_data", "compliance_issue", "stale_entity", "quality_gap", "utilization_alert"],
-          description: "Finding type category",
+          enum: [
+            "bug", "ux_issue", "suggestion", "positive", "performance", "missing_feature",
+            "broken_chain", "sla_violation", "missing_data", "compliance_issue", "stale_entity", "quality_gap", "utilization_alert"
+          ],
+          description: "Finding type category. Use 'positive' to report 'all OK' / healthy state. Operational types: broken_chain, sla_violation, missing_data, compliance_issue, stale_entity, quality_gap, utilization_alert. Product types: bug, ux_issue, suggestion, performance, missing_feature.",
         },
         severity: {
           type: "string",
