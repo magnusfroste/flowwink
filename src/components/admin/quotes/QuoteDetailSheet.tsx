@@ -42,6 +42,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const convertToInvoice = useConvertQuoteToInvoice();
   const requestApproval = useRequestQuoteApproval();
   const sendQuote = useSendQuote();
+  const sendReminder = useSendQuoteReminder();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [taxRate, setTaxRate] = useState(0.25);
