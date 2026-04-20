@@ -40,6 +40,7 @@ import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo,
 import { useProducts, formatPrice } from '@/hooks/useProducts';
 import { useLeads } from '@/hooks/useLeads';
 import { DealKanban } from '@/components/admin/DealKanban';
+import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
@@ -125,7 +126,10 @@ export default function DealsPage() {
 
         {/* Kanban View */}
         {viewMode === 'kanban' && (
-          <DealKanban deals={deals} isLoading={isLoading} />
+          <>
+            <DealKanban deals={deals} isLoading={isLoading} />
+            <StaleDealsCard daysThreshold={14} />
+          </>
         )}
 
         {/* Table View */}
