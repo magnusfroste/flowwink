@@ -136,7 +136,7 @@ export default function QuotesPage() {
         <QuoteDetailSheet
           quoteId={selectedId}
           open={!!selectedId}
-          onOpenChange={(open) => !open && setSelectedId(null)}
+          onOpenChange={handleSheetOpenChange}
         />
 
         <CreateQuoteDialog open={createOpen} onOpenChange={setCreateOpen} />

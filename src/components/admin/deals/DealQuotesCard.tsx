@@ -64,7 +64,7 @@ export function DealQuotesCard({ dealId, leadId }: Props) {
               return (
                 <Link
                   key={q.id}
-                  to={`/admin/quotes/${q.id}`}
+                  to={`/admin/quotes?id=${q.id}`}
                   className="flex items-center justify-between rounded-md border p-3 text-sm hover:bg-muted/40 transition-colors"
                 >
                   <div className="flex items-center gap-3">
