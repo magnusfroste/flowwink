@@ -4,12 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { Building } from 'lucide-react';
-import { addLeadActivity, type LeadStatus } from '@/lib/lead-utils';
+import { addLeadActivity } from '@/lib/lead-utils';
 
 interface CreateLeadDialogProps {
   open: boolean;
@@ -27,7 +26,6 @@ export function CreateLeadDialog({
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [status, setStatus] = useState<LeadStatus>('lead');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -35,7 +33,6 @@ export function CreateLeadDialog({
     setEmail('');
     setName('');
     setPhone('');
-    setStatus('lead');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +68,7 @@ export function CreateLeadDialog({
           company_id: defaultCompanyId || null,
           phone: phone || null,
           source: 'manual',
-          status,
+          status: 'lead',
           score: 0,
           needs_review: false,
         })
@@ -155,20 +152,10 @@ export function CreateLeadDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as LeadStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lead">Contact</SelectItem>
-                <SelectItem value="opportunity">Opportunity</SelectItem>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            New contacts start as <strong>Lead</strong>. Status auto-updates as deals progress
+            (Lead → Opportunity → Customer).
+          </p>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
