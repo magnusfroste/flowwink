@@ -25,6 +25,13 @@ export interface Deal {
   lead_id: string;
   product_id: string | null;
   product?: Product;
+  lead?: {
+    id: string;
+    name: string | null;
+    email: string;
+    company_id: string | null;
+    company?: { id: string; name: string } | null;
+  } | null;
   stage: DealStage;
   value_cents: number;
   currency: string;
@@ -42,7 +49,7 @@ export function useDeals(leadId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('deals')
-        .select('*, product:products(*)')
+        .select('*, product:products(*), lead:leads(id, name, email, company_id, company:companies(id, name))')
         .order('created_at', { ascending: false });
 
       if (leadId) {
@@ -52,7 +59,7 @@ export function useDeals(leadId?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Deal[];
+      return data as unknown as Deal[];
     },
   });
 }
@@ -65,12 +72,12 @@ export function useDeal(id: string | undefined) {
 
       const { data, error } = await supabase
         .from('deals')
-        .select('*, product:products(*)')
+        .select('*, product:products(*), lead:leads(id, name, email, company_id, company:companies(id, name))')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return data as Deal;
+      return data as unknown as Deal;
     },
     enabled: !!id,
   });

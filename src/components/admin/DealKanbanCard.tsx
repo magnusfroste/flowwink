@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, GripVertical } from 'lucide-react';
+import { Calendar, GripVertical, Building2, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { formatPrice } from '@/hooks/useProducts';
@@ -27,6 +27,10 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
     transition,
   };
 
+  const contactName = deal.lead?.name || deal.lead?.email || 'Unknown contact';
+  const companyName = deal.lead?.company?.name;
+  const productName = deal.product?.name;
+
   return (
     <Card
       ref={setNodeRef}
@@ -39,10 +43,16 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate">
-              {deal.product?.name || 'Custom deal'}
+            <p className="font-medium text-sm truncate" title={contactName}>
+              {contactName}
             </p>
-            <p className="text-lg font-bold">
+            {companyName && (
+              <p className="text-xs text-muted-foreground truncate flex items-center gap-1" title={companyName}>
+                <Building2 className="h-3 w-3 shrink-0" />
+                {companyName}
+              </p>
+            )}
+            <p className="text-lg font-bold mt-1">
               {formatPrice(deal.value_cents, deal.currency)}
             </p>
           </div>
@@ -55,12 +65,19 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
             <GripVertical className="h-4 w-4" />
           </button>
         </div>
-        
-        <Link 
-          to={`/admin/leads/${deal.lead_id}`}
+
+        {productName && (
+          <p className="text-xs text-muted-foreground truncate flex items-center gap-1" title={productName}>
+            <Package className="h-3 w-3 shrink-0" />
+            {productName}
+          </p>
+        )}
+
+        <Link
+          to={`/admin/deals/${deal.id}`}
           className="text-xs text-primary hover:underline inline-block"
         >
-          View Lead →
+          Open deal →
         </Link>
 
         {deal.expected_close && (

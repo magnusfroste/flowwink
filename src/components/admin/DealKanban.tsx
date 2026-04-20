@@ -199,8 +199,13 @@ export function DealKanban({ deals, isLoading }: DealKanbanProps) {
           <Card className="shadow-lg ring-2 ring-primary opacity-90 w-[280px]">
             <CardContent className="p-3">
               <p className="font-medium text-sm">
-                {activeDeal.product?.name || 'Custom deal'}
+                {activeDeal.lead?.name || activeDeal.lead?.email || 'Unknown contact'}
               </p>
+              {activeDeal.lead?.company?.name && (
+                <p className="text-xs text-muted-foreground">
+                  {activeDeal.lead.company.name}
+                </p>
+              )}
               <p className="text-lg font-bold">
                 {formatPrice(activeDeal.value_cents, activeDeal.currency)}
               </p>
