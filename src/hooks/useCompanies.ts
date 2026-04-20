@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type CompanyLifecycleStage = 'prospect' | 'customer' | 'churned';
+
 export interface Company {
   id: string;
   name: string;
@@ -16,6 +18,8 @@ export interface Company {
   created_at: string;
   updated_at: string;
   enriched_at: string | null;
+  lifecycle_stage: CompanyLifecycleStage;
+  customer_since: string | null;
 }
 
 export function useCompanies() {
@@ -73,7 +77,7 @@ export function useCreateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (company: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (company: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>> & { name: string }) => {
       const { data, error } = await supabase
         .from('companies')
         .insert(company)
@@ -147,7 +151,7 @@ export function useCompanyStats() {
     queryFn: async () => {
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
-        .select('id');
+        .select('id, lifecycle_stage');
 
       if (companiesError) throw companiesError;
 
@@ -159,11 +163,15 @@ export function useCompanyStats() {
       if (leadsError) throw leadsError;
 
       const companiesWithLeads = new Set(leads?.map(l => l.company_id) || []);
+      const customers = companies?.filter(c => c.lifecycle_stage === 'customer').length || 0;
+      const prospects = companies?.filter(c => c.lifecycle_stage === 'prospect').length || 0;
 
       return {
         total: companies?.length || 0,
         withContacts: companiesWithLeads.size,
         withoutContacts: (companies?.length || 0) - companiesWithLeads.size,
+        customers,
+        prospects,
       };
     },
   });

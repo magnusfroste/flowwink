@@ -1832,10 +1832,12 @@ export type Database = {
           address: string | null
           created_at: string
           created_by: string | null
+          customer_since: string | null
           domain: string | null
           enriched_at: string | null
           id: string
           industry: string | null
+          lifecycle_stage: Database["public"]["Enums"]["company_lifecycle_stage"]
           name: string
           notes: string | null
           phone: string | null
@@ -1847,10 +1849,12 @@ export type Database = {
           address?: string | null
           created_at?: string
           created_by?: string | null
+          customer_since?: string | null
           domain?: string | null
           enriched_at?: string | null
           id?: string
           industry?: string | null
+          lifecycle_stage?: Database["public"]["Enums"]["company_lifecycle_stage"]
           name: string
           notes?: string | null
           phone?: string | null
@@ -1862,10 +1866,12 @@ export type Database = {
           address?: string | null
           created_at?: string
           created_by?: string | null
+          customer_since?: string | null
           domain?: string | null
           enriched_at?: string | null
           id?: string
           industry?: string | null
+          lifecycle_stage?: Database["public"]["Enums"]["company_lifecycle_stage"]
           name?: string
           notes?: string | null
           phone?: string | null
@@ -3876,6 +3882,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          company_id: string | null
           confirmation_sent_at: string | null
           created_at: string
           currency: string
@@ -3899,6 +3906,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          company_id?: string | null
           confirmation_sent_at?: string | null
           created_at?: string
           currency?: string
@@ -3922,6 +3930,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          company_id?: string | null
           confirmation_sent_at?: string | null
           created_at?: string
           currency?: string
@@ -3944,7 +3953,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_versions: {
         Row: {
@@ -6182,6 +6199,7 @@ export type Database = {
       approval_decision_kind: "approve" | "reject"
       approval_status: "pending" | "approved" | "rejected" | "cancelled"
       automation_trigger_type: "cron" | "event" | "signal"
+      company_lifecycle_stage: "prospect" | "customer" | "churned"
       contract_status:
         | "draft"
         | "pending_signature"
@@ -6445,6 +6463,7 @@ export const Constants = {
       approval_decision_kind: ["approve", "reject"],
       approval_status: ["pending", "approved", "rejected", "cancelled"],
       automation_trigger_type: ["cron", "event", "signal"],
+      company_lifecycle_stage: ["prospect", "customer", "churned"],
       contract_status: [
         "draft",
         "pending_signature",
