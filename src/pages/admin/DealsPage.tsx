@@ -35,11 +35,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List } from 'lucide-react';
+import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List, Target, Calendar } from 'lucide-react';
 import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
 import { useProducts, formatPrice } from '@/hooks/useProducts';
 import { useLeads } from '@/hooks/useLeads';
 import { DealKanban } from '@/components/admin/DealKanban';
+import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
@@ -56,7 +57,7 @@ export default function DealsPage() {
     updateDeal.mutate({ id: dealId, stage });
   };
 
-  const activeDeals = deals.filter(d => d.stage === 'proposal' || d.stage === 'negotiation');
+  const activeDeals = deals.filter(d => d.stage !== 'closed_won' && d.stage !== 'closed_lost');
   const closedDeals = deals.filter(d => d.stage === 'closed_won' || d.stage === 'closed_lost');
 
   return (
@@ -87,45 +88,48 @@ export default function DealsPage() {
           </div>
         </AdminPageHeader>
 
-        {/* Stats Cards */}
+        {/* Forecast row — the numbers that matter */}
         <div className="grid gap-4 md:grid-cols-4">
           <StatCard
             label="Pipeline Value"
             value={stats ? formatPrice(stats.totalPipeline) : null}
             icon={TrendingUp}
-            variant="primary"
-            isLoading={!stats}
-            subtext="Active opportunities"
-          />
-          <StatCard
-            label="In Proposal"
-            value={stats?.proposal.count}
-            icon={Briefcase}
             variant="default"
             isLoading={!stats}
-            subtext={stats ? formatPrice(stats.proposal.value) : ''}
+            subtext="All open deals"
+          />
+          <StatCard
+            label="Weighted Forecast"
+            value={stats ? formatPrice(Math.round(stats.weightedForecast)) : null}
+            icon={Target}
+            variant="primary"
+            isLoading={!stats}
+            subtext="Σ value × win probability"
+          />
+          <StatCard
+            label="Won This Month"
+            value={stats ? formatPrice(stats.wonThisMonth) : null}
+            icon={Trophy}
+            variant="success"
+            isLoading={!stats}
+            subtext={stats ? `${stats.closed_won.count} deal${stats.closed_won.count === 1 ? '' : 's'} closed` : ''}
           />
           <StatCard
             label="In Negotiation"
             value={stats?.negotiation.count}
-            icon={Briefcase}
+            icon={Calendar}
             variant="warning"
             isLoading={!stats}
             subtext={stats ? formatPrice(stats.negotiation.value) : ''}
-          />
-          <StatCard
-            label="Won This Period"
-            value={stats?.closed_won.count}
-            icon={Trophy}
-            variant="success"
-            isLoading={!stats}
-            subtext={stats ? formatPrice(stats.closed_won.value) : ''}
           />
         </div>
 
         {/* Kanban View */}
         {viewMode === 'kanban' && (
-          <DealKanban deals={deals} isLoading={isLoading} />
+          <>
+            <DealKanban deals={deals} isLoading={isLoading} />
+            <StaleDealsCard daysThreshold={14} />
+          </>
         )}
 
         {/* Table View */}
@@ -189,6 +193,8 @@ export default function DealsPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="lead">Lead</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="proposal">Proposal</SelectItem>
                                 <SelectItem value="negotiation">Negotiation</SelectItem>
                                 <SelectItem value="closed_won">Won</SelectItem>
