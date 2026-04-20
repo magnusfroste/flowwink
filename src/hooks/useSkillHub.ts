@@ -63,6 +63,7 @@ export function useUpsertSkill() {
         requires_approval: skill.requires_approval ?? false,
         enabled: skill.enabled ?? true,
         tool_definition: skill.tool_definition ?? {},
+        ...(skill.trust_level ? { trust_level: skill.trust_level } : {}),
       };
 
       if (skill.id) {

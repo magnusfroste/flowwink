@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { MoreHorizontal, Shield } from 'lucide-react';
-import type { AgentSkill, AgentScope, AgentSkillCategory } from '@/types/agent';
+import type { AgentSkill, AgentScope, AgentSkillCategory, SkillTrustLevel } from '@/types/agent';
 
 const SCOPE_COLORS: Record<AgentScope, string> = {
   internal: 'bg-blue-500/10 text-blue-600 border-blue-200',
@@ -20,6 +20,12 @@ const CATEGORY_LABELS: Record<AgentSkillCategory, string> = {
   search: 'Search',
   analytics: 'Analytics',
   growth: 'Growth',
+};
+
+const TRUST_STYLES: Record<SkillTrustLevel, { label: string; className: string; tooltip: string }> = {
+  auto:    { label: 'Auto',    className: 'bg-green-500/10 text-green-700 border-green-200',   tooltip: 'Runs without approval' },
+  notify:  { label: 'Notify',  className: 'bg-amber-500/10 text-amber-700 border-amber-200',   tooltip: 'Runs and notifies admin' },
+  approve: { label: 'Approval',className: 'bg-red-500/10 text-red-700 border-red-200',         tooltip: 'Requires admin approval' },
 };
 
 function handlerLabel(handler: string) {
@@ -99,9 +105,21 @@ export function SkillCard({ skill, onToggle, onEdit, onToggleMcp }: SkillCardPro
           <Badge variant="outline" className="text-[10px]">
             {handlerLabel(skill.handler)}
           </Badge>
+          {skill.trust_level && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className={`text-[10px] ${TRUST_STYLES[skill.trust_level].className}`}>
+                  {TRUST_STYLES[skill.trust_level].label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Trust: {TRUST_STYLES[skill.trust_level].tooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
           {skill.requires_approval && (
             <Badge variant="destructive" className="text-[10px]">
-              Approval
+              Legacy approval flag
             </Badge>
           )}
         </div>

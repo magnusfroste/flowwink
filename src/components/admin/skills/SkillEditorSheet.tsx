@@ -34,6 +34,7 @@ const schema = z.object({
   scope: z.enum(['internal', 'external', 'both']),
   handler: z.string().min(1, 'Required'),
   requires_approval: z.boolean(),
+  trust_level: z.enum(['auto', 'notify', 'approve']),
   enabled: z.boolean(),
   tool_definition_json: z.string(),
 });
@@ -59,6 +60,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       scope: 'internal',
       handler: '',
       requires_approval: false,
+      trust_level: 'notify',
       enabled: true,
       tool_definition_json: '{}',
     },
@@ -74,6 +76,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
         scope: skill.scope,
         handler: skill.handler,
         requires_approval: skill.requires_approval,
+        trust_level: skill.trust_level ?? 'notify',
         enabled: skill.enabled,
         tool_definition_json: JSON.stringify(skill.tool_definition, null, 2),
       });
@@ -86,6 +89,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
         scope: 'internal',
         handler: '',
         requires_approval: false,
+        trust_level: 'notify',
         enabled: true,
         tool_definition_json: '{}',
       });
@@ -110,6 +114,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       scope: values.scope,
       handler: values.handler,
       requires_approval: values.requires_approval,
+      trust_level: values.trust_level,
       enabled: values.enabled,
       tool_definition: toolDef,
     });
@@ -217,18 +222,39 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 text-sm">
               <Switch
-                checked={form.watch('requires_approval')}
-                onCheckedChange={(v) => form.setValue('requires_approval', v)}
-              />
-              Requires approval
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Switch
                 checked={form.watch('enabled')}
                 onCheckedChange={(v) => form.setValue('enabled', v)}
               />
               Enabled
             </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch
+                checked={form.watch('requires_approval')}
+                onCheckedChange={(v) => form.setValue('requires_approval', v)}
+              />
+              Legacy approval
+            </label>
+          </div>
+
+          {/* Trust level */}
+          <div className="space-y-1.5">
+            <Label>
+              Trust level
+              <span className="text-muted-foreground font-normal ml-1.5 text-[11px]">
+                (controls if agent needs approval to run this skill)
+              </span>
+            </Label>
+            <Select
+              value={form.watch('trust_level')}
+              onValueChange={(v: any) => form.setValue('trust_level', v)}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto — runs without approval</SelectItem>
+                <SelectItem value="notify">Notify — runs and notifies admin</SelectItem>
+                <SelectItem value="approve">Approve — requires admin approval before running</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tool definition JSON */}

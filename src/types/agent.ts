@@ -8,6 +8,7 @@
 export type AgentScope = 'internal' | 'external' | 'both';
 export type AgentSkillCategory = 'content' | 'crm' | 'communication' | 'automation' | 'search' | 'analytics' | 'growth';
 export type AgentActivityStatus = 'success' | 'failed' | 'pending_approval' | 'approved' | 'rejected';
+export type SkillTrustLevel = 'auto' | 'notify' | 'approve';
 export type AgentType = 'flowpilot' | 'chat';
 export type AgentMemoryCategory = 'preference' | 'context' | 'fact';
 export type AgentObjectiveStatus = 'active' | 'completed' | 'paused' | 'failed';
@@ -29,6 +30,7 @@ export interface AgentSkill {
   requires_approval: boolean;
   enabled: boolean;
   mcp_exposed?: boolean;
+  trust_level?: SkillTrustLevel;
   created_at: string;
   updated_at: string;
 }
