@@ -156,17 +156,36 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                 />
                 <Input
                   type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="1"
                   placeholder="Qty"
-                  value={item.qty}
-                  onChange={(e) => updateLineItem(i, 'qty', parseInt(e.target.value) || 0)}
+                  value={item.qty === 0 ? '' : item.qty}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    updateLineItem(i, 'qty', v === '' ? 0 : Number(v));
+                  }}
+                  onFocus={(e) => e.target.select()}
                   className="w-16"
                 />
                 <Input
                   type="number"
-                  placeholder="Price (öre)"
-                  value={item.unit_price_cents}
-                  onChange={(e) => updateLineItem(i, 'unit_price_cents', parseInt(e.target.value) || 0)}
-                  className="w-28"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  placeholder={`Price (${quote?.currency || 'SEK'})`}
+                  value={item.unit_price_cents === 0 ? '' : (item.unit_price_cents / 100).toString()}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') {
+                      updateLineItem(i, 'unit_price_cents', 0);
+                    } else {
+                      const num = Number(v);
+                      updateLineItem(i, 'unit_price_cents', Number.isFinite(num) ? Math.round(num * 100) : 0);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  className="w-32"
                 />
                 <Button variant="ghost" size="icon" onClick={() => removeLineItem(i)}>
                   <Trash2 className="h-4 w-4" />
