@@ -1,4 +1,4 @@
-// agent-execute v2026-04-17-fix-3 (deal_stage enum + defensive normalize)
+// agent-execute v2026-04-20-stale-deals-with-contact (lead/company in deal_stale_check)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
