@@ -197,6 +197,8 @@ const router = createBrowserRouter([
       { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=header" replace /> },
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
+      { path: "/admin/leads", element: <Navigate to="/admin/contacts" replace /> },
+      { path: "/admin/leads/:id", element: <Navigate to="/admin/contacts/:id" replace /> },
       { path: "/admin/contacts", element: <LeadsPage /> },
       { path: "/admin/contacts/:id", element: <LeadDetailPage /> },
       { path: "/admin/deals", element: <DealsPage /> },
