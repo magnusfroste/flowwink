@@ -79,7 +79,6 @@ export interface IntegrationsSettings {
   stripe_webhook: IntegrationConfig;
   resend: IntegrationConfig;
   smtp: IntegrationConfig;
-  email: IntegrationConfig;
   openai: IntegrationConfig;
   gemini: IntegrationConfig;
   anthropic: IntegrationConfig;
@@ -158,22 +157,8 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       user: '',
     },
   },
-  email: {
-    name: 'Email Router',
-    description:
-      'Selects which provider system emails (dunning, newsletter, receipts) are sent through.',
-    icon: 'Mail',
-    category: 'communication',
-    features: ['Provider switching', 'From-address override', 'Auto-detect available providers'],
-    secretName: '',
-    docsUrl: '',
-    docsLabel: '',
-    config: {
-      provider: 'smtp',
-      fromEmail: 'noreply@example.com',
-      fromName: 'FlowWink',
-    },
-  },
+  // Email Router moved to modules (see useModules.tsx → 'email').
+  // It is an internal infrastructure module that consumes SMTP/Resend integrations.
   openai: {
 
     name: 'OpenAI',

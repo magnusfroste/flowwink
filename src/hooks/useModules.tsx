@@ -85,6 +85,7 @@ export interface ModulesSettings {
   subscriptions: ModuleConfig;
   approvals: ModuleConfig;
   reconciliation: ModuleConfig;
+  email: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
