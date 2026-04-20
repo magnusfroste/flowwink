@@ -1,5 +1,19 @@
 /**
  * Contracts Module — Unified Definition
+ *
+ * SCOPE NOTE (2026-04-20): Currently a "legal contract archive" — agreements with
+ * counterparties, status flow, renewal alerts, linked documents (via documents
+ * module + related_entity_type='contract').
+ *
+ * FUTURE SCOPE (planned, not implemented):
+ *   - Recurring/subscription contracts that auto-generate invoices (Odoo-style sale.subscription)
+ *   - MRR/ARR tracking + churn signals
+ *   - "Convert quote → contract" flow when a deal closes
+ *   - E-signature integration (DocuSign / Scrive)
+ *
+ * Documents are linked via the documents table:
+ *   related_entity_type='contract', related_entity_id=<contract.id>
+ * Use the `list_contract_documents` skill from MCP to enumerate them.
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -96,6 +110,28 @@ const CONTRACT_SKILLS: SkillSeed[] = [
     },
     instructions: 'Query active contracts where end_date is within the specified window. Group by urgency: critical (<7 days), warning (<30 days), notice (<90 days). For auto-renew contracts, check if renewal_notice_days has passed. Swedish: "förnyelse", "utgående avtal", "uppsägningstid".',
   },
+  {
+    name: 'list_contract_documents',
+    description: 'List all documents linked to a specific contract. Use when: admin or agent asks "vilka dokument finns på avtal X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
+    category: 'commerce',
+    handler: 'db:contracts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_contract_documents',
+        description: 'Return documents from the central archive that are linked to a contract via related_entity_type=contract.',
+        parameters: {
+          type: 'object',
+          properties: {
+            contract_id: { type: 'string', description: 'UUID of the contract' },
+          },
+          required: ['contract_id'],
+        },
+      },
+    },
+    instructions: 'Query public.documents WHERE related_entity_type=\'contract\' AND related_entity_id=<contract_id>. Return id, title, file_name, category, created_at. Files themselves live in the private "documents" storage bucket — generate a signed URL only on explicit request.',
+  },
 ];
 
 const CONTRACT_AUTOMATIONS: AutomationSeed[] = [
@@ -118,7 +154,7 @@ export const contractsModule = defineModule<ContractsInput, ContractsOutput>({
   inputSchema: contractsInputSchema,
   outputSchema: contractsOutputSchema,
 
-  skills: ['manage_contract', 'contract_renewal_check'],
+  skills: ['manage_contract', 'contract_renewal_check', 'list_contract_documents'],
   skillSeeds: CONTRACT_SKILLS,
   automations: CONTRACT_AUTOMATIONS,
 
