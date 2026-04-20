@@ -116,5 +116,11 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.0",
     "vite": "^5.4.19"
+  },
+  "overrides": {
+    "@tiptap/core": "3.13.0"
+  },
+  "resolutions": {
+    "@tiptap/core": "3.13.0"
   }
 }
