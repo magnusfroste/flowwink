@@ -255,5 +255,6 @@ export default function ApprovalsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminLayout>
   );
 }
