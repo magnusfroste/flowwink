@@ -53,6 +53,11 @@ export function useDeleteDocument() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Best-effort: if file_url is a storage path (no scheme), remove it from the bucket too.
+      const { data: doc } = await supabase.from("documents").select("file_url").eq("id", id).maybeSingle();
+      if (doc?.file_url && !/^https?:\/\//i.test(doc.file_url)) {
+        await supabase.storage.from("documents").remove([doc.file_url]);
+      }
       const { error } = await supabase.from("documents").delete().eq("id", id);
       if (error) throw error;
     },
@@ -62,4 +67,15 @@ export function useDeleteDocument() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+}
+
+/** Get a short-lived signed URL for a private documents-bucket path. */
+export async function getDocumentSignedUrl(filePath: string, expiresIn = 60): Promise<string | null> {
+  if (/^https?:\/\//i.test(filePath)) return filePath; // already a public/external URL
+  const { data, error } = await supabase.storage.from("documents").createSignedUrl(filePath, expiresIn);
+  if (error) {
+    toast.error(error.message);
+    return null;
+  }
+  return data.signedUrl;
 }
