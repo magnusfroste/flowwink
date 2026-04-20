@@ -5565,6 +5565,19 @@ const DEDICATED_SKILL_TABLES: Record<string, string> = {
   leads: 'Use "manage_leads" for lead operations.',
 };
 
+/**
+ * Strip internal underscore-prefixed fields (e.g. _caller_user_id, _approved,
+ * _bypass_approval) before writing to the DB. These are agent-internal flags
+ * that should never be persisted as columns.
+ */
+function stripInternalFields(data: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (!key.startsWith('_')) out[key] = val;
+  }
+  return out;
+}
+
 async function executeGenericCrud(
   supabase: any,
   table: string,
