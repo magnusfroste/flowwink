@@ -22,18 +22,43 @@ function fmtMoney(cents: number, currency: string) {
 
 function buildHtml(opts: {
   quote: any;
+  items: any[];
   url: string;
   reminder: boolean;
   custom: string;
   siteName: string;
 }) {
-  const { quote, url, reminder, custom, siteName } = opts;
-  const total = fmtMoney(quote.total_cents, quote.currency || 'SEK');
+  const { quote, items, url, reminder, custom, siteName } = opts;
+  const currency = quote.currency || 'SEK';
+  const total = fmtMoney(quote.total_cents, currency);
+  const subtotal = fmtMoney(quote.subtotal_cents, currency);
+  const tax = fmtMoney(quote.tax_cents, currency);
   const validUntil = quote.valid_until ? new Date(quote.valid_until).toLocaleDateString('sv-SE') : null;
   const heading = reminder ? `Reminder: Quote ${quote.quote_number}` : `Your quote ${quote.quote_number}`;
   const intro = reminder
     ? `This is a friendly reminder regarding the quote we sent you.`
     : `Thank you for your interest. Please find your quote below.`;
+
+  const itemRows = (items || []).map((it: any) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:top">
+        <div>${escapeHtml(it.description || '')}</div>
+        <div style="color:#6b7280;font-size:11px;margin-top:2px">${it.quantity} ${escapeHtml(it.unit || '')} × ${fmtMoney(it.unit_price_cents, currency)}</div>
+      </td>
+      <td style="padding:8px 0;border-bottom:1px solid #eef0f3;text-align:right;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap;vertical-align:top">
+        ${fmtMoney(it.line_total_cents, currency)}
+      </td>
+    </tr>`).join('');
+
+  const itemsBlock = items && items.length > 0 ? `
+    <table style="width:100%;border-collapse:collapse;margin:12px 0 4px">
+      <thead><tr>
+        <th style="text-align:left;font-size:11px;text-transform:uppercase;color:#6b7280;padding-bottom:6px;border-bottom:1px solid #e6e8ec">Item</th>
+        <th style="text-align:right;font-size:11px;text-transform:uppercase;color:#6b7280;padding-bottom:6px;border-bottom:1px solid #e6e8ec">Amount</th>
+      </tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>` : '';
+
   return `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f7f9;margin:0;padding:24px;color:#111">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e6e8ec">
     <h1 style="margin:0 0 8px;font-size:20px">${heading}</h1>
@@ -42,8 +67,11 @@ function buildHtml(opts: {
     <div style="background:#f9fafb;border:1px solid #e6e8ec;border-radius:8px;padding:16px;margin:16px 0">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">Quote</span><strong>${quote.quote_number}</strong></div>
       ${quote.title ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">Title</span><span>${escapeHtml(quote.title)}</span></div>` : ''}
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">Total</span><strong>${total}</strong></div>
-      ${validUntil ? `<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Valid until</span><span>${validUntil}</span></div>` : ''}
+      ${itemsBlock}
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px"><span style="color:#6b7280">Subtotal</span><span style="font-family:ui-monospace,monospace">${subtotal}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#6b7280">Tax</span><span style="font-family:ui-monospace,monospace">${tax}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;border-top:1px solid #e6e8ec;padding-top:6px"><strong>Total</strong><strong style="font-family:ui-monospace,monospace">${total}</strong></div>
+      ${validUntil ? `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:#6b7280"><span>Valid until</span><span>${validUntil}</span></div>` : ''}
     </div>
     <div style="text-align:center;margin:24px 0">
       <a href="${url}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">View &amp; sign quote</a>
@@ -114,8 +142,15 @@ Deno.serve(async (req) => {
       replyTo?: string;
     };
 
+    const { data: items } = await supabase
+      .from('quote_items')
+      .select('*')
+      .eq('quote_id', quote.id)
+      .order('position', { ascending: true });
+
     const html = buildHtml({
       quote,
+      items: items || [],
       url: body.public_url,
       reminder: !!body.reminder,
       custom: body.custom_message || '',

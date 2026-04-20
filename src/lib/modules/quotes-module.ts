@@ -166,7 +166,8 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
         .single();
       if (error) return { success: false, error: error.message };
 
-      // Seed items from template
+      // Seed items: prefer template items; otherwise derive from deal (product + value)
+      let seededItems = false;
       if (templateData?.items && Array.isArray(templateData.items) && templateData.items.length > 0) {
         const rows = templateData.items.map((it, idx) => {
           const item = it as { description?: string; qty?: number; unit_price_cents?: number; unit?: string };
@@ -180,6 +181,30 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
           };
         });
         await supabase.from('quote_items').insert(rows as never);
+        seededItems = true;
+      }
+
+      if (!seededItems && v.deal_id) {
+        const { data: deal } = await supabase
+          .from('deals')
+          .select('value_cents, product_id, notes, products(name, description)')
+          .eq('id', v.deal_id)
+          .single();
+        if (deal && ((deal as { value_cents: number }).value_cents > 0 || (deal as { product_id: string | null }).product_id)) {
+          const product = (deal as { products?: { name?: string; description?: string } | null }).products;
+          const description =
+            product?.name ||
+            (deal as { notes?: string | null }).notes ||
+            'Service';
+          await supabase.from('quote_items').insert({
+            quote_id: (data as { id: string }).id,
+            position: 0,
+            description,
+            quantity: 1,
+            unit_price_cents: (deal as { value_cents: number }).value_cents ?? 0,
+            tax_rate_pct: 25,
+          } as never);
+        }
       }
 
       return { success: true, quote_id: data.id, quote_number: data.quote_number, message: 'Draft quote created' };
