@@ -222,18 +222,39 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 text-sm">
               <Switch
-                checked={form.watch('requires_approval')}
-                onCheckedChange={(v) => form.setValue('requires_approval', v)}
-              />
-              Requires approval
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Switch
                 checked={form.watch('enabled')}
                 onCheckedChange={(v) => form.setValue('enabled', v)}
               />
               Enabled
             </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch
+                checked={form.watch('requires_approval')}
+                onCheckedChange={(v) => form.setValue('requires_approval', v)}
+              />
+              Legacy approval
+            </label>
+          </div>
+
+          {/* Trust level */}
+          <div className="space-y-1.5">
+            <Label>
+              Trust level
+              <span className="text-muted-foreground font-normal ml-1.5 text-[11px]">
+                (controls if agent needs approval to run this skill)
+              </span>
+            </Label>
+            <Select
+              value={form.watch('trust_level')}
+              onValueChange={(v: any) => form.setValue('trust_level', v)}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto — runs without approval</SelectItem>
+                <SelectItem value="notify">Notify — runs and notifies admin</SelectItem>
+                <SelectItem value="approve">Approve — requires admin approval before running</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tool definition JSON */}
