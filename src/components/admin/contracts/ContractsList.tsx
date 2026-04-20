@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { Plus, FileText, Calendar, DollarSign, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, FileText, Calendar, DollarSign, MoreHorizontal, Trash2, Edit, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useQueryClient } from '@tanstack/react-query';
 import { useContracts, useDeleteContract, type Contract } from '@/hooks/useContracts';
+import { useEntityDocumentCounts, uploadDocumentForEntity } from '@/hooks/useDocuments';
 import { NewContractDialog } from './NewContractDialog';
 import { ContractDetailDialog } from './ContractDetailDialog';
 import { format } from 'date-fns';
 import { FileText as FileTextIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -33,13 +36,35 @@ interface Props {
 export function ContractsList({ statusFilter }: Props) {
   const { data: contracts, isLoading } = useContracts(statusFilter);
   const deleteContract = useDeleteContract();
+  const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editContract, setEditContract] = useState<Contract | undefined>();
   const [detailContract, setDetailContract] = useState<Contract | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+
+  const ids = useMemo(() => contracts?.map((c) => c.id) ?? [], [contracts]);
+  const { data: counts } = useEntityDocumentCounts('contract', ids);
 
   const formatValue = (cents: number, currency: string) => {
     if (!cents) return null;
     return new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(cents / 100);
+  };
+
+  const handleDrop = async (e: React.DragEvent, contract: Contract) => {
+    e.preventDefault();
+    setDropTarget(null);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const result = await uploadDocumentForEntity({
+      file,
+      entityType: 'contract',
+      entityId: contract.id,
+      category: 'contract',
+    });
+    if (result) {
+      qc.invalidateQueries({ queryKey: ['documents', 'counts', 'contract'] });
+      qc.invalidateQueries({ queryKey: ['documents', 'entity', 'contract', contract.id] });
+    }
   };
 
   if (isLoading) {
@@ -63,73 +88,96 @@ export function ContractsList({ statusFilter }: Props) {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {contracts.map((contract) => (
-            <Card key={contract.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailContract(contract)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold truncate">{contract.title}</h3>
-                      <Badge variant="outline" className={STATUS_COLORS[contract.status]}>
-                        {contract.status.replace('_', ' ')}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {TYPE_LABELS[contract.contract_type]}
-                      </Badge>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {contract.counterparty_name}
-                      {contract.counterparty_email && ` · ${contract.counterparty_email}`}
-                    </p>
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {contract.start_date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(contract.start_date), 'MMM d, yyyy')}
-                          {contract.end_date && ` → ${format(new Date(contract.end_date), 'MMM d, yyyy')}`}
-                        </span>
-                      )}
-                      {contract.value_cents > 0 && (
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          {formatValue(contract.value_cents, contract.currency)}
-                        </span>
-                      )}
-                      {contract.renewal_type !== 'none' && (
-                        <Badge variant="outline" className="text-xs">
-                          {contract.renewal_type === 'auto' ? 'Auto-renew' : 'Manual renew'}
+          {contracts.map((contract) => {
+            const docCount = counts?.[contract.id] ?? 0;
+            const isOver = dropTarget === contract.id;
+            return (
+              <Card
+                key={contract.id}
+                className={cn(
+                  'hover:shadow-md transition-all cursor-pointer',
+                  isOver && 'ring-2 ring-primary bg-primary/5'
+                )}
+                onClick={() => setDetailContract(contract)}
+                onDragOver={(e) => { e.preventDefault(); setDropTarget(contract.id); }}
+                onDragLeave={() => setDropTarget(null)}
+                onDrop={(e) => handleDrop(e, contract)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold truncate">{contract.title}</h3>
+                        <Badge variant="outline" className={STATUS_COLORS[contract.status]}>
+                          {contract.status.replace('_', ' ')}
                         </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {TYPE_LABELS[contract.contract_type]}
+                        </Badge>
+                        {docCount > 0 && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Paperclip className="h-3 w-3" /> {docCount}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {contract.counterparty_name}
+                        {contract.counterparty_email && ` · ${contract.counterparty_email}`}
+                      </p>
+
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {contract.start_date && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(contract.start_date), 'MMM d, yyyy')}
+                            {contract.end_date && ` → ${format(new Date(contract.end_date), 'MMM d, yyyy')}`}
+                          </span>
+                        )}
+                        {contract.value_cents > 0 && (
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {formatValue(contract.value_cents, contract.currency)}
+                          </span>
+                        )}
+                        {contract.renewal_type !== 'none' && (
+                          <Badge variant="outline" className="text-xs">
+                            {contract.renewal_type === 'auto' ? 'Auto-renew' : 'Manual renew'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {isOver && (
+                        <p className="text-xs text-primary mt-2 font-medium">Drop file to attach</p>
                       )}
                     </div>
-                  </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onClick={() => setDetailContract(contract)}>
-                        <FileTextIcon className="h-4 w-4 mr-2" /> Open
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setEditContract(contract); setDialogOpen(true); }}>
-                        <Edit className="h-4 w-4 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => deleteContract.mutate(contract.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={() => setDetailContract(contract)}>
+                          <FileTextIcon className="h-4 w-4 mr-2" /> Open
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setEditContract(contract); setDialogOpen(true); }}>
+                          <Edit className="h-4 w-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => deleteContract.mutate(contract.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

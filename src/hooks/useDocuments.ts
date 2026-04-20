@@ -67,6 +67,84 @@ export function useCreateDocument() {
   });
 }
 
+/**
+ * Get document counts grouped by related_entity_id for a given entity type.
+ * Used to render badges like "📎 3" on contract/project cards.
+ */
+export function useEntityDocumentCounts(entityType: string, entityIds: string[]) {
+  return useQuery({
+    enabled: entityIds.length > 0,
+    queryKey: ["documents", "counts", entityType, [...entityIds].sort().join(",")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("related_entity_id")
+        .eq("related_entity_type", entityType)
+        .in("related_entity_id", entityIds);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        const id = (row as { related_entity_id: string | null }).related_entity_id;
+        if (id) counts[id] = (counts[id] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+}
+
+/**
+ * Upload a File to the documents bucket and create a documents row linked
+ * to an entity. Used by drag-and-drop on entity cards.
+ */
+export async function uploadDocumentForEntity(params: {
+  file: File;
+  entityType: string;
+  entityId: string;
+  category?: string;
+  title?: string;
+}): Promise<{ id: string } | null> {
+  const { file, entityType, entityId, category, title } = params;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error("Not authenticated");
+    return null;
+  }
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from("documents")
+    .upload(path, file, { contentType: file.type || undefined, upsert: false });
+  if (upErr) {
+    toast.error(upErr.message);
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .insert({
+      title: title?.trim() || file.name.replace(/\.[^.]+$/, ""),
+      file_name: file.name,
+      file_url: path,
+      file_type: file.type || null,
+      file_size_bytes: file.size,
+      category: category || entityType,
+      related_entity_type: entityType,
+      related_entity_id: entityId,
+      uploaded_by: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    toast.error(error.message);
+    await supabase.storage.from("documents").remove([path]);
+    return null;
+  }
+  toast.success("Document uploaded");
+  return data;
+}
+
 export function useDeleteDocument() {
   const qc = useQueryClient();
   return useMutation({

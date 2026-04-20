@@ -84,6 +84,14 @@ export default function DocumentsPage() {
                               <div>
                                 <p className="font-medium">{doc.title}</p>
                                 <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+                                {doc.related_entity_type && doc.related_entity_id && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    Linked to:{' '}
+                                    <span className="capitalize font-medium">{doc.related_entity_type}</span>
+                                    {' · '}
+                                    <code className="text-[10px]">{doc.related_entity_id.slice(0, 8)}</code>
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </TableCell>
