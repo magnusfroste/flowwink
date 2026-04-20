@@ -443,8 +443,8 @@ export async function handleExecuteAutomation(supabase: any, supabaseUrl: string
 
   if (auto.skill_name) {
     const { data: skill } = await supabase.from('agent_skills')
-      .select('trust_level, requires_approval').eq('name', auto.skill_name).maybeSingle();
-    const trustLevel = skill?.trust_level || (skill?.requires_approval ? 'approve' : 'auto');
+      .select('trust_level').eq('name', auto.skill_name).maybeSingle();
+    const trustLevel = skill?.trust_level || 'auto';
     if (trustLevel === 'approve') {
       await supabase.from('agent_activity').insert({
         agent: 'flowpilot', skill_name: auto.skill_name,
@@ -775,8 +775,7 @@ export async function handleSkillPackInstall(supabase: any, args: { pack_name: s
         handler: skill.handler,
         category: skill.category || 'automation',
         scope: skill.scope || 'internal',
-        trust_level: skill.trust_level || (skill.requires_approval ? 'approve' : 'auto'),
-        requires_approval: skill.requires_approval ?? false,
+        trust_level: skill.trust_level || 'auto',
         enabled: skill.enabled ?? true,
         instructions: skill.instructions || null,
         tool_definition: skill.tool_definition || null,
@@ -859,7 +858,6 @@ export async function handleSkillCreate(supabase: any, args: any) {
     category: args.category || 'automation',
     scope: args.scope || 'internal',
     trust_level: args.trust_level || 'approve',
-    requires_approval: (args.trust_level || 'approve') === 'approve',
     enabled: true,
     tool_definition: args.tool_definition,
     origin: 'agent',
@@ -870,7 +868,7 @@ export async function handleSkillCreate(supabase: any, args: any) {
 }
 
 export async function handleSkillUpdate(supabase: any, args: { skill_name: string; updates: Record<string, any> }) {
-  const safeFields = ['description', 'handler', 'category', 'scope', 'trust_level', 'requires_approval', 'enabled', 'tool_definition', 'instructions'];
+  const safeFields = ['description', 'handler', 'category', 'scope', 'trust_level', 'enabled', 'tool_definition', 'instructions'];
   const filtered: Record<string, any> = {};
   for (const [k, v] of Object.entries(args.updates)) {
     if (safeFields.includes(k)) filtered[k] = v;
@@ -885,7 +883,7 @@ export async function handleSkillUpdate(supabase: any, args: { skill_name: strin
 }
 
 export async function handleSkillList(supabase: any, args: { category?: string; scope?: string; include_disabled?: boolean }) {
-  let q = supabase.from('agent_skills').select('id, name, description, category, scope, handler, enabled, trust_level, requires_approval');
+  let q = supabase.from('agent_skills').select('id, name, description, category, scope, handler, enabled, trust_level');
   if (!args.include_disabled) q = q.eq('enabled', true);
   if (args.category) q = q.eq('category', args.category);
   if (args.scope) q = q.eq('scope', args.scope);
@@ -933,7 +931,7 @@ export async function handleSkillInstruct(supabase: any, args: { skill_name: str
 export async function handleSkillRead(supabase: any, args: { skill_name: string }) {
   const { data, error } = await supabase
     .from('agent_skills')
-    .select('id, name, description, handler, category, scope, trust_level, instructions, tool_definition, requires, requires_approval')
+    .select('id, name, description, handler, category, scope, trust_level, instructions, tool_definition, requires')
     .eq('name', args.skill_name)
     .maybeSingle();
 
@@ -949,7 +947,6 @@ export async function handleSkillRead(supabase: any, args: { skill_name: string 
       category: data.category,
       scope: data.scope,
       trust_level: data.trust_level,
-      requires_approval: data.requires_approval,
       instructions: data.instructions || '(no instructions — consider adding with skill_instruct)',
       parameters: data.tool_definition?.function?.parameters || null,
       prerequisites: data.requires || [],

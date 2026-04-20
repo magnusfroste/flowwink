@@ -130,7 +130,7 @@ serve(async (req) => {
 
     // 3. Check trust level (auto → execute, notify → execute + notify, approve → block)
     //    `_approved: true` is the bypass flag set when an admin approves a pending activity.
-    const trustLevel = skill.trust_level || (skill.requires_approval ? 'approve' : 'auto');
+    const trustLevel = skill.trust_level || 'auto';
     const bypassApproval = (args as any)?._approved === true;
     if (bypassApproval) delete (args as any)._approved;
 
