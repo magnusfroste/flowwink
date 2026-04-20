@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -235,14 +236,11 @@ export default function BookingServicesPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
-                <Input
+                <MoneyInput
                   id="price"
-                  type="number"
-                  min={0}
-                  value={formData.price_cents / 100}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })
-                  }
+                  value={formData.price_cents}
+                  onChange={(c) => setFormData({ ...formData, price_cents: c })}
+                  currency={formData.currency}
                 />
               </div>
             </div>

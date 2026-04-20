@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -30,7 +31,7 @@ interface FormData {
   name: string;
   description: string;
   type: ProductType;
-  price: string;
+  price_cents: number;
   currency: string;
   image_url: string;
   track_inventory: boolean;
@@ -48,7 +49,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       name: '',
       description: '',
       type: 'one_time',
-      price: '',
+      price_cents: 0,
       currency: 'USD',
       image_url: '',
       track_inventory: false,
@@ -60,6 +61,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
   const productType = watch('type');
   const trackInventory = watch('track_inventory');
+  const priceCents = watch('price_cents');
 
   useEffect(() => {
     if (product) {
@@ -67,7 +69,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         name: product.name,
         description: product.description || '',
         type: product.type,
-        price: (product.price_cents / 100).toString(),
+        price_cents: product.price_cents,
         currency: product.currency,
         image_url: product.image_url || '',
         track_inventory: product.track_inventory,
@@ -80,7 +82,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         name: '',
         description: '',
         type: 'one_time',
-        price: '',
+        price_cents: 0,
         currency: 'USD',
         image_url: '',
         track_inventory: false,
@@ -96,7 +98,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       name: data.name,
       description: data.description || null,
       type: data.type,
-      price_cents: Math.round(parseFloat(data.price) * 100),
+      price_cents: data.price_cents,
       currency: data.currency,
       is_active: true,
       sort_order: 0,
@@ -184,18 +186,15 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">Price *</Label>
-              <Input
+              <MoneyInput
                 id="price"
-                type="number"
-                step="1"
-                {...register('price', { 
-                  required: 'Price is required',
-                  min: { value: 0, message: 'Price must be positive' }
-                })}
-                placeholder="9900"
+                value={priceCents}
+                onChange={(c) => setValue('price_cents', c, { shouldValidate: true })}
+                currency={watch('currency')}
+                placeholder="0"
               />
-              {errors.price && (
-                <p className="text-sm text-destructive">{errors.price.message}</p>
+              {priceCents <= 0 && (
+                <p className="text-xs text-muted-foreground">Set a price greater than 0</p>
               )}
             </div>
 

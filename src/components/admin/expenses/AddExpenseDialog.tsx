@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -30,27 +31,27 @@ export function AddExpenseDialog() {
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState('');
-  const [total, setTotal] = useState('');
+  const [totalCents, setTotalCents] = useState(0);
   const [vatRate, setVatRate] = useState('25');
-  const [vatOverride, setVatOverride] = useState('');
+  const [vatOverrideCents, setVatOverrideCents] = useState<number | null>(null);
   const [category, setCategory] = useState('other');
   const [vendor, setVendor] = useState('');
   const [currency, setCurrency] = useState('SEK');
   const [isRepresentation, setIsRepresentation] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
 
-  const totalNum = parseFloat(total || '0');
-  const computedVat = vatOverride
-    ? parseFloat(vatOverride)
+  const totalNum = totalCents / 100;
+  const computedVatNum = vatOverrideCents !== null
+    ? vatOverrideCents / 100
     : totalNum - totalNum / (1 + parseFloat(vatRate) / 100);
-  const netAmount = totalNum - computedVat;
+  const netAmount = totalNum - computedVatNum;
 
   function reset() {
     setDate(new Date().toISOString().slice(0, 10));
     setDescription('');
-    setTotal('');
+    setTotalCents(0);
     setVatRate('25');
-    setVatOverride('');
+    setVatOverrideCents(null);
     setCategory('other');
     setVendor('');
     setCurrency('SEK');
@@ -72,7 +73,7 @@ export function AddExpenseDialog() {
 
   async function handleSubmit() {
     const amountCents = Math.round(netAmount * 100);
-    const vatCents = Math.round(computedVat * 100);
+    const vatCents = Math.round(computedVatNum * 100);
 
     await createExpense.mutateAsync({
       expense_date: date,
@@ -90,7 +91,7 @@ export function AddExpenseDialog() {
     setOpen(false);
   }
 
-  const canSubmit = description.trim() && total && parseFloat(total) > 0;
+  const canSubmit = description.trim() && totalCents > 0;
   const needsAttendees = isRepresentation && attendees.filter((a) => a.name.trim()).length === 0;
 
   return (
@@ -146,11 +147,11 @@ export function AddExpenseDialog() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="exp-total">Total (incl. VAT)</Label>
-              <Input id="exp-total" type="number" step="0.01" min="0" placeholder="0.00" value={total} onChange={(e) => setTotal(e.target.value)} />
+              <MoneyInput id="exp-total" value={totalCents} onChange={setTotalCents} step="0.01" currency={currency} />
             </div>
             <div className="space-y-1.5">
               <Label>VAT Rate</Label>
-              <Select value={vatRate} onValueChange={(v) => { setVatRate(v); setVatOverride(''); }}>
+              <Select value={vatRate} onValueChange={(v) => { setVatRate(v); setVatOverrideCents(null); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="25">25%</SelectItem>
@@ -181,11 +182,18 @@ export function AddExpenseDialog() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="space-y-1.5">
                 <Label htmlFor="exp-vat-override" className="text-xs text-muted-foreground">VAT override (optional)</Label>
-                <Input id="exp-vat-override" type="number" step="0.01" min="0" placeholder={computedVat.toFixed(2)} value={vatOverride} onChange={(e) => setVatOverride(e.target.value)} />
+                <MoneyInput
+                  id="exp-vat-override"
+                  value={vatOverrideCents ?? 0}
+                  onChange={(c) => setVatOverrideCents(c === 0 ? null : c)}
+                  step="0.01"
+                  placeholder={computedVatNum.toFixed(2)}
+                  currency={currency}
+                />
               </div>
               <div className="flex flex-col justify-end text-muted-foreground text-xs space-y-0.5 pb-2">
                 <span>Net: {netAmount.toFixed(2)} {currency}</span>
-                <span>VAT: {computedVat.toFixed(2)} {currency}</span>
+                <span>VAT: {computedVatNum.toFixed(2)} {currency}</span>
               </div>
             </div>
           )}

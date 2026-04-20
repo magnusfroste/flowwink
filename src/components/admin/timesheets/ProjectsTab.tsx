@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -115,7 +116,7 @@ export function ProjectsTab() {
   const [name, setName] = useState('');
   const [clientName, setClientName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
-  const [rate, setRate] = useState('');
+  const [rateCents, setRateCents] = useState(0);
   const [isBillable, setIsBillable] = useState(true);
 
   const handleCreate = async () => {
@@ -123,13 +124,13 @@ export function ProjectsTab() {
       name,
       client_name: clientName || undefined,
       color,
-      hourly_rate_cents: Math.round(parseFloat(rate || '0') * 100),
+      hourly_rate_cents: rateCents,
       is_billable: isBillable,
     } as any);
     setOpen(false);
     setName('');
     setClientName('');
-    setRate('');
+    setRateCents(0);
   };
 
   return (
@@ -222,7 +223,7 @@ export function ProjectsTab() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Hourly Rate (SEK)</Label>
-                <Input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="0" />
+                <MoneyInput value={rateCents} onChange={setRateCents} currency="SEK" />
               </div>
               <div className="flex items-end pb-1 gap-2">
                 <Switch checked={isBillable} onCheckedChange={setIsBillable} id="billable" />

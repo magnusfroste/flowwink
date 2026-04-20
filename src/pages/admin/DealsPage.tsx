@@ -6,6 +6,7 @@ import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { StatCard } from '@/components/admin/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -317,12 +318,13 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
   });
 
   const selectedProductId = watch('product_id');
+  const valueCents = watch('value') || 0;
 
   useEffect(() => {
     if (selectedProductId) {
       const product = products.find(p => p.id === selectedProductId);
       if (product) {
-        setValue('value', product.price_cents / 100);
+        setValue('value', product.price_cents);
       }
     }
   }, [selectedProductId, products, setValue]);
@@ -337,7 +339,7 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
     createDeal.mutate({
       lead_id: data.lead_id,
       product_id: data.product_id || null,
-      value_cents: Math.round(data.value * 100),
+      value_cents: Math.round(data.value || 0),
       expected_close: data.expected_close || null,
       notes: data.notes || null,
     }, {
@@ -406,12 +408,11 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
 
             <div className="grid gap-2">
               <Label htmlFor="value">Value</Label>
-              <Input
+              <MoneyInput
                 id="value"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('value', { valueAsNumber: true })}
+                value={valueCents}
+                onChange={(c) => setValue('value', c)}
+                placeholder="0"
               />
             </div>
 

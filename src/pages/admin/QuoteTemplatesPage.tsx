@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuoteTemplates, useUpsertQuoteTemplate, useDeleteQuoteTemplate, type QuoteTemplate, type QuoteTemplateItem } from '@/hooks/useQuoteTemplates';
@@ -102,7 +103,9 @@ export default function QuoteTemplatesPage() {
                     <div key={i} className="flex gap-2">
                       <Input placeholder="Description" value={it.description} onChange={(e) => updateItem(i, 'description', e.target.value)} className="flex-1" />
                       <Input type="number" placeholder="Qty" value={it.qty} onChange={(e) => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} className="w-20" />
-                      <Input type="number" placeholder="Price (öre)" value={it.unit_price_cents} onChange={(e) => updateItem(i, 'unit_price_cents', parseInt(e.target.value) || 0)} className="w-28" />
+                      <div className="w-32">
+                        <MoneyInput value={it.unit_price_cents} onChange={(c) => updateItem(i, 'unit_price_cents', c)} currency={editing.currency || 'SEK'} placeholder="Price" />
+                      </div>
                       <Button variant="ghost" size="icon" onClick={() => setEditing({ ...editing, items: (editing.items || []).filter((_, idx) => idx !== i) })}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
