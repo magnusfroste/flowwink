@@ -96,7 +96,37 @@ export function useCreateQuote() {
       notes?: string;
     }) => {
       const taxRate = input.tax_rate ?? 0.25;
-      const lineItems = input.line_items || [{ description: '', qty: 1, unit_price_cents: 0 }];
+
+      // Fetch lead for customer info auto-fill
+      const { data: lead } = await supabase
+        .from('leads')
+        .select('name, email, companies(name)')
+        .eq('id', input.lead_id)
+        .maybeSingle();
+
+      // If a deal is linked and no explicit line items, seed line item from deal
+      let seededItems = input.line_items;
+      let currency = input.currency || 'SEK';
+      let dealNotes: string | null = null;
+      if (!seededItems && input.deal_id) {
+        const { data: deal } = await supabase
+          .from('deals')
+          .select('value_cents, currency, notes, products(name)')
+          .eq('id', input.deal_id)
+          .maybeSingle();
+        if (deal) {
+          currency = deal.currency || currency;
+          dealNotes = deal.notes;
+          const productName = (deal as any).products?.name;
+          seededItems = [{
+            description: productName || 'Deal item',
+            qty: 1,
+            unit_price_cents: deal.value_cents || 0,
+          }];
+        }
+      }
+
+      const lineItems = seededItems || [{ description: '', qty: 1, unit_price_cents: 0 }];
       const totals = computeInvoiceTotals(lineItems, taxRate);
 
       const { count } = await supabase
@@ -113,10 +143,13 @@ export function useCreateQuote() {
           line_items: lineItems as any,
           tax_rate: taxRate,
           ...totals,
-          currency: input.currency || 'SEK',
+          currency,
           valid_until: input.valid_until || null,
           deal_id: input.deal_id || null,
-          notes: input.notes || null,
+          notes: input.notes || dealNotes || null,
+          customer_name: lead?.name || null,
+          customer_email: lead?.email || null,
+          customer_company: (lead as any)?.companies?.name || null,
           created_by: user?.id || null,
         } as any)
         .select(QUOTE_SELECT)
