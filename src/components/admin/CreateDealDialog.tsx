@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -28,7 +29,7 @@ interface CreateDealDialogProps {
 
 interface FormData {
   product_id: string;
-  value: string;
+  value_cents: number;
   expected_close: string;
   notes: string;
 }
@@ -37,22 +38,23 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
   const { data: products = [] } = useProducts({ activeOnly: true });
   const createDeal = useCreateDeal();
   
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { handleSubmit, reset, setValue, watch } = useForm<FormData>({
     defaultValues: {
       product_id: '',
-      value: '',
+      value_cents: 0,
       expected_close: '',
       notes: '',
     },
   });
 
   const selectedProductId = watch('product_id');
+  const valueCents = watch('value_cents');
 
   useEffect(() => {
     if (selectedProductId && selectedProductId !== 'custom') {
       const product = products.find(p => p.id === selectedProductId);
       if (product) {
-        setValue('value', (product.price_cents / 100).toString());
+        setValue('value_cents', product.price_cents);
       }
     }
   }, [selectedProductId, products, setValue]);
@@ -61,7 +63,7 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
     if (!open) {
       reset({
         product_id: '',
-        value: '',
+        value_cents: 0,
         expected_close: '',
         notes: '',
       });
@@ -72,7 +74,7 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
     await createDeal.mutateAsync({
       lead_id: leadId,
       product_id: data.product_id === 'custom' ? null : data.product_id || null,
-      value_cents: Math.round(parseFloat(data.value) * 100),
+      value_cents: data.value_cents,
       expected_close: data.expected_close || null,
       notes: data.notes || null,
     });
@@ -110,19 +112,12 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
 
           <div className="space-y-2">
             <Label htmlFor="value">Value *</Label>
-            <Input
+            <MoneyInput
               id="value"
-              type="number"
-              step="1"
-              {...register('value', { 
-                required: 'Value is required',
-                min: { value: 0, message: 'Value must be positive' }
-              })}
-              placeholder="9900"
+              value={valueCents}
+              onChange={(c) => setValue('value_cents', c)}
+              placeholder="0"
             />
-            {errors.value && (
-              <p className="text-sm text-destructive">{errors.value.message}</p>
-            )}
           </div>
 
           <div className="space-y-2">
