@@ -31,7 +31,7 @@ interface DealKanbanProps {
   isLoading?: boolean;
 }
 
-const STAGES: DealStage[] = ['proposal', 'negotiation', 'closed_won', 'closed_lost'];
+const STAGES: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
 
 interface KanbanColumnProps {
   stage: DealStage;
@@ -42,7 +42,7 @@ interface KanbanColumnProps {
 function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const stageInfo = getDealStageInfo(stage);
-  const isActive = stage === 'proposal' || stage === 'negotiation';
+  const isActive = stage !== 'closed_won' && stage !== 'closed_lost';
 
   return (
     <div className="flex flex-col min-w-[280px] max-w-[320px] flex-1">

@@ -56,7 +56,7 @@ export default function DealsPage() {
     updateDeal.mutate({ id: dealId, stage });
   };
 
-  const activeDeals = deals.filter(d => d.stage === 'proposal' || d.stage === 'negotiation');
+  const activeDeals = deals.filter(d => d.stage !== 'closed_won' && d.stage !== 'closed_lost');
   const closedDeals = deals.filter(d => d.stage === 'closed_won' || d.stage === 'closed_lost');
 
   return (
@@ -189,6 +189,8 @@ export default function DealsPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="lead">Lead</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="proposal">Proposal</SelectItem>
                                 <SelectItem value="negotiation">Negotiation</SelectItem>
                                 <SelectItem value="closed_won">Won</SelectItem>
