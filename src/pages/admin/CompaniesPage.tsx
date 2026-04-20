@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Building2, Users, Search, Globe, Phone, Sparkles, Download, Upload, MoreVertical } from 'lucide-react';
+import { Building2, Users, Search, Globe, Phone, Sparkles, Download, Upload, MoreVertical, Trophy, Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useCompanies';
 import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExport';
@@ -29,8 +29,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+type LifecycleFilter = 'all' | 'prospect' | 'customer' | 'churned';
+
 export default function CompaniesPage() {
   const [search, setSearch] = useState('');
+  const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>('all');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const { data: companies, isLoading } = useCompanies();
   const { data: stats } = useCompanyStats();
@@ -38,11 +41,14 @@ export default function CompaniesPage() {
   const exportCompanies = useExportCompanies();
   const importCompanies = useImportCompanies();
 
-  const filteredCompanies = companies?.filter((company) =>
-    company.name.toLowerCase().includes(search.toLowerCase()) ||
-    company.domain?.toLowerCase().includes(search.toLowerCase()) ||
-    company.industry?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCompanies = companies?.filter((company) => {
+    const matchesSearch =
+      company.name.toLowerCase().includes(search.toLowerCase()) ||
+      company.domain?.toLowerCase().includes(search.toLowerCase()) ||
+      company.industry?.toLowerCase().includes(search.toLowerCase());
+    const matchesLifecycle = lifecycleFilter === 'all' || company.lifecycle_stage === lifecycleFilter;
+    return matchesSearch && matchesLifecycle;
+  });
 
   const handleExport = () => {
     if (companies && companies.length > 0) {
@@ -92,14 +98,32 @@ export default function CompaniesPage() {
         onImport={handleImport}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="cursor-pointer transition hover:bg-muted/30" onClick={() => setLifecycleFilter('all')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total ?? 0}</div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer transition hover:bg-muted/30" onClick={() => setLifecycleFilter('customer')}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Customers</CardTitle>
+            <Trophy className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.customers ?? 0}</div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer transition hover:bg-muted/30" onClick={() => setLifecycleFilter('prospect')}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Prospects</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.prospects ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -109,15 +133,6 @@ export default function CompaniesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.withContacts ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Without Contacts</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.withoutContacts ?? 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -153,10 +168,11 @@ export default function CompaniesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Company</TableHead>
+                  <TableHead>Stage</TableHead>
                   <TableHead>Industry</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Customer Since</TableHead>
                   <TableHead className="w-[100px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -193,6 +209,17 @@ export default function CompaniesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      {company.lifecycle_stage === 'customer' ? (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-emerald-500/30">
+                          <Trophy className="h-3 w-3 mr-1" /> Customer
+                        </Badge>
+                      ) : company.lifecycle_stage === 'churned' ? (
+                        <Badge variant="outline" className="text-muted-foreground">Churned</Badge>
+                      ) : (
+                        <Badge variant="outline">Prospect</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {company.industry && (
                         <Badge variant="secondary">{company.industry}</Badge>
                       )}
@@ -227,7 +254,9 @@ export default function CompaniesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(company.created_at), 'd MMM yyyy')}
+                      {company.customer_since
+                        ? format(new Date(company.customer_since), 'd MMM yyyy')
+                        : <span className="text-xs italic opacity-60">—</span>}
                     </TableCell>
                     <TableCell>
                       <AlertDialog>
