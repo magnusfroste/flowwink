@@ -3091,7 +3091,9 @@ export type Database = {
           notes: string | null
           paid_at: string | null
           payment_terms: string | null
+          payment_url: string | null
           project_id: string | null
+          public_token: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents: number
@@ -3099,6 +3101,7 @@ export type Database = {
           tax_rate: number
           total_cents: number
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           created_at?: string
@@ -3116,7 +3119,9 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_terms?: string | null
+          payment_url?: string | null
           project_id?: string | null
+          public_token?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
@@ -3124,6 +3129,7 @@ export type Database = {
           tax_rate?: number
           total_cents?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           created_at?: string
@@ -3141,7 +3147,9 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_terms?: string | null
+          payment_url?: string | null
           project_id?: string | null
+          public_token?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
@@ -3149,6 +3157,7 @@ export type Database = {
           tax_rate?: number
           total_cents?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
