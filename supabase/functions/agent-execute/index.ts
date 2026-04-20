@@ -3346,13 +3346,24 @@ async function executeOrdersAction(
   }
 
   // check_order / lookup_order — original handler
+  // Accepts full UUID OR an 8-char prefix (e.g. "e2c09094") for human convenience.
   const { order_id, email } = args as any;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   let query = supabase.from('orders').select('id, status, total_cents, currency, created_at, customer_email');
-  if (order_id) query = query.eq('id', order_id);
-  else if (email) query = query.eq('customer_email', email);
+  if (order_id) {
+    const oid = String(order_id).trim();
+    if (UUID_RE.test(oid)) {
+      query = query.eq('id', oid);
+    } else {
+      // Treat as prefix — cast id to text for ILIKE matching
+      query = query.ilike('id::text', `${oid}%`);
+    }
+  } else if (email) {
+    query = query.eq('customer_email', email);
+  }
   const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
   if (error) throw new Error(`Order lookup failed: ${error.message}`);
-  return { orders: data || [] };
+  return { orders: data || [], matched_by: order_id ? (UUID_RE.test(String(order_id).trim()) ? 'uuid' : 'prefix') : 'email' };
 }
 
 function groupBy(items: any[], key: string): Record<string, number> {
@@ -3623,8 +3634,23 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
     }
   }
 
-  if (!subject || !bodyHtml) {
-    throw new Error('Could not produce subject and body for email');
+  // Fallback — if AI returned nothing usable, build a minimal but valid draft
+  // so the agent never gets stuck. Better a plain template than a hard fail.
+  if (!subject) {
+    const purposeLabels: Record<string, string> = {
+      outreach: 'Hello from us',
+      follow_up: 'Following up',
+      nurture: 'A quick check-in',
+      reactivation: 'We miss you',
+    };
+    subject = purposeLabels[purpose as string] || 'Hello';
+    if (lead.name) subject = `${subject}, ${lead.name.split(' ')[0]}`;
+  }
+  if (!bodyHtml) {
+    const greeting = lead.name ? `Hi ${lead.name.split(' ')[0]},` : 'Hi there,';
+    const ctx = custom_instructions ? `<p>${String(custom_instructions).slice(0, 300)}</p>` : '';
+    bodyHtml = `<p>${greeting}</p>${ctx}<p>I wanted to reach out personally — would you be open to a short conversation this week?</p><p>Best regards</p>`;
+    console.warn('[send_email_to_lead] Using fallback template (AI returned no usable content)');
   }
 
   // 4. Dry-run — return draft without sending
