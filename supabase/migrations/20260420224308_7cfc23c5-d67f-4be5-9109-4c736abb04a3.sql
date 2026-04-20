@@ -1,0 +1,1 @@
+UPDATE public.agent_skills SET trust_level = 'auto'::public.skill_trust_level, updated_at = now() WHERE name = 'manage_invoice';
