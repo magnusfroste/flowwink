@@ -187,6 +187,23 @@ export default function SkillHubPage() {
 
             <div className="flex-1" />
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => bulkToggle.mutate({ ids: filtered.map(s => s.id), enabled: true })}
+              disabled={!filtered.length || bulkToggle.isPending}
+            >
+              Enable all
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => bulkToggle.mutate({ ids: filtered.map(s => s.id), enabled: false })}
+              disabled={!filtered.length || bulkToggle.isPending}
+            >
+              Disable all
+            </Button>
+
             <Button onClick={handleNew} size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
               New Skill
