@@ -76,11 +76,25 @@ Deno.serve(async (req) => {
 
     const { data: quote, error: qErr } = await supabase
       .from('quotes')
-      .select('*')
+      .select('*, leads(name, email)')
       .eq('id', body.quote_id)
       .single();
     if (qErr || !quote) throw new Error(qErr?.message || 'Quote not found');
-    if (!quote.customer_email) throw new Error('Quote has no customer_email');
+
+    // Fallback: use linked lead's email/name if quote doesn't have its own
+    const recipientEmail = quote.customer_email || quote.leads?.email;
+    const recipientName = quote.customer_name || quote.leads?.name;
+    if (!recipientEmail) throw new Error('Quote has no customer_email and lead has no email');
+
+    // Backfill quote so future sends + audit trail have it
+    if (!quote.customer_email && recipientEmail) {
+      await supabase
+        .from('quotes')
+        .update({ customer_email: recipientEmail, customer_name: recipientName })
+        .eq('id', quote.id);
+      quote.customer_email = recipientEmail;
+      quote.customer_name = recipientName;
+    }
 
     // Resolve site name + optional from/reply-to override from settings
     const { data: settings } = await supabase
@@ -115,7 +129,7 @@ Deno.serve(async (req) => {
     // Route via the provider-agnostic email-send function.
     const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
       body: {
-        to: quote.customer_email,
+        to: recipientEmail,
         subject,
         html,
         fromOverride: quoteCfg.fromOverride,
@@ -131,7 +145,7 @@ Deno.serve(async (req) => {
       action: body.reminder ? 'quote.reminder_sent' : 'quote.email_sent',
       entity_type: 'quote',
       entity_id: quote.id,
-      metadata: { provider: sendData.provider, to: quote.customer_email, subject },
+      metadata: { provider: sendData.provider, to: recipientEmail, subject },
     });
 
     return new Response(JSON.stringify({ success: true, provider: sendData.provider }), {
