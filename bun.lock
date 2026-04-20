@@ -50,7 +50,7 @@
         "@tanstack/react-query": "^5.83.0",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.1",
-        "@tiptap/core": "^3.22.4",
+        "@tiptap/core": "3.13.0",
         "@tiptap/extension-image": "^3.13.0",
         "@tiptap/extension-link": "^3.13.0",
         "@tiptap/extension-placeholder": "^3.13.0",
@@ -519,7 +519,7 @@
 
     "@testing-library/react": ["@testing-library/react@16.3.1", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": "^10.0.0", "@types/react": "^18.0.0 || ^19.0.0", "@types/react-dom": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-gr4KtAWqIOQoucWYD/f6ki+j5chXfcPc74Col/6poTyqTmn7zRmodWahWRCp8tYd+GMqBonw6hstNzqjbs6gjw=="],
 
-    "@tiptap/core": ["@tiptap/core@3.22.4", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/core/-/core-3.22.4.tgz", { "peerDependencies": { "@tiptap/pm": "3.22.4" } }, "sha512-vGIGm/HpqLg8EAAQXQ+koV+/S828OEpzocfWcPOwo1u2QUVf9dQG47Yy6JJ8zFFaJwfv4dBcOXli+7BrJwsxDQ=="],
+    "@tiptap/core": ["@tiptap/core@3.13.0", "", { "peerDependencies": { "@tiptap/pm": "^3.13.0" } }, "sha512-iUelgiTMgPVMpY5ZqASUpk8mC8HuR9FWKaDzK27w9oWip9tuB54Z8mePTxNcQaSPb6ErzEaC8x8egrRt7OsdGQ=="],
 
     "@tiptap/extension-blockquote": ["@tiptap/extension-blockquote@3.13.0", "", { "peerDependencies": { "@tiptap/core": "^3.13.0" } }, "sha512-K1z/PAIIwEmiWbzrP//4cC7iG1TZknDlF1yb42G7qkx2S2X4P0NiqX7sKOej3yqrPjKjGwPujLMSuDnCF87QkQ=="],
 
@@ -1522,8 +1522,6 @@
     "@testing-library/dom/aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
     "@testing-library/dom/dom-accessibility-api": ["dom-accessibility-api@0.5.16", "", {}, "sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg=="],
-
-    "@tiptap/starter-kit/@tiptap/core": ["@tiptap/core@3.13.0", "", { "peerDependencies": { "@tiptap/pm": "^3.13.0" } }, "sha512-iUelgiTMgPVMpY5ZqASUpk8mC8HuR9FWKaDzK27w9oWip9tuB54Z8mePTxNcQaSPb6ErzEaC8x8egrRt7OsdGQ=="],
 
     "@typescript-eslint/eslint-plugin/ignore": ["ignore@7.0.5", "", {}, "sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg=="],
 
