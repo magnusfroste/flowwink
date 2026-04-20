@@ -18,8 +18,19 @@ serve(async (req: Request) => {
     );
 
     const url = new URL(req.url);
-    const orderId = url.searchParams.get("id");
-    const email = url.searchParams.get("email");
+    let orderId = url.searchParams.get("id") || url.searchParams.get("order_id");
+    let email = url.searchParams.get("email");
+
+    // Also accept JSON body (POST from MCP / agent-execute)
+    if (!orderId && (req.method === "POST" || req.method === "PUT")) {
+      try {
+        const body = await req.json();
+        orderId = body?.id || body?.order_id || orderId;
+        email = body?.email || email;
+      } catch {
+        // ignore — body may be empty
+      }
+    }
 
     if (!orderId) {
       return new Response(JSON.stringify({ error: "Missing 'id' parameter" }), {

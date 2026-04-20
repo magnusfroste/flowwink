@@ -2459,11 +2459,20 @@ async function executeDealsAction(
   }
 
   if (action === 'update') {
-    const { deal_id, ...updateData } = args as any;
+    const { deal_id, ...rest } = args as any;
     if (!deal_id) throw new Error('deal_id is required');
-    delete updateData.action;
+    // Strip injected/system fields and unknown keys — only allow real columns
+    const allowed = ['value_cents', 'currency', 'stage', 'product_id', 'expected_close', 'notes', 'closed_at'];
+    const updateData: Record<string, unknown> = {};
+    for (const k of allowed) {
+      if (rest[k] !== undefined) updateData[k] = rest[k];
+    }
+    if (Object.keys(updateData).length === 0) {
+      throw new Error('No updatable fields provided');
+    }
+    updateData.updated_at = new Date().toISOString();
     const { data, error } = await supabase.from('deals')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', deal_id).select('id, stage').single();
     if (error) throw new Error(`Update deal failed: ${error.message}`);
     return { deal_id: data.id, stage: data.stage, status: 'updated' };
@@ -3476,6 +3485,34 @@ async function executeLeadsAction(
 // Sends via Resend. Logs result to lead_activities for audit + future
 // suppression checks. Supports dry_run for safe previews.
 
+/**
+ * Robust JSON parser for AI-generated email drafts.
+ * Handles: code-fence wrappers, leading/trailing prose, unterminated strings
+ * (extracts subject/body via regex fallback when JSON.parse fails).
+ */
+function parseAiEmailJson(raw: string): { subject?: string; body_html?: string } {
+  if (!raw) return {};
+  let txt = raw.trim();
+  // Strip ```json ... ``` fences
+  txt = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  // Try direct parse first
+  try {
+    return JSON.parse(txt);
+  } catch { /* fall through */ }
+  // Try extracting first {...} block
+  const match = txt.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch { /* fall through */ }
+  }
+  // Last resort: regex-extract subject + body_html fields
+  const subjectMatch = txt.match(/"subject"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const bodyMatch = txt.match(/"body_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const out: { subject?: string; body_html?: string } = {};
+  if (subjectMatch) out.subject = subjectMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+  if (bodyMatch) out.body_html = bodyMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+  return out;
+}
+
 async function executeSendEmailToLead(
   supabase: any,
   args: Record<string, unknown>,
@@ -3559,7 +3596,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
         );
         const data = await r.json();
         const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        aiResp = JSON.parse(raw);
+        aiResp = parseAiEmailJson(raw);
       } else if (openaiKey) {
         const r = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -3574,7 +3611,7 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
           }),
         });
         const data = await r.json();
-        aiResp = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+        aiResp = parseAiEmailJson(data.choices?.[0]?.message?.content || '{}');
       } else {
         throw new Error('No AI provider configured (GEMINI_API_KEY or OPENAI_API_KEY)');
       }
