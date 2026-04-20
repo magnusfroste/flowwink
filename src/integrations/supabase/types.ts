@@ -575,7 +575,6 @@ export type Database = {
           name: string
           origin: Database["public"]["Enums"]["skill_origin"]
           requires: Json | null
-          requires_approval: boolean
           scope: Database["public"]["Enums"]["agent_scope"]
           tool_definition: Json
           trust_level: Database["public"]["Enums"]["skill_trust_level"]
@@ -593,7 +592,6 @@ export type Database = {
           name: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
-          requires_approval?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
           tool_definition?: Json
           trust_level?: Database["public"]["Enums"]["skill_trust_level"]
@@ -611,7 +609,6 @@ export type Database = {
           name?: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
-          requires_approval?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
           tool_definition?: Json
           trust_level?: Database["public"]["Enums"]["skill_trust_level"]

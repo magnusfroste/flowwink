@@ -1,0 +1,1 @@
+ALTER TABLE public.agent_skills DROP COLUMN IF EXISTS requires_approval;
