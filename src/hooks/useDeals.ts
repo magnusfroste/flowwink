@@ -183,7 +183,7 @@ export function useDealStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('deals')
-        .select('stage, value_cents');
+        .select('stage, value_cents, closed_at');
 
       if (error) throw error;
 
