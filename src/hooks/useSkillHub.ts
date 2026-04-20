@@ -60,7 +60,6 @@ export function useUpsertSkill() {
         category: skill.category ?? 'content',
         scope: skill.scope ?? 'internal',
         handler: skill.handler,
-        requires_approval: skill.requires_approval ?? false,
         enabled: skill.enabled ?? true,
         tool_definition: skill.tool_definition ?? {},
         ...(skill.trust_level ? { trust_level: skill.trust_level } : {}),

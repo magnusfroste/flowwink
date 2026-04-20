@@ -62,7 +62,6 @@ const APPROVAL_SKILLS: SkillSeed[] = [
     category: 'commerce',
     handler: 'db:approvals',
     scope: 'internal',
-    requires_approval: false,
     tool_definition: {
       type: 'function',
       function: {

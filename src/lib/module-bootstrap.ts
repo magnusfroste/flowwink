@@ -26,7 +26,6 @@ export interface SkillSeed {
   scope: 'internal' | 'external' | 'both';
   tool_definition: Record<string, unknown>;
   instructions?: string;
-  requires_approval?: boolean;
 }
 
 export interface AutomationSeed {
@@ -134,7 +133,6 @@ export async function bootstrapModule(
               scope: skill.scope,
               tool_definition: skill.tool_definition as Json,
               instructions: skill.instructions || null,
-              requires_approval: skill.requires_approval ?? false,
               enabled: true,
               origin: 'bundled' as const,
               trust_level: 'notify' as const,

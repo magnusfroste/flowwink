@@ -73,7 +73,6 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
         category: skill.category,
         scope: skill.scope,
         handler: skill.handler,
-        requires_approval: skill.requires_approval,
         trust_level: skill.trust_level ?? 'notify',
         enabled: skill.enabled,
         tool_definition_json: JSON.stringify(skill.tool_definition, null, 2),
@@ -86,7 +85,6 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
         category: 'content',
         scope: 'internal',
         handler: '',
-        requires_approval: false,
         trust_level: 'notify',
         enabled: true,
         tool_definition_json: '{}',
@@ -111,7 +109,6 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       category: values.category,
       scope: values.scope,
       handler: values.handler,
-      requires_approval: values.requires_approval,
       trust_level: values.trust_level,
       enabled: values.enabled,
       tool_definition: toolDef,
@@ -224,13 +221,6 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
                 onCheckedChange={(v) => form.setValue('enabled', v)}
               />
               Enabled
-            </label>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Switch
-                checked={form.watch('requires_approval')}
-                onCheckedChange={(v) => form.setValue('requires_approval', v)}
-              />
-              Legacy approval
             </label>
           </div>
 
