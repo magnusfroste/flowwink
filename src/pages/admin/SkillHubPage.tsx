@@ -45,6 +45,7 @@ export default function SkillHubPage() {
   const toggleMcp = useToggleMcpExposed();
   const upsert = useUpsertSkill();
   const remove = useDeleteSkill();
+  const bulkToggle = useBulkToggleSkills();
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null);
