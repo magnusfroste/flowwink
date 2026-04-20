@@ -7,9 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDocuments, useDeleteDocument } from "@/hooks/useDocuments";
-import { FileText, Trash2, ExternalLink, FolderOpen } from "lucide-react";
+import { useDocuments, useDeleteDocument, getDocumentSignedUrl } from "@/hooks/useDocuments";
+import { FileText, Trash2, ExternalLink, FolderOpen, Plus } from "lucide-react";
 import { format } from "date-fns";
+import { AddDocumentDialog } from "@/components/admin/documents/AddDocumentDialog";
 
 const CATEGORIES = ["all", "general", "contract", "hr", "finance", "project"];
 
@@ -22,13 +23,27 @@ function formatSize(bytes: number | null) {
 
 export default function DocumentsPage() {
   const [category, setCategory] = useState("all");
+  const [addOpen, setAddOpen] = useState(false);
   const { data: documents, isLoading } = useDocuments(category);
   const deleteDoc = useDeleteDocument();
+
+  const openFile = async (filePath: string) => {
+    const url = await getDocumentSignedUrl(filePath, 120);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <AdminPageHeader title="Documents" description="Central document archive with categories and tagging" />
+        <AdminPageHeader
+          title="Documents"
+          description="Central document archive with categories and tagging"
+          actions={
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Add document
+            </Button>
+          }
+        />
 
         <Tabs value={category} onValueChange={setCategory}>
           <TabsList>
@@ -45,6 +60,9 @@ export default function DocumentsPage() {
                   <div className="text-center py-12 text-muted-foreground">
                     <FolderOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>No documents in this category.</p>
+                    <Button variant="outline" className="mt-4" onClick={() => setAddOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" /> Add your first document
+                    </Button>
                   </div>
                 ) : (
                   <Table>
@@ -79,8 +97,8 @@ export default function DocumentsPage() {
                           <TableCell>
                             <div className="flex gap-1">
                               {doc.file_url && (
-                                <Button size="icon" variant="ghost" className="h-7 w-7" asChild>
-                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" /></a>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openFile(doc.file_url)}>
+                                  <ExternalLink className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteDoc.mutate(doc.id)}>
@@ -97,6 +115,8 @@ export default function DocumentsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <AddDocumentDialog open={addOpen} onOpenChange={setAddOpen} />
       </div>
     </AdminLayout>
   );
