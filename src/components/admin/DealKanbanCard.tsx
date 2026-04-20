@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { formatPrice } from '@/hooks/useProducts';
 import type { Deal } from '@/hooks/useDeals';
 import { cn } from '@/lib/utils';
+import { NextActivityBadge } from './deals/NextActivityBadge';
 
 interface DealKanbanCardProps {
   deal: Deal;
@@ -72,6 +73,8 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
             {productName}
           </p>
         )}
+
+        <NextActivityBadge dealId={deal.id} />
 
         <Link
           to={`/admin/deals/${deal.id}`}
