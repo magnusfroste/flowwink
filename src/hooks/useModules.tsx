@@ -85,6 +85,7 @@ export interface ModulesSettings {
   subscriptions: ModuleConfig;
   approvals: ModuleConfig;
   reconciliation: ModuleConfig;
+  quotes: ModuleConfig;
   email: ModuleConfig;
 }
 
