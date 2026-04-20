@@ -38,12 +38,11 @@ export default function DocumentsPage() {
         <AdminPageHeader
           title="Documents"
           description="Central document archive with categories and tagging"
-          actions={
-            <Button onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Add document
-            </Button>
-          }
-        />
+        >
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Add document
+          </Button>
+        </AdminPageHeader>
 
         <Tabs value={category} onValueChange={setCategory}>
           <TabsList>
