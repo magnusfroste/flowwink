@@ -24,6 +24,7 @@ import { DunningPreview } from '@/components/admin/subscriptions/DunningPreview'
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Clock, MoreHorizontal, Pause, Play, Play as PlayIcon, RefreshCw, XCircle, Zap } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 const STATUS_LABEL: Record<DunningStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'Active', variant: 'destructive' },
@@ -84,6 +85,7 @@ export default function DunningPage() {
   const selected = seqs?.find((s) => s.id === selectedId) ?? null;
 
   return (
+    <AdminLayout>
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -219,6 +221,7 @@ export default function DunningPage() {
 
       <DetailSheet sequence={selected} onClose={() => setSelectedId(null)} />
     </div>
+    </AdminLayout>
   );
 }
 

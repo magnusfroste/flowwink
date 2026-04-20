@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useSubscriptions';
 import { format } from 'date-fns';
 import { ExternalLink, MoreHorizontal, RefreshCw, XCircle } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -46,6 +47,7 @@ export default function SubscriptionsPage() {
   const action = useSubscriptionAction();
 
   return (
+    <AdminLayout>
     <div className="container mx-auto py-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
@@ -129,6 +131,7 @@ export default function SubscriptionsPage() {
         </CardContent>
       </Card>
     </div>
+    </AdminLayout>
   );
 }
 
