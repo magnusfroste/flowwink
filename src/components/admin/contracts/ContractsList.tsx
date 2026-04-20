@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useContracts, useDeleteContract, type Contract } from '@/hooks/useContracts';
 import { NewContractDialog } from './NewContractDialog';
+import { ContractDetailDialog } from './ContractDetailDialog';
 import { format } from 'date-fns';
+import { FileText as FileTextIcon } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -33,6 +35,7 @@ export function ContractsList({ statusFilter }: Props) {
   const deleteContract = useDeleteContract();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editContract, setEditContract] = useState<Contract | undefined>();
+  const [detailContract, setDetailContract] = useState<Contract | null>(null);
 
   const formatValue = (cents: number, currency: string) => {
     if (!cents) return null;
@@ -61,7 +64,7 @@ export function ContractsList({ statusFilter }: Props) {
       ) : (
         <div className="grid gap-4">
           {contracts.map((contract) => (
-            <Card key={contract.id} className="hover:shadow-md transition-shadow">
+            <Card key={contract.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailContract(contract)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -104,11 +107,14 @@ export function ContractsList({ statusFilter }: Props) {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => setDetailContract(contract)}>
+                        <FileTextIcon className="h-4 w-4 mr-2" /> Open
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => { setEditContract(contract); setDialogOpen(true); }}>
                         <Edit className="h-4 w-4 mr-2" /> Edit
                       </DropdownMenuItem>
@@ -131,6 +137,12 @@ export function ContractsList({ statusFilter }: Props) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         contract={editContract}
+      />
+
+      <ContractDetailDialog
+        contract={detailContract}
+        open={!!detailContract}
+        onOpenChange={(o) => !o && setDetailContract(null)}
       />
     </>
   );

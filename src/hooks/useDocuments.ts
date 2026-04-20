@@ -33,6 +33,24 @@ export function useDocuments(category?: string) {
   });
 }
 
+/** Documents linked to a specific entity (contract, project, employee...). */
+export function useEntityDocuments(entityType?: string | null, entityId?: string | null) {
+  return useQuery({
+    enabled: !!entityType && !!entityId,
+    queryKey: ["documents", "entity", entityType, entityId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("related_entity_type", entityType!)
+        .eq("related_entity_id", entityId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Document[];
+    },
+  });
+}
+
 export function useCreateDocument() {
   const qc = useQueryClient();
   return useMutation({
