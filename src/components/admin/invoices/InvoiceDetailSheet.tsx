@@ -174,16 +174,23 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                 />
                 <Input
                   type="number"
+                  inputMode="decimal"
                   placeholder="Qty"
-                  value={item.qty}
-                  onChange={(e) => updateLineItem(i, 'qty', parseInt(e.target.value) || 0)}
+                  value={item.qty === 0 ? '' : item.qty}
+                  onChange={(e) => updateLineItem(i, 'qty', e.target.value === '' ? 0 : Number(e.target.value))}
                   className="w-16"
                 />
                 <Input
                   type="number"
-                  placeholder="Price (öre)"
-                  value={item.unit_price_cents}
-                  onChange={(e) => updateLineItem(i, 'unit_price_cents', parseInt(e.target.value) || 0)}
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="Price (kr)"
+                  value={item.unit_price_cents === 0 ? '' : item.unit_price_cents / 100}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const cents = v === '' ? 0 : Math.round(Number(v) * 100);
+                    updateLineItem(i, 'unit_price_cents', cents);
+                  }}
                   className="w-28"
                 />
                 <Button variant="ghost" size="icon" onClick={() => removeLineItem(i)}>
