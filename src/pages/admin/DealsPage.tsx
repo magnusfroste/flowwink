@@ -35,7 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List } from 'lucide-react';
+import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List, Target, Calendar } from 'lucide-react';
 import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
 import { useProducts, formatPrice } from '@/hooks/useProducts';
 import { useLeads } from '@/hooks/useLeads';
@@ -87,39 +87,39 @@ export default function DealsPage() {
           </div>
         </AdminPageHeader>
 
-        {/* Stats Cards */}
+        {/* Forecast row — the numbers that matter */}
         <div className="grid gap-4 md:grid-cols-4">
           <StatCard
             label="Pipeline Value"
             value={stats ? formatPrice(stats.totalPipeline) : null}
             icon={TrendingUp}
-            variant="primary"
-            isLoading={!stats}
-            subtext="Active opportunities"
-          />
-          <StatCard
-            label="In Proposal"
-            value={stats?.proposal.count}
-            icon={Briefcase}
             variant="default"
             isLoading={!stats}
-            subtext={stats ? formatPrice(stats.proposal.value) : ''}
+            subtext="All open deals"
+          />
+          <StatCard
+            label="Weighted Forecast"
+            value={stats ? formatPrice(Math.round(stats.weightedForecast)) : null}
+            icon={Target}
+            variant="primary"
+            isLoading={!stats}
+            subtext="Σ value × win probability"
+          />
+          <StatCard
+            label="Won This Month"
+            value={stats ? formatPrice(stats.wonThisMonth) : null}
+            icon={Trophy}
+            variant="success"
+            isLoading={!stats}
+            subtext={stats ? `${stats.closed_won.count} deal${stats.closed_won.count === 1 ? '' : 's'} closed` : ''}
           />
           <StatCard
             label="In Negotiation"
             value={stats?.negotiation.count}
-            icon={Briefcase}
+            icon={Calendar}
             variant="warning"
             isLoading={!stats}
             subtext={stats ? formatPrice(stats.negotiation.value) : ''}
-          />
-          <StatCard
-            label="Won This Period"
-            value={stats?.closed_won.count}
-            icon={Trophy}
-            variant="success"
-            isLoading={!stats}
-            subtext={stats ? formatPrice(stats.closed_won.value) : ''}
           />
         </div>
 
