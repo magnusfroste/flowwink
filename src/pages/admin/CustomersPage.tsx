@@ -14,114 +14,92 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, ShoppingCart, MapPin, Heart } from 'lucide-react';
+import { Users, ShoppingCart, Coins, UserCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface CustomerProfile {
-  id: string;
+interface AggregatedCustomer {
   email: string;
-  full_name: string | null;
-  created_at: string;
-  avatar_url: string | null;
-}
-
-interface CustomerStats {
-  totalCustomers: number;
-  totalOrders: number;
-  totalRevenue: number;
+  name: string | null;
+  order_count: number;
+  total_spent_cents: number;
   currency: string;
+  first_order_at: string;
+  last_order_at: string;
+  has_account: boolean;
 }
 
 export default function CustomersPage() {
-  // Fetch all users with customer role
+  // Aggregate customers from orders + augment with profile data when available
   const { data: customers, isLoading } = useQuery({
-    queryKey: ['admin-customers'],
+    queryKey: ['admin-customers-aggregated'],
     queryFn: async () => {
-      // Get all user_ids with customer role
-      const { data: customerRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'customer');
-
-      if (rolesError) throw rolesError;
-      if (!customerRoles?.length) return [];
-
-      const customerIds = customerRoles.map(r => r.user_id);
-
-      // Fetch profiles for those users
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at, avatar_url')
-        .in('id', customerIds)
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('customer_email, customer_name, total_cents, currency, created_at, user_id')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
-      return (profiles || []) as CustomerProfile[];
-    },
-  });
+      if (ordersError) throw ordersError;
+      if (!orders?.length) return [] as AggregatedCustomer[];
 
-  // Fetch aggregate stats
-  const { data: stats } = useQuery({
-    queryKey: ['admin-customer-stats'],
-    queryFn: async () => {
-      const [ordersRes, wishlistRes] = await Promise.all([
-        supabase.from('orders').select('id, total_cents, currency', { count: 'exact' }),
-        supabase.from('wishlist_items').select('id', { count: 'exact' }),
-      ]);
-
-      const orders = ordersRes.data || [];
-      const totalRevenue = orders.reduce((sum, o) => sum + (o.total_cents || 0), 0);
-
-      return {
-        totalCustomers: customers?.length || 0,
-        totalOrders: ordersRes.count || 0,
-        totalWishlistItems: wishlistRes.count || 0,
-        totalRevenue,
-        currency: orders[0]?.currency || 'SEK',
-      };
-    },
-    enabled: !!customers,
-  });
-
-  // Fetch order counts per customer
-  const { data: orderCounts } = useQuery({
-    queryKey: ['admin-customer-order-counts', customers?.map(c => c.id)],
-    queryFn: async () => {
-      if (!customers?.length) return {};
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('user_id, id')
-        .in('user_id', customers.map(c => c.id));
-
-      const counts: Record<string, number> = {};
-      for (const order of (orders || [])) {
-        if (order.user_id) {
-          counts[order.user_id] = (counts[order.user_id] || 0) + 1;
+      // Group by email (lowercased)
+      const map = new Map<string, AggregatedCustomer>();
+      for (const o of orders) {
+        const email = (o.customer_email || '').toLowerCase().trim();
+        if (!email) continue;
+        const existing = map.get(email);
+        if (existing) {
+          existing.order_count += 1;
+          existing.total_spent_cents += o.total_cents || 0;
+          if (o.created_at < existing.first_order_at) existing.first_order_at = o.created_at;
+          if (o.created_at > existing.last_order_at) existing.last_order_at = o.created_at;
+          if (!existing.name && o.customer_name) existing.name = o.customer_name;
+          if (!existing.has_account && o.user_id) existing.has_account = true;
+        } else {
+          map.set(email, {
+            email,
+            name: o.customer_name || null,
+            order_count: 1,
+            total_spent_cents: o.total_cents || 0,
+            currency: o.currency || 'SEK',
+            first_order_at: o.created_at,
+            last_order_at: o.created_at,
+            has_account: !!o.user_id,
+          });
         }
       }
-      return counts;
+
+      // Sort by total spent desc
+      return Array.from(map.values()).sort((a, b) => b.total_spent_cents - a.total_spent_cents);
     },
-    enabled: !!customers?.length,
   });
 
-  const formatCurrency = (cents: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+  const stats = customers
+    ? {
+        totalCustomers: customers.length,
+        totalOrders: customers.reduce((s, c) => s + c.order_count, 0),
+        totalRevenue: customers.reduce((s, c) => s + c.total_spent_cents, 0),
+        currency: customers[0]?.currency || 'SEK',
+        withAccount: customers.filter(c => c.has_account).length,
+      }
+    : null;
+
+  const formatCurrency = (cents: number, currency: string) =>
+    new Intl.NumberFormat('sv-SE', {
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
     }).format(cents / 100);
-  };
 
   return (
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader
           title="Customers"
-          description="E-commerce customers who have registered accounts"
+          description="Aggregated from all orders — including phone, MCP and storefront."
         />
 
         {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -129,8 +107,21 @@ export default function CustomersPage() {
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Customers</p>
-                  <p className="text-2xl font-bold">{customers?.length || 0}</p>
+                  <p className="text-sm text-muted-foreground">Unique Customers</p>
+                  <p className="text-2xl font-bold">{stats?.totalCustomers ?? 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <UserCheck className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">With Account</p>
+                  <p className="text-2xl font-bold">{stats?.withAccount ?? 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -143,7 +134,7 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-bold">{stats?.totalOrders || 0}</p>
+                  <p className="text-2xl font-bold">{stats?.totalOrders ?? 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -152,7 +143,7 @@ export default function CustomersPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Heart className="h-5 w-5 text-primary" />
+                  <Coins className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Revenue</p>
@@ -170,7 +161,7 @@ export default function CustomersPage() {
           <CardHeader>
             <CardTitle className="font-serif">All Customers</CardTitle>
             <CardDescription>
-              Users who registered via the storefront
+              Aggregated from orders. Account badge shown when the customer has a registered profile.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -183,7 +174,7 @@ export default function CustomersPage() {
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-medium text-lg mb-1">No customers yet</h3>
                 <p className="text-muted-foreground text-sm">
-                  Customers will appear here when they register through the storefront.
+                  Customers appear here when an order is placed — via storefront, phone, or MCP.
                 </p>
               </div>
             ) : (
@@ -193,36 +184,39 @@ export default function CustomersPage() {
                     <TableHead>Customer</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="text-center">Orders</TableHead>
-                    <TableHead>Registered</TableHead>
+                    <TableHead className="text-right">Lifetime Value</TableHead>
+                    <TableHead>Last Order</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customers.map((customer) => (
-                    <TableRow key={customer.id}>
+                    <TableRow key={customer.email}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                            {customer.avatar_url ? (
-                              <img src={customer.avatar_url} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <Users className="h-4 w-4 text-muted-foreground" />
+                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {customer.name || 'Guest'}
+                            </span>
+                            {customer.has_account && (
+                              <Badge variant="outline" className="text-xs">Account</Badge>
                             )}
                           </div>
-                          <span className="font-medium">
-                            {customer.full_name || 'Unknown'}
-                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {customer.email}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary">
-                          {orderCounts?.[customer.id] || 0}
-                        </Badge>
+                        <Badge variant="secondary">{customer.order_count}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(customer.total_spent_cents, customer.currency)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDistanceToNow(new Date(customer.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(customer.last_order_at), { addSuffix: true })}
                       </TableCell>
                     </TableRow>
                   ))}
