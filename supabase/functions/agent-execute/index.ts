@@ -2459,11 +2459,20 @@ async function executeDealsAction(
   }
 
   if (action === 'update') {
-    const { deal_id, ...updateData } = args as any;
+    const { deal_id, ...rest } = args as any;
     if (!deal_id) throw new Error('deal_id is required');
-    delete updateData.action;
+    // Strip injected/system fields and unknown keys — only allow real columns
+    const allowed = ['value_cents', 'currency', 'stage', 'product_id', 'expected_close', 'notes', 'closed_at'];
+    const updateData: Record<string, unknown> = {};
+    for (const k of allowed) {
+      if (rest[k] !== undefined) updateData[k] = rest[k];
+    }
+    if (Object.keys(updateData).length === 0) {
+      throw new Error('No updatable fields provided');
+    }
+    updateData.updated_at = new Date().toISOString();
     const { data, error } = await supabase.from('deals')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', deal_id).select('id, stage').single();
     if (error) throw new Error(`Update deal failed: ${error.message}`);
     return { deal_id: data.id, stage: data.stage, status: 'updated' };
