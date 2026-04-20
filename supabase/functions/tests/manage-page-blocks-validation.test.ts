@@ -101,7 +101,6 @@ async function setupTestFixtures(): Promise<{ pageId: string; cleanupSkillId: st
       enabled: true,
       scope: "internal",
       trust_level: "auto",
-      requires_approval: false,
       tool_definition: {
         type: "function",
         function: {
