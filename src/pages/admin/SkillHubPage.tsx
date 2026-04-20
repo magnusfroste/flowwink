@@ -24,7 +24,7 @@ import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
 import { WorkflowsPanel } from '@/components/admin/skills/WorkflowsPanel';
 import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { AutonomyScheduleTab } from '@/components/admin/AutonomyScheduleTab';
-import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill, useToggleMcpExposed } from '@/hooks/useSkillHub';
+import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill, useToggleMcpExposed, useBulkToggleSkills } from '@/hooks/useSkillHub';
 import {
   useAutonomyScheduleSettings,
   useUpdateAutonomyScheduleSettings,
