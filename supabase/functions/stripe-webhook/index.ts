@@ -338,6 +338,33 @@ serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
+        const invoiceId = session.metadata?.invoice_id;
+
+        // Handle invoice payment via public payment link
+        if (invoiceId) {
+          console.log("Marking invoice as paid:", invoiceId);
+          const { error: invErr } = await supabase
+            .from("invoices")
+            .update({
+              status: "paid",
+              paid_at: new Date().toISOString(),
+            })
+            .eq("id", invoiceId);
+          if (invErr) {
+            console.error("Error updating invoice:", invErr);
+          } else {
+            await supabase.from("audit_logs").insert({
+              action: "invoice.paid_via_stripe",
+              entity_type: "invoice",
+              entity_id: invoiceId,
+              metadata: {
+                stripe_session_id: session.id,
+                payment_intent: session.payment_intent,
+                amount_total: session.amount_total,
+              },
+            });
+          }
+        }
 
         if (orderId) {
           console.log("Updating order to paid:", orderId);

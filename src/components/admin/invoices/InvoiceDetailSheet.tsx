@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, Building2, Download, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Building2, Download, Loader2, Send, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals,
@@ -46,6 +46,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const [notes, setNotes] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sendLoading, setSendLoading] = useState(false);
 
   useEffect(() => {
     if (invoice) {
@@ -115,6 +116,54 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
     } finally {
       setPdfLoading(false);
     }
+  };
+
+  const handleSendInvoice = async () => {
+    if (!invoice) return;
+    const { toast } = await import('sonner');
+    if (!customerEmail) {
+      toast.error('Invoice has no customer email');
+      return;
+    }
+    if (!confirm(`Send invoice ${invoice.invoice_number} to ${customerEmail}?`)) return;
+    setSendLoading(true);
+    try {
+      // Refetch to get fresh public_token
+      const { data: fresh, error: fErr } = await supabase
+        .from('invoices')
+        .select('public_token')
+        .eq('id', invoice.id)
+        .single();
+      if (fErr || !fresh?.public_token) throw new Error('Missing public token');
+
+      const publicUrl = `${window.location.origin}/invoice/${fresh.public_token}`;
+      const { error } = await supabase.functions.invoke('send-invoice-email', {
+        body: { invoice_id: invoice.id, public_url: publicUrl },
+      });
+      if (error) throw error;
+      toast.success('Invoice sent');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send invoice');
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!invoice) return;
+    const { toast } = await import('sonner');
+    const { data: fresh } = await supabase
+      .from('invoices')
+      .select('public_token')
+      .eq('id', invoice.id)
+      .single();
+    if (!fresh?.public_token) {
+      toast.error('No public link available');
+      return;
+    }
+    const url = `${window.location.origin}/invoice/${fresh.public_token}`;
+    await navigator.clipboard.writeText(url);
+    toast.success('Public link copied');
   };
 
   const updateLineItem = (index: number, field: keyof InvoiceLineItem, value: string | number) => {
@@ -258,6 +307,13 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
             <Button variant="outline" onClick={handleDownloadPdf} disabled={pdfLoading}>
               {pdfLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
               PDF
+            </Button>
+            <Button variant="default" onClick={handleSendInvoice} disabled={sendLoading}>
+              {sendLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+              Send
+            </Button>
+            <Button variant="outline" onClick={handleCopyLink}>
+              <LinkIcon className="h-4 w-4 mr-1" /> Link
             </Button>
             {actions.map((action) => (
               <Button
