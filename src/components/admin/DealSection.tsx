@@ -69,7 +69,7 @@ export function DealSection({ leadId }: DealSectionProps) {
                       </span>
                     )}
                     {wonDeals.length > 0 && (
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1 text-success">
                         <Trophy className="h-3 w-3" />
                         {wonDeals.length} won · {formatPrice(wonValue)}
                       </span>
