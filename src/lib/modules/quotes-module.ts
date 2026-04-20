@@ -25,6 +25,7 @@ const quotesInputSchema = z.object({
   ]),
   id: z.string().uuid().optional(),
   lead_id: z.string().uuid().optional(),
+  deal_id: z.string().uuid().optional(),
   template_id: z.string().uuid().optional(),
   title: z.string().optional(),
   intro_text: z.string().optional(),
@@ -76,6 +77,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
             },
             id: { type: 'string', description: 'Quote ID (uuid)' },
             lead_id: { type: 'string', description: 'Required when creating a new quote' },
+            deal_id: { type: 'string', description: 'Optional — link the quote to an existing CRM deal/opportunity (Odoo-style Deal → Quote)' },
             template_id: { type: 'string', description: 'Optional template to seed the quote with' },
             title: { type: 'string' },
             intro_text: { type: 'string' },
@@ -94,7 +96,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Workflow: 1) create with lead_id (or use_template) → returns draft quote. 2) add_item one or more times. 3) request_approval to check whether the quote requires sign-off (above 25k SEK by default). 4) Once approved (or if not required), send to generate the public accept_token and email the customer the link. 5) convert_to_invoice once the customer accepts.',
+      'Workflow: 1) create with lead_id (and optionally deal_id to link to a CRM opportunity) → returns draft quote. 2) add_item one or more times. 3) request_approval to check whether the quote requires sign-off (above 25k SEK by default). 4) Once approved (or if not required), send to generate the public accept_token and email the customer the link. 5) convert_to_invoice once the customer accepts.',
   },
 ];
 
@@ -148,6 +150,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
         .from('quotes')
         .insert({
           lead_id: v.lead_id,
+          deal_id: v.deal_id ?? null,
           title: v.title ?? null,
           intro_text: v.intro_text ?? templateData?.intro_text ?? null,
           terms_text: v.terms_text ?? templateData?.terms_text ?? null,
