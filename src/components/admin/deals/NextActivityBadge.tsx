@@ -1,5 +1,5 @@
 import { useCrmTasks } from '@/hooks/useCrmTasks';
-import { CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { formatDistanceToNow, isPast, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +22,7 @@ export function NextActivityBadge({ dealId }: NextActivityBadgeProps) {
   // No activity scheduled — Pipedrive shows this as a warning
   if (!next) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-500">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
         <AlertTriangle className="h-3 w-3 shrink-0" />
         <span className="truncate">No activity scheduled</span>
       </div>
