@@ -4,7 +4,7 @@ import {
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
   Network, Snowflake, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
-  RefreshCw, AlertTriangle,
+  RefreshCw, AlertTriangle, CheckSquare,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -79,6 +79,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
       { name: "Consultants", href: "/admin/resume", icon: FileUser, moduleId: "resume" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
+      { name: "Activities", href: "/admin/activities", icon: CheckSquare },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Calendar", href: "/admin/calendar", icon: CalendarDays, moduleId: "calendar" },
     ],

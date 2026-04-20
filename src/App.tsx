@@ -108,6 +108,7 @@ import SubscriptionsPage from "./pages/admin/SubscriptionsPage";
 import DunningPage from "./pages/admin/DunningPage";
 import ApprovalsPage from "./pages/admin/ApprovalsPage";
 import ReconciliationPage from "./pages/admin/ReconciliationPage";
+import ActivitiesPage from "./pages/admin/ActivitiesPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
@@ -203,6 +204,7 @@ const router = createBrowserRouter([
       { path: "/admin/contacts/:id", element: <LeadDetailPage /> },
       { path: "/admin/deals", element: <DealsPage /> },
       { path: "/admin/deals/:id", element: <DealDetailPage /> },
+      { path: "/admin/activities", element: <ActivitiesPage /> },
       { path: "/admin/companies", element: <CompaniesPage /> },
       { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
       { path: "/admin/products", element: <ProductsPage /> },
