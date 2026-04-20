@@ -2431,9 +2431,54 @@ async function executeGlobalBlocksAction(
 
 async function executeDealsAction(
   supabase: SupabaseClient,
-  _skillName: string,
+  skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // ── deal_stale_check skill (MCP-exposed, agent-independent) ──
+  if (skillName === 'deal_stale_check') {
+    const { days_threshold = 14 } = args as any;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - Number(days_threshold));
+
+    const { data, error } = await supabase
+      .from('deals')
+      .select('id, stage, value_cents, currency, lead_id, expected_close, updated_at, notes, product:products(name)')
+      .not('stage', 'in', '(closed_won,closed_lost)')
+      .lt('updated_at', cutoff.toISOString())
+      .order('updated_at', { ascending: true })
+      .limit(50);
+
+    if (error) throw new Error(`Stale deals query failed: ${error.message}`);
+
+    const now = Date.now();
+    const stale = (data || []).map((d: any) => {
+      const daysIdle = Math.floor((now - new Date(d.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        deal_id: d.id,
+        stage: d.stage,
+        value_cents: d.value_cents,
+        currency: d.currency,
+        lead_id: d.lead_id,
+        product_name: d.product?.name || null,
+        expected_close: d.expected_close,
+        days_idle: daysIdle,
+        recommendation: daysIdle > 30
+          ? 'Consider closing as lost or escalating'
+          : daysIdle > 21
+            ? 'Send a check-in email or schedule a call'
+            : 'Add a follow-up activity',
+      };
+    });
+
+    const total_value = stale.reduce((sum, d) => sum + d.value_cents, 0);
+    return {
+      threshold_days: days_threshold,
+      stale_count: stale.length,
+      total_value_at_risk_cents: total_value,
+      deals: stale,
+    };
+  }
+
   const { action = 'list' } = args as any;
 
   if (action === 'list') {
