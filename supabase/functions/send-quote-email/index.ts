@@ -142,8 +142,15 @@ Deno.serve(async (req) => {
       replyTo?: string;
     };
 
+    const { data: items } = await supabase
+      .from('quote_items')
+      .select('*')
+      .eq('quote_id', quote.id)
+      .order('position', { ascending: true });
+
     const html = buildHtml({
       quote,
+      items: items || [],
       url: body.public_url,
       reminder: !!body.reminder,
       custom: body.custom_message || '',
