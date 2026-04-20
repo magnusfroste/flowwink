@@ -100,11 +100,28 @@ export function useCreateDeal() {
         .single();
 
       if (error) throw error;
+
+      // Auto-bump contact: lead → opportunity (Pipedrive/HubSpot pattern)
+      // Only bumps if currently 'lead' so we don't downgrade customers
+      try {
+        await updateLeadStatus(data.lead_id, 'opportunity', { onlyIfCurrentStatus: 'lead' });
+        await addLeadActivity({
+          leadId: data.lead_id,
+          type: 'deal_created',
+          metadata: { deal_id: data.id, value_cents: data.value_cents, stage: data.stage },
+        });
+      } catch (bumpError) {
+        logger.warn('Auto-bump on deal create failed:', bumpError);
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['deals', data.lead_id] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead', data.lead_id] });
+      queryClient.invalidateQueries({ queryKey: ['lead-activities', data.lead_id] });
       toast.success('Deal created');
     },
     onError: (error) => {
