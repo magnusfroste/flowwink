@@ -38,7 +38,7 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
   const { data: products = [] } = useProducts({ activeOnly: true });
   const createDeal = useCreateDeal();
   
-  const { handleSubmit, reset, setValue, watch } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch } = useForm<FormData>({
     defaultValues: {
       product_id: '',
       value_cents: 0,
