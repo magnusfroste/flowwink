@@ -34,6 +34,8 @@ export function BlogContentEditor({
   const [unsplashOpen, setUnsplashOpen] = useState(false);
 
   const editor = useEditor({
+    // Cast to any[] — @tiptap/starter-kit ships its own nested @tiptap/core copy
+    // which TS sees as a structurally-identical-but-distinct type.
     extensions: [
       StarterKit.configure({
         heading: {
@@ -41,14 +43,14 @@ export function BlogContentEditor({
         },
       }),
       Placeholder.configure({ placeholder }),
-      Link.configure({ 
+      Link.configure({
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-primary underline hover:text-primary/80',
         },
       }),
       ResizableImage,
-    ],
+    ] as any[],
     content: content || '',
     editable: !disabled,
     onUpdate: ({ editor }) => {

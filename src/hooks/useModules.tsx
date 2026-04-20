@@ -85,6 +85,7 @@ export interface ModulesSettings {
   subscriptions: ModuleConfig;
   approvals: ModuleConfig;
   reconciliation: ModuleConfig;
+  email: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -529,6 +530,18 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     optionalIntegrations: ['stripe'],
     enhancedByFlowPilot: true,
+  },
+  email: {
+    enabled: true,
+    name: 'Email Router',
+    description:
+      'Internal infrastructure module that routes all system emails (dunning, newsletter, receipts, booking confirmations) through SMTP or Resend. Auto-detects available providers — explicit provider can be set in Integrations.',
+    icon: 'Mail',
+    category: 'system',
+    core: true,
+    autonomy: 'agent-capable',
+    adminUI: false,
+    optionalIntegrations: ['smtp', 'resend'],
   },
 };
 
