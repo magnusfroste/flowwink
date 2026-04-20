@@ -6,7 +6,19 @@ import { updateLeadStatus, addLeadActivity } from '@/lib/lead-utils';
 import { notifyDealWon } from '@/lib/slack-notify';
 import type { Product } from './useProducts';
 
-export type DealStage = 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+export type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+
+/** Win probability per stage — used for weighted forecast */
+export const STAGE_PROBABILITY: Record<DealStage, number> = {
+  lead: 0.10,
+  qualified: 0.25,
+  proposal: 0.50,
+  negotiation: 0.75,
+  closed_won: 1.0,
+  closed_lost: 0,
+};
+
+export const ACTIVE_STAGES: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation'];
 
 export interface Deal {
   id: string;
@@ -176,20 +188,34 @@ export function useDealStats() {
       if (error) throw error;
 
       const stats = {
+        lead: { count: 0, value: 0 },
+        qualified: { count: 0, value: 0 },
         proposal: { count: 0, value: 0 },
         negotiation: { count: 0, value: 0 },
         closed_won: { count: 0, value: 0 },
         closed_lost: { count: 0, value: 0 },
         totalPipeline: 0,
+        weightedForecast: 0,
+        wonThisMonth: 0,
       };
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
       data.forEach((deal) => {
         const stage = deal.stage as DealStage;
+        if (!stats[stage]) return;
         stats[stage].count++;
         stats[stage].value += deal.value_cents;
-        
-        if (stage === 'proposal' || stage === 'negotiation') {
+
+        if (ACTIVE_STAGES.includes(stage)) {
           stats.totalPipeline += deal.value_cents;
+          stats.weightedForecast += deal.value_cents * STAGE_PROBABILITY[stage];
+        }
+
+        if (stage === 'closed_won' && deal.closed_at && new Date(deal.closed_at) >= startOfMonth) {
+          stats.wonThisMonth += deal.value_cents;
         }
       });
 
@@ -200,6 +226,8 @@ export function useDealStats() {
 
 export function getDealStageInfo(stage: DealStage): { label: string; color: string } {
   const stages: Record<DealStage, { label: string; color: string }> = {
+    lead: { label: 'Lead', color: 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300' },
+    qualified: { label: 'Qualified', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
     proposal: { label: 'Proposal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
     negotiation: { label: 'Negotiation', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
     closed_won: { label: 'Won', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
