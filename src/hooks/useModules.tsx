@@ -532,6 +532,17 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['stripe'],
     enhancedByFlowPilot: true,
   },
+  quotes: {
+    enabled: false,
+    name: 'Quotes',
+    description: 'Send branded quotes, track acceptance, and convert to orders or invoices — FlowPilot autonomously follows up on pending quotes.',
+    icon: 'FileSignature',
+    category: 'data',
+    autonomy: 'view-required',
+    adminUI: true,
+    optionalIntegrations: ['stripe', 'resend'],
+    enhancedByFlowPilot: true,
+  },
   email: {
     enabled: true,
     name: 'Email Router',
