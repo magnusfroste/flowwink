@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
+    dedupe: ["react", "react-dom", "@codemirror/state", "@codemirror/view"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@templates": path.resolve(__dirname, "./templates"),
