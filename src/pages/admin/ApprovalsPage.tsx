@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 function formatAmount(cents: number | null, currency: string) {
   if (cents == null) return '—';
