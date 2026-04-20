@@ -32,11 +32,9 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-50 shadow-lg ring-2 ring-primary'
       )}
       {...attributes}
-      {...listeners}
     >
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
@@ -48,13 +46,19 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
               {formatPrice(deal.value_cents, deal.currency)}
             </p>
           </div>
-          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+          <button
+            type="button"
+            className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 text-muted-foreground hover:text-foreground shrink-0"
+            aria-label="Drag deal"
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
         </div>
         
         <Link 
           to={`/admin/leads/${deal.lead_id}`}
-          className="text-xs text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          className="text-xs text-primary hover:underline inline-block"
         >
           View Lead →
         </Link>
