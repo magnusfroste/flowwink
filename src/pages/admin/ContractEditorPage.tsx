@@ -3,7 +3,7 @@
  * The markdown is the source of truth — exposed verbatim to ClawWink via MCP.
  */
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Send, ExternalLink, Copy, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContractMarkdownEditor } from '@/components/admin/contracts/ContractMarkdownEditor';
 import { DocumentsPanel } from '@/components/admin/documents/DocumentsPanel';
@@ -33,7 +32,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ContractEditorPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: contract, isLoading } = useContract(id);
   const update = useUpdateContract();
   const send = useSendContract();
