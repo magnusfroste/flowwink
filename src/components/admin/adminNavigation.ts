@@ -117,6 +117,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Projects", href: "/admin/projects", icon: FolderKanban, moduleId: "projects" },
       { name: "HR & Employees", href: "/admin/hr", icon: Users, moduleId: "hr" },
+      { name: "Recruitment", href: "/admin/recruitment", icon: Briefcase, moduleId: "recruitment" },
       { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts" },
       { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },

@@ -42,6 +42,7 @@ export { timesheetsModule } from './timesheets-module';
 export { purchasingModule } from './purchasing-module';
 export { contractsModule } from './contracts-module';
 export { hrModule } from './hr-module';
+export { recruitmentModule } from './recruitment-module';
 export { documentsModule } from './documents-module';
 export { projectsModule } from './projects-module';
 export { slaModule } from './sla-module';

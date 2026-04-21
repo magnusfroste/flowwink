@@ -87,6 +87,7 @@ export interface ModulesSettings {
   reconciliation: ModuleConfig;
   quotes: ModuleConfig;
   email: ModuleConfig;
+  recruitment: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -555,6 +556,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: false,
     optionalIntegrations: ['smtp', 'resend'],
   },
+  recruitment: {
+    enabled: false,
+    name: 'Recruitment',
+    description:
+      'Applicant Tracking System — job postings, candidate pipeline, AI screening and outreach. FlowPilot summarizes the pipeline daily and flags top-fit candidates.',
+    icon: 'Briefcase',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -608,6 +620,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/subscriptions': 'subscriptions',
   '/admin/approvals': 'approvals',
   '/admin/reconciliation': 'reconciliation',
+  '/admin/recruitment': 'recruitment',
 };
 
 export function useModules() {
