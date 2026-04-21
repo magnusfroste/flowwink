@@ -105,6 +105,7 @@ import ContractEditorPage from "./pages/admin/ContractEditorPage";
 import PublicContractPage from "./pages/PublicContractPage";
 import HRPage from "./pages/admin/HRPage";
 import RecruitmentPage from "./pages/admin/RecruitmentPage";
+import CandidatePage from "./pages/admin/CandidatePage";
 import DocumentsPage from "./pages/admin/DocumentsPage";
 import ProjectsPage from "./pages/admin/ProjectsPage";
 import CalendarPage from "./pages/admin/CalendarPage";
@@ -255,6 +256,7 @@ const router = createBrowserRouter([
       { path: "/contract/:token", element: <PublicContractPage /> },
       { path: "/admin/hr", element: <HRPage /> },
       { path: "/admin/recruitment", element: <RecruitmentPage /> },
+      { path: "/admin/recruitment/candidates/:id", element: <CandidatePage /> },
       { path: "/admin/documents", element: <DocumentsPage /> },
       { path: "/admin/projects", element: <ProjectsPage /> },
       { path: "/admin/calendar", element: <CalendarPage /> },

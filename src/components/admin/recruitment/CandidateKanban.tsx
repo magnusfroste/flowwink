@@ -11,6 +11,7 @@ import {
 } from '@/hooks/useRecruitment';
 import { Star, Mail } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -29,6 +30,7 @@ const VISIBLE_STAGES: ApplicationStage[] = [
 export function CandidateKanban({ jobId }: Props) {
   const { data, isLoading } = useApplications(jobId);
   const move = useMoveApplicationStage();
+  const navigate = useNavigate();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
 
@@ -90,8 +92,9 @@ export function CandidateKanban({ jobId }: Props) {
                 draggable
                 onDragStart={() => setDraggingId(app.id)}
                 onDragEnd={() => setDraggingId(null)}
+                onClick={() => navigate(`/admin/recruitment/candidates/${app.id}`)}
                 className={cn(
-                  'cursor-grab transition-opacity active:cursor-grabbing',
+                  'cursor-pointer transition-opacity hover:border-primary/50 active:cursor-grabbing',
                   draggingId === app.id && 'opacity-50',
                 )}
               >
