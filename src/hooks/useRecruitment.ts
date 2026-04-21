@@ -209,6 +209,30 @@ export function useMoveApplicationStage() {
   });
 }
 
+export function useScoreCandidate() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (application_id: string) => {
+      const { data, error } = await supabase.functions.invoke('score-candidate', {
+        body: { application_id },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Scoring failed');
+      return data.scoring;
+    },
+    onSuccess: (_d, application_id) => {
+      qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['applications', application_id] });
+      toast({ title: 'Candidate re-scored' });
+    },
+    onError: (e: Error) => {
+      logger.error('scoreCandidate', e);
+      toast({ title: 'Scoring failed', description: e.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useCreateApplication() {
   const qc = useQueryClient();
   const { toast } = useToast();
