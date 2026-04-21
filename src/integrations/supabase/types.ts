@@ -2087,8 +2087,96 @@ export type Database = {
           },
         ]
       }
+      contract_signatures: {
+        Row: {
+          action: string
+          comment: string | null
+          contract_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          signature_data: string | null
+          signer_email: string | null
+          signer_name: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          contract_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_data?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          contract_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_data?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_versions: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          snapshot: Json
+          version_number: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_versions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
+          accept_token: string | null
+          body_markdown: string | null
+          body_updated_at: string | null
           contract_type: Database["public"]["Enums"]["contract_type"]
           counterparty_email: string | null
           counterparty_name: string
@@ -2101,15 +2189,24 @@ export type Database = {
           notes: string | null
           renewal_notice_days: number | null
           renewal_type: Database["public"]["Enums"]["renewal_type"]
+          sent_at: string | null
           signed_at: string | null
+          signer_email: string | null
+          signer_ip: string | null
+          signer_name: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["contract_status"]
           terminated_at: string | null
           title: string
           updated_at: string
           value_cents: number | null
+          version: number
+          viewed_at: string | null
         }
         Insert: {
+          accept_token?: string | null
+          body_markdown?: string | null
+          body_updated_at?: string | null
           contract_type?: Database["public"]["Enums"]["contract_type"]
           counterparty_email?: string | null
           counterparty_name: string
@@ -2122,15 +2219,24 @@ export type Database = {
           notes?: string | null
           renewal_notice_days?: number | null
           renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          sent_at?: string | null
           signed_at?: string | null
+          signer_email?: string | null
+          signer_ip?: string | null
+          signer_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           terminated_at?: string | null
           title: string
           updated_at?: string
           value_cents?: number | null
+          version?: number
+          viewed_at?: string | null
         }
         Update: {
+          accept_token?: string | null
+          body_markdown?: string | null
+          body_updated_at?: string | null
           contract_type?: Database["public"]["Enums"]["contract_type"]
           counterparty_email?: string | null
           counterparty_name?: string
@@ -2143,13 +2249,19 @@ export type Database = {
           notes?: string | null
           renewal_notice_days?: number | null
           renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          sent_at?: string | null
           signed_at?: string | null
+          signer_email?: string | null
+          signer_ip?: string | null
+          signer_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           terminated_at?: string | null
           title?: string
           updated_at?: string
           value_cents?: number | null
+          version?: number
+          viewed_at?: string | null
         }
         Relationships: []
       }
