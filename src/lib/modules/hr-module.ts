@@ -101,7 +101,18 @@ const HR_SKILLS: SkillSeed[] = [
             action: { type: 'string', enum: ['create', 'update_item', 'get_status', 'list_incomplete'] },
             employee_id: { type: 'string' },
             checklist_id: { type: 'string' },
-            items: { type: 'array', description: 'Array of {title, done} items' },
+            items: {
+              type: 'array',
+              description: 'Array of {title, done} items',
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  done: { type: 'boolean' },
+                },
+                required: ['title'],
+              },
+            },
           },
           required: ['action'],
         },
