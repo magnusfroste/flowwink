@@ -7,7 +7,6 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Send, ExternalLink, Copy, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -71,48 +70,48 @@ export default function ContractEditorPage() {
           </Button>
         </div>
 
-        <AdminPageHeader
-          title={
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <Input
                 value={titleDraft ?? contract.title}
                 onChange={(e) => setTitleDraft(e.target.value)}
                 onBlur={handleTitleBlur}
                 disabled={isLocked}
-                className="text-2xl font-semibold border-transparent hover:border-input focus-visible:border-input bg-transparent shadow-none px-2 -ml-2 max-w-xl"
+                className="text-2xl font-semibold border-transparent hover:border-input focus-visible:border-input bg-transparent shadow-none px-2 -ml-2 max-w-xl h-auto py-1"
               />
               <Badge variant="outline" className={STATUS_COLORS[contract.status]}>
                 {contract.status.replace('_', ' ')}
               </Badge>
               <span className="text-xs text-muted-foreground">v{contract.version}</span>
             </div>
-          }
-          description={`With ${contract.counterparty_name}${contract.counterparty_email ? ` · ${contract.counterparty_email}` : ''}`}
-          actions={
-            <div className="flex gap-2">
-              {publicUrl && (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(publicUrl);
-                    toast.success('Public link copied');
-                  }}>
-                    <Copy className="h-4 w-4 mr-1" /> Copy link
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={publicUrl} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-1" /> Open
-                    </a>
-                  </Button>
-                </>
-              )}
-              {!isLocked && (
-                <Button size="sm" onClick={handleSend} disabled={send.isPending}>
-                  <Send className="h-4 w-4 mr-1" /> {contract.status === 'pending_signature' ? 'Resend link' : 'Send for signature'}
+            <p className="text-sm text-muted-foreground mt-1 ml-2">
+              With {contract.counterparty_name}{contract.counterparty_email ? ` · ${contract.counterparty_email}` : ''}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {publicUrl && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => {
+                  navigator.clipboard.writeText(publicUrl);
+                  toast.success('Public link copied');
+                }}>
+                  <Copy className="h-4 w-4 mr-1" /> Copy link
                 </Button>
-              )}
-            </div>
-          }
-        />
+                <Button variant="outline" size="sm" asChild>
+                  <a href={publicUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-1" /> Open
+                  </a>
+                </Button>
+              </>
+            )}
+            {!isLocked && (
+              <Button size="sm" onClick={handleSend} disabled={send.isPending}>
+                <Send className="h-4 w-4 mr-1" /> {contract.status === 'pending_signature' ? 'Resend link' : 'Send for signature'}
+              </Button>
+            )}
+          </div>
+        </div>
 
         <Tabs defaultValue="editor">
           <TabsList>

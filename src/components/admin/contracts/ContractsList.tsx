@@ -98,7 +98,7 @@ export function ContractsList({ statusFilter }: Props) {
                   'hover:shadow-md transition-all cursor-pointer',
                   isOver && 'ring-2 ring-primary bg-primary/5'
                 )}
-                onClick={() => setDetailContract(contract)}
+                onClick={() => window.location.assign(`/admin/contracts/${contract.id}`)}
                 onDragOver={(e) => { e.preventDefault(); setDropTarget(contract.id); }}
                 onDragLeave={() => setDropTarget(null)}
                 onDrop={(e) => handleDrop(e, contract)}
@@ -159,8 +159,8 @@ export function ContractsList({ statusFilter }: Props) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => setDetailContract(contract)}>
-                          <FileTextIcon className="h-4 w-4 mr-2" /> Open
+                        <DropdownMenuItem onClick={() => window.location.assign(`/admin/contracts/${contract.id}`)}>
+                          <FileTextIcon className="h-4 w-4 mr-2" /> Open editor
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setEditContract(contract); setDialogOpen(true); }}>
                           <Edit className="h-4 w-4 mr-2" /> Edit
