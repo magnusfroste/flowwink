@@ -46,7 +46,7 @@ export default function JobAdminPage() {
     employment_type: 'full_time' as EmploymentKind,
     description: '',
     requirements: '',
-    status: 'draft' as 'draft' | 'published' | 'closed',
+    status: 'draft' as 'draft' | 'published' | 'closed' | 'archived',
   });
 
   useEffect(() => {
@@ -205,7 +205,7 @@ export default function JobAdminPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as 'draft' | 'published' | 'closed' }))}>
+                  <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as typeof form.status }))}>
                     <SelectTrigger id="status" className="md:w-64">
                       <SelectValue />
                     </SelectTrigger>
@@ -213,6 +213,7 @@ export default function JobAdminPage() {
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="published">Published</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
