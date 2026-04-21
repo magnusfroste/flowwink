@@ -700,6 +700,141 @@ export type Database = {
         }
         Relationships: []
       }
+      application_stages: {
+        Row: {
+          application_id: string
+          changed_by: string | null
+          comment: string | null
+          created_at: string
+          from_stage: Database["public"]["Enums"]["application_stage"] | null
+          id: string
+          to_stage: Database["public"]["Enums"]["application_stage"]
+        }
+        Insert: {
+          application_id: string
+          changed_by?: string | null
+          comment?: string | null
+          created_at?: string
+          from_stage?: Database["public"]["Enums"]["application_stage"] | null
+          id?: string
+          to_stage: Database["public"]["Enums"]["application_stage"]
+        }
+        Update: {
+          application_id?: string
+          changed_by?: string | null
+          comment?: string | null
+          created_at?: string
+          from_stage?: Database["public"]["Enums"]["application_stage"] | null
+          id?: string
+          to_stage?: Database["public"]["Enums"]["application_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_stages_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applications: {
+        Row: {
+          ai_reasoning: string | null
+          ai_score: number | null
+          ai_summary: string | null
+          assigned_recruiter_id: string | null
+          candidate_email: string
+          candidate_name: string
+          candidate_phone: string | null
+          cover_letter: string | null
+          created_at: string
+          detected_skills: string[] | null
+          id: string
+          job_posting_id: string
+          linkedin_url: string | null
+          matching_skills: string[] | null
+          meta: Json
+          missing_skills: string[] | null
+          parsed_resume: Json
+          rejected_reason: string | null
+          resume_url: string | null
+          source: string
+          stage: Database["public"]["Enums"]["application_stage"]
+          updated_at: string
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          ai_score?: number | null
+          ai_summary?: string | null
+          assigned_recruiter_id?: string | null
+          candidate_email: string
+          candidate_name: string
+          candidate_phone?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          detected_skills?: string[] | null
+          id?: string
+          job_posting_id: string
+          linkedin_url?: string | null
+          matching_skills?: string[] | null
+          meta?: Json
+          missing_skills?: string[] | null
+          parsed_resume?: Json
+          rejected_reason?: string | null
+          resume_url?: string | null
+          source?: string
+          stage?: Database["public"]["Enums"]["application_stage"]
+          updated_at?: string
+        }
+        Update: {
+          ai_reasoning?: string | null
+          ai_score?: number | null
+          ai_summary?: string | null
+          assigned_recruiter_id?: string | null
+          candidate_email?: string
+          candidate_name?: string
+          candidate_phone?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          detected_skills?: string[] | null
+          id?: string
+          job_posting_id?: string
+          linkedin_url?: string | null
+          matching_skills?: string[] | null
+          meta?: Json
+          missing_skills?: string[] | null
+          parsed_resume?: Json
+          rejected_reason?: string | null
+          resume_url?: string | null
+          source?: string
+          stage?: Database["public"]["Enums"]["application_stage"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_assigned_recruiter_id_fkey"
+            columns: ["assigned_recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_assigned_recruiter_id_fkey"
+            columns: ["assigned_recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_decisions: {
         Row: {
           comment: string | null
@@ -1621,6 +1756,41 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "booking_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_notes: {
+        Row: {
+          application_id: string
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          rating: number | null
+        }
+        Insert: {
+          application_id: string
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+        }
+        Update: {
+          application_id?: string
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
             referencedColumns: ["id"]
           },
         ]
@@ -3288,6 +3458,108 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          department: string | null
+          description: string | null
+          employment_type: Database["public"]["Enums"]["employment_kind"]
+          external_apply_url: string | null
+          hero_image_url: string | null
+          hiring_manager_id: string | null
+          id: string
+          location: string | null
+          meta: Json
+          nice_to_have_skills: string[] | null
+          perks: string[] | null
+          published_at: string | null
+          remote_policy: string | null
+          required_skills: string[] | null
+          requirements: string | null
+          responsibilities: string | null
+          salary_max_cents: number | null
+          salary_min_cents: number | null
+          slug: string
+          status: Database["public"]["Enums"]["job_posting_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department?: string | null
+          description?: string | null
+          employment_type?: Database["public"]["Enums"]["employment_kind"]
+          external_apply_url?: string | null
+          hero_image_url?: string | null
+          hiring_manager_id?: string | null
+          id?: string
+          location?: string | null
+          meta?: Json
+          nice_to_have_skills?: string[] | null
+          perks?: string[] | null
+          published_at?: string | null
+          remote_policy?: string | null
+          required_skills?: string[] | null
+          requirements?: string | null
+          responsibilities?: string | null
+          salary_max_cents?: number | null
+          salary_min_cents?: number | null
+          slug: string
+          status?: Database["public"]["Enums"]["job_posting_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department?: string | null
+          description?: string | null
+          employment_type?: Database["public"]["Enums"]["employment_kind"]
+          external_apply_url?: string | null
+          hero_image_url?: string | null
+          hiring_manager_id?: string | null
+          id?: string
+          location?: string | null
+          meta?: Json
+          nice_to_have_skills?: string[] | null
+          perks?: string[] | null
+          published_at?: string | null
+          remote_policy?: string | null
+          required_skills?: string[] | null
+          requirements?: string | null
+          responsibilities?: string | null
+          salary_max_cents?: number | null
+          salary_min_cents?: number | null
+          slug?: string
+          status?: Database["public"]["Enums"]["job_posting_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6314,6 +6586,15 @@ export type Database = {
         | "subscriptions"
       agent_type: "flowpilot" | "chat" | "mcp"
       app_role: "writer" | "approver" | "admin" | "customer"
+      application_stage:
+        | "applied"
+        | "screened"
+        | "interview_scheduled"
+        | "interviewed"
+        | "offer_sent"
+        | "hired"
+        | "rejected"
+        | "withdrawn"
       approval_decision_kind: "approve" | "reject"
       approval_status: "pending" | "approved" | "rejected" | "cancelled"
       automation_trigger_type: "cron" | "event" | "signal"
@@ -6333,7 +6614,14 @@ export type Database = {
         | "negotiation"
         | "closed_won"
         | "closed_lost"
+      employment_kind:
+        | "full_time"
+        | "part_time"
+        | "contract"
+        | "internship"
+        | "temporary"
       invoice_status: "draft" | "sent" | "paid" | "cancelled" | "overdue"
+      job_posting_status: "draft" | "published" | "closed" | "archived"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
@@ -6578,6 +6866,16 @@ export const Constants = {
       ],
       agent_type: ["flowpilot", "chat", "mcp"],
       app_role: ["writer", "approver", "admin", "customer"],
+      application_stage: [
+        "applied",
+        "screened",
+        "interview_scheduled",
+        "interviewed",
+        "offer_sent",
+        "hired",
+        "rejected",
+        "withdrawn",
+      ],
       approval_decision_kind: ["approve", "reject"],
       approval_status: ["pending", "approved", "rejected", "cancelled"],
       automation_trigger_type: ["cron", "event", "signal"],
@@ -6599,7 +6897,15 @@ export const Constants = {
         "closed_won",
         "closed_lost",
       ],
+      employment_kind: [
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary",
+      ],
       invoice_status: ["draft", "sent", "paid", "cancelled", "overdue"],
+      job_posting_status: ["draft", "published", "closed", "archived"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
