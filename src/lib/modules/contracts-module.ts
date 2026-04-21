@@ -111,6 +111,74 @@ const CONTRACT_SKILLS: SkillSeed[] = [
     instructions: 'Query active contracts where end_date is within the specified window. Group by urgency: critical (<7 days), warning (<30 days), notice (<90 days). For auto-renew contracts, check if renewal_notice_days has passed. Swedish: "förnyelse", "utgående avtal", "uppsägningstid".',
   },
   {
+    name: 'get_contract_content',
+    description: 'Fetch the full markdown body of a contract for LLM consumption. Use when: external operator (ClawWink) or agent needs to read, summarize, or analyze the actual agreement text — not just metadata. Returns title, counterparty, status, value and the entire body_markdown. NOT for: listing contracts (use manage_contract action=list) or attached PDFs (use list_contract_documents).',
+    category: 'commerce',
+    handler: 'db:contracts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_contract_content',
+        description: 'Return contract metadata + full markdown body — LLM-friendly, no parsing required.',
+        parameters: {
+          type: 'object',
+          properties: {
+            contract_id: { type: 'string', description: 'UUID of the contract' },
+          },
+          required: ['contract_id'],
+        },
+      },
+    },
+    instructions: 'Query public.contracts by id. Return id, title, counterparty_name, counterparty_email, status, contract_type, value_cents, currency, start_date, end_date, signed_at, version and body_markdown. The body_markdown field is the source of truth for the agreement text — pass it directly to the LLM context, do not summarize unless asked.',
+  },
+  {
+    name: 'search_contracts',
+    description: 'Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "hitta avtalet med X", "vilka avtal nämner Y-klausulen?", "sök NDA med ACME". Uses pg_trgm for fuzzy matching. NOT for: filtering by status only (use manage_contract action=list with status).',
+    category: 'commerce',
+    handler: 'db:contracts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_contracts',
+        description: 'Trigram + ILIKE search across title, counterparty_name and body_markdown. Returns matching contracts with score.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search terms — fuzzy matching on title, counterparty and body content' },
+            limit: { type: 'number', description: 'Max results (default 10)' },
+            status: { type: 'string', enum: ['draft', 'pending_signature', 'active', 'expired', 'terminated'], description: 'Optional status filter' },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    instructions: 'Use pg_trgm similarity + ILIKE on title, counterparty_name and body_markdown. Sort by similarity DESC. Return id, title, counterparty_name, status, snippet (first 200 chars of matching body section). For exact clause lookup, fall back to ILIKE on body_markdown.',
+  },
+  {
+    name: 'send_contract_for_signature',
+    description: 'Generate a public signing link for a contract and mark it as pending_signature. Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current version, returns a /contract/:token URL the counterparty can visit to accept/reject without logging in. NOT for: creating contracts (use manage_contract) or signing on behalf of someone (signing must be done by the actual signer).',
+    category: 'commerce',
+    handler: 'db:contracts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_contract_for_signature',
+        description: 'Issue a public signing token + URL for a contract that has body_markdown filled in.',
+        parameters: {
+          type: 'object',
+          properties: {
+            contract_id: { type: 'string', description: 'UUID of the contract' },
+          },
+          required: ['contract_id'],
+        },
+      },
+    },
+    instructions: 'Verify contract.body_markdown is non-empty (refuse if blank — "write the agreement first"). Snapshot to contract_versions, generate accept_token if missing, set status=pending_signature, sent_at=now(). Return { url, token, version }. The URL pattern is {site_origin}/contract/{token}.',
+  },
+  {
     name: 'list_contract_documents',
     description: 'List all documents linked to a specific contract. Use when: admin or agent asks "vilka dokument finns på avtal X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
     category: 'commerce',
@@ -154,7 +222,7 @@ export const contractsModule = defineModule<ContractsInput, ContractsOutput>({
   inputSchema: contractsInputSchema,
   outputSchema: contractsOutputSchema,
 
-  skills: ['manage_contract', 'contract_renewal_check', 'list_contract_documents'],
+  skills: ['manage_contract', 'contract_renewal_check', 'get_contract_content', 'search_contracts', 'send_contract_for_signature', 'list_contract_documents'],
   skillSeeds: CONTRACT_SKILLS,
   automations: CONTRACT_AUTOMATIONS,
 
