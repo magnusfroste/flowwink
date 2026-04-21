@@ -16,6 +16,7 @@ import {
   Quote, Undo, Redo, Link as LinkIcon, Save,
 } from 'lucide-react';
 import { useSaveContractBody } from '@/hooks/useContractWorkflow';
+import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   initialMarkdown: string;
   readOnly?: boolean;
   onSaved?: () => void;
+  /** Short context hint passed to AI utility actions (e.g. contract title + counterparty). */
+  aiContext?: string;
 }
 
 const turndown = new TurndownService({
@@ -31,7 +34,7 @@ const turndown = new TurndownService({
   bulletListMarker: '-',
 });
 
-export function ContractMarkdownEditor({ contractId, initialMarkdown, readOnly, onSaved }: Props) {
+export function ContractMarkdownEditor({ contractId, initialMarkdown, readOnly, onSaved, aiContext }: Props) {
   const save = useSaveContractBody();
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -121,6 +124,9 @@ export function ContractMarkdownEditor({ contractId, initialMarkdown, readOnly, 
           <span className="w-px h-5 bg-border mx-1" />
           <ToolBtn onClick={() => editor.chain().focus().undo().run()}><Undo className="h-4 w-4" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().redo().run()}><Redo className="h-4 w-4" /></ToolBtn>
+          <span className="w-px h-5 bg-border mx-1" />
+          {/* Klass 1 AI utilities — pure text transforms (improve, translate, summarize). Always available, no FlowPilot dependency. */}
+          <AITiptapToolbar editor={editor} context={aiContext} />
           <div className="ml-auto flex items-center gap-2 pr-1 text-xs text-muted-foreground">
             {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'Markdown · auto-save'}
             {dirty && (

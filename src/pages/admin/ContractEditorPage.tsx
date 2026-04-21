@@ -131,6 +131,7 @@ export default function ContractEditorPage() {
               contractId={contract.id}
               initialMarkdown={contract.body_markdown ?? ''}
               readOnly={isLocked}
+              aiContext={`Contract "${contract.title}" with ${contract.counterparty_name}`}
             />
             <p className="text-xs text-muted-foreground">
               Markdown is the source of truth. ClawWink (via MCP) and the counterparty signing page render from this exact text.
