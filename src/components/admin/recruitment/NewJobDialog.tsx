@@ -29,9 +29,9 @@ export function NewJobDialog() {
   const [slug, setSlug] = useState('');
   const [department, setDepartment] = useState('');
   const [location, setLocation] = useState('');
-  const [employmentType, setEmploymentType] = useState<'full_time' | 'part_time' | 'contractor' | 'internship'>(
-    'full_time',
-  );
+  const [employmentType, setEmploymentType] = useState<
+    'full_time' | 'part_time' | 'contract' | 'internship' | 'temporary'
+  >('full_time');
   const [description, setDescription] = useState('');
   const create = useCreateJobPosting();
 
@@ -113,7 +113,8 @@ export function NewJobDialog() {
                 <SelectContent>
                   <SelectItem value="full_time">Full-time</SelectItem>
                   <SelectItem value="part_time">Part-time</SelectItem>
-                  <SelectItem value="contractor">Contractor</SelectItem>
+                  <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="temporary">Temporary</SelectItem>
                   <SelectItem value="internship">Internship</SelectItem>
                 </SelectContent>
               </Select>

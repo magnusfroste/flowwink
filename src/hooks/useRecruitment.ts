@@ -27,6 +27,7 @@ export const STAGE_LABELS: Record<ApplicationStage, string> = {
   offer_sent: 'Offer sent',
   hired: 'Hired',
   rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
 };
 
 // ── Job postings ───────────────────────────────────────────────
@@ -65,7 +66,16 @@ export function useCreateJobPosting() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (input: Partial<JobPosting> & { title: string; slug: string }) => {
+    mutationFn: async (input: {
+      title: string;
+      slug: string;
+      department?: string;
+      location?: string;
+      employment_type?: EmploymentKind;
+      description?: string;
+      requirements?: string;
+      status?: Database['public']['Enums']['job_posting_status'];
+    }) => {
       const { data, error } = await supabase
         .from('job_postings')
         .insert({
@@ -75,8 +85,7 @@ export function useCreateJobPosting() {
           location: input.location ?? null,
           employment_type: input.employment_type ?? 'full_time',
           description: input.description ?? null,
-          requirements: input.requirements ?? [],
-          salary_range: input.salary_range ?? null,
+          requirements: input.requirements ?? null,
           status: input.status ?? 'draft',
         })
         .select()
