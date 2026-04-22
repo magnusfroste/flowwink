@@ -87,19 +87,23 @@ interface SkillRow {
   };
 }
 
-// Skill category → module IDs that must be enabled for the category to be exposed
+// Skill category → module IDs that must be enabled for the category to be exposed.
+// MCP is platform-level: skills from active modules are exposed regardless of whether
+// FlowPilot is on. FlowPilot is just one of many possible MCP clients (others: OpenClaw,
+// ClawWink, Claude Desktop). See docs/architecture/mcp-as-platform.md
 const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
   content: ["pages", "blog", "knowledgeBase", "handbook", "resume", "mediaLibrary", "siteMigration"],
   crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
   communication: ["newsletter", "chat", "liveSupport", "webinars"],
-  automation: ["flowpilot"],
-  search: ["flowpilot", "browserControl"],
+  automation: [], // platform-level — available to any MCP client
+  search: ["browserControl"],
   analytics: ["analytics", "sla"],
   system: [], // always available
   commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
   growth: ["paidGrowth"],
   subscriptions: ["subscriptions"],
   identity: ["companyInsights"],
+  agent: ["flowpilot"], // FlowPilot-internal skills (objectives, soul, reflect) — only when FlowPilot is on
 };
 
 async function loadActiveModules(): Promise<Set<string>> {
