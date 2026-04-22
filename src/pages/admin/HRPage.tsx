@@ -68,6 +68,7 @@ export default function HRPage() {
             <TabsTrigger value="allocations">Allocations</TabsTrigger>
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
             <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
           </TabsList>
           <TabsContent value="employees">
             <Card>
@@ -111,6 +112,9 @@ export default function HRPage() {
             ) : (
               <OrgChart employees={employees || []} />
             )}
+          </TabsContent>
+          <TabsContent value="performance">
+            <PerformancePanel />
           </TabsContent>
         </Tabs>
       </div>
