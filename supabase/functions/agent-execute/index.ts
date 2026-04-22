@@ -211,6 +211,20 @@ serve(async (req) => {
         const peerName = handler.replace('a2a:', '');
         result = await executeA2ARequest(supabase, peerName, args);
 
+      } else if (handler.startsWith('rpc:')) {
+        const fnName = handler.replace('rpc:', '');
+        // Map skill arg names → RPC param names by prefixing p_
+        const rpcArgs: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(args || {})) {
+          rpcArgs[k.startsWith('p_') ? k : `p_${k}`] = v;
+        }
+        const { data: rpcData, error: rpcErr } = await supabase.rpc(fnName, rpcArgs);
+        if (rpcErr) {
+          result = { error: `RPC ${fnName} failed: ${rpcErr.message}`, status: 'failed' };
+        } else {
+          result = (rpcData as Record<string, unknown>) ?? { success: true };
+        }
+
       } else {
         result = { error: `Unknown handler type: ${handler}` };
       }
