@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
-import { useCreateEmployee } from "@/hooks/useEmployees";
+import { useCreateEmployee, useEmployees } from "@/hooks/useEmployees";
 
 export function NewEmployeeDialog() {
   const [open, setOpen] = useState(false);
   const create = useCreateEmployee();
+  const { data: existing } = useEmployees();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -19,6 +20,7 @@ export function NewEmployeeDialog() {
     department: "",
     employment_type: "full_time",
     start_date: "",
+    manager_id: "",
     notes: "",
   });
 
@@ -34,12 +36,16 @@ export function NewEmployeeDialog() {
         department: form.department || null,
         employment_type: form.employment_type,
         start_date: form.start_date || null,
+        manager_id: form.manager_id || null,
         notes: form.notes || null,
       },
       {
         onSuccess: () => {
           setOpen(false);
-          setForm({ name: "", email: "", phone: "", title: "", department: "", employment_type: "full_time", start_date: "", notes: "" });
+          setForm({
+            name: "", email: "", phone: "", title: "", department: "",
+            employment_type: "full_time", start_date: "", manager_id: "", notes: "",
+          });
         },
       }
     );
@@ -71,6 +77,21 @@ export function NewEmployeeDialog() {
               </Select>
             </div>
             <div><Label>Start Date</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
+            <div className="col-span-2">
+              <Label>Manager</Label>
+              <Select
+                value={form.manager_id || "none"}
+                onValueChange={v => setForm(f => ({ ...f, manager_id: v === "none" ? "" : v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="No manager" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No manager</SelectItem>
+                  {(existing ?? []).map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.name}{e.title ? ` — ${e.title}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} /></div>
           <div className="flex justify-end gap-2">
