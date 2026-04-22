@@ -1,26 +1,26 @@
 ---
-title: "Pages Module"
-module_id: "pages"
+title: "CRM Module"
+module_id: "leads"
 version: "1.0.0"
-category: "content"
-autonomy: "config-required"
+category: "data"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-04-22"
 ---
 
-# Pages
+# CRM
 
-> Create and publish CMS pages
+> Create and manage leads
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `pages` |
+| **Module ID** | `leads` |
 | **Version** | 1.0.0 |
-| **Category** | content |
-| **Autonomy** | config-required |
-| **Core** | Yes |
+| **Category** | data |
+| **Autonomy** | view-required |
+| **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 
 ## API Contract
@@ -29,9 +29,9 @@ generated_at: "2026-04-22"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/pages-module.ts` |
-| Hook | `src/hooks/usePages.tsx` |
-| Migration | `supabase/migrations/20260207130000_soft_delete_pages.sql` |
+| Module definition | `src/lib/modules/crm-module.ts` |
+| Hook | `src/hooks/useLeads.ts` |
+| Admin page | `src/pages/admin/LeadsPage.tsx` |
 
 ## Contributing
 

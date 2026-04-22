@@ -1,27 +1,31 @@
 ---
-title: "Pages Module"
-module_id: "pages"
+title: "Booking Module"
+module_id: "bookings"
 version: "1.0.0"
-category: "content"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-22"
 ---
 
-# Pages
+# Booking
 
-> Create and publish CMS pages
+> Create and manage bookings/appointments
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `pages` |
+| **Module ID** | `bookings` |
 | **Version** | 1.0.0 |
-| **Category** | content |
+| **Category** | data |
 | **Autonomy** | config-required |
-| **Core** | Yes |
+| **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
+
+## Integrations
+
+**Optional:** `resend`, `stripe`
 
 ## API Contract
 
@@ -29,9 +33,11 @@ generated_at: "2026-04-22"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/pages-module.ts` |
-| Hook | `src/hooks/usePages.tsx` |
-| Migration | `supabase/migrations/20260207130000_soft_delete_pages.sql` |
+| Module definition | `src/lib/modules/booking-module.ts` |
+| Hook | `src/hooks/useBookings.ts` |
+| Admin page | `src/pages/admin/BookingsPage.tsx` |
+| Public block | `src/components/public/blocks/BookingBlock.tsx` |
+| Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
 
 ## Contributing
 

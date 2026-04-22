@@ -1,27 +1,31 @@
 ---
-title: "Pages Module"
-module_id: "pages"
+title: "Products Module"
+module_id: "ecommerce"
 version: "1.0.0"
-category: "content"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-22"
 ---
 
-# Pages
+# Products
 
-> Create and publish CMS pages
+> Create and manage e-commerce products
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `pages` |
+| **Module ID** | `ecommerce` |
 | **Version** | 1.0.0 |
-| **Category** | content |
+| **Category** | data |
 | **Autonomy** | config-required |
-| **Core** | Yes |
+| **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
+
+## Integrations
+
+**Optional:** `stripe`, `resend`, `stripe_webhook`
 
 ## API Contract
 
@@ -29,9 +33,10 @@ generated_at: "2026-04-22"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/pages-module.ts` |
-| Hook | `src/hooks/usePages.tsx` |
-| Migration | `supabase/migrations/20260207130000_soft_delete_pages.sql` |
+| Module definition | `src/lib/modules/products-module.ts` |
+| Hook | `src/hooks/useProducts.ts` |
+| Admin page | `src/pages/admin/ProductsPage.tsx` |
+| Public block | `src/components/public/blocks/ProductsBlock.tsx` |
 
 ## Contributing
 

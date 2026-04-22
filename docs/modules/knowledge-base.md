@@ -1,6 +1,6 @@
 ---
-title: "Pages Module"
-module_id: "pages"
+title: "Knowledge Base Module"
+module_id: "knowledgeBase"
 version: "1.0.0"
 category: "content"
 autonomy: "config-required"
@@ -8,20 +8,20 @@ generated: true
 generated_at: "2026-04-22"
 ---
 
-# Pages
+# Knowledge Base
 
-> Create and publish CMS pages
+> Create knowledge base articles
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `pages` |
+| **Module ID** | `knowledgeBase` |
 | **Version** | 1.0.0 |
 | **Category** | content |
 | **Autonomy** | config-required |
-| **Core** | Yes |
-| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
+| **Core** | No |
+| **Capabilities** | `content:receive`, `data:write` |
 
 ## API Contract
 
@@ -29,9 +29,9 @@ generated_at: "2026-04-22"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/pages-module.ts` |
-| Hook | `src/hooks/usePages.tsx` |
-| Migration | `supabase/migrations/20260207130000_soft_delete_pages.sql` |
+| Module definition | `src/lib/modules/kb-module.ts` |
+| Hook | `src/hooks/useKnowledgeBase.ts` |
+| Admin page | `src/pages/admin/KnowledgeBasePage.tsx` |
 
 ## Contributing
 

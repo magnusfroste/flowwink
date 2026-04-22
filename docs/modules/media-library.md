@@ -1,27 +1,27 @@
 ---
-title: "Pages Module"
-module_id: "pages"
+title: "Media Library Module"
+module_id: "mediaLibrary"
 version: "1.0.0"
-category: "content"
+category: "data"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-22"
 ---
 
-# Pages
+# Media Library
 
-> Create and publish CMS pages
+> Manage media assets and files
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `pages` |
+| **Module ID** | `mediaLibrary` |
 | **Version** | 1.0.0 |
-| **Category** | content |
+| **Category** | data |
 | **Autonomy** | config-required |
 | **Core** | Yes |
-| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
+| **Capabilities** | `data:read`, `data:write` |
 
 ## API Contract
 
@@ -29,9 +29,9 @@ generated_at: "2026-04-22"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/pages-module.ts` |
-| Hook | `src/hooks/usePages.tsx` |
-| Migration | `supabase/migrations/20260207130000_soft_delete_pages.sql` |
+| Module definition | `src/lib/modules/media-module.ts` |
+| Hook | `src/hooks/useMediaLibrary.ts` |
+| Admin page | `src/pages/admin/MediaLibraryPage.tsx` |
 
 ## Contributing
 
