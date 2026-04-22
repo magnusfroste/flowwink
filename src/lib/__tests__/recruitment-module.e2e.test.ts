@@ -90,7 +90,7 @@ afterEach(() => {
 });
 
 describe('recruitment module — end-to-end autonomy contract', () => {
-  it('declares exactly the 6 ClawWink-callable skills in its manifest', () => {
+  it('declares exactly the 7 ClawWink-callable skills in its manifest', () => {
     expect(recruitmentModule.skills).toEqual(RECRUITMENT_SKILLS);
     expect(recruitmentModule.skillSeeds).toBeDefined();
     expect(recruitmentModule.skillSeeds!.map((s) => s.name).sort()).toEqual(
