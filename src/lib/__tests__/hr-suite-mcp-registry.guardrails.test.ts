@@ -11,8 +11,9 @@ import { describe, it, expect } from 'vitest';
 // Side-effect import — registers all modules via defineModule()
 import '@/lib/modules';
 import { getUnifiedModule, getUnifiedSkillNames } from '@/lib/module-def';
+import type { ModulesSettings } from '@/hooks/useModules';
 
-const HR_SUITE: Array<{ id: string; requiredSkills?: string[] }> = [
+const HR_SUITE: Array<{ id: keyof ModulesSettings; requiredSkills?: string[] }> = [
   { id: 'hr', requiredSkills: ['manage_employee'] },
   { id: 'recruitment', requiredSkills: ['hire_candidate'] },
   { id: 'expenses' },
