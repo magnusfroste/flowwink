@@ -34,6 +34,7 @@ import {
   useLeaveAllocations,
   useUpsertLeaveAllocation,
 } from "@/hooks/useLeaveBalances";
+import { AutoAllocateDialog } from "./AutoAllocateDialog";
 
 const LEAVE_TYPES = ["vacation", "sick", "parental", "other"] as const;
 
@@ -100,13 +101,15 @@ export function LeaveAllocationsPanel({ employees }: { employees: Employee[] }) 
           />
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Set allocation
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <AutoAllocateDialog />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Set allocation
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Set leave allocation</DialogTitle>
