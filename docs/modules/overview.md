@@ -130,10 +130,15 @@ Each module has auto-generated documentation with API contracts, webhook events,
 | Module | Doc |
 |--------|-----|
 | Accounting | [accounting.md](./accounting.md) |
+| Analytics | [analytics.md](./analytics.md) |
+| Approvals | [approvals.md](./approvals.md) |
 | Blog | [blog.md](./blog.md) |
 | Booking | [booking.md](./booking.md) |
 | Browser Control | [browser-control.md](./browser-control.md) |
+| Calendar | [calendar.md](./calendar.md) |
+| Chat | [chat.md](./chat.md) |
 | Companies | [companies.md](./companies.md) |
+| Company Insights | [company-insights.md](./company-insights.md) |
 | Composio | [composio.md](./composio.md) |
 | Contracts | [contracts.md](./contracts.md) |
 | CRM (Leads) | [crm.md](./crm.md) |
@@ -141,22 +146,33 @@ Each module has auto-generated documentation with API contracts, webhook events,
 | Developer | [developer.md](./developer.md) |
 | Documents | [documents.md](./documents.md) |
 | E-commerce | [orders.md](./orders.md) · [products.md](./products.md) |
+| Email | [email.md](./email.md) |
 | Expenses | [expenses.md](./expenses.md) |
 | Federation | [federation.md](./federation.md) |
+| FlowPilot | [flowpilot.md](./flowpilot.md) |
 | Forms | [forms.md](./forms.md) |
+| Global Blocks | [global-blocks.md](./global-blocks.md) |
 | Handbook | [handbook.md](./handbook.md) |
 | HR | [hr.md](./hr.md) |
 | Inventory | [inventory.md](./inventory.md) |
 | Invoicing | [invoicing.md](./invoicing.md) |
 | Knowledge Base | [kb.md](./kb.md) |
+| Live Support | [live-support.md](./live-support.md) |
 | Media Library | [media.md](./media.md) |
 | Newsletter | [newsletter.md](./newsletter.md) |
+| Paid Growth | [paid-growth.md](./paid-growth.md) |
 | Pages | [pages.md](./pages.md) |
 | Projects | [projects.md](./projects.md) |
 | Purchasing | [purchasing.md](./purchasing.md) |
+| Quotes | [quotes.md](./quotes.md) |
+| Reconciliation | [reconciliation.md](./reconciliation.md) |
+| Recruitment | [recruitment.md](./recruitment.md) |
 | Resume | [resume.md](./resume.md) |
 | Sales Intelligence | [sales-intelligence.md](./sales-intelligence.md) |
+| Site Migration | [site-migration.md](./site-migration.md) |
 | SLA | [sla.md](./sla.md) |
+| Subscriptions | [subscriptions.md](./subscriptions.md) |
+| Templates | [templates.md](./templates.md) |
 | Tickets | [tickets.md](./tickets.md) |
 | Timesheets | [timesheets.md](./timesheets.md) |
 | Webinars | [webinars.md](./webinars.md) |
