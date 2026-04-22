@@ -46,6 +46,8 @@ export interface EmploymentContract {
   signed_at: string | null;
   signed_by_employee_at: string | null;
   signed_by_employer_at: string | null;
+  terminated_at: string | null;
+  termination_reason: string | null;
   created_at: string;
 }
 

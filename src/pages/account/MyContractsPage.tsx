@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function MyContractsPage() {
-  const { employee, isEmployee, isLoading } = useEmployeeSelf();
+  const { employee, isEmployee, loading: isLoading } = useEmployeeSelf();
   const { data: contracts } = useEmploymentContracts(employee?.id);
   const sign = useSignEmploymentContract();
   const [openId, setOpenId] = useState<string | null>(null);
