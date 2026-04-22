@@ -9,6 +9,7 @@ import { NewEmployeeDialog } from "@/components/admin/hr/NewEmployeeDialog";
 import { LeaveRequestsPanel } from "@/components/admin/hr/LeaveRequestsPanel";
 import { LeaveAllocationsPanel } from "@/components/admin/hr/LeaveAllocationsPanel";
 import { PayrollExportPanel } from "@/components/admin/hr/PayrollExportPanel";
+import { OrgChart } from "@/components/admin/hr/OrgChart";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 
 export default function HRPage() {
@@ -65,6 +66,7 @@ export default function HRPage() {
             <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
             <TabsTrigger value="allocations">Allocations</TabsTrigger>
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
+            <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
           </TabsList>
           <TabsContent value="employees">
             <Card>
@@ -101,6 +103,13 @@ export default function HRPage() {
           </TabsContent>
           <TabsContent value="payroll">
             <PayrollExportPanel />
+          </TabsContent>
+          <TabsContent value="orgchart">
+            {empLoading ? (
+              <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}</div>
+            ) : (
+              <OrgChart employees={employees || []} />
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -18,6 +18,7 @@ export type Employee = {
   notes: string | null;
   manager_id: string | null;
   personal_number: string | null;
+  birth_date: string | null;
   created_at: string;
   updated_at: string;
 };

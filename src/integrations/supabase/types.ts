@@ -2894,6 +2894,7 @@ export type Database = {
       employees: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           created_by: string | null
           department: string | null
@@ -2915,6 +2916,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           created_by?: string | null
           department?: string | null
@@ -2936,6 +2938,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           created_by?: string | null
           department?: string | null
@@ -6290,6 +6293,48 @@ export type Database = {
         }
         Relationships: []
       }
+      vacation_policies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_carry_over_days: number
+          min_age: number
+          min_tenure_years: number
+          name: string
+          priority: number
+          updated_at: string
+          vacation_days: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_carry_over_days?: number
+          min_age?: number
+          min_tenure_years?: number
+          name: string
+          priority?: number
+          updated_at?: string
+          vacation_days: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_carry_over_days?: number
+          min_age?: number
+          min_tenure_years?: number
+          name?: string
+          priority?: number
+          updated_at?: string
+          vacation_days?: number
+        }
+        Relationships: []
+      }
       vendor_products: {
         Row: {
           created_at: string
@@ -6658,6 +6703,20 @@ export type Database = {
       }
     }
     Functions: {
+      auto_allocate_vacation: {
+        Args: { p_dry_run?: boolean; p_year: number }
+        Returns: {
+          action: string
+          allocated_days: number
+          carried_over_days: number
+          employee_id: string
+          employee_name: string
+        }[]
+      }
+      calculate_vacation_days: {
+        Args: { p_employee_id: string; p_year: number }
+        Returns: number
+      }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
