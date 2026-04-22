@@ -2905,6 +2905,7 @@ export type Database = {
           manager_id: string | null
           name: string
           notes: string | null
+          personal_number: string | null
           phone: string | null
           start_date: string | null
           status: string
@@ -2925,6 +2926,7 @@ export type Database = {
           manager_id?: string | null
           name: string
           notes?: string | null
+          personal_number?: string | null
           phone?: string | null
           start_date?: string | null
           status?: string
@@ -2945,6 +2947,7 @@ export type Database = {
           manager_id?: string | null
           name?: string
           notes?: string | null
+          personal_number?: string | null
           phone?: string | null
           start_date?: string | null
           status?: string
@@ -3068,6 +3071,7 @@ export type Database = {
           expense_date: string
           id: string
           is_representation: boolean
+          payroll_export_id: string | null
           receipt_analyzed: boolean
           receipt_data: Json | null
           receipt_url: string | null
@@ -3089,6 +3093,7 @@ export type Database = {
           expense_date?: string
           id?: string
           is_representation?: boolean
+          payroll_export_id?: string | null
           receipt_analyzed?: boolean
           receipt_data?: Json | null
           receipt_url?: string | null
@@ -3110,6 +3115,7 @@ export type Database = {
           expense_date?: string
           id?: string
           is_representation?: boolean
+          payroll_export_id?: string | null
           receipt_analyzed?: boolean
           receipt_data?: Json | null
           receipt_url?: string | null
@@ -3121,6 +3127,13 @@ export type Database = {
           vendor?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_payroll_export_id_fkey"
+            columns: ["payroll_export_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_exports"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_report_id_fkey"
             columns: ["report_id"]
@@ -3997,6 +4010,7 @@ export type Database = {
           id: string
           leave_type: string
           notes: string | null
+          payroll_export_id: string | null
           reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -4012,6 +4026,7 @@ export type Database = {
           id?: string
           leave_type?: string
           notes?: string | null
+          payroll_export_id?: string | null
           reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -4027,6 +4042,7 @@ export type Database = {
           id?: string
           leave_type?: string
           notes?: string | null
+          payroll_export_id?: string | null
           reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -4040,6 +4056,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_payroll_export_id_fkey"
+            columns: ["payroll_export_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_exports"
             referencedColumns: ["id"]
           },
         ]
@@ -4584,6 +4607,138 @@ export type Database = {
           title?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      payroll_export_lines: {
+        Row: {
+          created_at: string
+          employee_email: string | null
+          employee_id: string
+          employee_name: string
+          expense_count: number
+          expense_ids: string[]
+          expense_reimbursement_cents: number
+          export_id: string
+          id: string
+          leave_request_ids: string[]
+          other_leave_days: number
+          parental_days: number
+          personal_number: string | null
+          representation_cents: number
+          sick_days: number
+          vacation_days: number
+        }
+        Insert: {
+          created_at?: string
+          employee_email?: string | null
+          employee_id: string
+          employee_name: string
+          expense_count?: number
+          expense_ids?: string[]
+          expense_reimbursement_cents?: number
+          export_id: string
+          id?: string
+          leave_request_ids?: string[]
+          other_leave_days?: number
+          parental_days?: number
+          personal_number?: string | null
+          representation_cents?: number
+          sick_days?: number
+          vacation_days?: number
+        }
+        Update: {
+          created_at?: string
+          employee_email?: string | null
+          employee_id?: string
+          employee_name?: string
+          expense_count?: number
+          expense_ids?: string[]
+          expense_reimbursement_cents?: number
+          export_id?: string
+          id?: string
+          leave_request_ids?: string[]
+          other_leave_days?: number
+          parental_days?: number
+          personal_number?: string | null
+          representation_cents?: number
+          sick_days?: number
+          vacation_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_export_lines_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_export_lines_export_id_fkey"
+            columns: ["export_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_exports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_exports: {
+        Row: {
+          created_at: string
+          csv_content: string | null
+          currency: string
+          format: string
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          locked_at: string | null
+          notes: string | null
+          paxml_content: string | null
+          period_month: number
+          period_year: number
+          status: string
+          total_employees: number
+          total_expense_cents: number
+          total_leave_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          csv_content?: string | null
+          currency?: string
+          format?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          locked_at?: string | null
+          notes?: string | null
+          paxml_content?: string | null
+          period_month: number
+          period_year: number
+          status?: string
+          total_employees?: number
+          total_expense_cents?: number
+          total_leave_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          csv_content?: string | null
+          currency?: string
+          format?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          locked_at?: string | null
+          notes?: string | null
+          paxml_content?: string | null
+          period_month?: number
+          period_year?: number
+          status?: string
+          total_employees?: number
+          total_expense_cents?: number
+          total_leave_days?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -6530,6 +6685,10 @@ export type Database = {
           rule_name: string
         }[]
       }
+      generate_payroll_export: {
+        Args: { p_month: number; p_year: number }
+        Returns: string
+      }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -6592,6 +6751,52 @@ export type Database = {
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
         Returns: string
+      }
+      lock_payroll_export: {
+        Args: { p_export_id: string }
+        Returns: {
+          created_at: string
+          csv_content: string | null
+          currency: string
+          format: string
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          locked_at: string | null
+          notes: string | null
+          paxml_content: string | null
+          period_month: number
+          period_year: number
+          status: string
+          total_employees: number
+          total_expense_cents: number
+          total_leave_days: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_exports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      preview_payroll_period: {
+        Args: { p_month: number; p_year: number }
+        Returns: {
+          employee_email: string
+          employee_id: string
+          employee_name: string
+          expense_count: number
+          expense_ids: string[]
+          expense_reimbursement_cents: number
+          leave_request_ids: string[]
+          other_leave_days: number
+          parental_days: number
+          personal_number: string
+          representation_cents: number
+          sick_days: number
+          vacation_days: number
+        }[]
       }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
