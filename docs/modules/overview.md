@@ -97,11 +97,19 @@ When FlowPilot is on, modules gain autonomous skills and automation.
 
 | Module | Skills | Webhooks | Description |
 |--------|--------|----------|-------------|
+| **FlowPilot** | (orchestrator — uses all skills) | — | Autonomous agent loop |
 | **Federation** | `a2a_chat`, `a2a_request`, `openclaw_start_session`, `openclaw_end_session`, `openclaw_report_finding`, `openclaw_exchange`, `openclaw_get_status`, `queue_beta_test`, `resolve_finding`, `scan_beta_findings` | — | Agent-to-Agent protocol |
 | **Composio** | `composio_execute`, `composio_search_tools`, `composio_gmail_read`, `composio_gmail_send` | — | External tool bridge |
+| **Email** | `send_email` | `email.sent` | Provider-agnostic email transport |
+| **Chat** | `chat_history_search` | — | AI chat infrastructure |
+| **Browser Control** | `browser_fetch`, `browser_act` | — | Headless browser automation |
+| **Subscriptions** | `manage_subscription` | `subscription.renewed`, `subscription.cancelled` | Recurring revenue |
+| **Templates** | `install_template` | — | Site template installer |
+| **Developer** | `manage_webhook`, `run_diagnostic` | — | Developer tools |
 | **Resume** | `manage_consultant_profile`, `match_consultant` | — | Talent matching |
 | **Site Migration** | `migrate_url` | — | Content import |
 | **Tickets** | `ticket_triage` | — | Support tickets |
+| **Global Blocks** | (registry only) | — | Reusable page blocks |
 
 ---
 
