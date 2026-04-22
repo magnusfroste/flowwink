@@ -2902,6 +2902,7 @@ export type Database = {
           employment_type: string
           end_date: string | null
           id: string
+          manager_id: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -2921,6 +2922,7 @@ export type Database = {
           employment_type?: string
           end_date?: string | null
           id?: string
+          manager_id?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -2940,6 +2942,7 @@ export type Database = {
           employment_type?: string
           end_date?: string | null
           id?: string
+          manager_id?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
@@ -2949,7 +2952,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expense_attachments: {
         Row: {
@@ -6548,6 +6559,12 @@ export type Database = {
           year: number
         }[]
       }
+      get_team_member_ids: {
+        Args: { _manager_user_id: string }
+        Returns: {
+          employee_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -6567,6 +6584,10 @@ export type Database = {
           p_start_date?: string
         }
         Returns: Json
+      }
+      is_manager_of: {
+        Args: { _employee_id: string; _manager_user_id: string }
+        Returns: boolean
       }
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
