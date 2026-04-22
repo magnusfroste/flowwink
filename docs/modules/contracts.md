@@ -1,16 +1,16 @@
 ---
-title: "manage_contract Module"
+title: "Contracts Module"
 module_id: "contracts"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_contract
+# Contracts
 
-> Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), project management (use manage_projects).
+> Contract lifecycle management with renewal tracking and document storage
 
 ## Quick Facts
 

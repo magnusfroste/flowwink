@@ -3,9 +3,9 @@ title: "Email Module"
 module_id: "email"
 version: "1.0.0"
 category: "system"
-autonomy: "config-required"
+autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
 # Email
@@ -18,10 +18,14 @@ generated_at: "2026-04-17"
 |----------|-------|
 | **Module ID** | `email` |
 | **Version** | 1.0.0 |
-| **Category** | — |
-| **Autonomy** | — |
-| **Core** | No |
+| **Category** | system |
+| **Autonomy** | agent-capable |
+| **Core** | Yes |
 | **Capabilities** | `data:write` |
+
+## Integrations
+
+**Optional:** `smtp`, `resend`
 
 ## API Contract
 

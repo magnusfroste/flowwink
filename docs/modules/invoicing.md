@@ -1,16 +1,16 @@
 ---
-title: "manage_invoice Module"
+title: "Invoicing Module"
 module_id: "invoicing"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_invoice
+# Invoicing
 
-> Create, update, list, or send invoices. Use when: user wants to create an invoice, change status (draft→sent→paid), update line items, or look up invoice details. NOT for: quotes (use manage_quote), accounting entries (use manage_journal_entry), timesheets (use log_time).
+> Create and manage invoices with line items, tax computation, and status tracking
 
 ## Quick Facts
 

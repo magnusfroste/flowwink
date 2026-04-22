@@ -5,7 +5,7 @@ version: "2.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
 # Sales Intelligence

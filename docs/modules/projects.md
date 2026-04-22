@@ -1,16 +1,16 @@
 ---
-title: "manage_project Module"
+title: "Projects Module"
 module_id: "projects"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_project
+# Projects
 
-> Create, update, search, and close projects. Use when: starting new client work, updating project status, reviewing active projects. NOT for: individual tasks (use manage_project_task), timesheets (use log_time).
+> Project and task management with Kanban boards, assignments, and time tracking integration
 
 ## Quick Facts
 

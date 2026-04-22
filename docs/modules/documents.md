@@ -1,16 +1,16 @@
 ---
-title: "manage_document Module"
+title: "Documents Module"
 module_id: "documents"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_document
+# Documents
 
-> Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use manage_media), blog content.
+> Document management with categorization, entity linking, and version tracking
 
 ## Quick Facts
 

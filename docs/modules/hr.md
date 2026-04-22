@@ -1,16 +1,16 @@
 ---
-title: "manage_employee Module"
+title: "HR & Employees Module"
 module_id: "hr"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_employee
+# HR & Employees
 
-> Create, update, search, and deactivate employee records. Use when: adding new team members, updating roles/departments, offboarding. NOT for: leave requests (use manage_leave), documents.
+> Employee directory, leave management, and organizational structure
 
 ## Quick Facts
 

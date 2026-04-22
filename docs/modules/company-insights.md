@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
 # Business Identity
@@ -21,7 +21,7 @@ generated_at: "2026-04-17"
 | **Category** | insights |
 | **Autonomy** | agent-capable |
 | **Core** | No |
-| **Capabilities** | `data:read` |
+| **Capabilities** | `data:read`, `data:write` |
 
 ## Integrations
 

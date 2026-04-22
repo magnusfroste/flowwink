@@ -1,16 +1,16 @@
 ---
-title: "log_time Module"
+title: "Timesheets Module"
 module_id: "timesheets"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# log_time
+# Timesheets
 
-> Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says 
+> Time tracking for employees and projects with billable/non-billable categorization
 
 ## Quick Facts
 

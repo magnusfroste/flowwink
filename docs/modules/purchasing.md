@@ -1,16 +1,16 @@
 ---
-title: "manage_vendor Module"
+title: "Purchasing Module"
 module_id: "purchasing"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-17"
+generated_at: "2026-04-22"
 ---
 
-# manage_vendor
+# Purchasing
 
-> Create, list, update, or deactivate vendors/suppliers. Use when: admin asks to add a new supplier, update vendor details, or review the vendor list. NOT for: creating purchase orders (use create_purchase_order).
+> Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt
 
 ## Quick Facts
 
