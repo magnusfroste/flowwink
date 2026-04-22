@@ -1,62 +1,118 @@
 
 
-# Fix Module Registry Drift — Återanslut quotes/approvals/reconciliation
+# Refactor: Frikoppla MCP & Skills från FlowPilot
 
-## Vad är fel
+## Mål
 
-Vitest-guardrailsen (`module-registry.guardrails.test.ts`) failar på 2 av 4 tester. Tre moduler har manifest (`defineModule()`) och exporteras från barrel, men de är **frikopplade från resten av plattformen**:
+FlowWink ska fungera som en ren SaaS där **MCP + Skills-katalog är kärnplattform** (alltid på). FlowPilot blir en *valfri* intern agent som konsumerar samma skills som en extern MCP-klient (OpenClaw, ClawWink, Claude Desktop, etc.). Stänger man av FlowPilot ska alla moduler fortsätta exponera sina skills via MCP — bara den interna autonoma loopen (heartbeats, objectives, evolution) försvinner.
 
-| Modul | Manifest finns | Settings-key | Importeras i registry | Effekt |
-|-------|---------------|--------------|----------------------|--------|
-| `quotes` | ✅ | ❌ | ❌ | Skill exponeras inte via MCP, kan inte togglas |
-| `approvals` | ✅ | ✅ | ❌ | Settings finns men self-registration sker inte |
-| `reconciliation` | ✅ | ✅ | ❌ | Samma — drift mellan manifest och registry |
+## Problemet med dagens arkitektur
 
-Detta är **exakt det MCP-problemet du ser**: när ClawWink/externa agenter anropar skills (t.ex. `create_quote`, `approve_expense`, `reconcile_transaction`) hittar MCP-servern ingen aktiv modul och blockerar/404:ar dem — eller så filtrerar `mcp-module-aware-filtering` bort dem trots att deras manifest finns.
+| Var | Hur det är idag | Varför fel |
+|---|---|---|
+| `/admin/skills` (Engine Room) | Blandar Skills-katalog, MCP-toggle, Activity, Health med Objectives, Automations, Workflows, Evolution, Autonomy Schedule | Admin tvingas in i "FlowPilot-land" bara för att titta på vilka skills MCP exponerar |
+| `module-bootstrap.ts` rad 82–86 | `if (!flowpilot.enabled) return` — hoppar över skill-seeding | Stänger man av FlowPilot förlorar man också MCP-skills för externa agenter — exakt motsatsen till önskat beteende |
+| `mcp-server/index.ts` `SKILL_CATEGORY_MODULES` | `automation: ["flowpilot"]`, `search: ["flowpilot", ...]` | Två hela kategorier kopplade till FlowPilot-modulen |
+| Developer-modulen | Har bara MCP-*Keys* | Saknar resten av MCP-ytan (skills-katalog, activity, exposure) |
 
-Det matchar också `mem://development/new-module-checklist` som kräver: manifest + settings-key + registry-import för varje ny modul.
+## Föreslagen ny struktur
 
-## Vad som ska göras
+```text
+/admin/developer            ← MCP & API-plattform (alltid synlig, modul-oberoende)
+  ├─ API Explorer
+  ├─ Webhooks
+  ├─ Dev Tools
+  ├─ MCP Keys
+  ├─ MCP Skills            (NY — flyttas från Engine Room)
+  │   • Tabell: namn, modul, kategori, scope, MCP-exponerad ✓, enabled ✓
+  │   • Filter på modul/kategori, sök, bulk-toggle MCP-exposure
+  │   • "Vem kan kalla denna?" — visar MCP-keys + collaborators som har access
+  └─ MCP Activity          (NY — flyttas från Engine Room "Activity")
+      • Read-only logg av alla MCP-anrop (vem, vilken skill, status, latency)
 
-### 1. Lägg till `quotes` i `defaultModulesSettings` (`src/hooks/useModules.tsx`)
-Ny entry med samma form som `invoicing`/`deals`:
-- `name: 'Quotes'`, `category: 'data'`, `autonomy: 'view-required'`, `adminUI: true`
-- Beskrivning som speglar offert-funktionen (skicka offerter, konvertera till order/invoice)
-- `enhancedByFlowPilot: true` (autonom uppföljning på skickade offerter)
+/admin/federation           ← oförändrad: A2A-peers, MCP Collaborators, Agent Invites
+  └─ "Available skills"-länk → /admin/developer?tab=mcp-skills
 
-### 2. Lägg till alla tre i `src/lib/module-registry.ts`
-Importera `quotesModule`, `approvalsModule`, `reconciliationModule` från `./modules` och registrera dem i samma block där övriga moduler self-registrerar (`moduleRegistry.register(...)`).
+/admin/flowpilot            ← FlowPilot Cockpit (oförändrad)
+  └─ Engine Room blir FlowPilot-only och döps om till "FlowPilot Engine"
+      • Objectives, Automations, Workflows, Evolution, Autonomy Schedule
+      • Self-Healing, System Integrity (FlowPilot-perspektiv)
+      • Visar "Skills används från Developer → MCP Skills"-länk
+```
 
-### 3. Verifiera att MCP-filtret nu släpper igenom dem
-Kör `vitest run src/lib/__tests__/module-registry.guardrails.test.ts` — alla 4 tester ska gå grönt.
+## Konkreta ändringar
 
-Sedan i preview: öppna `/admin/modules` och bekräfta att Quotes/Approvals/Reconciliation visas som riktiga modulkort med toggle.
+### 1. Bootstrap-logiken — frikoppla skills från FlowPilot
 
-### 4. Bonus-fix: `ModuleDetailSheet` ref-warning (konsollog)
-Konsollen visar `Function components cannot be given refs` från `SheetHeader` i `ModuleDetailSheet.tsx`. Det är en separat, icke-blockerande bug men trivial att laga (wrappa header-komponenten i `React.forwardRef` eller ta bort ref-prop:en). Inkluderas om det är samma kodväg.
+`src/lib/module-bootstrap.ts`:
+- Ta bort `flowpilotEnabled`-gaten på rad 82–86. Skills och MCP-exposure ska **alltid** seedas när en modul aktiveras.
+- Behåll FlowPilot-gate **endast** för `automations` (steg 5) — automations är en ren FlowPilot-feature (cron/event-triggers som FlowPilot kör).
+- Resultat: aktiverar man `recruitment` får man 6 skills i `agent_skills` med `mcp_exposed=true`, oavsett om FlowPilot är på.
 
-## Varför detta löser MCP-felen
+### 2. MCP-server — bryt FlowPilot-beroendet i kategori-mappningen
 
-ClawWink träffar fel via MCP eftersom:
-- `mcp-server` filtrerar skills baserat på `site_settings.modules[id].enabled`
-- `quotes`-skills (t.ex. `create_quote`, `send_quote`) registreras i registry vid runtime — men eftersom `quotesModule` aldrig importeras i `module-registry.ts` sker self-registreringen aldrig → MCP exponerar inga `quotes`-tools → externa anrop misslyckas
-- `approvals`/`reconciliation` har samma problem; deras heartbeats/skills går inte att rikta från MCP
+`supabase/functions/mcp-server/index.ts` `SKILL_CATEGORY_MODULES`:
+- `automation: ["flowpilot"]` → `automation: []` (alltid tillgänglig — externa agenter får automation-skills oavsett FlowPilot)
+- `search: ["flowpilot", "browserControl"]` → `search: ["browserControl"]` (search beror inte på FlowPilot)
+- Lägg till `agent: ["flowpilot"]` som ny kategori för rena FlowPilot-interna skills (objectives, soul, reflect) — dessa exponeras inte via MCP per default.
 
-Efter fixen är manifest, settings-key, registry-import och MCP-exponering i synk — vilket är hela poängen med guardrail-testet.
+### 3. Ny sida: MCP Skills-tab i Developer
+
+Skapar **`src/components/admin/developer/McpSkillsPanel.tsx`** som återanvänder befintliga hooks (`useSkills`, `useToggleMcpExposed`, `useBulkToggleSkills`) men med en **modul-orienterad vy**:
+- Grupperade per modul (inte per kategori) — admin tänker "vad kan recruitment-modulen göra?", inte "vilka content-skills finns?"
+- Kolumner: Skill, Modul, Scope, Handler, **MCP-exponerad** (toggle), Enabled (toggle)
+- Search + filter på modul/kategori
+- "Test in API Explorer"-knapp per skill (deeplink till befintlig API Explorer)
+
+Lägger till `<TabsTrigger value="mcp-skills">` i `DeveloperPage.tsx`.
+
+### 4. Flytta Activity → Developer
+
+Skapar **`McpActivityPanel.tsx`** som visar `agent_activity` filtrerad på `agent='mcp'` (externa anrop). FlowPilot-aktivitet stannar i Cockpit.
+
+### 5. Engine Room → FlowPilot Engine
+
+Döper om `/admin/skills` till `/admin/flowpilot/engine` (behåller redirect från gamla URL:n):
+- Tar bort tabbarna **Skills** och **Activity** (flyttade till Developer)
+- Behåller Objectives, Automations, Health, Workflows, Evolution, Autonomy
+- Lägger till informationsruta överst: *"Skills och MCP-exponering hanteras i Developer → MCP Skills. FlowPilot konsumerar samma skills som externa agenter."*
+
+### 6. Federation — länka till Developer
+
+`FederationPage.tsx` MCP Collaborators-tab: lägg till länk *"Manage exposed skills →"* som går till `/admin/developer?tab=mcp-skills`.
+
+### 7. Guardrail-test
+
+Uppdatera `src/lib/__tests__/recruitment-module.e2e.test.ts` + lägg till nytt test `mcp-flowpilot-decoupling.test.ts`:
+- Verifierar att `bootstrapModule('recruitment', { flowpilot: { enabled: false }, ... })` **fortfarande** seedar 6 skills med `mcp_exposed=true`.
+- Verifierar att `automation`-kategorin i mcp-server inte längre kräver flowpilot.
 
 ## Filer som ändras
 
-- `src/hooks/useModules.tsx` — lägg till `quotes`-entry
-- `src/lib/module-registry.ts` — importera och registrera 3 moduler
-- (valfritt) `src/components/admin/modules/ModuleDetailSheet.tsx` — fixa forwardRef-warning
+**Edit:**
+- `src/lib/module-bootstrap.ts` (ta bort flowpilot-gate på skills, behåll på automations)
+- `supabase/functions/mcp-server/index.ts` (omkategorisering)
+- `src/pages/admin/DeveloperPage.tsx` (lägg till 2 tabbar)
+- `src/pages/admin/SkillHubPage.tsx` (ta bort Skills+Activity-tabbar, lägg till banner)
+- `src/App.tsx` (redirect /admin/skills → /admin/flowpilot/engine)
+- `src/pages/admin/FederationPage.tsx` (länk till Developer)
+- `src/lib/__tests__/recruitment-module.e2e.test.ts` (test med flowpilot off)
 
-## Verifiering
+**Create:**
+- `src/components/admin/developer/McpSkillsPanel.tsx`
+- `src/components/admin/developer/McpActivityPanel.tsx`
+- `src/lib/__tests__/mcp-flowpilot-decoupling.test.ts`
+- `docs/architecture/mcp-as-platform.md` (dokumentera principen + best practice)
 
-```text
-npx vitest run src/lib/__tests__/module-registry.guardrails.test.ts
-→ Test Files 1 passed (1)
-→ Tests       4 passed (4)
-```
+**Memory:**
+- Spara `mem://architecture/mcp-as-platform-not-flowpilot-feature` med kärnregeln: *MCP/Skills-katalogen är kärnplattform. FlowPilot är en valfri konsument, inte ägare. Bootstrap seedar alltid skills oavsett FlowPilot-status.*
 
-Sedan testa via MCP att `quotes`/`approvals`/`reconciliation`-skills syns under `/rest/groups` och kan kallas av ClawWink utan 404.
+## Resultat — best practice-flödet
+
+| Användarval | Vad händer |
+|---|---|
+| **Aktiverar `recruitment`-modul** | 6 skills seedas med `mcp_exposed=true`. Synliga direkt i `/admin/developer` → MCP Skills. Externa MCP-klienter ser dem omedelbart. |
+| **Stänger av FlowPilot** | Skills finns kvar. MCP fungerar fullt ut. Bara automations/objectives/heartbeat pausas. Admin kan köra hela företaget via OpenClaw/ClawWink/Claude Desktop. |
+| **Vill byta intern agent** | Ingen skill-migration behövs. Plugga in valfri MCP-klient mot `mcp-server`-endpointen — alla skills är redan exponerade. |
+| **Vill se "vad kan plattformen göra?"** | En enda sida: `/admin/developer` → MCP Skills, grupperad per modul. Inga FlowPilot-koncept i sikte. |
 
