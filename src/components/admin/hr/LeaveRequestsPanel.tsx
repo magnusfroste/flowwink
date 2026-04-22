@@ -1,7 +1,10 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LeaveRequest, useUpdateLeaveRequest } from "@/hooks/useEmployees";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Check, X } from "lucide-react";
 
@@ -14,6 +17,21 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function LeaveRequestsPanel({ requests }: { requests: LeaveRequest[] }) {
   const update = useUpdateLeaveRequest();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-leave-requests")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leave_requests" },
+        () => qc.invalidateQueries({ queryKey: ["leave_requests"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   if (!requests.length) {
     return <p className="text-muted-foreground text-center py-8">No leave requests.</p>;
