@@ -53,6 +53,8 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 import { bootstrapModule } from '@/lib/module-bootstrap';
+// Side-effect import: registers recruitment in the unified module registry
+import '@/lib/modules/recruitment-module';
 import type { ModulesSettings } from '@/hooks/useModules';
 
 beforeEach(() => {
