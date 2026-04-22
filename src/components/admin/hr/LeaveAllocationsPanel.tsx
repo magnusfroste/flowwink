@@ -198,6 +198,7 @@ export function LeaveAllocationsPanel({ employees }: { employees: Employee[] }) 
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (
