@@ -13,6 +13,7 @@ import { Star, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { CandidateMatchOverlay } from './CandidateMatchOverlay';
 
 interface Props {
   jobId?: string;
@@ -33,6 +34,7 @@ export function CandidateKanban({ jobId }: Props) {
   const navigate = useNavigate();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
+  const [overlayId, setOverlayId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -108,10 +110,20 @@ export function CandidateKanban({ jobId }: Props) {
                       </p>
                     </div>
                     {app.ai_score != null && (
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        <Star className="mr-1 h-3 w-3" />
-                        {app.ai_score}
-                      </Badge>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOverlayId(app.id);
+                        }}
+                        className="shrink-0"
+                        title="View match breakdown"
+                      >
+                        <Badge variant="outline" className="text-xs hover:bg-primary/10 hover:border-primary/40 transition-colors cursor-pointer">
+                          <Star className="mr-1 h-3 w-3" />
+                          {app.ai_score}
+                        </Badge>
+                      </button>
                     )}
                   </div>
                   {app.ai_summary && (
@@ -126,6 +138,7 @@ export function CandidateKanban({ jobId }: Props) {
           </div>
         </div>
       ))}
+      <CandidateMatchOverlay applicationId={overlayId} onClose={() => setOverlayId(null)} />
     </div>
   );
 }

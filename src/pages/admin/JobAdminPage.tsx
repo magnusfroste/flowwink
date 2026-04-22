@@ -19,8 +19,9 @@ import {
   useDeleteJobPosting,
   type EmploymentKind,
 } from '@/hooks/useRecruitment';
-import { ArrowLeft, Share2, ExternalLink, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Share2, ExternalLink, Trash2, Save, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateMatchOverlay';
 
 const EMPLOYMENT_OPTIONS: { value: EmploymentKind; label: string }[] = [
   { value: 'full_time', label: 'Full-time' },
@@ -37,6 +38,7 @@ export default function JobAdminPage() {
   const { data: apps } = useApplications(id);
   const update = useUpdateJobPosting();
   const del = useDeleteJobPosting();
+  const [overlayId, setOverlayId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     title: '',
@@ -241,27 +243,39 @@ export default function JobAdminPage() {
                 ) : (
                   <div className="divide-y">
                     {apps.map((a) => (
-                      <Link
+                      <div
                         key={a.id}
-                        to={`/admin/recruitment/candidates/${a.id}`}
-                        className="flex items-center justify-between gap-4 py-3 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                        className="flex items-center justify-between gap-4 py-3 -mx-2 px-2 rounded"
                       >
-                        <div className="min-w-0">
+                        <Link
+                          to={`/admin/recruitment/candidates/${a.id}`}
+                          className="flex-1 min-w-0 hover:underline"
+                        >
                           <p className="font-medium truncate">{a.candidate_name}</p>
                           <p className="text-sm text-muted-foreground truncate">{a.candidate_email}</p>
-                        </div>
+                        </Link>
                         <div className="flex items-center gap-3 shrink-0">
                           {typeof a.ai_score === 'number' && (
-                            <Badge variant={a.ai_score >= 80 ? 'default' : a.ai_score >= 50 ? 'secondary' : 'outline'}>
-                              {a.ai_score}/100
-                            </Badge>
+                            <button
+                              type="button"
+                              onClick={() => setOverlayId(a.id)}
+                              title="View match breakdown"
+                            >
+                              <Badge
+                                variant={a.ai_score >= 80 ? 'default' : a.ai_score >= 50 ? 'secondary' : 'outline'}
+                                className="cursor-pointer hover:opacity-80 transition-opacity gap-1"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                {a.ai_score}/100
+                              </Badge>
+                            </button>
                           )}
                           <Badge variant="outline">{a.stage}</Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
                           </span>
                         </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -269,6 +283,7 @@ export default function JobAdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        <CandidateMatchOverlay applicationId={overlayId} onClose={() => setOverlayId(null)} />
       </div>
     </AdminLayout>
   );

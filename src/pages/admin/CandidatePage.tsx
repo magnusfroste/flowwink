@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Linkedin, Sparkles, Star, Briefcase, FileText } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Linkedin, Sparkles, Star, Briefcase, FileText, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,7 @@ import {
   type ApplicationStage,
 } from '@/hooks/useRecruitment';
 import { cn } from '@/lib/utils';
+import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateMatchOverlay';
 
 function scoreColor(score: number | null) {
   if (score == null) return 'bg-muted text-muted-foreground';
@@ -36,6 +38,7 @@ export default function CandidatePage() {
   const { data, isLoading } = useApplication(id);
   const score = useScoreCandidate();
   const move = useMoveApplicationStage();
+  const [showOverlay, setShowOverlay] = useState(false);
 
   if (isLoading) {
     return (
@@ -119,13 +122,27 @@ export default function CandidatePage() {
               )}
             </div>
             <div className="flex flex-col items-start gap-2 md:items-end">
-              <Badge variant="outline" className={cn('px-3 py-1 text-base', scoreColor(data.ai_score))}>
-                <Star className="mr-1.5 h-4 w-4" />
-                {data.ai_score != null ? `${data.ai_score}/100` : 'Not scored'}
-              </Badge>
+              <button
+                type="button"
+                onClick={() => setShowOverlay(true)}
+                title="View detailed match breakdown"
+              >
+                <Badge
+                  variant="outline"
+                  className={cn('px-3 py-1 text-base cursor-pointer hover:opacity-80 transition-opacity', scoreColor(data.ai_score))}
+                >
+                  <Star className="mr-1.5 h-4 w-4" />
+                  {data.ai_score != null ? `${data.ai_score}/100` : 'Not scored'}
+                </Badge>
+              </button>
               <Badge className={cn('px-3 py-1', rec.tone)} variant="secondary">
                 {rec.label}
               </Badge>
+              {data.ai_score != null && (
+                <Button variant="ghost" size="sm" onClick={() => setShowOverlay(true)} className="h-7 text-xs">
+                  <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Match breakdown
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -208,6 +225,8 @@ export default function CandidatePage() {
           )}
         </CardContent>
       </Card>
+
+      <CandidateMatchOverlay applicationId={showOverlay ? data.id : null} onClose={() => setShowOverlay(false)} />
 
       {/* Cover letter */}
       {data.cover_letter && (
