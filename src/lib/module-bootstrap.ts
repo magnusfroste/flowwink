@@ -117,10 +117,10 @@ export async function bootstrapModule(
           .maybeSingle();
 
         if (existing) {
-          // Re-enable and update description/instructions
+          // Re-enable and update description/instructions; ensure MCP-exposed
           await supabase
             .from('agent_skills')
-            .update({ enabled: true, description: skill.description, instructions: skill.instructions || null })
+            .update({ enabled: true, mcp_exposed: true, description: skill.description, instructions: skill.instructions || null })
             .eq('id', existing.id);
         } else {
           const { error } = await supabase
@@ -134,6 +134,7 @@ export async function bootstrapModule(
               tool_definition: skill.tool_definition as Json,
               instructions: skill.instructions || null,
               enabled: true,
+              mcp_exposed: true,
               origin: 'bundled' as const,
               trust_level: 'notify' as const,
             }]);

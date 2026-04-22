@@ -90,7 +90,7 @@ interface SkillRow {
 // Skill category → module IDs that must be enabled for the category to be exposed
 const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
   content: ["pages", "blog", "knowledgeBase", "handbook", "resume", "mediaLibrary", "siteMigration"],
-  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "projects", "salesIntelligence", "tickets"],
+  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
   communication: ["newsletter", "chat", "liveSupport", "webinars"],
   automation: ["flowpilot"],
   search: ["flowpilot", "browserControl"],
