@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "cli": "bash scripts/flowwink.sh",
     "sync-blocks": "bun run scripts/sync-block-schema.ts",
-    "verify:hr-modules": "tsx scripts/verify-hr-modules.ts",
+    "verify:hr-modules": "npx -y tsx scripts/verify-hr-modules.ts",
     "pretest:mcp": "npm run verify:hr-modules"
   },
   "dependencies": {
