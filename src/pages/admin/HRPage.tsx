@@ -9,6 +9,7 @@ import { NewEmployeeDialog } from "@/components/admin/hr/NewEmployeeDialog";
 import { LeaveRequestsPanel } from "@/components/admin/hr/LeaveRequestsPanel";
 import { LeaveAllocationsPanel } from "@/components/admin/hr/LeaveAllocationsPanel";
 import { PayrollExportPanel } from "@/components/admin/hr/PayrollExportPanel";
+import { OrgChart } from "@/components/admin/hr/OrgChart";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 
 export default function HRPage() {
