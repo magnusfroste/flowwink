@@ -326,6 +326,18 @@ const MODULE_ID_TO_SETTINGS_KEY: Record<string, string> = {
   hr: 'hr',
   documents: 'documents',
   projects: 'projects',
+  recruitment: 'recruitment',
+  approvals: 'approvals',
+  reconciliation: 'reconciliation',
+  quotes: 'quotes',
+  email: 'email',
+  subscriptions: 'subscriptions',
+  flowpilot: 'flowpilot',
+  chat: 'chat',
+  'company-insights': 'companyInsights',
+  'live-support': 'liveSupport',
+  analytics: 'analytics',
+  calendar: 'calendar',
 };
 
 // ---------------------------------------------------------------------------
