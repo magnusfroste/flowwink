@@ -250,13 +250,30 @@ export function useHireCandidate() {
         p_department: input.department ?? null,
       });
       if (error) throw error;
-      return data as { success: boolean; employee_id: string; checklist_id: string };
+      const result = data as { success: boolean; employee_id: string; checklist_id: string; user_id: string | null; needs_invite: boolean };
+
+      // Fire-and-forget: invite employee to portal if no auth user yet
+      if (result.employee_id) {
+        try {
+          await supabase.functions.invoke('invite-employee', {
+            body: { employee_id: result.employee_id },
+          });
+        } catch (e) {
+          logger.error('invite-employee failed', e);
+        }
+      }
+      return result;
     },
-    onSuccess: (_d, vars) => {
+    onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
       qc.invalidateQueries({ queryKey: ['applications', vars.application_id] });
       qc.invalidateQueries({ queryKey: ['employees'] });
-      toast({ title: 'Candidate hired', description: 'Employee record + onboarding checklist created.' });
+      toast({
+        title: 'Candidate hired',
+        description: data.needs_invite
+          ? 'Employee record + onboarding created. Portal invite sent.'
+          : 'Employee record + onboarding created. Portal access linked.',
+      });
     },
     onError: (e: Error) => {
       logger.error('hireCandidate', e);

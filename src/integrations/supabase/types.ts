@@ -6496,6 +6496,10 @@ export type Database = {
         }
         Returns: Json
       }
+      link_employee_to_auth_user: {
+        Args: { p_employee_id: string }
+        Returns: string
+      }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
