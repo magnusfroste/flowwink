@@ -13,6 +13,7 @@ import { OrgChart } from "@/components/admin/hr/OrgChart";
 import { PerformancePanel } from "@/components/admin/hr/PerformancePanel";
 import { AttendancePanel } from "@/components/admin/hr/AttendancePanel";
 import { SkillsPanel } from "@/components/admin/hr/SkillsPanel";
+import { ContractsPanel } from "@/components/admin/hr/ContractsPanel";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 
 export default function HRPage() {
@@ -73,6 +74,7 @@ export default function HRPage() {
             <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="skills">Skills & Certs</TabsTrigger>
+            <TabsTrigger value="contracts">Contracts</TabsTrigger>
           </TabsList>
           <TabsContent value="employees">
             <Card>
@@ -125,6 +127,9 @@ export default function HRPage() {
           </TabsContent>
           <TabsContent value="skills">
             <SkillsPanel />
+          </TabsContent>
+          <TabsContent value="contracts">
+            <ContractsPanel />
           </TabsContent>
         </Tabs>
       </div>

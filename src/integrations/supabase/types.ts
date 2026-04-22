@@ -3113,6 +3113,150 @@ export type Database = {
           },
         ]
       }
+      employment_contract_templates: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          created_by: string | null
+          default_notice_period_days: number | null
+          default_probation_months: number | null
+          description: string | null
+          employment_type: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          body_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          default_notice_period_days?: number | null
+          default_probation_months?: number | null
+          description?: string | null
+          employment_type?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          default_notice_period_days?: number | null
+          default_probation_months?: number | null
+          description?: string | null
+          employment_type?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employment_contracts: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_id: string
+          employment_type: string
+          end_date: string | null
+          hourly_rate_cents: number | null
+          id: string
+          metadata: Json
+          monthly_salary_cents: number | null
+          notice_period_days: number | null
+          probation_end_date: string | null
+          sent_at: string | null
+          signed_at: string | null
+          signed_by_employee_at: string | null
+          signed_by_employer_at: string | null
+          start_date: string
+          status: string
+          template_id: string | null
+          terminated_at: string | null
+          termination_reason: string | null
+          title: string
+          updated_at: string
+          weekly_hours: number | null
+        }
+        Insert: {
+          body_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id: string
+          employment_type?: string
+          end_date?: string | null
+          hourly_rate_cents?: number | null
+          id?: string
+          metadata?: Json
+          monthly_salary_cents?: number | null
+          notice_period_days?: number | null
+          probation_end_date?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signed_by_employee_at?: string | null
+          signed_by_employer_at?: string | null
+          start_date: string
+          status?: string
+          template_id?: string | null
+          terminated_at?: string | null
+          termination_reason?: string | null
+          title: string
+          updated_at?: string
+          weekly_hours?: number | null
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id?: string
+          employment_type?: string
+          end_date?: string | null
+          hourly_rate_cents?: number | null
+          id?: string
+          metadata?: Json
+          monthly_salary_cents?: number | null
+          notice_period_days?: number | null
+          probation_end_date?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signed_by_employee_at?: string | null
+          signed_by_employer_at?: string | null
+          start_date?: string
+          status?: string
+          template_id?: string | null
+          terminated_at?: string | null
+          termination_reason?: string | null
+          title?: string
+          updated_at?: string
+          weekly_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employment_contracts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employment_contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "employment_contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_attachments: {
         Row: {
           created_at: string
@@ -4508,6 +4652,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          employment_type: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          items: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          items?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          items?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       one_on_ones: {
         Row: {
@@ -7135,6 +7321,25 @@ export type Database = {
       }
     }
     Functions: {
+      apply_onboarding_template: {
+        Args: { p_employee_id: string; p_template_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          items: Json
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_checklists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       auto_allocate_vacation: {
         Args: { p_dry_run?: boolean; p_year: number }
         Returns: {
@@ -7414,6 +7619,42 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sign_employment_contract: {
+        Args: { p_contract_id: string; p_side?: string }
+        Returns: {
+          body_markdown: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_id: string
+          employment_type: string
+          end_date: string | null
+          hourly_rate_cents: number | null
+          id: string
+          metadata: Json
+          monthly_salary_cents: number | null
+          notice_period_days: number | null
+          probation_end_date: string | null
+          sent_at: string | null
+          signed_at: string | null
+          signed_by_employee_at: string | null
+          signed_by_employer_at: string | null
+          start_date: string
+          status: string
+          template_id: string | null
+          terminated_at: string | null
+          termination_reason: string | null
+          title: string
+          updated_at: string
+          weekly_hours: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "employment_contracts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       try_acquire_agent_lock: {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
