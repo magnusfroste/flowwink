@@ -87,6 +87,8 @@ import LeavePage from "./pages/account/LeavePage";
 import MyExpensesPage from "./pages/account/MyExpensesPage";
 import TeamPage from "./pages/account/TeamPage";
 import PerformancePage from "./pages/account/PerformancePage";
+import AttendancePage from "./pages/account/AttendancePage";
+import MySkillsPage from "./pages/account/MySkillsPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
@@ -178,6 +180,8 @@ const router = createBrowserRouter([
           { path: "expenses", element: <MyExpensesPage /> },
           { path: "team", element: <TeamPage /> },
           { path: "performance", element: <PerformancePage /> },
+          { path: "attendance", element: <AttendancePage /> },
+          { path: "skills", element: <MySkillsPage /> },
         ],
       },
       { path: "/checkout", element: <CheckoutPage /> },

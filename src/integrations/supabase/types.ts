@@ -1002,6 +1002,53 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_entries: {
+        Row: {
+          break_minutes: number
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          source: string
+          total_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          break_minutes?: number
+          clock_in: string
+          clock_out?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          source?: string
+          total_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          break_minutes?: number
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          source?: string
+          total_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1813,6 +1860,56 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certifications: {
+        Row: {
+          certificate_number: string | null
+          created_at: string
+          document_url: string | null
+          employee_id: string
+          expires_at: string | null
+          id: string
+          issued_date: string | null
+          issuer: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          created_at?: string
+          document_url?: string | null
+          employee_id: string
+          expires_at?: string | null
+          id?: string
+          issued_date?: string | null
+          issuer?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          certificate_number?: string | null
+          created_at?: string
+          document_url?: string | null
+          employee_id?: string
+          expires_at?: string | null
+          id?: string
+          issued_date?: string | null
+          issuer?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -2887,6 +2984,54 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_skills: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          proficiency_level: number | null
+          skill_id: string
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          proficiency_level?: number | null
+          skill_id: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          proficiency_level?: number | null
+          skill_id?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_skills_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills_catalog"
             referencedColumns: ["id"]
           },
         ]
@@ -5958,6 +6103,30 @@ export type Database = {
         }
         Relationships: []
       }
+      skills_catalog: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       sla_policies: {
         Row: {
           created_at: string
@@ -6983,6 +7152,52 @@ export type Database = {
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
+      }
+      clock_in: {
+        Args: { p_employee_id?: string }
+        Returns: {
+          break_minutes: number
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          source: string
+          total_minutes: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "attendance_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      clock_out: {
+        Args: {
+          p_break_minutes?: number
+          p_employee_id?: string
+          p_notes?: string
+        }
+        Returns: {
+          break_minutes: number
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          source: string
+          total_minutes: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "attendance_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {

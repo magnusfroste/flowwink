@@ -5,7 +5,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 
@@ -16,9 +16,11 @@ const customerNav = [
 ];
 
 const employeeNav = [
+  { to: '/account/attendance', label: 'Time clock', icon: Clock },
   { to: '/account/leave', label: 'Leave', icon: CalendarOff },
   { to: '/account/expenses', label: 'Expenses', icon: Receipt },
   { to: '/account/performance', label: 'Performance', icon: Target },
+  { to: '/account/skills', label: 'Skills', icon: GraduationCap },
 ];
 
 const managerNav = [{ to: '/account/team', label: 'My Team', icon: Users }];

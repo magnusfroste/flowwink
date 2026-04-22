@@ -11,6 +11,8 @@ import { LeaveAllocationsPanel } from "@/components/admin/hr/LeaveAllocationsPan
 import { PayrollExportPanel } from "@/components/admin/hr/PayrollExportPanel";
 import { OrgChart } from "@/components/admin/hr/OrgChart";
 import { PerformancePanel } from "@/components/admin/hr/PerformancePanel";
+import { AttendancePanel } from "@/components/admin/hr/AttendancePanel";
+import { SkillsPanel } from "@/components/admin/hr/SkillsPanel";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
 
 export default function HRPage() {
@@ -69,6 +71,8 @@ export default function HRPage() {
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
             <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="skills">Skills & Certs</TabsTrigger>
           </TabsList>
           <TabsContent value="employees">
             <Card>
@@ -115,6 +119,12 @@ export default function HRPage() {
           </TabsContent>
           <TabsContent value="performance">
             <PerformancePanel />
+          </TabsContent>
+          <TabsContent value="attendance">
+            <AttendancePanel />
+          </TabsContent>
+          <TabsContent value="skills">
+            <SkillsPanel />
           </TabsContent>
         </Tabs>
       </div>
