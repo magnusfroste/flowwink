@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployeeLeaveBalances } from "@/hooks/useLeaveBalances";
+import { supabase } from "@/integrations/supabase/client";
 import { CalendarCheck, Hourglass, Wallet } from "lucide-react";
 
 const LABELS: Record<string, string> = {
@@ -12,7 +15,30 @@ const LABELS: Record<string, string> = {
 
 export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
   const year = new Date().getFullYear();
+  const qc = useQueryClient();
   const { data, isLoading } = useEmployeeLeaveBalances(employeeId, year);
+
+  // Live updates: invalidate balances when this employee's requests or allocations change
+  useEffect(() => {
+    if (!employeeId) return;
+    const channel = supabase
+      .channel(`leave-balance-${employeeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leave_requests", filter: `employee_id=eq.${employeeId}` },
+        () => qc.invalidateQueries({ queryKey: ["leave_balances", employeeId] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leave_allocations", filter: `employee_id=eq.${employeeId}` },
+        () => qc.invalidateQueries({ queryKey: ["leave_balances", employeeId] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [employeeId, qc]);
+
 
   if (isLoading) {
     return (
