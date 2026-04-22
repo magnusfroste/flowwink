@@ -42,25 +42,49 @@ export function useToggleOnboardingItem() {
   return useMutation({
     mutationFn: async ({
       checklist_id,
+      employee_id,
       index,
       done,
       currentItems,
     }: {
       checklist_id: string;
+      employee_id: string;
       index: number;
       done: boolean;
       currentItems: OnboardingItem[];
     }) => {
+      const item = currentItems[index];
       const next = currentItems.map((it, i) => (i === index ? { ...it, done } : it));
       const allDone = next.length > 0 && next.every((i) => i.done);
+      const completed_at = allDone ? new Date().toISOString() : null;
+
       const { error } = await supabase
         .from("onboarding_checklists")
         .update({
           items: next as any,
-          completed_at: allDone ? new Date().toISOString() : null,
+          completed_at,
         })
         .eq("id", checklist_id);
       if (error) throw error;
+
+      // Audit log — fire-and-forget, do not block UI on failure
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("audit_logs").insert({
+        action: done ? "onboarding.item_completed" : "onboarding.item_uncompleted",
+        entity_type: "onboarding_checklist",
+        entity_id: checklist_id,
+        user_id: userData?.user?.id ?? null,
+        metadata: {
+          employee_id,
+          checklist_id,
+          item_index: index,
+          item_title: item?.title ?? null,
+          done,
+          checklist_completed: allDone,
+          total_items: next.length,
+          completed_items: next.filter((i) => i.done).length,
+        },
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["onboarding_checklists"] });

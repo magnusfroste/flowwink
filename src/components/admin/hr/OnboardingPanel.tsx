@@ -90,6 +90,7 @@ export function OnboardingPanel({ employeeId, startDate, compact = false }: Prop
                   onCheckedChange={(v) =>
                     toggle.mutate({
                       checklist_id: cl.id,
+                      employee_id: employeeId,
                       index: idx,
                       done: Boolean(v),
                       currentItems: cl.items,
