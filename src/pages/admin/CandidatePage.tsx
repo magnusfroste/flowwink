@@ -145,6 +145,27 @@ export default function CandidatePage() {
                   <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Match breakdown
                 </Button>
               )}
+              {(data as any).employee_id ? (
+                <Link
+                  to={`/admin/hr`}
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Hired — view employee
+                </Link>
+              ) : (
+                ['interviewed', 'offer_sent'].includes(data.stage) && (
+                  <Button
+                    size="sm"
+                    onClick={() => hire.mutate({ application_id: data.id })}
+                    disabled={hire.isPending}
+                    className="mt-1"
+                  >
+                    <UserCheck className="mr-1.5 h-4 w-4" />
+                    {hire.isPending ? 'Hiring…' : 'Hire candidate'}
+                  </Button>
+                )
+              )}
             </div>
           </div>
         </CardContent>
