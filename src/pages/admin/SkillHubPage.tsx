@@ -1,21 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Plus, Zap, Timer, Save, Loader2, Search } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
+import { Zap, Timer, Save, Loader2, Cpu, ExternalLink, Info } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { SkillCard } from '@/components/admin/skills/SkillCard';
-import { SkillEditorSheet } from '@/components/admin/skills/SkillEditorSheet';
-import { ActivityTable } from '@/components/admin/skills/ActivityTable';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ObjectivesPanel } from '@/components/admin/skills/ObjectivesPanel';
 import { AutomationsPanel } from '@/components/admin/skills/AutomationsPanel';
 import { AutomationHealthPanel } from '@/components/admin/skills/AutomationHealthPanel';
@@ -24,7 +14,7 @@ import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
 import { WorkflowsPanel } from '@/components/admin/skills/WorkflowsPanel';
 import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { AutonomyScheduleTab } from '@/components/admin/AutonomyScheduleTab';
-import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill, useToggleMcpExposed, useBulkToggleSkills } from '@/hooks/useSkillHub';
+import { useSkills } from '@/hooks/useSkillHub';
 import {
   useAutonomyScheduleSettings,
   useUpdateAutonomyScheduleSettings,
@@ -33,25 +23,23 @@ import {
 } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { AgentSkill } from '@/types/agent';
 
+/**
+ * FlowPilot Engine — internal control room for the FlowPilot module.
+ *
+ * Skills + MCP exposure live under /admin/developer (platform layer). This page
+ * is FlowPilot-specific: objectives, automations, workflows, evolution, autonomy
+ * schedule and FlowPilot's health view.
+ *
+ * See docs/architecture/mcp-as-platform.md for the decoupling rationale.
+ */
 export default function SkillHubPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'skills';
+  const defaultTab = searchParams.get('tab') || 'objectives';
 
-  const { data: skills = [], isLoading } = useSkills();
-  const toggle = useToggleSkill();
-  const toggleMcp = useToggleMcpExposed();
-  const upsert = useUpsertSkill();
-  const remove = useDeleteSkill();
-  const bulkToggle = useBulkToggleSkills();
-
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [scopeFilter, setScopeFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { data: skills = [] } = useSkills();
+  const exposedCount = skills.filter((s) => s.mcp_exposed).length;
 
   // Autonomy schedule
   const { data: autonomySettings } = useAutonomyScheduleSettings();
@@ -76,216 +64,108 @@ export default function SkillHubPage() {
     }
   };
 
-  const filtered = useMemo(() => {
-    return skills.filter((s) => {
-      if (categoryFilter !== 'all' && s.category !== categoryFilter) return false;
-      if (scopeFilter !== 'all' && s.scope !== scopeFilter) return false;
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const nameMatch = s.name.toLowerCase().includes(q);
-        const descMatch = (s.description || '').toLowerCase().includes(q);
-        if (!nameMatch && !descMatch) return false;
-      }
-      return true;
-    });
-  }, [skills, categoryFilter, scopeFilter, searchQuery]);
-
-  const handleEdit = (skill: AgentSkill) => {
-    setEditingSkill(skill);
-    setEditorOpen(true);
-  };
-
-  const handleNew = () => {
-    setEditingSkill(null);
-    setEditorOpen(true);
-  };
-
   return (
     <AdminLayout>
-    <div className="space-y-6">
-      {/* Self-healing alerts */}
-      <SelfHealingAlert />
+      <div className="space-y-6">
+        {/* Self-healing alerts */}
+        <SelfHealingAlert />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Engine Room</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage agent skills, monitor activity, define objectives, and configure automations.
-          </p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">FlowPilot Engine</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Internal control room for the FlowPilot module — objectives, automations,
+              workflows and autonomous loops.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {exposedCount} skills exposed
+            </Badge>
+            <Button
+              variant="outline" size="sm" className="gap-1.5" asChild
+            >
+              <Link to="/admin/developer?tab=mcp-skills">
+                <Cpu className="h-3.5 w-3.5" />
+                MCP Skills
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </Link>
+            </Button>
+            <Button
+              variant="outline" size="sm" className="gap-1.5"
+              onClick={() => navigate('/admin/flowpilot')}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Open FlowPilot
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            {skills.length} skills
-          </Badge>
-          <Button 
-            variant="outline" size="sm" className="gap-1.5"
-            onClick={() => navigate('/admin/flowpilot')}
-          >
-            <Zap className="h-3.5 w-3.5" />
-            Open FlowPilot
-          </Button>
-        </div>
+
+        {/* Decoupling banner */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle className="text-sm">Skills & MCP exposure moved to Developer</AlertTitle>
+          <AlertDescription className="text-xs">
+            The skills catalog and MCP exposure toggles are now under{' '}
+            <Link to="/admin/developer?tab=mcp-skills" className="underline font-medium">
+              Developer → MCP Skills
+            </Link>
+            . FlowPilot consumes the same catalog as external MCP clients (OpenClaw,
+            ClawWink, Claude Desktop) — turning FlowPilot off does not hide skills from MCP.
+          </AlertDescription>
+        </Alert>
+
+        {/* Tabs */}
+        <Tabs defaultValue={defaultTab}>
+          <TabsList>
+            <TabsTrigger value="objectives">Objectives</TabsTrigger>
+            <TabsTrigger value="automations">Automations</TabsTrigger>
+            <TabsTrigger value="workflows">Workflows</TabsTrigger>
+            <TabsTrigger value="evolution">Evolution</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="autonomy" className="flex items-center gap-1.5">
+              <Timer className="h-3.5 w-3.5" />
+              Autonomy
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="objectives">
+            <ObjectivesPanel />
+          </TabsContent>
+
+          <TabsContent value="automations">
+            <AutomationsPanel />
+          </TabsContent>
+
+          <TabsContent value="workflows">
+            <WorkflowsPanel />
+          </TabsContent>
+
+          <TabsContent value="evolution">
+            <EvolutionPanel />
+          </TabsContent>
+
+          <TabsContent value="health" className="space-y-6">
+            <SystemIntegrityPanel />
+            <AutomationHealthPanel />
+          </TabsContent>
+
+          <TabsContent value="autonomy" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Autonomy Schedule</h2>
+                <p className="text-sm text-muted-foreground">Configure when FlowPilot runs its autonomous loops.</p>
+              </div>
+              <Button onClick={handleSaveAutonomy} disabled={autonomySaving} size="sm">
+                {autonomySaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Save schedule
+              </Button>
+            </div>
+            <AutonomyScheduleTab data={autonomyData} onChange={setAutonomyData} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue={defaultTab}>
-        <TabsList>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="health">Health</TabsTrigger>
-          <TabsTrigger value="objectives">Objectives</TabsTrigger>
-          <TabsTrigger value="automations">Automations</TabsTrigger>
-          <TabsTrigger value="workflows">Workflows</TabsTrigger>
-          <TabsTrigger value="evolution">Evolution</TabsTrigger>
-          <TabsTrigger value="autonomy" className="flex items-center gap-1.5">
-            <Timer className="h-3.5 w-3.5" />
-            Autonomy
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Skills Tab */}
-        <TabsContent value="skills" className="space-y-4">
-          {/* Toolbar */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative w-48">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search skills..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                <SelectItem value="content">Content</SelectItem>
-                <SelectItem value="crm">CRM</SelectItem>
-                <SelectItem value="communication">Communication</SelectItem>
-                <SelectItem value="automation">Automation</SelectItem>
-                <SelectItem value="search">Search</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="growth">Growth</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={scopeFilter} onValueChange={setScopeFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Scope" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All scopes</SelectItem>
-                <SelectItem value="internal">Internal</SelectItem>
-                <SelectItem value="external">External</SelectItem>
-                <SelectItem value="both">Both</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex-1" />
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => bulkToggle.mutate({ ids: filtered.map(s => s.id), enabled: true })}
-              disabled={!filtered.length || bulkToggle.isPending}
-            >
-              Enable all
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => bulkToggle.mutate({ ids: filtered.map(s => s.id), enabled: false })}
-              disabled={!filtered.length || bulkToggle.isPending}
-            >
-              Disable all
-            </Button>
-
-            <Button onClick={handleNew} size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              New Skill
-            </Button>
-          </div>
-
-          {/* Grid */}
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Loading skills…</p>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No skills found.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((skill) => (
-                <SkillCard
-                  key={skill.id}
-                  skill={skill}
-                  onToggle={(id, enabled) => toggle.mutate({ id, enabled })}
-                  onEdit={handleEdit}
-                  onToggleMcp={(id, mcp_exposed) => toggleMcp.mutate({ id, mcp_exposed })}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Activity Tab */}
-        <TabsContent value="activity">
-          <ActivityTable />
-        </TabsContent>
-
-        {/* Health Tab */}
-        <TabsContent value="health" className="space-y-6">
-          <SystemIntegrityPanel />
-          <AutomationHealthPanel />
-        </TabsContent>
-
-        {/* Objectives Tab */}
-        <TabsContent value="objectives">
-          <ObjectivesPanel />
-        </TabsContent>
-
-        {/* Automations Tab */}
-        <TabsContent value="automations">
-          <AutomationsPanel />
-        </TabsContent>
-
-        {/* Workflows Tab */}
-        <TabsContent value="workflows">
-          <WorkflowsPanel />
-        </TabsContent>
-
-        {/* Evolution Tab */}
-        <TabsContent value="evolution">
-          <EvolutionPanel />
-        </TabsContent>
-
-        {/* Autonomy Tab */}
-        <TabsContent value="autonomy" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Autonomy Schedule</h2>
-              <p className="text-sm text-muted-foreground">Configure when FlowPilot runs its autonomous loops.</p>
-            </div>
-            <Button onClick={handleSaveAutonomy} disabled={autonomySaving} size="sm">
-              {autonomySaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              Save schedule
-            </Button>
-          </div>
-          <AutonomyScheduleTab data={autonomyData} onChange={setAutonomyData} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Editor */}
-      <SkillEditorSheet
-        skill={editingSkill}
-        open={editorOpen}
-        onClose={() => setEditorOpen(false)}
-        onSave={(data) => upsert.mutate(data)}
-        onDelete={(id) => remove.mutate(id)}
-      />
-    </div>
     </AdminLayout>
   );
 }
