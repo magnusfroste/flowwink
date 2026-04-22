@@ -78,12 +78,12 @@ export async function bootstrapModule(
     }
   }
 
-  // 2. Skills + automations only if FlowPilot is enabled
+  // 2. Skills + MCP exposure are PLATFORM-level — always seeded regardless of FlowPilot.
+  //    External MCP clients (OpenClaw, ClawWink, Claude Desktop, etc.) must see the
+  //    same skills as FlowPilot. Only `automations` (cron/event triggers) require
+  //    FlowPilot since FlowPilot is the in-house executor for those.
+  //    See: docs/architecture/mcp-as-platform.md
   const flowpilotEnabled = allModules.flowpilot?.enabled ?? true;
-  if (!flowpilotEnabled) {
-    logger.log(`[module-bootstrap] FlowPilot disabled — skipping skills/automations for ${moduleId}`);
-    return result;
-  }
 
   // 3. Enable existing skills by name (unified registry first, then legacy skill-map)
   const skillNames = isUnifiedModule(moduleId)
@@ -149,9 +149,13 @@ export async function bootstrapModule(
     }
   }
 
-  // 5. Seed automations (upsert by name) — unified or legacy
-  const automations = unified?.automations ?? bootstrap?.automations ?? [];
-  if (automations.length) {
+  // 5. Seed automations (upsert by name) — unified or legacy.
+  //    Automations only run when FlowPilot module is enabled (FlowPilot owns the cron loop).
+  const automations = (unified?.automations ?? bootstrap?.automations ?? []);
+  if (automations.length && !flowpilotEnabled) {
+    logger.log(`[module-bootstrap] FlowPilot disabled — skipping ${automations.length} automations for ${moduleId} (skills still seeded for MCP)`);
+  }
+  if (automations.length && flowpilotEnabled) {
     for (const auto of automations) {
       try {
         const { data: existing } = await supabase
