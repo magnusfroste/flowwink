@@ -5,19 +5,29 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2 } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt } from 'lucide-react';
+import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 
-const navItems = [
+const customerNav = [
   { to: '/account', label: 'Orders', icon: Package, exact: true },
   { to: '/account/addresses', label: 'Addresses', icon: MapPin },
   { to: '/account/wishlist', label: 'Wishlist', icon: Heart },
-  { to: '/account/profile', label: 'Profile', icon: User },
 ];
+
+const employeeNav = [
+  { to: '/account/leave', label: 'Leave', icon: CalendarOff },
+  { to: '/account/expenses', label: 'Expenses', icon: Receipt },
+];
+
+const profileNav = [{ to: '/account/profile', label: 'Profile', icon: User }];
 
 export default function AccountLayout() {
   const { isLoggedIn, loading, signOut, profile } = useCustomerAuth();
+  const { isEmployee } = useEmployeeSelf();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const navItems = [...customerNav, ...(isEmployee ? employeeNav : []), ...profileNav];
 
   if (loading) {
     return (
@@ -65,7 +75,7 @@ export default function AccountLayout() {
             {/* Sidebar nav */}
             <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
               {navItems.map((item) => {
-                const isActive = item.exact
+                const isActive = (item as { exact?: boolean }).exact
                   ? location.pathname === item.to
                   : location.pathname.startsWith(item.to);
                 return (

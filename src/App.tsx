@@ -83,6 +83,8 @@ import CustomerOrdersPage from "./pages/account/OrdersPage";
 import AddressesPage from "./pages/account/AddressesPage";
 import WishlistPage from "./pages/account/WishlistPage";
 import CustomerProfilePage from "./pages/account/ProfilePage";
+import LeavePage from "./pages/account/LeavePage";
+import MyExpensesPage from "./pages/account/MyExpensesPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
@@ -170,6 +172,8 @@ const router = createBrowserRouter([
           { path: "addresses", element: <AddressesPage /> },
           { path: "wishlist", element: <WishlistPage /> },
           { path: "profile", element: <CustomerProfilePage /> },
+          { path: "leave", element: <LeavePage /> },
+          { path: "expenses", element: <MyExpensesPage /> },
         ],
       },
       { path: "/checkout", element: <CheckoutPage /> },

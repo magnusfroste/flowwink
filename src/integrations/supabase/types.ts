@@ -2909,6 +2909,7 @@ export type Database = {
           status: string
           title: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -2927,6 +2928,7 @@ export type Database = {
           status?: string
           title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -2945,6 +2947,7 @@ export type Database = {
           status?: string
           title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -6446,6 +6449,7 @@ export type Database = {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
       }
+      current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {
         Args: {
           entity_id?: string
@@ -6616,7 +6620,7 @@ export type Database = {
         | "testing"
         | "subscriptions"
       agent_type: "flowpilot" | "chat" | "mcp"
-      app_role: "writer" | "approver" | "admin" | "customer"
+      app_role: "writer" | "approver" | "admin" | "customer" | "employee"
       application_stage:
         | "applied"
         | "screened"
@@ -6896,7 +6900,7 @@ export const Constants = {
         "subscriptions",
       ],
       agent_type: ["flowpilot", "chat", "mcp"],
-      app_role: ["writer", "approver", "admin", "customer"],
+      app_role: ["writer", "approver", "admin", "customer", "employee"],
       application_stage: [
         "applied",
         "screened",
