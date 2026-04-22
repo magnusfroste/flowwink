@@ -86,6 +86,7 @@ import CustomerProfilePage from "./pages/account/ProfilePage";
 import LeavePage from "./pages/account/LeavePage";
 import MyExpensesPage from "./pages/account/MyExpensesPage";
 import TeamPage from "./pages/account/TeamPage";
+import PerformancePage from "./pages/account/PerformancePage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
@@ -176,6 +177,7 @@ const router = createBrowserRouter([
           { path: "leave", element: <LeavePage /> },
           { path: "expenses", element: <MyExpensesPage /> },
           { path: "team", element: <TeamPage /> },
+          { path: "performance", element: <PerformancePage /> },
         ],
       },
       { path: "/checkout", element: <CheckoutPage /> },

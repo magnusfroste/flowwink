@@ -3146,6 +3146,72 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          comments: string | null
+          created_at: string
+          feedback_type: string
+          giver_id: string | null
+          giver_user_id: string | null
+          id: string
+          improvements: string | null
+          is_anonymous: boolean
+          rating: number | null
+          receiver_id: string
+          related_review_id: string | null
+          strengths: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          feedback_type?: string
+          giver_id?: string | null
+          giver_user_id?: string | null
+          id?: string
+          improvements?: string | null
+          is_anonymous?: boolean
+          rating?: number | null
+          receiver_id: string
+          related_review_id?: string | null
+          strengths?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          feedback_type?: string
+          giver_id?: string | null
+          giver_user_id?: string | null
+          id?: string
+          improvements?: string | null
+          is_anonymous?: boolean
+          rating?: number | null
+          receiver_id?: string
+          related_review_id?: string | null
+          strengths?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_giver_id_fkey"
+            columns: ["giver_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flowpilot_briefings: {
         Row: {
           action_items: Json
@@ -4298,6 +4364,72 @@ export type Database = {
           },
         ]
       }
+      one_on_ones: {
+        Row: {
+          action_items: Json
+          agenda: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          employee_id: string
+          employee_mood: string | null
+          id: string
+          manager_id: string
+          notes: string | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json
+          agenda?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          employee_id: string
+          employee_mood?: string | null
+          id?: string
+          manager_id: string
+          notes?: string | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          agenda?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          employee_id?: string
+          employee_mood?: string | null
+          id?: string
+          manager_id?: string
+          notes?: string | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_on_ones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_on_ones_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opening_balances: {
         Row: {
           account_code: string
@@ -4744,6 +4876,137 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      performance_goals: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string
+          id: string
+          progress_pct: number
+          status: string
+          target_date: string | null
+          title: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id: string
+          id?: string
+          progress_pct?: number
+          status?: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string
+          id?: string
+          progress_pct?: number
+          status?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_goals_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_reviews: {
+        Row: {
+          achievements: string | null
+          acknowledged_at: string | null
+          areas_of_improvement: string | null
+          created_at: string
+          employee_comments: string | null
+          employee_id: string
+          goals_next_period: string | null
+          id: string
+          manager_comments: string | null
+          overall_rating: number | null
+          period_end: string
+          period_start: string
+          period_type: string
+          promotion_recommended: boolean
+          reviewer_id: string | null
+          salary_adjustment_pct: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          achievements?: string | null
+          acknowledged_at?: string | null
+          areas_of_improvement?: string | null
+          created_at?: string
+          employee_comments?: string | null
+          employee_id: string
+          goals_next_period?: string | null
+          id?: string
+          manager_comments?: string | null
+          overall_rating?: number | null
+          period_end: string
+          period_start: string
+          period_type?: string
+          promotion_recommended?: boolean
+          reviewer_id?: string | null
+          salary_adjustment_pct?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          achievements?: string | null
+          acknowledged_at?: string | null
+          areas_of_improvement?: string | null
+          created_at?: string
+          employee_comments?: string | null
+          employee_id?: string
+          goals_next_period?: string | null
+          id?: string
+          manager_comments?: string | null
+          overall_rating?: number | null
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          promotion_recommended?: boolean
+          reviewer_id?: string | null
+          salary_adjustment_pct?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_reviews_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_categories: {
         Row: {
