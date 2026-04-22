@@ -16,6 +16,7 @@ export type Employee = {
   avatar_url: string | null;
   emergency_contact: Record<string, unknown> | null;
   notes: string | null;
+  manager_id: string | null;
   created_at: string;
   updated_at: string;
 };
