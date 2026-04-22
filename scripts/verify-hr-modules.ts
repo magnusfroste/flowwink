@@ -1,131 +1,110 @@
 /**
- * Pre-MCP guardrail: verify all HR-suite modules are registered in the
- * unified module registry before running MCP tests.
+ * Pre-MCP guardrail: verify all HR-suite modules are wired into the unified
+ * registry before running MCP tests.
  *
- * Run with:
+ * Pure static analysis — no runtime, no env vars, no Supabase client. Reads:
+ *   - src/lib/modules/index.ts          (must export each HR module)
+ *   - src/lib/modules/<id>-module.ts    (must call defineModule({ id: '<id>' }))
+ *
+ * Usage:
  *   bun run scripts/verify-hr-modules.ts
- *   # or
- *   npx tsx scripts/verify-hr-modules.ts
+ *   node --experimental-strip-types scripts/verify-hr-modules.ts
  *
- * Exit code 0 = all good, 1 = something missing.
+ * Exit 0 = OK. Exit 1 = a required HR module is missing.
  *
- * What "HR suite" means here = the modules that together implement the
- * hire-to-retire process (employees, leave, payroll, attendance, skills,
- * employment contracts, recruitment bridge, expenses, timesheets).
- * Each must be in src/lib/modules/index.ts AND register itself via
- * defineModule() so its skills are exposed over MCP.
+ * Mirrored at runtime by src/lib/__tests__/hr-suite-mcp-registry.guardrails.test.ts
+ * which validates the actual unified registry (defineModule() calls).
  */
 
-// Side-effect import: triggers defineModule() for every module.
-import '@/lib/modules';
-import {
-  getUnifiedModule,
-  getAllUnifiedModules,
-  getUnifiedSkillNames,
-} from '@/lib/module-def';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const ROOT = process.cwd();
+const MODULES_DIR = path.join(ROOT, 'src/lib/modules');
+const INDEX_FILE = path.join(MODULES_DIR, 'index.ts');
 
 interface Expectation {
+  /** ModulesSettings key — must match defineModule({ id }) */
   id: string;
-  /** Skills that MUST be declared (subset check, not exact match) */
-  requiredSkills?: string[];
-  /** If true, missing the module is a hard error; if false, only warn */
-  required?: boolean;
+  /** Camel-case export name expected in modules/index.ts */
+  exportName: string;
+  /** Source file under src/lib/modules/ */
+  file: string;
 }
 
 const HR_SUITE: Expectation[] = [
-  { id: 'hr', required: true, requiredSkills: ['manage_employee'] },
-  { id: 'recruitment', required: true, requiredSkills: ['hire_candidate'] },
-  { id: 'expenses', required: true },
-  { id: 'timesheets', required: true },
-  { id: 'contracts', required: true },
-  { id: 'documents', required: true },
+  { id: 'hr',           exportName: 'hrModule',          file: 'hr-module.ts' },
+  { id: 'recruitment',  exportName: 'recruitmentModule', file: 'recruitment-module.ts' },
+  { id: 'expenses',     exportName: 'expensesModule',    file: 'expenses-module.ts' },
+  { id: 'timesheets',   exportName: 'timesheetsModule',  file: 'timesheets-module.ts' },
+  { id: 'contracts',    exportName: 'contractsModule',   file: 'contracts-module.ts' },
+  { id: 'documents',    exportName: 'documentsModule',   file: 'documents-module.ts' },
 ];
 
-type Issue = { module: string; severity: 'error' | 'warn'; message: string };
+type Issue = { module: string; message: string };
 
-function verify(): Issue[] {
+function check(): { issues: Issue[]; ok: number } {
   const issues: Issue[] = [];
-  const allIds = new Set(getAllUnifiedModules().map((m) => m.id));
+  let ok = 0;
+
+  if (!fs.existsSync(INDEX_FILE)) {
+    issues.push({ module: '*', message: `Missing ${INDEX_FILE}` });
+    return { issues, ok };
+  }
+  const indexSrc = fs.readFileSync(INDEX_FILE, 'utf8');
 
   for (const exp of HR_SUITE) {
-    const mod = getUnifiedModule(exp.id);
-    if (!mod) {
+    const filePath = path.join(MODULES_DIR, exp.file);
+
+    if (!fs.existsSync(filePath)) {
+      issues.push({ module: exp.id, message: `Source file missing: src/lib/modules/${exp.file}` });
+      continue;
+    }
+    const src = fs.readFileSync(filePath, 'utf8');
+
+    // 1. defineModule({ id: '<id>' })
+    const defineRe = new RegExp(`defineModule\\s*\\(\\s*\\{[^}]*id\\s*:\\s*['"\`]${exp.id}['"\`]`, 's');
+    if (!defineRe.test(src)) {
       issues.push({
         module: exp.id,
-        severity: exp.required ? 'error' : 'warn',
-        message: `Not registered in unified registry. Add export to src/lib/modules/index.ts and call defineModule() in src/lib/modules/${exp.id}-module.ts.`,
+        message: `${exp.file} does not call defineModule({ id: '${exp.id}', ... })`,
       });
       continue;
     }
 
-    if (exp.requiredSkills?.length) {
-      const declared = new Set(getUnifiedSkillNames(exp.id));
-      const missing = exp.requiredSkills.filter((s) => !declared.has(s));
-      if (missing.length) {
-        issues.push({
-          module: exp.id,
-          severity: 'error',
-          message: `Missing required skill(s): ${missing.join(', ')}`,
-        });
-      }
-    }
-
-    // Each MCP-exposed module should declare at least one skill OR be a
-    // pure data module (no skills). Warn if it has zero skills — likely a
-    // forgotten skillSeeds block.
-    const skills = getUnifiedSkillNames(exp.id);
-    if (skills.length === 0) {
+    // 2. Re-exported from modules/index.ts
+    const exportRe = new RegExp(`export\\s*\\{[^}]*\\b${exp.exportName}\\b[^}]*\\}\\s*from\\s*['"]\\./${exp.file.replace('.ts', '')}['"]`);
+    if (!exportRe.test(indexSrc)) {
       issues.push({
         module: exp.id,
-        severity: 'warn',
-        message: 'Registered but exposes 0 skills over MCP — verify this is intentional.',
+        message: `Not re-exported from src/lib/modules/index.ts as "${exp.exportName}"`,
       });
+      continue;
     }
+
+    ok++;
   }
 
-  // Bonus: list any HR-related modules that exist on disk but aren't in the
-  // expected list (helps catch new HR modules that should be tracked here).
-  const hrAdjacent = ['attendance', 'skills', 'employment_contracts', 'payroll'];
-  for (const id of hrAdjacent) {
-    if (allIds.has(id)) {
-      issues.push({
-        module: id,
-        severity: 'warn',
-        message: `Module "${id}" is registered — consider adding it to HR_SUITE in scripts/verify-hr-modules.ts.`,
-      });
-    }
-  }
-
-  return issues;
+  return { issues, ok };
 }
 
 function main() {
-  const issues = verify();
+  const { issues, ok } = check();
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  Pre-MCP HR module registry check');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   for (const exp of HR_SUITE) {
-    const mod = getUnifiedModule(exp.id);
-    const skills = mod ? getUnifiedSkillNames(exp.id) : [];
-    const status = mod ? '✓' : '✗';
-    console.log(
-      `  ${status}  ${exp.id.padEnd(16)} ${mod ? `${skills.length} skill(s)` : 'NOT REGISTERED'}`,
-    );
+    const failed = issues.find((i) => i.module === exp.id);
+    const mark = failed ? '✗' : '✓';
+    console.log(`  ${mark}  ${exp.id.padEnd(14)} (${exp.exportName})`);
   }
+  console.log(`\n  ${ok}/${HR_SUITE.length} HR modules registered.`);
 
-  const errors = issues.filter((i) => i.severity === 'error');
-  const warnings = issues.filter((i) => i.severity === 'warn');
-
-  if (warnings.length) {
-    console.log('\n  Warnings:');
-    for (const w of warnings) console.log(`    ⚠  [${w.module}] ${w.message}`);
-  }
-
-  if (errors.length) {
-    console.log('\n  Errors:');
-    for (const e of errors) console.log(`    ✗  [${e.module}] ${e.message}`);
+  if (issues.length) {
+    console.log('\n  Issues:');
+    for (const i of issues) console.log(`    ✗  [${i.module}] ${i.message}`);
     console.log('\n  ❌ HR module registry check FAILED — fix before running MCP tests.\n');
     process.exit(1);
   }
