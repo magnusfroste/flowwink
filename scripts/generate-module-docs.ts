@@ -86,17 +86,26 @@ function parseModuleFile(filePath: string): ModuleInfo | null {
 }
 
 function extractDefineModuleBlock(src: string): string | null {
-  const idx = src.indexOf('defineModule');
-  if (idx < 0) return null;
-  const open = src.indexOf('({', idx);
-  if (open < 0) return null;
-  let depth = 0;
-  for (let i = open + 1; i < src.length; i++) {
-    const c = src[i];
-    if (c === '{') depth++;
-    else if (c === '}') {
-      depth--;
-      if (depth === 0) return src.slice(open + 1, i + 1);
+  // Find a `defineModule(...)` call (not the import statement). The call is
+  // typically `defineModule<...>({ ... })` or `defineModule({ ... })`.
+  const callRe = /defineModule\s*(?:<[^>]*>)?\s*\(\s*\{/g;
+  let m: RegExpExecArray | null;
+  while ((m = callRe.exec(src)) !== null) {
+    // Skip matches inside import statements
+    const lineStart = src.lastIndexOf('\n', m.index) + 1;
+    const lineEnd = src.indexOf('\n', m.index);
+    const line = src.slice(lineStart, lineEnd === -1 ? src.length : lineEnd);
+    if (/^\s*import\b/.test(line)) continue;
+
+    const open = m.index + m[0].length - 1; // position of `{`
+    let depth = 0;
+    for (let i = open; i < src.length; i++) {
+      const c = src[i];
+      if (c === '{') depth++;
+      else if (c === '}') {
+        depth--;
+        if (depth === 0) return src.slice(open, i + 1);
+      }
     }
   }
   return null;
