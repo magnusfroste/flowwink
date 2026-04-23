@@ -2,8 +2,8 @@
 
 > The full employee lifecycle — from hire to offboarding.
 
-**Maturity level:** L2 — Manual (with agent assistance for checklists)
-**Status:** ⚠️ Basic HR functions; lacks payroll and performance management
+**Maturity level:** L3 — Operational (auto-hire bridge live; payroll & performance still manual)
+**Status:** ✅ Hire-to-Onboard automated; ⚠️ lacks payroll and performance management
 
 ---
 
@@ -22,17 +22,25 @@
 ## Step-by-step flow
 
 ```
-Candidate → Hire decision
+Candidate applies (Recruitment) → application row
        ↓
-Employee created (HR)
+AI screening (score_candidate) → ai_score, matching_skills
        ↓
-Employment contract generated (Contracts) → signing
+Stage advances → offer_sent → offer accepted
        ↓
-Onboarding checklist started (HR)
+🤖 hire_application(application_id)  ← ONE-CALL HIRE BRIDGE
+       │
+       ├─→ employees row created (name, email, title, dept, start_date)
+       ├─→ employment_contracts (draft) generated from template
+       │     • Token substitution: {{employee_name}}, {{title}}, {{start_date}}, {{monthly_salary}}
+       │     • Probation period auto-set from template
+       ├─→ onboarding_checklists seeded from best-matching template
+       │     (matched by department + employment_type, falls back to default)
+       └─→ application.stage = 'hired', employee_id linked
        ↓
-Documents archived (Documents — related to employee_id)
+Contract signed by employer + employee (sign_employment_contract)
        ↓
-[Ongoing] Leave requests, expense claims
+[Ongoing] Leave requests, expense claims, attendance
        ↓
 [Ongoing] Contract renewals (annually)
        ↓
@@ -45,9 +53,11 @@ Offboarding → contracts terminated, access revoked
 
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
+| Candidate screening | ✅ | ✅ (`score_candidate`) | — |
+| **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | — |
-| Contract handling | ✅ | ✅ (`manage_contract`) | — |
-| Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
+| Contract handling | ✅ | ✅ (`manage_contract`, `sign_employment_contract`) | — |
+| Onboarding checklist | ✅ | ✅ (`onboarding_checklist`, `apply_onboarding_template`) | — |
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |
 | Contract renewal check | — | ✅ (`contract_renewal_check`) | — |
 | Performance reviews | ❌ Missing | — | — |

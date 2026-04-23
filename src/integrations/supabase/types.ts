@@ -7672,6 +7672,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      hire_application: {
+        Args: {
+          p_application_id: string
+          p_contract_template_id?: string
+          p_department?: string
+          p_manager_id?: string
+          p_monthly_salary_cents?: number
+          p_onboarding_template_id?: string
+          p_start_date?: string
+        }
+        Returns: {
+          application_id: string
+          contract_status: string
+          employee_id: string
+          employment_contract_id: string
+          onboarding_checklist_id: string
+        }[]
+      }
       hire_candidate_from_application: {
         Args: {
           p_application_id: string
