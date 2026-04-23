@@ -95,6 +95,53 @@ const INVOICING_SKILLS: SkillSeed[] = [
     instructions: 'Aggregate billable hours from time_entries for the given project and period. Each entry becomes a line item with hours × project hourly rate. Group options: "entry" (one line per entry), "user" (sum per user), "week" (sum per week). Auto-set due_date to issue_date + due_days. Swedish: "fakturera timmar", "faktura från tidsrapport".',
   },
   {
+    name: 'bulk_invoice_from_timesheets',
+    description: 'Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "skapa månadsfaktura från timmar". NOT for: single manual invoices (use manage_invoice).',
+    category: 'commerce',
+    handler: 'rpc:bulk_invoice_from_timesheets',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'bulk_invoice_from_timesheets',
+        description: 'Aggregate billable hours into one invoice draft for a project + period',
+        parameters: {
+          type: 'object',
+          properties: {
+            project_id: { type: 'string' },
+            start_date: { type: 'string', description: 'YYYY-MM-DD' },
+            end_date: { type: 'string', description: 'YYYY-MM-DD' },
+            group_by: { type: 'string', enum: ['entry', 'user', 'week'] },
+            due_days: { type: 'integer', description: 'Default 30' },
+          },
+          required: ['project_id', 'start_date', 'end_date'],
+        },
+      },
+    },
+    instructions: 'Calls RPC bulk_invoice_from_timesheets. Marks each used time_entry as invoiced. Creates invoice in draft status — admin reviews before sending.',
+  },
+  {
+    name: 'send_dunning_reminders',
+    description: 'Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "kör påminnelser", "send overdue reminders". NOT for: single invoice reminders.',
+    category: 'commerce',
+    handler: 'rpc:send_dunning_reminders',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_dunning_reminders',
+        description: 'Run dunning sweep across all overdue invoices',
+        parameters: {
+          type: 'object',
+          properties: {
+            dry_run: { type: 'boolean', description: 'Preview without writing actions, default false' },
+          },
+        },
+      },
+    },
+    instructions: 'Returns one row per overdue invoice with assigned dunning step. Logs to dunning_actions and flips status sent→overdue. Idempotent per step per day.',
+  },
+  {
     name: 'invoice_overdue_check',
     description: 'Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "vilka fakturor är förfallna". NOT for: creating invoices (use manage_invoice).',
     category: 'commerce',
@@ -138,7 +185,7 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
   inputSchema: invoicingInputSchema,
   outputSchema: invoicingOutputSchema,
 
-  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check'],
+  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid'],
   skillSeeds: INVOICING_SKILLS,
   automations: INVOICING_AUTOMATIONS,
 

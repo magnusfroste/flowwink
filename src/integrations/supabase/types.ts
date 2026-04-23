@@ -7492,6 +7492,22 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: Json
       }
+      bulk_invoice_from_timesheets: {
+        Args: {
+          p_due_days?: number
+          p_end_date: string
+          p_group_by?: string
+          p_project_id: string
+          p_start_date: string
+        }
+        Returns: {
+          hours_billed: number
+          invoice_id: string
+          invoice_number: string
+          line_count: number
+          total_cents: number
+        }[]
+      }
       calculate_vacation_days: {
         Args: { p_employee_id: string; p_year: number }
         Returns: number
@@ -7865,6 +7881,17 @@ export type Database = {
           key: string
           similarity: number
           value: Json
+        }[]
+      }
+      send_dunning_reminders: {
+        Args: { p_dry_run?: boolean }
+        Returns: {
+          customer_email: string
+          days_overdue: number
+          dunning_step: string
+          invoice_id: string
+          invoice_number: string
+          total_cents: number
         }[]
       }
       show_limit: { Args: never; Returns: number }
