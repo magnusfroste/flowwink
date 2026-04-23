@@ -204,6 +204,9 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
     'manage_opening_balances',
     'manage_chart_of_accounts',
     'suggest_accounting_template',
+    'close_accounting_period',
+    'reopen_accounting_period',
+    'list_accounting_periods',
   ],
 
   skillSeeds: ACCOUNTING_SKILLS,
