@@ -112,6 +112,57 @@ export type Database = {
         }
         Relationships: []
       }
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          entry_count: number | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          reopened_at: string | null
+          reopened_by: string | null
+          status: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents: number | null
+          total_debit_cents: number | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          entry_count?: number | null
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          period_month: number
+          reopened_at?: string | null
+          reopened_by?: string | null
+          status?: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents?: number | null
+          total_debit_cents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          entry_count?: number | null
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          period_month?: number
+          reopened_at?: string | null
+          reopened_by?: string | null
+          status?: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents?: number | null
+          total_debit_cents?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       accounting_templates: {
         Row: {
           category: string
@@ -7404,6 +7455,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      close_accounting_period: {
+        Args: { p_month: number; p_notes?: string; p_year: number }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          entry_count: number | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          reopened_at: string | null
+          reopened_by: string | null
+          status: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents: number | null
+          total_debit_cents: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "accounting_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {
         Args: {
@@ -7490,9 +7566,35 @@ export type Database = {
         Args: { _employee_id: string; _manager_user_id: string }
         Returns: boolean
       }
+      is_period_closed: { Args: { p_date: string }; Returns: boolean }
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
         Returns: string
+      }
+      lock_accounting_period: {
+        Args: { p_month: number; p_year: number }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          entry_count: number | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          reopened_at: string | null
+          reopened_by: string | null
+          status: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents: number | null
+          total_debit_cents: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "accounting_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       lock_payroll_export: {
         Args: { p_export_id: string }
@@ -7545,6 +7647,31 @@ export type Database = {
         Returns: Json
       }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
+      reopen_accounting_period: {
+        Args: { p_month: number; p_reason?: string; p_year: number }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          entry_count: number | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          reopened_at: string | null
+          reopened_by: string | null
+          status: Database["public"]["Enums"]["accounting_period_status"]
+          total_credit_cents: number | null
+          total_debit_cents: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "accounting_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_approval: {
         Args: {
           p_comment?: string
@@ -7665,6 +7792,7 @@ export type Database = {
       a2a_activity_status: "success" | "error" | "pending" | "dispatched"
       a2a_direction: "inbound" | "outbound"
       a2a_peer_status: "active" | "paused" | "revoked"
+      accounting_period_status: "open" | "closed" | "locked"
       activity_outcome_status:
         | "pending"
         | "success"
@@ -7941,6 +8069,7 @@ export const Constants = {
       a2a_activity_status: ["success", "error", "pending", "dispatched"],
       a2a_direction: ["inbound", "outbound"],
       a2a_peer_status: ["active", "paused", "revoked"],
+      accounting_period_status: ["open", "closed", "locked"],
       activity_outcome_status: [
         "pending",
         "success",
