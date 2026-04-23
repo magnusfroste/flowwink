@@ -263,7 +263,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={!isBalanced || !description || createEntry.isPending}
+              disabled={!isBalanced || !description || !journalId || createEntry.isPending}
             >
               {createEntry.isPending ? 'Creating...' : 'Post Entry'}
             </Button>
