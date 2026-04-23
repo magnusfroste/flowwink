@@ -22,17 +22,25 @@
 ## Step-by-step flow
 
 ```
-Candidate → Hire decision
+Candidate applies (Recruitment) → application row
        ↓
-Employee created (HR)
+AI screening (score_candidate) → ai_score, matching_skills
        ↓
-Employment contract generated (Contracts) → signing
+Stage advances → offer_sent → offer accepted
        ↓
-Onboarding checklist started (HR)
+🤖 hire_application(application_id)  ← ONE-CALL HIRE BRIDGE
+       │
+       ├─→ employees row created (name, email, title, dept, start_date)
+       ├─→ employment_contracts (draft) generated from template
+       │     • Token substitution: {{employee_name}}, {{title}}, {{start_date}}, {{monthly_salary}}
+       │     • Probation period auto-set from template
+       ├─→ onboarding_checklists seeded from best-matching template
+       │     (matched by department + employment_type, falls back to default)
+       └─→ application.stage = 'hired', employee_id linked
        ↓
-Documents archived (Documents — related to employee_id)
+Contract signed by employer + employee (sign_employment_contract)
        ↓
-[Ongoing] Leave requests, expense claims
+[Ongoing] Leave requests, expense claims, attendance
        ↓
 [Ongoing] Contract renewals (annually)
        ↓
