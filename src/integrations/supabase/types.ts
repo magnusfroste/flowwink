@@ -4030,6 +4030,7 @@ export type Database = {
           entry_date: string
           id: string
           invoice_id: string | null
+          journal_id: string | null
           reference_number: string | null
           source: string
           status: string
@@ -4042,6 +4043,7 @@ export type Database = {
           entry_date?: string
           id?: string
           invoice_id?: string | null
+          journal_id?: string | null
           reference_number?: string | null
           source?: string
           status?: string
@@ -4054,6 +4056,7 @@ export type Database = {
           entry_date?: string
           id?: string
           invoice_id?: string | null
+          journal_id?: string | null
           reference_number?: string | null
           source?: string
           status?: string
@@ -4065,6 +4068,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
             referencedColumns: ["id"]
           },
         ]
@@ -4109,6 +4119,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      journals: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string
+          default_account_code: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          journal_type: string
+          name: string
+          sequence_prefix: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string
+          default_account_code?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          journal_type: string
+          name: string
+          sequence_prefix?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string
+          default_account_code?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          journal_type?: string
+          name?: string
+          sequence_prefix?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       kb_articles: {
         Row: {

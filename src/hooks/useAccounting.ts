@@ -24,9 +24,37 @@ export interface JournalEntry {
   status: string;
   source: string;
   invoice_id: string | null;
+  journal_id: string | null;
   created_by: string | null;
   created_at: string;
   lines?: JournalEntryLine[];
+}
+
+export interface Journal {
+  id: string;
+  code: string;
+  name: string;
+  journal_type: 'sales' | 'purchase' | 'bank' | 'cash' | 'misc';
+  currency: string;
+  default_account_code: string | null;
+  sequence_prefix: string | null;
+  is_active: boolean;
+  description: string | null;
+}
+
+export function useJournals() {
+  return useQuery({
+    queryKey: ['journals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('journals' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('code');
+      if (error) throw error;
+      return data as unknown as Journal[];
+    },
+  });
 }
 
 export interface JournalEntryLine {
@@ -93,9 +121,9 @@ export function useChartOfAccounts(locale?: string) {
 // Journal Entries
 // ============================================================
 
-export function useJournalEntries(statusFilter?: string) {
+export function useJournalEntries(statusFilter?: string, journalId?: string) {
   return useQuery({
-    queryKey: ['journal-entries', statusFilter],
+    queryKey: ['journal-entries', statusFilter, journalId],
     queryFn: async () => {
       let query = supabase
         .from('journal_entries')
@@ -105,6 +133,9 @@ export function useJournalEntries(statusFilter?: string) {
 
       if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
+      }
+      if (journalId && journalId !== 'all') {
+        query = query.eq('journal_id', journalId);
       }
 
       const { data, error } = await query;
@@ -145,6 +176,7 @@ export interface CreateJournalEntryInput {
   status?: string;
   source?: string;
   invoice_id?: string;
+  journal_id?: string;
   lines: {
     account_code: string;
     account_name: string;
@@ -176,7 +208,8 @@ export function useCreateJournalEntry() {
           status: input.status || 'posted',
           source: input.source || 'manual',
           invoice_id: input.invoice_id || null,
-        })
+          journal_id: input.journal_id || null,
+        } as any)
         .select()
         .single();
       if (entryError) throw entryError;

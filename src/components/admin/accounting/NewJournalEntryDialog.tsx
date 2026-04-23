@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, FileText } from 'lucide-react';
-import { useCreateJournalEntry } from '@/hooks/useAccounting';
+import { useCreateJournalEntry, useJournals } from '@/hooks/useAccounting';
 import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccounting';
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
@@ -35,12 +35,14 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
+  const [journalId, setJournalId] = useState<string>('');
   const [lines, setLines] = useState<LineInput[]>([emptyLine(), emptyLine()]);
 
   const { locale } = useAccountingLocale();
   const createEntry = useCreateJournalEntry();
   const { data: accounts } = useChartOfAccounts(locale);
   const { data: templates } = useAccountingTemplates(locale);
+  const { data: journals } = useJournals();
 
   const updateLine = (index: number, updates: Partial<LineInput>) => {
     setLines((prev) =>
@@ -82,6 +84,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
       entry_date: date,
       description,
       reference_number: reference || undefined,
+      journal_id: journalId || undefined,
       lines: lines.filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0)),
     });
     onOpenChange(false);
@@ -89,6 +92,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
     setDate(new Date().toISOString().split('T')[0]);
     setDescription('');
     setReference('');
+    setJournalId('');
     setLines([emptyLine(), emptyLine()]);
   };
 
@@ -123,7 +127,22 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
           )}
 
           {/* Header fields */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div>
+              <Label>Journal</Label>
+              <Select value={journalId} onValueChange={setJournalId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {journals?.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      {j.code} — {j.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Date</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -244,7 +263,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={!isBalanced || !description || createEntry.isPending}
+              disabled={!isBalanced || !description || !journalId || createEntry.isPending}
             >
               {createEntry.isPending ? 'Creating...' : 'Post Entry'}
             </Button>

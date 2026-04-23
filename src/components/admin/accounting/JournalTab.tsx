@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, FileText } from 'lucide-react';
-import { useJournalEntries, useJournalEntryWithLines } from '@/hooks/useAccounting';
+import { useJournalEntries, useJournalEntryWithLines, useJournals } from '@/hooks/useAccounting';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewJournalEntryDialog } from './NewJournalEntryDialog';
 import { JournalEntryDetail } from './JournalEntryDetail';
@@ -20,25 +20,43 @@ const statusColor: Record<string, string> = {
 
 export function JournalTab() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [journalFilter, setJournalFilter] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const { data: entries, isLoading } = useJournalEntries(statusFilter);
+  const { data: entries, isLoading } = useJournalEntries(statusFilter, journalFilter);
   const { data: selectedEntry } = useJournalEntryWithLines(selectedId);
+  const { data: journals } = useJournals();
+  const journalById = new Map((journals || []).map((j) => [j.id, j]));
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Filter status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="posted">Posted</SelectItem>
-            <SelectItem value="voided">Voided</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Select value={journalFilter} onValueChange={setJournalFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter journal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All journals</SelectItem>
+              {journals?.map((j) => (
+                <SelectItem key={j.id} value={j.id}>
+                  {j.code} — {j.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="posted">Posted</SelectItem>
+              <SelectItem value="voided">Voided</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Entry
@@ -83,6 +101,11 @@ export function JournalTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
+                    {entry.journal_id && journalById.get(entry.journal_id) && (
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {journalById.get(entry.journal_id)!.code}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className={statusColor[entry.status] || ''}>
                       {entry.status}
                     </Badge>
