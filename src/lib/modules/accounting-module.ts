@@ -135,6 +135,75 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     },
     instructions: 'Group journal entries by their account_code combinations. If the same set of accounts appears 3+ times, suggest it as a template. Include common descriptions as keywords.',
   },
+  {
+    name: 'close_accounting_period',
+    description: 'Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and reconciled. NOT for: permanent archival (use lock_accounting_period after audit).',
+    category: 'commerce',
+    handler: 'rpc:close_accounting_period',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'close_accounting_period',
+        description: 'Close a month so no further bookings can be made. Refuses if any draft entries remain.',
+        parameters: {
+          type: 'object',
+          properties: {
+            year: { type: 'number', description: 'Fiscal year, e.g. 2026' },
+            month: { type: 'number', description: 'Month 1-12' },
+            notes: { type: 'string', description: 'Optional close note (auditor reference, etc.)' },
+          },
+          required: ['year', 'month'],
+        },
+      },
+    },
+    instructions: 'Always run accounting_reports for unbooked_invoices first to ensure nothing is missing. Confirm with admin before closing. Once closed, only reopen_accounting_period (admin-only) can revert it — and only if not permanently locked.',
+  },
+  {
+    name: 'reopen_accounting_period',
+    description: 'Reopen a previously closed accounting period to allow corrections. Fails if the period was permanently locked. Use when: late-arriving correction needs to be booked, auditor requests adjustment. NOT for: locked periods (those are immutable).',
+    category: 'commerce',
+    handler: 'rpc:reopen_accounting_period',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reopen_accounting_period',
+        description: 'Reopen a closed period for corrections',
+        parameters: {
+          type: 'object',
+          properties: {
+            year: { type: 'number' },
+            month: { type: 'number' },
+            reason: { type: 'string', description: 'Why the period is being reopened (audit trail)' },
+          },
+          required: ['year', 'month', 'reason'],
+        },
+      },
+    },
+    instructions: 'Always require an explicit reason for the audit log. Notify the responsible accountant after reopening.',
+  },
+  {
+    name: 'list_accounting_periods',
+    description: 'List accounting periods with their status (open/closed/locked) and snapshot totals. Use when: admin asks "is March closed?", before attempting to close a new month, or for the month-end dashboard.',
+    category: 'commerce',
+    handler: 'db:accounting_periods',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_accounting_periods',
+        description: 'List accounting periods and their status',
+        parameters: {
+          type: 'object',
+          properties: {
+            year: { type: 'number' },
+            status: { type: 'string', enum: ['open', 'closed', 'locked'] },
+          },
+        },
+      },
+    },
+  },
 ];
 
 const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
