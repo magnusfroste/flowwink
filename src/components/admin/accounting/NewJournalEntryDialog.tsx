@@ -127,7 +127,22 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
           )}
 
           {/* Header fields */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div>
+              <Label>Journal</Label>
+              <Select value={journalId} onValueChange={setJournalId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {journals?.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      {j.code} — {j.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Date</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
