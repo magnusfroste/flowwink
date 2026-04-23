@@ -84,6 +84,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
       entry_date: date,
       description,
       reference_number: reference || undefined,
+      journal_id: journalId || undefined,
       lines: lines.filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0)),
     });
     onOpenChange(false);
@@ -91,6 +92,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
     setDate(new Date().toISOString().split('T')[0]);
     setDescription('');
     setReference('');
+    setJournalId('');
     setLines([emptyLine(), emptyLine()]);
   };
 
