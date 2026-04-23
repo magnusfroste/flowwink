@@ -176,6 +176,7 @@ export interface CreateJournalEntryInput {
   status?: string;
   source?: string;
   invoice_id?: string;
+  journal_id?: string;
   lines: {
     account_code: string;
     account_name: string;
@@ -207,7 +208,8 @@ export function useCreateJournalEntry() {
           status: input.status || 'posted',
           source: input.source || 'manual',
           invoice_id: input.invoice_id || null,
-        })
+          journal_id: input.journal_id || null,
+        } as any)
         .select()
         .single();
       if (entryError) throw entryError;
