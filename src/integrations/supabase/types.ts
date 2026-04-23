@@ -7492,6 +7492,18 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: Json
       }
+      auto_generate_purchase_orders: {
+        Args: { p_dry_run?: boolean }
+        Returns: {
+          line_count: number
+          po_id: string
+          po_number: string
+          status: string
+          total_cents: number
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       bulk_invoice_from_timesheets: {
         Args: {
           p_due_days?: number
@@ -7677,6 +7689,22 @@ export type Database = {
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
         Returns: string
+      }
+      list_reorder_candidates: {
+        Args: never
+        Returns: {
+          estimated_cost_cents: number
+          lead_time_days: number
+          min_order_quantity: number
+          product_id: string
+          product_name: string
+          quantity_on_hand: number
+          reorder_point: number
+          reorder_quantity: number
+          unit_price_cents: number
+          vendor_id: string
+          vendor_name: string
+        }[]
       }
       lock_accounting_period: {
         Args: { p_month: number; p_year: number }
