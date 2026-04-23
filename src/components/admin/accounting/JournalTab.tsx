@@ -101,6 +101,11 @@ export function JournalTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
+                    {entry.journal_id && journalById.get(entry.journal_id) && (
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {journalById.get(entry.journal_id)!.code}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className={statusColor[entry.status] || ''}>
                       {entry.status}
                     </Badge>
