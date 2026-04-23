@@ -7887,6 +7887,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      run_period_lock_tests: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
       schedule_cron_job: {
         Args: {
           p_body: string
