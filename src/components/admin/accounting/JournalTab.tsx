@@ -20,10 +20,13 @@ const statusColor: Record<string, string> = {
 
 export function JournalTab() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [journalFilter, setJournalFilter] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const { data: entries, isLoading } = useJournalEntries(statusFilter);
+  const { data: entries, isLoading } = useJournalEntries(statusFilter, journalFilter);
   const { data: selectedEntry } = useJournalEntryWithLines(selectedId);
+  const { data: journals } = useJournals();
+  const journalById = new Map((journals || []).map((j) => [j.id, j]));
 
   return (
     <div className="space-y-4">
