@@ -24,9 +24,37 @@ export interface JournalEntry {
   status: string;
   source: string;
   invoice_id: string | null;
+  journal_id: string | null;
   created_by: string | null;
   created_at: string;
   lines?: JournalEntryLine[];
+}
+
+export interface Journal {
+  id: string;
+  code: string;
+  name: string;
+  journal_type: 'sales' | 'purchase' | 'bank' | 'cash' | 'misc';
+  currency: string;
+  default_account_code: string | null;
+  sequence_prefix: string | null;
+  is_active: boolean;
+  description: string | null;
+}
+
+export function useJournals() {
+  return useQuery({
+    queryKey: ['journals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('journals' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('code');
+      if (error) throw error;
+      return data as unknown as Journal[];
+    },
+  });
 }
 
 export interface JournalEntryLine {
