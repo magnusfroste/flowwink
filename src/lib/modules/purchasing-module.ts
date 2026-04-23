@@ -167,7 +167,10 @@ export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>(
   inputSchema: purchasingInputSchema,
   outputSchema: purchasingOutputSchema,
 
-  skills: ['manage_vendor', 'create_purchase_order', 'send_purchase_order', 'receive_goods', 'purchase_reorder_check'],
+  skills: [
+    'manage_vendor', 'create_purchase_order', 'send_purchase_order', 'receive_goods', 'purchase_reorder_check',
+    'register_vendor_invoice', 'match_po_to_invoice', 'auto_approve_vendor_invoice', 'flag_invoice_variance',
+  ],
   skillSeeds: PURCHASING_SKILLS,
   automations: PURCHASING_AUTOMATIONS,
 
