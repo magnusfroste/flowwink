@@ -35,12 +35,14 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
+  const [journalId, setJournalId] = useState<string>('');
   const [lines, setLines] = useState<LineInput[]>([emptyLine(), emptyLine()]);
 
   const { locale } = useAccountingLocale();
   const createEntry = useCreateJournalEntry();
   const { data: accounts } = useChartOfAccounts(locale);
   const { data: templates } = useAccountingTemplates(locale);
+  const { data: journals } = useJournals();
 
   const updateLine = (index: number, updates: Partial<LineInput>) => {
     setLines((prev) =>
