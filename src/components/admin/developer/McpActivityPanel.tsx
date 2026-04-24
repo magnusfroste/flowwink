@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
+import { ValidationErrorDetails, hasValidationDetails } from '@/components/admin/agent/ValidationErrorDetails';
 
 interface McpActivityRow {
   id: string;
@@ -14,6 +15,8 @@ interface McpActivityRow {
   duration_ms: number | null;
   created_at: string;
   conversation_id: string | null;
+  error_message: string | null;
+  output: Record<string, unknown> | null;
 }
 
 export function McpActivityPanel() {
@@ -22,7 +25,7 @@ export function McpActivityPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agent_activity')
-        .select('id, agent, skill_name, status, duration_ms, created_at, conversation_id')
+        .select('id, agent, skill_name, status, duration_ms, created_at, conversation_id, error_message, output')
         .eq('agent', 'mcp')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -63,25 +66,48 @@ export function McpActivityPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{row.skill_name ?? '—'}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={row.status === 'success' ? 'secondary' : row.status === 'failed' ? 'destructive' : 'outline'}
-                        className="text-[10px]"
-                      >
-                        {row.status ?? 'unknown'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {row.duration_ms ? `${row.duration_ms}ms` : '—'}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {data.map((row) => {
+                  const showDetails =
+                    row.status === 'failed' &&
+                    (hasValidationDetails(row.output) || !!row.error_message);
+                  return (
+                    <>
+                      <TableRow key={row.id}>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{row.skill_name ?? '—'}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              row.status === 'success'
+                                ? 'secondary'
+                                : row.status === 'failed'
+                                  ? 'destructive'
+                                  : 'outline'
+                            }
+                            className="text-[10px]"
+                          >
+                            {row.status ?? 'unknown'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {row.duration_ms ? `${row.duration_ms}ms` : '—'}
+                        </TableCell>
+                      </TableRow>
+                      {showDetails && (
+                        <TableRow key={`${row.id}-error`} className="bg-destructive/5 hover:bg-destructive/5">
+                          <TableCell colSpan={4} className="py-2">
+                            <ValidationErrorDetails
+                              output={row.output}
+                              errorMessage={row.error_message}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
