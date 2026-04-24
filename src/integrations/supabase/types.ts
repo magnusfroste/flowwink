@@ -2178,6 +2178,88 @@ export type Database = {
           },
         ]
       }
+      clawable_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          response_id: string | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          response_id?: string | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          response_id?: string | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clawable_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "clawable_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clawable_sessions: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_response_id: string | null
+          model: string
+          peer_id: string | null
+          thread_key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_response_id?: string | null
+          model?: string
+          peer_id?: string | null
+          thread_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_response_id?: string | null
+          model?: string
+          peer_id?: string | null
+          thread_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clawable_sessions_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
