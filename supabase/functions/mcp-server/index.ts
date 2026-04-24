@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -266,6 +266,7 @@ async function executeSkill(
   skillName: string,
   args: Record<string, unknown>,
   callerUserId?: string | null,
+  callerApiKeyId?: string | null,
 ): Promise<string> {
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
   const res = await fetch(url, {
@@ -279,6 +280,7 @@ async function executeSkill(
       arguments: args,
       agent_type: "mcp",
       caller_user_id: callerUserId ?? undefined,
+      caller_api_key_id: callerApiKeyId ?? undefined,
     }),
   });
 
@@ -607,7 +609,7 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
       },
       handler: async (args: Record<string, unknown>) => {
         const ctx = requestContext.getStore();
-        const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null);
+        const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
         return {
           content: [{ type: "text" as const, text: result }],
         };
@@ -787,6 +789,7 @@ app.use("/*", async (c, next) => {
   }
   c.set("apiKeyScopes" as any, auth.scopes);
   c.set("apiKeyCreatedBy" as any, auth.createdBy);
+  c.set("apiKeyId" as any, auth.keyId);
   return next();
 });
 
@@ -948,7 +951,8 @@ app.post("/rest/execute", async (c) => {
   }
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
-  const result = await executeSkill(match.name, args || {}, callerUserId);
+  const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
+  const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId);
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
