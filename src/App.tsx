@@ -96,6 +96,7 @@ import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
 import ConsultantProfilesPage from "./pages/admin/ConsultantProfilesPage";
 import FederationPage from "./pages/admin/FederationPage";
+import ClawablePage from "./pages/admin/ClawablePage";
 import CompanyInsightsPage from "./pages/admin/CompanyInsightsPage";
 import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
 import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
