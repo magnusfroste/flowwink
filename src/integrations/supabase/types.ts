@@ -4079,6 +4079,55 @@ export type Database = {
           },
         ]
       }
+      journal_entry_line_taxes: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          journal_entry_line_id: string
+          tax_code_id: string
+          tax_grid_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          journal_entry_line_id: string
+          tax_code_id: string
+          tax_grid_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          journal_entry_line_id?: string
+          tax_code_id?: string
+          tax_grid_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_line_taxes_journal_entry_line_id_fkey"
+            columns: ["journal_entry_line_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entry_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_line_taxes_tax_code_id_fkey"
+            columns: ["tax_code_id"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_line_taxes_tax_grid_id_fkey"
+            columns: ["tax_grid_id"]
+            isOneToOne: false
+            referencedRelation: "tax_grids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entry_lines: {
         Row: {
           account_code: string
@@ -4089,6 +4138,9 @@ export type Database = {
           description: string | null
           id: string
           journal_entry_id: string
+          tax_amount_cents: number | null
+          tax_base_cents: number | null
+          tax_code_id: string | null
         }
         Insert: {
           account_code: string
@@ -4099,6 +4151,9 @@ export type Database = {
           description?: string | null
           id?: string
           journal_entry_id: string
+          tax_amount_cents?: number | null
+          tax_base_cents?: number | null
+          tax_code_id?: string | null
         }
         Update: {
           account_code?: string
@@ -4109,6 +4164,9 @@ export type Database = {
           description?: string | null
           id?: string
           journal_entry_id?: string
+          tax_amount_cents?: number | null
+          tax_base_cents?: number | null
+          tax_code_id?: string | null
         }
         Relationships: [
           {
@@ -4116,6 +4174,13 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_tax_code_id_fkey"
+            columns: ["tax_code_id"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -6798,6 +6863,141 @@ export type Database = {
           },
         ]
       }
+      tax_code_grids: {
+        Row: {
+          applies_to: string
+          id: string
+          sign: number
+          tax_code_id: string
+          tax_grid_id: string
+        }
+        Insert: {
+          applies_to?: string
+          id?: string
+          sign?: number
+          tax_code_id: string
+          tax_grid_id: string
+        }
+        Update: {
+          applies_to?: string
+          id?: string
+          sign?: number
+          tax_code_id?: string
+          tax_grid_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_code_grids_tax_code_id_fkey"
+            columns: ["tax_code_id"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_code_grids_tax_grid_id_fkey"
+            columns: ["tax_grid_id"]
+            isOneToOne: false
+            referencedRelation: "tax_grids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_codes: {
+        Row: {
+          code: string
+          computation: string
+          created_at: string
+          description: string | null
+          id: string
+          input_account_code: string | null
+          is_active: boolean
+          is_eu: boolean
+          is_reverse_charge: boolean
+          locale: string
+          name: string
+          output_account_code: string | null
+          price_include: boolean
+          rate_pct: number
+          sequence: number
+          tax_type: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          computation?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_account_code?: string | null
+          is_active?: boolean
+          is_eu?: boolean
+          is_reverse_charge?: boolean
+          locale?: string
+          name: string
+          output_account_code?: string | null
+          price_include?: boolean
+          rate_pct?: number
+          sequence?: number
+          tax_type?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          computation?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_account_code?: string | null
+          is_active?: boolean
+          is_eu?: boolean
+          is_reverse_charge?: boolean
+          locale?: string
+          name?: string
+          output_account_code?: string | null
+          price_include?: boolean
+          rate_pct?: number
+          sequence?: number
+          tax_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tax_grids: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          locale: string
+          name: string
+          sequence: number
+        }
+        Insert: {
+          category?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          locale?: string
+          name: string
+          sequence?: number
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          locale?: string
+          name?: string
+          sequence?: number
+        }
+        Relationships: []
+      }
       ticket_comments: {
         Row: {
           author_id: string | null
@@ -7575,6 +7775,15 @@ export type Database = {
       calculate_vacation_days: {
         Args: { p_employee_id: string; p_year: number }
         Returns: number
+      }
+      calculate_vat_report: {
+        Args: { p_end_month?: number; p_start_month: number; p_year: number }
+        Returns: {
+          amount_cents: number
+          category: string
+          grid_code: string
+          grid_name: string
+        }[]
       }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
