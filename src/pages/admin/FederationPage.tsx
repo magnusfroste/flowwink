@@ -1175,8 +1175,11 @@ export default function FederationPage() {
         </Dialog>
           </TabsContent>
 
-          <TabsContent value="mcp-collaborators" className="space-y-8">
-            <McpCollaborators />
+          <TabsContent value="connections" className="space-y-6">
+            <PeerConnectionsTab />
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-8">
             <div>
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
                 Agent Findings
