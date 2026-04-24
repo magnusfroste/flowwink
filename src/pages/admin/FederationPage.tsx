@@ -849,27 +849,8 @@ export default function FederationPage() {
                             checked={peer.status === 'active'}
                             onCheckedChange={() => handleToggleStatus(peer.id, peer.status)}
                           />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive">
-                                Revoke
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Revoke peer?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently disable the connection with {peer.name}. They will no longer be able to send requests.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRevoke(peer.id)}>
-                                  Revoke
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          {/* Peer-level Revoke removed — credential revoke lives per channel:
+                              MCP keys → /admin/api-keys, A2A tokens → remove the channel itself */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
