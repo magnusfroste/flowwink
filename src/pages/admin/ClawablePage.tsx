@@ -206,7 +206,29 @@ export default function ClawablePage() {
     setSelectedSessionId(sessions.find(s => s.id !== selectedSessionId)?.id || '');
   };
 
-  const handleSend = async () => {
+  const loadPeerModels = async () => {
+    if (!selectedPeerId) return;
+    setLoadingModels(true);
+    setPeerModels([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('clawable-list-models', {
+        body: { peer_id: selectedPeerId },
+      });
+      if (error) throw error;
+      const models = (data?.models ?? []) as Array<{ id: string; owned_by: string | null }>;
+      setPeerModels(models);
+      toast({
+        title: `Loaded ${models.length} model${models.length === 1 ? '' : 's'}`,
+        description: models.length ? 'Pick one in the Agent ID field below.' : 'Peer returned an empty list.',
+      });
+    } catch (e: any) {
+      toast({ title: 'Failed to list models', description: e?.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+
     if (!input.trim() || !selectedSessionId) return;
     const text = input.trim();
     setInput('');
