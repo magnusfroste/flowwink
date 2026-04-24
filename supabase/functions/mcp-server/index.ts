@@ -990,7 +990,8 @@ app.all("/*", async (c) => {
 
   const handler = await getMcpHandler(filterGroups);
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
-  const response = await requestContext.run({ callerUserId }, () => handler(c.req.raw));
+  const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
+  const response = await requestContext.run({ callerUserId, callerApiKeyId }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);
