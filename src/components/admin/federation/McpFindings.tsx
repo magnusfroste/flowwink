@@ -32,7 +32,7 @@ export function McpFindings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('beta_test_findings')
-        .select('id, title, type, severity, description, resolved_at, created_at')
+        .select('id, title, type, severity, description, resolved_at, created_at, reported_by')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
