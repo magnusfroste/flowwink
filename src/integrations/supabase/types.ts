@@ -63,6 +63,7 @@ export type Database = {
       }
       a2a_peers: {
         Row: {
+          api_key_id: string | null
           capabilities: Json
           created_at: string
           created_by: string | null
@@ -72,13 +73,15 @@ export type Database = {
           last_seen_at: string | null
           mcp_api_key: string | null
           name: string
-          outbound_token: string
+          outbound_token: string | null
           request_count: number
           status: Database["public"]["Enums"]["a2a_peer_status"]
+          transport: Database["public"]["Enums"]["peer_transport"]
           updated_at: string
-          url: string
+          url: string | null
         }
         Insert: {
+          api_key_id?: string | null
           capabilities?: Json
           created_at?: string
           created_by?: string | null
@@ -88,13 +91,15 @@ export type Database = {
           last_seen_at?: string | null
           mcp_api_key?: string | null
           name: string
-          outbound_token?: string
+          outbound_token?: string | null
           request_count?: number
           status?: Database["public"]["Enums"]["a2a_peer_status"]
+          transport?: Database["public"]["Enums"]["peer_transport"]
           updated_at?: string
-          url: string
+          url?: string | null
         }
         Update: {
+          api_key_id?: string | null
           capabilities?: Json
           created_at?: string
           created_by?: string | null
@@ -104,13 +109,22 @@ export type Database = {
           last_seen_at?: string | null
           mcp_api_key?: string | null
           name?: string
-          outbound_token?: string
+          outbound_token?: string | null
           request_count?: number
           status?: Database["public"]["Enums"]["a2a_peer_status"]
+          transport?: Database["public"]["Enums"]["peer_transport"]
           updated_at?: string
-          url?: string
+          url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "a2a_peers_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       accounting_periods: {
         Row: {
@@ -8566,6 +8580,7 @@ export type Database = {
       job_posting_status: "draft" | "published" | "closed" | "archived"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
+      peer_transport: "a2a" | "openresponses" | "mcp_inbound"
       product_type: "one_time" | "recurring"
       project_task_priority: "low" | "medium" | "high" | "urgent"
       project_task_status: "todo" | "in_progress" | "review" | "done"
@@ -8851,6 +8866,7 @@ export const Constants = {
       job_posting_status: ["draft", "published", "closed", "archived"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
+      peer_transport: ["a2a", "openresponses", "mcp_inbound"],
       product_type: ["one_time", "recurring"],
       project_task_priority: ["low", "medium", "high", "urgent"],
       project_task_status: ["todo", "in_progress", "review", "done"],
