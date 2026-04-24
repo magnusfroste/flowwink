@@ -63,6 +63,20 @@ export default function ClawablePage() {
   const [savingPeer, setSavingPeer] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // shadcn ScrollArea forwards ref to the root; viewport is a child div with [data-radix-scroll-area-viewport]
+    const viewport = el.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    const target = viewport ?? el;
+    target.scrollTop = target.scrollHeight;
+  };
+
+  useEffect(() => {
+    // scroll on new messages, when sending starts/stops, or on session switch
+    requestAnimationFrame(() => scrollToBottom());
+  }, [messages, sending, selectedSessionId]);
+
   const reloadPeers = async () => {
     const { data, error } = await supabase
       .from('a2a_peers')
