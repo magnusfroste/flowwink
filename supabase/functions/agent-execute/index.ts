@@ -850,7 +850,16 @@ async function executeTimesheetsAction(
     }
 
     case 'timesheet_summary': {
-      const { period = 'this_week', start_date, end_date, project_id, user_id, billable_only, include_revenue } = args as any;
+      const a = args as any;
+      // Accept aliases — agents commonly send from_date/to_date or start/end
+      const explicitStart = a.start_date || a.from_date || a.from || a.start;
+      const explicitEnd = a.end_date || a.to_date || a.to || a.end;
+      // If explicit dates passed, force custom mode regardless of period arg
+      const period = (explicitStart || explicitEnd) ? 'custom' : (a.period || 'this_week');
+      const project_id = a.project_id;
+      const user_id = a.user_id;
+      const billable_only = a.billable_only;
+      const include_revenue = a.include_revenue;
 
       let ws: string, we: string;
       const now = new Date();
@@ -888,9 +897,18 @@ async function executeTimesheetsAction(
           we = lastDay.toISOString().slice(0, 10);
           break;
         }
-        default:
-          ws = start_date || now.toISOString().slice(0, 10);
-          we = end_date || now.toISOString().slice(0, 10);
+        case 'custom':
+        default: {
+          if (!explicitStart || !explicitEnd) {
+            return {
+              error: 'custom period requires start_date and end_date (or aliases from_date/to_date). Got: ' +
+                JSON.stringify({ start: explicitStart, end: explicitEnd }),
+              status: 'failed',
+            };
+          }
+          ws = explicitStart;
+          we = explicitEnd;
+        }
       }
 
       let query = supabase.from('time_entries').select('*, projects(name, hourly_rate_cents, currency)').gte('entry_date', ws).lte('entry_date', we);
@@ -898,13 +916,13 @@ async function executeTimesheetsAction(
       if (user_id) query = query.eq('user_id', user_id);
       if (billable_only) query = query.eq('is_billable', true);
       const { data: entries, error } = await query;
-      if (error) return { error: error.message };
+      if (error) return { error: error.message, status: 'failed' };
 
       // Group by project
-      const byProject = new Map<string, { name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
+      const byProject = new Map<string, { project_id: string; name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
       for (const e of entries || []) {
         const key = e.project_id;
-        const existing = byProject.get(key) || { name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
+        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
         existing.hours += Number(e.hours);
         if (e.is_billable) {
           existing.billable_hours += Number(e.hours);
