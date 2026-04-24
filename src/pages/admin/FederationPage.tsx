@@ -340,28 +340,7 @@ export default function FederationPage() {
     await updatePeer.mutateAsync({ id: peerId, status: 'revoked' });
   };
 
-  const openEditDialog = (peer: any) => {
-    setEditingPeer(peer);
-    setEditName(peer.name);
-    setEditUrl(peer.url || '');
-    setEditOutboundToken('');
-    setEditGatewayToken(peer.gateway_token || '');
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingPeer) return;
-    const updates: Record<string, string> = { id: (editingPeer as any).id };
-    if (editName !== (editingPeer as any).name) updates.name = editName;
-    if (editUrl !== ((editingPeer as any).url || '')) updates.url = editUrl;
-    if (editGatewayToken !== ((editingPeer as any).gateway_token || '')) {
-      updates.gateway_token = editGatewayToken;
-    }
-    if (editOutboundToken) updates.outbound_token = editOutboundToken;
-    await updatePeer.mutateAsync(updates as any);
-
-    setEditingPeer(null);
-    toast({ title: 'Peer updated', description: `${editName} has been updated.` });
-  };
+  // openEditDialog/handleSaveEdit removed — channel-level edits live in PeerChannelsInline
 
   // --- Protocol detection ---
   // Prefers the explicit `transport` column (set during peer creation or auto-discovery).
