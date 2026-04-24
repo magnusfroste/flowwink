@@ -726,12 +726,29 @@ async function executeTimesheetsAction(
   switch (skillName) {
     case 'log_time': {
       const a = args as any;
-      // Accept common aliases agents tend to send
-      const action = a.action || (a.hours != null || a.project_id || a.project_name ? 'create' : 'list');
+      const ALLOWED_ACTIONS = ['create', 'list', 'delete'];
+
+      // STRICT: action must be explicit. No auto-inference — agents must declare intent.
+      if (!a.action || typeof a.action !== 'string') {
+        return {
+          error: `action required and must be one of: ${ALLOWED_ACTIONS.join(', ')}. Write operations MUST pass action="create" explicitly.`,
+          status: 'failed',
+          received: { action: a.action ?? null },
+        };
+      }
+      const action = a.action;
+      if (!ALLOWED_ACTIONS.includes(action)) {
+        return {
+          error: `Invalid action "${action}". Allowed: ${ALLOWED_ACTIONS.join(', ')}.`,
+          status: 'failed',
+        };
+      }
+
       const project_id = a.project_id;
       const project_name = a.project_name || a.project;
       const entry_date = a.entry_date || a.date;
-      const hours = a.hours != null ? Number(a.hours) : undefined;
+      const hasHoursField = a.hours !== undefined && a.hours !== null && a.hours !== '';
+      const hours = hasHoursField ? Number(a.hours) : undefined;
       const description = a.description || a.note || a.notes || null;
       const is_billable = a.is_billable;
       const user_id = a.user_id;
@@ -740,10 +757,42 @@ async function executeTimesheetsAction(
       const _caller_user_id = a._caller_user_id;
 
       if (action === 'create') {
-        // Hard validation — no more silent no-ops
-        if (hours == null || isNaN(hours) || hours <= 0) {
-          return { error: 'hours required (must be > 0). Got: ' + JSON.stringify(a.hours), status: 'failed' };
+        // Hard validation — fail loudly, no silent no-ops, no defaults for required fields.
+        const missing: string[] = [];
+        const invalid: Array<{ field: string; reason: string; got: unknown }> = [];
+
+        if (!hasHoursField) {
+          missing.push('hours');
+        } else if (typeof hours !== 'number' || isNaN(hours)) {
+          invalid.push({ field: 'hours', reason: 'must be a number', got: a.hours });
+        } else if (hours <= 0) {
+          invalid.push({ field: 'hours', reason: 'must be > 0', got: a.hours });
+        } else if (hours > 24) {
+          invalid.push({ field: 'hours', reason: 'must be <= 24 (single day entry)', got: a.hours });
         }
+
+        if (!project_id && !project_name) {
+          missing.push('project_id or project_name');
+        } else if (project_id && typeof project_id !== 'string') {
+          invalid.push({ field: 'project_id', reason: 'must be a string (uuid)', got: project_id });
+        } else if (project_name && typeof project_name !== 'string') {
+          invalid.push({ field: 'project_name', reason: 'must be a string', got: project_name });
+        }
+
+        if (entry_date && !/^\d{4}-\d{2}-\d{2}$/.test(String(entry_date))) {
+          invalid.push({ field: 'entry_date', reason: 'must be YYYY-MM-DD', got: entry_date });
+        }
+
+        if (missing.length || invalid.length) {
+          return {
+            error: 'log_time validation failed',
+            status: 'failed',
+            missing_fields: missing,
+            invalid_fields: invalid,
+            hint: 'log_time create requires: action="create", hours (>0, <=24), and project_id OR project_name.',
+          };
+        }
+
         let resolvedProjectId = project_id;
         if (!resolvedProjectId && project_name) {
           const { data: proj, error: projErr } = await supabase
@@ -756,9 +805,6 @@ async function executeTimesheetsAction(
           if (projErr) return { error: `Project lookup failed: ${projErr.message}`, status: 'failed' };
           if (!proj) return { error: `No active project matching "${project_name}"`, status: 'failed' };
           resolvedProjectId = proj.id;
-        }
-        if (!resolvedProjectId) {
-          return { error: 'project_id or project_name required', status: 'failed' };
         }
 
         const resolvedUserId = user_id
