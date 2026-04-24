@@ -902,7 +902,8 @@ export default function FederationPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Discovered Skills */}
+                  <PeerConnectionRow peerId={peer.id} />
+
                   {(() => {
                     const skills = (peer.capabilities as any)?.skills;
                     if (!skills?.length) return null;
