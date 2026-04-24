@@ -347,6 +347,7 @@ export default function FederationPage() {
     setEditName(peer.name);
     setEditUrl(peer.url || '');
     setEditOutboundToken('');
+    setEditGatewayToken(peer.gateway_token || '');
   };
 
   const handleSaveEdit = async () => {
