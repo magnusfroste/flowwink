@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,6 +18,13 @@ interface McpActivityRow {
   conversation_id: string | null;
   error_message: string | null;
   output: Record<string, unknown> | null;
+  input: Record<string, unknown> | null;
+}
+
+function getCallerApiKeyId(input: Record<string, unknown> | null): string | null {
+  if (!input || typeof input !== 'object') return null;
+  const v = (input as any)._caller_api_key_id;
+  return typeof v === 'string' ? v : null;
 }
 
 export function McpActivityPanel() {
@@ -26,7 +33,7 @@ export function McpActivityPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agent_activity')
-        .select('id, agent, skill_name, status, duration_ms, created_at, conversation_id, error_message, output')
+        .select('id, agent, skill_name, status, duration_ms, created_at, conversation_id, error_message, output, input')
         .eq('agent', 'mcp')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -34,6 +41,34 @@ export function McpActivityPanel() {
       return (data ?? []) as McpActivityRow[];
     },
     refetchInterval: 15000,
+  });
+
+  // Collect unique caller api_key_ids and resolve to peer names
+  const callerIds = useMemo(() => {
+    if (!data) return [] as string[];
+    const set = new Set<string>();
+    for (const r of data) {
+      const id = getCallerApiKeyId(r.input);
+      if (id) set.add(id);
+    }
+    return Array.from(set);
+  }, [data]);
+
+  const { data: peerMap } = useQuery({
+    queryKey: ['mcp-activity-peers', callerIds.join(',')],
+    enabled: callerIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('a2a_peers')
+        .select('api_key_id, name')
+        .in('api_key_id', callerIds);
+      if (error) throw error;
+      const m: Record<string, string> = {};
+      for (const row of (data ?? []) as Array<{ api_key_id: string; name: string }>) {
+        if (row.api_key_id) m[row.api_key_id] = row.name;
+      }
+      return m;
+    },
   });
 
   return (
@@ -61,6 +96,7 @@ export function McpActivityPanel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>When</TableHead>
+                  <TableHead>Sender</TableHead>
                   <TableHead>Skill</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Duration</TableHead>
@@ -71,11 +107,24 @@ export function McpActivityPanel() {
                   const showDetails =
                     row.status === 'failed' &&
                     (hasValidationDetails(row.output) || !!row.error_message);
+                  const callerId = getCallerApiKeyId(row.input);
+                  const senderName = callerId
+                    ? (peerMap?.[callerId] ?? `key:${callerId.slice(0, 8)}…`)
+                    : null;
                   return (
                     <Fragment key={row.id}>
                       <TableRow>
                         <TableCell className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {senderName ? (
+                            <Badge variant="outline" className="text-[10px] font-normal">
+                              {senderName}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">unknown</span>
+                          )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{row.skill_name ?? '—'}</TableCell>
                         <TableCell>
@@ -98,7 +147,7 @@ export function McpActivityPanel() {
                       </TableRow>
                       {showDetails && (
                         <TableRow key={`${row.id}-error`} className="bg-destructive/5 hover:bg-destructive/5">
-                          <TableCell colSpan={4} className="py-2">
+                          <TableCell colSpan={5} className="py-2">
                             <ValidationErrorDetails
                               output={row.output}
                               errorMessage={row.error_message}
