@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { LocalePackProvider } from "@/providers/LocalePackProvider";
 import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -297,21 +298,23 @@ const router = createBrowserRouter([
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <AuthProvider>
-          <BrandingProvider>
-            <CartProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <RouterProvider router={router} />
-              </TooltipProvider>
-            </CartProvider>
-          </BrandingProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </HelmetProvider>
+    <LocalePackProvider>
+      <HelmetProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <BrandingProvider>
+              <CartProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <RouterProvider router={router} />
+                </TooltipProvider>
+              </CartProvider>
+            </BrandingProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </HelmetProvider>
+    </LocalePackProvider>
   </QueryClientProvider>
 );
 
