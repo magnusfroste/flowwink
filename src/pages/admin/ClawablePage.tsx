@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -295,10 +295,7 @@ export default function ClawablePage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader
-          title="Clawable"
-          description="OpenClaw-style chat with /v1/responses peers — sessions persist via previous_response_id chaining."
-        />
+
 
         {/* Compact toolbar: peer + session controls */}
         <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-border/50">
