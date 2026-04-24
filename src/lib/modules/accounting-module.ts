@@ -3,8 +3,7 @@ import { logger } from '@/lib/logger';
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
-import { BAS_2024_ACCOUNTS } from '@/data/bas2024-accounts';
-import { BAS_2024_TEMPLATES } from '@/data/templates-bas2024';
+import { getActivePack } from '@/lib/locale-packs';
 
 const accountingInputSchema = z.object({
   action: z.enum(['create_entry', 'list_entries', 'balance_sheet', 'profit_loss']),
@@ -57,7 +56,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Always use BAS 2024 account codes. Ensure debits equal credits. Match accounting templates by keywords when possible. For invoices: Debit 1510 Kundfordringar, Credit 3010 Försäljning + Credit 2610 Utgående moms 25%.',
+    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Match accounting templates by keywords when possible. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
   },
   {
     name: 'accounting_reports',
@@ -217,51 +216,55 @@ const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
   },
 ];
 
-/** Seed BAS 2024 chart of accounts if table is empty */
+/** Seed chart of accounts from the active locale pack if not already present */
 async function seedChartOfAccounts() {
+  const pack = getActivePack();
   const { count } = await supabase
     .from('chart_of_accounts')
     .select('id', { count: 'exact', head: true })
-    .eq('locale', 'se-bas2024');
+    .eq('locale', pack.id);
 
   if ((count ?? 0) > 0) {
-    logger.log('[accounting] BAS 2024 chart already populated, skipping');
+    logger.log(`[accounting] ${pack.label} chart already populated, skipping`);
     return;
   }
 
-  for (let i = 0; i < BAS_2024_ACCOUNTS.length; i += 50) {
-    const batch = BAS_2024_ACCOUNTS.slice(i, i + 50);
+  const accounts = pack.chart.map((a) => ({ ...a, locale: pack.id }));
+  for (let i = 0; i < accounts.length; i += 50) {
+    const batch = accounts.slice(i, i + 50);
     const { error } = await supabase.from('chart_of_accounts').insert(batch);
     if (error) throw error;
   }
-  logger.log(`[accounting] Seeded ${BAS_2024_ACCOUNTS.length} BAS 2024 accounts`);
+  logger.log(`[accounting] Seeded ${accounts.length} ${pack.label} accounts`);
 }
 
-/** Seed default accounting templates if table is empty */
+/** Seed default accounting templates from the active locale pack */
 async function seedAccountingTemplates() {
+  const pack = getActivePack();
   const { count } = await supabase
     .from('accounting_templates')
     .select('id', { count: 'exact', head: true })
-    .eq('locale', 'se-bas2024');
+    .eq('locale', pack.id);
 
   if ((count ?? 0) > 0) {
-    logger.log('[accounting] BAS 2024 templates already populated, skipping');
+    logger.log(`[accounting] ${pack.label} templates already populated, skipping`);
     return;
   }
 
-  for (let i = 0; i < BAS_2024_TEMPLATES.length; i += 20) {
-    const batch = BAS_2024_TEMPLATES.slice(i, i + 20);
+  const templates = pack.templates.map((t) => ({ ...t, locale: pack.id, is_system: t.is_system ?? true }));
+  for (let i = 0; i < templates.length; i += 20) {
+    const batch = templates.slice(i, i + 20);
     const { error } = await supabase.from('accounting_templates').insert(batch);
     if (error) throw error;
   }
-  logger.log(`[accounting] Seeded ${BAS_2024_TEMPLATES.length} BAS 2024 templates`);
+  logger.log(`[accounting] Seeded ${templates.length} ${pack.label} templates`);
 }
 
 export const accountingModule = defineModule<AccountingInput, AccountingOutput>({
   id: 'accounting',
   name: 'Accounting',
   version: '1.0.0',
-  description: 'Double-entry bookkeeping with BAS 2024 chart of accounts, journal entries, general ledger, balance sheet and P&L reports',
+  description: 'Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also supports IFRS-generic. Add new market packs in src/lib/locale-packs/.',
   capabilities: ['data:write', 'data:read'],
   inputSchema: accountingInputSchema,
   outputSchema: accountingOutputSchema,
