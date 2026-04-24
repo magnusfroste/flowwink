@@ -6,7 +6,7 @@ const inputSchema = z.object({
   action: z.enum(['sync_stripe', 'import_file', 'auto_match', 'list_unmatched']),
   fileName: z.string().optional(),
   content: z.string().optional(),
-  format: z.enum(['csv', 'camt053', 'sie']).optional(),
+  format: z.enum(['csv', 'camt053', 'mt940', 'ofx', 'sie']).optional(),
 });
 const outputSchema = z.object({
   success: z.boolean(),
@@ -19,9 +19,10 @@ type Output = z.infer<typeof outputSchema>;
 /**
  * Reconciliation — bank-to-books matching.
  *
- * Imports Stripe payouts, CSV/CAMT.053/SIE bank files, and matches
- * transactions against invoices, expenses and orders. Manual review
- * for partial / ambiguous matches via /admin/reconciliation.
+ * Imports Stripe payouts and bank statement files (formats per active locale
+ * pack — e.g. CAMT.053/MT940/OFX/CSV everywhere, SIE for Sweden), then matches
+ * transactions against invoices, expenses and orders. Manual review for
+ * partial / ambiguous matches via /admin/reconciliation.
  *
  * Live bank connectivity (GoCardless/Tink/Plaid) is planned for v0.5.
  */
@@ -30,7 +31,7 @@ export const reconciliationModule = defineModule<Input, Output>({
   name: 'Reconciliation',
   version: '1.0.0',
   description:
-    'Bank reconciliation: Stripe payout sync, CSV/CAMT.053/SIE import, auto-match against invoices/expenses/orders.',
+    'Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV, plus locale-specific formats like SIE). Auto-matches against invoices/expenses/orders.',
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
