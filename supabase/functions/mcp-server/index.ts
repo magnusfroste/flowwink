@@ -68,11 +68,17 @@ async function authenticateApiKey(
     .eq("id", data.id)
     .then();
 
-  // Auto-discover this MCP client as an inbound peer (fire-and-forget).
+  // Auto-discover this MCP client as an inbound peer.
   // Federation UI shows it without admin needing to manually create a peer row.
-  upsertInboundMcpPeer(sb, data.id, raw.substring(0, 12)).catch((e) =>
+  // Use waitUntil so the insert isn't killed when the response is sent.
+  const upsertPromise = upsertInboundMcpPeer(sb, data.id, raw.substring(0, 12)).catch((e) =>
     console.error("[mcp-peer-upsert] failed:", e?.message ?? e),
   );
+  // @ts-ignore — EdgeRuntime is available in Supabase edge runtime
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(upsertPromise);
+  }
 
   return { valid: true, keyId: data.id, scopes: data.scopes ?? [], createdBy: data.created_by ?? null };
 }
