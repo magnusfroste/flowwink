@@ -856,7 +856,14 @@ export default function FederationPage() {
                         <CardTitle className="text-base">
                           {((peer.capabilities as any)?.agent_name) || peer.name}
                         </CardTitle>
-                        <CardDescription className="font-mono text-xs">{peer.url}</CardDescription>
+                        {peer.url ? (
+                          <CardDescription className="font-mono text-xs">{peer.url}</CardDescription>
+                        ) : getPeerTransport(peer) === 'mcp_inbound' ? (
+                          <CardDescription className="text-xs flex items-center gap-1.5">
+                            <ArrowDownLeft className="h-3 w-3" />
+                            Auto-discovered via MCP authentication
+                          </CardDescription>
+                        ) : null}
                         {(peer.capabilities as any)?.agent_description && (
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {(peer.capabilities as any).agent_description}
@@ -865,8 +872,11 @@ export default function FederationPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {getPeerTransport(peer) === 'responses' ? '/v1/responses' : 'A2A'}
+                      <Badge
+                        variant={getPeerTransport(peer) === 'mcp_inbound' ? 'secondary' : 'outline'}
+                        className="text-[10px]"
+                      >
+                        {transportLabel(getPeerTransport(peer))}
                       </Badge>
                       {(peer.capabilities as any)?.protocol_version && (
                         <Badge variant="outline" className="text-[10px]">
