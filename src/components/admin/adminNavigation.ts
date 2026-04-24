@@ -35,6 +35,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "FlowPilot", href: "/admin/flowpilot", icon: Zap, moduleId: "flowpilot" },
       { name: "Engine Room", href: "/admin/skills", icon: Bot, moduleId: "flowpilot" },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
+      { name: "Clawable", href: "/admin/clawable", icon: MessageSquare },
       { name: "OpenClaw", href: "/admin/openclaw", icon: Snowflake, moduleId: "openclaw" },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Growth", href: "/admin/growth", icon: Megaphone, moduleId: "paidGrowth" },
