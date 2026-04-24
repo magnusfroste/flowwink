@@ -939,10 +939,7 @@ export default function FederationPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setDispatchDialogPeer(peer);
-                                setDispatchPrompt('');
-                              }}
+                              onClick={() => setDispatchDialogPeer(peer)}
                             >
                               <Send className="h-3 w-3 mr-1" />
                               Dispatch Mission
