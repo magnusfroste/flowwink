@@ -8191,37 +8191,70 @@ export type Database = {
           vacation_days: number
         }[]
       }
-      reconcile_invoice_payments: {
-        Args: {
-          p_bank_transaction_ids: string[]
-          p_invoice_id: string
-          p_notes?: string
-        }
-        Returns: {
-          created_at: string
-          currency: string
-          id: string
-          invoice_id: string
-          invoice_total_cents: number
-          journal_entry_id: string | null
-          notes: string | null
-          reconciled_amount_cents: number
-          reconciled_at: string
-          reconciled_by: string | null
-          reversal_journal_entry_id: string | null
-          reversal_reason: string | null
-          reversed_at: string | null
-          reversed_by: string | null
-          status: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "payment_reconciliations"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      reconcile_invoice_payments:
+        | {
+            Args: {
+              p_bank_transaction_ids: string[]
+              p_invoice_id: string
+              p_notes?: string
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_bank_transaction_ids: string[]
+              p_invoice_id: string
+              p_notes?: string
+              p_skip_auth?: boolean
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
@@ -8393,33 +8426,65 @@ export type Database = {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
       }
-      unreconcile_payment: {
-        Args: { p_reason?: string; p_reconciliation_id: string }
-        Returns: {
-          created_at: string
-          currency: string
-          id: string
-          invoice_id: string
-          invoice_total_cents: number
-          journal_entry_id: string | null
-          notes: string | null
-          reconciled_amount_cents: number
-          reconciled_at: string
-          reconciled_by: string | null
-          reversal_journal_entry_id: string | null
-          reversal_reason: string | null
-          reversed_at: string | null
-          reversed_by: string | null
-          status: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "payment_reconciliations"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      unreconcile_payment:
+        | {
+            Args: { p_reason?: string; p_reconciliation_id: string }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_reason?: string
+              p_reconciliation_id: string
+              p_skip_auth?: boolean
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {
