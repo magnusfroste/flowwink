@@ -68,7 +68,64 @@ async function authenticateApiKey(
     .eq("id", data.id)
     .then();
 
+  // Auto-discover this MCP client as an inbound peer (fire-and-forget).
+  // Federation UI shows it without admin needing to manually create a peer row.
+  upsertInboundMcpPeer(sb, data.id, raw.substring(0, 12)).catch((e) =>
+    console.error("[mcp-peer-upsert] failed:", e?.message ?? e),
+  );
+
   return { valid: true, keyId: data.id, scopes: data.scopes ?? [], createdBy: data.created_by ?? null };
+}
+
+// Upsert an "mcp_inbound" peer row for the API key that just authenticated.
+// Throttled: only writes when last_seen_at is older than 30s to avoid hammering the DB.
+async function upsertInboundMcpPeer(
+  sb: ReturnType<typeof serviceClient>,
+  apiKeyId: string,
+  keyPrefix: string,
+) {
+  // Check existing
+  const { data: existing } = await sb
+    .from("a2a_peers")
+    .select("id, last_seen_at, request_count")
+    .eq("api_key_id", apiKeyId)
+    .maybeSingle();
+
+  const now = new Date();
+
+  if (existing) {
+    const lastSeen = existing.last_seen_at ? new Date(existing.last_seen_at).getTime() : 0;
+    if (now.getTime() - lastSeen < 30_000) return; // throttle
+    await sb
+      .from("a2a_peers")
+      .update({
+        last_seen_at: now.toISOString(),
+        request_count: (existing.request_count ?? 0) + 1,
+      })
+      .eq("id", existing.id);
+    return;
+  }
+
+  // Create new inbound peer. Look up the key name for a friendly display.
+  const { data: keyRow } = await sb
+    .from("api_keys")
+    .select("name")
+    .eq("id", apiKeyId)
+    .maybeSingle();
+
+  const peerName = keyRow?.name ? `${keyRow.name} (MCP)` : `MCP client ${keyPrefix}`;
+
+  await sb.from("a2a_peers").insert({
+    name: peerName,
+    url: "", // inbound-only — they call us, no callback URL
+    outbound_token: "", // no outbound channel
+    transport: "mcp_inbound",
+    api_key_id: apiKeyId,
+    status: "active",
+    capabilities: [],
+    last_seen_at: now.toISOString(),
+    request_count: 1,
+  });
 }
 
 // ---------- load tools ----------
