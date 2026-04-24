@@ -74,22 +74,54 @@ export default function ClawablePage() {
     if (list.length && !selectedPeerId) setSelectedPeerId(list[0].id);
   };
 
-  // Load peers (only ones with /v1/responses-style transport — we'll allow all but warn)
+  // Load peers on mount
   useEffect(() => {
-    supabase
-      .from('a2a_peers')
-      .select('id, name, url, transport, gateway_token')
-      .order('name')
-      .then(({ data, error }) => {
-        if (error) {
-          toast({ title: 'Failed to load peers', description: error.message, variant: 'destructive' });
-          return;
-        }
-        const list = (data || []) as Peer[];
-        setPeers(list);
-        if (list.length && !selectedPeerId) setSelectedPeerId(list[0].id);
-      });
+    reloadPeers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const openNewPeerDialog = () => {
+    setPeerForm({ id: '', name: 'clawwink', url: 'https://clawwink.froste.eu', gateway_token: '' });
+    setPeerDialogOpen(true);
+  };
+
+  const openEditPeerDialog = () => {
+    if (!selectedPeer) return;
+    setPeerForm({
+      id: selectedPeer.id,
+      name: selectedPeer.name,
+      url: selectedPeer.url || '',
+      gateway_token: selectedPeer.gateway_token || '',
+    });
+    setPeerDialogOpen(true);
+  };
+
+  const savePeer = async () => {
+    if (!peerForm.name || !peerForm.url || !peerForm.gateway_token) {
+      toast({ title: 'Missing fields', description: 'Name, URL and gateway_token are required', variant: 'destructive' });
+      return;
+    }
+    setSavingPeer(true);
+    const payload = {
+      name: peerForm.name,
+      url: peerForm.url.replace(/\/$/, ''),
+      gateway_token: peerForm.gateway_token,
+      transport: 'openresponses' as const,
+      status: 'active' as const,
+    };
+    const { data, error } = peerForm.id
+      ? await supabase.from('a2a_peers').update(payload).eq('id', peerForm.id).select().single()
+      : await supabase.from('a2a_peers').insert(payload).select().single();
+    setSavingPeer(false);
+    if (error) {
+      toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: peerForm.id ? 'Peer updated' : 'Peer added' });
+    setPeerDialogOpen(false);
+    await reloadPeers();
+    if (data?.id) setSelectedPeerId(data.id);
+  };
 
   // Load sessions for selected peer
   useEffect(() => {
