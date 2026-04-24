@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Send, Trash2, MessageSquare, Snowflake } from 'lucide-react';
+import { Loader2, Plus, Send, Trash2, MessageSquare, Snowflake, Settings2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface Peer {
   id: string;
@@ -52,24 +55,73 @@ export default function ClawablePage() {
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
   const [agentId, setAgentId] = useState('');
+  const [peerDialogOpen, setPeerDialogOpen] = useState(false);
+  const [peerForm, setPeerForm] = useState({ id: '', name: '', url: '', gateway_token: '' });
+  const [savingPeer, setSavingPeer] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load peers (only ones with /v1/responses-style transport — we'll allow all but warn)
-  useEffect(() => {
-    supabase
+  const reloadPeers = async () => {
+    const { data, error } = await supabase
       .from('a2a_peers')
       .select('id, name, url, transport, gateway_token')
-      .order('name')
-      .then(({ data, error }) => {
-        if (error) {
-          toast({ title: 'Failed to load peers', description: error.message, variant: 'destructive' });
-          return;
-        }
-        const list = (data || []) as Peer[];
-        setPeers(list);
-        if (list.length && !selectedPeerId) setSelectedPeerId(list[0].id);
-      });
+      .order('name');
+    if (error) {
+      toast({ title: 'Failed to load peers', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const list = (data || []) as Peer[];
+    setPeers(list);
+    if (list.length && !selectedPeerId) setSelectedPeerId(list[0].id);
+  };
+
+  // Load peers on mount
+  useEffect(() => {
+    reloadPeers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const openNewPeerDialog = () => {
+    setPeerForm({ id: '', name: 'clawwink', url: 'https://clawwink.froste.eu', gateway_token: '' });
+    setPeerDialogOpen(true);
+  };
+
+  const openEditPeerDialog = () => {
+    if (!selectedPeer) return;
+    setPeerForm({
+      id: selectedPeer.id,
+      name: selectedPeer.name,
+      url: selectedPeer.url || '',
+      gateway_token: selectedPeer.gateway_token || '',
+    });
+    setPeerDialogOpen(true);
+  };
+
+  const savePeer = async () => {
+    if (!peerForm.name || !peerForm.url || !peerForm.gateway_token) {
+      toast({ title: 'Missing fields', description: 'Name, URL and gateway_token are required', variant: 'destructive' });
+      return;
+    }
+    setSavingPeer(true);
+    const payload = {
+      name: peerForm.name,
+      url: peerForm.url.replace(/\/$/, ''),
+      gateway_token: peerForm.gateway_token,
+      transport: 'openresponses' as const,
+      status: 'active' as const,
+    };
+    const { data, error } = peerForm.id
+      ? await supabase.from('a2a_peers').update(payload).eq('id', peerForm.id).select().single()
+      : await supabase.from('a2a_peers').insert(payload).select().single();
+    setSavingPeer(false);
+    if (error) {
+      toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: peerForm.id ? 'Peer updated' : 'Peer added' });
+    setPeerDialogOpen(false);
+    await reloadPeers();
+    if (data?.id) setSelectedPeerId(data.id);
+  };
 
   // Load sessions for selected peer
   useEffect(() => {
@@ -226,24 +278,38 @@ export default function ClawablePage() {
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
           {/* Left: peer + session list */}
           <Card className="h-fit">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">Peer</CardTitle>
+              <Button size="sm" variant="ghost" onClick={openNewPeerDialog} title="Add peer">
+                <Plus className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Select value={selectedPeerId} onValueChange={setSelectedPeerId}>
-                <SelectTrigger><SelectValue placeholder="Select peer" /></SelectTrigger>
-                <SelectContent>
-                  {peers.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {peers.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">
+                  No peers yet. Click + to add Clawwink (or any /v1/responses peer).
+                </div>
+              ) : (
+                <Select value={selectedPeerId} onValueChange={setSelectedPeerId}>
+                  <SelectTrigger><SelectValue placeholder="Select peer" /></SelectTrigger>
+                  <SelectContent>
+                    {peers.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {selectedPeer && (
                 <div className="text-xs text-muted-foreground space-y-1">
                   <div className="truncate">{selectedPeer.url}</div>
-                  <Badge variant="outline">{selectedPeer.transport}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{selectedPeer.transport}</Badge>
+                    <Button size="sm" variant="ghost" className="h-6 px-2" onClick={openEditPeerDialog}>
+                      <Settings2 className="h-3 w-3 mr-1" /> Edit
+                    </Button>
+                  </div>
                   {!selectedPeer.gateway_token && (
-                    <div className="text-destructive">Missing gateway_token</div>
+                    <div className="text-destructive">Missing gateway_token — click Edit</div>
                   )}
                 </div>
               )}
@@ -268,6 +334,47 @@ export default function ClawablePage() {
               </Button>
             </CardContent>
           </Card>
+
+          <Dialog open={peerDialogOpen} onOpenChange={setPeerDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{peerForm.id ? 'Edit peer' : 'Add peer'}</DialogTitle>
+                <DialogDescription>
+                  Register a peer that exposes <code>/v1/responses</code> (e.g. Clawwink, OpenClaw).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Name</label>
+                  <Input value={peerForm.name} onChange={e => setPeerForm({ ...peerForm, name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Base URL</label>
+                  <Input
+                    placeholder="https://clawwink.froste.eu"
+                    value={peerForm.url}
+                    onChange={e => setPeerForm({ ...peerForm, url: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Gateway token (Bearer)</label>
+                  <Input
+                    type="password"
+                    placeholder="Bearer token sent on outbound calls"
+                    value={peerForm.gateway_token}
+                    onChange={e => setPeerForm({ ...peerForm, gateway_token: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPeerDialogOpen(false)}>Cancel</Button>
+                <Button onClick={savePeer} disabled={savingPeer}>
+                  {savingPeer && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Right: chat */}
           <Card className="flex flex-col h-[calc(100vh-220px)] min-h-[500px]">
