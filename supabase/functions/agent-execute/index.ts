@@ -2521,12 +2521,15 @@ async function executeDealsAction(
   }
 
   if (action === 'create') {
-    const { value_cents = 0, currency = 'SEK', stage = 'proposal', product_id, expected_close, notes, company_id, company_name } = args as any;
+    const { value_cents = 0, currency = 'SEK', stage = 'proposal', product_id, expected_close, notes, company_id, company_name, lead_name, lead_email } = args as any;
     let { lead_id } = args as any;
+    let auto_created_lead = false;
 
-    // Auto-resolve a lead from company_id / company_name when no lead_id supplied.
-    // This lets agents create deals in a company-centric flow without first creating a placeholder lead.
-    if (!lead_id && (company_id || company_name)) {
+    // Auto-resolve a lead when no lead_id supplied. Strategy:
+    //  1. If company_id/company_name → reuse latest lead for that company, else create one.
+    //  2. Else → create a minimal placeholder lead so deals can be tracked in a pure pipeline flow
+    //     (e.g. agent ingests an opportunity from a webform/news without a contact yet).
+    if (!lead_id) {
       let resolvedCompanyId: string | null = company_id || null;
       let resolvedCompanyName: string | null = company_name || null;
       if (!resolvedCompanyId && company_name) {
@@ -2535,34 +2538,34 @@ async function executeDealsAction(
         if (comp) { resolvedCompanyId = comp.id; resolvedCompanyName = comp.name; }
       }
       if (resolvedCompanyId) {
-        // Reuse existing open lead for this company if any
         const { data: existing } = await supabase
           .from('leads').select('id').eq('company_id', resolvedCompanyId)
           .order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (existing) {
-          lead_id = existing.id;
-        } else {
-          const safeName = (resolvedCompanyName || 'auto-lead').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-          const { data: newLead, error: leadErr } = await supabase
-            .from('leads').insert({
-              name: resolvedCompanyName || 'Auto-generated lead',
-              email: `deal-${safeName}-${Date.now()}@auto.flowwink.local`,
-              company_id: resolvedCompanyId,
-              source: 'agent_deal',
-              status: 'opportunity',
-            }).select('id').single();
-          if (leadErr) throw new Error(`Auto-lead creation failed: ${leadErr.message}`);
-          lead_id = newLead.id;
-        }
+        if (existing) lead_id = existing.id;
+      }
+      if (!lead_id) {
+        const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
+        const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
+        const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;
+        const { data: newLead, error: leadErr } = await supabase
+          .from('leads').insert({
+            name: baseName,
+            email: fallbackEmail,
+            company_id: resolvedCompanyId,
+            source: 'agent_deal',
+            status: 'opportunity',
+          }).select('id').single();
+        if (leadErr) throw new Error(`Auto-lead creation failed: ${leadErr.message}`);
+        lead_id = newLead.id;
+        auto_created_lead = true;
       }
     }
 
-    if (!lead_id) throw new Error('lead_id is required (or provide company_id / company_name to auto-create a lead)');
     const { data, error } = await supabase.from('deals').insert({
       value_cents, currency, stage, lead_id, product_id, expected_close, notes,
     }).select('id, stage, value_cents, lead_id').single();
     if (error) throw new Error(`Create deal failed: ${error.message}`);
-    return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents, lead_id: data.lead_id };
+    return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents, lead_id: data.lead_id, auto_created_lead };
   }
 
   if (action === 'update') {
