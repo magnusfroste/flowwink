@@ -35,10 +35,11 @@ export interface AccountingTemplateLine {
 }
 
 export interface AccountingTemplate {
-  name: string;
+  template_name: string;
   description?: string;
   category: 'revenue' | 'expense' | 'payment' | 'payroll' | 'tax' | 'asset' | 'adjustment';
   keywords?: string[];
+  is_system?: boolean;
   template_lines: AccountingTemplateLine[];
   locale?: string;
 }
