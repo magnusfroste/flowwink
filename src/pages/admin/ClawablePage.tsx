@@ -221,7 +221,6 @@ export default function ClawablePage() {
         <AdminPageHeader
           title="Clawable"
           description="OpenClaw-style chat with /v1/responses peers — sessions persist via previous_response_id chaining."
-          icon={Snowflake}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
