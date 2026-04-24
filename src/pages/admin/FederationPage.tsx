@@ -34,9 +34,11 @@ import { Globe, Plus, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pen
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { AgentInvites } from '@/components/admin/federation/AgentInvites';
-import { McpCollaborators } from '@/components/admin/federation/McpCollaborators';
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
+import { PeerConnectionsTab } from '@/components/admin/federation/PeerConnectionsTab';
+import { ConnectionBadges } from '@/components/admin/federation/ConnectionBadges';
+import { useFederationConnections } from '@/hooks/useFederationConnections';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
