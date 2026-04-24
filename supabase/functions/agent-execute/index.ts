@@ -725,50 +725,73 @@ async function executeTimesheetsAction(
 ): Promise<unknown> {
   switch (skillName) {
     case 'log_time': {
-      const { action = 'list', project_id, project_name, entry_date, hours, description, is_billable, user_id, entry_id, week_offset = 0, _caller_user_id } = args as any;
+      const a = args as any;
+      // Accept common aliases agents tend to send
+      const action = a.action || (a.hours != null || a.project_id || a.project_name ? 'create' : 'list');
+      const project_id = a.project_id;
+      const project_name = a.project_name || a.project;
+      const entry_date = a.entry_date || a.date;
+      const hours = a.hours != null ? Number(a.hours) : undefined;
+      const description = a.description || a.note || a.notes || null;
+      const is_billable = a.is_billable;
+      const user_id = a.user_id;
+      const entry_id = a.entry_id || a.id;
+      const week_offset = a.week_offset ?? 0;
+      const _caller_user_id = a._caller_user_id;
 
       if (action === 'create') {
+        // Hard validation — no more silent no-ops
+        if (hours == null || isNaN(hours) || hours <= 0) {
+          return { error: 'hours required (must be > 0). Got: ' + JSON.stringify(a.hours), status: 'failed' };
+        }
         let resolvedProjectId = project_id;
-        // Look up project by name if no ID
         if (!resolvedProjectId && project_name) {
-          const { data: proj } = await supabase
+          const { data: proj, error: projErr } = await supabase
             .from('projects')
-            .select('id')
+            .select('id, name')
             .ilike('name', `%${project_name}%`)
             .eq('is_active', true)
             .limit(1)
-            .single();
-          if (proj) resolvedProjectId = proj.id;
-          else return { error: `No active project matching "${project_name}"` };
+            .maybeSingle();
+          if (projErr) return { error: `Project lookup failed: ${projErr.message}`, status: 'failed' };
+          if (!proj) return { error: `No active project matching "${project_name}"`, status: 'failed' };
+          resolvedProjectId = proj.id;
         }
-        if (!resolvedProjectId) return { error: 'project_id or project_name required' };
+        if (!resolvedProjectId) {
+          return { error: 'project_id or project_name required', status: 'failed' };
+        }
 
-        // Resolve user_id from explicit arg → MCP caller → auth context
         const resolvedUserId = user_id
           || _caller_user_id
           || (await supabase.auth.getUser()).data?.user?.id;
-        if (!resolvedUserId) return { error: 'user_id required (or pass _caller_user_id from MCP)' };
+        if (!resolvedUserId) {
+          return { error: 'user_id required (pass user_id explicitly, or _caller_user_id from MCP context)', status: 'failed' };
+        }
 
         const { data, error } = await supabase.from('time_entries').insert([{
           user_id: resolvedUserId,
           project_id: resolvedProjectId,
           entry_date: entry_date || new Date().toISOString().slice(0, 10),
-          hours: hours || 0,
-          description: description || null,
+          hours,
+          description,
           is_billable: is_billable ?? true,
         }]).select('*, projects(name)').single();
-        if (error) return { error: error.message };
-        return { success: true, entry: data, message: `Logged ${hours}h on ${data.projects?.name || 'project'}` };
+        if (error) return { error: `Insert failed: ${error.message}`, status: 'failed' };
+        return {
+          success: true,
+          entry: data,
+          message: `Logged ${hours}h on ${data.projects?.name || 'project'} (${data.entry_date})`,
+        };
       }
 
       if (action === 'delete') {
-        if (!entry_id) return { error: 'entry_id required' };
+        if (!entry_id) return { error: 'entry_id required', status: 'failed' };
         const { error } = await supabase.from('time_entries').delete().eq('id', entry_id).eq('is_invoiced', false);
-        if (error) return { error: error.message };
+        if (error) return { error: error.message, status: 'failed' };
         return { success: true };
       }
 
-      // list
+      // list (default)
       const now = new Date();
       const day = now.getDay();
       const monday = new Date(now);
@@ -782,7 +805,7 @@ async function executeTimesheetsAction(
       if (user_id) query = query.eq('user_id', user_id);
       if (project_id) query = query.eq('project_id', project_id);
       const { data, error } = await query;
-      if (error) return { error: error.message };
+      if (error) return { error: error.message, status: 'failed' };
       const total = (data || []).reduce((s: number, e: any) => s + Number(e.hours), 0);
       return { entries: data, total_hours: total, period: `${ws} to ${we}` };
     }
@@ -827,7 +850,16 @@ async function executeTimesheetsAction(
     }
 
     case 'timesheet_summary': {
-      const { period = 'this_week', start_date, end_date, project_id, user_id, billable_only, include_revenue } = args as any;
+      const a = args as any;
+      // Accept aliases — agents commonly send from_date/to_date or start/end
+      const explicitStart = a.start_date || a.from_date || a.from || a.start;
+      const explicitEnd = a.end_date || a.to_date || a.to || a.end;
+      // If explicit dates passed, force custom mode regardless of period arg
+      const period = (explicitStart || explicitEnd) ? 'custom' : (a.period || 'this_week');
+      const project_id = a.project_id;
+      const user_id = a.user_id;
+      const billable_only = a.billable_only;
+      const include_revenue = a.include_revenue;
 
       let ws: string, we: string;
       const now = new Date();
@@ -865,9 +897,18 @@ async function executeTimesheetsAction(
           we = lastDay.toISOString().slice(0, 10);
           break;
         }
-        default:
-          ws = start_date || now.toISOString().slice(0, 10);
-          we = end_date || now.toISOString().slice(0, 10);
+        case 'custom':
+        default: {
+          if (!explicitStart || !explicitEnd) {
+            return {
+              error: 'custom period requires start_date and end_date (or aliases from_date/to_date). Got: ' +
+                JSON.stringify({ start: explicitStart, end: explicitEnd }),
+              status: 'failed',
+            };
+          }
+          ws = explicitStart;
+          we = explicitEnd;
+        }
       }
 
       let query = supabase.from('time_entries').select('*, projects(name, hourly_rate_cents, currency)').gte('entry_date', ws).lte('entry_date', we);
@@ -875,13 +916,13 @@ async function executeTimesheetsAction(
       if (user_id) query = query.eq('user_id', user_id);
       if (billable_only) query = query.eq('is_billable', true);
       const { data: entries, error } = await query;
-      if (error) return { error: error.message };
+      if (error) return { error: error.message, status: 'failed' };
 
       // Group by project
-      const byProject = new Map<string, { name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
+      const byProject = new Map<string, { project_id: string; name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
       for (const e of entries || []) {
         const key = e.project_id;
-        const existing = byProject.get(key) || { name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
+        const existing = byProject.get(key) || { project_id: key, name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
         existing.hours += Number(e.hours);
         if (e.is_billable) {
           existing.billable_hours += Number(e.hours);
