@@ -93,7 +93,11 @@ async function callSkill(
 }
 
 function classifyError(body: any): { kind: 'rls' | 'double-prefix' | 'missing-skill' | 'other'; msg: string } {
-  const msg = body?.error || body?.message || JSON.stringify(body).slice(0, 200);
+  const msg =
+    body?.error ||
+    body?.message ||
+    body?.result?.error ||
+    JSON.stringify(body).slice(0, 200);
   if (typeof msg === 'string') {
     if (/p__[a-z]/.test(msg)) return { kind: 'double-prefix', msg };
     if (/permission denied|RLS|row-level security|Only admins|not authorized/i.test(msg)) return { kind: 'rls', msg };
