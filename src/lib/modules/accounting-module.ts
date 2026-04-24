@@ -251,7 +251,12 @@ async function seedAccountingTemplates() {
     return;
   }
 
-  const templates = pack.templates.map((t) => ({ ...t, locale: pack.id, is_system: t.is_system ?? true }));
+  const templates = pack.templates.map((t) => ({
+    ...t,
+    locale: pack.id,
+    is_system: t.is_system ?? true,
+    template_lines: t.template_lines as any,
+  })) as any[];
   for (let i = 0; i < templates.length; i += 20) {
     const batch = templates.slice(i, i + 20);
     const { error } = await supabase.from('accounting_templates').insert(batch);
