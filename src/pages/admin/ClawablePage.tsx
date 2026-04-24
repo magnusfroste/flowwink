@@ -55,7 +55,24 @@ export default function ClawablePage() {
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
   const [agentId, setAgentId] = useState('');
+  const [peerDialogOpen, setPeerDialogOpen] = useState(false);
+  const [peerForm, setPeerForm] = useState({ id: '', name: '', url: '', gateway_token: '' });
+  const [savingPeer, setSavingPeer] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const reloadPeers = async () => {
+    const { data, error } = await supabase
+      .from('a2a_peers')
+      .select('id, name, url, transport, gateway_token')
+      .order('name');
+    if (error) {
+      toast({ title: 'Failed to load peers', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const list = (data || []) as Peer[];
+    setPeers(list);
+    if (list.length && !selectedPeerId) setSelectedPeerId(list[0].id);
+  };
 
   // Load peers (only ones with /v1/responses-style transport — we'll allow all but warn)
   useEffect(() => {
