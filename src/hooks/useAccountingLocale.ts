@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { listPacks, getPack, DEFAULT_LOCALE_ID } from '@/lib/locale-packs';
+import { useEffect, useState } from 'react';
+import {
+  listPacks,
+  getPack,
+  DEFAULT_LOCALE_ID,
+  ACTIVE_PACK_STORAGE_KEY,
+  setActivePackId,
+  onActivePackChange,
+} from '@/lib/locale-packs';
 
 export interface AccountingLocaleOption {
   value: string;
@@ -18,19 +25,22 @@ export const ACCOUNTING_LOCALES: AccountingLocaleOption[] = listPacks().map((p) 
   description: p.description,
 }));
 
-const STORAGE_KEY = 'accounting-locale';
-
 export function useAccountingLocale() {
   const [locale, setLocaleState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_LOCALE_ID;
+      return localStorage.getItem(ACTIVE_PACK_STORAGE_KEY) || DEFAULT_LOCALE_ID;
     }
     return DEFAULT_LOCALE_ID;
   });
 
+  // Stay in sync when another component (or another tab) switches the pack.
+  useEffect(() => {
+    return onActivePackChange((id) => setLocaleState(id));
+  }, []);
+
   const setLocale = (value: string) => {
     setLocaleState(value);
-    localStorage.setItem(STORAGE_KEY, value);
+    setActivePackId(value);
   };
 
   return { locale, setLocale, locales: ACCOUNTING_LOCALES, pack: getPack(locale) };
