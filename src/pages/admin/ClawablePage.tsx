@@ -54,7 +54,8 @@ export default function ClawablePage() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [agentId, setAgentId] = useState('');
+  const [agentId, setAgentId] = useState('openclaw/main');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [peerModels, setPeerModels] = useState<Array<{ id: string; owned_by: string | null }>>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [peerDialogOpen, setPeerDialogOpen] = useState(false);
