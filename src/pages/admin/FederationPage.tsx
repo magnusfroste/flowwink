@@ -37,6 +37,7 @@ import { AgentInvites } from '@/components/admin/federation/AgentInvites';
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
 import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { PeerChannelsInline } from '@/components/admin/federation/PeerChannelsInline';
+import { MissionDispatchDialog } from '@/components/admin/federation/MissionDispatchDialog';
 import { useFederationConnections } from '@/hooks/useFederationConnections';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useA2AActivity } from '@/hooks/useA2A';
@@ -385,50 +386,7 @@ export default function FederationPage() {
     return 'A2A';
   };
 
-  const [dispatchingPeerId, setDispatchingPeerId] = useState<string | null>(null);
-  const [dispatchPrompt, setDispatchPrompt] = useState('');
   const [dispatchDialogPeer, setDispatchDialogPeer] = useState<any>(null);
-
-  const handleDispatchMission = async (peer: any, prompt: string) => {
-    if (!prompt.trim()) return;
-    setDispatchingPeerId(peer.id);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-outbound`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            peer_name: peer.name,
-            skill: 'mission_dispatch',
-            arguments: { prompt },
-          }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok && !data.error) {
-        toast({ title: 'Mission dispatched', description: `Sent to ${peer.name}` });
-        setDispatchDialogPeer(null);
-        setDispatchPrompt('');
-        queryClient.invalidateQueries({ queryKey: ['a2a-activity'] });
-      } else {
-        const errMsg = data.error?.message || JSON.stringify(data.error) || `HTTP ${res.status}`;
-        toast({ title: 'Dispatch failed', description: errMsg, variant: 'destructive' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      toast({ title: 'Dispatch error', description: msg, variant: 'destructive' });
-    } finally {
-      setDispatchingPeerId(null);
-    }
-  };
 
   const activePeers = peers?.filter(p => p.status !== 'revoked') || [];
   const totalRequests = peers?.reduce((sum, p) => sum + (p.request_count || 0), 0) || 0;
@@ -981,10 +939,7 @@ export default function FederationPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setDispatchDialogPeer(peer);
-                                setDispatchPrompt('');
-                              }}
+                              onClick={() => setDispatchDialogPeer(peer)}
                             >
                               <Send className="h-3 w-3 mr-1" />
                               Dispatch Mission
@@ -1139,39 +1094,11 @@ export default function FederationPage() {
           <A2AActivityLog />
         </div>
 
-        {/* Dispatch Mission Dialog */}
-        <Dialog open={!!dispatchDialogPeer} onOpenChange={(open) => { if (!open) setDispatchDialogPeer(null); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Dispatch Mission to {dispatchDialogPeer?.name}</DialogTitle>
-              <DialogDescription>
-                Send a prompt via /v1/responses. The agent will execute autonomously and report back via MCP.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Label>Mission Prompt</Label>
-              <textarea
-                className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="e.g. Audit the content marketing pipeline and report findings..."
-                value={dispatchPrompt}
-                onChange={e => setDispatchPrompt(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDispatchDialogPeer(null)}>Cancel</Button>
-              <Button
-                onClick={() => handleDispatchMission(dispatchDialogPeer, dispatchPrompt)}
-                disabled={!dispatchPrompt.trim() || dispatchingPeerId === dispatchDialogPeer?.id}
-              >
-                {dispatchingPeerId === dispatchDialogPeer?.id ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Dispatching...</>
-                ) : (
-                  <><Send className="h-4 w-4 mr-2" />Dispatch</>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Dispatch Mission Dialog (structured envelope) */}
+        <MissionDispatchDialog
+          peer={dispatchDialogPeer ? { id: dispatchDialogPeer.id, name: dispatchDialogPeer.name } : null}
+          onClose={() => setDispatchDialogPeer(null)}
+        />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-8">
