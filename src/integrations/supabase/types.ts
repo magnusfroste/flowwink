@@ -3826,11 +3826,13 @@ export type Database = {
           lead_id: string | null
           line_items: Json
           notes: string | null
+          paid_amount_cents: number
           paid_at: string | null
           payment_terms: string | null
           payment_url: string | null
           project_id: string | null
           public_token: string | null
+          reconciliation_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents: number
@@ -3854,11 +3856,13 @@ export type Database = {
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
+          paid_amount_cents?: number
           paid_at?: string | null
           payment_terms?: string | null
           payment_url?: string | null
           project_id?: string | null
           public_token?: string | null
+          reconciliation_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
@@ -3882,11 +3886,13 @@ export type Database = {
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
+          paid_amount_cents?: number
           paid_at?: string | null
           payment_terms?: string | null
           payment_url?: string | null
           project_id?: string | null
           public_token?: string | null
+          reconciliation_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
@@ -3916,6 +3922,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_reconciliations"
             referencedColumns: ["id"]
           },
         ]
@@ -5244,6 +5257,85 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_reconciliations: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string
+          invoice_total_cents: number
+          journal_entry_id: string | null
+          notes: string | null
+          reconciled_amount_cents: number
+          reconciled_at: string
+          reconciled_by: string | null
+          reversal_journal_entry_id: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id: string
+          invoice_total_cents: number
+          journal_entry_id?: string | null
+          notes?: string | null
+          reconciled_amount_cents?: number
+          reconciled_at?: string
+          reconciled_by?: string | null
+          reversal_journal_entry_id?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string
+          invoice_total_cents?: number
+          journal_entry_id?: string | null
+          notes?: string | null
+          reconciled_amount_cents?: number
+          reconciled_at?: string
+          reconciled_by?: string | null
+          reversal_journal_entry_id?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reconciliations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reconciliations_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reconciliations_reversal_journal_entry_id_fkey"
+            columns: ["reversal_journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_export_lines: {
         Row: {
           created_at: string
@@ -6368,6 +6460,7 @@ export type Database = {
           id: string
           match_type: string
           notes: string | null
+          reconciliation_id: string | null
         }
         Insert: {
           amount_cents: number
@@ -6380,6 +6473,7 @@ export type Database = {
           id?: string
           match_type?: string
           notes?: string | null
+          reconciliation_id?: string | null
         }
         Update: {
           amount_cents?: number
@@ -6392,6 +6486,7 @@ export type Database = {
           id?: string
           match_type?: string
           notes?: string | null
+          reconciliation_id?: string | null
         }
         Relationships: [
           {
@@ -6399,6 +6494,13 @@ export type Database = {
             columns: ["bank_transaction_id"]
             isOneToOne: false
             referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_matches_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_reconciliations"
             referencedColumns: ["id"]
           },
         ]
@@ -7960,6 +8062,7 @@ export type Database = {
         }
         Returns: Json
       }
+      invoice_outstanding: { Args: { p_invoice_id: string }; Returns: number }
       is_manager_of: {
         Args: { _employee_id: string; _manager_user_id: string }
         Returns: boolean
@@ -8088,6 +8191,70 @@ export type Database = {
           vacation_days: number
         }[]
       }
+      reconcile_invoice_payments:
+        | {
+            Args: {
+              p_bank_transaction_ids: string[]
+              p_invoice_id: string
+              p_notes?: string
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_bank_transaction_ids: string[]
+              p_invoice_id: string
+              p_notes?: string
+              p_skip_auth?: boolean
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
@@ -8149,6 +8316,14 @@ export type Database = {
         }
       }
       run_period_lock_tests: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
+      run_reconciliation_tests: {
         Args: never
         Returns: {
           detail: string
@@ -8251,6 +8426,65 @@ export type Database = {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
       }
+      unreconcile_payment:
+        | {
+            Args: { p_reason?: string; p_reconciliation_id: string }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_reason?: string
+              p_reconciliation_id: string
+              p_skip_auth?: boolean
+            }
+            Returns: {
+              created_at: string
+              currency: string
+              id: string
+              invoice_id: string
+              invoice_total_cents: number
+              journal_entry_id: string | null
+              notes: string | null
+              reconciled_amount_cents: number
+              reconciled_at: string
+              reconciled_by: string | null
+              reversal_journal_entry_id: string | null
+              reversal_reason: string | null
+              reversed_at: string | null
+              reversed_by: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "payment_reconciliations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {
