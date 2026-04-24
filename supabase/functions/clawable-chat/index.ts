@@ -85,9 +85,19 @@ Deno.serve(async (req) => {
     });
 
     // Build /v1/responses request — chain via previous_response_id when available
-    const model = session.agent_id
-      ? `${session.model || 'openclaw'}/${session.agent_id}`
-      : (session.model || 'openclaw');
+    // Build model slug:
+    // - If agent_id already looks like a full slug ("provider/name"), use as-is
+    // - If agent_id is just a name, prefix with session.model (or "openclaw")
+    // - If no agent_id, fall back to session.model or "openclaw"
+    const provider = session.model || 'openclaw';
+    let model: string;
+    if (session.agent_id) {
+      model = session.agent_id.includes('/')
+        ? session.agent_id
+        : `${provider}/${session.agent_id}`;
+    } else {
+      model = provider;
+    }
 
     const payload: Record<string, unknown> = {
       model,
