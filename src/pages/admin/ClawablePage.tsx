@@ -55,6 +55,8 @@ export default function ClawablePage() {
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
   const [agentId, setAgentId] = useState('');
+  const [peerModels, setPeerModels] = useState<Array<{ id: string; owned_by: string | null }>>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [peerDialogOpen, setPeerDialogOpen] = useState(false);
   const [peerForm, setPeerForm] = useState({ id: '', name: '', url: '', gateway_token: '' });
   const [savingPeer, setSavingPeer] = useState(false);
@@ -204,6 +206,28 @@ export default function ClawablePage() {
     setSelectedSessionId(sessions.find(s => s.id !== selectedSessionId)?.id || '');
   };
 
+  const loadPeerModels = async () => {
+    if (!selectedPeerId) return;
+    setLoadingModels(true);
+    setPeerModels([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('clawable-list-models', {
+        body: { peer_id: selectedPeerId },
+      });
+      if (error) throw error;
+      const models = (data?.models ?? []) as Array<{ id: string; owned_by: string | null }>;
+      setPeerModels(models);
+      toast({
+        title: `Loaded ${models.length} model${models.length === 1 ? '' : 's'}`,
+        description: models.length ? 'Pick one in the Agent ID field below.' : 'Peer returned an empty list.',
+      });
+    } catch (e: any) {
+      toast({ title: 'Failed to list models', description: e?.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || !selectedSessionId) return;
     const text = input.trim();
@@ -315,12 +339,38 @@ export default function ClawablePage() {
               )}
 
               <div className="pt-2 space-y-2">
-                <label className="text-xs text-muted-foreground">Agent ID (optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">Agent ID / model slug (optional)</label>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                    onClick={loadPeerModels}
+                    disabled={!selectedPeerId || loadingModels}
+                    title="Fetch /v1/models from peer"
+                  >
+                    {loadingModels ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                    List models
+                  </Button>
+                </div>
                 <Input
-                  placeholder="e.g. heartbeat"
+                  list="peer-models-list"
+                  placeholder="leave empty for default"
                   value={agentId}
                   onChange={(e) => setAgentId(e.target.value)}
                 />
+                <datalist id="peer-models-list">
+                  {peerModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.owned_by ? `${m.id} — ${m.owned_by}` : m.id}
+                    </option>
+                  ))}
+                </datalist>
+                {peerModels.length > 0 && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {peerModels.length} model{peerModels.length === 1 ? '' : 's'} available — type to filter
+                  </div>
+                )}
               </div>
 
               <Button
