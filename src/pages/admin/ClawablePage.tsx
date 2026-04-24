@@ -55,6 +55,8 @@ export default function ClawablePage() {
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
   const [agentId, setAgentId] = useState('');
+  const [peerModels, setPeerModels] = useState<Array<{ id: string; owned_by: string | null }>>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [peerDialogOpen, setPeerDialogOpen] = useState(false);
   const [peerForm, setPeerForm] = useState({ id: '', name: '', url: '', gateway_token: '' });
   const [savingPeer, setSavingPeer] = useState(false);
