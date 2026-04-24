@@ -248,6 +248,8 @@ serve(async (req) => {
     const activityInput: Record<string, unknown> = { ...args };
     if (objective_context) activityInput._objective_context = objective_context;
     if (trace_id) activityInput.trace_id = trace_id;
+    if (caller_api_key_id) activityInput._caller_api_key_id = caller_api_key_id;
+    if (caller_user_id) activityInput._caller_user_id = caller_user_id;
     // Determine if the handler actually succeeded
     const handlerFailed = !!(result as any)?.error;
     const activityId = await logActivity(supabase, {
