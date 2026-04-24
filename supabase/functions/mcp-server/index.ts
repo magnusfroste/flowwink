@@ -950,7 +950,8 @@ app.post("/rest/execute", async (c) => {
   }
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
-  const result = await executeSkill(match.name, args || {}, callerUserId);
+  const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
+  const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId);
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
