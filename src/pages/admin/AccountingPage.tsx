@@ -8,6 +8,8 @@ import { OpeningBalancesTab } from '@/components/admin/accounting/OpeningBalance
 import { ProfitLossTab } from '@/components/admin/accounting/ProfitLossTab';
 import { BalanceSheetTab } from '@/components/admin/accounting/BalanceSheetTab';
 import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
+import { TaxTab } from '@/components/admin/accounting/TaxTab';
+import { VatReportTab } from '@/components/admin/accounting/VatReportTab';
 import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 
 export default function AccountingPage() {
@@ -28,6 +30,8 @@ export default function AccountingPage() {
             <TabsTrigger value="ledger">General Ledger</TabsTrigger>
             <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
             <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
+            <TabsTrigger value="tax">Tax</TabsTrigger>
+            <TabsTrigger value="vat">VAT Report</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -46,6 +50,12 @@ export default function AccountingPage() {
           </TabsContent>
           <TabsContent value="balance">
             <BalanceSheetTab />
+          </TabsContent>
+          <TabsContent value="tax">
+            <TaxTab />
+          </TabsContent>
+          <TabsContent value="vat">
+            <VatReportTab />
           </TabsContent>
           <TabsContent value="templates">
             <TemplatesTab />
