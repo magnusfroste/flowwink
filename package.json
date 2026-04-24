@@ -16,7 +16,8 @@
     "sync-blocks": "bun run scripts/sync-block-schema.ts",
     "verify:hr-modules": "npx -y tsx scripts/verify-hr-modules.ts",
     "pretest:mcp": "npm run verify:hr-modules",
-    "test:mcp-regression": "npx -y tsx scripts/mcp-regression.ts"
+    "test:mcp-regression": "npx -y tsx scripts/mcp-regression.ts",
+    "test:timesheet-regression": "npx -y tsx scripts/timesheet-regression.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",

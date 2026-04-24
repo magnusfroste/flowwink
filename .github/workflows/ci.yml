@@ -35,6 +35,26 @@ jobs:
       - name: Run tests
         run: npx vitest run
 
+      - name: MCP module registry guard (static)
+        run: npm run verify:hr-modules
+        continue-on-error: true
+
+      - name: MCP regression (live tools/list)
+        run: npm run test:mcp-regression
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        continue-on-error: true
+
+      - name: Timesheet → Invoice regression
+        run: npm run test:timesheet-regression
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          MCP_ADMIN_JWT: ${{ secrets.MCP_ADMIN_JWT }}
+          MCP_PROJECT_ID: ${{ secrets.MCP_PROJECT_ID }}
+        continue-on-error: true
+
   build:
     name: Build
     runs-on: ubuntu-latest
