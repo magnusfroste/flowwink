@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Send, Trash2, MessageSquare, Snowflake } from 'lucide-react';
+import { Loader2, Plus, Send, Trash2, MessageSquare, Snowflake, Settings2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface Peer {
   id: string;
