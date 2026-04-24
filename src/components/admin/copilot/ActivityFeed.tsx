@@ -63,9 +63,15 @@ export function ActivityFeed({ activities, onApprove, onRefresh }: ActivityFeedP
                     {activity.agent}
                   </Badge>
                 </div>
-                {activity.error_message && (
-                  <p className="text-xs text-destructive mt-0.5 truncate">{activity.error_message}</p>
-                )}
+                {activity.status === 'failed' && hasValidationDetails(activity.output) ? (
+                  <ValidationErrorDetails
+                    output={activity.output}
+                    errorMessage={activity.error_message}
+                    compact
+                  />
+                ) : activity.error_message ? (
+                  <p className="text-xs text-destructive mt-0.5 break-words">{activity.error_message}</p>
+                ) : null}
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                   {activity.duration_ms && ` · ${activity.duration_ms}ms`}
