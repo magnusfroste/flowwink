@@ -214,8 +214,13 @@ serve(async (req) => {
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');
         // Map skill arg names → RPC param names by prefixing p_
+        // IMPORTANT: strip underscore-prefixed agent-internal fields (e.g. _caller_user_id,
+        // _approved, _bypass_approval, _objective_context, trace_id) BEFORE prefixing — otherwise
+        // they get sent as `p__caller_user_id` and break Postgres function-signature lookup.
         const rpcArgs: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(args || {})) {
+          if (k.startsWith('_')) continue;
+          if (k === 'trace_id' || k === 'objective_context') continue;
           rpcArgs[k.startsWith('p_') ? k : `p_${k}`] = v;
         }
         const { data: rpcData, error: rpcErr } = await supabase.rpc(fnName, rpcArgs);
@@ -720,7 +725,7 @@ async function executeTimesheetsAction(
 ): Promise<unknown> {
   switch (skillName) {
     case 'log_time': {
-      const { action = 'list', project_id, project_name, entry_date, hours, description, is_billable, user_id, entry_id, week_offset = 0 } = args as any;
+      const { action = 'list', project_id, project_name, entry_date, hours, description, is_billable, user_id, entry_id, week_offset = 0, _caller_user_id } = args as any;
 
       if (action === 'create') {
         let resolvedProjectId = project_id;
@@ -738,8 +743,14 @@ async function executeTimesheetsAction(
         }
         if (!resolvedProjectId) return { error: 'project_id or project_name required' };
 
+        // Resolve user_id from explicit arg → MCP caller → auth context
+        const resolvedUserId = user_id
+          || _caller_user_id
+          || (await supabase.auth.getUser()).data?.user?.id;
+        if (!resolvedUserId) return { error: 'user_id required (or pass _caller_user_id from MCP)' };
+
         const { data, error } = await supabase.from('time_entries').insert([{
-          user_id: user_id || (await supabase.auth.getUser()).data?.user?.id,
+          user_id: resolvedUserId,
           project_id: resolvedProjectId,
           entry_date: entry_date || new Date().toISOString().slice(0, 10),
           hours: hours || 0,
@@ -2510,13 +2521,48 @@ async function executeDealsAction(
   }
 
   if (action === 'create') {
-    const { value_cents = 0, currency = 'SEK', stage = 'proposal', lead_id, product_id, expected_close, notes } = args as any;
-    if (!lead_id) throw new Error('lead_id is required');
+    const { value_cents = 0, currency = 'SEK', stage = 'proposal', product_id, expected_close, notes, company_id, company_name } = args as any;
+    let { lead_id } = args as any;
+
+    // Auto-resolve a lead from company_id / company_name when no lead_id supplied.
+    // This lets agents create deals in a company-centric flow without first creating a placeholder lead.
+    if (!lead_id && (company_id || company_name)) {
+      let resolvedCompanyId: string | null = company_id || null;
+      let resolvedCompanyName: string | null = company_name || null;
+      if (!resolvedCompanyId && company_name) {
+        const { data: comp } = await supabase
+          .from('companies').select('id, name').ilike('name', `%${company_name}%`).limit(1).maybeSingle();
+        if (comp) { resolvedCompanyId = comp.id; resolvedCompanyName = comp.name; }
+      }
+      if (resolvedCompanyId) {
+        // Reuse existing open lead for this company if any
+        const { data: existing } = await supabase
+          .from('leads').select('id').eq('company_id', resolvedCompanyId)
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (existing) {
+          lead_id = existing.id;
+        } else {
+          const safeName = (resolvedCompanyName || 'auto-lead').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+          const { data: newLead, error: leadErr } = await supabase
+            .from('leads').insert({
+              name: resolvedCompanyName || 'Auto-generated lead',
+              email: `deal-${safeName}-${Date.now()}@auto.flowwink.local`,
+              company_id: resolvedCompanyId,
+              source: 'agent_deal',
+              status: 'opportunity',
+            }).select('id').single();
+          if (leadErr) throw new Error(`Auto-lead creation failed: ${leadErr.message}`);
+          lead_id = newLead.id;
+        }
+      }
+    }
+
+    if (!lead_id) throw new Error('lead_id is required (or provide company_id / company_name to auto-create a lead)');
     const { data, error } = await supabase.from('deals').insert({
       value_cents, currency, stage, lead_id, product_id, expected_close, notes,
-    }).select('id, stage, value_cents').single();
+    }).select('id, stage, value_cents, lead_id').single();
     if (error) throw new Error(`Create deal failed: ${error.message}`);
-    return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents };
+    return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents, lead_id: data.lead_id };
   }
 
   if (action === 'update') {
