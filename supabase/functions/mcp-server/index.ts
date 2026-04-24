@@ -789,6 +789,7 @@ app.use("/*", async (c, next) => {
   }
   c.set("apiKeyScopes" as any, auth.scopes);
   c.set("apiKeyCreatedBy" as any, auth.createdBy);
+  c.set("apiKeyId" as any, auth.keyId);
   return next();
 });
 
