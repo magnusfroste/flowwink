@@ -16,6 +16,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Copilot/FlowPilot page renders its own header + edge-to-edge cockpit
+  // (no padded <main>) but still gets the standard left sidebar.
   const isCopilotMode = location.pathname === '/admin/flowpilot';
 
   // Auto-seed FlowPilot on first admin session (idempotent)
@@ -61,26 +63,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // In copilot mode: children provide their own left panel at full height
-  if (isCopilotMode) {
-    return (
-      <SidebarProvider>
-        <div className="flex h-screen w-full bg-background">
-          {children}
-        </div>
-      </SidebarProvider>
-    );
-  }
-
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <AdminContentHeader />
-          <main className="flex-1 overflow-auto animate-fade-in p-8">
-            {children}
-          </main>
+          {isCopilotMode ? (
+            // FlowPilot cockpit: edge-to-edge, owns its own header + chrome
+            children
+          ) : (
+            <>
+              <AdminContentHeader />
+              <main className="flex-1 overflow-auto animate-fade-in p-8">
+                {children}
+              </main>
+            </>
+          )}
         </div>
       </div>
     </SidebarProvider>
