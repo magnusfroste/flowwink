@@ -28,7 +28,12 @@ import {
   CheckCircle2,
   XCircle,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Briefcase,
+  Receipt,
+  ClipboardList,
+  Truck,
+  LifeBuoy,
 } from 'lucide-react';
 
 interface ResetSiteDialogProps {
