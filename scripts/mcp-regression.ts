@@ -143,7 +143,7 @@ async function rpc(method: string, params: Record<string, unknown> = {}) {
 // ── Steps ───────────────────────────────────────────────────────────────────
 
 function step1_preMcpGuard() {
-  bar('1/4  Pre-MCP guard (static module registry check)');
+  bar('1/5  Pre-MCP guard (static module registry check)');
   const result = spawnSync('npx', ['-y', 'tsx', path.join(ROOT, 'scripts/verify-hr-modules.ts')], {
     stdio: 'inherit',
   });
@@ -151,7 +151,7 @@ function step1_preMcpGuard() {
 }
 
 async function step2_initialize() {
-  bar('2/4  Live MCP initialize handshake');
+  bar('2/5  Live MCP initialize handshake');
   const result = (await rpc('initialize', {
     protocolVersion: '2024-11-05',
     capabilities: {},
@@ -163,7 +163,7 @@ async function step2_initialize() {
 }
 
 async function step3_listTools(): Promise<Set<string>> {
-  bar('3/4  Live MCP tools/list');
+  bar('3/5  Live MCP tools/list');
   const result = (await rpc('tools/list')) as { tools?: Array<{ name: string }> };
   const names = new Set((result.tools ?? []).map((t) => t.name));
   console.log(`  ✓ ${names.size} tools exposed`);
@@ -171,7 +171,7 @@ async function step3_listTools(): Promise<Set<string>> {
 }
 
 function step4_assertExpectations(live: Set<string>) {
-  bar('4/4  Expectation match');
+  bar('4/5  Expectation match');
 
   const missing: Array<{ module: string; tool: string }> = [];
   let total = 0;
