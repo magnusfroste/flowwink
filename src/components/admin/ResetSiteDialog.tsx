@@ -58,6 +58,14 @@ interface ResetOptions {
   bookings: boolean;
   orders: boolean;
   engineRoom: boolean;
+  // ERP modules
+  hr: boolean;              // employees, leave, attendance, contracts, onboarding, performance, recruitment
+  finance: boolean;         // quotes, invoices, accounting, dunning, payments, payroll, tax
+  operations: boolean;      // projects, tasks, time entries, expenses, handbook
+  procurement: boolean;     // vendors, POs, goods receipts, inventory/stock
+  service: boolean;         // tickets, SLA, contracts (legal), documents, subscriptions, feedback
+  growth: boolean;          // ad campaigns, webinars, sales intelligence
+  federation: boolean;      // a2a peers/activity, federation connections, webhooks, api keys
 }
 
 const defaultOptions: ResetOptions = {
@@ -75,6 +83,13 @@ const defaultOptions: ResetOptions = {
   bookings: true,
   orders: true,
   engineRoom: true,
+  hr: true,
+  finance: true,
+  operations: true,
+  procurement: true,
+  service: true,
+  growth: true,
+  federation: true,
 };
 
 interface ProgressItem {
