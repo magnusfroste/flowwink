@@ -65,11 +65,11 @@ export async function bootstrapModule(
   const unified = getUnifiedModule(moduleId);
   const result = { seededSkills: 0, seededAutomations: 0, errors: [] as string[] };
 
-  // 1. Always seed reference data (from unified def or legacy bootstrap)
+  // 1. Always seed reference data (unified seedData takes precedence over legacy bootstrap.seedData)
   const seedFn = unified?.seedData ?? bootstrap?.seedData;
   if (seedFn) {
     try {
-      await bootstrap.seedData();
+      await seedFn();
       logger.log(`[module-bootstrap] Seeded reference data for ${moduleId}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error seeding data';
