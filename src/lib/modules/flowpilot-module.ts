@@ -607,16 +607,31 @@ export const flowpilotModule = defineModule<Input, Output>({
   id: 'flowpilot',
   name: 'FlowPilot',
   version: '1.0.0',
-  description: 'Autonomous AI operator — skills, objectives, automations and workflows',
+  description: 'Autonomous AI operator — skills, objectives, automations and workflows. When disabled, FlowWink runs as a traditional SaaS; when enabled, FlowPilot drives skills/automations autonomously.',
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
 
   skills: [
     // FlowPilot consumes skills from other modules — it doesn't own module-specific skills.
-    // Core skills (create_objective, manage_automations, etc.) are defined in CORE_SKILLS.
+    // Its own core skills (create_objective, manage_automations, etc.) live in FLOWPILOT_SKILLS.
   ],
   skillSeeds: FLOWPILOT_SKILLS,
+
+  // Self-contained init: soul + identity + agents-rules + tool_policy + starter objectives
+  // are all seeded here when the module is enabled. No more separate setup-flowpilot trigger.
+  seedData: seedFlowPilotSoul,
+
+  automations: [
+    {
+      name: 'Weekly Business Digest',
+      description: 'Every Friday afternoon, summarise traffic, leads, and top content, then log to activity.',
+      trigger_type: 'cron',
+      trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
+      skill_name: 'weekly_business_digest',
+      skill_arguments: {},
+    },
+  ],
 
   async publish(input: Input): Promise<Output> {
     return { success: true, message: `FlowPilot ${input.action} completed` };
