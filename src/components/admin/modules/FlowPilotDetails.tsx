@@ -246,7 +246,7 @@ export function FlowPilotDetails() {
   });
 
   // Syncs any missing skills and soul to the latest version.
-  // Objectives and automations are managed in Engine Room — not touched here.
+  // Objectives and automations are managed in FlowPilot → Objectives/Automations — not touched here.
   const handleSyncSkills = async () => {
     setIsBootstrapping(true);
     try {

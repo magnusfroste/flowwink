@@ -62,7 +62,7 @@ export function AutomationHealthDashboardWidget() {
           <p className="text-sm text-muted-foreground text-center py-4">
             No automations configured yet.
           </p>
-          <Link to="/admin/skills" className="text-xs text-primary hover:underline flex items-center justify-center gap-1">
+          <Link to="/admin/flowpilot?tab=health" className="text-xs text-primary hover:underline flex items-center justify-center gap-1">
             Set up automations <ArrowRight className="h-3 w-3" />
           </Link>
         </CardContent>
@@ -80,7 +80,7 @@ export function AutomationHealthDashboardWidget() {
             <Activity className="h-4 w-4 text-muted-foreground" />
             Automation Health
           </CardTitle>
-          <Link to="/admin/skills" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+          <Link to="/admin/flowpilot?tab=health" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
             Details <ArrowRight className="h-3 w-3" />
           </Link>
         </div>

@@ -385,7 +385,7 @@ export default function CopilotPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Engine Room tabs */}
+            {/* FlowPilot cockpit tabs */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FlowPilotTab)} className="flex-1 min-w-0">
               <TabsList className="h-9">
                 {ENGINE_TABS.map(tab => {

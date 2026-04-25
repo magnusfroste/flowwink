@@ -362,7 +362,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.engineRoom) {
       tasks.push({
         key: 'engineRoom',
-        label: 'Resetting Engine Room (objectives, memory, activity)',
+        label: 'Resetting FlowPilot brain (objectives, memory, activity)',
         fn: async () => {
           // Clear objective activities junction first
           const { error: oaErr } = await supabase.from('agent_objective_activities').delete().neq('objective_id', '00000000-0000-0000-0000-000000000000');
@@ -805,7 +805,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
                       onCheckedChange={(c) => setOptions(p => ({ ...p, engineRoom: !!c }))} 
                     />
                     <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    Engine Room (objectives, memory, activity)
+                    FlowPilot brain (objectives, memory, activity)
                   </label>
                 </div>
               </div>

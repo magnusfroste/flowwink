@@ -3,7 +3,7 @@
  * 
  * Right-side panel for the FlowPilot cockpit.
  * Aggregates: Agent Status, Active Objectives, Live Activity Feed.
- * Provides cross-navigation links to Engine Room.
+ * Provides cross-navigation links to FlowPilot tabs (Objectives, Automations, Evolution).
  */
 
 import { useState, useEffect } from 'react';
@@ -179,7 +179,7 @@ export function ContextPanel({ activities, onApprove, onRefresh }: ContextPanelP
           ) : (
             <div className="space-y-1.5">
               {objectives.slice(0, 5).map(obj => (
-                <div key={obj.id} onClick={() => navigate('/admin/skills?tab=objectives')}>
+                <div key={obj.id} onClick={() => navigate('/admin/flowpilot?tab=objectives')}>
                   <ObjectiveChip 
                     goal={obj.goal} 
                     status={obj.status} 
@@ -190,7 +190,7 @@ export function ContextPanel({ activities, onApprove, onRefresh }: ContextPanelP
               {objectives.length > 5 && (
                 <Button 
                   variant="ghost" size="sm" className="w-full text-xs h-7"
-                  onClick={() => navigate('/admin/skills?tab=objectives')}
+                  onClick={() => navigate('/admin/flowpilot?tab=objectives')}
                 >
                   View all {objectives.length} objectives
                 </Button>
@@ -231,21 +231,21 @@ export function ContextPanel({ activities, onApprove, onRefresh }: ContextPanelP
       <div className="border-t p-2 space-y-0.5">
         <Button 
           variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
-          onClick={() => navigate('/admin/skills')}
+          onClick={() => navigate('/admin/flowpilot?tab=objectives')}
         >
           <Settings2 className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">Skills</span>
         </Button>
         <Button 
           variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
-          onClick={() => navigate('/admin/skills?tab=automations')}
+          onClick={() => navigate('/admin/flowpilot?tab=automations')}
         >
           <Workflow className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">Automations</span>
         </Button>
         <Button 
           variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
-          onClick={() => navigate('/admin/skills?tab=evolution')}
+          onClick={() => navigate('/admin/flowpilot?tab=evolution')}
         >
           <TrendingUp className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">Evolution</span>

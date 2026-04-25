@@ -96,7 +96,7 @@ export function FlowPilotOnboardingWizard({ open, onOpenChange, templateName }: 
     } catch (err) {
       toast({
         title: 'Failed to save goals',
-        description: 'You can set goals later from the Engine Room.',
+        description: 'You can set goals later from FlowPilot → Objectives.',
         variant: 'destructive',
       });
     } finally {
