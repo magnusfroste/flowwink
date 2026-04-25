@@ -211,6 +211,11 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           if (itemsError) throw itemsError;
           const { error } = await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
+          // Customer-related extras
+          const { error: addrErr } = await supabase.from('customer_addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (addrErr) throw addrErr;
+          const { error: wishErr } = await supabase.from('wishlist_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (wishErr) throw wishErr;
         }
       });
     }
@@ -220,6 +225,8 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'deals',
         label: 'Clearing deals',
         fn: async () => {
+          const { error: actErr } = await supabase.from('deal_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (actErr) throw actErr;
           const { error } = await supabase.from('deals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -229,8 +236,12 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.leads) {
       tasks.push({
         key: 'leads',
-        label: 'Clearing leads',
+        label: 'Clearing leads & CRM tasks',
         fn: async () => {
+          const { error: actErr } = await supabase.from('lead_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (actErr) throw actErr;
+          const { error: taskErr } = await supabase.from('crm_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (taskErr) throw taskErr;
           const { error } = await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -240,8 +251,10 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.companies) {
       tasks.push({
         key: 'companies',
-        label: 'Clearing companies',
+        label: 'Clearing companies & sales intelligence',
         fn: async () => {
+          const { error: siErr } = await supabase.from('sales_intelligence_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (siErr) throw siErr;
           const { error } = await supabase.from('companies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -251,8 +264,17 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.products) {
       tasks.push({
         key: 'products',
-        label: 'Clearing products & consultants',
+        label: 'Clearing products, stock & consultants',
         fn: async () => {
+          // Stock movements + per-product stock first (FK to products)
+          const { error: smErr } = await supabase.from('stock_moves').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (smErr) throw smErr;
+          const { error: psErr } = await supabase.from('product_stock').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (psErr) throw psErr;
+          const { error: bisErr } = await supabase.from('back_in_stock_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (bisErr) throw bisErr;
+          const { error: pcErr } = await supabase.from('product_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (pcErr) throw pcErr;
           const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
           const { error: cpErr } = await supabase.from('consultant_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
