@@ -420,6 +420,165 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
       });
     }
 
+    // -------------------- HR --------------------
+    if (options.hr) {
+      tasks.push({
+        key: 'hr',
+        label: 'Clearing HR (employees, leave, contracts, recruitment)',
+        fn: async () => {
+          await supabase.from('candidate_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('applications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('application_stages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('job_postings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('one_on_ones').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('performance_reviews').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('performance_goals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('onboarding_checklists').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('onboarding_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('leave_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('leave_allocations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vacation_policies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('attendance_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employment_contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employment_contract_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employee_skills').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employee_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('certifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('skills_catalog').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          const { error } = await supabase.from('employees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (error) throw error;
+        }
+      });
+    }
+
+    // -------------------- Operations --------------------
+    if (options.operations) {
+      tasks.push({
+        key: 'operations',
+        label: 'Clearing projects, tasks, time entries & expenses',
+        fn: async () => {
+          await supabase.from('time_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('project_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('project_members').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expense_attachments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expense_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('handbook_chapters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Procurement & inventory --------------------
+    if (options.procurement) {
+      tasks.push({
+        key: 'procurement',
+        label: 'Clearing vendors, purchase orders & goods receipts',
+        fn: async () => {
+          await supabase.from('goods_receipt_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('goods_receipts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('purchase_order_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('purchase_orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendor_invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendor_products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Finance --------------------
+    if (options.finance) {
+      tasks.push({
+        key: 'finance',
+        label: 'Clearing quotes, invoices, accounting & payroll',
+        fn: async () => {
+          await supabase.from('quote_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quotes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payment_reconciliations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('dunning_actions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('dunning_sequences').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('reconciliation_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('bank_transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('bank_import_batches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payroll_export_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payroll_exports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entry_line_taxes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('opening_balances').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('accounting_periods').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('accounting_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('chart_of_accounts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_code_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_codes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Service --------------------
+    if (options.service) {
+      tasks.push({
+        key: 'service',
+        label: 'Clearing tickets, SLA, contracts, documents & subscriptions',
+        fn: async () => {
+          await supabase.from('ticket_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('support_escalations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tickets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('support_agents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('sla_violations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('sla_policies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('subscription_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('subscriptions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_decisions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_rules').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Growth --------------------
+    if (options.growth) {
+      tasks.push({
+        key: 'growth',
+        label: 'Clearing ad campaigns & webinars',
+        fn: async () => {
+          await supabase.from('ad_creatives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('ad_campaigns').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webinars').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Federation & integrations --------------------
+    if (options.federation) {
+      tasks.push({
+        key: 'federation',
+        label: 'Clearing federation peers, webhooks & API keys',
+        fn: async () => {
+          await supabase.from('federation_connections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webhook_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webhooks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('api_keys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('clawable_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('clawable_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('a2a_peers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
     if (options.settings) {
       tasks.push({
         key: 'settings',
