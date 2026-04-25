@@ -15,7 +15,7 @@ const GROWTH_SKILLS: SkillSeed[] = [
   {
     name: 'ad_campaign_create',
     description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment. Use when: launching a marketing initiative; defining advertising parameters; allocating ad budget. NOT for: generating ad creatives (ad_creative_generate); optimizing existing campaigns (ad_optimize).',
-    category: 'growth',
+    category: 'automation',
     handler: 'db:ad_campaigns',
     scope: 'internal',
     tool_definition: {
@@ -98,7 +98,7 @@ Creates a new ad campaign with objective, budget, target audience, and platform.
   {
     name: 'ad_creative_generate',
     description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience. Use when: creating ad copy for a campaign; generating variations for A/B testing; needing creative inspiration. NOT for: creating campaigns (ad_campaign_create); checking ad performance (ad_performance_check).',
-    category: 'growth',
+    category: 'automation',
     handler: 'db:ad_creatives',
     scope: 'internal',
     tool_definition: {
@@ -167,7 +167,7 @@ Generates ad creative (headline, body, CTA) using AI based on campaign objective
   {
     name: 'ad_performance_check',
     description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions. Use when: monitoring campaign metrics; building performance reports; evaluating ROI. NOT for: optimizing campaigns (ad_optimize); creating campaigns (ad_campaign_create).',
-    category: 'growth',
+    category: 'automation',
     handler: 'db:ad_campaigns',
     scope: 'internal',
     tool_definition: {
@@ -213,7 +213,7 @@ Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, co
   {
     name: 'ad_optimize',
     description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval. Use when: reviewing campaign results; optimizing ad spend; identifying underperforming ads. NOT for: creating campaigns (ad_campaign_create); generating creatives (ad_creative_generate).',
-    category: 'growth',
+    category: 'automation',
     handler: 'db:ad_campaigns',
     scope: 'internal',
     tool_definition: {
