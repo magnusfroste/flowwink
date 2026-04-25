@@ -326,9 +326,9 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['firecrawl'],
   },
   flowpilot: {
-    enabled: true,
+    enabled: false,
     name: 'FlowPilot',
-    description: 'Autonomous AI operator — skills, objectives, automations and workflows. Disable to use FlowWink as a traditional CMS without autonomous capabilities.',
+    description: 'Optional autonomous AI operator — skills, objectives, automations and workflows. Disabled by default. FlowWink works as a traditional SaaS without it; enabling FlowPilot lets other modules opt into autonomous behavior (heartbeats, automations, scheduled actions).',
     icon: 'Sparkles',
     category: 'system',
     autonomy: 'agent-capable',

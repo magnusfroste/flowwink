@@ -10,6 +10,9 @@ import {
   orderModuleOutputSchema,
 } from '@/types/module-contracts';
 
+// NOTE: ordersModule uses the legacy ModuleDefinition shape (not defineModule)
+// because its module-id 'orders' rolls up under 'ecommerce' in ModulesSettings.
+// Order-related skills live in products-module.ts (which owns id 'ecommerce').
 export const ordersModule: ModuleDefinition<OrderModuleInput, OrderModuleOutput> = {
   id: 'orders',
   name: 'Orders',

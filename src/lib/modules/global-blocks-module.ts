@@ -1,16 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   GlobalBlockModuleInput,
   GlobalBlockModuleOutput,
   globalBlockModuleInputSchema,
   globalBlockModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const globalBlocksModule: ModuleDefinition<GlobalBlockModuleInput, GlobalBlockModuleOutput> = {
-  id: 'global-blocks',
+export const globalBlocksModule = defineModule<GlobalBlockModuleInput, GlobalBlockModuleOutput>({
+  id: 'globalElements',
   name: 'Global Blocks',
   version: '1.0.0',
   description: 'Create reusable global content blocks (header, footer, etc.)',
@@ -39,4 +39,4 @@ export const globalBlocksModule: ModuleDefinition<GlobalBlockModuleInput, Global
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

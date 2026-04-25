@@ -20,33 +20,40 @@ export function useFlowPilotBootstrap() {
   const { data: modules } = useModules();
   const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? true;
 
-  // Check if skills exist (lightweight query)
-  const { data: skillCount, isLoading } = useQuery({
-    queryKey: ['flowpilot-bootstrap-check'],
+  // Check if FlowPilot's soul has been seeded — schema + soul + identity is what
+  // setup-flowpilot owns. Skills are now seeded per-module via bootstrapModule().
+  const { data: soulSeeded, isLoading } = useQuery({
+    queryKey: ['flowpilot-soul-check'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('agent_skills')
-        .select('id', { count: 'exact', head: true });
+      const { data, error } = await supabase
+        .from('agent_memory')
+        .select('id')
+        .eq('key', 'soul')
+        .maybeSingle();
       if (error) throw error;
-      return count ?? 0;
+      return !!data;
     },
     staleTime: 1000 * 60 * 30, // 30 min
+    enabled: isFlowPilotEnabled,
   });
 
   const bootstrap = useMutation({
     mutationFn: async () => {
-      logger.log('[FlowPilotBootstrap] Seeding FlowPilot for the first time...');
-      
+      logger.log('[FlowPilotBootstrap] Seeding FlowPilot soul/identity for the first time...');
+
+      // Note: seed_skills is now a no-op in setup-flowpilot — kept true for
+      // backward compatibility with any older deployment that still has
+      // DEFAULT_SKILLS. Skills are seeded per-module by bootstrapModule().
       const { data, error } = await supabase.functions.invoke('setup-flowpilot', {
         body: {
-          seed_skills: true,
+          seed_skills: false,
           seed_soul: true,
           template_flowpilot: DEFAULT_FLOWPILOT_BOOTSTRAP,
         },
       });
 
       if (error) throw error;
-      
+
       logger.log('[FlowPilotBootstrap] Bootstrap complete:', data);
 
       // Seed AGENTS document (operational rules) if not present
@@ -92,11 +99,11 @@ export function useFlowPilotBootstrap() {
       return data;
     },
     onSuccess: () => {
-      // Invalidate relevant queries so FlowPilot cockpit reflects the new skills
+      // Invalidate relevant queries so FlowPilot cockpit reflects the new state
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
       queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
       queryClient.invalidateQueries({ queryKey: ['agent-automations'] });
-      queryClient.invalidateQueries({ queryKey: ['flowpilot-bootstrap-check'] });
+      queryClient.invalidateQueries({ queryKey: ['flowpilot-soul-check'] });
     },
     onError: (error) => {
       logger.error('[FlowPilotBootstrap] Failed:', error);
@@ -105,9 +112,9 @@ export function useFlowPilotBootstrap() {
 
   useEffect(() => {
     if (!isFlowPilotEnabled || isLoading || hasTriggered.current) return;
-    if (skillCount === 0) {
+    if (soulSeeded === false) {
       hasTriggered.current = true;
       bootstrap.mutate();
     }
-  }, [skillCount, isLoading, isFlowPilotEnabled]);
+  }, [soulSeeded, isLoading, isFlowPilotEnabled]);
 }

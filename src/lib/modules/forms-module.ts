@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { triggerWebhook } from '@/lib/webhook-utils';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import {
   FormSubmissionModuleInput,
@@ -9,6 +10,63 @@ import {
   formSubmissionModuleInputSchema,
   formSubmissionModuleOutputSchema,
 } from '@/types/module-contracts';
+
+// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const FORMS_SKILLS: SkillSeed[] = [
+  {
+    name: 'manage_form_submissions',
+    description: 'View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_chat_feedback); managing leads (manage_leads).',
+    category: 'crm',
+    handler: 'module:forms',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_form_submissions',
+        description: 'View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_chat_feedback); managing leads (manage_leads).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: [
+                'list',
+                'get',
+                'delete',
+                'stats',
+              ],
+            },
+            submission_id: {
+              type: 'string',
+            },
+            form_name: {
+              type: 'string',
+            },
+            limit: {
+              type: 'number',
+            },
+          },
+          required: [
+            'action',
+          ],
+        },
+      },
+    },
+    instructions: `## manage_form_submissions
+### What
+Views and manages form submissions from website forms.
+### When to use
+- Admin asks about form responses
+- Lead generation: review contact form submissions
+- Analytics: form submission statistics
+### Parameters
+- **action**: Required. list, get, delete, stats.
+- **form_name**: Filter by form name.
+### Edge cases
+- Form submissions may contain PII — handle with care.
+- Stats action returns submission counts by form.`,
+  },
+];
 
 export const formsModule = defineModule<FormSubmissionModuleInput, FormSubmissionModuleOutput>({
   id: 'forms',
@@ -22,6 +80,7 @@ export const formsModule = defineModule<FormSubmissionModuleInput, FormSubmissio
   skills: [
     'manage_form_submissions',
   ],
+  skillSeeds: FORMS_SKILLS,
 
   webhookEvents: [
     { event: 'form.submitted', description: 'A form was submitted' },
