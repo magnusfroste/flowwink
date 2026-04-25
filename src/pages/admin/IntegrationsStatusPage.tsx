@@ -701,6 +701,11 @@ export default function IntegrationsStatusPage() {
     return acc;
   }, {} as Record<string, Array<{ key: keyof IntegrationsSettings } & typeof defaultIntegrationsSettings[keyof typeof defaultIntegrationsSettings]>>);
 
+  // Sort each category alphabetically by name
+  Object.keys(groupedIntegrations).forEach((cat) => {
+    groupedIntegrations[cat].sort((a, b) => a.name.localeCompare(b.name));
+  });
+
   // Sort categories by order
   const sortedCategories = Object.entries(INTEGRATION_CATEGORIES)
     .sort(([, a], [, b]) => a.order - b.order)
