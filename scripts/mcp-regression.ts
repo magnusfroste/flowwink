@@ -207,6 +207,31 @@ function step4_assertExpectations(live: Set<string>) {
   }
 }
 
+async function step5_callSmokeTest(live: Set<string>) {
+  bar('5/5  Live MCP tools/call smoke test');
+
+  // Pick a safe read-only tool we know is exposed on every instance.
+  const candidates = ['list_leads', 'list_orders', 'list_pages'];
+  const target = candidates.find((t) => live.has(t));
+  if (!target) {
+    console.log('  ⚠  No safe read-only tool available — skipping tools/call smoke test.');
+    return;
+  }
+
+  const result = (await rpc('tools/call', {
+    name: target,
+    arguments: {},
+  })) as { content?: Array<{ type: string }>; isError?: boolean };
+
+  if (result?.isError) {
+    fail(1, `tools/call '${target}' returned isError=true — JSON-RPC execution is broken.`);
+  }
+  if (!Array.isArray(result?.content)) {
+    fail(1, `tools/call '${target}' returned no content array — response shape regression.`);
+  }
+  console.log(`  ✓ tools/call '${target}' returned ${result.content!.length} content block(s)`);
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -217,8 +242,9 @@ async function main() {
   await step2_initialize();
   const live = await step3_listTools();
   step4_assertExpectations(live);
+  await step5_callSmokeTest(live);
 
-  console.log('\n✅ MCP regression PASSED — all expected tools exposed.\n');
+  console.log('\n✅ MCP regression PASSED — all expected tools exposed + tools/call works.\n');
 }
 
 main().catch((e) => fail(3, `Unhandled: ${(e as Error).message}`));
