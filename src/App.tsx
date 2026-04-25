@@ -130,7 +130,6 @@ import ActivitiesPage from "./pages/admin/ActivitiesPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
-const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
 
 console.info("[boot] App.tsx evaluated", new Date().toISOString());
 const queryClient = new QueryClient();
@@ -251,8 +250,9 @@ const router = createBrowserRouter([
       { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
       { path: "/admin/flowpilot", element: <CopilotPage /> },
-      { path: "/admin/flowpilot/engine", element: withPageFallback(<SkillHubPage />) },
-      { path: "/admin/skills", element: <Navigate to="/admin/flowpilot/engine" replace /> },
+      { path: "/admin/flowpilot/engine", element: <Navigate to="/admin/flowpilot?tab=objectives" replace /> },
+      { path: "/admin/skill-hub", element: <Navigate to="/admin/flowpilot?tab=objectives" replace /> },
+      { path: "/admin/skills", element: <Navigate to="/admin/flowpilot?tab=objectives" replace /> },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
       { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
