@@ -596,7 +596,7 @@ Content-Type: application/json
           </CardTitle>
           <CardDescription>
             Generate a structured prompt to onboard an external agent (e.g. OpenClaw) via MCP.
-            Choose an <strong>Operator</strong> mission to hand over operational control, or an <strong>Audit</strong> mission for read-only inspection.
+            Choose an <strong>Operator</strong> mission to hand over operational control, or an <strong>Audit</strong> mission for read-only inspection. Only missions whose required modules are enabled are shown.
           </CardDescription>
         </CardHeader>
       </Card>
