@@ -252,6 +252,8 @@ const router = createBrowserRouter([
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
       { path: "/admin/flowpilot", element: <CopilotPage /> },
       { path: "/admin/flowpilot/engine", element: <Navigate to="/admin/flowpilot" replace /> },
+      { path: "/admin/skills", element: <SkillsCatalogPage /> },
+      { path: "/admin/skill-hub", element: <Navigate to="/admin/skills" replace /> },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
       { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
