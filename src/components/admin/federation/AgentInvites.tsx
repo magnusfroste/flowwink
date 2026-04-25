@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Check, UserPlus, Sparkles, Shield, Search, BarChart3, ShoppingCart, Zap, TrendingUp, Pen, Bot, Users, Receipt, FolderKanban, PackageSearch, Calculator } from 'lucide-react';
+import { Copy, Check, UserPlus, Sparkles, Shield, Search, BarChart3, ShoppingCart, Zap, TrendingUp, Pen, Bot, Users, Receipt, FolderKanban, PackageSearch, Calculator, Snowflake, ArrowRight, MessageSquare, Network } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import { useModules, type ModulesSettings } from '@/hooks/useModules';
 import { toast } from 'sonner';
@@ -82,6 +83,39 @@ POST /rest/execute {"tool": "release_lock", "arguments": {"lane": "lead:abc123"}
 You own the initiative. Don't wait for instructions — observe the platform state and act like a competent business operator would.`,
     focusResources: ['flowwink://briefing', 'flowwink://skills', 'flowwink://modules'],
     focusTools: ['acquire_lock', 'release_lock', 'list_leads', 'update_lead', 'list_orders', 'list_pages', 'update_page_block'],
+  },
+  {
+    id: 'clawable-operator',
+    name: 'Clawable Operator',
+    icon: <Snowflake className="h-4 w-4" />,
+    category: 'operator',
+    description: 'Standalone OpenClaw — receives missions on demand via Clawable Chat over /v1/responses',
+    instructions: `You are a **Clawable Operator** — a standalone OpenClaw instance attached to a FlowWink platform. You do **not** run a continuous heartbeat. You wait for missions delivered through Clawable Chat (\`/v1/responses\` with \`previous_response_id\` chaining) and execute them against this platform via MCP.
+
+## Bootstrap (do this on first contact)
+
+1. \`GET /rest/resources/briefing\` — pull identity, health, active objectives, modules and skill count in one call.
+2. \`GET /rest/resources/skills\` — full skill registry, so you know what you can actually do.
+3. \`GET /rest/resources/modules\` — confirm which business modules are enabled. Never call skills from disabled modules.
+
+## How you are operated
+
+- The platform admin opens **Clawable Chat** and sends you a mission as a chat message.
+- Each chat session is one logical thread — your responses are chained via \`previous_response_id\`, so you have conversation memory inside a session, but **not across sessions**.
+- Treat every new session as a fresh assignment. Re-read the briefing if you need context.
+
+## How to act
+
+- For each mission: think → discover the right MCP tool → execute → report back in plain text in the chat.
+- Use \`acquire_lock\` / \`release_lock\` for any multi-step write operation.
+- If a mission requires capabilities you don't have access to, say so clearly instead of guessing.
+- Always end your reply with a short summary of what you did and what changed.
+
+## Key principle
+
+You are a **mission-driven specialist**, not a heartbeat agent. Stay quiet until the admin gives you something to do — then execute precisely against the platform via MCP and report back.`,
+    focusResources: ['flowwink://briefing', 'flowwink://skills', 'flowwink://modules'],
+    focusTools: ['acquire_lock', 'release_lock'],
   },
   {
     id: 'growth-operator',
@@ -566,7 +600,14 @@ Content-Type: application/json
 `}
 ## Verify Connection
 
-\`GET ${mcpUrl}/rest/resources/briefing\` — should return identity, health metrics, active objectives, and module status.`;
+\`GET ${mcpUrl}/rest/resources/briefing\` — should return identity, health metrics, active objectives, and module status.${mission.id === 'clawable-operator' ? `
+
+## How the platform will reach you back
+
+This platform will call **your** \`/v1/responses\` endpoint to deliver missions:
+- The admin will register your base URL and a \`gateway_token\` (Bearer) that you must accept on incoming calls.
+- Each Clawable Chat session is one thread — the platform passes \`previous_response_id\` so you keep memory inside a session.
+- Reply in plain text. The text becomes the assistant message visible in Clawable Chat.` : ''}`;
 
       setGeneratedPrompt(prompt);
       toast.success('Invite prompt generated with API key');
@@ -744,6 +785,67 @@ Content-Type: application/json
                 <span>API key <code className="bg-muted px-1 rounded">{generatedKey.slice(0, 12)}...</code> created and visible in Developer → MCP Keys</span>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Next Steps — shown after a Clawable Operator invite is generated */}
+      {generatedPrompt && mission.id === 'clawable-operator' && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ArrowRight className="h-4 w-4 text-primary" />
+              Next Steps
+            </CardTitle>
+            <CardDescription>
+              Once your OpenClaw instance accepts the prompt above, finish wiring it up:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ol className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span><strong>MCP key created</strong> — embedded in the prompt above (visible only once).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span><strong>Peer auto-registered</strong> as <code className="bg-muted px-1 rounded text-xs">{agentName || 'Unnamed'}</code> in Federation.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <span>Open the peer in <strong>Federation</strong> and add its <strong>Base URL</strong> + <strong>gateway_token</strong> (Bearer the peer expects on incoming <code className="bg-muted px-1 rounded text-xs">/v1/responses</code> calls).</span>
+                  <div>
+                    <Button asChild size="sm" variant="outline" className="h-7 mt-1">
+                      <Link to="/admin/federation">
+                        <Network className="h-3 w-3 mr-1.5" />
+                        Open Federation
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <span>Add an <strong>outbound channel</strong> (transport: <code className="bg-muted px-1 rounded text-xs">openresponses</code>) on the peer card.</span>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <span>Open <strong>Clawable Chat</strong>, pick this peer, start a session and send your first mission.</span>
+                  <div>
+                    <Button asChild size="sm" variant="default" className="h-7 mt-1">
+                      <Link to="/admin/clawable">
+                        <MessageSquare className="h-3 w-3 mr-1.5" />
+                        Open Clawable Chat
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            </ol>
           </CardContent>
         </Card>
       )}

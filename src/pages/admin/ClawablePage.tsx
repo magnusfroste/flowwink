@@ -425,8 +425,11 @@ export default function ClawablePage() {
         )}
 
         {selectedPeer && !selectedPeer.gateway_token && (
-          <div className="mb-3 text-xs text-destructive">
-            Missing gateway_token on selected peer — click the gear icon to add it.
+          <div className="mb-3 flex items-center gap-2 text-xs text-destructive">
+            <span>Missing gateway_token on selected peer — add it via the gear icon, or finish wiring up channels in Federation.</span>
+            <Button asChild size="sm" variant="outline" className="h-6 ml-auto">
+              <a href="/admin/federation">Open Federation</a>
+            </Button>
           </div>
         )}
 
