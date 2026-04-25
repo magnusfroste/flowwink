@@ -400,6 +400,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           enabled: boolean
+          executor: string
           id: string
           last_error: string | null
           last_triggered_at: string | null
@@ -418,6 +419,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           enabled?: boolean
+          executor?: string
           id?: string
           last_error?: string | null
           last_triggered_at?: string | null
@@ -436,6 +438,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           enabled?: boolean
+          executor?: string
           id?: string
           last_error?: string | null
           last_triggered_at?: string | null
