@@ -118,6 +118,7 @@ You are a **mission-driven specialist**, not a heartbeat agent. Stay quiet until
     focusTools: ['acquire_lock', 'release_lock'],
   },
   {
+    id: 'growth-operator',
     name: 'Growth Operator',
     icon: <TrendingUp className="h-4 w-4" />,
     category: 'operator',
