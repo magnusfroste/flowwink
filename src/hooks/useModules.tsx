@@ -596,7 +596,6 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/growth': 'paidGrowth',
   '/admin/company-insights': 'companyInsights',
   '/admin/flowpilot': 'flowpilot',
-  '/admin/skills': 'flowpilot',
   
   '/admin/tickets': 'tickets',
   '/admin/site-migration': 'siteMigration',
