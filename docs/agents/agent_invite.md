@@ -28,7 +28,22 @@ curl -X POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/mcp-server \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"acquire_lock","arguments":{"lane":"lead_abc","ttl_seconds":60}}}'
 ```
 
-> **`Method not found` from `tools/call`?** That JSON-RPC error (`-32601`) means the **tool name** in `params.name` doesn't exist on this server — not that the method is missing. Always discover real names via `tools/list` first. There is no tool called `site_health_check`; for site stats read the **`flowwink://health`** resource via `resources/read` (or `GET /rest/resources/health`) instead.
+> **⚠️ Critical: SSE Accept header for `tools/call`**
+>
+> Per the **MCP Streamable HTTP spec**, every JSON-RPC POST — and especially `tools/call` — **must** include:
+>
+> ```
+> Accept: application/json, text/event-stream
+> ```
+>
+> The server returns `tools/call` responses as **Server-Sent Events** (one `data: {...}` frame per response). Without the header you will see one of:
+>
+> - **HTTP 406 Not Acceptable** (`Client must accept both application/json and text/event-stream`), or
+> - A misleading **`Method not found` (-32601)** from a partial parse on your side — even though the method works fine.
+>
+> Official MCP SDKs (TypeScript/Python, Claude Desktop, Cursor, mcp-inspector, OpenClaw) set this header automatically. If you write your own transport (raw `fetch` / `curl` / `web_fetch`), you **must** add it yourself **and** parse the SSE stream — extract the last `data:` line and `JSON.parse` its payload. Agents without an SSE parser should use the **REST facade (`POST /rest/execute`)** below instead.
+>
+> **`Method not found` after fixing the header?** Then the JSON-RPC error (`-32601`) genuinely means the **tool name** in `params.name` doesn't exist on this server. Always discover real names via `tools/list` first. There is no tool called `site_health_check`; for site stats read the **`flowwink://health`** resource via `resources/read` (or `GET /rest/resources/health`) instead.
 
 ### Option B: REST facade
 
