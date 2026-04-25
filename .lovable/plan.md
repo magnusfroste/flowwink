@@ -1,118 +1,94 @@
+# Clawable Operator — end-to-end onboarding flow
 
+Ja, exakt så ska det fungera. Vi har redan alla pusselbitar — vi behöver bara koppla ihop dem och göra flödet uppenbart i UI:t.
 
-# Refactor: Frikoppla MCP & Skills från FlowPilot
-
-## Mål
-
-FlowWink ska fungera som en ren SaaS där **MCP + Skills-katalog är kärnplattform** (alltid på). FlowPilot blir en *valfri* intern agent som konsumerar samma skills som en extern MCP-klient (OpenClaw, ClawWink, Claude Desktop, etc.). Stänger man av FlowPilot ska alla moduler fortsätta exponera sina skills via MCP — bara den interna autonoma loopen (heartbeats, objectives, evolution) försvinner.
-
-## Problemet med dagens arkitektur
-
-| Var | Hur det är idag | Varför fel |
-|---|---|---|
-| `/admin/skills` (Engine Room) | Blandar Skills-katalog, MCP-toggle, Activity, Health med Objectives, Automations, Workflows, Evolution, Autonomy Schedule | Admin tvingas in i "FlowPilot-land" bara för att titta på vilka skills MCP exponerar |
-| `module-bootstrap.ts` rad 82–86 | `if (!flowpilot.enabled) return` — hoppar över skill-seeding | Stänger man av FlowPilot förlorar man också MCP-skills för externa agenter — exakt motsatsen till önskat beteende |
-| `mcp-server/index.ts` `SKILL_CATEGORY_MODULES` | `automation: ["flowpilot"]`, `search: ["flowpilot", ...]` | Två hela kategorier kopplade till FlowPilot-modulen |
-| Developer-modulen | Har bara MCP-*Keys* | Saknar resten av MCP-ytan (skills-katalog, activity, exposure) |
-
-## Föreslagen ny struktur
+## Det fullständiga flödet (så här ska det vara)
 
 ```text
-/admin/developer            ← MCP & API-plattform (alltid synlig, modul-oberoende)
-  ├─ API Explorer
-  ├─ Webhooks
-  ├─ Dev Tools
-  ├─ MCP Keys
-  ├─ MCP Skills            (NY — flyttas från Engine Room)
-  │   • Tabell: namn, modul, kategori, scope, MCP-exponerad ✓, enabled ✓
-  │   • Filter på modul/kategori, sök, bulk-toggle MCP-exposure
-  │   • "Vem kan kalla denna?" — visar MCP-keys + collaborators som har access
-  └─ MCP Activity          (NY — flyttas från Engine Room "Activity")
-      • Read-only logg av alla MCP-anrop (vem, vilken skill, status, latency)
+1. Admin → Federation → Agent Invites
+   └─ Välj "Clawable Operator"-mall
+   └─ Generera prompt (skapar MCP-nyckel + auto-registrerar peer)
 
-/admin/federation           ← oförändrad: A2A-peers, MCP Collaborators, Agent Invites
-  └─ "Available skills"-länk → /admin/developer?tab=mcp-skills
+2. Admin → klistrar in prompten i en tom OpenClaw-instans
+   └─ OpenClawn använder MCP-nyckeln för att läsa briefing/skills/modules
+   └─ Den dyker upp som "active" peer (auto-registrerad i steg 1)
 
-/admin/flowpilot            ← FlowPilot Cockpit (oförändrad)
-  └─ Engine Room blir FlowPilot-only och döps om till "FlowPilot Engine"
-      • Objectives, Automations, Workflows, Evolution, Autonomy Schedule
-      • Self-Healing, System Integrity (FlowPilot-perspektiv)
-      • Visar "Skills används från Developer → MCP Skills"-länk
+3. Admin → Federation → klickar på peer-kortet
+   └─ Lägger till URL + gateway_token för outbound
+   └─ Lägger till en outbound channel (transport: openresponses) via PeerChannelsInline
+
+4. Admin → Clawable Chat
+   └─ Peer dyker upp i dropdown
+   └─ "New session" + skicka uppdrag → clawable-chat edge function
+   └─ Outbound POST till peer:s /v1/responses med previous_response_id-chaining
 ```
 
-## Konkreta ändringar
+Idag finns alla delar — men flödet är inte synligt eller styrt. En admin förstår inte att Agent Invites + Federation peer-edit + Clawable Chat hör ihop som ett flöde.
 
-### 1. Bootstrap-logiken — frikoppla skills från FlowPilot
+## Det som behöver byggas
 
-`src/lib/module-bootstrap.ts`:
-- Ta bort `flowpilotEnabled`-gaten på rad 82–86. Skills och MCP-exposure ska **alltid** seedas när en modul aktiveras.
-- Behåll FlowPilot-gate **endast** för `automations` (steg 5) — automations är en ren FlowPilot-feature (cron/event-triggers som FlowPilot kör).
-- Resultat: aktiverar man `recruitment` får man 6 skills i `agent_skills` med `mcp_exposed=true`, oavsett om FlowPilot är på.
+### 1. Ny mission-mall: "Clawable Operator" i `AgentInvites.tsx`
 
-### 2. MCP-server — bryt FlowPilot-beroendet i kategori-mappningen
+En ny `operator`-kategori-mall optimerad för OpenClaw-instanser som ska köras via `/v1/responses`:
 
-`supabase/functions/mcp-server/index.ts` `SKILL_CATEGORY_MODULES`:
-- `automation: ["flowpilot"]` → `automation: []` (alltid tillgänglig — externa agenter får automation-skills oavsett FlowPilot)
-- `search: ["flowpilot", "browserControl"]` → `search: ["browserControl"]` (search beror inte på FlowPilot)
-- Lägg till `agent: ["flowpilot"]` som ny kategori för rena FlowPilot-interna skills (objectives, soul, reflect) — dessa exponeras inte via MCP per default.
+- **id**: `clawable-operator`
+- **name**: "Clawable Operator"
+- **icon**: `Snowflake` (samma som ClawablePage använder)
+- **description**: "Standalone OpenClaw — receives missions via Clawable Chat over /v1/responses"
+- **instructions**: Kort, mission-driven prompt som förklarar:
+  - Du är en standalone operator som tar emot uppdrag via `/v1/responses`
+  - Använd MCP-nyckeln för att läsa platform-context (briefing/skills/modules)
+  - Vänta på instruktioner via response-chaining (varje session = en thread)
+  - Registrera dig själv genom att kalla briefing-resursen direkt vid uppstart
+- **focusResources**: `flowwink://briefing`, `flowwink://skills`, `flowwink://modules`
+- **focusTools**: minimal — bara observation-tools, eftersom instruktioner kommer via chat
+- **requiredModules**: ingen (alltid tillgänglig)
 
-### 3. Ny sida: MCP Skills-tab i Developer
+### 2. Förbättra "Generated Prompt" för Clawable-mallar
 
-Skapar **`src/components/admin/developer/McpSkillsPanel.tsx`** som återanvänder befintliga hooks (`useSkills`, `useToggleMcpExposed`, `useBulkToggleSkills`) men med en **modul-orienterad vy**:
-- Grupperade per modul (inte per kategori) — admin tänker "vad kan recruitment-modulen göra?", inte "vilka content-skills finns?"
-- Kolumner: Skill, Modul, Scope, Handler, **MCP-exponerad** (toggle), Enabled (toggle)
-- Search + filter på modul/kategori
-- "Test in API Explorer"-knapp per skill (deeplink till befintlig API Explorer)
+Lägg till en tydlig "Next Steps"-sektion längst ner i den genererade prompten när `id === 'clawable-operator'`:
 
-Lägger till `<TabsTrigger value="mcp-skills">` i `DeveloperPage.tsx`.
+```text
+## After this agent connects
 
-### 4. Flytta Activity → Developer
+1. It will appear as an active peer in Federation
+2. Edit the peer to add: Base URL + gateway_token (Bearer token the peer expects on incoming /v1/responses calls)
+3. Add an outbound channel (transport: openresponses)
+4. Go to Clawable Chat → select this peer → start sending missions
+```
 
-Skapar **`McpActivityPanel.tsx`** som visar `agent_activity` filtrerad på `agent='mcp'` (externa anrop). FlowPilot-aktivitet stannar i Cockpit.
+### 3. Success-skärm efter "Generate" — visa nästa steg
 
-### 5. Engine Room → FlowPilot Engine
+Efter genererad prompt, visa ett litet "Next Steps"-kort med deep-links:
 
-Döper om `/admin/skills` till `/admin/flowpilot/engine` (behåller redirect från gamla URL:n):
-- Tar bort tabbarna **Skills** och **Activity** (flyttade till Developer)
-- Behåller Objectives, Automations, Health, Workflows, Evolution, Autonomy
-- Lägger till informationsruta överst: *"Skills och MCP-exponering hanteras i Developer → MCP Skills. FlowPilot konsumerar samma skills som externa agenter."*
+- ✅ MCP key created (visad)
+- ✅ Peer auto-registered: `{agentName}` (länk: Federation)
+- ⏳ Add URL + gateway_token to peer (knapp → `/admin/federation`)
+- ⏳ Send first mission (knapp → `/admin/clawable`)
 
-### 6. Federation — länka till Developer
+Detta gör att admin förstår exakt var den ska klicka härnäst — istället för att bara få en prompt och undra "vad nu?".
 
-`FederationPage.tsx` MCP Collaborators-tab: lägg till länk *"Manage exposed skills →"* som går till `/admin/developer?tab=mcp-skills`.
+### 4. Liten justering i `ClawablePage.tsx` toolbar
 
-### 7. Guardrail-test
+När en peer är vald men saknar `gateway_token`, finns redan en röd varning. Lägg till en knapp "Open in Federation" intill den, så admin snabbt kan komma till peer-edit för att fylla i resten.
 
-Uppdatera `src/lib/__tests__/recruitment-module.e2e.test.ts` + lägg till nytt test `mcp-flowpilot-decoupling.test.ts`:
-- Verifierar att `bootstrapModule('recruitment', { flowpilot: { enabled: false }, ... })` **fortfarande** seedar 6 skills med `mcp_exposed=true`.
-- Verifierar att `automation`-kategorin i mcp-server inte längre kräver flowpilot.
+## Tekniska detaljer
 
-## Filer som ändras
+**Filer som ändras:**
+- `src/components/admin/federation/AgentInvites.tsx` — ny mall + Next Steps-kort
+- `src/pages/admin/ClawablePage.tsx` — deep-link i missing-token-varningen
 
-**Edit:**
-- `src/lib/module-bootstrap.ts` (ta bort flowpilot-gate på skills, behåll på automations)
-- `supabase/functions/mcp-server/index.ts` (omkategorisering)
-- `src/pages/admin/DeveloperPage.tsx` (lägg till 2 tabbar)
-- `src/pages/admin/SkillHubPage.tsx` (ta bort Skills+Activity-tabbar, lägg till banner)
-- `src/App.tsx` (redirect /admin/skills → /admin/flowpilot/engine)
-- `src/pages/admin/FederationPage.tsx` (länk till Developer)
-- `src/lib/__tests__/recruitment-module.e2e.test.ts` (test med flowpilot off)
+**Inga DB-ändringar.** Vi använder redan:
+- `a2a_peers` (auto-upsert i `handleGenerate`)
+- `api_keys` (skapas via `useCreateApiKey`)
+- `clawable_sessions` + `clawable_messages` (för chatten)
+- `federation_connections` (för outbound-kanalen, hanteras av `PeerChannelsInline`)
 
-**Create:**
-- `src/components/admin/developer/McpSkillsPanel.tsx`
-- `src/components/admin/developer/McpActivityPanel.tsx`
-- `src/lib/__tests__/mcp-flowpilot-decoupling.test.ts`
-- `docs/architecture/mcp-as-platform.md` (dokumentera principen + best practice)
+**Inga edge function-ändringar.** `clawable-chat`, `mcp-server`, `clawable-list-models` fungerar redan.
 
-**Memory:**
-- Spara `mem://architecture/mcp-as-platform-not-flowpilot-feature` med kärnregeln: *MCP/Skills-katalogen är kärnplattform. FlowPilot är en valfri konsument, inte ägare. Bootstrap seedar alltid skills oavsett FlowPilot-status.*
+## Vad detta INTE löser (medvetet)
 
-## Resultat — best practice-flödet
+- **Auto-fyll URL/gateway_token vid invite**: Vi kan inte gissa peer-URL:en vid generate-tid (admin vet inte var OpenClawn kommer hostas). Det måste fyllas i efter att peer:n är uppe.
+- **Auto-skapa outbound channel**: Samma anledning — kräver URL.
 
-| Användarval | Vad händer |
-|---|---|
-| **Aktiverar `recruitment`-modul** | 6 skills seedas med `mcp_exposed=true`. Synliga direkt i `/admin/developer` → MCP Skills. Externa MCP-klienter ser dem omedelbart. |
-| **Stänger av FlowPilot** | Skills finns kvar. MCP fungerar fullt ut. Bara automations/objectives/heartbeat pausas. Admin kan köra hela företaget via OpenClaw/ClawWink/Claude Desktop. |
-| **Vill byta intern agent** | Ingen skill-migration behövs. Plugga in valfri MCP-klient mot `mcp-server`-endpointen — alla skills är redan exponerade. |
-| **Vill se "vad kan plattformen göra?"** | En enda sida: `/admin/developer` → MCP Skills, grupperad per modul. Inga FlowPilot-koncept i sikte. |
-
+Detta är OK eftersom Next Steps-kortet gör det glasklart vad admin ska göra i vilken ordning.
