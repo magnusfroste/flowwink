@@ -28,7 +28,12 @@ import {
   CheckCircle2,
   XCircle,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Briefcase,
+  Receipt,
+  ClipboardList,
+  Truck,
+  LifeBuoy,
 } from 'lucide-react';
 
 interface ResetSiteDialogProps {
@@ -53,6 +58,14 @@ interface ResetOptions {
   bookings: boolean;
   orders: boolean;
   engineRoom: boolean;
+  // ERP modules
+  hr: boolean;              // employees, leave, attendance, contracts, onboarding, performance, recruitment
+  finance: boolean;         // quotes, invoices, accounting, dunning, payments, payroll, tax
+  operations: boolean;      // projects, tasks, time entries, expenses, handbook
+  procurement: boolean;     // vendors, POs, goods receipts, inventory/stock
+  service: boolean;         // tickets, SLA, contracts (legal), documents, subscriptions, feedback
+  growth: boolean;          // ad campaigns, webinars, sales intelligence
+  federation: boolean;      // a2a peers/activity, federation connections, webhooks, api keys
 }
 
 const defaultOptions: ResetOptions = {
@@ -70,6 +83,13 @@ const defaultOptions: ResetOptions = {
   bookings: true,
   orders: true,
   engineRoom: true,
+  hr: true,
+  finance: true,
+  operations: true,
+  procurement: true,
+  service: true,
+  growth: true,
+  federation: true,
 };
 
 interface ProgressItem {
@@ -191,6 +211,11 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           if (itemsError) throw itemsError;
           const { error } = await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
+          // Customer-related extras
+          const { error: addrErr } = await supabase.from('customer_addresses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (addrErr) throw addrErr;
+          const { error: wishErr } = await supabase.from('wishlist_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (wishErr) throw wishErr;
         }
       });
     }
@@ -200,6 +225,8 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'deals',
         label: 'Clearing deals',
         fn: async () => {
+          const { error: actErr } = await supabase.from('deal_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (actErr) throw actErr;
           const { error } = await supabase.from('deals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -209,8 +236,12 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.leads) {
       tasks.push({
         key: 'leads',
-        label: 'Clearing leads',
+        label: 'Clearing leads & CRM tasks',
         fn: async () => {
+          const { error: actErr } = await supabase.from('lead_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (actErr) throw actErr;
+          const { error: taskErr } = await supabase.from('crm_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (taskErr) throw taskErr;
           const { error } = await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -220,8 +251,10 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.companies) {
       tasks.push({
         key: 'companies',
-        label: 'Clearing companies',
+        label: 'Clearing companies & sales intelligence',
         fn: async () => {
+          const { error: siErr } = await supabase.from('sales_intelligence_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (siErr) throw siErr;
           const { error } = await supabase.from('companies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -231,8 +264,17 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.products) {
       tasks.push({
         key: 'products',
-        label: 'Clearing products & consultants',
+        label: 'Clearing products, stock & consultants',
         fn: async () => {
+          // Stock movements + per-product stock first (FK to products)
+          const { error: smErr } = await supabase.from('stock_moves').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (smErr) throw smErr;
+          const { error: psErr } = await supabase.from('product_stock').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (psErr) throw psErr;
+          const { error: bisErr } = await supabase.from('back_in_stock_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (bisErr) throw bisErr;
+          const { error: pcErr } = await supabase.from('product_categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (pcErr) throw pcErr;
           const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
           const { error: cpErr } = await supabase.from('consultant_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -374,6 +416,165 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           // Clear page view analytics
           const { error: pvErr } = await supabase.from('page_views').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (pvErr) throw pvErr;
+        }
+      });
+    }
+
+    // -------------------- HR --------------------
+    if (options.hr) {
+      tasks.push({
+        key: 'hr',
+        label: 'Clearing HR (employees, leave, contracts, recruitment)',
+        fn: async () => {
+          await supabase.from('candidate_notes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('applications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('application_stages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('job_postings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('one_on_ones').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('performance_reviews').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('performance_goals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('onboarding_checklists').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('onboarding_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('leave_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('leave_allocations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vacation_policies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('attendance_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employment_contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employment_contract_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employee_skills').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('employee_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('certifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('skills_catalog').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          const { error } = await supabase.from('employees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (error) throw error;
+        }
+      });
+    }
+
+    // -------------------- Operations --------------------
+    if (options.operations) {
+      tasks.push({
+        key: 'operations',
+        label: 'Clearing projects, tasks, time entries & expenses',
+        fn: async () => {
+          await supabase.from('time_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('project_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('project_members').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expense_attachments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expense_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('handbook_chapters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Procurement & inventory --------------------
+    if (options.procurement) {
+      tasks.push({
+        key: 'procurement',
+        label: 'Clearing vendors, purchase orders & goods receipts',
+        fn: async () => {
+          await supabase.from('goods_receipt_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('goods_receipts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('purchase_order_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('purchase_orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendor_invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendor_products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('vendors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Finance --------------------
+    if (options.finance) {
+      tasks.push({
+        key: 'finance',
+        label: 'Clearing quotes, invoices, accounting & payroll',
+        fn: async () => {
+          await supabase.from('quote_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quotes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('quote_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payment_reconciliations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('dunning_actions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('dunning_sequences').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('reconciliation_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('bank_transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('bank_import_batches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payroll_export_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('payroll_exports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entry_line_taxes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journal_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('journals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('opening_balances').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('accounting_periods').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('accounting_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('chart_of_accounts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_code_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tax_codes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Service --------------------
+    if (options.service) {
+      tasks.push({
+        key: 'service',
+        label: 'Clearing tickets, SLA, contracts, documents & subscriptions',
+        fn: async () => {
+          await supabase.from('ticket_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('support_escalations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('tickets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('support_agents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('sla_violations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('sla_policies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contract_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('subscription_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('subscriptions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_decisions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('approval_rules').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Growth --------------------
+    if (options.growth) {
+      tasks.push({
+        key: 'growth',
+        label: 'Clearing ad campaigns & webinars',
+        fn: async () => {
+          await supabase.from('ad_creatives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('ad_campaigns').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webinars').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      });
+    }
+
+    // -------------------- Federation & integrations --------------------
+    if (options.federation) {
+      tasks.push({
+        key: 'federation',
+        label: 'Clearing federation peers, webhooks & API keys',
+        fn: async () => {
+          await supabase.from('federation_connections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webhook_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('webhooks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('api_keys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('clawable_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('clawable_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('a2a_peers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
       });
     }
@@ -605,6 +806,51 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
                     />
                     <Sparkles className="h-4 w-4 text-muted-foreground" />
                     Engine Room (objectives, memory, activity)
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ERP — People & Ops</p>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.hr} onCheckedChange={(c) => setOptions(p => ({ ...p, hr: !!c }))} />
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    HR (employees, leave, recruitment)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.operations} onCheckedChange={(c) => setOptions(p => ({ ...p, operations: !!c }))} />
+                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                    Projects, time & expenses
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.procurement} onCheckedChange={(c) => setOptions(p => ({ ...p, procurement: !!c }))} />
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    Procurement & inventory
+                  </label>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ERP — Finance & Service</p>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.finance} onCheckedChange={(c) => setOptions(p => ({ ...p, finance: !!c }))} />
+                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                    Quotes, invoices & accounting
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.service} onCheckedChange={(c) => setOptions(p => ({ ...p, service: !!c }))} />
+                    <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+                    Tickets, contracts & subscriptions
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.growth} onCheckedChange={(c) => setOptions(p => ({ ...p, growth: !!c }))} />
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    Growth (ads, webinars)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={options.federation} onCheckedChange={(c) => setOptions(p => ({ ...p, federation: !!c }))} />
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    Federation, webhooks & API keys
                   </label>
                 </div>
               </div>
