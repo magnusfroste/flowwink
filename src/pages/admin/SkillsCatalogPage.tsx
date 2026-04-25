@@ -44,7 +44,7 @@ export default function SkillsCatalogPage() {
         const skillNames = getUnifiedSkillNames(mod.id as keyof ModulesSettings);
         const skills = allSkills.filter(s => skillNames.includes(s.name));
         const isEnabled = enabledModules
-          ? Boolean((enabledModules as Record<string, { enabled?: boolean }>)[mod.id]?.enabled)
+          ? Boolean((enabledModules as unknown as Record<string, { enabled?: boolean }>)[mod.id]?.enabled)
           : true;
         return { ...mod, skills, isEnabled };
       })
@@ -88,17 +88,15 @@ export default function SkillsCatalogPage() {
         <AdminPageHeader
           title="Skills"
           description="Browse every action your agent can perform — grouped by the module that owns it."
-          icon={Sparkles}
-          actions={
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/admin/developer?tab=mcp-skills">
-                <Cpu className="h-3.5 w-3.5 mr-1.5" />
-                Manage in Developer
-                <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
-              </Link>
-            </Button>
-          }
-        />
+        >
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/developer?tab=mcp-skills">
+              <Cpu className="h-3.5 w-3.5 mr-1.5" />
+              Manage in Developer
+              <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
+            </Link>
+          </Button>
+        </AdminPageHeader>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
