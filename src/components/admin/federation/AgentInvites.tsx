@@ -676,6 +676,16 @@ Content-Type: application/json
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {mission.requiredModules && mission.requiredModules.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Requires modules</p>
+                <div className="flex flex-wrap gap-1">
+                  {mission.requiredModules.map(m => (
+                    <Badge key={m} variant="default" className="text-[10px] font-mono">{m}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1.5">Resources</p>
               <div className="flex flex-wrap gap-1">
