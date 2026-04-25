@@ -1,120 +1,75 @@
 import { useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
-import { DEFAULT_FLOWPILOT_BOOTSTRAP } from '@/data/flowpilotDefaults';
 import { useModules } from '@/hooks/useModules';
+import { bootstrapModule } from '@/lib/module-bootstrap';
 
 /**
  * useFlowPilotBootstrap
- * 
- * Idempotent hook that auto-seeds FlowPilot (skills, soul, objectives,
- * automations, workflows, cron jobs) on the first admin session.
- * 
- * Called from AdminLayout — runs once per session.
- * If skills already exist, it's a no-op.
+ *
+ * After the modular refactor, FlowPilot's init is owned by the module system:
+ *   - Toggle FlowPilot module ON in /admin/modules → bootstrapModule('flowpilot')
+ *     seeds soul, identity, agents-rules, tool_policy, starter objectives,
+ *     core skills, and the weekly digest automation.
+ *
+ * This hook now serves as a SAFETY NET only: if FlowPilot is enabled but soul
+ * is missing (e.g. partial install, manual DB edit), it triggers a re-bootstrap
+ * of the module. No more calls to the legacy setup-flowpilot edge function from here.
  */
 export function useFlowPilotBootstrap() {
   const hasTriggered = useRef(false);
   const queryClient = useQueryClient();
   const { data: modules } = useModules();
-  const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? true;
+  const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? false;
 
-  // Check if FlowPilot's soul has been seeded — schema + soul + identity is what
-  // setup-flowpilot owns. Skills are now seeded per-module via bootstrapModule().
-  const { data: soulSeeded, isLoading } = useQuery({
-    queryKey: ['flowpilot-soul-check'],
-    queryFn: async () => {
+  const repair = useMutation({
+    mutationFn: async () => {
+      logger.log('[FlowPilotBootstrap] Soul missing for enabled FlowPilot — running module bootstrap to repair…');
+      if (!modules) throw new Error('Modules settings not loaded');
+      const result = await bootstrapModule('flowpilot', modules);
+      logger.log('[FlowPilotBootstrap] Repair complete:', result);
+
+      // Fire an initial heartbeat so objectives get decomposed quickly
+      try {
+        await supabase.functions.invoke('flowpilot-heartbeat', {
+          body: { time: new Date().toISOString(), trigger: 'auto-repair' },
+        });
+      } catch (hbError) {
+        logger.warn('[FlowPilotBootstrap] Initial heartbeat failed (non-fatal):', hbError);
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-automations'] });
+      queryClient.invalidateQueries({ queryKey: ['agent-memory'] });
+    },
+    onError: (error) => {
+      logger.error('[FlowPilotBootstrap] Repair failed:', error);
+    },
+  });
+
+  useEffect(() => {
+    if (!isFlowPilotEnabled || !modules || hasTriggered.current) return;
+
+    let cancelled = false;
+    (async () => {
       const { data, error } = await supabase
         .from('agent_memory')
         .select('id')
         .eq('key', 'soul')
         .maybeSingle();
-      if (error) throw error;
-      return !!data;
-    },
-    staleTime: 1000 * 60 * 30, // 30 min
-    enabled: isFlowPilotEnabled,
-  });
-
-  const bootstrap = useMutation({
-    mutationFn: async () => {
-      logger.log('[FlowPilotBootstrap] Seeding FlowPilot soul/identity for the first time...');
-
-      // Note: seed_skills is now a no-op in setup-flowpilot — kept true for
-      // backward compatibility with any older deployment that still has
-      // DEFAULT_SKILLS. Skills are seeded per-module by bootstrapModule().
-      const { data, error } = await supabase.functions.invoke('setup-flowpilot', {
-        body: {
-          seed_skills: false,
-          seed_soul: true,
-          template_flowpilot: DEFAULT_FLOWPILOT_BOOTSTRAP,
-        },
-      });
-
-      if (error) throw error;
-
-      logger.log('[FlowPilotBootstrap] Bootstrap complete:', data);
-
-      // Seed AGENTS document (operational rules) if not present
-      try {
-        const { data: existingAgents } = await supabase
-          .from('agent_memory')
-          .select('id')
-          .eq('key', 'agents')
-          .maybeSingle();
-
-        if (!existingAgents) {
-          await supabase.from('agent_memory').insert({
-            key: 'agents',
-            value: {
-              version: '1.0',
-              direct_action_rules: 'When a user asks you to DO something (delete, update, create, fix, clean up), ALWAYS execute it directly using the appropriate skill — NEVER create an automation instead. Only create automations when the user explicitly asks for scheduled/recurring tasks.',
-              self_improvement: 'If a user asks you to do something you can\'t, consider creating a new skill for it. When you notice repetitive tasks, SUGGEST (don\'t auto-create) an automation. Use reflect periodically. Use skill_instruct to enrich skills. Use soul_update for fundamental role insights. Use agents_update for operational rule refinements. Set trust_level: approve for destructive skills, notify for safe-but-visible, auto for low-risk. New automations are disabled by default.',
-              memory_guidelines: 'Save user preferences, facts, and context with memory_write. Check memory before answering questions about the site. memory_read supports semantic search.',
-              browser_rules: 'When a user provides a URL, ALWAYS call browser_fetch. NEVER guess URLs for social profiles. Use search_web first to find correct URLs.',
-              workflow_conventions: 'Use workflow_create for sequential steps with conditional branching. Steps support {{stepId.result.field}} templates. Use on_failure:continue or stop.',
-              a2a_conventions: 'Use delegate_task for subtasks to specialized agents. Built-in specialists: seo, content, sales, analytics, email.',
-              skill_pack_rules: 'Use skill_pack_list to see available packs. Use skill_pack_install for batch installation.',
-            },
-            category: 'preference',
-            created_by: 'flowpilot',
-          });
-          logger.log('[FlowPilotBootstrap] AGENTS document seeded');
-        }
-      } catch (agentsError) {
-        logger.warn('[FlowPilotBootstrap] AGENTS seed failed (non-fatal):', agentsError);
+      if (cancelled || error) return;
+      if (!data) {
+        hasTriggered.current = true;
+        repair.mutate();
       }
+    })();
 
-      // Fire initial heartbeat to decompose objectives
-      try {
-        await supabase.functions.invoke('flowpilot-heartbeat', {
-          body: { time: new Date().toISOString(), trigger: 'auto-bootstrap' },
-        });
-        logger.log('[FlowPilotBootstrap] Initial heartbeat fired');
-      } catch (hbError) {
-        logger.warn('[FlowPilotBootstrap] Initial heartbeat failed (non-fatal):', hbError);
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries so FlowPilot cockpit reflects the new state
-      queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-automations'] });
-      queryClient.invalidateQueries({ queryKey: ['flowpilot-soul-check'] });
-    },
-    onError: (error) => {
-      logger.error('[FlowPilotBootstrap] Failed:', error);
-    },
-  });
-
-  useEffect(() => {
-    if (!isFlowPilotEnabled || isLoading || hasTriggered.current) return;
-    if (soulSeeded === false) {
-      hasTriggered.current = true;
-      bootstrap.mutate();
-    }
-  }, [soulSeeded, isLoading, isFlowPilotEnabled]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isFlowPilotEnabled, modules]);
 }
