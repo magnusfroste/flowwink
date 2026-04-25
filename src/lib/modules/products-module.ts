@@ -194,7 +194,302 @@ Manages product inventory: list stock levels, update quantities, check low-stock
       },
     },
     instructions: 'Get a product catalog snapshot. Identify items to promote or restock.',
+  },,
+  {
+    name: 'lookup_order',
+    description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
+    category: 'crm',
+    handler: 'module:orders',
+    scope: 'both',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'lookup_order',
+        description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'Order ID',
+            },
+            email: {
+              type: 'string',
+              description: 'Customer email',
+            },
+          },
+        },
+      },
+    },
+    instructions: `## lookup_order
+### What
+Looks up order status by order ID or customer email.
+### When to use
+- Visitor asks about their order status in chat
+- Admin needs to check a specific order
+- CRM workflow needs order context
+### Parameters
+- **order_id**: Direct lookup by UUID.
+- **email**: Lookup all orders for a customer email.
+- At least one parameter should be provided.
+### Edge cases
+- Returns multiple orders when searching by email — present the most recent first.
+- Sensitive data: only share order details with the order owner in visitor chat.`,
   },
+  {
+    name: 'manage_orders',
+    description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
+    category: 'commerce',
+    handler: 'module:orders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_orders',
+        description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: [
+                'list',
+                'get',
+                'update_status',
+                'stats',
+              ],
+            },
+            order_id: {
+              type: 'string',
+            },
+            status: {
+              type: 'string',
+            },
+            period: {
+              type: 'string',
+              enum: [
+                'today',
+                'week',
+                'month',
+                'quarter',
+              ],
+            },
+            limit: {
+              type: 'number',
+            },
+          },
+          required: [
+            'action',
+          ],
+        },
+      },
+    },
+    instructions: `## manage_orders
+### What
+Manages e-commerce orders: list, get details, update status, view stats.
+### When to use
+- Admin asks about orders or order status
+- Order fulfillment workflow
+- Business reporting (order stats)
+### Parameters
+- **action**: Required. list, get, update_status, stats.
+- **order_id**: For get/update_status.
+- **status**: New status for update_status.
+- **period**: For stats: today, week, month, quarter.
+### Edge cases
+- Status transitions: pending → processing → shipped → delivered.
+- Stats action returns aggregated revenue and order counts.`,
+  },
+  {
+    name: 'place_order',
+    description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
+    category: 'commerce',
+    handler: 'edge:create-checkout',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'place_order',
+        description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
+        parameters: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  productId: {
+                    type: 'string',
+                  },
+                  productName: {
+                    type: 'string',
+                  },
+                  priceCents: {
+                    type: 'number',
+                  },
+                  quantity: {
+                    type: 'number',
+                  },
+                },
+                required: [
+                  'productId',
+                  'productName',
+                  'priceCents',
+                  'quantity',
+                ],
+              },
+              description: 'Cart items',
+            },
+            customerName: {
+              type: 'string',
+              description: 'Customer name',
+            },
+            customerEmail: {
+              type: 'string',
+              description: 'Customer email',
+            },
+            currency: {
+              type: 'string',
+              description: 'Currency code (default SEK)',
+            },
+          },
+          required: [
+            'items',
+            'customerName',
+            'customerEmail',
+          ],
+        },
+      },
+    },
+    instructions: `## place_order
+### What
+Places an order through the create-checkout edge function. In sandbox mode, completes immediately without payment.
+### When to use
+- External agent (OpenClaw) tests the full purchase flow
+- Programmatic order creation for testing or automation
+### Parameters
+- **items**: Array of {productId, productName, priceCents, quantity}.
+- **customerName**: Buyer name.
+- **customerEmail**: Buyer email.
+- **currency**: ISO currency code (default SEK).
+### Edge cases
+- Sandbox mode auto-detected from module config — no Stripe needed.
+- Always use notify trust level so admin sees orders.`,
+  },
+  {
+    name: 'check_order_status',
+    description: 'Check the status of an existing order by ID. Use when: a user inquires about their purchase; verifying order progress; providing delivery updates. NOT for: managing orders (manage_orders); looking up orders by email (lookup_order).',
+    category: 'commerce',
+    handler: 'edge:order-status',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'check_order_status',
+        description: 'Check the status of an existing order by ID. Use when: a user inquires about their purchase; verifying order progress; providing delivery updates. NOT for: managing orders (manage_orders); looking up orders by email (lookup_order).',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'Order UUID',
+            },
+            email: {
+              type: 'string',
+              description: 'Customer email (for guest verification)',
+            },
+          },
+          required: [
+            'order_id',
+          ],
+        },
+      },
+    },
+    instructions: `## check_order_status
+### What
+Checks the current status of an order via the order-status edge function.
+### When to use
+- External agent wants to verify an order went through
+- Visitor asks about their order in chat
+- Automated follow-up workflows checking fulfillment
+### Parameters
+- **order_id**: The UUID of the order.
+- **email**: Optional email for guest verification.`,
+  },
+  {
+    name: 'cart_recovery_check',
+    description: 'Lists orders with abandoned or incomplete status. Use when: reviewing abandoned carts, recovery campaigns, checking incomplete orders. NOT for: checking specific order status (use check_order).',
+    category: 'crm',
+    handler: 'module:orders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'cart_recovery_check',
+        parameters: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+            },
+            days_back: {
+              type: 'number',
+            },
+          },
+        },
+        description: 'Lists orders with abandoned or incomplete status. Use when: reviewing abandoned carts, recovery campaigns, checking incomplete orders. NOT for: checking specific order status (use check_order).',
+      },
+    },
+    instructions: 'Identify orders needing follow-up. After listing, create a recovery campaign.',
+  },
+  {
+    name: 'send_invoice_for_order',
+    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent — reuses existing invoice for the same order.',
+    category: 'commerce',
+    handler: 'module:orders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_invoice_for_order',
+        description: 'Generate and send an invoice for an existing order. Reuses any existing invoice for the same order.',
+        parameters: {
+          type: 'object',
+          required: [
+            'order_id',
+          ],
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'Order UUID to invoice',
+            },
+            due_days: {
+              type: 'number',
+              description: 'Days until due date (default 14)',
+            },
+            tax_rate: {
+              type: 'number',
+              description: 'Tax rate as decimal e.g. 0.25 for 25% (default 0.25)',
+            },
+            payment_terms: {
+              type: 'string',
+              description: 'Payment terms text (default "Net <due_days>")',
+            },
+            notes: {
+              type: 'string',
+              description: 'Extra notes prepended to the invoice',
+            },
+            dry_run: {
+              type: 'boolean',
+              description: 'If true, returns preview totals without creating the invoice or sending email',
+            },
+          },
+        },
+      },
+    },
+    instructions: 'Builds an invoice from order_items (qty × price_cents), applies tax_rate (default 0.25), marks status=sent, and emails the customer a link to /functions/v1/generate-invoice-pdf. Idempotent via notes "order:<id>". Use dry_run=true to preview totals before sending. Logs invoice_sent to audit_logs.',
+  },,
 ];
 
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
