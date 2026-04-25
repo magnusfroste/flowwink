@@ -144,4 +144,46 @@ export const documentsModule = defineModule<DocumentsInput, DocumentsOutput>({
 
     return { success: false, message: 'Unsupported action' };
   },
-});
+});// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const DOCUMENTS_SKILLS: SkillSeed[] = [
+  {
+    name: 'extract_pdf_text',
+    description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
+    category: 'content',
+    handler: 'edge:extract-pdf-text',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'extract_pdf_text',
+        description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_url: {
+              type: 'string',
+              description: 'Public URL of the PDF file',
+            },
+            storage_path: {
+              type: 'string',
+              description: 'Storage path (bucket/path) of the PDF in media library',
+            },
+          },
+        },
+      },
+    },
+    instructions: `## When to use
+- User attaches a PDF file in chat (you'll see a file URL or storage path)
+- User asks to "read", "parse", or "extract" a PDF
+- Before creating a consultant profile from a resume PDF
+
+## Chaining
+After extracting text from a resume PDF, chain with:
+1. Call parse_resume with the extracted text to get structured data
+2. Call manage_consultant_profile to save the profile
+
+For non-resume PDFs, return the extracted text directly to the user.`,
+  },
+];
+
+

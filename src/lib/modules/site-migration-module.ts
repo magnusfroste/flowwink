@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
@@ -46,6 +47,7 @@ export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigratio
   skills: [
     'migrate_url',
   ],
+  skillSeeds: SITEMIGRATION_SKILLS,
 
   async publish(input: SiteMigrationInput): Promise<SiteMigrationOutput> {
     const validated = siteMigrationInputSchema.parse(input);
@@ -132,4 +134,68 @@ export const siteMigrationMeta = {
     'AI-powered block generation with brand fidelity',
     'Browser Control extension boost (optional)',
   ],
-};
+};// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const SITEMIGRATION_SKILLS: SkillSeed[] = [
+  {
+    name: 'migrate_url',
+    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an existing site in FlowWink. NOT for: creating pages from scratch (use manage_page), adding blocks manually (use create_page_block), scraping for data extraction only (use scrape_url).',
+    category: 'content',
+    handler: 'edge:migrate-page',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'migrate_url',
+        description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an existing site in FlowWink. NOT for: creating pages from scratch (use manage_page), adding blocks manually (use create_page_block), scraping for data extraction only (use scrape_url).',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'The full URL to migrate (e.g. https://example.com)',
+            },
+            pageType: {
+              type: 'string',
+              enum: [
+                'page',
+                'blog',
+                'kb',
+              ],
+              description: 'Target page type (default: page)',
+            },
+            slug: {
+              type: 'string',
+              description: 'Optional target slug override',
+            },
+            title: {
+              type: 'string',
+              description: 'Optional target title override',
+            },
+          },
+          required: [
+            'url',
+          ],
+        },
+      },
+    },
+    instructions: `# Website Migration — Multi-Step Orchestration
+
+## CRITICAL RULE
+After calling migrate_url, you MUST IMMEDIATELY call manage_page with the returned blocks.
+Do NOT only summarize or ask follow-up if page creation has not happened yet.
+
+## Flow (execute tools, don't just describe)
+1. Call migrate_url with URL
+2. Call manage_page with action='create' using returned title + blocks
+3. Confirm page created (capture page_id/slug)
+4. Offer to migrate discovered otherPages
+
+## Required behavior
+- If migrate_url returns blocks: create page directly
+- If migrate_url returns otherPages: list them and ask if user wants bulk migration
+- Preserve source language unless user asks otherwise
+- Never fabricate blocks; use extracted content only`,
+  },
+];
+
+

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { generateSlug, isTiptapDocument } from './helpers';
 import {
@@ -22,6 +23,7 @@ export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput
   skills: [
     'manage_kb_article',
   ],
+  skillSeeds: KB_SKILLS,
 
   webhookEvents: [
     { event: 'kb_article.published', description: 'An article was published' },
@@ -81,4 +83,76 @@ export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-});
+});// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const KB_SKILLS: SkillSeed[] = [
+  {
+    name: 'manage_kb_article',
+    description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
+    category: 'content',
+    handler: 'module:kb',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_kb_article',
+        description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: [
+                'list',
+                'get',
+                'create',
+                'update',
+                'publish',
+                'unpublish',
+              ],
+            },
+            article_id: {
+              type: 'string',
+            },
+            slug: {
+              type: 'string',
+            },
+            title: {
+              type: 'string',
+            },
+            question: {
+              type: 'string',
+            },
+            answer: {
+              type: 'string',
+            },
+            category: {
+              type: 'string',
+            },
+            include_in_chat: {
+              type: 'boolean',
+            },
+          },
+          required: [
+            'action',
+          ],
+        },
+      },
+    },
+    instructions: `## manage_kb_article
+### What
+Manages knowledge base articles: list, get, create, update, publish, unpublish.
+### When to use
+- Admin asks to create or edit FAQ/KB content
+- kb_gap_analysis identifies missing topics
+- Chat finds questions it can't answer → create KB article
+### Parameters
+- **action**: Required. list, get, create, update, publish, unpublish.
+- **title**, **question**, **answer**: For create/update.
+- **include_in_chat**: Boolean — whether the article is used by chat AI.
+### Edge cases
+- Articles with include_in_chat=true are embedded into chat context.
+- Always set a clear question field for chat matching.`,
+  },
+];
+
+

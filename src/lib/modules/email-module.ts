@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,6 +44,7 @@ export const emailModule = defineModule<Input, Output>({
   outputSchema,
 
   skills: ['send_email', 'configure_email_provider', 'preview_email_template'],
+  skillSeeds: EMAIL_SKILLS,
 
   async publish(input: Input): Promise<Output> {
     try {
@@ -63,4 +65,49 @@ export const emailModule = defineModule<Input, Output>({
       };
     }
   },
-});
+});// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const EMAIL_SKILLS: SkillSeed[] = [
+  {
+    name: 'scan_gmail_inbox',
+    description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
+    category: 'communication',
+    handler: 'edge:gmail-inbox-scan',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'scan_gmail_inbox',
+        description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
+        parameters: {
+          type: 'object',
+          properties: {
+            max_messages: {
+              type: 'number',
+              description: 'Max messages to scan (default 20)',
+            },
+            scan_days: {
+              type: 'number',
+              description: 'Days back to scan (default 1)',
+            },
+          },
+        },
+      },
+    },
+    instructions: `## scan_gmail_inbox
+### What
+Scans connected Gmail inbox for business signals — new leads, partnership inquiries, support requests.
+### When to use
+- Part of inbox monitoring automation
+- Admin asks to check recent emails
+- Lead discovery from inbound emails
+### Parameters
+- **max_messages**: Max messages to scan (default 20).
+- **scan_days**: Days back to scan (default 1).
+### Edge cases
+- Requires Google OAuth connection. Returns error if not connected.
+- Only reads — does not send or modify emails.
+- Extracts signals: lead info, meeting requests, support needs.`,
+  },
+];
+
+

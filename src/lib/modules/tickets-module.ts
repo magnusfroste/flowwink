@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
@@ -36,6 +37,7 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   skills: [
     'ticket_triage',
   ],
+  skillSeeds: TICKETS_SKILLS,
 
   async publish(input: TicketModuleInput): Promise<TicketModuleOutput> {
     try {
@@ -68,4 +70,54 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-});
+});// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const TICKETS_SKILLS: SkillSeed[] = [
+  {
+    name: 'ticket_triage',
+    description: 'Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler).',
+    category: 'crm',
+    handler: 'ticket_triage',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ticket_triage',
+        parameters: {
+          type: 'object',
+          required: [
+            'ticket_id',
+          ],
+          properties: {
+            ticket_id: {
+              type: 'string',
+              description: 'UUID of the ticket to triage',
+            },
+            auto_respond: {
+              type: 'boolean',
+              description: 'Whether to auto-respond if KB match found',
+            },
+          },
+        },
+        description: 'Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler).',
+      },
+    },
+    instructions: `You are triaging a support ticket. Follow these steps:
+
+1. CATEGORIZE: Analyze the ticket subject and description to determine the category (bug, feature, question, billing, other) and priority (low, medium, high, urgent).
+
+2. KB MATCH: Search the Knowledge Base for articles that match the ticket content.
+
+3. AUTO-RESPOND: If a KB article provides a clear answer, draft a response and add it as a ticket comment. Set status to waiting.
+
+4. ESCALATE: If no KB match or the issue is complex, set status to open and leave for human agent.
+
+5. UPDATE: Always update the ticket with your determined category and priority.
+
+Rules:
+- Never auto-close tickets
+- Always be empathetic and professional
+- For billing issues, always escalate to human`,
+  },
+];
+
+

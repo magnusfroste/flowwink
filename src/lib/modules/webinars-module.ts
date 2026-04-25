@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import {
   WebinarModuleInput,
@@ -21,6 +22,7 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
     'manage_webinar',
     'register_webinar',
   ],
+  skillSeeds: WEBINARS_SKILLS,
 
   async publish(input: WebinarModuleInput): Promise<WebinarModuleOutput> {
     try {
@@ -54,4 +56,105 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-});
+});// ── Bundled skill definitions (migrated from setup-flowpilot) ──
+const WEBINARS_SKILLS: SkillSeed[] = [
+  {
+    name: 'manage_webinar',
+    description: 'Manage webinars and registrations. Use when: setting up a new webinar; updating webinar details; reviewing registered attendees. NOT for: managing bookings (manage_bookings); creating events (N/A).',
+    category: 'communication',
+    handler: 'module:webinars',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_webinar',
+        description: 'Manage webinars and registrations. Use when: setting up a new webinar; updating webinar details; reviewing registered attendees. NOT for: managing bookings (manage_bookings); creating events (N/A).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: [
+                'list',
+                'create',
+                'update',
+                'registrations',
+              ],
+            },
+            webinar_id: {
+              type: 'string',
+            },
+            title: {
+              type: 'string',
+            },
+          },
+          required: [
+            'action',
+          ],
+        },
+      },
+    },
+    instructions: `## manage_webinar
+### What
+Manages webinars and registrations.
+### When to use
+- Admin creates or manages webinar events
+- Viewing webinar registrations
+### Parameters
+- **action**: Required. list, create, update, registrations.
+- **title**: Webinar title for create.
+### Edge cases
+- Registrations are linked to leads when email matches.`,
+  },
+  {
+    name: 'register_webinar',
+    description: 'Register a visitor for an upcoming webinar. Use when: visitor wants to sign up for a webinar. NOT for: managing webinars (use manage_webinar).',
+    category: 'communication',
+    handler: 'module:webinars',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'register_webinar',
+        parameters: {
+          type: 'object',
+          required: [
+            'action',
+          ],
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Attendee name',
+            },
+            email: {
+              type: 'string',
+              description: 'Attendee email',
+            },
+            phone: {
+              type: 'string',
+              description: 'Optional phone',
+            },
+            action: {
+              enum: [
+                'list_upcoming',
+                'register',
+              ],
+              type: 'string',
+              default: 'list_upcoming',
+            },
+            webinar_id: {
+              type: 'string',
+              description: 'Webinar to register for',
+            },
+          },
+        },
+        description: 'Register a visitor for an upcoming webinar. Use when: visitor wants to sign up for a webinar. NOT for: managing webinars (use manage_webinar).',
+      },
+    },
+    instructions: `## Webinar Registration
+Help visitors register for upcoming webinars. Collect name, email, and optional phone.
+Only show upcoming webinars. Confirm registration details.`,
+  },
+];
+
+
