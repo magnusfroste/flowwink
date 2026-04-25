@@ -77,7 +77,7 @@ export function McpActivityPanel() {
         <CardTitle className="text-base">MCP Activity</CardTitle>
         <CardDescription>
           Recent skill executions initiated by external MCP clients (OpenClaw, ClawWink,
-          Claude Desktop, etc.). FlowPilot's internal activity is shown in the FlowPilot Engine.
+          Claude Desktop, etc.). FlowPilot's internal activity is shown in the FlowPilot cockpit.
         </CardDescription>
       </CardHeader>
       <CardContent>
