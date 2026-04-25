@@ -629,7 +629,7 @@ Content-Type: application/json
                   </SelectItem>
                 ))}
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-1.5">Audit / Review</div>
-                {MISSION_TEMPLATES.filter(t => t.category === 'audit').map(t => (
+                {availableMissions.filter(t => t.category === 'audit').map(t => (
                   <SelectItem key={t.id} value={t.id}>
                     <span className="flex items-center gap-2">
                       {t.icon}
