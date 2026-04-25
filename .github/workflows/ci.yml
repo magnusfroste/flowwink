@@ -39,12 +39,9 @@ jobs:
         run: npm run verify:hr-modules
         continue-on-error: true
 
-      - name: MCP regression (live tools/list)
-        run: npm run test:mcp-regression
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        continue-on-error: true
+      # MCP live regression runs in dedicated workflow (.github/workflows/mcp-regression.yml)
+      # — triggered on module changes + daily cron. Kept out of PR CI to avoid
+      # gating PRs on live edge-function availability.
 
       - name: Timesheet → Invoice regression
         run: npm run test:timesheet-regression
