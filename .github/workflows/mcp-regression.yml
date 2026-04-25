@@ -44,10 +44,11 @@ jobs:
 
       - name: Run MCP regression (handshake + tools/list)
         id: regression
+        # MCP_URL is hardcoded as default in scripts/mcp-regression.ts (publik edge function URL).
+        # Endast MCP_API_KEY behövs som secret — anon-nyckeln finns inte tillgänglig i
+        # Lovable Cloud-projekt på samma sätt som i fristående Supabase-projekt.
         run: npm run test:mcp-regression
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           MCP_API_KEY: ${{ secrets.MCP_API_KEY }}
 
       - name: Open GitHub Issue on regression
