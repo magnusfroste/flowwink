@@ -762,6 +762,141 @@ export type Database = {
         }
         Relationships: []
       }
+      analytic_accounts: {
+        Row: {
+          account_type: string
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          project_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_type?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          project_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          project_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytic_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "analytic_account_balances"
+            referencedColumns: ["analytic_account_id"]
+          },
+          {
+            foreignKeyName: "analytic_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "analytic_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytic_accounts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analytic_lines: {
+        Row: {
+          account_code: string | null
+          amount_cents: number
+          analytic_account_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          entry_date: string
+          id: string
+          journal_entry_id: string | null
+          journal_entry_line_id: string | null
+        }
+        Insert: {
+          account_code?: string | null
+          amount_cents: number
+          analytic_account_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          entry_date: string
+          id?: string
+          journal_entry_id?: string | null
+          journal_entry_line_id?: string | null
+        }
+        Update: {
+          account_code?: string | null
+          amount_cents?: number
+          analytic_account_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          entry_date?: string
+          id?: string
+          journal_entry_id?: string | null
+          journal_entry_line_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytic_lines_analytic_account_id_fkey"
+            columns: ["analytic_account_id"]
+            isOneToOne: false
+            referencedRelation: "analytic_account_balances"
+            referencedColumns: ["analytic_account_id"]
+          },
+          {
+            foreignKeyName: "analytic_lines_analytic_account_id_fkey"
+            columns: ["analytic_account_id"]
+            isOneToOne: false
+            referencedRelation: "analytic_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytic_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytic_lines_journal_entry_line_id_fkey"
+            columns: ["journal_entry_line_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entry_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -8174,6 +8309,28 @@ export type Database = {
       }
     }
     Views: {
+      analytic_account_balances: {
+        Row: {
+          account_type: string | null
+          analytic_account_id: string | null
+          balance_cents: number | null
+          code: string | null
+          first_entry: string | null
+          last_entry: string | null
+          line_count: number | null
+          name: string | null
+          project_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytic_accounts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null
