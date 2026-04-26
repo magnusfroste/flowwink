@@ -92,3 +92,49 @@ export function useDeleteAutomation() {
     onError: () => toast.error('Failed to delete automation'),
   });
 }
+
+/**
+ * Trigger an automation immediately, bypassing the cron schedule.
+ * Calls agent-execute with the automation's skill + arguments, then
+ * updates last_triggered_at + run_count so the UI reflects the run.
+ */
+export function useRunAutomationNow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (auto: AgentAutomation) => {
+      if (!auto.skill_name && !auto.skill_id) {
+        throw new Error('Automation has no skill configured');
+      }
+
+      const { data, error } = await supabase.functions.invoke('agent-execute', {
+        body: {
+          skill_id: auto.skill_id,
+          skill_name: auto.skill_name,
+          arguments: auto.skill_arguments ?? {},
+          agent_type: auto.executor === 'flowpilot' ? 'flowpilot' : 'platform',
+        },
+      });
+
+      if (error) throw error;
+      const errMsg = (data as any)?.error ?? null;
+
+      await supabase
+        .from('agent_automations')
+        .update({
+          last_triggered_at: new Date().toISOString(),
+          run_count: (auto.run_count ?? 0) + 1,
+          last_error: errMsg,
+        } as any)
+        .eq('id', auto.id);
+
+      if (errMsg) throw new Error(errMsg);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success('Automation executed');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Run failed'),
+  });
+}
+
