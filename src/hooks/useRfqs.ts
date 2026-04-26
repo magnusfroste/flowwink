@@ -83,9 +83,9 @@ export function useRfq(id: string | null) {
       if (linesRes.error) throw linesRes.error;
       if (bidsRes.error) throw bidsRes.error;
       return {
-        rfq: rfqRes.data as Rfq,
-        lines: (linesRes.data ?? []) as RfqLine[],
-        bids: (bidsRes.data ?? []) as (RfqBid & { vendors: { name: string; email: string | null; currency: string } | null })[],
+        rfq: rfqRes.data as unknown as Rfq,
+        lines: (linesRes.data ?? []) as unknown as RfqLine[],
+        bids: (bidsRes.data ?? []) as unknown as (RfqBid & { vendors: { name: string; email: string | null; currency: string } | null })[],
       };
     },
   });
