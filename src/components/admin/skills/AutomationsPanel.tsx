@@ -167,6 +167,9 @@ function AutomationCard({
               on: {eventName}
             </Badge>
           )}
+          <Badge variant="outline" className="text-[10px]">
+            via {executorLabels[automation.executor ?? 'platform']}
+          </Badge>
         </div>
 
         {automation.last_error && (
