@@ -12,6 +12,7 @@ import { TaxTab } from '@/components/admin/accounting/TaxTab';
 import { VatReportTab } from '@/components/admin/accounting/VatReportTab';
 import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 import { AnalyticAccountingTab } from '@/components/admin/accounting/AnalyticAccountingTab';
+import { AuditTrailTab } from '@/components/admin/accounting/AuditTrailTab';
 
 export default function AccountingPage() {
   const [tab, setTab] = useState('journal');
