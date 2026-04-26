@@ -33,7 +33,7 @@ type AccountingOutput = z.infer<typeof accountingOutputSchema>;
 const ACCOUNTING_SKILLS: SkillSeed[] = [
   {
     name: 'manage_journal_entry',
-    description: 'Create, list, or void double-entry journal entries (verifikat). Use when: admin asks to book/record a transaction, invoice is paid and needs journal entry, salary/rent/VAT or other recurring transactions, heartbeat detects unbooked invoices. NOT for: reading reports (use accounting_reports), managing templates (use manage_accounting_template).',
+    description: 'Create, list, or void double-entry journal entries (verifikat). Use when: admin asks to book/record a transaction, invoice is paid and needs journal entry, salary/rent/VAT or other recurring transactions, heartbeat detects unbooked invoices. NOT for: reading reports (use accounting_reports), managing templates (use manage_accounting_template). MANDATORY WORKFLOW for create: (1) if a vendor is involved, look up the vendor and prefer its `default_account_code` and `last_used_template_id`; (2) otherwise call manage_accounting_template action=list and rank by keyword overlap × usage_count; (3) only invent accounts if no vendor default and no template scores ≥0.6 — and in that case also call suggest_accounting_template to register the new pattern; (4) ALWAYS pass `template_id` (when matched) and `vendor_id` (when known) so the system can learn.',
     category: 'commerce',
     handler: 'db:journal_entries',
     scope: 'internal',
@@ -41,7 +41,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_journal_entry',
-        description: 'Create or list double-entry journal entries',
+        description: 'Create or list double-entry journal entries. For create, prefer vendor.default_account_code → matching template → suggest new template last.',
         parameters: {
           type: 'object',
           properties: {
@@ -50,13 +50,15 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             entry_date: { type: 'string' },
             lines: { type: 'array', items: { type: 'object', properties: { account_code: { type: 'string' }, account_name: { type: 'string' }, debit_cents: { type: 'number' }, credit_cents: { type: 'number' } } } },
             invoice_id: { type: 'string' },
+            vendor_id: { type: 'string', description: 'Link to vendor — required when booking a supplier transaction so vendor learning fires.' },
+            template_id: { type: 'string', description: 'Link to the accounting_template that guided the booking — usage_count auto-increments.' },
             reference_number: { type: 'string' },
           },
           required: ['action'],
         },
       },
     },
-    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Match accounting templates by keywords when possible. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
+    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
   },
   {
     name: 'accounting_reports',
