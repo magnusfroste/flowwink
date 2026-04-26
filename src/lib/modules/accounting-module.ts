@@ -203,6 +203,66 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'manage_analytic_account',
+    description: 'Create, list, update, or archive analytic accounts (cost centers, projects, departments, campaigns) used to tag journal entries for profitability and per-project reporting. Use when: admin asks to track costs/revenue per project or cost center, set up department budgeting, or analyze campaign ROI. NOT for: actual bookkeeping (use manage_journal_entry), tagging existing entries (use tag_journal_entry_analytics).',
+    category: 'commerce',
+    handler: 'db:analytic_accounts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_analytic_account',
+        description: 'CRUD for analytic accounts (cost centers / projects / departments / campaigns)',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            id: { type: 'string', description: 'Required for get/update/delete' },
+            code: { type: 'string', description: 'Unique short code, e.g. CC-001' },
+            name: { type: 'string' },
+            account_type: { type: 'string', enum: ['cost_center', 'project', 'department', 'campaign', 'other'] },
+            parent_id: { type: 'string', description: 'Optional parent analytic account for hierarchy' },
+            project_id: { type: 'string', description: 'Optional link to a real project' },
+            description: { type: 'string' },
+            is_active: { type: 'boolean' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Use cost_center for departments/teams, project for revenue-bearing engagements, campaign for marketing initiatives. Codes should be short and stable (CC-001, PRJ-2026-A). After creating, journal entries can be tagged via tag_journal_entry_analytics.',
+  },
+  {
+    name: 'tag_journal_entry_analytics',
+    description: 'Tag an existing journal entry line with one or more analytic accounts to attribute the cost/revenue to projects, cost centers, departments or campaigns. Supports splitting (e.g. 60% Project A / 40% Project B). Use when: a posted entry needs project attribution, monthly cost allocation across departments, retroactive tagging of historical entries. NOT for: creating entries (use manage_journal_entry), creating analytic accounts (use manage_analytic_account).',
+    category: 'commerce',
+    handler: 'db:analytic_lines',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'tag_journal_entry_analytics',
+        description: 'Create analytic_lines that tag a journal_entry_line to one or more analytic accounts',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'create', 'delete'] },
+            analytic_account_id: { type: 'string', description: 'Target cost center / project / etc.' },
+            journal_entry_id: { type: 'string' },
+            journal_entry_line_id: { type: 'string' },
+            entry_date: { type: 'string', description: 'YYYY-MM-DD' },
+            account_code: { type: 'string', description: 'Source GL account code, e.g. 5910' },
+            description: { type: 'string' },
+            amount_cents: { type: 'number', description: 'Signed: positive = expense/debit, negative = revenue/credit' },
+            currency: { type: 'string', description: 'ISO code, default SEK' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'For a single 100% tag, create one analytic_line whose amount_cents matches the original JE line (debit positive, credit negative). For splits, create multiple lines that sum to the original amount. Always supply entry_date and account_code from the source JE for accurate reporting.',
+  },
 ];
 
 const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
