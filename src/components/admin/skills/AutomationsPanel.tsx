@@ -382,11 +382,22 @@ function AutomationEditorSheet({
                 id="event-name"
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
-                placeholder="e.g. lead.created, blog.published"
+                placeholder="e.g. lead.created"
                 className="font-mono text-xs"
+                list="canonical-events"
               />
+              <datalist id="canonical-events">
+                <option value="lead.created" />
+                <option value="order.created" />
+                <option value="order.paid" />
+                <option value="deal.won" />
+                <option value="ticket.created" />
+                <option value="booking.created" />
+              </datalist>
               <p className="text-xs text-muted-foreground">
-                Webhook event that triggers this automation.
+                Platform events: <code>lead.created</code>, <code>order.created</code>,{' '}
+                <code>order.paid</code>, <code>deal.won</code>, <code>ticket.created</code>,{' '}
+                <code>booking.created</code>. The event payload is passed as <code>arguments.event</code>.
               </p>
             </div>
           )}

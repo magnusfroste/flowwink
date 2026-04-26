@@ -168,6 +168,9 @@ verify_jwt = false
 [functions.automation-dispatcher]
 verify_jwt = false
 
+[functions.event-dispatcher]
+verify_jwt = false
+
 [functions.browser-fetch]
 verify_jwt = false
 
