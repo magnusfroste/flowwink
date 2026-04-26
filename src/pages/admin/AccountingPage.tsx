@@ -36,6 +36,7 @@ export default function AccountingPage() {
             <TabsTrigger value="vat">VAT Report</TabsTrigger>
             <TabsTrigger value="analytic">Analytic</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
