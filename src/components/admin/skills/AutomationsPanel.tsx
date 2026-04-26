@@ -243,6 +243,7 @@ function AutomationEditorSheet({
   const [signalCondition, setSignalCondition] = useState('');
   const [selectedSkillId, setSelectedSkillId] = useState('');
   const [argsText, setArgsText] = useState('{}');
+  const [executor, setExecutor] = useState<AutomationExecutor>('platform');
 
   useEffect(() => {
     if (open) {
