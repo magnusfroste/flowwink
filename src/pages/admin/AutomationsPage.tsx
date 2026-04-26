@@ -6,6 +6,7 @@
  * run deterministically via the dispatcher even when no AI operator is active.
  */
 
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AutomationsPanel } from '@/components/admin/skills/AutomationsPanel';
@@ -17,8 +18,9 @@ import { Timer, GitBranch, Zap, Activity } from 'lucide-react';
 
 export default function AutomationsPage() {
   return (
-    <AdminPageContainer>
-      <AdminPageHeader
+    <AdminLayout>
+      <AdminPageContainer>
+        <AdminPageHeader
         title="Automations & Workflows"
         description="Schedule skills, react to events, and chain multi-step flows. Runs whether or not FlowPilot is enabled."
       />
