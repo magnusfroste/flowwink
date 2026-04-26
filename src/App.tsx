@@ -35,6 +35,7 @@ import NewsletterPage from "./pages/admin/NewsletterPage";
 import BlogPage from "./pages/admin/BlogPage";
 import BlogPostEditorPage from "./pages/admin/BlogPostEditorPage";
 import ModulesPage from "./pages/admin/ModulesPage";
+import AutomationsPage from "./pages/admin/AutomationsPage";
 import WebhooksPage from "./pages/admin/WebhooksPage";
 import LeadsPage from "./pages/admin/LeadsPage";
 import LeadDetailPage from "./pages/admin/LeadDetailPage";
@@ -245,6 +246,7 @@ const router = createBrowserRouter([
       { path: "/admin/bookings/services", element: <BookingsPage /> },
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
       { path: "/admin/modules", element: <ModulesPage /> },
+      { path: "/admin/automations", element: <AutomationsPage /> },
       { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
       { path: "/admin/webhooks", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },

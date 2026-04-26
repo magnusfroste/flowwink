@@ -32,6 +32,7 @@ export function useUpsertAutomation() {
         skill_name: auto.skill_name ?? null,
         skill_arguments: auto.skill_arguments ?? {},
         enabled: auto.enabled ?? true,
+        executor: auto.executor ?? 'platform',
         created_by: auto.created_by ?? null,
       };
 

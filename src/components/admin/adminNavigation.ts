@@ -132,6 +132,7 @@ export const navigationGroups: NavGroup[] = [
       
       { name: "Templates", href: "/admin/templates", icon: Puzzle, moduleId: "templates" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
+      { name: "Automations", href: "/admin/automations", icon: Zap },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
       

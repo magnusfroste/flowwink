@@ -62,6 +62,37 @@ serve(async (req) => {
         continue;
       }
 
+      const executor = (auto.executor || "platform") as
+        | "platform"
+        | "flowpilot"
+        | "openclaw"
+        | "external";
+
+      // Skip externally-driven automations — those operators poll/listen themselves
+      if (executor === "openclaw" || executor === "external") {
+        results.push({ id: auto.id, name: auto.name, status: "skipped_external", type: "automation" });
+        continue;
+      }
+
+      // For executor='flowpilot' verify the module is enabled — otherwise skip cleanly
+      if (executor === "flowpilot") {
+        const { data: settings } = await supabase
+          .from("site_settings")
+          .select("modules")
+          .maybeSingle();
+        const flowpilotOn = (settings?.modules as any)?.flowpilot?.enabled === true;
+        if (!flowpilotOn) {
+          results.push({ id: auto.id, name: auto.name, status: "skipped_module_off", type: "automation" });
+          // Still advance the schedule so it doesn't fire continuously when re-enabled
+          const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
+          await supabase
+            .from("agent_automations")
+            .update({ next_run_at: calculateNextRun(cronExpr) })
+            .eq("id", auto.id);
+          continue;
+        }
+      }
+
       let status = "success";
       let lastError: string | null = null;
 

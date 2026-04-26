@@ -25,12 +25,19 @@ import {
   useAutomations, useUpsertAutomation, useToggleAutomation, useDeleteAutomation,
 } from '@/hooks/useAutomations';
 import { useSkills } from '@/hooks/useSkillHub';
-import type { AgentAutomation, AutomationTriggerType } from '@/types/agent';
+import type { AgentAutomation, AutomationTriggerType, AutomationExecutor } from '@/types/agent';
 
 const triggerConfig: Record<AutomationTriggerType, { label: string; icon: typeof Timer; color: string }> = {
   cron: { label: 'Cron', icon: Timer, color: 'bg-violet-500/15 text-violet-700 dark:text-violet-400' },
   event: { label: 'Event', icon: Zap, color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
   signal: { label: 'Signal', icon: Radio, color: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400' },
+};
+
+const executorLabels: Record<AutomationExecutor, string> = {
+  platform: 'Platform',
+  flowpilot: 'FlowPilot',
+  openclaw: 'OpenClaw',
+  external: 'External',
 };
 
 export function AutomationsPanel() {
@@ -160,6 +167,9 @@ function AutomationCard({
               on: {eventName}
             </Badge>
           )}
+          <Badge variant="outline" className="text-[10px]">
+            via {executorLabels[automation.executor ?? 'platform']}
+          </Badge>
         </div>
 
         {automation.last_error && (
@@ -233,6 +243,7 @@ function AutomationEditorSheet({
   const [signalCondition, setSignalCondition] = useState('');
   const [selectedSkillId, setSelectedSkillId] = useState('');
   const [argsText, setArgsText] = useState('{}');
+  const [executor, setExecutor] = useState<AutomationExecutor>('platform');
 
   useEffect(() => {
     if (open) {
@@ -245,6 +256,7 @@ function AutomationEditorSheet({
       setSignalCondition((tc as any).condition ? JSON.stringify((tc as any).condition, null, 2) : '');
       setSelectedSkillId(automation?.skill_id ?? '');
       setArgsText(automation?.skill_arguments ? JSON.stringify(automation.skill_arguments, null, 2) : '{}');
+      setExecutor(automation?.executor ?? 'platform');
     }
   }, [open, automation]);
 
@@ -275,6 +287,7 @@ function AutomationEditorSheet({
       skill_name: selectedSkill?.name ?? null,
       skill_arguments,
       enabled: automation?.enabled ?? true,
+      executor,
     });
     onClose();
   };
@@ -325,6 +338,24 @@ function AutomationEditorSheet({
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Executor</Label>
+            <Select value={executor} onValueChange={(v) => setExecutor(v as AutomationExecutor)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="platform">Platform — deterministic skill run</SelectItem>
+                <SelectItem value="flowpilot">FlowPilot — agentic execution</SelectItem>
+                <SelectItem value="openclaw">OpenClaw — external operator</SelectItem>
+                <SelectItem value="external">External — webhook only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Who runs this when it fires. Platform = no AI required.
+            </p>
           </div>
 
           {/* Trigger-specific config */}
