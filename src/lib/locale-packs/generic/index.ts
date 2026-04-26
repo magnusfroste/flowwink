@@ -9,6 +9,7 @@ import type { AccountingLocalePack, PayrollAdapter, BankImportAdapter } from '..
 import { IFRS_ACCOUNTS } from '@/data/accounts-ifrs';
 import { IFRS_TEMPLATES } from '@/data/templates-ifrs';
 import type { PayrollExportRow } from '../types';
+import { saftOecdAdapter, genericCsvExportAdapter } from './export-adapters';
 
 function escapeCsv(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return '';
