@@ -96,6 +96,7 @@ export const ifrsGenericPack: AccountingLocalePack = {
   payroll_adapters: [csvPayroll],
   bank_import_adapters: [camt053, mt940, ofx, csvBank],
   tax_return_adapters: [],
+  accounting_export_adapters: [saftOecdAdapter, genericCsvExportAdapter],
 
   ai_instructions: {
     journal_entry:
