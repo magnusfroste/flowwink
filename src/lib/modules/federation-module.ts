@@ -593,6 +593,52 @@ success, entity type, fulfillment status`,
 | medium | ≥3 | Group into improvement objective |
 | low | any | Monitor |`,
   },
+  {
+    name: 'invite_peer_agent',
+    description: 'Invite a new sub-agent into the FlowWink federation. Auto-generates an MCP API key and registers the peer with full transitive trust (the new peer inherits the inviter\'s toolset_groups). Use when: an external operator (e.g. OpenClaw) needs to recruit a specialist sub-agent for a task; expanding the federation autonomously. NOT for: registering a human-operated peer (use the admin UI); revoking peers.',
+    category: 'system',
+    handler: 'edge:federation-invite-peer',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'invite_peer_agent',
+        description: 'Invite a new sub-agent into the federation. Returns MCP credentials the inviter passes to its sub-agent.',
+        parameters: {
+          type: 'object',
+          required: ['invitee_name'],
+          properties: {
+            invitee_name: { type: 'string', description: 'Display name for the new peer' },
+            invitee_url: { type: 'string', description: 'Optional callback URL where the sub-agent can be reached' },
+            invitee_description: { type: 'string', description: 'What this sub-agent specialises in' },
+            toolset_groups: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: override which MCP toolset groups to grant (defaults to inheriting inviter groups)',
+            },
+            reason: { type: 'string', description: 'Why this peer is being invited (audit log)' },
+          },
+        },
+      },
+    },
+    instructions: `## invite_peer_agent — Recruit Sub-Agents
+
+### What
+Registers a new peer in the FlowWink federation, auto-generates an MCP API key, and inherits the inviter toolset_groups (full transitive trust). The new peer can immediately call MCP tools.
+
+### Trust model
+- **Full transitive**: invitee inherits ALL toolset_groups the inviter has
+- **Orphaned revocation**: if the inviter is revoked, the invitee continues operating
+
+### Returns
+JSON with peer_id and credentials { mcp_api_key, mcp_endpoint, mcp_url_with_groups, authorization_header }.
+
+### How to use the credentials
+Pass the entire credentials object to the sub-agent in its onboarding prompt. It uses the bearer token to authenticate against the MCP endpoint.
+
+### Audit
+Every invitation is logged to peer_invitations with inviter, invitee, granted groups, and reason.`,
+  },
 ];
 
 export const federationModule = defineModule<FederationPeerInput, FederationPeerOutput>({
@@ -615,6 +661,7 @@ export const federationModule = defineModule<FederationPeerInput, FederationPeer
     'queue_beta_test',
     'resolve_finding',
     'scan_beta_findings',
+    'invite_peer_agent',
   ],
   skillSeeds: FEDERATION_SKILLS,
 
