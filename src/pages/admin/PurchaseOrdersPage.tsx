@@ -6,6 +6,7 @@ import { PurchaseOrdersList } from '@/components/admin/purchasing/PurchaseOrders
 import { PurchaseOrderEditor } from '@/components/admin/purchasing/PurchaseOrderEditor';
 import { VendorProductsManager } from '@/components/admin/purchasing/VendorProductsManager';
 import { AutoReorderSettings } from '@/components/admin/purchasing/AutoReorderSettings';
+import { RfqsPanel } from '@/components/admin/purchasing/RfqsPanel';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 
 export default function PurchaseOrdersPage() {
@@ -36,6 +37,7 @@ export default function PurchaseOrdersPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="list">Orders</TabsTrigger>
+            <TabsTrigger value="rfqs">RFQs</TabsTrigger>
             <TabsTrigger value="sourcing">Vendor Sourcing</TabsTrigger>
             <TabsTrigger value="reorder">Auto-Reorder</TabsTrigger>
             {tab === 'editor' && <TabsTrigger value="editor">{editingId ? 'Edit PO' : 'New PO'}</TabsTrigger>}
@@ -43,6 +45,9 @@ export default function PurchaseOrdersPage() {
 
           <TabsContent value="list">
             <PurchaseOrdersList onEdit={openEditor} onNew={() => openEditor(null)} />
+          </TabsContent>
+          <TabsContent value="rfqs">
+            <RfqsPanel />
           </TabsContent>
           <TabsContent value="sourcing">
             <VendorProductsManager />

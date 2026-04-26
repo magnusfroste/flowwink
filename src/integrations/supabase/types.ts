@@ -6703,6 +6703,192 @@ export type Database = {
           },
         ]
       }
+      rfq_bids: {
+        Row: {
+          created_at: string
+          id: string
+          invited_at: string
+          lead_time_days: number | null
+          line_offers: Json
+          notes: string | null
+          payment_terms: string | null
+          rfq_id: string
+          status: Database["public"]["Enums"]["rfq_bid_status"]
+          submitted_at: string | null
+          total_cents: number
+          updated_at: string
+          validity_days: number | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_at?: string
+          lead_time_days?: number | null
+          line_offers?: Json
+          notes?: string | null
+          payment_terms?: string | null
+          rfq_id: string
+          status?: Database["public"]["Enums"]["rfq_bid_status"]
+          submitted_at?: string | null
+          total_cents?: number
+          updated_at?: string
+          validity_days?: number | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_at?: string
+          lead_time_days?: number | null
+          line_offers?: Json
+          notes?: string | null
+          payment_terms?: string | null
+          rfq_id?: string
+          status?: Database["public"]["Enums"]["rfq_bid_status"]
+          submitted_at?: string | null
+          total_cents?: number
+          updated_at?: string
+          validity_days?: number | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_bids_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_bids_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          position: number
+          product_id: string | null
+          quantity: number
+          rfq_id: string
+          target_unit_price_cents: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          rfq_id: string
+          target_unit_price_cents?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          rfq_id?: string
+          target_unit_price_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_lines_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfqs: {
+        Row: {
+          awarded_po_id: string | null
+          awarded_vendor_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          expected_delivery: string | null
+          id: string
+          issue_date: string
+          notes: string | null
+          response_deadline: string | null
+          rfq_number: string
+          status: Database["public"]["Enums"]["rfq_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          awarded_po_id?: string | null
+          awarded_vendor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          expected_delivery?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          response_deadline?: string | null
+          rfq_number: string
+          status?: Database["public"]["Enums"]["rfq_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          awarded_po_id?: string | null
+          awarded_vendor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          expected_delivery?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          response_deadline?: string | null
+          rfq_number?: string
+          status?: Database["public"]["Enums"]["rfq_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfqs_awarded_po_id_fkey"
+            columns: ["awarded_po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_awarded_vendor_id_fkey"
+            columns: ["awarded_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_intelligence_profiles: {
         Row: {
           created_at: string
@@ -7652,9 +7838,12 @@ export type Database = {
           lead_time_days: number | null
           min_order_quantity: number | null
           notes: string | null
+          price_tier_min_qty: number
           product_id: string
           unit_price_cents: number
           updated_at: string
+          valid_from: string | null
+          valid_until: string | null
           vendor_id: string
           vendor_sku: string | null
         }
@@ -7666,9 +7855,12 @@ export type Database = {
           lead_time_days?: number | null
           min_order_quantity?: number | null
           notes?: string | null
+          price_tier_min_qty?: number
           product_id: string
           unit_price_cents?: number
           updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
           vendor_id: string
           vendor_sku?: string | null
         }
@@ -7680,9 +7872,12 @@ export type Database = {
           lead_time_days?: number | null
           min_order_quantity?: number | null
           notes?: string | null
+          price_tier_min_qty?: number
           product_id?: string
           unit_price_cents?: number
           updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
           vendor_id?: string
           vendor_sku?: string | null
         }
@@ -8056,6 +8251,7 @@ export type Database = {
           vendor_name: string
         }[]
       }
+      award_rfq: { Args: { _bid_id: string; _rfq_id: string }; Returns: string }
       bulk_invoice_from_timesheets: {
         Args: {
           p_due_days?: number
@@ -8791,6 +8987,19 @@ export type Database = {
         | "viewed"
         | "cancelled"
       renewal_type: "none" | "auto" | "manual"
+      rfq_bid_status:
+        | "pending"
+        | "submitted"
+        | "awarded"
+        | "rejected"
+        | "withdrawn"
+      rfq_status:
+        | "draft"
+        | "sent"
+        | "bidding"
+        | "closed"
+        | "awarded"
+        | "cancelled"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
       subscription_status:
@@ -9081,6 +9290,21 @@ export const Constants = {
         "cancelled",
       ],
       renewal_type: ["none", "auto", "manual"],
+      rfq_bid_status: [
+        "pending",
+        "submitted",
+        "awarded",
+        "rejected",
+        "withdrawn",
+      ],
+      rfq_status: [
+        "draft",
+        "sent",
+        "bidding",
+        "closed",
+        "awarded",
+        "cancelled",
+      ],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
       subscription_status: [
