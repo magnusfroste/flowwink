@@ -18,6 +18,7 @@ import {
 } from '@/hooks/useRecruitment';
 import { cn } from '@/lib/utils';
 import { CandidateMatchOverlay } from '@/components/admin/recruitment/CandidateMatchOverlay';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 function scoreColor(score: number | null) {
   if (score == null) return 'bg-muted text-muted-foreground';
@@ -44,22 +45,26 @@ export default function CandidatePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-5xl space-y-4 p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <AdminLayout>
+        <div className="container mx-auto max-w-5xl space-y-4 p-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </AdminLayout>
     );
   }
 
   if (!data) {
     return (
-      <div className="container mx-auto max-w-5xl p-6">
-        <Button variant="ghost" onClick={() => navigate('/admin/recruitment')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-        <p className="mt-4 text-muted-foreground">Candidate not found.</p>
-      </div>
+      <AdminLayout>
+        <div className="container mx-auto max-w-5xl p-6">
+          <Button variant="ghost" onClick={() => navigate('/admin/recruitment')}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+          <p className="mt-4 text-muted-foreground">Candidate not found.</p>
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -67,7 +72,8 @@ export default function CandidatePage() {
   const rec = recommendation(data.ai_score);
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-6">
+    <AdminLayout>
+      <div className="container mx-auto max-w-5xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/recruitment')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to pipeline
