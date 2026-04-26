@@ -265,6 +265,64 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     },
     instructions: 'For a single 100% tag, create one analytic_line whose amount_cents matches the original JE line (debit positive, credit negative). For splits, create multiple lines that sum to the original amount. Always supply entry_date and account_code from the source JE for accurate reporting.',
   },
+  {
+    name: 'manage_vendor_defaults',
+    description: 'Read or update a vendor\'s autokontering defaults — `default_account_code` (e.g. 6540 for IT-tjänster), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
+    category: 'commerce',
+    handler: 'db:vendors',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_vendor_defaults',
+        description: 'Get or update a vendor\'s default bookkeeping settings (Visma-style autokontering).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['get', 'update'] },
+            id: { type: 'string', description: 'Vendor id (required).' },
+            default_account_code: { type: 'string' },
+            default_vat_code: { type: 'string' },
+            default_description: { type: 'string' },
+            last_used_template_id: { type: 'string' },
+          },
+          required: ['action', 'id'],
+        },
+      },
+    },
+    instructions: 'When you book a vendor invoice for the first time without an existing default, ALWAYS call this with action=update afterwards so future invoices auto-route correctly. When you start to book a vendor invoice, call action=get first to see if a default already exists.',
+  },
+  {
+    name: 'record_accounting_correction',
+    description: 'Record that a manually-corrected journal entry differed from what was originally booked (auto or by template). This is the learning signal — every call makes the agent smarter for similar future transactions. Use when: a user edits an account_code on an existing JE line, OR the agent itself notices its previous booking was wrong and re-books. NOT for: original bookings (use manage_journal_entry).',
+    category: 'commerce',
+    handler: 'db:accounting_corrections',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_accounting_correction',
+        description: 'Append a correction row so the agent can learn from past mistakes.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list'] },
+            journal_entry_id: { type: 'string' },
+            vendor_id: { type: 'string' },
+            description_pattern: { type: 'string' },
+            original_account_code: { type: 'string' },
+            corrected_account_code: { type: 'string' },
+            original_vat_code: { type: 'string' },
+            corrected_vat_code: { type: 'string' },
+            reason: { type: 'string' },
+            agent_source: { type: 'string', enum: ['openclaw', 'flowpilot', 'manual', 'template'] },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Before booking a similar transaction (same vendor or similar description), call action=list with vendor_id or description_pattern to fetch prior corrections — these override template defaults.',
+  },
 ];
 
 const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
