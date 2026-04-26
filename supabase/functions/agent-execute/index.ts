@@ -5269,6 +5269,21 @@ async function executeDbAction(
     case 'vendors': {
       const { action = 'list' } = args as any;
 
+      // Allow `id` as alias for `vendor_id` so MCP-style { action, id, ...defaults } works
+      if ((args as any).id && !(args as any).vendor_id) {
+        (args as any).vendor_id = (args as any).id;
+      }
+
+      // ── GET single vendor (incl. autokontering defaults) ──
+      if (action === 'get') {
+        const vendor_id = (args as any).vendor_id;
+        if (!vendor_id) throw new Error('id (vendor_id) is required for get');
+        const { data, error } = await supabase.from('vendors')
+          .select('*').eq('id', vendor_id).maybeSingle();
+        if (error) throw new Error(`Get vendor failed: ${error.message}`);
+        return { vendor: data };
+      }
+
       if (action === 'list') {
         const { search, is_active, limit = 50 } = args as any;
         let query = supabase.from('vendors')
