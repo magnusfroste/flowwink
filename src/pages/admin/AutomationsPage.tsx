@@ -58,6 +58,7 @@ export default function AutomationsPage() {
           <AutomationHealthPanel />
         </TabsContent>
       </Tabs>
-    </AdminPageContainer>
+      </AdminPageContainer>
+    </AdminLayout>
   );
 }
