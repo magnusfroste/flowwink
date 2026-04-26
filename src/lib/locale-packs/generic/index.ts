@@ -9,6 +9,7 @@ import type { AccountingLocalePack, PayrollAdapter, BankImportAdapter } from '..
 import { IFRS_ACCOUNTS } from '@/data/accounts-ifrs';
 import { IFRS_TEMPLATES } from '@/data/templates-ifrs';
 import type { PayrollExportRow } from '../types';
+import { saftOecdAdapter, genericCsvExportAdapter } from './export-adapters';
 
 function escapeCsv(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return '';
@@ -96,6 +97,7 @@ export const ifrsGenericPack: AccountingLocalePack = {
   payroll_adapters: [csvPayroll],
   bank_import_adapters: [camt053, mt940, ofx, csvBank],
   tax_return_adapters: [],
+  accounting_export_adapters: [saftOecdAdapter, genericCsvExportAdapter],
 
   ai_instructions: {
     journal_entry:

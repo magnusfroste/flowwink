@@ -13,6 +13,8 @@ import type {
 import { BAS_2024_ACCOUNTS } from '@/data/bas2024-accounts';
 import { BAS_2024_TEMPLATES } from '@/data/templates-bas2024';
 import { generatePAXml, generateFortnoxCSV } from '@/hooks/usePayroll';
+import { sie4Adapter } from './sie4-adapter';
+import { genericCsvExportAdapter } from '../generic/export-adapters';
 
 const paxmlAdapter: PayrollAdapter = {
   id: 'paxml',
@@ -84,6 +86,7 @@ export const sePack: AccountingLocalePack = {
   payroll_adapters: [paxmlAdapter, fortnoxCsvAdapter],
   bank_import_adapters: [sieAdapter, camt053Adapter, csvBankAdapter],
   tax_return_adapters: [vatReturnAdapter],
+  accounting_export_adapters: [sie4Adapter, genericCsvExportAdapter],
 
   ai_instructions: {
     journal_entry:

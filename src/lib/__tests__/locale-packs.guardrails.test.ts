@@ -37,6 +37,14 @@ describe('Accounting locale-pack contract', () => {
       expect(pack.payroll_adapters.length, `${pack.id} payroll`).toBeGreaterThan(0);
       expect(pack.bank_import_adapters.length, `${pack.id} bank import`).toBeGreaterThan(0);
 
+      // Every pack must expose at least one standardised accounting export
+      // (SIE in SE, DATEV in DE, FEC in FR, SAF-T in NO/PT, OECD SAF-T as
+      // generic baseline) so auditors / migrations always have a path out.
+      expect(
+        pack.accounting_export_adapters.length,
+        `${pack.id} accounting export`,
+      ).toBeGreaterThan(0);
+
       // AI instructions cover the three modules that ask the agent to book
       expect(pack.ai_instructions.journal_entry).toBeTruthy();
       expect(pack.ai_instructions.invoicing).toBeTruthy();
@@ -49,18 +57,21 @@ describe('Accounting locale-pack contract', () => {
     expect(getPack(null).id).toBe(DEFAULT_LOCALE_ID);
   });
 
-  it('SE pack exposes PAXml and SIE so Swedish payroll/bank flows still work', () => {
+  it('SE pack exposes PAXml, SIE bank import and SIE 4 export', () => {
     const se = getPack('se-bas2024');
     expect(se.payroll_adapters.find((a) => a.id === 'paxml')).toBeDefined();
     expect(se.bank_import_adapters.find((a) => a.id === 'sie')).toBeDefined();
+    expect(se.accounting_export_adapters.find((a) => a.id === 'sie4')).toBeDefined();
     expect(se.currency.code).toBe('SEK');
     expect(se.vat.default_rate).toBe(0.25);
   });
 
-  it('Generic IFRS pack does NOT assume Swedish-specific formats', () => {
+  it('Generic IFRS pack does NOT assume Swedish-specific formats but offers OECD SAF-T', () => {
     const generic = getPack('ifrs-generic');
     expect(generic.payroll_adapters.find((a) => a.id === 'paxml')).toBeUndefined();
     expect(generic.bank_import_adapters.find((a) => a.id === 'sie')).toBeUndefined();
+    expect(generic.accounting_export_adapters.find((a) => a.id === 'sie4')).toBeUndefined();
+    expect(generic.accounting_export_adapters.find((a) => a.id === 'saft-oecd')).toBeDefined();
     expect(generic.vat.default_rate).toBe(0);
   });
 });
