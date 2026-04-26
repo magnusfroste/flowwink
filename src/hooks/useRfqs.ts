@@ -105,14 +105,14 @@ export function useCreateRfq() {
     }) => {
       const { data: rfq, error: rfqErr } = await supabase
         .from('rfqs')
-        .insert({
+        .insert([{
           title: input.title,
           description: input.description,
           response_deadline: input.response_deadline,
           expected_delivery: input.expected_delivery,
           currency: input.currency ?? 'SEK',
-          status: 'draft',
-        })
+          status: 'draft' as const,
+        }])
         .select()
         .single();
       if (rfqErr) throw rfqErr;
