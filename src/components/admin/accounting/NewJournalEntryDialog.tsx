@@ -181,16 +181,17 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
 
           {/* Lines */}
           <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_1fr_120px_120px_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
+            <div className="grid grid-cols-[1fr_1fr_110px_110px_140px_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
               <span>Account</span>
               <span>Description</span>
               <span className="text-right">Debit</span>
               <span className="text-right">Credit</span>
+              <span>Analytic</span>
               <span></span>
             </div>
 
             {lines.map((line, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_120px_120px_auto] gap-2">
+              <div key={i} className="grid grid-cols-[1fr_1fr_110px_110px_140px_auto] gap-2">
                 <Select
                   value={line.account_code}
                   onValueChange={(val) => handleAccountSelect(i, val)}
@@ -238,6 +239,25 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
                   placeholder="0.00"
                   className="text-right text-sm"
                 />
+                <Select
+                  value={line.analytic_account_id ?? 'none'}
+                  onValueChange={(val) =>
+                    updateLine(i, { analytic_account_id: val === 'none' ? null : val })
+                  }
+                  disabled={!analyticAccounts || analyticAccounts.length === 0}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="none">— None —</SelectItem>
+                    {analyticAccounts?.map((aa) => (
+                      <SelectItem key={aa.id} value={aa.id}>
+                        {aa.code} — {aa.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   variant="ghost"
                   size="icon"
