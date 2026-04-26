@@ -9,6 +9,7 @@ import { useCreateJournalEntry, useJournals } from '@/hooks/useAccounting';
 import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccounting';
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
+import { useAnalyticAccounts } from '@/hooks/useAnalyticAccounting';
 
 interface LineInput {
   account_code: string;
@@ -16,6 +17,7 @@ interface LineInput {
   debit_cents: number;
   credit_cents: number;
   description: string;
+  analytic_account_id: string | null;
 }
 
 const emptyLine = (): LineInput => ({
@@ -24,6 +26,7 @@ const emptyLine = (): LineInput => ({
   debit_cents: 0,
   credit_cents: 0,
   description: '',
+  analytic_account_id: null,
 });
 
 interface Props {
@@ -43,6 +46,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const { data: accounts } = useChartOfAccounts(locale);
   const { data: templates } = useAccountingTemplates(locale);
   const { data: journals } = useJournals();
+  const { data: analyticAccounts } = useAnalyticAccounts(true);
 
   const updateLine = (index: number, updates: Partial<LineInput>) => {
     setLines((prev) =>
@@ -85,7 +89,16 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
       description,
       reference_number: reference || undefined,
       journal_id: journalId || undefined,
-      lines: lines.filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0)),
+      lines: lines
+        .filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0))
+        .map((l) => ({
+          account_code: l.account_code,
+          account_name: l.account_name,
+          debit_cents: l.debit_cents,
+          credit_cents: l.credit_cents,
+          description: l.description,
+          analytic_account_id: l.analytic_account_id,
+        })),
     });
     onOpenChange(false);
     // Reset form
