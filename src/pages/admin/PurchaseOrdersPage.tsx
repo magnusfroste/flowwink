@@ -37,6 +37,7 @@ export default function PurchaseOrdersPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="list">Orders</TabsTrigger>
+            <TabsTrigger value="rfqs">RFQs</TabsTrigger>
             <TabsTrigger value="sourcing">Vendor Sourcing</TabsTrigger>
             <TabsTrigger value="reorder">Auto-Reorder</TabsTrigger>
             {tab === 'editor' && <TabsTrigger value="editor">{editingId ? 'Edit PO' : 'New PO'}</TabsTrigger>}
@@ -44,6 +45,9 @@ export default function PurchaseOrdersPage() {
 
           <TabsContent value="list">
             <PurchaseOrdersList onEdit={openEditor} onNew={() => openEditor(null)} />
+          </TabsContent>
+          <TabsContent value="rfqs">
+            <RfqsPanel />
           </TabsContent>
           <TabsContent value="sourcing">
             <VendorProductsManager />
