@@ -82,7 +82,7 @@ export function RfqsPanel() {
 
 // ─────────────────────────────────────────────────────────────
 function CreateRfqDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const { vendors } = usePurchasing();
+  const { data: vendors = [] } = useVendors(true);
   const createRfq = useCreateRfq();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
