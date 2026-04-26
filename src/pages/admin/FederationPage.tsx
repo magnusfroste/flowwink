@@ -43,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useDeleteA2APeer, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import { InvitationTree } from '@/components/admin/federation/InvitationTree';
 
 export default function FederationPage() {
   const { toast } = useToast();
