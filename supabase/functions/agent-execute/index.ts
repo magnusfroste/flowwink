@@ -5849,6 +5849,7 @@ async function executeGenericCrud(
   table: string,
   skillName: string,
   args: Record<string, unknown>,
+  auditCtx?: AuditContext,
 ): Promise<unknown> {
   // Defensive: re-normalize in case caller bypassed the top-level normalizer
   // (e.g. nested data:{} that survived). Never let `data` reach insert().
@@ -5867,6 +5868,18 @@ async function executeGenericCrud(
   }
 
   const { action = 'list', id, ...fields } = args as any;
+  const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);
+
+  // Sanitize payload for audit (remove agent-internal _ fields)
+  const auditPayload: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(args)) if (!k.startsWith('_')) auditPayload[k] = v;
+
+  // Helper to capture "before" snapshot for update/delete
+  const getBefore = async (): Promise<any> => {
+    if (!auditEnabled || !id) return null;
+    const { data } = await supabase.from(table).select('*').eq('id', id).maybeSingle();
+    return data || null;
+  };
 
   try {
     switch (action) {
@@ -5876,7 +5889,6 @@ async function executeGenericCrud(
           .order(order_by, { ascending })
           .range(offset, offset + limit - 1);
 
-        // Apply simple equality filters: { status: 'active', department: 'IT' }
         if (filters && typeof filters === 'object') {
           for (const [col, val] of Object.entries(filters)) {
             query = query.eq(col, val);
@@ -5897,51 +5909,102 @@ async function executeGenericCrud(
 
       case 'create': {
         const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...insertData } = fields;
-        // Strip internal underscore-prefixed fields (e.g. _caller_user_id, _approved)
-        // so they never reach the DB layer (no such columns exist on most tables).
         const cleanInsert = stripInternalFields(insertData);
-        // Map _caller_user_id → created_by when the column likely exists
         if ((insertData as any)._caller_user_id && !cleanInsert.created_by) {
           cleanInsert.created_by = (insertData as any)._caller_user_id;
         }
-        const { data, error } = await supabase.from(table).insert(cleanInsert).select().single();
-        if (error) {
-          // If created_by doesn't exist on this table, retry without it
-          if (error.message?.includes('created_by')) {
-            delete cleanInsert.created_by;
-            const { data: d2, error: e2 } = await supabase.from(table).insert(cleanInsert).select().single();
-            if (e2) throw new Error(`Create ${table} failed: ${e2.message}`);
-            return { created: true, item: d2, table };
+        let createdItem: any;
+        try {
+          const { data, error } = await supabase.from(table).insert(cleanInsert).select().single();
+          if (error) {
+            if (error.message?.includes('created_by')) {
+              delete cleanInsert.created_by;
+              const { data: d2, error: e2 } = await supabase.from(table).insert(cleanInsert).select().single();
+              if (e2) throw new Error(`Create ${table} failed: ${e2.message}`);
+              createdItem = d2;
+            } else {
+              throw new Error(`Create ${table} failed: ${error.message}`);
+            }
+          } else {
+            createdItem = data;
           }
-          throw new Error(`Create ${table} failed: ${error.message}`);
+        } catch (e: any) {
+          if (auditEnabled) {
+            await writeAuditTrail(supabase, {
+              ctx: auditCtx!, table, crud_action: 'create',
+              request_payload: auditPayload, success: false, error_message: e.message,
+            });
+          }
+          throw e;
         }
-        return { created: true, item: data, table };
+        if (auditEnabled) {
+          await writeAuditTrail(supabase, {
+            ctx: auditCtx!, table, crud_action: 'create',
+            entity_id: createdItem?.id, request_payload: auditPayload,
+            before: null, after: createdItem, success: true,
+          });
+        }
+        return { created: true, item: createdItem, table };
       }
 
       case 'update': {
         if (!id) return { error: 'id is required for update action' };
+        const before = await getBefore();
         const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...updateData } = fields;
-        // Strip internal underscore-prefixed fields (e.g. _caller_user_id, _approved)
         const cleanUpdate = stripInternalFields(updateData);
         cleanUpdate.updated_at = new Date().toISOString();
-        const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
-        if (error) {
-          // If updated_at doesn't exist on the table, retry without it
-          if (error.message?.includes('updated_at')) {
-            delete cleanUpdate.updated_at;
-            const { data: d2, error: e2 } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
-            if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
-            return { updated: true, item: d2, table };
+        let updatedItem: any;
+        try {
+          const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
+          if (error) {
+            if (error.message?.includes('updated_at')) {
+              delete cleanUpdate.updated_at;
+              const { data: d2, error: e2 } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
+              if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
+              updatedItem = d2;
+            } else {
+              throw new Error(`Update ${table} failed: ${error.message}`);
+            }
+          } else {
+            updatedItem = data;
           }
-          throw new Error(`Update ${table} failed: ${error.message}`);
+        } catch (e: any) {
+          if (auditEnabled) {
+            await writeAuditTrail(supabase, {
+              ctx: auditCtx!, table, crud_action: 'update', entity_id: id,
+              request_payload: auditPayload, before, success: false, error_message: e.message,
+            });
+          }
+          throw e;
         }
-        return { updated: true, item: data, table };
+        if (auditEnabled) {
+          await writeAuditTrail(supabase, {
+            ctx: auditCtx!, table, crud_action: 'update', entity_id: id,
+            request_payload: auditPayload, before, after: updatedItem, success: true,
+          });
+        }
+        return { updated: true, item: updatedItem, table };
       }
 
       case 'delete': {
         if (!id) return { error: 'id is required for delete action' };
+        const before = await getBefore();
         const { error } = await supabase.from(table).delete().eq('id', id);
-        if (error) throw new Error(`Delete ${table} failed: ${error.message}`);
+        if (error) {
+          if (auditEnabled) {
+            await writeAuditTrail(supabase, {
+              ctx: auditCtx!, table, crud_action: 'delete', entity_id: id,
+              request_payload: auditPayload, before, success: false, error_message: error.message,
+            });
+          }
+          throw new Error(`Delete ${table} failed: ${error.message}`);
+        }
+        if (auditEnabled) {
+          await writeAuditTrail(supabase, {
+            ctx: auditCtx!, table, crud_action: 'delete', entity_id: id,
+            request_payload: auditPayload, before, after: null, success: true,
+          });
+        }
         return { deleted: true, id, table };
       }
 
