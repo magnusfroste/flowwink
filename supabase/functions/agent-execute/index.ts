@@ -4262,6 +4262,7 @@ async function executeDbAction(
   table: string,
   skillName: string,
   args: Record<string, unknown>,
+  auditCtx?: AuditContext,
 ): Promise<unknown> {
   // Defensive normalize — guarantees `data:{}` is always unwrapped
   args = normalizeSkillArgs(args as Record<string, unknown>);
