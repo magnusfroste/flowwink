@@ -462,6 +462,39 @@ export type Database = {
           },
         ]
       }
+      agent_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          last_error: string | null
+          payload: Json
+          processed_at: string | null
+          processed_count: number
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_count?: number
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_count?: number
+          source?: string
+        }
+        Relationships: []
+      }
       agent_locks: {
         Row: {
           expires_at: string
@@ -8137,6 +8170,10 @@ export type Database = {
           signal_name: string
         }
         Returns: undefined
+      }
+      emit_platform_event: {
+        Args: { _event_name: string; _payload?: Json; _source?: string }
+        Returns: string
       }
       evaluate_approval_required: {
         Args: {
