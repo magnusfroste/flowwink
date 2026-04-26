@@ -174,7 +174,7 @@ export function useSubmitBid() {
       const { error } = await supabase
         .from('rfq_bids')
         .update({
-          line_offers: input.line_offers,
+          line_offers: input.line_offers as any,
           lead_time_days: input.lead_time_days,
           payment_terms: input.payment_terms,
           validity_days: input.validity_days,
