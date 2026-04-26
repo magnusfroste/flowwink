@@ -183,6 +183,7 @@ export interface CreateJournalEntryInput {
     debit_cents: number;
     credit_cents: number;
     description?: string;
+    analytic_account_id?: string | null;
   }[];
 }
 
@@ -214,7 +215,7 @@ export function useCreateJournalEntry() {
         .single();
       if (entryError) throw entryError;
 
-      const { error: linesError } = await supabase
+      const { data: insertedLines, error: linesError } = await supabase
         .from('journal_entry_lines')
         .insert(
           input.lines.map((l) => ({
@@ -225,14 +226,39 @@ export function useCreateJournalEntry() {
             credit_cents: l.credit_cents,
             description: l.description || null,
           }))
-        );
+        )
+        .select();
       if (linesError) throw linesError;
+
+      // Create analytic_lines for any tagged JE lines
+      const analyticRows: any[] = [];
+      (insertedLines ?? []).forEach((row, i) => {
+        const src = input.lines[i];
+        if (!src?.analytic_account_id) return;
+        const amount = src.debit_cents - src.credit_cents; // debit positive (cost), credit negative (revenue)
+        if (amount === 0) return;
+        analyticRows.push({
+          analytic_account_id: src.analytic_account_id,
+          journal_entry_line_id: row.id,
+          journal_entry_id: entry.id,
+          entry_date: input.entry_date,
+          account_code: src.account_code,
+          description: src.description || input.description,
+          amount_cents: amount,
+        });
+      });
+      if (analyticRows.length) {
+        const { error: alErr } = await (supabase as any).from('analytic_lines').insert(analyticRows);
+        if (alErr) throw alErr;
+      }
 
       return entry;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       queryClient.invalidateQueries({ queryKey: ['account-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['analytic-lines'] });
+      queryClient.invalidateQueries({ queryKey: ['analytic-balances'] });
       toast({ title: 'Journal entry created' });
     },
     onError: (err: Error) => {

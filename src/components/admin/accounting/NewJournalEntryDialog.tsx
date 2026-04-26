@@ -9,6 +9,7 @@ import { useCreateJournalEntry, useJournals } from '@/hooks/useAccounting';
 import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccounting';
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
+import { useAnalyticAccounts } from '@/hooks/useAnalyticAccounting';
 
 interface LineInput {
   account_code: string;
@@ -16,6 +17,7 @@ interface LineInput {
   debit_cents: number;
   credit_cents: number;
   description: string;
+  analytic_account_id: string | null;
 }
 
 const emptyLine = (): LineInput => ({
@@ -24,6 +26,7 @@ const emptyLine = (): LineInput => ({
   debit_cents: 0,
   credit_cents: 0,
   description: '',
+  analytic_account_id: null,
 });
 
 interface Props {
@@ -43,6 +46,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const { data: accounts } = useChartOfAccounts(locale);
   const { data: templates } = useAccountingTemplates(locale);
   const { data: journals } = useJournals();
+  const { data: analyticAccounts } = useAnalyticAccounts(true);
 
   const updateLine = (index: number, updates: Partial<LineInput>) => {
     setLines((prev) =>
@@ -63,12 +67,13 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
     if (!template) return;
 
     setDescription(template.template_name);
-    const templateLines = (template.template_lines as TemplateLine[]).map((tl) => ({
+    const templateLines: LineInput[] = (template.template_lines as TemplateLine[]).map((tl) => ({
       account_code: tl.account_code,
       account_name: tl.account_name,
       debit_cents: 0,
       credit_cents: 0,
       description: tl.description,
+      analytic_account_id: null,
     }));
     setLines(templateLines);
   };
@@ -85,7 +90,16 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
       description,
       reference_number: reference || undefined,
       journal_id: journalId || undefined,
-      lines: lines.filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0)),
+      lines: lines
+        .filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0))
+        .map((l) => ({
+          account_code: l.account_code,
+          account_name: l.account_name,
+          debit_cents: l.debit_cents,
+          credit_cents: l.credit_cents,
+          description: l.description,
+          analytic_account_id: l.analytic_account_id,
+        })),
     });
     onOpenChange(false);
     // Reset form
@@ -167,16 +181,17 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
 
           {/* Lines */}
           <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_1fr_120px_120px_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
+            <div className="grid grid-cols-[1fr_1fr_110px_110px_140px_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
               <span>Account</span>
               <span>Description</span>
               <span className="text-right">Debit</span>
               <span className="text-right">Credit</span>
+              <span>Analytic</span>
               <span></span>
             </div>
 
             {lines.map((line, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_120px_120px_auto] gap-2">
+              <div key={i} className="grid grid-cols-[1fr_1fr_110px_110px_140px_auto] gap-2">
                 <Select
                   value={line.account_code}
                   onValueChange={(val) => handleAccountSelect(i, val)}
@@ -224,6 +239,25 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
                   placeholder="0.00"
                   className="text-right text-sm"
                 />
+                <Select
+                  value={line.analytic_account_id ?? 'none'}
+                  onValueChange={(val) =>
+                    updateLine(i, { analytic_account_id: val === 'none' ? null : val })
+                  }
+                  disabled={!analyticAccounts || analyticAccounts.length === 0}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="none">— None —</SelectItem>
+                    {analyticAccounts?.map((aa) => (
+                      <SelectItem key={aa.id} value={aa.id}>
+                        {aa.code} — {aa.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   variant="ghost"
                   size="icon"
