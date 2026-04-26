@@ -127,7 +127,7 @@ serve(async (req) => {
                     id: ev.id,
                   },
                 },
-                agent_type: "flowpilot",
+                agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
               }),
             },
           );
