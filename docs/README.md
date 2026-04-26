@@ -1,8 +1,10 @@
 # FlowWink Documentation
 
-> **FlowWink — The Business Operating System, powered by an autonomous AI operator.**
+> **FlowWink — A modular Business Operating System with a pluggable operator layer.**
 >
-> Docs structure inspired by [OpenClaw](https://github.com/openclaw/openclaw). FlowWink implements OpenClaw's agentic architecture in a serverless CMS shell.
+> FlowWink is a self-hosted SaaS platform whose modules, skills, automations and MCP surface work without any agent. An operator (local **FlowPilot**, or external — OpenClaw, Claude Desktop, Salesforce/Microsoft/Oracle agents, custom MCP clients) is opt-in. See [`concepts/operator-strategy.md`](./concepts/operator-strategy.md) for the rationale.
+>
+> Docs structure inspired by [OpenClaw](https://github.com/openclaw/openclaw).
 
 ---
 
@@ -24,8 +26,9 @@
 | Document | Summary | Read When |
 |----------|---------|-----------|
 | [prd.md](./concepts/prd.md) | Product requirements — 32 modules, 130+ skills | You need the full system scope |
+| [operator-strategy.md](./concepts/operator-strategy.md) | Why FlowPilot is a module; local vs external operators | Deciding which operator(s) to run |
 | [openclaw-law.md](./concepts/openclaw-law.md) | The 10 inviolable agentic architecture laws | Building or modifying FlowPilot |
-| [flowpilot.md](./concepts/flowpilot.md) | Complete agent reference — skills, heartbeat, memory | Understanding the operator |
+| [flowpilot.md](./concepts/flowpilot.md) | Local-operator reference — skills, heartbeat, memory | Understanding the local agent |
 | [elevator-pitch.md](./concepts/elevator-pitch.md) | BOS positioning and competitive landscape | Explaining FlowWink to others |
 | [a2a-communication-model.md](./concepts/a2a-communication-model.md) | Agent-to-Agent federation protocol | Implementing federation |
 | [feedback-loops.md](./concepts/feedback-loops.md) | Growth engine — automated business loops | Designing growth features |

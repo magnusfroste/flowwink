@@ -36,22 +36,21 @@ The next generation of business software isn't a tool. It's an operating system 
 
 Most AI products bolt intelligence onto existing architecture. A "generate with AI" button here. A chatbot widget there. That's noise.
 
-FlowWink is **native agentic from day one.**
+FlowWink is **agent-operable from day one** — but agent-agnostic by design.
 
 ```
 Traditional SaaS:   Human → Tool → Result
-FlowWink:           Human sets direction → Agent executes → Result
+FlowWink:           Human sets direction → Operator executes → Result
+                    (operator = FlowPilot, OpenClaw, Copilot, or any MCP client)
 ```
 
-FlowPilot — our autonomous agent — has:
+The platform exposes a unified skill catalogue, automations, workflows and an MCP surface that **any operator** can drive. Customers pick the operator that fits their stack:
 
-- **Soul** — brand personality and values it never breaks
-- **Memory** — learns the market, the customers, what converts
-- **Objectives** — breaks goals into steps and executes autonomously
-- **Heartbeat** — wakes every night, analyzes, acts, reports
-- **70+ Skills** — content, CRM, SEO, email, e-commerce, prospecting
+- **FlowPilot (built-in, opt-in module)** — local, vertically integrated, zero-config. Soul, memory, heartbeat, 70+ skills tuned to FlowWink's modules.
+- **External operators** — OpenClaw, Claude Desktop, Salesforce/Microsoft/Oracle agents, or any custom MCP client. Same skills, same automations, more cognitive horsepower.
+- **No operator at all** — modules still work as a traditional SaaS for human users.
 
-It's not a CMS with AI. It's **a Business Operating System with an autonomous operator.**
+It's not a CMS with AI bolted on. It's **a Business Operating System with a pluggable operator layer.** See [`operator-strategy.md`](./operator-strategy.md) for the local-vs-external tradeoff (the same call Salesforce, Oracle and Microsoft are making with their internal agents).
 
 ---
 

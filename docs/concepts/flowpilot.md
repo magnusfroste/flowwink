@@ -1,14 +1,20 @@
 # FlowPilot — The Autonomous Business Operator
 
-> **Your business runs itself.** FlowPilot is not a chatbot. It is the autonomous AI operator at the heart of the FlowWink Business Operating System (BOS). It writes your content, qualifies your leads, books your accounting entries, manages fulfillment, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
+> **FlowPilot is FlowWink's local, vertically-integrated AI operator — shipped as an opt-in module.** When enabled, it writes content, qualifies leads, books accounting entries, manages fulfillment, runs campaigns, and learns from every interaction. When disabled, FlowWink still works as a traditional SaaS, and the same skills remain available to any external operator (OpenClaw, Claude Desktop, Salesforce/Microsoft/Oracle agents, or any MCP client).
+>
+> See [`operator-strategy.md`](./operator-strategy.md) for *why* FlowPilot is a module rather than the platform core, and what unique value a local agent contributes versus best-in-class external operators.
 
-> **Version:** 4.2 | **Updated:** April 2026 | **Skills:** 110 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
+> **Version:** 4.3 | **Updated:** April 2026 | **Status:** Opt-in module · default OFF on new installs
 
 ---
 
-## 1. What FlowAgent Is
+## 1. What FlowPilot Is (and Isn't)
 
-FlowAgent is the **heart and brain** of FlowWink — an autonomous digital operator inspired by the OpenClaw agentic framework. It features persistent pgvector memory, self-evolving skills, goal-driven objectives with AI plan decomposition, self-healing, Workflow DAGs, Agent-to-Agent (A2A) delegation, Skill Packs, and a reactive automation layer. It sits above the entire platform — content, CRM, bookings, newsletters, analytics, knowledge base, e-commerce, consultant profiles — and orchestrates them continuously, with or without a human present.
+FlowPilot is **one of several possible operators** for the FlowWink platform — the *local* one, shipped in-tree, vertically integrated with the database and module layer. It implements the OpenClaw agentic pattern (soul, skills, memory, heartbeat, reflection) at a scale appropriate for a self-hosted SMB platform.
+
+It is **not** the heart of FlowWink. The heart of FlowWink is the platform itself: modules, the skill catalogue, automations, workflows, and the MCP surface. Those run regardless of which operator (if any) is active. FlowPilot's job is to be a great default operator for customers who don't already have one — and to get out of the way for customers who do.
+
+When FlowPilot is enabled it features persistent pgvector memory, self-evolving skills, goal-driven objectives with AI plan decomposition, self-healing, Workflow DAGs, Agent-to-Agent (A2A) delegation, Skill Packs, and a reactive automation layer.
 
 ### The Paradigm Shift
 
