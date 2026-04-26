@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRfqs, useRfq, useCreateRfq, useUpdateRfqStatus, useSubmitBid, useAwardRfq, type RfqStatus } from '@/hooks/useRfqs';
-import { usePurchasing } from '@/hooks/usePurchasing';
+import { useVendors } from '@/hooks/usePurchasing';
 
 const statusVariant: Record<RfqStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   draft: 'outline',
