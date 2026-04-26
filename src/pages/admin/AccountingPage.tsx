@@ -11,6 +11,7 @@ import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
 import { TaxTab } from '@/components/admin/accounting/TaxTab';
 import { VatReportTab } from '@/components/admin/accounting/VatReportTab';
 import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
+import { AnalyticAccountingTab } from '@/components/admin/accounting/AnalyticAccountingTab';
 
 export default function AccountingPage() {
   const [tab, setTab] = useState('journal');
@@ -32,6 +33,7 @@ export default function AccountingPage() {
             <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
             <TabsTrigger value="tax">Tax</TabsTrigger>
             <TabsTrigger value="vat">VAT Report</TabsTrigger>
+            <TabsTrigger value="analytic">Analytic</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -56,6 +58,9 @@ export default function AccountingPage() {
           </TabsContent>
           <TabsContent value="vat">
             <VatReportTab />
+          </TabsContent>
+          <TabsContent value="analytic">
+            <AnalyticAccountingTab />
           </TabsContent>
           <TabsContent value="templates">
             <TemplatesTab />
