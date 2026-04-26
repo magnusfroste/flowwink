@@ -126,6 +126,66 @@ export type Database = {
           },
         ]
       }
+      accounting_corrections: {
+        Row: {
+          agent_source: string | null
+          corrected_account_code: string
+          corrected_by: string | null
+          corrected_vat_code: string | null
+          created_at: string
+          description_pattern: string | null
+          id: string
+          journal_entry_id: string | null
+          original_account_code: string
+          original_vat_code: string | null
+          reason: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          agent_source?: string | null
+          corrected_account_code: string
+          corrected_by?: string | null
+          corrected_vat_code?: string | null
+          created_at?: string
+          description_pattern?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          original_account_code: string
+          original_vat_code?: string | null
+          reason?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          agent_source?: string | null
+          corrected_account_code?: string
+          corrected_by?: string | null
+          corrected_vat_code?: string | null
+          created_at?: string
+          description_pattern?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          original_account_code?: string
+          original_vat_code?: string | null
+          reason?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_corrections_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_corrections_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounting_periods: {
         Row: {
           closed_at: string | null
@@ -4455,7 +4515,9 @@ export type Database = {
           reference_number: string | null
           source: string
           status: string
+          template_id: string | null
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           created_at?: string
@@ -4468,7 +4530,9 @@ export type Database = {
           reference_number?: string | null
           source?: string
           status?: string
+          template_id?: string | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           created_at?: string
@@ -4481,7 +4545,9 @@ export type Database = {
           reference_number?: string | null
           source?: string
           status?: string
+          template_id?: string | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -4496,6 +4562,20 @@ export type Database = {
             columns: ["journal_id"]
             isOneToOne: false
             referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -8114,9 +8194,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          default_account_code: string | null
+          default_description: string | null
+          default_vat_code: string | null
           email: string | null
           id: string
           is_active: boolean
+          last_used_template_id: string | null
           name: string
           notes: string | null
           payment_terms: string | null
@@ -8129,9 +8213,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          default_account_code?: string | null
+          default_description?: string | null
+          default_vat_code?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
+          last_used_template_id?: string | null
           name: string
           notes?: string | null
           payment_terms?: string | null
@@ -8144,9 +8232,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          default_account_code?: string | null
+          default_description?: string | null
+          default_vat_code?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
+          last_used_template_id?: string | null
           name?: string
           notes?: string | null
           payment_terms?: string | null
@@ -8154,7 +8246,15 @@ export type Database = {
           updated_at?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendors_last_used_template_id_fkey"
+            columns: ["last_used_template_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_logs: {
         Row: {

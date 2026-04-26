@@ -5269,6 +5269,21 @@ async function executeDbAction(
     case 'vendors': {
       const { action = 'list' } = args as any;
 
+      // Allow `id` as alias for `vendor_id` so MCP-style { action, id, ...defaults } works
+      if ((args as any).id && !(args as any).vendor_id) {
+        (args as any).vendor_id = (args as any).id;
+      }
+
+      // ── GET single vendor (incl. autokontering defaults) ──
+      if (action === 'get') {
+        const vendor_id = (args as any).vendor_id;
+        if (!vendor_id) throw new Error('id (vendor_id) is required for get');
+        const { data, error } = await supabase.from('vendors')
+          .select('*').eq('id', vendor_id).maybeSingle();
+        if (error) throw new Error(`Get vendor failed: ${error.message}`);
+        return { vendor: data };
+      }
+
       if (action === 'list') {
         const { search, is_active, limit = 50 } = args as any;
         let query = supabase.from('vendors')
@@ -5720,6 +5735,7 @@ const ACCOUNTING_AUDIT_TABLES = new Set([
   'goods_receipts', 'goods_receipt_lines', 'vendor_invoices', 'vendor_products',
   'rfqs', 'rfq_lines', 'rfq_bids',
   'expenses',
+  'accounting_corrections',
 ]);
 
 async function sha256Hex(input: string): Promise<string> {
@@ -5815,6 +5831,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'agent_memory', 'agent_activity',
   // Recruitment / ATS module
   'job_postings', 'candidates', 'job_applications', 'application_stages', 'interviews',
+  // Smart-bookkeeping learning loop
+  'accounting_corrections',
 ]);
 
 /**

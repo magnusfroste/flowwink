@@ -33,7 +33,7 @@ type AccountingOutput = z.infer<typeof accountingOutputSchema>;
 const ACCOUNTING_SKILLS: SkillSeed[] = [
   {
     name: 'manage_journal_entry',
-    description: 'Create, list, or void double-entry journal entries (verifikat). Use when: admin asks to book/record a transaction, invoice is paid and needs journal entry, salary/rent/VAT or other recurring transactions, heartbeat detects unbooked invoices. NOT for: reading reports (use accounting_reports), managing templates (use manage_accounting_template).',
+    description: 'Create, list, or void double-entry journal entries (verifikat). Use when: admin asks to book/record a transaction, invoice is paid and needs journal entry, salary/rent/VAT or other recurring transactions, heartbeat detects unbooked invoices. NOT for: reading reports (use accounting_reports), managing templates (use manage_accounting_template). MANDATORY WORKFLOW for create: (1) if a vendor is involved, look up the vendor and prefer its `default_account_code` and `last_used_template_id`; (2) otherwise call manage_accounting_template action=list and rank by keyword overlap × usage_count; (3) only invent accounts if no vendor default and no template scores ≥0.6 — and in that case also call suggest_accounting_template to register the new pattern; (4) ALWAYS pass `template_id` (when matched) and `vendor_id` (when known) so the system can learn.',
     category: 'commerce',
     handler: 'db:journal_entries',
     scope: 'internal',
@@ -41,7 +41,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_journal_entry',
-        description: 'Create or list double-entry journal entries',
+        description: 'Create or list double-entry journal entries. For create, prefer vendor.default_account_code → matching template → suggest new template last.',
         parameters: {
           type: 'object',
           properties: {
@@ -50,13 +50,15 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             entry_date: { type: 'string' },
             lines: { type: 'array', items: { type: 'object', properties: { account_code: { type: 'string' }, account_name: { type: 'string' }, debit_cents: { type: 'number' }, credit_cents: { type: 'number' } } } },
             invoice_id: { type: 'string' },
+            vendor_id: { type: 'string', description: 'Link to vendor — required when booking a supplier transaction so vendor learning fires.' },
+            template_id: { type: 'string', description: 'Link to the accounting_template that guided the booking — usage_count auto-increments.' },
             reference_number: { type: 'string' },
           },
           required: ['action'],
         },
       },
     },
-    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Match accounting templates by keywords when possible. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
+    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
   },
   {
     name: 'accounting_reports',
@@ -263,6 +265,64 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     },
     instructions: 'For a single 100% tag, create one analytic_line whose amount_cents matches the original JE line (debit positive, credit negative). For splits, create multiple lines that sum to the original amount. Always supply entry_date and account_code from the source JE for accurate reporting.',
   },
+  {
+    name: 'manage_vendor_defaults',
+    description: 'Read or update a vendor\'s autokontering defaults — `default_account_code` (e.g. 6540 for IT-tjänster), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
+    category: 'commerce',
+    handler: 'db:vendors',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_vendor_defaults',
+        description: 'Get or update a vendor\'s default bookkeeping settings (Visma-style autokontering).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['get', 'update'] },
+            id: { type: 'string', description: 'Vendor id (required).' },
+            default_account_code: { type: 'string' },
+            default_vat_code: { type: 'string' },
+            default_description: { type: 'string' },
+            last_used_template_id: { type: 'string' },
+          },
+          required: ['action', 'id'],
+        },
+      },
+    },
+    instructions: 'When you book a vendor invoice for the first time without an existing default, ALWAYS call this with action=update afterwards so future invoices auto-route correctly. When you start to book a vendor invoice, call action=get first to see if a default already exists.',
+  },
+  {
+    name: 'record_accounting_correction',
+    description: 'Record that a manually-corrected journal entry differed from what was originally booked (auto or by template). This is the learning signal — every call makes the agent smarter for similar future transactions. Use when: a user edits an account_code on an existing JE line, OR the agent itself notices its previous booking was wrong and re-books. NOT for: original bookings (use manage_journal_entry).',
+    category: 'commerce',
+    handler: 'db:accounting_corrections',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_accounting_correction',
+        description: 'Append a correction row so the agent can learn from past mistakes.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list'] },
+            journal_entry_id: { type: 'string' },
+            vendor_id: { type: 'string' },
+            description_pattern: { type: 'string' },
+            original_account_code: { type: 'string' },
+            corrected_account_code: { type: 'string' },
+            original_vat_code: { type: 'string' },
+            corrected_vat_code: { type: 'string' },
+            reason: { type: 'string' },
+            agent_source: { type: 'string', enum: ['openclaw', 'flowpilot', 'manual', 'template'] },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Before booking a similar transaction (same vendor or similar description), call action=list with vendor_id or description_pattern to fetch prior corrections — these override template defaults.',
+  },
 ];
 
 const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
@@ -346,6 +406,8 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
     'list_accounting_periods',
     'manage_analytic_account',
     'tag_journal_entry_analytics',
+    'manage_vendor_defaults',
+    'record_accounting_correction',
   ],
 
   skillSeeds: ACCOUNTING_SKILLS,
