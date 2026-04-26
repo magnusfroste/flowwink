@@ -118,6 +118,62 @@ export interface TaxReturnAdapter {
   edge_function?: string;
 }
 
+/**
+ * Generic payload passed to accounting export adapters.
+ * Country-specific formats (SIE/DATEV/FEC/SAF-T/IIF) consume this same shape
+ * and serialize it to their target format.
+ */
+export interface AccountingExportPayload {
+  company: {
+    name: string;
+    org_number?: string | null;
+    currency: string;
+  };
+  fiscal_year: {
+    start: string; // YYYY-MM-DD
+    end: string;   // YYYY-MM-DD
+  };
+  chart: ChartAccount[];
+  entries: Array<{
+    entry_number: string | number;
+    entry_date: string; // YYYY-MM-DD
+    description: string;
+    lines: Array<{
+      account_code: string;
+      debit_cents: number;
+      credit_cents: number;
+      description?: string | null;
+    }>;
+  }>;
+  /** Optional opening balances per account */
+  opening_balances?: Array<{ account_code: string; balance_cents: number }>;
+}
+
+export interface AccountingExportOptions {
+  /** Inclusive date range to filter entries */
+  date_from?: string;
+  date_to?: string;
+  /** Generator name shown in file header */
+  generated_by?: string;
+}
+
+export interface AccountingExportAdapter {
+  /** Format id, e.g. 'sie4', 'datev', 'fec', 'saft-oecd', 'iif', 'csv-generic' */
+  id: string;
+  /** Human label, e.g. "SIE 4 (Sweden)", "DATEV CSV (Germany)" */
+  label: string;
+  /** Short description of when to use this format */
+  description?: string;
+  /** File extension without dot */
+  extension: string;
+  /** MIME type */
+  mime: string;
+  /** Why this format exists in this market */
+  purpose: 'auditor_handoff' | 'tax_authority' | 'system_migration' | 'general';
+  /** Serialize the canonical payload to the target format */
+  generate(payload: AccountingExportPayload, options?: AccountingExportOptions): string;
+}
+
 export interface AccountingLocalePack {
   /** Stable id, e.g. 'se-bas2024' */
   id: string;
@@ -142,6 +198,13 @@ export interface AccountingLocalePack {
   bank_import_adapters: BankImportAdapter[];
   /** Optional tax-return generators (VAT return, year-end, etc.) */
   tax_return_adapters?: TaxReturnAdapter[];
+  /**
+   * Standardised accounting export formats for auditor handoff / system
+   * migration / tax authorities. Every pack MUST register at least one
+   * (e.g. SIE 4 in SE, DATEV in DE, FEC in FR, SAF-T in PT/NO, OECD SAF-T
+   * as the international baseline in the generic pack).
+   */
+  accounting_export_adapters: AccountingExportAdapter[];
 
   /**
    * Pack-specific instructions appended to skill prompts so the AI uses
