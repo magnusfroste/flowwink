@@ -256,6 +256,7 @@ function AutomationEditorSheet({
       setSignalCondition((tc as any).condition ? JSON.stringify((tc as any).condition, null, 2) : '');
       setSelectedSkillId(automation?.skill_id ?? '');
       setArgsText(automation?.skill_arguments ? JSON.stringify(automation.skill_arguments, null, 2) : '{}');
+      setExecutor(automation?.executor ?? 'platform');
     }
   }, [open, automation]);
 
