@@ -70,12 +70,15 @@ export type Database = {
           gateway_token: string | null
           id: string
           inbound_token_hash: string | null
+          invitation_metadata: Json
+          invited_by_peer_id: string | null
           last_seen_at: string | null
           mcp_api_key: string | null
           name: string
           outbound_token: string | null
           request_count: number
           status: Database["public"]["Enums"]["a2a_peer_status"]
+          toolset_groups: string[]
           transport: Database["public"]["Enums"]["peer_transport"]
           updated_at: string
           url: string | null
@@ -88,12 +91,15 @@ export type Database = {
           gateway_token?: string | null
           id?: string
           inbound_token_hash?: string | null
+          invitation_metadata?: Json
+          invited_by_peer_id?: string | null
           last_seen_at?: string | null
           mcp_api_key?: string | null
           name: string
           outbound_token?: string | null
           request_count?: number
           status?: Database["public"]["Enums"]["a2a_peer_status"]
+          toolset_groups?: string[]
           transport?: Database["public"]["Enums"]["peer_transport"]
           updated_at?: string
           url?: string | null
@@ -106,12 +112,15 @@ export type Database = {
           gateway_token?: string | null
           id?: string
           inbound_token_hash?: string | null
+          invitation_metadata?: Json
+          invited_by_peer_id?: string | null
           last_seen_at?: string | null
           mcp_api_key?: string | null
           name?: string
           outbound_token?: string | null
           request_count?: number
           status?: Database["public"]["Enums"]["a2a_peer_status"]
+          toolset_groups?: string[]
           transport?: Database["public"]["Enums"]["peer_transport"]
           updated_at?: string
           url?: string | null
@@ -122,6 +131,13 @@ export type Database = {
             columns: ["api_key_id"]
             isOneToOne: false
             referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "a2a_peers_invited_by_peer_id_fkey"
+            columns: ["invited_by_peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
             referencedColumns: ["id"]
           },
         ]
@@ -5956,6 +5972,57 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invitee_name: string
+          invitee_peer_id: string
+          invitee_url: string | null
+          inviter_peer_id: string | null
+          metadata: Json
+          reason: string | null
+          toolset_groups: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invitee_name: string
+          invitee_peer_id: string
+          invitee_url?: string | null
+          inviter_peer_id?: string | null
+          metadata?: Json
+          reason?: string | null
+          toolset_groups?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invitee_name?: string
+          invitee_peer_id?: string
+          invitee_url?: string | null
+          inviter_peer_id?: string | null
+          metadata?: Json
+          reason?: string | null
+          toolset_groups?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_invitations_invitee_peer_id_fkey"
+            columns: ["invitee_peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_invitations_inviter_peer_id_fkey"
+            columns: ["inviter_peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_goals: {
         Row: {
           category: string
@@ -8505,6 +8572,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      peer_invitation_tree: {
+        Row: {
+          created_at: string | null
+          depth: number | null
+          id: string | null
+          invited_by_peer_id: string | null
+          name: string | null
+          path: string[] | null
+          status: string | null
+          toolset_groups: string[] | null
+        }
+        Relationships: []
       }
       profiles_public: {
         Row: {
