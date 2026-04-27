@@ -49,11 +49,14 @@ interface UseWorkspaceChatOpts {
   sources: WorkspaceSource[];
   mode?: CoworkMode;
   onError?: (msg: string) => void;
+  onPersistUser?: (text: string) => Promise<void> | void;
+  onPersistAssistant?: (text: string, citations: WorkspaceCitation[]) => Promise<void> | void;
+  onFirstMessage?: (text: string) => Promise<string | null> | string | null;
 }
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workspace-chat`;
 
-export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpts) {
+export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPersistAssistant, onFirstMessage }: UseWorkspaceChatOpts) {
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [lastContextMeta, setLastContextMeta] = useState<ContextMeta | null>(null);
@@ -62,6 +65,13 @@ export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpt
   const reset = useCallback(() => {
     abortRef.current?.abort();
     setMessages([]);
+    setLastContextMeta(null);
+  }, []);
+
+  const loadHistory = useCallback((msgs: WorkspaceMessage[]) => {
+    abortRef.current?.abort();
+    setMessages(msgs);
+    setLastContextMeta(null);
   }, []);
 
   const stop = useCallback(() => {
@@ -73,6 +83,14 @@ export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpt
     async (userText: string) => {
       const trimmed = userText.trim();
       if (!trimmed || isStreaming) return;
+
+      // First-message hook (e.g. create a session, return its id) — fire and continue.
+      if (messages.length === 0 && onFirstMessage) {
+        try { await onFirstMessage(trimmed); } catch (e) { logger.error('onFirstMessage failed', e); }
+      }
+      if (onPersistUser) {
+        try { await onPersistUser(trimmed); } catch (e) { logger.error('onPersistUser failed', e); }
+      }
 
       const userMsg: WorkspaceMessage = {
         id: crypto.randomUUID(),
@@ -250,10 +268,13 @@ export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpt
             ),
           );
         }
+        if (onPersistAssistant && assistantContent) {
+          try { await onPersistAssistant(assistantContent, assistantCitations); } catch (e) { logger.error('onPersistAssistant failed', e); }
+        }
       }
     },
-    [messages, sources, mode, isStreaming, onError],
+    [messages, sources, mode, isStreaming, onError, onPersistUser, onPersistAssistant, onFirstMessage],
   );
 
-  return { messages, isStreaming, send, stop, reset, lastContextMeta };
+  return { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta };
 }

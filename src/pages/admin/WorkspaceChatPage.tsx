@@ -14,9 +14,11 @@ import {
   useWorkspaceChat,
   type WorkspaceSource,
 } from '@/hooks/useWorkspaceChat';
+import { useWorkspaceSessions } from '@/hooks/useWorkspaceSessions';
 import { useCoworkSettings } from '@/hooks/useCoworkSettings';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettingsPanel';
+import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
 import {
   Send,
   Square,
@@ -33,11 +35,23 @@ export default function WorkspaceChatPage() {
   const { toast } = useToast();
   const enabled = useIsModuleEnabled('workspaceChat');
   const { data: settings } = useCoworkSettings();
-  // Sources default to ALL — saved defaults can narrow them, but the
-  // baseline is always "everything selected".
   const [sources, setSources] = useState<WorkspaceSource[]>(ALL_WORKSPACE_SOURCES);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sessions
+  const {
+    sessions,
+    refresh: refreshSessions,
+    createSession,
+    renameSession,
+    deleteSession,
+    loadMessages,
+    appendMessage,
+  } = useWorkspaceSessions();
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const activeSessionRef = useRef<string | null>(null);
+  useEffect(() => { activeSessionRef.current = activeSessionId; }, [activeSessionId]);
 
   // Apply saved defaults the first time settings load (only if user hasn't touched yet)
   const hydrated = useRef(false);
@@ -48,12 +62,51 @@ export default function WorkspaceChatPage() {
     }
   }, [settings?.defaultSources]);
 
-  const { messages, isStreaming, send, stop, reset, lastContextMeta } = useWorkspaceChat({
+  const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta } = useWorkspaceChat({
     sources,
     mode: settings?.mode,
     onError: (msg) =>
       toast({ title: 'Cowork Chat', description: msg, variant: 'destructive' }),
+    onFirstMessage: async (text) => {
+      if (activeSessionRef.current) return activeSessionRef.current;
+      const id = await createSession(text);
+      if (id) {
+        setActiveSessionId(id);
+        activeSessionRef.current = id;
+      }
+      return id;
+    },
+    onPersistUser: async (text) => {
+      const id = activeSessionRef.current;
+      if (id) await appendMessage(id, 'user', text);
+    },
+    onPersistAssistant: async (text, citations) => {
+      const id = activeSessionRef.current;
+      if (id) {
+        await appendMessage(id, 'assistant', text, { citations });
+        await refreshSessions();
+      }
+    },
   });
+
+  const handleSelectSession = async (id: string) => {
+    if (id === activeSessionId) return;
+    const msgs = await loadMessages(id);
+    setActiveSessionId(id);
+    activeSessionRef.current = id;
+    loadHistory(msgs);
+  };
+
+  const handleNewChat = () => {
+    setActiveSessionId(null);
+    activeSessionRef.current = null;
+    reset();
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    await deleteSession(id);
+    if (id === activeSessionId) handleNewChat();
+  };
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -108,15 +161,25 @@ export default function WorkspaceChatPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
         <div className="border-b border-border/60 px-6 py-4 flex items-center justify-between bg-background gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Cowork Chat
-            </h1>
-            <p className="text-xs text-muted-foreground truncate">
-              Workspace data + model knowledge {webOn ? '+ web search' : ''} —
-              your co-working assistant.
-            </p>
+          <div className="min-w-0 flex items-center gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Cowork Chat
+              </h1>
+              <p className="text-xs text-muted-foreground truncate">
+                Workspace data + model knowledge {webOn ? '+ web search' : ''} —
+                your co-working assistant.
+              </p>
+            </div>
+            <SessionPicker
+              sessions={sessions}
+              activeId={activeSessionId}
+              onSelect={handleSelectSession}
+              onNew={handleNewChat}
+              onRename={renameSession}
+              onDelete={handleDeleteSession}
+            />
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -148,7 +211,7 @@ export default function WorkspaceChatPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={reset}
+              onClick={handleNewChat}
               disabled={isStreaming || messages.length === 0}
             >
               <MessageSquarePlus className="h-4 w-4 mr-1.5" /> New chat
