@@ -14,20 +14,25 @@ type Input = z.infer<typeof inputSchema>;
 type Output = z.infer<typeof outputSchema>;
 
 /**
- * Workspace Chat — internal RAG/CAG chat for admins & employees.
+ * Cowork Chat — internal RAG/CAG + model knowledge chat for admins & employees.
  *
- * - Authenticated, read-only chat against your own FlowWink data:
- *   documents, contracts, KB, pages, CRM, employees.
- * - Uses the same AI provider as the public AI Chat (Integrations).
+ * - Authenticated, read-only chat against:
+ *   - workspace data (documents, contracts, KB, pages, CRM, employees), AND
+ *   - the model's own training knowledge (toggleable), AND
+ *   - the public web via Firecrawl (toggleable, requires FIRECRAWL_API_KEY).
+ * - Two modes: 'cowork' (default — blended) and 'strict' (workspace-only).
+ * - Uses the same AI provider as AI Chat (Integrations).
  * - Independent of FlowPilot — works as long as an AI provider is configured.
  * - Exposes NO skills (no MCP, no mutations).
+ *
+ * Internal id stays `workspaceChat` for backward compat with stored module flags.
  */
 export const workspaceChatModule = defineModule<Input, Output>({
   id: 'workspaceChat',
-  name: 'Workspace Chat',
-  version: '1.0.0',
+  name: 'Cowork Chat',
+  version: '1.1.0',
   description:
-    'Internal authenticated chat that answers questions about your documents, contracts, KB, CRM and HR data — with source citations. No mutations.',
+    'Internal authenticated chat that blends your workspace data with the model\'s own knowledge and optional web search — with source citations. No mutations.',
   capabilities: ['data:read'],
   inputSchema,
   outputSchema,
