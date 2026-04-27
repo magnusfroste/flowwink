@@ -195,34 +195,43 @@ async function buildContext(
   }
 
   if (sources.includes('contracts')) {
-    const { data: contracts } = await supabase
+    const { data: contracts, error: contractsErr } = await supabase
       .from('contracts')
-      .select('id, title, status, counterparty, renewal_date, end_date')
+      .select('id, title, status, counterparty_name, contract_type, start_date, end_date, value_cents, currency, body_markdown, notes')
       .order('created_at', { ascending: false })
       .limit(PER_SOURCE_LIMIT);
+    if (contractsErr) console.error('cowork-chat: contracts query failed', contractsErr);
     if (contracts?.length) {
       const lines = contracts.map((c: any) => {
         const r = push('contract', c.id, c.title || 'Contract', `/admin/contracts/${c.id}`);
         const parts = [
+          c.contract_type && `type=${c.contract_type}`,
           c.status && `status=${c.status}`,
-          c.counterparty && `party=${c.counterparty}`,
-          c.renewal_date && `renews=${c.renewal_date}`,
+          c.counterparty_name && `party=${c.counterparty_name}`,
+          c.start_date && `from=${c.start_date}`,
           c.end_date && `ends=${c.end_date}`,
+          c.value_cents && `value=${(c.value_cents / 100).toFixed(0)} ${c.currency || ''}`,
         ].filter(Boolean).join(', ');
-        return `[${r}] ${c.title || 'Contract'} (${parts})`;
+        const body = c.body_markdown ? `\n  Body: ${c.body_markdown.slice(0, 400)}${c.body_markdown.length > 400 ? '…' : ''}` : '';
+        const notes = c.notes ? `\n  Notes: ${c.notes.slice(0, 200)}` : '';
+        return `[${r}] ${c.title || 'Contract'} (${parts})${body}${notes}`;
       });
       rawBlocks.push({ source: 'contracts', text: `### Contracts\n${lines.join('\n')}` });
     }
 
-    const { data: empContracts } = await supabase
+    const { data: empContracts, error: empErr } = await supabase
       .from('employment_contracts')
-      .select('id, employee_name, role, status, start_date, end_date')
+      .select('id, title, employment_type, status, start_date, end_date, monthly_salary_cents, currency, employees(full_name)')
       .order('created_at', { ascending: false })
       .limit(PER_SOURCE_LIMIT);
+    if (empErr) console.error('cowork-chat: employment_contracts query failed', empErr);
     if (empContracts?.length) {
       const lines = empContracts.map((c: any) => {
-        const r = push('employment_contract', c.id, `${c.employee_name || 'Employee'} — ${c.role || 'role'}`, `/admin/hr/contracts/${c.id}`);
-        return `[${r}] ${c.employee_name || ''} ${c.role ? `(${c.role})` : ''} status=${c.status || 'n/a'} ${c.start_date ? `from ${c.start_date}` : ''}`;
+        const empName = c.employees?.full_name || 'Employee';
+        const label = `${empName} — ${c.title || c.employment_type || 'Contract'}`;
+        const r = push('employment_contract', c.id, label, `/admin/hr/contracts/${c.id}`);
+        const salary = c.monthly_salary_cents ? `${(c.monthly_salary_cents / 100).toFixed(0)} ${c.currency || ''}/mo` : '';
+        return `[${r}] ${label} status=${c.status || 'n/a'} ${c.start_date ? `from ${c.start_date}` : ''} ${c.end_date ? `to ${c.end_date}` : ''} ${salary}`;
       });
       rawBlocks.push({ source: 'employment_contracts', text: `### Employment Contracts\n${lines.join('\n')}` });
     }
