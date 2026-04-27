@@ -255,5 +255,5 @@ export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpt
     [messages, sources, mode, isStreaming, onError],
   );
 
-  return { messages, isStreaming, send, stop, reset };
+  return { messages, isStreaming, send, stop, reset, lastContextMeta };
 }
