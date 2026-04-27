@@ -88,7 +88,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Contracts track agreements with external parties. Status flow: draft → pending_signature → active → expired/terminated. When creating, default currency to SEK. For search, match against title and counterparty_name. Swedish: "avtal", "kontrakt", "NDA", "tjänsteavtal".',
+    instructions: 'Contracts track agreements with external parties. Status flow: draft → pending_signature → active → expired/terminated. When creating, default currency to SEK. ALWAYS write the full agreement text into body_markdown (Parties, Scope, Term, Fees, Payment, Confidentiality, Termination, Governing law, Signatures) — do NOT create a contract with an empty body unless a file_url PDF is attached. notes is for short internal metadata only, NOT the contract text. For search, match against title and counterparty_name. Swedish: "avtal", "kontrakt", "NDA", "tjänsteavtal".',
   },
   {
     name: 'contract_renewal_check',
