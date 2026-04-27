@@ -65,6 +65,13 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
   const reset = useCallback(() => {
     abortRef.current?.abort();
     setMessages([]);
+    setLastContextMeta(null);
+  }, []);
+
+  const loadHistory = useCallback((msgs: WorkspaceMessage[]) => {
+    abortRef.current?.abort();
+    setMessages(msgs);
+    setLastContextMeta(null);
   }, []);
 
   const stop = useCallback(() => {
