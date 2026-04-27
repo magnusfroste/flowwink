@@ -99,7 +99,25 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       function: {
         name: 'manage_opening_balances',
         description: 'CRUD for opening balances per fiscal year',
-        parameters: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'set', 'delete'] }, fiscal_year: { type: 'number', description: 'Fiscal year, e.g. 2024' }, account_code: { type: 'string' }, amount_cents: { type: 'number' }, balance_type: { type: 'string', enum: ['debit', 'credit'] }, locale: { type: 'string', description: 'Chart locale, e.g. se-bas2024' } }, required: ['action'] },
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'set', 'delete'] },
+            fiscal_year: { type: 'number', description: 'Fiscal year, e.g. 2024' },
+            account_code: { type: 'string', description: 'Required for set/delete — e.g. "1930"' },
+            account_name: { type: 'string', description: 'Required for action=set — human-readable name, e.g. "Bankkonto"' },
+            amount_cents: { type: 'number' },
+            balance_type: { type: 'string', enum: ['debit', 'credit'] },
+            locale: { type: 'string', description: 'Chart locale, e.g. se-bas2024' },
+          },
+          required: ['action'],
+          allOf: [
+            {
+              if: { properties: { action: { const: 'set' } } },
+              then: { required: ['action', 'account_code', 'account_name', 'amount_cents'] },
+            },
+          ],
+        },
       },
     },
     instructions: 'Opening balances must balance (total debit = total credit). Each account should have only one IB per fiscal year. Use the chart_of_accounts to validate account codes.',
