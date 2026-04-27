@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSkills } from '@/hooks/useSkillHub';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { getUnifiedSkillNames } from '@/lib/module-def';
 import type { ModulesSettings } from '@/hooks/useModules';
 import type { AgentSkill } from '@/types/agent';
@@ -129,6 +130,7 @@ export function ModuleSkillsSection({
 // ─── Single skill row ─────────────────────────────────────────────────────────
 
 function SkillRow({ skill }: { skill: AgentSkill }) {
+  const flowpilotEnabled = useIsModuleEnabled('flowpilot');
   const tryPrompt = encodeURIComponent(`Use the ${skill.name} skill`);
   return (
     <div
@@ -162,7 +164,7 @@ function SkillRow({ skill }: { skill: AgentSkill }) {
           </p>
         )}
       </div>
-      {skill.enabled && (
+      {skill.enabled && flowpilotEnabled && (
         <Button
           variant="ghost"
           size="icon"
