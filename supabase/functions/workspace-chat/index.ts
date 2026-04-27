@@ -436,7 +436,8 @@ Deno.serve(async (req) => {
     const allowWorld = mode === 'strict' ? false : settings.allowWorldKnowledge;
     const webSearchOn = mode === 'strict' ? false : settings.allowWebSearch && !!Deno.env.get('FIRECRAWL_API_KEY');
 
-    const { contextText, citations } = await buildContext(supabaseAdmin, requestedSources);
+    const { contextText, citations, meta: contextMeta } = await buildContext(supabaseAdmin, requestedSources);
+    console.log(`[cowork-chat] context: ${contextMeta.tokens_used}/${contextMeta.tokens_budget} tokens, ${contextMeta.sources_active} sources, truncated=[${contextMeta.sources_truncated.join(',')}]`);
 
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabaseAdmin, 'fast');
     if (isAnthropicProvider(apiUrl)) {
