@@ -276,5 +276,26 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
     [messages, sources, mode, isStreaming, onError, onPersistUser, onPersistAssistant, onFirstMessage],
   );
 
-  return { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta };
+  /**
+   * Re-run the last user message. Drops the trailing assistant turn(s) first
+   * so the new response replaces the old one.
+   */
+  const regenerate = useCallback(() => {
+    setMessages((prev) => {
+      // Find the last user message
+      let lastUserIdx = -1;
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (prev[i].role === 'user') { lastUserIdx = i; break; }
+      }
+      if (lastUserIdx === -1) return prev;
+      const lastUserText = prev[lastUserIdx].content;
+      // Strip everything from the last user message onward, then re-send.
+      const trimmed = prev.slice(0, lastUserIdx);
+      // Defer send to next tick so state settles
+      queueMicrotask(() => { void send(lastUserText); });
+      return trimmed;
+    });
+  }, [send]);
+
+  return { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate };
 }
