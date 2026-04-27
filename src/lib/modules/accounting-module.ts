@@ -268,6 +268,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             is_active: { type: 'boolean' },
           },
           required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'code', 'name'] } },
+          ],
         },
       },
     },

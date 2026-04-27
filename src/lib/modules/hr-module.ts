@@ -50,6 +50,9 @@ const HR_SKILLS: SkillSeed[] = [
             search_query: { type: 'string' },
           },
           required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'name'] } },
+          ],
         },
       },
     },
@@ -79,6 +82,9 @@ const HR_SKILLS: SkillSeed[] = [
             reason: { type: 'string' },
           },
           required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'employee_id', 'start_date', 'end_date'] } },
+          ],
         },
       },
     },
