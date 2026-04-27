@@ -52,6 +52,9 @@ const PURCHASING_SKILLS: SkillSeed[] = [
             currency: { type: 'string' }, search: { type: 'string' },
           },
           required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'name'] } },
+          ],
         },
       },
     },

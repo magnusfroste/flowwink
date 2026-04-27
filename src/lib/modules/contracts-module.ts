@@ -82,7 +82,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
           allOf: [
             {
               if: { properties: { action: { const: 'create' } } },
-              then: { required: ['action', 'counterparty_name'] },
+              then: { required: ['action', 'counterparty_name', 'title'] },
             },
           ],
         },

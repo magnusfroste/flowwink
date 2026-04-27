@@ -55,6 +55,12 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             reference_number: { type: 'string' },
           },
           required: ['action'],
+          allOf: [
+            {
+              if: { properties: { action: { const: 'create' } } },
+              then: { required: ['action', 'description'] },
+            },
+          ],
         },
       },
     },
@@ -84,7 +90,14 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_accounting_template',
-        parameters: { type: 'object', properties: { action: { type: 'string', enum: ['create', 'list', 'update'] }, template_name: { type: 'string' }, description: { type: 'string' }, category: { type: 'string' }, keywords: { type: 'array', items: { type: 'string' } }, template_lines: { type: 'array' } }, required: ['action'] },
+        parameters: {
+          type: 'object',
+          properties: { action: { type: 'string', enum: ['create', 'list', 'update'] }, template_name: { type: 'string' }, description: { type: 'string' }, category: { type: 'string' }, keywords: { type: 'array', items: { type: 'string' } }, template_lines: { type: 'array' } },
+          required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'template_name'] } },
+          ],
+        },
       },
     },
   },
@@ -133,7 +146,14 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       function: {
         name: 'manage_chart_of_accounts',
         description: 'CRUD for chart of accounts across locales',
-        parameters: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } }, required: ['action'] },
+        parameters: {
+          type: 'object',
+          properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } },
+          required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'add' } } }, then: { required: ['action', 'account_code', 'account_name', 'account_type', 'account_category', 'normal_balance'] } },
+          ],
+        },
       },
     },
     instructions: 'When listing, group by account_type for clarity. BAS 2024 uses 4-digit codes (1xxx=assets, 2xxx=liabilities, 3xxx=income, 4-7xxx=expenses, 8xxx=financial). IFRS and US GAAP use similar groupings. Custom accounts should follow the locale convention.',
@@ -248,6 +268,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             is_active: { type: 'boolean' },
           },
           required: ['action'],
+          allOf: [
+            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'code', 'name'] } },
+          ],
         },
       },
     },
