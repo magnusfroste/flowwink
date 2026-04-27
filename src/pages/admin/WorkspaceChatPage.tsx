@@ -15,24 +15,36 @@ import {
   type WorkspaceSource,
 } from '@/hooks/useWorkspaceChat';
 import { useCoworkSettings } from '@/hooks/useCoworkSettings';
-import { SourceFilterPanel } from '@/components/admin/workspace/SourceFilterPanel';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettingsPanel';
-import { Send, Square, Sparkles, Loader2, MessageSquarePlus, Globe, Database, Brain } from 'lucide-react';
+import {
+  Send,
+  Square,
+  Sparkles,
+  Loader2,
+  MessageSquarePlus,
+  Globe,
+  Database,
+  Brain,
+} from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function WorkspaceChatPage() {
   const { toast } = useToast();
   const enabled = useIsModuleEnabled('workspaceChat');
   const { data: settings } = useCoworkSettings();
+  // Sources default to ALL — saved defaults can narrow them, but the
+  // baseline is always "everything selected".
   const [sources, setSources] = useState<WorkspaceSource[]>(ALL_WORKSPACE_SOURCES);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Pick up saved defaults the first time settings load
+  // Apply saved defaults the first time settings load (only if user hasn't touched yet)
+  const hydrated = useRef(false);
   useEffect(() => {
-    if (settings?.defaultSources?.length) {
+    if (!hydrated.current && settings?.defaultSources?.length) {
       setSources(settings.defaultSources);
+      hydrated.current = true;
     }
   }, [settings?.defaultSources]);
 
@@ -135,16 +147,8 @@ export default function WorkspaceChatPage() {
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-[260px_1fr_300px] gap-4 p-4 min-h-0">
-          <aside className="hidden md:block min-h-0">
-            <SourceFilterPanel
-              selected={sources}
-              onChange={setSources}
-              onReset={() => setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)}
-            />
-          </aside>
-
+        {/* Body — chat + right rail (sources moved into the rail) */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-4 p-4 min-h-0">
           <main className="flex flex-col min-h-0 min-w-0">
             <Card className="flex-1 flex flex-col min-h-0 border-border/60">
               <ScrollArea className="flex-1 min-h-0" ref={scrollRef as any}>
@@ -245,7 +249,14 @@ export default function WorkspaceChatPage() {
           </main>
 
           <aside className="hidden md:block min-h-0">
-            <CitationsDrawer citations={citations} />
+            <CitationsDrawer
+              citations={citations}
+              sources={sources}
+              onSourcesChange={setSources}
+              onResetSources={() =>
+                setSources(settings?.defaultSources || ALL_WORKSPACE_SOURCES)
+              }
+            />
           </aside>
         </div>
       </div>
