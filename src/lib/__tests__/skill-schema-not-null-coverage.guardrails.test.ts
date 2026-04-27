@@ -21,17 +21,50 @@ interface ToolProperty {
   enum?: string[];
 }
 
+interface JsonSchemaNode {
+  properties?: Record<string, ToolProperty>;
+  required?: string[];
+  allOf?: Array<{
+    if?: { properties?: Record<string, { const?: string; enum?: string[] }> };
+    then?: { required?: string[]; properties?: Record<string, ToolProperty> };
+  }>;
+  oneOf?: JsonSchemaNode[];
+  anyOf?: JsonSchemaNode[];
+}
+
 interface SkillSeed {
   name: string;
   handler?: string;
   tool_definition?: {
     function?: {
-      parameters?: {
-        properties?: Record<string, ToolProperty>;
-        required?: string[];
-      };
+      parameters?: JsonSchemaNode;
     };
   };
+}
+
+/** Collect the set of `action` enum values declared on the skill. */
+function getActions(params: JsonSchemaNode | undefined): string[] {
+  const actionProp = params?.properties?.action as ToolProperty | undefined;
+  return actionProp?.enum ?? [];
+}
+
+/** Compute which fields are required for a given action value, considering allOf/if-then branches. */
+function requiredForAction(
+  params: JsonSchemaNode | undefined,
+  action: string,
+): Set<string> {
+  const required = new Set<string>(params?.required ?? []);
+  for (const branch of params?.allOf ?? []) {
+    const ifAction = branch.if?.properties?.action;
+    if (!ifAction) continue;
+    const matches =
+      ifAction.const === action ||
+      (Array.isArray(ifAction.enum) && ifAction.enum.includes(action));
+    if (matches) {
+      for (const f of branch.then?.required ?? []) required.add(f);
+    }
+  }
+  return required;
 }
 
 const NOT_NULL_TABLES = (fixture as any).tables as Record<string, string[]>;
