@@ -56,12 +56,14 @@ serve(async (req: Request) => {
         .eq("id", body.inviter_peer_id)
         .maybeSingle();
       inviter = data as any;
-    } else if (body.caller_api_key_id) {
-      // Invoked via agent-execute → MCP tool call. The caller's api_key_id is forwarded.
+    } else if (body.caller_api_key_id || (body as any)._caller_api_key_id) {
+      // Invoked via agent-execute → MCP tool call. The caller's api_key_id is forwarded
+      // either as `caller_api_key_id` (top-level) or `_caller_api_key_id` (in args).
+      const callerApiKeyId = body.caller_api_key_id || (body as any)._caller_api_key_id;
       const { data } = await supabase
         .from("a2a_peers")
         .select("id, name, toolset_groups")
-        .eq("api_key_id", body.caller_api_key_id)
+        .eq("api_key_id", callerApiKeyId)
         .maybeSingle();
       inviter = data as any;
     } else {
