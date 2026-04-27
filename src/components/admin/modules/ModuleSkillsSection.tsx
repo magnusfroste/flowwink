@@ -130,6 +130,7 @@ export function ModuleSkillsSection({
 // ─── Single skill row ─────────────────────────────────────────────────────────
 
 function SkillRow({ skill }: { skill: AgentSkill }) {
+  const flowpilotEnabled = useIsModuleEnabled('flowpilot');
   const tryPrompt = encodeURIComponent(`Use the ${skill.name} skill`);
   return (
     <div
@@ -163,7 +164,7 @@ function SkillRow({ skill }: { skill: AgentSkill }) {
           </p>
         )}
       </div>
-      {skill.enabled && (
+      {skill.enabled && flowpilotEnabled && (
         <Button
           variant="ghost"
           size="icon"
