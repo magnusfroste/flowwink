@@ -218,7 +218,8 @@ const router = createBrowserRouter([
       { path: "/admin/branding", element: <BrandingSettingsPage /> },
       
       { path: "/admin/chat", element: <ChatSettingsPage /> },
-      { path: "/admin/workspace", element: <WorkspaceChatPage /> },
+      { path: "/admin/cowork", element: <WorkspaceChatPage /> },
+      { path: "/admin/workspace", element: <Navigate to="/admin/cowork" replace /> },
       { path: "/admin/content-api", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/developer", element: <DeveloperPage /> },
       { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
