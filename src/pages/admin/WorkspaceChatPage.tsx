@@ -208,5 +208,6 @@ export default function WorkspaceChatPage() {
         </aside>
       </div>
     </div>
+    </AdminLayout>
   );
 }
