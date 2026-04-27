@@ -161,15 +161,25 @@ export default function WorkspaceChatPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
         <div className="border-b border-border/60 px-6 py-4 flex items-center justify-between bg-background gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Cowork Chat
-            </h1>
-            <p className="text-xs text-muted-foreground truncate">
-              Workspace data + model knowledge {webOn ? '+ web search' : ''} —
-              your co-working assistant.
-            </p>
+          <div className="min-w-0 flex items-center gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Cowork Chat
+              </h1>
+              <p className="text-xs text-muted-foreground truncate">
+                Workspace data + model knowledge {webOn ? '+ web search' : ''} —
+                your co-working assistant.
+              </p>
+            </div>
+            <SessionPicker
+              sessions={sessions}
+              activeId={activeSessionId}
+              onSelect={handleSelectSession}
+              onNew={handleNewChat}
+              onRename={renameSession}
+              onDelete={handleDeleteSession}
+            />
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -201,7 +211,7 @@ export default function WorkspaceChatPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={reset}
+              onClick={handleNewChat}
               disabled={isStreaming || messages.length === 0}
             >
               <MessageSquarePlus className="h-4 w-4 mr-1.5" /> New chat
