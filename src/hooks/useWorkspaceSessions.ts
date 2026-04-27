@@ -122,13 +122,13 @@ export function useWorkspaceSessions() {
       metadata?: Record<string, unknown>,
     ) => {
       try {
-        await supabase.from('chat_messages').insert({
+        await supabase.from('chat_messages').insert([{
           conversation_id: conversationId,
           role,
           content,
-          metadata: metadata || {},
+          metadata: (metadata || {}) as any,
           source: 'cowork',
-        });
+        }]);
         await supabase
           .from('chat_conversations')
           .update({ updated_at: new Date().toISOString() })
