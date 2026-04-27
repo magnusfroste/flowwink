@@ -59,7 +59,7 @@ async function main() {
       'NOT NULL columns without DB defaults, per public table that backs a db:<table> manage_* skill. Regenerate with: bun run scripts/snapshot-db-not-nulls.ts',
     _generated_at: new Date().toISOString().slice(0, 10),
     tables,
-    _auto_filled_columns: existing._auto_filled_columns ?? {},
+    _skill_auto_filled_columns: existing._skill_auto_filled_columns ?? {},
   };
 
   fs.writeFileSync(FIXTURE_PATH, JSON.stringify(next, null, 2) + '\n');
