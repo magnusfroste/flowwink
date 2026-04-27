@@ -51,17 +51,19 @@ const DOCS_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_document',
-        description: 'CRUD for the document archive. NOTE: action=create REQUIRES title + file_url (file_name auto-defaults to title if omitted). DB columns title, file_name, file_url are NOT NULL.',
+        description: 'CRUD for the document archive. action=create REQUIRES title + file_url + file_name (file_name auto-defaults to title if omitted). For PDFs uploaded to chat, pass the public URL as file_url. Aliases accepted: mime_type→file_type, size_bytes→file_size_bytes, storage_path/url→file_url, name/filename→file_name. Body/markdown content is NOT stored — only the file at file_url.',
         parameters: {
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'search', 'list', 'get', 'update', 'delete', 'categorize'] },
             document_id: { type: 'string', description: 'Required for get/update/delete' },
-            title: { type: 'string', description: 'Required for create' },
-            file_url: { type: 'string', description: 'Required for create — public URL or storage path of the file' },
-            file_name: { type: 'string', description: 'Optional — defaults to title if omitted' },
-            file_type: { type: 'string', description: 'MIME type, e.g. application/pdf' },
-            category: { type: 'string', enum: ['general', 'contract', 'hr', 'finance', 'project'] },
+            id: { type: 'string', description: 'Alias for document_id' },
+            title: { type: 'string', description: 'Required for create — short human-readable name' },
+            file_url: { type: 'string', description: 'Required for create — public URL or storage path of the file. Aliases accepted: storage_path, url, path.' },
+            file_name: { type: 'string', description: 'Optional for create — defaults to title if omitted. Aliases: name, filename.' },
+            file_type: { type: 'string', description: 'MIME type, e.g. application/pdf. Aliases: mime_type, content_type.' },
+            file_size_bytes: { type: 'number', description: 'File size in bytes. Aliases: size_bytes, file_size.' },
+            category: { type: 'string', enum: ['general', 'contract', 'hr', 'finance', 'project'], description: 'Required for create — choose the closest match.' },
             folder: { type: 'string' },
             tags: { type: 'array', items: { type: 'string' } },
             description: { type: 'string', description: 'Notes / summary of the document' },
@@ -70,10 +72,16 @@ const DOCS_SKILLS: SkillSeed[] = [
             search_query: { type: 'string' },
           },
           required: ['action'],
+          allOf: [
+            {
+              if: { properties: { action: { const: 'create' } } },
+              then: { required: ['action', 'title', 'file_url', 'category'] },
+            },
+          ],
         },
       },
     },
-    instructions: 'Central document store. action=create REQUIRES title + file_url; file_name auto-fills from title. Categories map to modules: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Auto-categorize based on related_entity_type when possible. For PDFs from chat attachments, pass the attachment URL as file_url. Swedish: "dokument", "fil", "arkiv", "mapp".',
+    instructions: 'Central document store. action=create REQUIRES title + file_url + category; file_name auto-fills from title. Categories: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Use related_entity_type to link to a record (e.g. "deal" + deal_id). For PDFs from chat attachments, pass the attachment URL as file_url. The body/markdown of the document is NOT stored — only the file URL. Swedish: "dokument", "fil", "arkiv", "mapp".',
   },
 ];
 

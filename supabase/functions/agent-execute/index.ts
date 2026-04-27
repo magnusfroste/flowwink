@@ -5883,7 +5883,82 @@ const GENERIC_CRUD_TABLES = new Set([
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)
   'onboarding_templates', 'onboarding_checklists',
+  // Sales quotes (CPQ)
+  'quotes',
 ]);
+
+/**
+ * Friendly table aliases — external agents often use shorter / natural names
+ * (e.g. "applications" instead of "job_applications"). Map them to the real
+ * physical table before whitelist + CRUD lookup.
+ */
+const TABLE_ALIASES: Record<string, string> = {
+  applications: 'job_applications',
+  application: 'job_applications',
+  candidate: 'candidates',
+  job_posting: 'job_postings',
+};
+
+/**
+ * Per-table column aliases. Lets external agents use natural names that don't
+ * exactly match the DB schema (e.g. mime_type → file_type for documents).
+ * Unknown / dropped columns: any column not in the table will throw a clear
+ * error from Postgres; this map only covers the very common cases.
+ */
+const COLUMN_ALIASES: Record<string, Record<string, string>> = {
+  documents: {
+    mime_type: 'file_type',
+    content_type: 'file_type',
+    size_bytes: 'file_size_bytes',
+    file_size: 'file_size_bytes',
+    storage_path: 'file_url',
+    path: 'file_url',
+    url: 'file_url',
+    name: 'file_name',
+    filename: 'file_name',
+  },
+  leave_requests: {
+    employee: 'employee_id',
+    type: 'leave_type',
+    from: 'start_date',
+    to: 'end_date',
+  },
+};
+
+/**
+ * Columns that should be silently dropped (with a hint) for a given table.
+ * Useful when external agents send "narrative" fields that have no DB column
+ * (e.g. body_markdown / content for documents — the actual content is the
+ * file at file_url).
+ */
+const DROPPED_COLUMNS: Record<string, string[]> = {
+  documents: ['body_markdown', 'content', 'body', 'markdown'],
+};
+
+function applyTableAlias(table: string): string {
+  return TABLE_ALIASES[table] ?? table;
+}
+
+function applyColumnAliases(table: string, fields: Record<string, any>): { mapped: Record<string, any>; dropped: string[] } {
+  const aliases = COLUMN_ALIASES[table];
+  const dropList = DROPPED_COLUMNS[table] ?? [];
+  const dropped: string[] = [];
+  const mapped: Record<string, any> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (dropList.includes(k)) {
+      dropped.push(k);
+      continue;
+    }
+    const target = aliases?.[k];
+    if (target) {
+      // Prefer existing canonical value if both supplied
+      if (mapped[target] === undefined) mapped[target] = v;
+    } else {
+      mapped[k] = v;
+    }
+  }
+  return { mapped, dropped };
+}
 
 /**
  * Tables with business logic that MUST go through dedicated skills.
@@ -5922,6 +5997,10 @@ async function executeGenericCrud(
   // Defensive: re-normalize in case caller bypassed the top-level normalizer
   // (e.g. nested data:{} that survived). Never let `data` reach insert().
   args = normalizeSkillArgs(args as Record<string, unknown>);
+
+  // Friendly aliases — let agents say "applications" instead of "job_applications"
+  table = applyTableAlias(table);
+
   // Block tables that have dedicated business-logic skills
   if (DEDICATED_SKILL_TABLES[table]) {
     return { 
@@ -5935,7 +6014,49 @@ async function executeGenericCrud(
     return { error: `Unknown db table: ${table}. Generic CRUD is not enabled for this table.` };
   }
 
-  const { action = 'list', id, ...fields } = args as any;
+  let { action = 'list', id, ...fields } = args as any;
+
+  // Action aliases — common natural variants like "list_pending" → list + filter
+  const ACTION_ALIASES: Record<string, { action: string; extraFilters?: Record<string, any> }> = {
+    list_pending:  { action: 'list', extraFilters: { status: 'pending' } },
+    list_active:   { action: 'list', extraFilters: { status: 'active' } },
+    list_open:     { action: 'list', extraFilters: { status: 'open' } },
+    list_approved: { action: 'list', extraFilters: { status: 'approved' } },
+    list_draft:    { action: 'list', extraFilters: { status: 'draft' } },
+    fetch:         { action: 'get' },
+    read:          { action: 'get' },
+    insert:        { action: 'create' },
+    add:           { action: 'create' },
+    edit:          { action: 'update' },
+    modify:        { action: 'update' },
+    remove:        { action: 'delete' },
+  };
+  const aliasResolved = ACTION_ALIASES[action];
+  if (aliasResolved) {
+    action = aliasResolved.action;
+    if (aliasResolved.extraFilters) {
+      fields.filters = { ...(fields.filters as Record<string, any> ?? {}), ...aliasResolved.extraFilters };
+    }
+  }
+
+  // Apply per-table column aliases (e.g. mime_type → file_type for documents).
+  // Only touches data fields — leaves reserved CRUD keys untouched.
+  const RESERVED_FIELD_KEYS = new Set(['limit', 'offset', 'order_by', 'ascending', 'filters', 'search']);
+  const reservedExtract: Record<string, any> = {};
+  const dataExtract: Record<string, any> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (RESERVED_FIELD_KEYS.has(k) || k.startsWith('_')) {
+      reservedExtract[k] = v;
+    } else {
+      dataExtract[k] = v;
+    }
+  }
+  const { mapped, dropped } = applyColumnAliases(table, dataExtract);
+  fields = { ...reservedExtract, ...mapped };
+  if (dropped.length) {
+    console.log(`[agent-execute] dropped unsupported columns for ${table}: ${dropped.join(', ')}`);
+  }
+
   const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);
 
   // Sanitize payload for audit (remove agent-internal _ fields)
