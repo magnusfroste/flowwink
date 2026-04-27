@@ -70,6 +70,92 @@ const DEFAULT_SETTINGS: CoworkSettings = {
 const PER_SOURCE_LIMIT = 25;
 
 /* ------------------------------------------------------------------ */
+/* Token budget                                                        */
+/* ------------------------------------------------------------------ */
+// Rough char→token estimate (gpt-style): ~4 chars per token.
+const CHAR_PER_TOKEN = 4;
+const TOTAL_TOKEN_BUDGET = 15000;
+const MIN_PER_SOURCE_TOKENS = 600;
+
+interface ContextMeta {
+  tokens_used: number;
+  tokens_budget: number;
+  sources_active: number;
+  sources_truncated: string[];
+  per_source: Record<string, number>;
+}
+
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / CHAR_PER_TOKEN);
+}
+
+function truncateBlock(block: string, maxTokens: number): { block: string; truncated: boolean } {
+  const tokens = estimateTokens(block);
+  if (tokens <= maxTokens) return { block, truncated: false };
+  const maxChars = maxTokens * CHAR_PER_TOKEN;
+  const lines = block.split('\n');
+  const header = lines[0];
+  let out = header;
+  let used = header.length;
+  for (let i = 1; i < lines.length; i++) {
+    const next = '\n' + lines[i];
+    if (used + next.length > maxChars - 40) break;
+    out += next;
+    used += next.length;
+  }
+  out += `\n…[truncated to fit token budget]`;
+  return { block: out, truncated: true };
+}
+
+function applyTokenBudget(
+  rawBlocks: Array<{ source: string; text: string }>,
+): { contextText: string; meta: ContextMeta } {
+  const sourcesActive = rawBlocks.length;
+  if (sourcesActive === 0) {
+    return {
+      contextText: '',
+      meta: { tokens_used: 0, tokens_budget: TOTAL_TOKEN_BUDGET, sources_active: 0, sources_truncated: [], per_source: {} },
+    };
+  }
+  const fairShare = Math.max(MIN_PER_SOURCE_TOKENS, Math.floor(TOTAL_TOKEN_BUDGET / sourcesActive));
+  const truncated: string[] = [];
+  const trimmed = rawBlocks.map(({ source, text }) => {
+    const r = truncateBlock(text, fairShare);
+    if (r.truncated) truncated.push(source);
+    return { source, text: r.block, tokens: estimateTokens(r.block) };
+  });
+  let used = trimmed.reduce((s, b) => s + b.tokens, 0);
+  const leftover = TOTAL_TOKEN_BUDGET - used;
+  if (leftover > 0 && truncated.length > 0) {
+    const bonus = Math.floor(leftover / truncated.length);
+    for (let i = 0; i < trimmed.length; i++) {
+      if (!truncated.includes(trimmed[i].source)) continue;
+      const original = rawBlocks.find((b) => b.source === trimmed[i].source)!.text;
+      const r = truncateBlock(original, trimmed[i].tokens + bonus);
+      trimmed[i].text = r.block;
+      trimmed[i].tokens = estimateTokens(r.block);
+      if (!r.truncated) {
+        const idx = truncated.indexOf(trimmed[i].source);
+        if (idx >= 0) truncated.splice(idx, 1);
+      }
+    }
+  }
+  const finalText = trimmed.map((b) => b.text).join('\n\n');
+  const perSource: Record<string, number> = {};
+  trimmed.forEach((b) => { perSource[b.source] = b.tokens; });
+  return {
+    contextText: finalText,
+    meta: {
+      tokens_used: estimateTokens(finalText),
+      tokens_budget: TOTAL_TOKEN_BUDGET,
+      sources_active: sourcesActive,
+      sources_truncated: truncated,
+      per_source: perSource,
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Context builder                                                     */
 /* ------------------------------------------------------------------ */
 async function buildContext(
