@@ -570,15 +570,15 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   workspaceChat: {
     enabled: false,
-    name: 'Workspace Chat',
+    name: 'Cowork Chat',
     description:
-      'Internal authenticated chat that answers questions about your documents, contracts, KB, CRM and HR data — read-only with source citations. Independent of FlowPilot.',
+      'Internal authenticated chat for admins/employees. Combines your workspace data (documents, contracts, KB, CRM, HR) with the model\'s own knowledge and optional web search. Read-only with source citations.',
     icon: 'Sparkles',
     category: 'communication',
     autonomy: 'view-required',
     adminUI: true,
     requiresAI: true,
-    optionalIntegrations: ['openai', 'gemini', 'local_llm'],
+    optionalIntegrations: ['openai', 'gemini', 'local_llm', 'firecrawl'],
   },
 };
 

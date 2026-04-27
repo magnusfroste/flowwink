@@ -66,7 +66,7 @@ export const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
-      { name: "Workspace Chat", href: "/admin/workspace", icon: Sparkles, moduleId: "workspaceChat" },
+      { name: "Cowork Chat", href: "/admin/workspace", icon: Sparkles, moduleId: "workspaceChat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
     ],
