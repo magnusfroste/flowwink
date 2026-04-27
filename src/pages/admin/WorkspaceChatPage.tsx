@@ -16,6 +16,7 @@ import {
 import { SourceFilterPanel } from '@/components/admin/workspace/SourceFilterPanel';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { Send, Square, Sparkles, Loader2, MessageSquarePlus } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function WorkspaceChatPage() {
   const { toast } = useToast();
@@ -55,25 +56,28 @@ export default function WorkspaceChatPage() {
 
   if (!enabled) {
     return (
-      <div className="container mx-auto max-w-2xl py-12">
-        <Card>
-          <CardContent className="py-12 text-center space-y-4">
-            <Sparkles className="h-10 w-10 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Workspace Chat is disabled</h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Enable the Workspace Chat module to ask questions about your
-              internal documents, contracts, KB, CRM and employee data.
-            </p>
-            <Button asChild>
-              <Link to="/admin/modules">Manage modules</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AdminLayout>
+        <div className="container mx-auto max-w-2xl py-12">
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <Sparkles className="h-10 w-10 mx-auto text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Workspace Chat is disabled</h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Enable the Workspace Chat module to ask questions about your
+                internal documents, contracts, KB, CRM and employee data.
+              </p>
+              <Button asChild>
+                <Link to="/admin/modules">Manage modules</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
+    <AdminLayout>
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
       <div className="border-b border-border/60 px-6 py-4 flex items-center justify-between bg-background">
@@ -204,5 +208,6 @@ export default function WorkspaceChatPage() {
         </aside>
       </div>
     </div>
+    </AdminLayout>
   );
 }
