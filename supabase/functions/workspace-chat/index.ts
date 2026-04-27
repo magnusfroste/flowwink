@@ -161,9 +161,9 @@ function applyTokenBudget(
 async function buildContext(
   supabase: any,
   sources: SourceKey[],
-): Promise<{ contextText: string; citations: Citation[] }> {
+): Promise<{ contextText: string; citations: Citation[]; meta: ContextMeta }> {
   const citations: Citation[] = [];
-  const blocks: string[] = [];
+  const rawBlocks: Array<{ source: string; text: string }> = [];
   let ref = 1;
 
   const push = (
