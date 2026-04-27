@@ -88,6 +88,7 @@ export interface ModulesSettings {
   quotes: ModuleConfig;
   email: ModuleConfig;
   recruitment: ModuleConfig;
+  workspaceChat: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
