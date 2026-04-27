@@ -35,14 +35,17 @@ export interface WorkspaceMessage {
   createdAt: string;
 }
 
+export type CoworkMode = 'strict' | 'cowork';
+
 interface UseWorkspaceChatOpts {
   sources: WorkspaceSource[];
+  mode?: CoworkMode;
   onError?: (msg: string) => void;
 }
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workspace-chat`;
 
-export function useWorkspaceChat({ sources, onError }: UseWorkspaceChatOpts) {
+export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpts) {
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -127,6 +130,7 @@ export function useWorkspaceChat({ sources, onError }: UseWorkspaceChatOpts) {
           body: JSON.stringify({
             messages: historyForApi,
             sources,
+            ...(mode ? { mode } : {}),
           }),
         });
 
@@ -229,7 +233,7 @@ export function useWorkspaceChat({ sources, onError }: UseWorkspaceChatOpts) {
         }
       }
     },
-    [messages, sources, isStreaming, onError],
+    [messages, sources, mode, isStreaming, onError],
   );
 
   return { messages, isStreaming, send, stop, reset };
