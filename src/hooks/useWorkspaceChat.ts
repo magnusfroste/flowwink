@@ -84,6 +84,14 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
       const trimmed = userText.trim();
       if (!trimmed || isStreaming) return;
 
+      // First-message hook (e.g. create a session, return its id) — fire and continue.
+      if (messages.length === 0 && onFirstMessage) {
+        try { await onFirstMessage(trimmed); } catch (e) { logger.error('onFirstMessage failed', e); }
+      }
+      if (onPersistUser) {
+        try { await onPersistUser(trimmed); } catch (e) { logger.error('onPersistUser failed', e); }
+      }
+
       const userMsg: WorkspaceMessage = {
         id: crypto.randomUUID(),
         role: 'user',
