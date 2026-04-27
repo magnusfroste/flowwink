@@ -60,36 +60,13 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
     },
     instructions: 'STRICT VALIDATION: log_time will reject the call (status="failed") if action is missing, if action!="create" while attempting to log, if hours is missing/zero/negative/>24, or if neither project_id nor project_name is supplied. To log hours: 1) Resolve the project (lookup by name if needed). 2) Send action="create", hours, and project_id|project_name — entry_date defaults to today. 3) Confirm the log showing project name, hours, and date. Swedish synonyms: "logga tid", "tidsrapport", "jobbade", "timmar".',
   },
-  {
-    name: 'manage_projects',
-    description: 'Create, list, or update time-tracking projects. Use when: admin wants to set up a new project, list active projects, or change hourly rates. NOT for: logging time (use log_time), CRM deals (use manage_deal).',
-    category: 'commerce',
-    handler: 'db:timesheets',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'manage_projects',
-        description: 'CRUD for time-tracking projects',
-        parameters: {
-          type: 'object',
-          properties: {
-            action: { type: 'string', enum: ['create', 'list', 'update', 'deactivate'] },
-            project_id: { type: 'string' },
-            name: { type: 'string' },
-            client_name: { type: 'string' },
-            description: { type: 'string' },
-            color: { type: 'string' },
-            hourly_rate_cents: { type: 'number' },
-            currency: { type: 'string' },
-            is_billable: { type: 'boolean' },
-          },
-          required: ['action'],
-        },
-      },
-    },
-    instructions: 'Projects link to clients and have hourly rates for billing. Default currency is SEK. Colors help visual identification in the weekly timesheet view.',
-  },
+  // NOTE: manage_projects / manage_tasks intentionally removed.
+  // Use the canonical skills from projects-module instead:
+  //   - manage_project        (handler: db:projects)
+  //   - manage_project_task   (handler: db:project_tasks)
+  // Previous duplicates here had handler='db:timesheets' which doesn't exist
+  // and would crash at runtime. See guardrail:
+  //   src/lib/__tests__/skill-schema-not-null-coverage.guardrails.test.ts
   {
     name: 'timesheet_summary',
     description: 'Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "hur mycket tid har vi lagt på projekt X". NOT for: logging time (use log_time).',
@@ -119,38 +96,6 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
       },
     },
     instructions: 'For custom date ranges pass start_date/end_date (from_date/to_date also accepted) — period auto-switches to "custom". When include_revenue is true, multiply hours × hourly_rate per project. Swedish: "tidssammanställning", "fakturerbar tid", "rapportera timmar".',
-  },
-  {
-    name: 'manage_tasks',
-    description: 'Create, list, update, or complete project tasks. Use when: user wants to create a task, see open tasks, change status, or assign someone. NOT for: logging time (use log_time), project setup (use manage_projects).',
-    category: 'commerce',
-    handler: 'db:timesheets',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'manage_tasks',
-        description: 'CRUD for project tasks with kanban status management',
-        parameters: {
-          type: 'object',
-          properties: {
-            action: { type: 'string', enum: ['create', 'list', 'update', 'delete'] },
-            task_id: { type: 'string', description: 'Task UUID (for update/delete)' },
-            project_id: { type: 'string', description: 'Project UUID' },
-            project_name: { type: 'string', description: 'Project name (lookup if no project_id)' },
-            title: { type: 'string' },
-            description: { type: 'string' },
-            status: { type: 'string', enum: ['todo', 'in_progress', 'review', 'done'] },
-            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
-            assigned_to: { type: 'string', description: 'User UUID to assign' },
-            due_date: { type: 'string', description: 'YYYY-MM-DD' },
-            estimated_hours: { type: 'number' },
-          },
-          required: ['action'],
-        },
-      },
-    },
-    instructions: 'Tasks live within projects. Status flow: todo → in_progress → review → done. completed_at is set automatically when done. Swedish: "uppgift", "task", "skapa uppgift", "vad ska göras".',
   },
 ];
 

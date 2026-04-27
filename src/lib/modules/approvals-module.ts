@@ -60,7 +60,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
     description:
       'Generic approval workflow engine: request approval for an entity, list pending requests, approve/reject/cancel, and evaluate whether an entity needs approval based on amount thresholds. Use when: a purchase order/expense report/invoice/quote crosses an approval threshold, an admin needs to see what is awaiting their decision, FlowPilot wants to know if an action requires human sign-off before proceeding. NOT for: managing the underlying entity itself (use manage_purchase_order, manage_expenses, manage_invoice, manage_quote).',
     category: 'commerce',
-    handler: 'db:approvals',
+    handler: 'module:approvals',
     scope: 'internal',
     tool_definition: {
       type: 'function',
