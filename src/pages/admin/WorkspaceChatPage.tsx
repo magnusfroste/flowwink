@@ -122,6 +122,15 @@ export default function WorkspaceChatPage() {
             <Badge variant="secondary" className="gap-1 text-[10px]">
               <Database className="h-3 w-3" /> Workspace
             </Badge>
+            {lastContextMeta && (
+              <Badge
+                variant={lastContextMeta.sources_truncated.length > 0 ? 'destructive' : 'outline'}
+                className="text-[10px]"
+                title={`Truncated: ${lastContextMeta.sources_truncated.join(', ') || 'none'}`}
+              >
+                Context: {(lastContextMeta.tokens_used / 1000).toFixed(1)}k / {(lastContextMeta.tokens_budget / 1000).toFixed(0)}k tok
+              </Badge>
+            )}
             {worldOn && (
               <Badge variant="secondary" className="gap-1 text-[10px]">
                 <Brain className="h-3 w-3" /> Model
