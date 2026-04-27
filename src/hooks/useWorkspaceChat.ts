@@ -49,11 +49,14 @@ interface UseWorkspaceChatOpts {
   sources: WorkspaceSource[];
   mode?: CoworkMode;
   onError?: (msg: string) => void;
+  onPersistUser?: (text: string) => Promise<void> | void;
+  onPersistAssistant?: (text: string, citations: WorkspaceCitation[]) => Promise<void> | void;
+  onFirstMessage?: (text: string) => Promise<string | null> | string | null;
 }
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workspace-chat`;
 
-export function useWorkspaceChat({ sources, mode, onError }: UseWorkspaceChatOpts) {
+export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPersistAssistant, onFirstMessage }: UseWorkspaceChatOpts) {
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [lastContextMeta, setLastContextMeta] = useState<ContextMeta | null>(null);
