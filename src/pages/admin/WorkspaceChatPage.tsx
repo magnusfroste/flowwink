@@ -16,6 +16,7 @@ import {
 import { SourceFilterPanel } from '@/components/admin/workspace/SourceFilterPanel';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { Send, Square, Sparkles, Loader2, MessageSquarePlus } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function WorkspaceChatPage() {
   const { toast } = useToast();
