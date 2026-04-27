@@ -509,7 +509,7 @@ Deno.serve(async (req) => {
         if (!toolCalls || toolCalls.length === 0) {
           // No tool calls — we have the final assistant message. Stream it back as a single chunk.
           const finalText: string = choice?.message?.content || '';
-          return streamFinal(citations, finalText);
+          return streamFinal(citations, finalText, contextMeta);
         }
         // Execute tool calls
         conversation.push(choice.message);
