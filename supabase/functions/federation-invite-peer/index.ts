@@ -13,6 +13,7 @@ const corsHeaders = {
 
 interface InvitePayload {
   inviter_peer_id?: string;       // Set when called via MCP (the peer that authenticated)
+  caller_api_key_id?: string;     // Injected by agent-execute when invoked via MCP tool-call
   invitee_name: string;
   invitee_url?: string;            // Optional — pure inbound peers may not have one
   invitee_description?: string;
@@ -53,6 +54,16 @@ serve(async (req: Request) => {
         .from("a2a_peers")
         .select("id, name, toolset_groups")
         .eq("id", body.inviter_peer_id)
+        .maybeSingle();
+      inviter = data as any;
+    } else if (body.caller_api_key_id || (body as any)._caller_api_key_id) {
+      // Invoked via agent-execute → MCP tool call. The caller's api_key_id is forwarded
+      // either as `caller_api_key_id` (top-level) or `_caller_api_key_id` (in args).
+      const callerApiKeyId = body.caller_api_key_id || (body as any)._caller_api_key_id;
+      const { data } = await supabase
+        .from("a2a_peers")
+        .select("id, name, toolset_groups")
+        .eq("api_key_id", callerApiKeyId)
         .maybeSingle();
       inviter = data as any;
     } else {
