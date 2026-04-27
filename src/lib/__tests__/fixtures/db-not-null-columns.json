@@ -1,0 +1,31 @@
+{
+  "_comment": "NOT NULL columns without DB defaults, per public table that backs a db:<table> manage_* skill. Regenerate with: bun run scripts/snapshot-db-not-nulls.ts",
+  "_generated_at": "2026-04-27",
+  "tables": {
+    "accounting_templates": ["template_name"],
+    "analytic_accounts": ["code", "name"],
+    "chart_of_accounts": ["account_category", "account_code", "account_name", "account_type", "normal_balance"],
+    "contracts": ["counterparty_name", "title"],
+    "documents": ["file_name", "file_url", "title"],
+    "employees": ["name"],
+    "expenses": ["user_id"],
+    "invoices": ["invoice_number"],
+    "job_postings": ["slug", "title"],
+    "journal_entries": ["description"],
+    "leave_requests": ["employee_id", "end_date", "start_date"],
+    "opening_balances": ["account_code", "account_name"],
+    "project_tasks": ["project_id", "title"],
+    "projects": ["name"],
+    "quotes": ["quote_number"],
+    "site_settings": ["key"],
+    "vendors": ["name"]
+  },
+  "_auto_filled_columns": {
+    "_comment": "Columns the handler/service-layer fills automatically — exempt from schema exposure rule",
+    "documents": ["file_name"],
+    "expenses": ["user_id"],
+    "invoices": ["invoice_number"],
+    "quotes": ["quote_number"],
+    "job_postings": ["slug"]
+  }
+}
