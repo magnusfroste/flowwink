@@ -29,6 +29,7 @@ export { inventoryModule } from './inventory-module';
 export { chatModule } from './chat-module';
 export { liveSupportModule } from './live-support-module';
 export { webinarsModule } from './webinars-module';
+export { workspaceChatModule } from './workspace-chat-module';
 
 // ── Insights ──
 export { analyticsModule } from './analytics-module';
