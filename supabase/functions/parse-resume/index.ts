@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,10 +22,17 @@ serve(async (req) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    let ai;
+    try {
+      ai = await resolveAiConfig(supabase, 'fast');
+    } catch (err: any) {
       return new Response(
-        JSON.stringify({ success: false, error: 'AI service not configured' }),
+        JSON.stringify({ success: false, error: err.message || 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -69,52 +78,69 @@ Rules:
 - For experience_json, include the most recent 5-10 positions
 - Return ONLY the JSON, no markdown or explanation`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n## Resume Text\n${resume_text.slice(0, 30000)}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4096,
-            responseMimeType: 'application/json',
-          },
-        }),
-      }
-    );
+    const userMessage = `${systemPrompt}\n\n## Resume Text\n${resume_text.slice(0, 30000)}`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error:', errorText);
-      return new Response(
-        JSON.stringify({ success: false, error: 'AI parsing failed' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    let rawText = '';
+
+    if (isAnthropicProvider(ai.apiUrl)) {
+      const response = await fetch(ai.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ai.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          max_tokens: 4096,
+          temperature: 0.2,
+          messages: [{ role: 'user', content: userMessage }],
+        }),
+      });
+      if (!response.ok) {
+        console.error('parse-resume Anthropic error:', await response.text());
+        return new Response(JSON.stringify({ success: false, error: 'AI parsing failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const result = await response.json();
+      rawText = result.content?.[0]?.text || '';
+    } else {
+      // OpenAI-compatible (OpenAI, Gemini OpenAI-compat, Local LLM)
+      const response = await fetch(ai.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ai.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          messages: [{ role: 'user', content: userMessage }],
+          temperature: 0.2,
+          max_tokens: 4096,
+          response_format: { type: 'json_object' },
+        }),
+      });
+      if (!response.ok) {
+        console.error('parse-resume AI error:', await response.text());
+        return new Response(JSON.stringify({ success: false, error: 'AI parsing failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const result = await response.json();
+      rawText = result.choices?.[0]?.message?.content || '';
     }
 
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
+    if (!rawText) {
       return new Response(
         JSON.stringify({ success: false, error: 'No response from AI' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse the JSON response
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
     return new Response(
-      JSON.stringify({ success: true, profile: parsed }),
+      JSON.stringify({ success: true, profile: parsed, provider_used: ai.provider }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
