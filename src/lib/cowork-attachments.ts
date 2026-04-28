@@ -138,7 +138,7 @@ async function parsePdfFile(file: File): Promise<ParseResult> {
 
   try {
     const { data, error } = await supabase.functions.invoke('extract-pdf-text', {
-      body: { storage_path: `cowork-uploads/${path}` },
+      body: { storage_path: `cowork-uploads/${path}`, document_id: docId },
     });
     if (error) throw new Error(error.message || 'extract-pdf-text failed');
     if (data?.queued) {
