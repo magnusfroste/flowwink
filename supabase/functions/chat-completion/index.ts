@@ -6,6 +6,7 @@ import {
   buildSystemPrompt,
   loadSkillTools,
 } from "../_shared/agent-reason.ts";
+import { logAiUsage } from "../_shared/ai-usage-logger.ts";
 
 /**
  * Chat Completion — Visitor-facing AI chat
@@ -810,6 +811,7 @@ serve(async (req) => {
         model: provider.model,
         messages: msgs,
         stream: true,
+        stream_options: { include_usage: true },
       };
 
       if (tools.length > 0 && iteration < MAX_TOOL_ITERATIONS - 1) {
@@ -817,12 +819,64 @@ serve(async (req) => {
         reqBody.tool_choice = 'auto';
       }
 
+      const tIter = Date.now();
       const upstream = await fetch(provider.apiUrl, { method: 'POST', headers, body: JSON.stringify(reqBody) });
-      if (!upstream.ok) return handleAiError(upstream);
+      if (!upstream.ok) {
+        void logAiUsage({
+          supabase, source: 'chat-completion', provider: provider.id, model: provider.model,
+          promptTokens: 0, completionTokens: 0, totalTokens: 0,
+          latencyMs: Date.now() - tIter,
+          status: upstream.status === 429 ? 'rate_limited' : 'error',
+          conversationId: conversationId || null,
+          metadata: { iteration, http_status: upstream.status, has_tools: tools.length > 0 },
+        });
+        return handleAiError(upstream);
+      }
 
-      // No tools or last iteration — pipe directly, zero overhead
+      // Wrap upstream stream so we can sniff the final usage chunk without changing client behaviour
+      const sniffStream = (src: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> => {
+        const decoder = new TextDecoder();
+        let buf = '';
+        return new ReadableStream({
+          async start(controller) {
+            const reader = src.getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                controller.enqueue(value);
+                buf += decoder.decode(value, { stream: true });
+                if (buf.length > 8000) buf = buf.slice(-4000);
+              }
+            } catch (e) {
+              console.error('[chat-completion] stream sniff error:', e);
+            } finally {
+              controller.close();
+              let pTok = 0, cTok = 0, tTok = 0;
+              const matches = buf.match(/"usage"\s*:\s*\{[^}]*\}/g);
+              if (matches && matches.length) {
+                try {
+                  const u = JSON.parse(`{${matches[matches.length - 1]}}`).usage;
+                  pTok = u.prompt_tokens || 0;
+                  cTok = u.completion_tokens || 0;
+                  tTok = u.total_tokens || pTok + cTok;
+                } catch { /* ignore */ }
+              }
+              void logAiUsage({
+                supabase, source: 'chat-completion', provider: provider.id, model: provider.model,
+                promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
+                latencyMs: Date.now() - tIter, status: 'success',
+                conversationId: conversationId || null,
+                metadata: { iteration, has_tools: tools.length > 0 },
+              });
+            }
+          },
+        });
+      };
+
+      // No tools or last iteration — pipe directly with sniffer
       if (tools.length === 0 || iteration >= MAX_TOOL_ITERATIONS - 1) {
-        return new Response(upstream.body, { headers: sseHeaders });
+        return new Response(sniffStream(upstream.body!), { headers: sseHeaders });
       }
 
       // Open an output pipe — client starts receiving immediately

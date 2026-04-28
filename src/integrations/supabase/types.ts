@@ -913,6 +913,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_logs: {
+        Row: {
+          completion_tokens: number
+          conversation_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          latency_ms: number | null
+          metadata: Json
+          model: string | null
+          prompt_tokens: number
+          provider: string | null
+          request_id: string | null
+          source: string
+          status: string
+          total_tokens: number
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model?: string | null
+          prompt_tokens?: number
+          provider?: string | null
+          request_id?: string | null
+          source: string
+          status?: string
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model?: string | null
+          prompt_tokens?: number
+          provider?: string | null
+          request_id?: string | null
+          source?: string
+          status?: string
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       analytic_accounts: {
         Row: {
           account_type: string

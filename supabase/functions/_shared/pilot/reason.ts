@@ -13,6 +13,7 @@ import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToo
 import { resolveAiConfig } from '../ai-config.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
+import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from './intent-scorer.ts';
 import {
   handleMemoryWrite,
@@ -741,7 +742,7 @@ export async function reason(
   }
 
   try {
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
+    const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabase, config.tier || 'fast');
     const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
 
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
@@ -819,6 +820,7 @@ export async function reason(
         console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
 
+      const tIter = Date.now();
       const aiResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -833,6 +835,15 @@ export async function reason(
       if (!aiResponse.ok) {
         const errText = await aiResponse.text();
         console.error(`[reason] trace=${traceId} AI error:`, aiResponse.status, errText);
+        void logAiUsage({
+          supabase, source: `pilot:${config.scope}`, provider, model,
+          promptTokens: 0, completionTokens: 0, totalTokens: 0,
+          latencyMs: Date.now() - tIter,
+          status: aiResponse.status === 429 ? 'rate_limited' : 'error',
+          error: errText.slice(0, 500),
+          requestId: traceId,
+          metadata: { http_status: aiResponse.status, lock_lane: config.lockLane },
+        });
         throw new Error(`AI provider error: ${aiResponse.status}`);
       }
 
@@ -844,6 +855,15 @@ export async function reason(
         completion_tokens: usage.completion_tokens || 0,
         total_tokens: (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
       };
+      void logAiUsage({
+        supabase, source: `pilot:${config.scope}`, provider, model,
+        promptTokens: iterTokens.prompt_tokens,
+        completionTokens: iterTokens.completion_tokens,
+        totalTokens: iterTokens.total_tokens,
+        latencyMs: Date.now() - tIter, status: 'success',
+        requestId: traceId,
+        metadata: { lock_lane: config.lockLane, tools_count: allTools.length },
+      });
       totalTokenUsage = {
         prompt_tokens: totalTokenUsage.prompt_tokens + iterTokens.prompt_tokens,
         completion_tokens: totalTokenUsage.completion_tokens + iterTokens.completion_tokens,
