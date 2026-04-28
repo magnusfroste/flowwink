@@ -61,10 +61,24 @@ serve(async (req) => {
       );
     }
 
-    // Resolve a vision-capable AI via the central config layer
+    // Resolve a vision-capable AI via the central config layer.
+    // PDF preference: Gemini handles PDFs in a single call via inline_data.
+    // OpenAI requires the Files API (2-step upload). Anthropic supports document blocks.
+    // If Gemini key exists, prefer it for PDFs even when another provider is primary.
     let ai;
     try {
-      ai = await resolveAiConfig(supabase, 'multimodal');
+      const geminiKey = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
+      if (geminiKey) {
+        ai = {
+          provider: 'gemini' as const,
+          apiKey: geminiKey,
+          apiUrl: '',
+          model: 'gemini-2.5-flash',
+          fallback: false,
+        };
+      } else {
+        ai = await resolveAiConfig(supabase, 'multimodal');
+      }
     } catch (err: any) {
       return new Response(
         JSON.stringify({ success: false, error: err.message || 'No vision-capable AI provider configured' }),
@@ -119,7 +133,27 @@ If this is a resume/CV, preserve all sections clearly.`;
       const result = await response.json();
       extractedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
     } else if (ai.provider === 'openai') {
-      // OpenAI accepts data URLs in image_url for PDF/image content
+      // OpenAI requires PDF via Files API: upload first, then reference file_id.
+      // image_url with application/pdf data URL is NOT supported (returns invalid_image_format).
+      const uploadForm = new FormData();
+      uploadForm.append('purpose', 'user_data');
+      uploadForm.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'document.pdf');
+
+      const uploadResp = await fetch('https://api.openai.com/v1/files', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${ai.apiKey}` },
+        body: uploadForm,
+      });
+
+      if (!uploadResp.ok) {
+        const errText = await uploadResp.text();
+        console.error('OpenAI file upload error:', errText);
+        throw new Error('OpenAI file upload failed');
+      }
+
+      const uploaded = await uploadResp.json();
+      const fileId = uploaded.id;
+
       const response = await fetch(ai.apiUrl, {
         method: 'POST',
         headers: {
@@ -132,7 +166,7 @@ If this is a resume/CV, preserve all sections clearly.`;
             role: 'user',
             content: [
               { type: 'text', text: extractionPrompt },
-              { type: 'image_url', image_url: { url: `data:application/pdf;base64,${base64Pdf}` } },
+              { type: 'file', file: { file_id: fileId } },
             ],
           }],
           max_tokens: 16384,
@@ -148,6 +182,12 @@ If this is a resume/CV, preserve all sections clearly.`;
 
       const result = await response.json();
       extractedText = result.choices?.[0]?.message?.content || '';
+
+      // Best-effort cleanup of uploaded file
+      fetch(`https://api.openai.com/v1/files/${fileId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${ai.apiKey}` },
+      }).catch(() => {});
     } else if (ai.provider === 'anthropic') {
       // Anthropic native messages API with document content block
       const response = await fetch(ai.apiUrl, {
