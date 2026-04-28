@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, RefreshCw, Copy, Check } from 'lucide-react';
 import type { AppRole } from '@/types/cms';
+import { ROLE_LABELS } from '@/types/cms';
 
 function generatePassword(length = 12): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
