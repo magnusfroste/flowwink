@@ -30,7 +30,7 @@ function formatCents(cents: number, currency = 'SEK'): string {
 
 export function ExpenseReportsTab() {
   const { data: reports, isLoading } = useExpenseReports();
-  const { data: isAdmin } = useIsAdmin();
+  const { isAdmin } = useAuth();
   const generate = useGenerateMonthlyReport();
   const submit = useSubmitExpenseReport();
   const approve = useApproveExpenseReport();
