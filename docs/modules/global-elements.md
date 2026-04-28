@@ -1,31 +1,27 @@
 ---
-title: "Products Module"
-module_id: "ecommerce"
+title: "Global Blocks Module"
+module_id: "globalElements"
 version: "1.0.0"
-category: "data"
+category: "system"
 autonomy: "config-required"
 generated: true
 generated_at: "2026-04-28"
 ---
 
-# Products
+# Global Blocks
 
-> Create and manage e-commerce products
+> Create reusable global content blocks (header, footer, etc.)
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `ecommerce` |
+| **Module ID** | `globalElements` |
 | **Version** | 1.0.0 |
-| **Category** | data |
+| **Category** | system |
 | **Autonomy** | config-required |
 | **Core** | No |
-| **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-
-## Integrations
-
-**Optional:** `stripe`, `resend`, `stripe_webhook`
+| **Capabilities** | `content:receive`, `data:write` |
 
 ## API Contract
 
@@ -33,10 +29,7 @@ generated_at: "2026-04-28"
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/products-module.ts` |
-| Hook | `src/hooks/useProducts.ts` |
-| Admin page | `src/pages/admin/ProductsPage.tsx` |
-| Public block | `src/components/public/blocks/ProductsBlock.tsx` |
+| Module definition | `src/lib/modules/global-blocks-module.ts` |
 
 ## Contributing
 

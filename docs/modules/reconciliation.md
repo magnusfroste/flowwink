@@ -1,23 +1,23 @@
 ---
 title: "Reconciliation Module"
 module_id: "reconciliation"
-version: "1.0.0"
+version: "1.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-22"
+generated_at: "2026-04-28"
 ---
 
 # Reconciliation
 
-> Bank reconciliation: Stripe payout sync, CSV/CAMT.053/SIE import, auto-match against invoices/expenses/orders.
+> Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches against invoices/expenses/orders.
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
 | **Module ID** | `reconciliation` |
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
 | **Category** | data |
 | **Autonomy** | agent-capable |
 | **Core** | No |
@@ -29,7 +29,7 @@ generated_at: "2026-04-22"
 
 ## API Contract
 
-**Actions:** `sync_stripe`, `import_file`, `auto_match`, `list_unmatched`
+**Actions:** `sync_stripe`, `import_file`, `import_image`, `auto_match`, `list_unmatched`
 
 ### Input Fields
 
@@ -38,7 +38,12 @@ generated_at: "2026-04-22"
 | `action` | `src/lib/modules/reconciliation-module.ts` |
 | `fileName` | `src/lib/modules/reconciliation-module.ts` |
 | `content` | `src/lib/modules/reconciliation-module.ts` |
+| `contentBase64` | `src/lib/modules/reconciliation-module.ts` |
+| `mimeType` | `src/lib/modules/reconciliation-module.ts` |
+| `provider` | `src/lib/modules/reconciliation-module.ts` |
 | `format` | `src/lib/modules/reconciliation-module.ts` |
+| `commit` | `src/lib/modules/reconciliation-module.ts` |
+| `transactions` | `src/lib/modules/reconciliation-module.ts` |
 
 ### Output Fields
 

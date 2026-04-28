@@ -1,79 +1,67 @@
-# Workspace Chat
+---
+title: "Cowork Chat Module"
+module_id: "workspaceChat"
+version: "1.1.0"
+category: "communication"
+autonomy: "view-required"
+generated: true
+generated_at: "2026-04-28"
+---
 
-Internal authenticated chat for admins and employees to ask questions about
-their own FlowWink data — documents, contracts, KB, pages, CRM and HR.
+# Cowork Chat
 
-## What it is
+> Internal authenticated chat that blends your workspace data with the model\
 
-| Surface | Audience | Purpose | Mutates data? |
-|---------|----------|---------|---------------|
-| AI Chat (`/chat`, `ChatBlock`) | Public visitors | Sales / support / KB lookup | No |
-| **Workspace Chat (`/admin/workspace`)** | **Admin / employee** | **Fact-finding across internal data** | **No** |
-| FlowPilot (`/admin/flowpilot`) | Admin (when on) | Autonomous operator | Yes |
+## Quick Facts
 
-Workspace Chat is intentionally **read-only**. If you want autonomous
-mutations (assign leads, send emails, trigger workflows), enable FlowPilot.
+| Property | Value |
+|----------|-------|
+| **Module ID** | `workspaceChat` |
+| **Version** | 1.1.0 |
+| **Category** | communication |
+| **Autonomy** | view-required |
+| **Core** | No |
+| **Capabilities** | `data:read` |
 
-## How it works
+## Integrations
 
-1. User opens `/admin/workspace` (auth required, admin/employee/manager role).
-2. Selects which sources to ground answers in (Documents, Contracts, KB,
-   Pages, CRM, Employees).
-3. Sends a question.
-4. Frontend calls `workspace-chat` edge function with their JWT.
-5. Edge function:
-   - Verifies the JWT and the user's role.
-   - Builds a CAG (Context-Augmented Generation) prompt from the selected
-     sources, packing top-N entities directly into the system message.
-   - Calls the AI provider configured under **Integrations** (OpenAI,
-     Gemini or Local LLM) using the same `resolveAiConfig()` helper that
-     powers the public AI Chat.
-   - Streams the response back as SSE, prepending one `event: citations`
-     frame so the UI can show source chips alongside the answer.
-6. UI renders the streaming markdown answer and the citations drawer.
+**Optional:** `openai`, `gemini`, `local_llm`, `firecrawl`
 
-## Architecture
+## API Contract
 
-- **Page**: `src/pages/admin/WorkspaceChatPage.tsx`
-- **Hook**: `src/hooks/useWorkspaceChat.ts` (SSE parser + history state +
-  custom `event: citations` handling)
-- **Components**:
-  - `src/components/admin/workspace/SourceFilterPanel.tsx`
-  - `src/components/admin/workspace/CitationsDrawer.tsx`
-- **Edge function**: `supabase/functions/workspace-chat/index.ts`
-- **Module manifest**: `src/lib/modules/workspace-chat-module.ts` (id:
-  `workspaceChat`, no skills, no MCP exposure)
-- **DB**: `chat_conversations` gained a `scope` column (`'visitor'` |
-  `'internal'`) and a `user_id` FK; RLS policies restrict `internal` rows
-  to the owning user.
+**Actions:** `get_config`
 
-### Why no skills?
+### Input Fields
 
-Per the [Skill Generalization Principle](../../mem/philosophy/skill-generalization-principle.md)
-and the [AI Utility vs Skill](../../mem/architecture/ai-utility-vs-skill-classification.md)
-contract, Workspace Chat is a **utility surface** — it transforms structured
-data into a natural-language answer. It performs no business operations,
-so it registers no skills and is not exposed via MCP. FlowPilot (when
-enabled) keeps its full skill catalog as the autonomy layer.
+| Field | Source |
+|-------|--------|
+| `action` | `src/lib/modules/workspace-chat-module.ts` |
 
-## CAG today, RAG tomorrow
+### Output Fields
 
-v1 packs top-N records of each source type (limit 25 each) directly into
-the prompt. This works well for small/medium deployments.
+| Field | Source |
+|-------|--------|
+| `success` | `src/lib/modules/workspace-chat-module.ts` |
+| `error` | `src/lib/modules/workspace-chat-module.ts` |
 
-When data volumes grow, swap `buildContext()` in `workspace-chat/index.ts`
-for a pgvector similarity search over `documents.content`,
-`contracts.notes`, and `kb_articles.body`. The interface (sources →
-`{ contextText, citations }`) stays identical.
+## File Map
 
-## Operating notes
+| Purpose | Path |
+|---------|------|
+| Module definition | `src/lib/modules/workspace-chat-module.ts` |
+| Hook | `src/hooks/useWorkspaceChat.ts` |
+| Admin page | `src/pages/admin/WorkspaceChatPage.tsx` |
 
-- Anthropic provider is **not** supported in v1 (different API shape).
-  Use OpenAI, Gemini or Local LLM.
-- The function uses the service-role client to read across all tables,
-  but only after explicitly verifying the caller has `admin`, `employee`
-  or `manager` in `user_roles`.
-- Citations are rendered as `[N]` references the model is instructed to
-  use; the side panel maps each `[N]` back to the source record.
-- The module gracefully degrades — if disabled the page shows an upsell
-  card linking to `/admin/modules`.
+## Contributing
+
+To enhance this module, see [Contributing Guide](../contributing/contributing.md) and [Module API](../reference/module-api.md).
+
+Key rules:
+- Follow `ModuleDefinition<I, O>` contract pattern
+- All schema changes require idempotent migrations
+- Skills must be self-describing (Law 2)
+- Blocks are interfaces, not pipelines (Law 3)
+
+---
+
+*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually.*
