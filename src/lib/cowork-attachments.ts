@@ -47,9 +47,14 @@ function truncate(text: string): { text: string; truncated: boolean } {
 async function extractTextFromPdfClient(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   try {
+    type PdfJsModule = {
+      GlobalWorkerOptions: { workerSrc: string };
+      getDocument: (params: { data: ArrayBuffer }) => { promise: Promise<{ numPages: number; getPage: (pageNumber: number) => Promise<{ getTextContent: () => Promise<{ items: Array<{ str?: string }> }> }> }> };
+    };
+
     const pdfjsLib = await (Function(
       'return import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs")',
-    )() as Promise<any>);
+    )() as Promise<PdfJsModule>);
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
 
