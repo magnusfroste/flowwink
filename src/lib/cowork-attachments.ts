@@ -52,11 +52,9 @@ async function extractTextFromPdfClient(file: File): Promise<string> {
       getDocument: (params: { data: ArrayBuffer }) => { promise: Promise<{ numPages: number; getPage: (pageNumber: number) => Promise<{ getTextContent: () => Promise<{ items: Array<{ str?: string }> }> }> }> };
     };
 
-    const pdfjsLib = await (Function(
-      'return import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs")',
-    )() as Promise<PdfJsModule>);
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs') as PdfJsModule;
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+      new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
 
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const pageTexts: string[] = [];
@@ -75,7 +73,20 @@ async function extractTextFromPdfClient(file: File): Promise<string> {
     return pageTexts.join('\n\n');
   } catch (error) {
     logger.error('client PDF extraction failed', error);
-    return '';
+    try {
+      const raw = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(arrayBuffer));
+      const matches = raw.match(/\(([^)]+)\)/g);
+      if (!matches?.length) return '';
+      return matches
+        .map((match) => match.slice(1, -1))
+        .join(' ')
+        .replace(/\\[nrtbf()\\]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    } catch (fallbackError) {
+      logger.error('raw PDF text fallback failed', fallbackError);
+      return '';
+    }
   }
 }
 
@@ -196,6 +207,24 @@ async function parsePdfFile(file: File): Promise<ParseResult> {
     });
     if (error) throw new Error(error.message || 'extract-pdf-text failed');
     if (data?.queued) {
+      window.setTimeout(async () => {
+        if (!docId) return;
+        const { data: doc } = await supabase
+          .from('documents')
+          .select('extraction_status')
+          .eq('id', docId)
+          .maybeSingle();
+
+        if (doc?.extraction_status === 'pending') {
+          await writeBackExtraction(
+            docId,
+            'failed',
+            null,
+            'PDF extraction timed out or upstream parser was unavailable.',
+          );
+        }
+      }, 20000);
+
       return {
         text: '',
         truncated: false,
