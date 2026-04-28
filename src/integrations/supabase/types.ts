@@ -3250,8 +3250,12 @@ export type Database = {
       documents: {
         Row: {
           category: string
+          content_extracted_at: string | null
+          content_md: string | null
           created_at: string
           description: string | null
+          extraction_error: string | null
+          extraction_status: string
           file_name: string
           file_size_bytes: number | null
           file_type: string | null
@@ -3260,6 +3264,7 @@ export type Database = {
           id: string
           related_entity_id: string | null
           related_entity_type: string | null
+          source: string
           tags: string[] | null
           title: string
           updated_at: string
@@ -3267,8 +3272,12 @@ export type Database = {
         }
         Insert: {
           category?: string
+          content_extracted_at?: string | null
+          content_md?: string | null
           created_at?: string
           description?: string | null
+          extraction_error?: string | null
+          extraction_status?: string
           file_name: string
           file_size_bytes?: number | null
           file_type?: string | null
@@ -3277,6 +3286,7 @@ export type Database = {
           id?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
+          source?: string
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -3284,8 +3294,12 @@ export type Database = {
         }
         Update: {
           category?: string
+          content_extracted_at?: string | null
+          content_md?: string | null
           created_at?: string
           description?: string | null
+          extraction_error?: string | null
+          extraction_status?: string
           file_name?: string
           file_size_bytes?: number | null
           file_type?: string | null
@@ -3294,6 +3308,7 @@ export type Database = {
           id?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
+          source?: string
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -8771,6 +8786,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_cowork_document: {
+        Args: {
+          p_category?: string
+          p_description?: string
+          p_file_name: string
+          p_file_size_bytes?: number
+          p_file_type?: string
+          p_file_url: string
+          p_tags?: string[]
+          p_title: string
+        }
+        Returns: string
+      }
       current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {
         Args: {
@@ -9299,6 +9327,15 @@ export type Database = {
             }
           }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
+      update_cowork_document_extraction: {
+        Args: {
+          p_content_md?: string
+          p_document_id: string
+          p_error?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       a2a_activity_status: "success" | "error" | "pending" | "dispatched"

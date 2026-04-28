@@ -180,17 +180,27 @@ async function buildContext(
   if (sources.includes('documents')) {
     const { data } = await supabase
       .from('documents')
-      .select('id, title, description, related_entity_type, created_at')
+      .select('id, title, description, related_entity_type, source, content_md, extraction_status, created_at')
       .order('created_at', { ascending: false })
       .limit(PER_SOURCE_LIMIT);
     if (data?.length) {
       const lines = data.map((d: any) => {
         const r = push('document', d.id, d.title || 'Untitled', `/admin/documents/${d.id}`);
         const meta = d.related_entity_type ? ` [${d.related_entity_type}]` : '';
+        const sourceTag = d.source && d.source !== 'manual' ? ` (${d.source})` : '';
         const desc = d.description ? ` — ${String(d.description).slice(0, 200)}` : '';
-        return `[${r}] ${d.title || 'Untitled'}${meta}${desc}`;
+
+        // If we have a successfully extracted markdown shadow, include a slice
+        // of the actual file content so the model can answer about it.
+        let body = '';
+        if (d.extraction_status === 'success' && d.content_md) {
+          const excerpt = String(d.content_md).slice(0, 2000);
+          body = `\n${excerpt}${d.content_md.length > 2000 ? '\n[…content truncated]' : ''}`;
+        }
+
+        return `[${r}] ${d.title || 'Untitled'}${sourceTag}${meta}${desc}${body}`;
       });
-      rawBlocks.push({ source: 'documents', text: `### Documents\n${lines.join('\n')}` });
+      rawBlocks.push({ source: 'documents', text: `### Documents\n${lines.join('\n\n')}` });
     }
   }
 
