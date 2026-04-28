@@ -143,23 +143,43 @@ export default function ReconciliationPage() {
             Sync Stripe
           </Button>
           <Select value={importFormat} onValueChange={(v: any) => setImportFormat(v)}>
-            <SelectTrigger className="w-32 h-9">
+            <SelectTrigger className="w-40 h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="csv">CSV</SelectItem>
               <SelectItem value="camt053">CAMT.053</SelectItem>
               <SelectItem value="sie">SIE</SelectItem>
+              <SelectItem value="image">Image / PDF (OCR)</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={importFile.isPending}>
-            <Upload className="h-4 w-4 mr-1" />
-            Import file
+          {importFormat === 'image' && (
+            <Select value={ocrProvider} onValueChange={(v: any) => setOcrProvider(v)}>
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="openai">OpenAI</SelectItem>
+                <SelectItem value="gemini">Gemini</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importFile.isPending || previewImage.isPending}
+          >
+            {importFormat === 'image' ? (
+              <ScanLine className="h-4 w-4 mr-1" />
+            ) : (
+              <Upload className="h-4 w-4 mr-1" />
+            )}
+            {previewImage.isPending ? 'Reading…' : importFormat === 'image' ? 'Scan image' : 'Import file'}
           </Button>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.xml,.sie,.se"
+            accept={importFormat === 'image' ? 'image/*,application/pdf' : '.csv,.xml,.sie,.se'}
             className="hidden"
             onChange={handleFile}
           />
