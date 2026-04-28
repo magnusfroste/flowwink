@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useModules } from '@/hooks/useModules';
 import {
   useRoleModuleAccess,
   useToggleRoleModuleAccess,
 } from '@/hooks/useRoleModuleAccess';
-import { FUNCTIONAL_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/types/cms';
+import { useResetRoleModuleAccess } from '@/hooks/useResetRoleModuleAccess';
+import { FUNCTIONAL_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, type AppRole } from '@/types/cms';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -17,13 +18,27 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { RotateCcw, Shield } from 'lucide-react';
 import { RoleAccessAuditPanel } from '@/components/admin/RoleAccessAuditPanel';
 
 export default function RolePermissionsPage() {
   const { data: modules, isLoading: loadingModules } = useModules();
   const { data: accessMap, isLoading: loadingAccess } = useRoleModuleAccess();
   const toggle = useToggleRoleModuleAccess();
+  const { resetOne, resetAll } = useResetRoleModuleAccess();
+  const [resetRoleTarget, setResetRoleTarget] = useState<AppRole | null>(null);
 
   const moduleEntries = useMemo(() => {
     if (!modules) return [];
@@ -45,7 +60,7 @@ export default function RolePermissionsPage() {
         <div className="rounded-lg bg-primary/10 p-2">
           <Shield className="h-5 w-5 text-primary" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Role permissions</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Control which modules each functional role can see in the admin sidebar.
@@ -53,6 +68,29 @@ export default function RolePermissionsPage() {
             is module-based, not role-based.
           </p>
         </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset all to defaults
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset all roles to defaults?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This wipes the entire matrix and restores the seeded baseline for
+                every role. The change is logged in the audit trail.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => resetAll.mutate()}>
+                Reset all
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <Card className="overflow-hidden">
@@ -76,7 +114,18 @@ export default function RolePermissionsPage() {
                       className="text-center min-w-[110px]"
                       title={ROLE_DESCRIPTIONS[role]}
                     >
-                      {ROLE_LABELS[role]}
+                      <div className="flex flex-col items-center gap-1">
+                        <span>{ROLE_LABELS[role]}</span>
+                        <button
+                          type="button"
+                          onClick={() => setResetRoleTarget(role)}
+                          className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 transition-colors"
+                          title={`Reset ${ROLE_LABELS[role]} to defaults`}
+                        >
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          reset
+                        </button>
+                      </div>
                     </TableHead>
                   ))}
                 </TableRow>
@@ -131,6 +180,34 @@ export default function RolePermissionsPage() {
       </p>
 
       <RoleAccessAuditPanel />
+
+      <AlertDialog
+        open={resetRoleTarget !== null}
+        onOpenChange={(open) => !open && setResetRoleTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Reset {resetRoleTarget ? ROLE_LABELS[resetRoleTarget] : ''} to defaults?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This wipes all current module grants for this role and restores the
+              seeded baseline. The change is logged in the audit trail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resetRoleTarget) resetOne.mutate(resetRoleTarget);
+                setResetRoleTarget(null);
+              }}
+            >
+              Reset role
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
