@@ -47,6 +47,7 @@ import {
   detectKind,
   parseAttachment,
 } from '@/lib/cowork-attachments';
+import { supabase } from '@/integrations/supabase/client';
 
 const MAX_ATTACHMENTS = 5;
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -191,10 +192,24 @@ export default function WorkspaceChatPage() {
 
         try {
           const result = await parseAttachment(file);
+          if (result.pending) {
+            setAttachments((prev) =>
+              prev.map((a) =>
+                a.id === id
+                  ? {
+                      ...a,
+                      documentId: result.documentId,
+                      status: 'parsing',
+                    }
+                  : a,
+              ),
+            );
+            continue;
+          }
           setAttachments((prev) =>
             prev.map((a) =>
               a.id === id
-                ? { ...a, status: 'ready', text: result.text }
+                ? { ...a, status: 'ready', text: result.text, documentId: result.documentId }
                 : a,
             ),
           );
@@ -215,6 +230,53 @@ export default function WorkspaceChatPage() {
     },
     [attachments.length, toast],
   );
+
+  useEffect(() => {
+    const pendingDocs = attachments.filter(
+      (a) => a.status === 'parsing' && a.documentId,
+    );
+    if (pendingDocs.length === 0) return;
+
+    const interval = window.setInterval(async () => {
+      const ids = pendingDocs
+        .map((a) => a.documentId)
+        .filter((id): id is string => Boolean(id));
+      if (ids.length === 0) return;
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, content_md, extraction_status, extraction_error')
+        .in('id', ids);
+
+      if (error || !data) return;
+
+      setAttachments((prev) =>
+        prev.map((attachment) => {
+          if (!attachment.documentId || attachment.status !== 'parsing') return attachment;
+          const doc = data.find((row) => row.id === attachment.documentId);
+          if (!doc) return attachment;
+          if (doc.extraction_status === 'success' && doc.content_md) {
+            return {
+              ...attachment,
+              status: 'ready',
+              text: doc.content_md,
+              error: undefined,
+            };
+          }
+          if (doc.extraction_status === 'failed' || doc.extraction_status === 'unsupported') {
+            return {
+              ...attachment,
+              status: 'error',
+              error: doc.extraction_error || 'Failed to extract text from PDF',
+            };
+          }
+          return attachment;
+        }),
+      );
+    }, 2000);
+
+    return () => window.clearInterval(interval);
+  }, [attachments]);
 
   const handlePickFiles = () => fileInputRef.current?.click();
 
