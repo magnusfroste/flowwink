@@ -9395,7 +9395,20 @@ export type Database = {
         | "testing"
         | "subscriptions"
       agent_type: "flowpilot" | "chat" | "mcp"
-      app_role: "writer" | "approver" | "admin" | "customer" | "employee"
+      app_role:
+        | "writer"
+        | "approver"
+        | "admin"
+        | "customer"
+        | "employee"
+        | "sales"
+        | "hr"
+        | "accounting"
+        | "support"
+        | "warehouse"
+        | "marketing"
+        | "purchasing"
+        | "projects"
       application_stage:
         | "applied"
         | "screened"
@@ -9692,7 +9705,21 @@ export const Constants = {
         "subscriptions",
       ],
       agent_type: ["flowpilot", "chat", "mcp"],
-      app_role: ["writer", "approver", "admin", "customer", "employee"],
+      app_role: [
+        "writer",
+        "approver",
+        "admin",
+        "customer",
+        "employee",
+        "sales",
+        "hr",
+        "accounting",
+        "support",
+        "warehouse",
+        "marketing",
+        "purchasing",
+        "projects",
+      ],
       application_stage: [
         "applied",
         "screened",
