@@ -96,16 +96,39 @@ Deno.serve(async (req) => {
 
     const ai = await resolveAiConfig(supabase, 'multimodal');
 
-    const dataUrl = `data:${mime_type};base64,${file_base64}`;
+    const isImage = mime_type.startsWith('image/');
+    const isPdf = mime_type === 'application/pdf';
+    if (!isImage && !isPdf) {
+      return new Response(
+        JSON.stringify({ error: `Unsupported file type "${mime_type}". Use an image (JPG/PNG/HEIC) or PDF.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
-    // OpenAI / Gemini chat-completions compatible vision payload
+    // Build provider-specific content part for the file.
+    // - Images: standard `image_url` data URL works on both OpenAI and Gemini gateway.
+    // - PDFs: OpenAI accepts `file` parts; Gemini gateway accepts `image_url` data URL too,
+    //   but a clean cross-provider path is to send the data URL as `image_url` (works on
+    //   OpenAI vision and Gemini's OpenAI-compat layer for both images and PDFs).
+    //   Some Gemini deployments reject non-image MIME on `image_url` — fall back below.
+    const filePart =
+      isImage || ai.provider === 'openai'
+        ? { type: 'image_url', image_url: { url: dataUrl } }
+        // Gemini-compatible inline data for PDFs (works via the OpenAI-compat gateway too)
+        : {
+            type: 'image_url',
+            image_url: { url: dataUrl },
+            // Some gateways look for these alternative fields
+            inline_data: { mime_type, data: file_base64 },
+          };
+
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
           { type: 'text', text: 'Extract the expense fields from this receipt.' },
-          { type: 'image_url', image_url: { url: dataUrl } },
+          filePart,
         ],
       },
     ];
