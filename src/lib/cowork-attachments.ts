@@ -21,6 +21,8 @@ export interface ParseResult {
   text: string;
   truncated: boolean;
   kind: 'pdf' | 'text';
+  /** Persisted documents.id (shadow markdown). null if persistence failed. */
+  documentId: string | null;
 }
 
 export function detectKind(file: File): 'pdf' | 'text' | 'image' | 'other' {
@@ -40,10 +42,72 @@ function truncate(text: string): { text: string; truncated: boolean } {
   };
 }
 
+/**
+ * Create a documents row for the upload via SECURITY DEFINER RPC.
+ * Returns documents.id, or null if creation failed (we still want the chat
+ * to keep working — the shadow is a nice-to-have, not a blocker).
+ */
+async function createShadowDocument(args: {
+  title: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string | null;
+  fileSizeBytes: number | null;
+  description: string;
+}): Promise<string | null> {
+  const { data, error } = await supabase.rpc('create_cowork_document', {
+    p_title: args.title,
+    p_file_name: args.fileName,
+    p_file_url: args.fileUrl,
+    p_file_type: args.fileType,
+    p_file_size_bytes: args.fileSizeBytes,
+    p_description: args.description,
+    p_category: 'chat-attachment',
+    p_tags: ['cowork'],
+  });
+  if (error) {
+    logger.error('create_cowork_document failed', error);
+    return null;
+  }
+  return (data as string) ?? null;
+}
+
+async function writeBackExtraction(
+  documentId: string,
+  status: 'success' | 'failed' | 'unsupported' | 'not_applicable',
+  contentMd: string | null,
+  errorMessage: string | null,
+) {
+  const { error } = await supabase.rpc('update_cowork_document_extraction', {
+    p_document_id: documentId,
+    p_status: status,
+    p_content_md: contentMd,
+    p_error: errorMessage,
+  });
+  if (error) {
+    logger.error('update_cowork_document_extraction failed', error);
+  }
+}
+
 async function parseTextFile(file: File): Promise<ParseResult> {
   const raw = await file.text();
   const { text, truncated } = truncate(raw);
-  return { text, truncated, kind: 'text' };
+
+  const docId = await createShadowDocument({
+    title: file.name,
+    fileName: file.name,
+    fileUrl: 'inline:text', // text files aren't uploaded to storage
+    fileType: file.type || 'text/plain',
+    fileSizeBytes: file.size,
+    description: 'Uploaded in cowork chat',
+  });
+
+  if (docId) {
+    // For text files we already have the markdown — write it back immediately.
+    await writeBackExtraction(docId, 'success', text, null);
+  }
+
+  return { text, truncated, kind: 'text', documentId: docId };
 }
 
 async function parsePdfFile(file: File): Promise<ParseResult> {
@@ -60,6 +124,16 @@ async function parsePdfFile(file: File): Promise<ParseResult> {
     .upload(path, file, { contentType: file.type || PDF_MIME, upsert: false });
   if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
+  // Create the shadow document immediately (status: pending).
+  const docId = await createShadowDocument({
+    title: file.name,
+    fileName: file.name,
+    fileUrl: `cowork-uploads/${path}`,
+    fileType: file.type || PDF_MIME,
+    fileSizeBytes: file.size,
+    description: 'PDF uploaded in cowork chat',
+  });
+
   try {
     const { data, error } = await supabase.functions.invoke('extract-pdf-text', {
       body: { storage_path: `cowork-uploads/${path}` },
@@ -67,14 +141,25 @@ async function parsePdfFile(file: File): Promise<ParseResult> {
     if (error) throw new Error(error.message || 'extract-pdf-text failed');
     if (!data?.success) throw new Error(data?.error || 'PDF extraction returned no text');
     const { text, truncated } = truncate(String(data.text || ''));
-    return { text, truncated, kind: 'pdf' };
-  } finally {
-    // Best-effort cleanup — don't block on failure
-    supabase.storage
-      .from('cowork-uploads')
-      .remove([path])
-      .catch((e) => logger.error('cowork cleanup failed', e));
+
+    if (docId) {
+      await writeBackExtraction(docId, 'success', text, null);
+    }
+
+    return { text, truncated, kind: 'pdf', documentId: docId };
+  } catch (err) {
+    if (docId) {
+      await writeBackExtraction(
+        docId,
+        'failed',
+        null,
+        err instanceof Error ? err.message : 'extraction failed',
+      );
+    }
+    throw err;
   }
+  // NOTE: we no longer delete the PDF from storage — it's now the canonical
+  // file backing the shadow document and must remain accessible.
 }
 
 export async function parseAttachment(file: File): Promise<ParseResult> {
