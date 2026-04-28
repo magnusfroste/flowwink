@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-22"
+generated_at: "2026-04-28"
 ---
 
 # SLA Monitor

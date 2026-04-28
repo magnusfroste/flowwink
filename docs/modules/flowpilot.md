@@ -5,12 +5,12 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-04-22"
+generated_at: "2026-04-28"
 ---
 
 # FlowPilot
 
-> Autonomous AI operator — skills, objectives, automations and workflows
+> Autonomous AI operator — skills, objectives, automations and workflows. When disabled, FlowWink runs as a traditional SaaS; when enabled, FlowPilot drives skills/automations autonomously.
 
 ## Quick Facts
 
