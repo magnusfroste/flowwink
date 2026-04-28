@@ -8,7 +8,11 @@
  * Both System AI and AI Chat should use this layer.
  */
 
-export type AiTier = 'fast' | 'reasoning';
+export type AiTier = 'fast' | 'reasoning' | 'multimodal';
+
+// Providers that support vision (image + PDF input).
+// Local LLMs are excluded by default — most self-hosted models are text-only.
+const VISION_CAPABLE_PROVIDERS = new Set(['openai', 'gemini', 'anthropic']);
 
 // Server-side model migration — normalize legacy model names
 const OPENAI_MODEL_MIGRATION: Record<string, string> = {
@@ -23,11 +27,20 @@ function migrateOpenaiModel(m?: string): string { return (m && OPENAI_MODEL_MIGR
 function migrateGeminiModel(m?: string): string { return (m && GEMINI_MODEL_MIGRATION[m]) || m || 'gemini-2.5-flash'; }
 function migrateAnthropicModel(m?: string): string { return m || 'claude-sonnet-4-20250514'; }
 
-export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Promise<{ apiKey: string; apiUrl: string; model: string }> {
-  let apiKey = '';
-  let apiUrl = 'https://api.openai.com/v1/chat/completions';
-  let model = tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini';
+export interface ResolvedAiConfig {
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  /** Provider id used for this resolution ('openai' | 'gemini' | 'anthropic' | 'local'). */
+  provider: 'openai' | 'gemini' | 'anthropic' | 'local';
+  /** True if the configured primary provider had to be substituted (e.g. local → gemini for multimodal). */
+  fallback: boolean;
+}
 
+export async function resolveAiConfig(
+  supabase: any,
+  tier: AiTier = 'fast',
+): Promise<ResolvedAiConfig> {
   // 1. Read system_ai settings for configured provider
   const { data: settings } = await supabase
     .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
@@ -37,71 +50,151 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
     .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
   const integrations = integrationsRow?.value as Record<string, any> | null;
 
-  if (settings?.value) {
-    const cfg = settings.value as Record<string, string>;
+  const cfg = (settings?.value || {}) as Record<string, string>;
+  const primary = cfg.provider as ResolvedAiConfig['provider'] | undefined;
 
-    if (cfg.provider === 'local') {
-      // Local LLM — read endpoint from integrations config
-      const localConfig = integrations?.local_llm?.config || {};
-      const endpoint = localConfig.endpoint;
-      
-      if (endpoint) {
-        const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig.apiKey || '';
-        apiKey = localApiKey || 'local'; // Local LLMs may not need a key
-        const baseEndpoint = endpoint.replace(/\/+$/, '');
-        apiUrl = baseEndpoint.endsWith('/v1')
-          ? `${baseEndpoint}/chat/completions`
-          : `${baseEndpoint}/v1/chat/completions`;
-        // Local LLMs use a single model for both tiers
-        model = localConfig.model || cfg.localModel || 'llama3';
-        return { apiKey, apiUrl, model };
-      }
-      // If local is configured but no endpoint, fall through to key-based providers
-    } else if (cfg.provider === 'anthropic' && Deno.env.get('ANTHROPIC_API_KEY')) {
-      apiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
-      apiUrl = 'https://api.anthropic.com/v1/messages';
-      model = tier === 'reasoning'
-        ? migrateAnthropicModel(cfg.anthropicReasoningModel || 'claude-sonnet-4-20250514')
-        : migrateAnthropicModel(cfg.anthropicModel || 'claude-sonnet-4-20250514');
-      return { apiKey, apiUrl, model };
-    } else if (cfg.provider === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
-      apiKey = Deno.env.get('GEMINI_API_KEY')!;
-      apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-      model = tier === 'reasoning'
-        ? migrateGeminiModel(cfg.geminiReasoningModel || 'gemini-2.5-pro')
-        : migrateGeminiModel(cfg.geminiModel || cfg.model);
-      return { apiKey, apiUrl, model };
-    } else if (cfg.provider === 'openai' && Deno.env.get('OPENAI_API_KEY')) {
-      apiKey = Deno.env.get('OPENAI_API_KEY')!;
-      model = tier === 'reasoning'
-        ? migrateOpenaiModel(cfg.openaiReasoningModel || 'gpt-4.1')
-        : migrateOpenaiModel(cfg.openaiModel || cfg.model);
-      return { apiKey, apiUrl, model };
+  // For multimodal: if the primary provider can't do vision, transparently
+  // fall back to the first vision-capable provider with an env key.
+  if (tier === 'multimodal' && primary && !VISION_CAPABLE_PROVIDERS.has(primary)) {
+    const vision = pickVisionFallback();
+    if (vision) {
+      return { ...vision, fallback: true };
     }
+    throw new Error(
+      `Multimodal request, but configured provider "${primary}" has no vision support and no vision-capable fallback (GEMINI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY) is set.`,
+    );
   }
 
-  // 3. Fallback: auto-detect from available environment keys
+  // Local LLM (only for non-multimodal tiers)
+  if (primary === 'local') {
+    const localConfig = integrations?.local_llm?.config || {};
+    const endpoint = localConfig.endpoint;
+    if (endpoint) {
+      const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig.apiKey || '';
+      const baseEndpoint = endpoint.replace(/\/+$/, '');
+      const apiUrl = baseEndpoint.endsWith('/v1')
+        ? `${baseEndpoint}/chat/completions`
+        : `${baseEndpoint}/v1/chat/completions`;
+      return {
+        apiKey: localApiKey || 'local',
+        apiUrl,
+        model: localConfig.model || cfg.localModel || 'llama3',
+        provider: 'local',
+        fallback: false,
+      };
+    }
+    // local configured but endpoint missing — fall through to env auto-detect
+  }
+
+  if (primary === 'anthropic' && Deno.env.get('ANTHROPIC_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('ANTHROPIC_API_KEY')!,
+      apiUrl: 'https://api.anthropic.com/v1/messages',
+      model: tier === 'reasoning'
+        ? migrateAnthropicModel(cfg.anthropicReasoningModel || 'claude-sonnet-4-20250514')
+        : migrateAnthropicModel(cfg.anthropicModel || 'claude-sonnet-4-20250514'),
+      provider: 'anthropic',
+      fallback: false,
+    };
+  }
+
+  if (primary === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('GEMINI_API_KEY')!,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      model: tier === 'reasoning'
+        ? migrateGeminiModel(cfg.geminiReasoningModel || 'gemini-2.5-pro')
+        : migrateGeminiModel(cfg.geminiModel || (cfg as any).model),
+      provider: 'gemini',
+      fallback: false,
+    };
+  }
+
+  if (primary === 'openai' && Deno.env.get('OPENAI_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('OPENAI_API_KEY')!,
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: tier === 'reasoning'
+        ? migrateOpenaiModel(cfg.openaiReasoningModel || 'gpt-4.1')
+        : migrateOpenaiModel(cfg.openaiModel || (cfg as any).model),
+      provider: 'openai',
+      fallback: false,
+    };
+  }
+
+  // 3. Fallback: auto-detect from available environment keys.
+  // For multimodal we only consider vision-capable providers.
+  if (tier === 'multimodal') {
+    const vision = pickVisionFallback();
+    if (vision) return { ...vision, fallback: !!primary };
+    throw new Error('No vision-capable AI provider configured. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.');
+  }
+
   if (Deno.env.get('OPENAI_API_KEY')) {
-    apiKey = Deno.env.get('OPENAI_API_KEY')!;
-    model = tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini';
-    return { apiKey, apiUrl, model };
+    return {
+      apiKey: Deno.env.get('OPENAI_API_KEY')!,
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini',
+      provider: 'openai',
+      fallback: !!primary,
+    };
   }
 
   if (Deno.env.get('ANTHROPIC_API_KEY')) {
-    apiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
-    apiUrl = 'https://api.anthropic.com/v1/messages';
-    model = tier === 'reasoning' ? 'claude-sonnet-4-20250514' : 'claude-sonnet-4-20250514';
-    return { apiKey, apiUrl, model };
+    return {
+      apiKey: Deno.env.get('ANTHROPIC_API_KEY')!,
+      apiUrl: 'https://api.anthropic.com/v1/messages',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+      fallback: !!primary,
+    };
   }
 
   if (Deno.env.get('GEMINI_API_KEY')) {
-    apiKey = Deno.env.get('GEMINI_API_KEY')!;
-    apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-    model = tier === 'reasoning' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
-    return { apiKey, apiUrl, model };
+    return {
+      apiKey: Deno.env.get('GEMINI_API_KEY')!,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      model: tier === 'reasoning' ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
+      provider: 'gemini',
+      fallback: !!primary,
+    };
   }
 
   throw new Error('No AI provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY, or configure a Local LLM endpoint.');
+}
+
+/**
+ * Pick the first vision-capable provider that has an API key in env.
+ * Order: Gemini (best price/perf for vision) → OpenAI → Anthropic.
+ */
+function pickVisionFallback():
+  | Omit<ResolvedAiConfig, 'fallback'>
+  | null {
+  if (Deno.env.get('GEMINI_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('GEMINI_API_KEY')!,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      model: 'gemini-2.5-flash',
+      provider: 'gemini',
+    };
+  }
+  if (Deno.env.get('OPENAI_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('OPENAI_API_KEY')!,
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: 'gpt-4.1-mini',
+      provider: 'openai',
+    };
+  }
+  if (Deno.env.get('ANTHROPIC_API_KEY')) {
+    return {
+      apiKey: Deno.env.get('ANTHROPIC_API_KEY')!,
+      apiUrl: 'https://api.anthropic.com/v1/messages',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+    };
+  }
+  return null;
 }
 
 /**

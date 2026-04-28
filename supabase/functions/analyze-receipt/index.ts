@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveAiConfig } from "../_shared/ai-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,12 +18,19 @@ serve(async (req) => {
       });
     }
 
-    // Resolve AI provider — prefer Gemini (best vision), fallback to OpenAI
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
 
-    if (!geminiKey && !openaiKey) {
-      return new Response(JSON.stringify({ error: 'No AI provider configured for vision analysis' }), {
+    // Resolve a vision-capable AI provider via the central config layer.
+    // If the configured System AI provider is text-only (e.g. local LLM),
+    // resolveAiConfig transparently falls back to Gemini → OpenAI → Anthropic.
+    let ai;
+    try {
+      ai = await resolveAiConfig(supabase, 'multimodal');
+    } catch (err: any) {
+      return new Response(JSON.stringify({ error: err.message || 'No vision-capable AI configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -74,26 +82,30 @@ If you cannot read the receipt clearly, still provide your best estimates and se
       },
     ];
 
-    let apiUrl: string;
-    let headers: Record<string, string>;
-    const body: any = { messages, tools, tool_choice: { type: "function", function: { name: "extract_receipt_data" } } };
+    const body: any = {
+      model: ai.model,
+      messages,
+      tools,
+      tool_choice: { type: "function", function: { name: "extract_receipt_data" } },
+    };
 
-    if (geminiKey) {
-      apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-      headers = { 'Authorization': `Bearer ${geminiKey}`, 'Content-Type': 'application/json' };
-      body.model = 'gemini-2.5-flash';
-    } else {
-      apiUrl = 'https://api.openai.com/v1/chat/completions';
-      headers = { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' };
-      body.model = 'gpt-4.1-mini';
-    }
-
-    const response = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await fetch(ai.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ai.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('AI vision error:', response.status, errText);
-      return new Response(JSON.stringify({ error: 'AI vision analysis failed', status: response.status }), {
+      console.error('AI vision error:', response.status, errText, '(provider:', ai.provider, 'fallback:', ai.fallback, ')');
+      return new Response(JSON.stringify({
+        error: 'AI vision analysis failed',
+        status: response.status,
+        provider: ai.provider,
+      }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -125,7 +137,12 @@ If you cannot read the receipt clearly, still provide your best estimates and se
       receiptData.suggested_account_code = accountMap[receiptData.category] || '6992';
     }
 
-    return new Response(JSON.stringify({ receipt: receiptData, image_url }), {
+    return new Response(JSON.stringify({
+      receipt: receiptData,
+      image_url,
+      provider_used: ai.provider,
+      provider_fallback: ai.fallback,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Info, Sparkles, ExternalLink, Server } from 'lucide-react';
+import { Info, Sparkles, ExternalLink, Server, Eye, Zap, Brain, AlertTriangle } from 'lucide-react';
 import { SystemAiSettings, SystemAiProvider } from '@/hooks/useSiteSettings';
 import { useIsOpenAIConfigured, useIsGeminiConfigured, useIsAnthropicConfigured, useIsLocalLLMConfigured } from '@/hooks/useIntegrationStatus';
 import { Link } from 'react-router-dom';
@@ -13,12 +13,60 @@ interface SystemAiSettingsTabProps {
   onChange: (data: SystemAiSettings) => void;
 }
 
+const VISION_CAPABLE = new Set<SystemAiProvider>(['openai', 'gemini', 'anthropic']);
+const PROVIDER_LABEL: Record<SystemAiProvider, string> = {
+  openai: 'OpenAI',
+  gemini: 'Google Gemini',
+  anthropic: 'Anthropic (Claude)',
+  local: 'Local LLM',
+};
+
 export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps) {
   const openaiEnabled = useIsOpenAIConfigured();
   const geminiEnabled = useIsGeminiConfigured();
   const anthropicEnabled = useIsAnthropicConfigured();
   const localEnabled = useIsLocalLLMConfigured();
   const hasAnyProvider = openaiEnabled || geminiEnabled || anthropicEnabled || localEnabled;
+
+  const enabledByProvider: Record<SystemAiProvider, boolean> = {
+    openai: openaiEnabled,
+    gemini: geminiEnabled,
+    anthropic: anthropicEnabled,
+    local: localEnabled,
+  };
+
+  // Mirror of resolveAiConfig() server-side logic for UI display.
+  // For 'fast'/'reasoning': use selected provider if configured, otherwise auto-fall-back to env.
+  // For 'multimodal': only vision-capable providers count; local LLM forces fallback.
+  const resolveTier = (tier: 'fast' | 'reasoning' | 'multimodal'): {
+    provider: SystemAiProvider | null;
+    fallback: boolean;
+  } => {
+    const primary = data.provider as SystemAiProvider;
+
+    if (tier === 'multimodal') {
+      if (primary && VISION_CAPABLE.has(primary) && enabledByProvider[primary]) {
+        return { provider: primary, fallback: false };
+      }
+      // Fallback chain: Gemini → OpenAI → Anthropic
+      if (geminiEnabled) return { provider: 'gemini', fallback: !!primary };
+      if (openaiEnabled) return { provider: 'openai', fallback: !!primary };
+      if (anthropicEnabled) return { provider: 'anthropic', fallback: !!primary };
+      return { provider: null, fallback: false };
+    }
+
+    if (primary && enabledByProvider[primary]) {
+      return { provider: primary, fallback: false };
+    }
+    if (openaiEnabled) return { provider: 'openai', fallback: !!primary };
+    if (anthropicEnabled) return { provider: 'anthropic', fallback: !!primary };
+    if (geminiEnabled) return { provider: 'gemini', fallback: !!primary };
+    return { provider: null, fallback: false };
+  };
+
+  const fastTier = resolveTier('fast');
+  const reasoningTier = resolveTier('reasoning');
+  const multimodalTier = resolveTier('multimodal');
 
   const updateField = <K extends keyof SystemAiSettings>(key: K, value: SystemAiSettings[K]) => {
     onChange({ ...data, [key]: value });
@@ -318,6 +366,48 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
               </AlertDescription>
             </Alert>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            Capability Routing
+          </CardTitle>
+          <CardDescription>
+            Which provider actually handles each tier. Multimodal (image/PDF) auto-falls back
+            to a vision-capable provider if your selected one is text-only.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Fast (chat, tools)', icon: Zap, tier: fastTier },
+              { label: 'Reasoning (planning)', icon: Brain, tier: reasoningTier },
+              { label: 'Multimodal (image/PDF)', icon: Eye, tier: multimodalTier },
+            ].map(({ label, icon: Icon, tier }) => (
+              <div key={label} className="rounded-lg border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </div>
+                {tier.provider ? (
+                  <>
+                    <div className="text-base font-serif">{PROVIDER_LABEL[tier.provider]}</div>
+                    {tier.fallback && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Fallback (selected provider can't handle this)
+                      </Badge>
+                    )}
+                  </>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">Not available</Badge>
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

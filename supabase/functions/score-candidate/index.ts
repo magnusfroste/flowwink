@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,9 +42,11 @@ serve(async (req) => {
       });
     }
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ success: false, error: 'AI not configured' }), {
+    let ai;
+    try {
+      ai = await resolveAiConfig(supabase, 'reasoning');
+    } catch (err: any) {
+      return new Response(JSON.stringify({ success: false, error: err.message || 'AI not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -104,40 +107,62 @@ confidence_level: "high" when resume has clear evidence for all dimensions, "med
 Be honest and specific. Cite actual evidence from the resume.`;
 
     const userPrompt = `## Job Posting\n${jobContext}\n\n## Candidate\n${candidateContext}`;
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    let rawText = '';
+
+    if (isAnthropicProvider(ai.apiUrl)) {
+      const response = await fetch(ai.apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ai.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 2048,
-            responseMimeType: 'application/json',
-          },
+          model: ai.model,
+          max_tokens: 2048,
+          temperature: 0.2,
+          messages: [{ role: 'user', content: fullPrompt }],
         }),
+      });
+      if (!response.ok) {
+        console.error('score-candidate Anthropic error:', await response.text());
+        return new Response(JSON.stringify({ success: false, error: 'AI scoring failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Gemini error:', errText);
-      return new Response(JSON.stringify({ success: false, error: 'AI scoring failed' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      const result = await response.json();
+      rawText = result.content?.[0]?.text || '';
+    } else {
+      const response = await fetch(ai.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ai.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          messages: [{ role: 'user', content: fullPrompt }],
+          temperature: 0.2,
+          max_tokens: 2048,
+          response_format: { type: 'json_object' },
+        }),
       });
+      if (!response.ok) {
+        console.error('score-candidate AI error:', await response.text());
+        return new Response(JSON.stringify({ success: false, error: 'AI scoring failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const result = await response.json();
+      rawText = result.choices?.[0]?.message?.content || '';
     }
 
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      return new Response(JSON.stringify({ success: false, error: 'Empty AI response' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!rawText) {
+      return new Response(JSON.stringify({ success: false, error: 'Empty AI response' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const scoring = JSON.parse(cleaned);
 
     const { error: updateErr } = await supabase
@@ -161,7 +186,7 @@ Be honest and specific. Cite actual evidence from the resume.`;
       });
     }
 
-    return new Response(JSON.stringify({ success: true, scoring }), {
+    return new Response(JSON.stringify({ success: true, scoring, provider_used: ai.provider }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

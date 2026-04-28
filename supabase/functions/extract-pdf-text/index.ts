@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveAiConfig } from "../_shared/ai-config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,11 +10,13 @@ const corsHeaders = {
 /**
  * Extract text from a PDF file stored in Supabase Storage.
  * 
- * Uses the system AI provider (Gemini/OpenAI) to extract text from PDF
- * by converting pages to base64 and using multimodal vision capabilities.
+ * Uses the system multimodal AI provider (resolved via resolveAiConfig('multimodal'))
+ * to extract text from PDF by sending it as base64. If the configured System AI
+ * provider is text-only (e.g. local LLM), automatically falls back to the first
+ * vision-capable provider with an env key (Gemini → OpenAI → Anthropic).
  * 
  * Input: { file_url: string } — public URL or storage path (bucket/path)
- * Output: { success: boolean, text: string, page_count: number }
+ * Output: { success: boolean, text: string, char_count: number, provider_used: string }
  */
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,7 +41,6 @@ serve(async (req) => {
     let pdfBytes: Uint8Array;
 
     if (storage_path) {
-      // Download from Supabase storage
       const parts = storage_path.split('/');
       const bucket = parts[0];
       const path = parts.slice(1).join('/');
@@ -47,7 +49,6 @@ serve(async (req) => {
       if (error) throw new Error(`Storage download failed: ${error.message}`);
       pdfBytes = new Uint8Array(await data.arrayBuffer());
     } else {
-      // Download from URL
       const resp = await fetch(file_url);
       if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
       pdfBytes = new Uint8Array(await resp.arrayBuffer());
@@ -60,39 +61,18 @@ serve(async (req) => {
       );
     }
 
-    // Resolve AI provider from site_settings
-    const { data: aiSettings } = await supabase
-      .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
-
-    let apiKey = '';
-    let apiUrl = '';
-    let provider = 'gemini';
-
-    if (aiSettings?.value) {
-      const config = aiSettings.value as Record<string, any>;
-      provider = config.provider || 'gemini';
-
-      if (provider === 'openai') {
-        apiKey = config.apiKey || Deno.env.get('OPENAI_API_KEY') || '';
-        apiUrl = 'https://api.openai.com/v1/chat/completions';
-      } else {
-        apiKey = config.apiKey || Deno.env.get('GEMINI_API_KEY') || '';
-      }
-    } else {
-      apiKey = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('OPENAI_API_KEY') || '';
-      if (!apiKey && Deno.env.get('OPENAI_API_KEY')) provider = 'openai';
-    }
-
-    if (!apiKey) {
+    // Resolve a vision-capable AI via the central config layer
+    let ai;
+    try {
+      ai = await resolveAiConfig(supabase, 'multimodal');
+    } catch (err: any) {
       return new Response(
-        JSON.stringify({ success: false, error: 'No AI API key configured. Set up System AI in settings.' }),
+        JSON.stringify({ success: false, error: err.message || 'No vision-capable AI provider configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Convert PDF to base64 for multimodal extraction.
-    // Chunked to avoid "Maximum call stack size exceeded" on large PDFs
-    // (spread operator on big Uint8Arrays blows the stack).
+    // Convert PDF to base64. Chunked to avoid stack overflow on large files.
     const CHUNK = 0x8000; // 32 KB
     let binary = '';
     for (let i = 0; i < pdfBytes.length; i += CHUNK) {
@@ -110,9 +90,10 @@ If this is a resume/CV, preserve all sections clearly.`;
 
     let extractedText = '';
 
-    if (provider === 'gemini') {
+    if (ai.provider === 'gemini') {
+      // Gemini native API supports inline_data with application/pdf
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${ai.model}:generateContent?key=${ai.apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -120,54 +101,38 @@ If this is a resume/CV, preserve all sections clearly.`;
             contents: [{
               role: 'user',
               parts: [
-                {
-                  inline_data: {
-                    mime_type: 'application/pdf',
-                    data: base64Pdf,
-                  },
-                },
+                { inline_data: { mime_type: 'application/pdf', data: base64Pdf } },
                 { text: extractionPrompt },
               ],
             }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 16384,
-            },
+            generationConfig: { temperature: 0.1, maxOutputTokens: 16384 },
           }),
         }
       );
 
       if (!response.ok) {
         const errText = await response.text();
-        console.error('Gemini extraction error:', errText);
-        throw new Error('AI extraction failed');
+        console.error('Gemini PDF extraction error:', errText);
+        throw new Error('Gemini extraction failed');
       }
 
       const result = await response.json();
       extractedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      // OpenAI with vision
-      const response = await fetch(apiUrl, {
+    } else if (ai.provider === 'openai') {
+      // OpenAI accepts data URLs in image_url for PDF/image content
+      const response = await fetch(ai.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${ai.apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: ai.model,
           messages: [{
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: extractionPrompt,
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64Pdf}`,
-                },
-              },
+              { type: 'text', text: extractionPrompt },
+              { type: 'image_url', image_url: { url: `data:application/pdf;base64,${base64Pdf}` } },
             ],
           }],
           max_tokens: 16384,
@@ -177,17 +142,49 @@ If this is a resume/CV, preserve all sections clearly.`;
 
       if (!response.ok) {
         const errText = await response.text();
-        console.error('OpenAI extraction error:', errText);
-        throw new Error('AI extraction failed');
+        console.error('OpenAI PDF extraction error:', errText);
+        throw new Error('OpenAI extraction failed');
       }
 
       const result = await response.json();
       extractedText = result.choices?.[0]?.message?.content || '';
+    } else if (ai.provider === 'anthropic') {
+      // Anthropic native messages API with document content block
+      const response = await fetch(ai.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ai.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          max_tokens: 16384,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64Pdf } },
+              { type: 'text', text: extractionPrompt },
+            ],
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('Anthropic PDF extraction error:', errText);
+        throw new Error('Anthropic extraction failed');
+      }
+
+      const result = await response.json();
+      extractedText = result.content?.[0]?.text || '';
+    } else {
+      throw new Error(`Provider "${ai.provider}" does not support PDF extraction`);
     }
 
     if (!extractedText || extractedText.length < 10) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Could not extract text from PDF' }),
+        JSON.stringify({ success: false, error: 'Could not extract text from PDF', provider_used: ai.provider }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -197,7 +194,8 @@ If this is a resume/CV, preserve all sections clearly.`;
         success: true,
         text: extractedText,
         char_count: extractedText.length,
-        provider_used: provider,
+        provider_used: ai.provider,
+        provider_fallback: ai.fallback,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
