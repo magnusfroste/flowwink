@@ -1,5 +1,5 @@
 import { FileText, Image as ImageIcon, X, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 export interface CoworkAttachment {
@@ -8,6 +8,8 @@ export interface CoworkAttachment {
   size: number;
   kind: 'pdf' | 'text' | 'image' | 'other';
   status: 'parsing' | 'ready' | 'error';
+  /** Backing documents.id for async extraction. */
+  documentId?: string | null;
   /** Extracted text content (for pdf/text). Empty for images/other. */
   text?: string;
   /** Optional error message when status === 'error'. */
@@ -22,7 +24,10 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function ElapsedBadge({ startedAt }: { startedAt: number }) {
+const ElapsedBadge = forwardRef<HTMLSpanElement, { startedAt: number }>(function ElapsedBadge(
+  { startedAt },
+  ref,
+) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -30,11 +35,11 @@ function ElapsedBadge({ startedAt }: { startedAt: number }) {
   }, []);
   const sec = Math.max(0, Math.floor((now - startedAt) / 1000));
   return (
-    <span className="text-muted-foreground/70 shrink-0 tabular-nums">
+    <span ref={ref} className="text-muted-foreground/70 shrink-0 tabular-nums">
       · {sec}s
     </span>
   );
-}
+});
 
 export function AttachmentChip({
   attachment,
