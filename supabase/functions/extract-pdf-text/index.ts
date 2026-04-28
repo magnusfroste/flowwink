@@ -208,12 +208,16 @@ async function updateDocumentExtraction(documentId: string, status: 'success' | 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, serviceKey);
-  await supabase.rpc('update_cowork_document_extraction', {
+  const { error } = await supabase.rpc('update_cowork_document_extraction', {
     p_document_id: documentId,
     p_status: status,
     p_content_md: contentMd,
     p_error: errorMessage,
   });
+  if (error) {
+    console.error('updateDocumentExtraction rpc failed:', error);
+    throw new Error(error.message || 'Failed to persist extraction result');
+  }
 }
 
 serve(async (req) => {
