@@ -8786,6 +8786,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_agent_document: {
+        Args: {
+          p_category?: string
+          p_content_md?: string
+          p_description?: string
+          p_extraction_error?: string
+          p_extraction_status?: string
+          p_file_name: string
+          p_file_size_bytes?: number
+          p_file_type?: string
+          p_file_url?: string
+          p_peer_name: string
+          p_tags?: string[]
+          p_title: string
+          p_uploaded_by: string
+        }
+        Returns: string
+      }
       create_cowork_document: {
         Args: {
           p_category?: string
