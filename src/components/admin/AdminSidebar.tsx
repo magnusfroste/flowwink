@@ -95,7 +95,7 @@ import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags'
 export function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, role, signOut, isAdmin } = useAuth();
+  const { user, profile, role, signOut, isAdmin, hasAnyRole } = useAuth();
   const { state } = useSidebar();
   const { data: modules } = useModules();
   const { addPin, removePin, isPinned } = usePinnedPages(user?.id);
@@ -131,8 +131,16 @@ export function AdminSidebar() {
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
 
-  // Filter by admin role
-  const roleFilteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
+  // Filter groups by role: admin sees all; functional roles see groups where allowedRoles intersects.
+  // Groups without allowedRoles and without adminOnly are visible to everyone authenticated.
+  const roleFilteredGroups = navigationGroups.filter((group) => {
+    if (isAdmin) return true;
+    if (group.adminOnly) return false;
+    if (group.allowedRoles && group.allowedRoles.length > 0) {
+      return hasAnyRole(group.allowedRoles);
+    }
+    return true;
+  });
   
   // Filter by enabled modules
   const { data: featureFlags } = useNavFeatureFlags();
@@ -148,10 +156,14 @@ export function AdminSidebar() {
           if (mod.adminUI === false) return false;
         }
         if (!isFeatureFlagOn(featureFlags, item.featureFlag)) return false;
+        // Per-item role gate (admin always passes)
+        if (!isAdmin && item.allowedRoles && item.allowedRoles.length > 0) {
+          if (!hasAnyRole(item.allowedRoles)) return false;
+        }
         return true;
       }),
     }))
-    .filter(group => group.items.length > 0), [roleFilteredGroups, modules, featureFlags]);
+    .filter(group => group.items.length > 0), [roleFilteredGroups, modules, featureFlags, isAdmin, hasAnyRole]);
 
   // All items for search
   const allSearchItems = useMemo(() =>
