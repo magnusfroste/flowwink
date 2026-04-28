@@ -1,4 +1,5 @@
 import { FileText, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 export interface CoworkAttachment {
@@ -11,12 +12,28 @@ export interface CoworkAttachment {
   text?: string;
   /** Optional error message when status === 'error'. */
   error?: string;
+  /** Epoch ms when parsing started (used to show elapsed time). */
+  startedAt?: number;
 }
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ElapsedBadge({ startedAt }: { startedAt: number }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const sec = Math.max(0, Math.floor((now - startedAt) / 1000));
+  return (
+    <span className="text-muted-foreground/70 shrink-0 tabular-nums">
+      · {sec}s
+    </span>
+  );
 }
 
 export function AttachmentChip({
@@ -27,8 +44,18 @@ export function AttachmentChip({
   onRemove: () => void;
 }) {
   const Icon = attachment.kind === 'image' ? ImageIcon : FileText;
+  const isLargePdf =
+    attachment.kind === 'pdf' && attachment.size > 1.5 * 1024 * 1024;
+
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 pl-2 pr-1 py-1 text-xs max-w-[240px]">
+    <div
+      className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 pl-2 pr-1 py-1 text-xs max-w-[280px]"
+      title={
+        attachment.status === 'parsing' && isLargePdf
+          ? 'Large PDFs can take 20–60s to extract.'
+          : attachment.error || attachment.name
+      }
+    >
       {attachment.status === 'parsing' ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
       ) : (
@@ -40,12 +67,13 @@ export function AttachmentChip({
           }
         />
       )}
-      <span className="truncate" title={attachment.name}>
-        {attachment.name}
-      </span>
+      <span className="truncate">{attachment.name}</span>
       <span className="text-muted-foreground/70 shrink-0">
         {formatBytes(attachment.size)}
       </span>
+      {attachment.status === 'parsing' && attachment.startedAt && (
+        <ElapsedBadge startedAt={attachment.startedAt} />
+      )}
       <Button
         type="button"
         variant="ghost"
