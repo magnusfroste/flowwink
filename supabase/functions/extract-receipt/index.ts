@@ -185,6 +185,34 @@ async function extractPdfText(pdfBytes: Uint8Array, ai: Awaited<ReturnType<typeo
     }
   }
 
+  if (ai.provider === 'anthropic') {
+    const response = await fetch(ai.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ai.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: ai.model,
+        max_tokens: 8192,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: bytesToBase64(pdfBytes) } },
+            { type: 'text', text: extractionPrompt },
+          ],
+        }],
+      }),
+    });
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || 'Anthropic PDF extraction failed');
+
+    const parsed = text ? JSON.parse(text) : null;
+    return parsed?.content?.map((item: any) => item?.text || '').join('\n') || '';
+  }
+
   throw new Error('PDF receipts are not supported by the configured AI provider yet.');
 }
 
