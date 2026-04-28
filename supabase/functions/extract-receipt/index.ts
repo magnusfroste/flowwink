@@ -98,38 +98,33 @@ Deno.serve(async (req) => {
 
     const isImage = mime_type.startsWith('image/');
     const isPdf = mime_type === 'application/pdf';
-    const dataUrl = `data:${mime_type};base64,${file_base64}`;
     if (!isImage && !isPdf) {
       return new Response(
         JSON.stringify({ error: `Unsupported file type "${mime_type}". Use an image (JPG/PNG/HEIC) or PDF.` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
+    // PDF support varies across vision providers (Gemini's OpenAI-compat layer
+    // rejects application/pdf on image_url). Until we render PDFs to images
+    // server-side, ask the user to provide an image.
+    if (isPdf && ai.provider !== 'openai') {
+      return new Response(
+        JSON.stringify({
+          error:
+            'PDF receipts are not yet supported on this AI provider. Please upload a photo of the receipt (JPG/PNG/HEIC), or take a screenshot of the PDF.',
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
-    // Build provider-specific content part for the file.
-    // - Images: standard `image_url` data URL works on both OpenAI and Gemini gateway.
-    // - PDFs: OpenAI accepts `file` parts; Gemini gateway accepts `image_url` data URL too,
-    //   but a clean cross-provider path is to send the data URL as `image_url` (works on
-    //   OpenAI vision and Gemini's OpenAI-compat layer for both images and PDFs).
-    //   Some Gemini deployments reject non-image MIME on `image_url` — fall back below.
-    const filePart =
-      isImage || ai.provider === 'openai'
-        ? { type: 'image_url', image_url: { url: dataUrl } }
-        // Gemini-compatible inline data for PDFs (works via the OpenAI-compat gateway too)
-        : {
-            type: 'image_url',
-            image_url: { url: dataUrl },
-            // Some gateways look for these alternative fields
-            inline_data: { mime_type, data: file_base64 },
-          };
-
+    const dataUrl = `data:${mime_type};base64,${file_base64}`;
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
           { type: 'text', text: 'Extract the expense fields from this receipt.' },
-          filePart,
+          { type: 'image_url', image_url: { url: dataUrl } },
         ],
       },
     ];
