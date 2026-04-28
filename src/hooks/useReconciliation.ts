@@ -212,6 +212,59 @@ export function useImportBankFile() {
   });
 }
 
+export interface OcrTransaction {
+  transaction_date: string;
+  amount_cents: number;
+  currency: string;
+  counterparty?: string;
+  reference?: string;
+  description?: string;
+}
+
+/** OCR a bank statement image/PDF — preview only, returns parsed rows. */
+export function usePreviewBankImage() {
+  return useMutation({
+    mutationFn: async (input: {
+      fileName: string;
+      contentBase64: string;
+      mimeType: string;
+      provider?: 'openai' | 'gemini';
+      model?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('reconciliation-import-image', {
+        body: { ...input, commit: false },
+      });
+      if (error) throw error;
+      return data as { transactions: OcrTransaction[]; currency_default: string };
+    },
+    onError: (e: Error) => toast.error(`OCR failed: ${e.message}`),
+  });
+}
+
+/** Commit user-approved OCR rows into bank_transactions. */
+export function useCommitBankImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      fileName: string;
+      transactions: OcrTransaction[];
+      currency_default?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('reconciliation-import-image', {
+        body: { ...input, commit: true },
+      });
+      if (error) throw error;
+      return data as { imported: number; errors: number; batch_id: string };
+    },
+    onSuccess: (d) => {
+      qc.invalidateQueries({ queryKey: ['bank_transactions'] });
+      qc.invalidateQueries({ queryKey: ['bank_import_batches'] });
+      toast.success(`Imported ${d.imported}${d.errors ? ` (${d.errors} errors)` : ''}`);
+    },
+    onError: (e: Error) => toast.error(`Commit failed: ${e.message}`),
+  });
+}
+
 /** Auto-suggest matches by reference / amount */
 export function useAutoMatch() {
   const qc = useQueryClient();
