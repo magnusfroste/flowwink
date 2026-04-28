@@ -221,6 +221,9 @@ serve(async (req) => {
         const peerName = handler.replace('a2a:', '');
         result = await executeA2ARequest(supabase, peerName, args);
 
+      } else if (handler === 'internal:upload_document') {
+        result = await executeUploadDocument(supabase, args, { caller_user_id, caller_api_key_id });
+
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');
         // Map skill arg names → RPC param names by prefixing p_
@@ -6864,4 +6867,176 @@ async function trackObjectiveProgress(
     console.error('[objective-tracker] Error:', err);
     // Non-fatal — don't break skill execution
   }
+}
+
+// ============================================================================
+// upload_document — agent-uploaded files become searchable documents
+// ============================================================================
+// Pattern: mem://architecture/document-shadow-markdown-pattern
+//          mem://federation/directional-connections-model
+//
+// Two input modes:
+//   A) content_text  → stored directly in documents.content_md
+//   B) content_base64 + mime_type + file_name → uploaded to documents bucket;
+//      text/* and markdown are decoded to content_md; other types saved with
+//      extraction_status='unsupported' (still archived, just not searchable).
+async function executeUploadDocument(
+  supabase: any,
+  args: Record<string, unknown>,
+  ctx: { caller_user_id?: string; caller_api_key_id?: string },
+): Promise<unknown> {
+  const title = String(args.title || '').trim();
+  const description = args.description ? String(args.description) : null;
+  const category = args.category ? String(args.category) : 'agent-upload';
+  const tags = Array.isArray(args.tags) ? (args.tags as string[]).filter((t) => typeof t === 'string') : [];
+  const contentText = typeof args.content_text === 'string' ? args.content_text : null;
+  const contentBase64 = typeof args.content_base64 === 'string' ? args.content_base64 : null;
+  const mimeType = typeof args.mime_type === 'string' ? args.mime_type : null;
+  let fileName = typeof args.file_name === 'string' ? args.file_name.trim() : '';
+
+  // ── Validation ───────────────────────────────────────────────────────────
+  if (!title) return { error: 'title is required', status: 'failed' };
+  if (!contentText && !contentBase64) {
+    return { error: 'Provide either content_text or content_base64', status: 'failed' };
+  }
+  if (contentText && contentBase64) {
+    return { error: 'Provide only one of content_text or content_base64, not both', status: 'failed' };
+  }
+  if (contentText && contentText.length > 500_000) {
+    return { error: 'content_text exceeds 500 000 character limit', status: 'failed' };
+  }
+  if (contentBase64) {
+    if (!mimeType) return { error: 'mime_type is required for binary mode', status: 'failed' };
+    if (!fileName) return { error: 'file_name is required for binary mode', status: 'failed' };
+    // base64 length ≈ 4/3 of raw bytes; cap at ~13.4MB base64 (≈10MB raw)
+    if (contentBase64.length > 13_400_000) {
+      return { error: 'content_base64 exceeds 10 MB raw size limit', status: 'failed' };
+    }
+  }
+
+  // ── Identify uploader (must be a real user with role) ────────────────────
+  // Strategy: prefer caller_user_id (set when MCP call). Fall back to the
+  // owner of the api_key. If neither resolves, refuse.
+  let uploadedBy: string | undefined = ctx.caller_user_id;
+  let peerName = 'unknown';
+
+  if (ctx.caller_api_key_id) {
+    const { data: keyRow } = await supabase
+      .from('api_keys')
+      .select('name, created_by')
+      .eq('id', ctx.caller_api_key_id)
+      .maybeSingle();
+    if (keyRow) {
+      peerName = keyRow.name || 'unknown';
+      if (!uploadedBy && keyRow.created_by) uploadedBy = keyRow.created_by;
+    }
+  }
+
+  if (!uploadedBy) {
+    return { error: 'Cannot determine uploader (no caller_user_id or resolvable api_key owner)', status: 'failed' };
+  }
+
+  // ── Auto-fill file_name for text mode ────────────────────────────────────
+  if (!fileName) {
+    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'document';
+    fileName = `${safeTitle}.md`;
+  }
+
+  // ── Mode A: text → content_md directly ───────────────────────────────────
+  if (contentText) {
+    const { data: docId, error: rpcErr } = await supabase.rpc('create_agent_document', {
+      p_uploaded_by: uploadedBy,
+      p_peer_name: peerName,
+      p_title: title,
+      p_file_name: fileName,
+      p_file_url: null,
+      p_file_type: 'text/markdown',
+      p_file_size_bytes: new TextEncoder().encode(contentText).length,
+      p_description: description,
+      p_category: category,
+      p_tags: tags,
+      p_content_md: contentText,
+      p_extraction_status: 'success',
+      p_extraction_error: null,
+    });
+    if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+    return {
+      success: true,
+      document_id: docId,
+      source: `agent-upload:${peerName.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}`,
+      extraction_status: 'success',
+      searchable: true,
+      mode: 'text',
+    };
+  }
+
+  // ── Mode B: binary → upload to storage, attempt text extraction ──────────
+  // Decode base64 → bytes
+  let bytes: Uint8Array;
+  try {
+    const bin = atob(contentBase64!);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  } catch (e: any) {
+    return { error: `Invalid base64 content: ${e.message}`, status: 'failed' };
+  }
+
+  // Upload to documents bucket under agent-uploads/<peer>/<uuid>-<fileName>
+  const safePeer = peerName.toLowerCase().replace(/[^a-z0-9_-]+/g, '-') || 'unknown';
+  const objectKey = `agent-uploads/${safePeer}/${crypto.randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]+/g, '_')}`;
+  const { error: uploadErr } = await supabase.storage
+    .from('documents')
+    .upload(objectKey, bytes, { contentType: mimeType!, upsert: false });
+  if (uploadErr) {
+    return { error: `Storage upload failed: ${uploadErr.message}`, status: 'failed' };
+  }
+
+  // Attempt to decode to markdown for text-based mime types
+  let extractedMd: string | null = null;
+  let extractionStatus = 'unsupported';
+  let extractionError: string | null = null;
+  const mt = mimeType!.toLowerCase();
+  if (mt.startsWith('text/') || mt === 'application/json' || mt === 'application/xml' || mt.endsWith('+json') || mt.endsWith('+xml')) {
+    try {
+      extractedMd = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+      if (extractedMd.length > 500_000) extractedMd = extractedMd.slice(0, 500_000) + '\n\n…[truncated]';
+      extractionStatus = 'success';
+    } catch (e: any) {
+      extractionStatus = 'failed';
+      extractionError = `Text decode failed: ${e.message}`;
+    }
+  } else {
+    // PDF/DOCX/etc — server-side parsing not available in this skill yet.
+    // Document is archived; an admin or future utility can re-extract.
+    extractionStatus = 'unsupported';
+    extractionError = `No server-side parser for mime_type=${mt}. Use content_text mode if you can extract client-side.`;
+  }
+
+  const { data: docId, error: rpcErr } = await supabase.rpc('create_agent_document', {
+    p_uploaded_by: uploadedBy,
+    p_peer_name: peerName,
+    p_title: title,
+    p_file_name: fileName,
+    p_file_url: objectKey,
+    p_file_type: mimeType,
+    p_file_size_bytes: bytes.byteLength,
+    p_description: description,
+    p_category: category,
+    p_tags: tags,
+    p_content_md: extractedMd,
+    p_extraction_status: extractionStatus,
+    p_extraction_error: extractionError,
+  });
+  if (rpcErr) return { error: `Failed to create document: ${rpcErr.message}`, status: 'failed' };
+
+  return {
+    success: true,
+    document_id: docId,
+    source: `agent-upload:${safePeer}`,
+    extraction_status: extractionStatus,
+    extraction_error: extractionError,
+    searchable: extractionStatus === 'success',
+    mode: 'binary',
+    storage_path: objectKey,
+  };
 }
