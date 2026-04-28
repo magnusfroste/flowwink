@@ -227,7 +227,7 @@ export default function UsersPage() {
                                 </div>
                                 <div className="space-y-2 max-h-[320px] overflow-y-auto">
                                   {ASSIGNABLE_ROLES.map(r => {
-                                    const checked = user.roles.includes(r);
+                                    const checked = (user.roles ?? []).includes(r);
                                     return (
                                       <label
                                         key={r}
