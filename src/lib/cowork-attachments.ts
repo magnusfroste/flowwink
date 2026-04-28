@@ -23,6 +23,8 @@ export interface ParseResult {
   kind: 'pdf' | 'text';
   /** Persisted documents.id (shadow markdown). null if persistence failed. */
   documentId: string | null;
+  /** True when extraction continues in background and text is not ready yet. */
+  pending?: boolean;
 }
 
 export function detectKind(file: File): 'pdf' | 'text' | 'image' | 'other' {
@@ -136,9 +138,18 @@ async function parsePdfFile(file: File): Promise<ParseResult> {
 
   try {
     const { data, error } = await supabase.functions.invoke('extract-pdf-text', {
-      body: { storage_path: `cowork-uploads/${path}` },
+      body: { storage_path: `cowork-uploads/${path}`, document_id: docId },
     });
     if (error) throw new Error(error.message || 'extract-pdf-text failed');
+    if (data?.queued) {
+      return {
+        text: '',
+        truncated: false,
+        kind: 'pdf',
+        documentId: docId,
+        pending: true,
+      };
+    }
     if (!data?.success) throw new Error(data?.error || 'PDF extraction returned no text');
     const { text, truncated } = truncate(String(data.text || ''));
 
