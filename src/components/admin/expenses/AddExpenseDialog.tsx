@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, ScanLine, Loader2 } from 'lucide-react';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -25,6 +26,19 @@ const CATEGORIES = [
 interface Attendee {
   name: string;
   company: string;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK_SIZE = 8192;
+  let binary = '';
+
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
 }
 
 export function AddExpenseDialog() {
@@ -48,10 +62,7 @@ export function AddExpenseDialog() {
     setScanning(true);
     try {
       const buf = await file.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      const file_base64 = btoa(binary);
+      const file_base64 = arrayBufferToBase64(buf);
 
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
         body: { file_base64, mime_type: file.type, filename: file.name },
@@ -76,7 +87,16 @@ export function AddExpenseDialog() {
       }
       toast.success('Receipt scanned — review the fields and save.');
     } catch (e: any) {
-      toast.error(e?.message || 'Could not read receipt');
+      if (e instanceof FunctionsHttpError) {
+        try {
+          const body = await e.context.json();
+          toast.error(body?.error || e.message || 'Could not read receipt');
+        } catch {
+          toast.error(e.message || 'Could not read receipt');
+        }
+      } else {
+        toast.error(e?.message || 'Could not read receipt');
+      }
     } finally {
       setScanning(false);
     }

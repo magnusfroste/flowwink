@@ -69,6 +69,153 @@ const TOOL_DEF = {
   },
 };
 
+function cleanBase64(base64String: string): string {
+  let cleaned = String(base64String || '').trim();
+
+  if (cleaned.startsWith('data:') && cleaned.includes(',')) {
+    cleaned = cleaned.split(',')[1];
+  }
+
+  return cleaned.replace(/\s/g, '');
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(cleanBase64(base64));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, i + CHUNK) as unknown as number[],
+    );
+  }
+  return btoa(binary);
+}
+
+async function extractPdfText(pdfBytes: Uint8Array, ai: Awaited<ReturnType<typeof resolveAiConfig>>): Promise<string> {
+  const extractionPrompt = `Extract the readable text content from this receipt PDF.
+- Preserve merchant name, dates, totals, VAT lines, line items, currency, and payment details.
+- Skip decorative artifacts and repeated headers/footers.
+- Return ONLY the extracted text. No commentary.`;
+
+  if (ai.provider === 'gemini') {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${ai.model}:generateContent?key=${ai.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [
+              { inline_data: { mime_type: 'application/pdf', data: bytesToBase64(pdfBytes) } },
+              { text: extractionPrompt },
+            ],
+          }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
+        }),
+      },
+    );
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || 'Gemini PDF extraction failed');
+
+    const parsed = text ? JSON.parse(text) : null;
+    return parsed?.candidates?.[0]?.content?.parts?.map((part: any) => part?.text || '').join('\n') || '';
+  }
+
+  if (ai.provider === 'openai') {
+    const uploadForm = new FormData();
+    uploadForm.append('purpose', 'user_data');
+    uploadForm.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'receipt.pdf');
+
+    const uploadResp = await fetch('https://api.openai.com/v1/files', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${ai.apiKey}` },
+      body: uploadForm,
+    });
+
+    const uploadText = await uploadResp.text();
+    if (!uploadResp.ok) throw new Error(uploadText || 'OpenAI file upload failed');
+
+    const uploaded = uploadText ? JSON.parse(uploadText) : null;
+    const fileId = uploaded?.id;
+    if (!fileId) throw new Error('OpenAI file upload failed');
+
+    try {
+      const response = await fetch(ai.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${ai.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: ai.model,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: extractionPrompt },
+              { type: 'file', file: { file_id: fileId } },
+            ],
+          }],
+          temperature: 0.1,
+          max_tokens: 8192,
+        }),
+      });
+
+      const text = await response.text();
+      if (!response.ok) throw new Error(text || 'OpenAI PDF extraction failed');
+
+      const parsed = text ? JSON.parse(text) : null;
+      const content = parsed?.choices?.[0]?.message?.content;
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) return content.map((item: any) => item?.text || '').join('\n');
+      return '';
+    } finally {
+      fetch(`https://api.openai.com/v1/files/${fileId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${ai.apiKey}` },
+      }).catch(() => {});
+    }
+  }
+
+  if (ai.provider === 'anthropic') {
+    const response = await fetch(ai.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ai.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: ai.model,
+        max_tokens: 8192,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: bytesToBase64(pdfBytes) } },
+            { type: 'text', text: extractionPrompt },
+          ],
+        }],
+      }),
+    });
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || 'Anthropic PDF extraction failed');
+
+    const parsed = text ? JSON.parse(text) : null;
+    return parsed?.content?.map((item: any) => item?.text || '').join('\n') || '';
+  }
+
+  throw new Error('PDF receipts are not supported by the configured AI provider yet.');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -94,6 +241,7 @@ Deno.serve(async (req) => {
       userId = data.user?.id ?? null;
     }
 
+    const cleanedBase64 = cleanBase64(file_base64);
     const ai = await resolveAiConfig(supabase, 'multimodal');
 
     const isImage = mime_type.startsWith('image/');
@@ -104,30 +252,27 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
-    // PDF support varies across vision providers (Gemini's OpenAI-compat layer
-    // rejects application/pdf on image_url). Until we render PDFs to images
-    // server-side, ask the user to provide an image.
-    if (isPdf && ai.provider !== 'openai') {
-      return new Response(
-        JSON.stringify({
-          error:
-            'PDF receipts are not yet supported on this AI provider. Please upload a photo of the receipt (JPG/PNG/HEIC), or take a screenshot of the PDF.',
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-
-    const dataUrl = `data:${mime_type};base64,${file_base64}`;
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Extract the expense fields from this receipt.' },
-          { type: 'image_url', image_url: { url: dataUrl } },
-        ],
-      },
-    ];
+    const messages = isPdf
+      ? [
+          {
+            role: 'system',
+            content: `${SYSTEM_PROMPT}\n\nYou will receive OCR text extracted from a receipt PDF instead of an image. Base your output only on that text.`,
+          },
+          {
+            role: 'user',
+            content: `Extract the expense fields from this receipt OCR text:\n\n${await extractPdfText(base64ToBytes(cleanedBase64), ai)}`,
+          },
+        ]
+      : [
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract the expense fields from this receipt.' },
+              { type: 'image_url', image_url: { url: `data:${mime_type};base64,${cleanedBase64}` } },
+            ],
+          },
+        ];
 
     const result = await callAiCompletion({
       supabase,
