@@ -190,16 +190,16 @@ export default function UsersPage() {
                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {user.roles.length === 0 ? (
+                            {(user.roles ?? []).length === 0 ? (
                               <span className="text-xs text-muted-foreground italic">No roles</span>
                             ) : (
-                              user.roles.map(r => (
+                              (user.roles ?? []).map(r => (
                                 <Badge
                                   key={r}
                                   variant="outline"
                                   className={`text-xs ${roleColors[r] ?? ''}`}
                                 >
-                                  {ROLE_LABELS[r]}
+                                  {ROLE_LABELS[r] ?? r}
                                 </Badge>
                               ))
                             )}
