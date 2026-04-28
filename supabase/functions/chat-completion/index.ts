@@ -6,6 +6,7 @@ import {
   buildSystemPrompt,
   loadSkillTools,
 } from "../_shared/agent-reason.ts";
+import { logAiUsage } from "../_shared/ai-usage-logger.ts";
 
 /**
  * Chat Completion — Visitor-facing AI chat
