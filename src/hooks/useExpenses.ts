@@ -198,3 +198,68 @@ export function useExpenseReports() {
     },
   });
 }
+
+export function useGenerateMonthlyReport() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (period?: string) => {
+      const { data, error } = await supabase.rpc('generate_monthly_expense_report', {
+        _period: period ?? new Date().toISOString().slice(0, 7),
+      });
+      if (error) throw error;
+      return data as { ok: boolean; report_id: string; period: string; expense_count: number; total_cents: number };
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['expense-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast({
+        title: `Report ready: ${res.period}`,
+        description: `${res.expense_count} expense(s) bundled`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Could not generate report', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useSubmitExpenseReport() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (reportId: string) => {
+      const { data, error } = await supabase.rpc('submit_expense_report', { _report_id: reportId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast({ title: 'Report submitted for approval' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Submit failed', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useApproveExpenseReport() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (reportId: string) => {
+      const { data, error } = await supabase.rpc('approve_expense_report', { _report_id: reportId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast({ title: 'Report approved' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Approve failed', description: err.message, variant: 'destructive' });
+    },
+  });
+}

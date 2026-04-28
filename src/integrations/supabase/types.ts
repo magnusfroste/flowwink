@@ -8748,6 +8748,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_expense_report: { Args: { _report_id: string }; Returns: Json }
       auto_allocate_vacation: {
         Args: { p_dry_run?: boolean; p_year: number }
         Returns: {
@@ -8936,6 +8937,10 @@ export type Database = {
           rule_id: string
           rule_name: string
         }[]
+      }
+      generate_monthly_expense_report: {
+        Args: { _period?: string; _user_id?: string }
+        Returns: Json
       }
       generate_payroll_export: {
         Args: { p_month: number; p_year: number }
@@ -9379,6 +9384,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_expense_report: { Args: { _report_id: string }; Returns: Json }
       try_acquire_agent_lock: {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
