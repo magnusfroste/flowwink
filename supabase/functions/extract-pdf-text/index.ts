@@ -99,10 +99,12 @@ serve(async (req) => {
     }
     const base64Pdf = btoa(binary);
 
-    const extractionPrompt = `Extract ALL text content from this PDF document. 
-Preserve the structure: headings, paragraphs, lists, tables.
-Return ONLY the extracted text content, no commentary or formatting instructions.
-If this is a resume/CV, preserve all sections clearly.`;
+    const extractionPrompt = `Extract the readable text content from this PDF.
+- Preserve headings, paragraphs, lists, and table structure.
+- Skip page numbers, repeated headers/footers, and decorative artifacts.
+- For long documents (>50 pages), prefer concise extraction over verbatim copying — summarize repetitive boilerplate.
+- Hard cap output at ~50,000 characters; stop cleanly at the next paragraph break if approaching the limit.
+- Return ONLY the extracted text. No commentary.`;
 
     let extractedText = '';
 
