@@ -18,6 +18,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Shield } from 'lucide-react';
+import { RoleAccessAuditPanel } from '@/components/admin/RoleAccessAuditPanel';
 
 export default function RolePermissionsPage() {
   const { data: modules, isLoading: loadingModules } = useModules();
