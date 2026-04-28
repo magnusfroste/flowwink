@@ -371,6 +371,48 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
 
       <Card>
         <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            Capability Routing
+          </CardTitle>
+          <CardDescription>
+            Which provider actually handles each tier. Multimodal (image/PDF) auto-falls back
+            to a vision-capable provider if your selected one is text-only.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Fast (chat, tools)', icon: Zap, tier: fastTier },
+              { label: 'Reasoning (planning)', icon: Brain, tier: reasoningTier },
+              { label: 'Multimodal (image/PDF)', icon: Eye, tier: multimodalTier },
+            ].map(({ label, icon: Icon, tier }) => (
+              <div key={label} className="rounded-lg border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </div>
+                {tier.provider ? (
+                  <>
+                    <div className="text-base font-serif">{PROVIDER_LABEL[tier.provider]}</div>
+                    {tier.fallback && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Fallback (selected provider can't handle this)
+                      </Badge>
+                    )}
+                  </>
+                ) : (
+                  <Badge variant="destructive" className="text-xs">Not available</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="font-serif">Powered Features</CardTitle>
           <CardDescription>These features use System AI settings</CardDescription>
         </CardHeader>
