@@ -8,12 +8,20 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  /** Primary role (first row in user_roles) — kept for backwards compatibility. */
   role: AppRole | null;
+  /** All roles assigned to the user (multi-role support). */
+  roles: AppRole[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  /** True if user has the given functional role, OR is admin (admin sees everything). */
+  hasRole: (role: AppRole) => boolean;
+  /** True if user has any of the given roles, OR is admin. */
+  hasAnyRole: (roles: AppRole[]) => boolean;
+  /** Legacy gates — writer/approver are deprecated, treated as admin. */
   isWriter: boolean;
   isApprover: boolean;
   isAdmin: boolean;
@@ -26,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRole(null);
+          setRoles([]);
           setLoading(false);
         }
       }
@@ -74,14 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setProfile(profileData as Profile | null);
 
-      // Fetch role
+      // Fetch ALL roles (multi-role support)
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
       
-      setRole(roleData?.role as AppRole | null);
+      const allRoles = (roleData ?? []).map(r => r.role as AppRole);
+      setRoles(allRoles);
+      // Primary role: prefer admin, otherwise first row
+      const primary = allRoles.includes('admin')
+        ? 'admin'
+        : (allRoles[0] ?? null);
+      setRole(primary);
     } catch (error) {
       logger.error('Error fetching user data:', error);
     } finally {
@@ -116,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setRoles([]);
   };
 
   const refreshProfile = async () => {
@@ -124,9 +140,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isWriter = role === 'writer' || role === 'approver' || role === 'admin';
-  const isApprover = role === 'approver' || role === 'admin';
-  const isAdmin = role === 'admin';
+  const isAdmin = roles.includes('admin');
+  // Legacy gates: writer/approver are deprecated. Treat them as admin so existing
+  // CMS publish-flow checks still grant access. New code should use hasRole/hasAnyRole.
+  const isWriter = isAdmin || roles.includes('writer') || roles.includes('approver') || roles.length > 0;
+  const isApprover = isAdmin || roles.includes('approver');
+
+  const hasRole = (r: AppRole) => isAdmin || roles.includes(r);
+  const hasAnyRole = (rs: AppRole[]) => isAdmin || rs.some(r => roles.includes(r));
 
   return (
     <AuthContext.Provider value={{
@@ -134,11 +155,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       role,
+      roles,
       loading,
       signIn,
       signUp,
       signOut,
       refreshProfile,
+      hasRole,
+      hasAnyRole,
       isWriter,
       isApprover,
       isAdmin,

@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, RefreshCw, Copy, Check } from 'lucide-react';
 import type { AppRole } from '@/types/cms';
+import { ROLE_LABELS } from '@/types/cms';
 
 function generatePassword(length = 12): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
@@ -38,7 +39,7 @@ export function CreateUserDialog() {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<AppRole>('writer');
+  const [role, setRole] = useState<AppRole>('sales');
   const [copied, setCopied] = useState(false);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
   
@@ -69,7 +70,7 @@ export function CreateUserDialog() {
       setCreatedPassword(password);
       toast({ 
         title: 'User created', 
-        description: `${email} has been added with the role ${role === 'writer' ? 'Writer' : role === 'approver' ? 'Approver' : 'Administrator'}.`
+        description: `${email} has been added with the role ${ROLE_LABELS[role]}. You can assign more roles from the user list.`
       });
     },
     onError: (error: Error) => {
@@ -104,7 +105,7 @@ export function CreateUserDialog() {
       setEmail('');
       setFullName('');
       setPassword('');
-      setRole('writer');
+      setRole('sales');
       setCreatedPassword(null);
       setCopied(false);
     }, 200);
@@ -193,17 +194,26 @@ export function CreateUserDialog() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">Initial role</Label>
                 <Select value={role} onValueChange={(v: AppRole) => setRole(v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="writer">Writer</SelectItem>
-                    <SelectItem value="approver">Approver</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="admin">Administrator — full access</SelectItem>
+                    <SelectItem value="sales">Sales — CRM, deals, quotes</SelectItem>
+                    <SelectItem value="hr">HR — employees, leave, recruitment</SelectItem>
+                    <SelectItem value="accounting">Accounting — invoices, expenses</SelectItem>
+                    <SelectItem value="support">Support — tickets, chat</SelectItem>
+                    <SelectItem value="warehouse">Warehouse — inventory, products</SelectItem>
+                    <SelectItem value="purchasing">Purchasing — vendors, POs</SelectItem>
+                    <SelectItem value="marketing">Marketing — newsletter, forms</SelectItem>
+                    <SelectItem value="projects">Projects — tasks, timesheets</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  You can grant additional roles after creation.
+                </p>
               </div>
             </div>
 

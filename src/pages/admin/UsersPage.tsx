@@ -6,13 +6,13 @@ import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Table,
   TableBody,
@@ -24,18 +24,20 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, User, CheckCircle } from 'lucide-react';
+import { Shield, User, Settings2 } from 'lucide-react';
 import type { AppRole } from '@/types/cms';
-import { ROLE_LABELS } from '@/types/cms';
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, FUNCTIONAL_ROLES } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
 
-interface UserWithRole {
+interface UserWithRoles {
   id: string;
   email: string;
   full_name: string | null;
-  role: AppRole;
+  roles: AppRole[];
   created_at: string;
 }
+
+const ASSIGNABLE_ROLES: AppRole[] = ['admin', ...FUNCTIONAL_ROLES];
 
 export default function UsersPage() {
   const { isAdmin, user: currentUser } = useAuth();
@@ -52,42 +54,53 @@ export default function UsersPage() {
 
       if (profilesError) throw profilesError;
 
-      const { data: roles, error: rolesError } = await supabase
+      const { data: roleRows, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      const roleMap = new Map(roles?.map(r => [r.user_id, r.role as AppRole]) || []);
+      const roleMap = new Map<string, AppRole[]>();
+      (roleRows ?? []).forEach(r => {
+        const list = roleMap.get(r.user_id) ?? [];
+        list.push(r.role as AppRole);
+        roleMap.set(r.user_id, list);
+      });
 
       return (profiles || []).map(p => ({
         ...p,
-        role: roleMap.get(p.id) || 'writer',
-      })) as UserWithRole[];
+        roles: roleMap.get(p.id) ?? [],
+      })) as UserWithRoles[];
     },
     enabled: isAdmin,
   });
 
-  const updateRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
-
-      if (error) throw error;
+  const toggleRole = useMutation({
+    mutationFn: async ({ userId, role, enabled }: { userId: string; role: AppRole; enabled: boolean }) => {
+      if (enabled) {
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role });
+        if (error && !String(error.message).includes('duplicate')) throw error;
+      } else {
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', role);
+        if (error) throw error;
+      }
 
       await supabase.from('audit_logs').insert({
-        action: 'update_user_role',
+        action: enabled ? 'grant_user_role' : 'revoke_user_role',
         entity_type: 'user',
         entity_id: userId,
         user_id: currentUser?.id,
-        metadata: { new_role: newRole } as unknown as Json,
+        metadata: { role } as unknown as Json,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({ title: 'Role updated', description: 'User role has been changed.' });
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -106,11 +119,19 @@ export default function UsersPage() {
     );
   }
 
-  const roleColors: Record<AppRole, string> = {
+  const roleColors: Partial<Record<AppRole, string>> = {
+    admin: 'bg-primary/20 text-primary border-primary/30',
+    sales: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+    hr: 'bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/30',
+    accounting: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+    support: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30',
+    warehouse: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+    marketing: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
+    purchasing: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
+    projects: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30',
+    customer: 'bg-muted text-muted-foreground',
     writer: 'bg-muted text-muted-foreground',
     approver: 'bg-warning/20 text-warning-foreground',
-    admin: 'bg-primary/20 text-primary',
-    customer: 'bg-accent text-accent-foreground',
   };
 
   return (
@@ -118,7 +139,7 @@ export default function UsersPage() {
       <AdminPageContainer>
         <AdminPageHeader 
           title="Users"
-          description="Manage users and their roles"
+          description="Assign one or more functional roles per user. Admins see everything regardless of other roles."
         >
           <CreateUserDialog />
         </AdminPageHeader>
@@ -127,7 +148,7 @@ export default function UsersPage() {
           <CardHeader>
             <CardTitle className="font-serif">All Users</CardTitle>
             <CardDescription>
-              Change roles using the dropdown menu
+              Click <strong>Manage roles</strong> to grant or revoke access to specific business modules.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -143,52 +164,106 @@ export default function UsersPage() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead className="w-[140px]">Manage</TableHead>
                     <TableHead>Registered</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-                            <User className="h-4 w-4 text-muted-foreground" />
+                  {users.map((user) => {
+                    const isSelf = user.id === currentUser?.id;
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <span className="font-medium">{user.full_name || 'Unknown'}</span>
+                            {isSelf && (
+                              <Badge variant="outline" className="text-xs">You</Badge>
+                            )}
                           </div>
-                          <span className="font-medium">{user.full_name || 'Unknown'}</span>
-                          {user.id === currentUser?.id && (
-                            <Badge variant="outline" className="text-xs">You</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
-                        {user.id === currentUser?.id ? (
-                          <Badge className={roleColors[user.role]}>{ROLE_LABELS[user.role]}</Badge>
-                        ) : (
-                          <Select
-                            value={user.role}
-                            onValueChange={(value: AppRole) => 
-                              updateRole.mutate({ userId: user.id, newRole: value })
-                            }
-                            disabled={updateRole.isPending}
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="writer">Writer</SelectItem>
-                              <SelectItem value="approver">Approver</SelectItem>
-                              <SelectItem value="admin">Administrator</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(user.created_at).toLocaleDateString('en-US')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles.length === 0 ? (
+                              <span className="text-xs text-muted-foreground italic">No roles</span>
+                            ) : (
+                              user.roles.map(r => (
+                                <Badge
+                                  key={r}
+                                  variant="outline"
+                                  className={`text-xs ${roleColors[r] ?? ''}`}
+                                >
+                                  {ROLE_LABELS[r]}
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isSelf || toggleRole.isPending}
+                              >
+                                <Settings2 className="h-3.5 w-3.5 mr-1.5" />
+                                Manage roles
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80" align="end">
+                              <div className="space-y-3">
+                                <div>
+                                  <h4 className="font-medium text-sm">Assign roles</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    A user can have multiple roles. Admin grants access to everything.
+                                  </p>
+                                </div>
+                                <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                                  {ASSIGNABLE_ROLES.map(r => {
+                                    const checked = user.roles.includes(r);
+                                    return (
+                                      <label
+                                        key={r}
+                                        className="flex items-start gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
+                                      >
+                                        <Checkbox
+                                          checked={checked}
+                                          disabled={toggleRole.isPending}
+                                          onCheckedChange={(v) =>
+                                            toggleRole.mutate({
+                                              userId: user.id,
+                                              role: r,
+                                              enabled: Boolean(v),
+                                            })
+                                          }
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-sm font-medium leading-none">
+                                            {ROLE_LABELS[r]}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground mt-1">
+                                            {ROLE_DESCRIPTIONS[r]}
+                                          </div>
+                                        </div>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(user.created_at).toLocaleDateString('en-US')}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

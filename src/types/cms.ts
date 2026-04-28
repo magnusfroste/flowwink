@@ -1,4 +1,32 @@
-export type AppRole = 'writer' | 'approver' | 'admin' | 'customer';
+export type AppRole =
+  | 'admin'
+  | 'customer'
+  // Functional roles (Odoo-style) — grant access to specific module groups
+  | 'sales'
+  | 'hr'
+  | 'accounting'
+  | 'support'
+  | 'warehouse'
+  | 'marketing'
+  | 'purchasing'
+  | 'projects'
+  // Legacy CMS roles — deprecated, treated as admin for backwards compatibility.
+  // Do not assign to new users. See mem://architecture/functional-roles-model.
+  | 'writer'
+  | 'approver';
+
+/** Functional roles only (excludes admin/customer/legacy). Used for module access gating. */
+export const FUNCTIONAL_ROLES = [
+  'sales',
+  'hr',
+  'accounting',
+  'support',
+  'warehouse',
+  'marketing',
+  'purchasing',
+  'projects',
+] as const;
+export type FunctionalRole = (typeof FUNCTIONAL_ROLES)[number];
 
 export type PageStatus = 'draft' | 'reviewing' | 'published' | 'archived';
 
@@ -864,10 +892,33 @@ export const STATUS_ICONS: Record<PageStatus, string> = {
 };
 
 export const ROLE_LABELS: Record<AppRole, string> = {
-  writer: 'Writer',
-  approver: 'Approver',
   admin: 'Administrator',
   customer: 'Customer',
+  sales: 'Sales',
+  hr: 'HR',
+  accounting: 'Accounting',
+  support: 'Support',
+  warehouse: 'Warehouse',
+  marketing: 'Marketing',
+  purchasing: 'Purchasing',
+  projects: 'Projects',
+  writer: 'Writer (legacy)',
+  approver: 'Approver (legacy)',
+};
+
+export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
+  admin: 'Full access to everything',
+  customer: 'External customer account',
+  sales: 'CRM, leads, deals, quotes, companies, calendar',
+  hr: 'Employees, leave, attendance, recruitment, contracts',
+  accounting: 'Invoices, expenses, reconciliation, period locks',
+  support: 'Tickets, live support, cowork chat',
+  warehouse: 'Inventory, products, vendors, purchase orders',
+  marketing: 'Newsletter, webinars, forms, campaigns',
+  purchasing: 'Vendors, RFQs, purchase orders',
+  projects: 'Projects, tasks, timesheets',
+  writer: 'Legacy CMS role — treated as admin',
+  approver: 'Legacy CMS role — treated as admin',
 };
 
 // ==================== BLOG TYPES ====================
