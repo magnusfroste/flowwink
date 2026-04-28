@@ -30,6 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
   approved: 'bg-green-500/10 text-green-700 dark:text-green-400',
   rejected: 'bg-destructive/10 text-destructive',
   booked: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+  paid: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
 };
 
 function formatCents(cents: number, currency = 'SEK'): string {
