@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
 
     const isImage = mime_type.startsWith('image/');
     const isPdf = mime_type === 'application/pdf';
+    const dataUrl = `data:${mime_type};base64,${file_base64}`;
     if (!isImage && !isPdf) {
       return new Response(
         JSON.stringify({ error: `Unsupported file type "${mime_type}". Use an image (JPG/PNG/HEIC) or PDF.` }),
