@@ -13,6 +13,7 @@ import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToo
 import { resolveAiConfig } from '../ai-config.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
+import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from './intent-scorer.ts';
 import {
   handleMemoryWrite,
