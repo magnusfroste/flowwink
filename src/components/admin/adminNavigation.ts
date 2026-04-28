@@ -61,7 +61,7 @@ export const navigationGroups: NavGroup[] = [
   },
   {
     label: "Marketing",
-    adminOnly: true,
+    allowedRoles: ['marketing'],
     items: [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
       { name: "Webinars", href: "/admin/webinars", icon: Video, moduleId: "webinars" },
@@ -70,7 +70,7 @@ export const navigationGroups: NavGroup[] = [
   },
   {
     label: "Support",
-    adminOnly: true,
+    allowedRoles: ['support'],
     items: [
       { name: "Cowork Chat", href: "/admin/cowork", icon: Sparkles, moduleId: "workspaceChat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
@@ -79,7 +79,7 @@ export const navigationGroups: NavGroup[] = [
   },
   {
     label: "CRM",
-    adminOnly: true,
+    allowedRoles: ['sales'],
     items: [
       { name: "Business Identity", href: "/admin/company-insights", icon: Building2, moduleId: "companyInsights" },
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
@@ -94,7 +94,7 @@ export const navigationGroups: NavGroup[] = [
   },
   {
     label: "Finance",
-    adminOnly: true,
+    allowedRoles: ['accounting'],
     items: [
       { name: "Quotes", href: "/admin/quotes", icon: FileQuote, moduleId: "invoicing" },
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
@@ -109,24 +109,24 @@ export const navigationGroups: NavGroup[] = [
   },
   {
     label: "E-commerce",
-    adminOnly: true,
+    allowedRoles: ['warehouse', 'purchasing'],
     items: [
       { name: "Customers", href: "/admin/customers", icon: UserRound, moduleId: "ecommerce" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "ecommerce" },
       { name: "Inventory", href: "/admin/inventory", icon: Package, moduleId: "inventory" },
-      { name: "Vendors", href: "/admin/vendors", icon: Building2, moduleId: "purchasing" },
-      { name: "Purchase Orders", href: "/admin/purchase-orders", icon: Truck, moduleId: "purchasing" },
+      { name: "Vendors", href: "/admin/vendors", icon: Building2, moduleId: "purchasing", allowedRoles: ['purchasing'] },
+      { name: "Purchase Orders", href: "/admin/purchase-orders", icon: Truck, moduleId: "purchasing", allowedRoles: ['purchasing'] },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "ecommerce" },
     ],
   },
   {
     label: "Operations",
-    adminOnly: true,
+    allowedRoles: ['hr', 'projects'],
     items: [
-      { name: "Projects", href: "/admin/projects", icon: FolderKanban, moduleId: "projects" },
-      { name: "HR & Employees", href: "/admin/hr", icon: Users, moduleId: "hr" },
-      { name: "Recruitment", href: "/admin/recruitment", icon: Briefcase, moduleId: "recruitment" },
-      { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts" },
+      { name: "Projects", href: "/admin/projects", icon: FolderKanban, moduleId: "projects", allowedRoles: ['projects'] },
+      { name: "HR & Employees", href: "/admin/hr", icon: Users, moduleId: "hr", allowedRoles: ['hr'] },
+      { name: "Recruitment", href: "/admin/recruitment", icon: Briefcase, moduleId: "recruitment", allowedRoles: ['hr'] },
+      { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts", allowedRoles: ['hr'] },
       { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
