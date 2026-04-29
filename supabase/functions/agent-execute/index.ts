@@ -7043,3 +7043,210 @@ async function executeUploadDocument(
     storage_path: objectKey,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// internal:lint_skill — runs the Agent Contract Integrity pre-release checklist
+// (mem://architecture/agent-contract-integrity) against one or all enabled
+// skills. Returns a structured findings list with severity + suggested fix per
+// rule. Used by FlowPilot/peers to self-verify before releasing a new skill.
+// ─────────────────────────────────────────────────────────────────────────────
+async function executeLintSkill(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const targetName = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
+  const includePassing = args.include_passing === true;
+
+  // 1. Load skill(s)
+  let q = supabase
+    .from('agent_skills')
+    .select('id,name,handler,module_id,enabled,mcp_exposed,description,tool_definition')
+    .eq('enabled', true);
+  if (targetName) q = q.eq('name', targetName);
+  const { data: skills, error: skillErr } = await q;
+  if (skillErr) return { error: `Failed to load skills: ${skillErr.message}` };
+  if (!skills || skills.length === 0) {
+    return { error: targetName ? `Skill "${targetName}" not found or disabled.` : 'No enabled skills.' };
+  }
+
+  // 2. Load RPC signatures
+  const { data: rpcRows, error: rpcErr } = await supabase.rpc('lint_get_rpc_signatures');
+  if (rpcErr) return { error: `RPC signature lookup failed: ${rpcErr.message}` };
+  const rpcArgsByName = new Map<string, Set<string>>();
+  for (const r of (rpcRows ?? []) as Array<{ proname: string; args: string[] }>) {
+    rpcArgsByName.set(r.proname, new Set(r.args ?? []));
+  }
+
+  // 3. Load NOT NULL columns
+  const { data: nnRows, error: nnErr } = await supabase.rpc('lint_get_not_null_columns');
+  if (nnErr) return { error: `NOT NULL lookup failed: ${nnErr.message}` };
+  const notNullByTable = new Map<string, Set<string>>();
+  for (const r of (nnRows ?? []) as Array<{ table_name: string; column_name: string }>) {
+    if (!notNullByTable.has(r.table_name)) notNullByTable.set(r.table_name, new Set());
+    notNullByTable.get(r.table_name)!.add(r.column_name);
+  }
+
+  // 4. Load module settings
+  const { data: settingsRow } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'modules')
+    .maybeSingle();
+  const moduleSettings = (settingsRow?.value as Record<string, { enabled?: boolean }>) ?? {};
+
+  // Auto-fill exemptions are kept in the codebase fixture; agents can pass overrides.
+  const autoFillOverrides = (args.auto_filled_columns as Record<string, string[]>) ?? {};
+
+  const reports = skills.map((s: any) =>
+    lintOne(s, { rpcArgsByName, notNullByTable, autoFillOverrides, moduleSettings }),
+  );
+  const filtered = includePassing ? reports : reports.filter((r) => r.findings.length > 0);
+
+  const errors = reports.reduce(
+    (sum, r) => sum + r.findings.filter((f) => f.severity === 'error').length,
+    0,
+  );
+  const warnings = reports.reduce(
+    (sum, r) => sum + r.findings.filter((f) => f.severity === 'warn').length,
+    0,
+  );
+
+  return {
+    success: true,
+    generated_at: new Date().toISOString(),
+    total_skills: reports.length,
+    reported: filtered.length,
+    errors,
+    warnings,
+    blocking: errors > 0,
+    summary:
+      errors === 0
+        ? `✓ ${reports.length} skill(s) clean of blocking issues (${warnings} warning(s)).`
+        : `✗ ${errors} blocking issue(s) across ${reports.length} skill(s) — fix before release.`,
+    reports: filtered,
+  };
+}
+
+interface LintFinding {
+  layer: 1 | 2 | 3 | 4;
+  severity: 'error' | 'warn' | 'info';
+  rule: string;
+  message: string;
+  fix?: string;
+}
+
+function lintOne(
+  skill: any,
+  ctx: {
+    rpcArgsByName: Map<string, Set<string>>;
+    notNullByTable: Map<string, Set<string>>;
+    autoFillOverrides: Record<string, string[]>;
+    moduleSettings: Record<string, { enabled?: boolean }>;
+  },
+): { skill_name: string; handler: string | null; module_id: string | null; ok: boolean; findings: LintFinding[] } {
+  const findings: LintFinding[] = [];
+  const handler: string = skill.handler ?? '';
+  const props = skill.tool_definition?.function?.parameters?.properties ?? {};
+  const propNames = Object.keys(props);
+  const description: string = skill.description ?? '';
+
+  // Layer 1 — arg mapping for rpc:*
+  if (handler.startsWith('rpc:')) {
+    const rpcName = handler.slice(4);
+    const valid = ctx.rpcArgsByName.get(rpcName);
+    if (!valid) {
+      findings.push({
+        layer: 1, severity: 'error', rule: 'rpc-exists',
+        message: `Handler points to RPC "${rpcName}" but no such function exists.`,
+        fix: `Create migration for ${rpcName}() or fix handler.`,
+      });
+    } else {
+      const mapped = propNames
+        .filter((k) => !k.startsWith('_') && k !== 'trace_id' && k !== 'objective_context')
+        .map((k) => ({ original: k, arg: k.startsWith('p_') ? k : `p_${k}` }));
+      for (const { original, arg } of mapped) {
+        if (!valid.has(arg)) {
+          findings.push({
+            layer: 1, severity: 'error', rule: 'arg-mapping',
+            message: `Property "${original}" maps to "${arg}" but RPC ${rpcName} has no such parameter. Available: ${[...valid].join(', ') || '∅'}`,
+            fix: `Rename property to match an existing p_* arg, or add parameter to ${rpcName}().`,
+          });
+        }
+      }
+    }
+  }
+
+  // Layer 2 — NOT NULL coverage for db:*
+  if (handler.startsWith('db:')) {
+    const table = handler.slice(3);
+    const required = ctx.notNullByTable.get(table);
+    if (!required) {
+      findings.push({
+        layer: 2, severity: 'error', rule: 'table-exists',
+        message: `Handler points to table "${table}" but it does not exist.`,
+      });
+    } else {
+      const exempt = new Set(ctx.autoFillOverrides[skill.name] ?? []);
+      const propSet = new Set(propNames);
+      for (const col of required) {
+        if (!propSet.has(col) && !exempt.has(col)) {
+          findings.push({
+            layer: 2, severity: 'error', rule: 'not-null-coverage',
+            message: `Column "${col}" is NOT NULL on ${table} but missing from skill schema.`,
+            fix: `Add "${col}" to properties OR pass auto_filled_columns.${skill.name}=["${col}"] if handler auto-fills it.`,
+          });
+        }
+      }
+    }
+  }
+
+  // Layer 3 — description quality (Law 2)
+  if (!description || description.length < 30) {
+    findings.push({
+      layer: 3, severity: 'warn', rule: 'description-too-short',
+      message: `Description is ${description.length} chars — needs ≥30 for reliable scoring.`,
+      fix: `Expand to explain what the skill does and when to use it.`,
+    });
+  }
+  if (description && !/use when:/i.test(description)) {
+    findings.push({
+      layer: 3, severity: 'warn', rule: 'missing-use-when',
+      message: `Description lacks "Use when:" marker — risk of misrouting.`,
+      fix: `Add "Use when: <trigger phrases>" to description.`,
+    });
+  }
+  if (description && !/not for:/i.test(description)) {
+    findings.push({
+      layer: 3, severity: 'info', rule: 'missing-not-for',
+      message: `Description lacks "NOT for:" marker — recommended.`,
+    });
+  }
+
+  // Layer 4 — module registration
+  if (!skill.module_id) {
+    findings.push({
+      layer: 4, severity: 'warn', rule: 'no-module',
+      message: `Skill has no module_id — won't be filtered by MCP module-aware filtering.`,
+      fix: `Set module_id to owning module.`,
+    });
+  } else if (ctx.moduleSettings[skill.module_id]?.enabled === false) {
+    findings.push({
+      layer: 4, severity: 'info', rule: 'module-disabled',
+      message: `Owning module "${skill.module_id}" is disabled — skill hidden from MCP.`,
+    });
+  }
+  if (skill.mcp_exposed === false) {
+    findings.push({
+      layer: 4, severity: 'info', rule: 'not-mcp-exposed',
+      message: `Skill not mcp_exposed — only callable via FlowPilot.`,
+    });
+  }
+
+  return {
+    skill_name: skill.name,
+    handler: skill.handler,
+    module_id: skill.module_id,
+    ok: !findings.some((f) => f.severity === 'error'),
+    findings,
+  };
+}
