@@ -205,7 +205,7 @@ export function useGenerateMonthlyReport() {
   return useMutation({
     mutationFn: async (period?: string) => {
       const { data, error } = await supabase.rpc('generate_monthly_expense_report', {
-        _period: period ?? new Date().toISOString().slice(0, 7),
+        p_period: period ?? new Date().toISOString().slice(0, 7),
       });
       if (error) throw error;
       return data as { ok: boolean; report_id: string; period: string; expense_count: number; total_cents: number };
