@@ -26,15 +26,6 @@ import {
   type BomHeader,
 } from '@/hooks/useManufacturing';
 
-const STATUS_VARIANT: Record<MoStatus, 'secondary' | 'outline' | 'default'> = {
-  draft: 'outline',
-  planned: 'outline',
-  confirmed: 'secondary',
-  in_progress: 'default',
-  done: 'secondary',
-  cancelled: 'outline',
-};
-
 function MoActions({ mo }: { mo: Record<string, unknown> }) {
   const id = String(mo.id);
   const status = mo.status as MoStatus;
@@ -74,7 +65,16 @@ function MoActions({ mo }: { mo: Record<string, unknown> }) {
 }
 
 function MoList() {
+  useManufacturingOrdersRealtime();
   const { data, isLoading } = useManufacturingOrders();
+  const { data: products = [] } = useProducts();
+
+  const productById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of products) m.set(p.id, p.name);
+    return m;
+  }, [products]);
+
   if (isLoading) return <Skeleton className="h-64 w-full" />;
   if (!data || data.length === 0) {
     return (
@@ -87,24 +87,37 @@ function MoList() {
   }
   return (
     <div className="space-y-3">
-      {data.map((mo) => (
-        <Card key={String(mo.id)}>
-          <CardContent className="flex flex-col gap-3 py-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-medium">{String(mo.mo_number)}</span>
-                <Badge variant={STATUS_VARIANT[mo.status as MoStatus] ?? 'outline'}>
-                  {String(mo.status)}
-                </Badge>
+      {data.map((mo) => {
+        const status = mo.status as MoStatus;
+        const productName = mo.product_id
+          ? productById.get(String(mo.product_id)) ?? 'Unknown product'
+          : '—';
+        return (
+          <Card key={String(mo.id)}>
+            <CardContent className="space-y-4 py-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-medium">{String(mo.mo_number)}</span>
+                    <MoStatusBadge status={status} />
+                    <span className="truncate text-sm text-foreground">{productName}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Qty {String(mo.quantity)} · due {mo.due_date ? String(mo.due_date) : '—'} · source {String(mo.source_type)}
+                  </div>
+                </div>
+                <MoActions mo={mo} />
               </div>
-              <div className="text-xs text-muted-foreground">
-                Qty {String(mo.quantity)} · due {mo.due_date ? String(mo.due_date) : '—'} · source {String(mo.source_type)}
-              </div>
-            </div>
-            <MoActions mo={mo} />
-          </CardContent>
-        </Card>
-      ))}
+              <MoTimeline
+                status={status}
+                createdAt={mo.created_at as string | null | undefined}
+                startedAt={mo.started_at as string | null | undefined}
+                completedAt={mo.completed_at as string | null | undefined}
+              />
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
