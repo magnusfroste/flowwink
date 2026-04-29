@@ -28,7 +28,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
   {
     name: 'manage_bom',
     description:
-      'Create, list, or update Bill of Materials (BOM) versions for a product. Use when: defining what components make up a finished good, versioning a recipe, or reading the current BOM. NOT for: planning a production run (use create_manufacturing_order).',
+      'Create a new Bill of Materials (BOM) version for a product. Use when: defining what components make up a finished good, or adding a new versioned recipe. NOT for: planning a production run (use create_manufacturing_order). Reads go via universal CRUD on bom_headers / bom_lines.',
     category: 'commerce',
     handler: 'rpc:create_bom',
     scope: 'internal',
@@ -36,14 +36,12 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_bom',
-        description: 'CRUD for Bill of Materials (BOM headers + lines)',
+        description: 'Create a Bill of Materials (BOM) header + lines in one transaction',
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'list', 'get'] },
-            product_id: { type: 'string' },
-            bom_id: { type: 'string' },
-            version: { type: 'string' },
+            product_id: { type: 'string', description: 'Finished-good product UUID' },
+            version: { type: 'string', description: 'BOM version label (e.g. v1, 2026-Q1)' },
             quantity_produced: { type: 'number', description: 'Units produced per BOM run (default 1)' },
             routing_notes: { type: 'string' },
             activate: { type: 'boolean', description: 'Set this version as the active BOM (default true)' },
@@ -62,17 +60,7 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
               },
             },
           },
-          required: ['action'],
-          allOf: [
-            {
-              if: { properties: { action: { const: 'create' } } },
-              then: { required: ['action', 'product_id', 'lines'] },
-            },
-            {
-              if: { properties: { action: { const: 'get' } } },
-              then: { required: ['action', 'bom_id'] },
-            },
-          ],
+          required: ['product_id', 'lines'],
         },
       },
     },
