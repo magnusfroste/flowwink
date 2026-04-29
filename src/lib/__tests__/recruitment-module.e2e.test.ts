@@ -71,6 +71,7 @@ const RECRUITMENT_SKILLS = [
   'move_application_stage',
   'draft_candidate_outreach',
   'hire_candidate',
+  'hire_application',
   'summarize_candidate_pipeline',
 ];
 
