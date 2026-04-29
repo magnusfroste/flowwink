@@ -286,3 +286,88 @@ export function useAutoMatch() {
     onError: (e: Error) => toast.error(`Auto-match failed: ${e.message}`),
   });
 }
+
+/**
+ * Book an unmatched bank transaction directly:
+ * creates a journal entry (Dt counter / Cr bank, or vice-versa) AND a reconciliation match
+ * so the row becomes both posted AND reconciled in one step.
+ */
+export function useBookFromUnmatched() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      bank_transaction_id: string;
+      bank_gl_account: string; // e.g. '1930'
+      counter_account_code: string;
+      counter_account_name: string;
+      amount_cents: number; // signed: negative = bank outflow
+      currency: string;
+      entry_date: string;
+      description: string;
+      reference?: string;
+    }) => {
+      const isOutflow = input.amount_cents < 0;
+      const abs = Math.abs(input.amount_cents);
+
+      // Outflow (e.g. supplier payment): Dt counter, Cr bank
+      // Inflow (e.g. customer payment): Dt bank, Cr counter
+      const lines = isOutflow
+        ? [
+            { account_code: input.counter_account_code, account_name: input.counter_account_name, debit_cents: abs, credit_cents: 0 },
+            { account_code: input.bank_gl_account, account_name: 'Bank', debit_cents: 0, credit_cents: abs },
+          ]
+        : [
+            { account_code: input.bank_gl_account, account_name: 'Bank', debit_cents: abs, credit_cents: 0 },
+            { account_code: input.counter_account_code, account_name: input.counter_account_name, debit_cents: 0, credit_cents: abs },
+          ];
+
+      const { data: entry, error: entryErr } = await supabase
+        .from('journal_entries')
+        .insert({
+          entry_date: input.entry_date,
+          description: input.description,
+          reference_number: input.reference || null,
+          status: 'posted',
+          source: 'reconciliation',
+        } as any)
+        .select()
+        .single();
+      if (entryErr) throw entryErr;
+
+      const { error: linesErr } = await supabase
+        .from('journal_entry_lines')
+        .insert(lines.map((l) => ({ ...l, journal_entry_id: entry.id })));
+      if (linesErr) throw linesErr;
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: matchErr } = await supabase.from('reconciliation_matches').insert({
+        bank_transaction_id: input.bank_transaction_id,
+        entity_type: 'manual',
+        entity_id: entry.id,
+        amount_cents: abs,
+        match_type: 'manual',
+        notes: `Booked: ${input.description}`,
+        created_by: user?.id || null,
+      });
+      if (matchErr) throw matchErr;
+
+      // Mark transaction as matched
+      await supabase
+        .from('bank_transactions')
+        .update({ status: 'matched', matched_amount_cents: abs })
+        .eq('id', input.bank_transaction_id);
+
+      return entry;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bank_transactions'] });
+      qc.invalidateQueries({ queryKey: ['reconciliation_matches'] });
+      qc.invalidateQueries({ queryKey: ['journal-entries'] });
+      qc.invalidateQueries({ queryKey: ['account-balances'] });
+      qc.invalidateQueries({ queryKey: ['bank_reconciliation_summary'] });
+      toast.success('Booked & reconciled');
+    },
+    onError: (e: Error) => toast.error(`Booking failed: ${e.message}`),
+  });
+}
