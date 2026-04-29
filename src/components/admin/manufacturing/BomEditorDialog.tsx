@@ -195,7 +195,7 @@ export function BomEditorDialog({ open, onOpenChange, bom }: Props) {
 
   async function handleSave() {
     const result = validate();
-    if (!result.ok) {
+    if (result.ok === false) {
       setErrors(result.errors);
       return;
     }
