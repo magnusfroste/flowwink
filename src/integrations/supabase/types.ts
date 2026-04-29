@@ -5392,6 +5392,7 @@ export type Database = {
       manufacturing_orders: {
         Row: {
           bom_id: string | null
+          cancelled_at: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -5409,6 +5410,7 @@ export type Database = {
         }
         Insert: {
           bom_id?: string | null
+          cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -5426,6 +5428,7 @@ export type Database = {
         }
         Update: {
           bom_id?: string | null
+          cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
