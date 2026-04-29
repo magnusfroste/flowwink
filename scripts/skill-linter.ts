@@ -109,16 +109,10 @@ async function lintSkills(only?: string): Promise<LintResult> {
     : { _skill_auto_filled_columns: {} };
   const autoFilled: Record<string, string[]> = fixture._skill_auto_filled_columns ?? {};
 
-  // Pre-fetch active modules
-  const { rows: settingsRow } = await client.query(
-    `SELECT value FROM public.site_settings WHERE key = 'modules' LIMIT 1`,
-  );
-  const moduleSettings = (settingsRow[0]?.value as Record<string, { enabled?: boolean }>) ?? {};
-
   await client.end();
 
   const reports: SkillReport[] = skills.map((skill) =>
-    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, autoFilled, moduleSettings }),
+    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, autoFilled }),
   );
 
   const totalFindings = reports.reduce((s, r) => s + r.findings.length, 0);
