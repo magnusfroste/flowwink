@@ -1,6 +1,7 @@
 # Testing Guide — FlowPilot Autonomy Stack
 
-This document describes the three-layer testing framework for FlowPilot and how to add new tests as the system evolves.
+> **For the full test suite (Vitest guardrails, snapshot scripts, regression runners, Skill Linter, CI wiring) see [`test-suite.md`](./test-suite.md) — the master spec.**
+> This document covers only the server-side L1–L6 autonomy tests that run via the `run-autonomy-tests` edge function.
 
 ---
 
