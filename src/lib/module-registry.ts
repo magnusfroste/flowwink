@@ -22,7 +22,7 @@ import {
   formsModule, bookingModule, productsModule, inventoryModule, chatModule,
   liveSupportModule, webinarsModule, analyticsModule, companyInsightsModule,
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
-  purchasingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
+  purchasingModule, manufacturingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
   slaModule, calendarModule, subscriptionsModule, salesIntelligenceModule,
   growthModule, resumeModule, browserControlModule, federationModule,
   composioModule, ticketsModule, siteMigrationModule, developerModule,

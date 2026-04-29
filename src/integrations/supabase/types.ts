@@ -2127,6 +2127,98 @@ export type Database = {
         }
         Relationships: []
       }
+      bom_headers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          product_id: string
+          quantity_produced: number
+          routing_notes: string | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          product_id: string
+          quantity_produced?: number
+          routing_notes?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          quantity_produced?: number
+          routing_notes?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bom_headers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bom_lines: {
+        Row: {
+          bom_id: string
+          component_product_id: string
+          created_at: string
+          id: string
+          position: number
+          quantity: number
+          scrap_pct: number
+          unit: string | null
+        }
+        Insert: {
+          bom_id: string
+          component_product_id: string
+          created_at?: string
+          id?: string
+          position?: number
+          quantity: number
+          scrap_pct?: number
+          unit?: string | null
+        }
+        Update: {
+          bom_id?: string
+          component_product_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          quantity?: number
+          scrap_pct?: number
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bom_lines_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "bom_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_availability: {
         Row: {
           created_at: string
@@ -5297,6 +5389,120 @@ export type Database = {
           },
         ]
       }
+      manufacturing_orders: {
+        Row: {
+          bom_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          mo_number: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          source_id: string | null
+          source_type: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["mo_status"]
+          updated_at: string
+        }
+        Insert: {
+          bom_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          mo_number: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          source_id?: string | null
+          source_type?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["mo_status"]
+          updated_at?: string
+        }
+        Update: {
+          bom_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          mo_number?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          source_id?: string | null
+          source_type?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["mo_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_orders_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "bom_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_components: {
+        Row: {
+          availability: string
+          component_product_id: string
+          created_at: string
+          id: string
+          mo_id: string
+          qty_consumed: number
+          qty_required: number
+        }
+        Insert: {
+          availability?: string
+          component_product_id: string
+          created_at?: string
+          id?: string
+          mo_id: string
+          qty_consumed?: number
+          qty_required: number
+        }
+        Update: {
+          availability?: string
+          component_product_id?: string
+          created_at?: string
+          id?: string
+          mo_id?: string
+          qty_consumed?: number
+          qty_required?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_components_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_email_opens: {
         Row: {
           created_at: string
@@ -7647,6 +7853,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          mo_id: string | null
           move_type: string
           notes: string | null
           product_id: string
@@ -7658,6 +7865,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          mo_id?: string | null
           move_type?: string
           notes?: string | null
           product_id: string
@@ -7669,6 +7877,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          mo_id?: string | null
           move_type?: string
           notes?: string | null
           product_id?: string
@@ -7677,6 +7886,13 @@ export type Database = {
           reference_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_moves_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_moves_product_id_fkey"
             columns: ["product_id"]
@@ -8931,6 +9147,8 @@ export type Database = {
           grid_name: string
         }[]
       }
+      cancel_mo: { Args: { p_mo_id: string; p_reason?: string }; Returns: Json }
+      check_mo_availability: { Args: { p_mo_id: string }; Returns: Json }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
@@ -9006,6 +9224,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_mo: {
+        Args: { p_actual_qty?: number; p_mo_id: string }
+        Returns: Json
+      }
+      confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
       create_agent_document: {
         Args: {
           p_category?: string
@@ -9023,6 +9246,17 @@ export type Database = {
           p_uploaded_by: string
         }
         Returns: string
+      }
+      create_bom: {
+        Args: {
+          p_activate?: boolean
+          p_lines: Json
+          p_product_id: string
+          p_quantity_produced?: number
+          p_routing_notes?: string
+          p_version?: string
+        }
+        Returns: Json
       }
       create_cowork_document: {
         Args: {
@@ -9282,6 +9516,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      next_mo_number: { Args: never; Returns: string }
       preview_payroll_period: {
         Args: { p_month: number; p_year: number }
         Returns: {
@@ -9536,7 +9771,9 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      start_mo: { Args: { p_mo_id: string }; Returns: Json }
       submit_expense_report: { Args: { p_report_id: string }; Returns: Json }
+      trigger_procurement_for_mo: { Args: { p_mo_id: string }; Returns: Json }
       try_acquire_agent_lock: {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
@@ -9704,6 +9941,13 @@ export type Database = {
       invoice_status: "draft" | "sent" | "paid" | "cancelled" | "overdue"
       job_posting_status: "draft" | "published" | "closed" | "archived"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
+      mo_status:
+        | "draft"
+        | "planned"
+        | "confirmed"
+        | "in_progress"
+        | "done"
+        | "cancelled"
       page_status: "draft" | "reviewing" | "published" | "archived"
       peer_transport: "a2a" | "openresponses" | "mcp_inbound"
       product_type: "one_time" | "recurring"
@@ -10019,6 +10263,14 @@ export const Constants = {
       invoice_status: ["draft", "sent", "paid", "cancelled", "overdue"],
       job_posting_status: ["draft", "published", "closed", "archived"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
+      mo_status: [
+        "draft",
+        "planned",
+        "confirmed",
+        "in_progress",
+        "done",
+        "cancelled",
+      ],
       page_status: ["draft", "reviewing", "published", "archived"],
       peer_transport: ["a2a", "openresponses", "mcp_inbound"],
       product_type: ["one_time", "recurring"],

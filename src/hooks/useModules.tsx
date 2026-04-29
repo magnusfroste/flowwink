@@ -76,6 +76,7 @@ export interface ModulesSettings {
   timesheets: ModuleConfig;
   inventory: ModuleConfig;
   purchasing: ModuleConfig;
+  manufacturing: ModuleConfig;
   sla: ModuleConfig;
   contracts: ModuleConfig;
   hr: ModuleConfig;
@@ -444,6 +445,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
     optionalIntegrations: ['resend'],
+  },
+  manufacturing: {
+    enabled: false,
+    name: 'Manufacturing',
+    description: 'MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.',
+    icon: 'Factory',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
   },
   sla: {
     enabled: false,

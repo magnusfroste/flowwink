@@ -41,6 +41,7 @@ export { accountingModule } from './accounting-module';
 export { expensesModule } from './expenses-module';
 export { timesheetsModule } from './timesheets-module';
 export { purchasingModule } from './purchasing-module';
+export { manufacturingModule } from './manufacturing-module';
 export { contractsModule } from './contracts-module';
 export { hrModule } from './hr-module';
 export { recruitmentModule } from './recruitment-module';

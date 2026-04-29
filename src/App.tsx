@@ -52,6 +52,7 @@ import CustomersPage from "./pages/admin/CustomersPage";
 import InventoryPage from "./pages/admin/InventoryPage";
 import VendorsPage from "./pages/admin/VendorsPage";
 import PurchaseOrdersPage from "./pages/admin/PurchaseOrdersPage";
+import ManufacturingPage from "./pages/admin/ManufacturingPage";
 import SlaMonitorPage from "./pages/admin/SlaMonitorPage";
 import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
@@ -248,6 +249,7 @@ const router = createBrowserRouter([
       { path: "/admin/inventory", element: <InventoryPage /> },
       { path: "/admin/vendors", element: <VendorsPage /> },
       { path: "/admin/purchase-orders", element: <PurchaseOrdersPage /> },
+      { path: "/admin/manufacturing", element: <ManufacturingPage /> },
       { path: "/admin/sla", element: <SlaMonitorPage /> },
       { path: "/admin/bookings", element: <BookingsPage /> },
       { path: "/admin/bookings/services", element: <BookingsPage /> },
