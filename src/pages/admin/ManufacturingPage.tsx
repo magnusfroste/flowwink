@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BomEditorDialog } from '@/components/admin/manufacturing/BomEditorDialog';
 import { MoStatusBadge } from '@/components/admin/manufacturing/MoStatusBadge';
 import { MoTimeline } from '@/components/admin/manufacturing/MoTimeline';
-import { MoCancellationFeed } from '@/components/admin/manufacturing/MoCancellationFeed';
+import { MoActivityFeed } from '@/components/admin/manufacturing/MoActivityFeed';
 import { useProducts } from '@/hooks/useProducts';
 import {
   useManufacturingOrders,
@@ -233,7 +233,7 @@ export default function ManufacturingPage() {
           </TabsList>
           <TabsContent value="orders" className="mt-4"><MoList /></TabsContent>
           <TabsContent value="boms" className="mt-4"><BomList /></TabsContent>
-          <TabsContent value="activity" className="mt-4"><MoCancellationFeed /></TabsContent>
+          <TabsContent value="activity" className="mt-4"><MoActivityFeed /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
