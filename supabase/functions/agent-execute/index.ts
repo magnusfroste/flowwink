@@ -7060,7 +7060,7 @@ async function executeLintSkill(
   // 1. Load skill(s)
   let q = supabase
     .from('agent_skills')
-    .select('id,name,handler,module_id,enabled,mcp_exposed,description,tool_definition')
+    .select('id,name,handler,category,enabled,mcp_exposed,description,tool_definition')
     .eq('enabled', true);
   if (targetName) q = q.eq('name', targetName);
   const { data: skills, error: skillErr } = await q;
@@ -7086,19 +7086,11 @@ async function executeLintSkill(
     notNullByTable.get(r.table_name)!.add(r.column_name);
   }
 
-  // 4. Load module settings
-  const { data: settingsRow } = await supabase
-    .from('site_settings')
-    .select('value')
-    .eq('key', 'modules')
-    .maybeSingle();
-  const moduleSettings = (settingsRow?.value as Record<string, { enabled?: boolean }>) ?? {};
-
   // Auto-fill exemptions are kept in the codebase fixture; agents can pass overrides.
   const autoFillOverrides = (args.auto_filled_columns as Record<string, string[]>) ?? {};
 
   const reports = skills.map((s: any) =>
-    lintOne(s, { rpcArgsByName, notNullByTable, autoFillOverrides, moduleSettings }),
+    lintOne(s, { rpcArgsByName, notNullByTable, autoFillOverrides }),
   );
   const filtered = includePassing ? reports : reports.filter((r) => r.findings.length > 0);
 
@@ -7141,9 +7133,8 @@ function lintOne(
     rpcArgsByName: Map<string, Set<string>>;
     notNullByTable: Map<string, Set<string>>;
     autoFillOverrides: Record<string, string[]>;
-    moduleSettings: Record<string, { enabled?: boolean }>;
   },
-): { skill_name: string; handler: string | null; module_id: string | null; ok: boolean; findings: LintFinding[] } {
+): { skill_name: string; handler: string | null; category: string | null; ok: boolean; findings: LintFinding[] } {
   const findings: LintFinding[] = [];
   const handler: string = skill.handler ?? '';
   const props = skill.tool_definition?.function?.parameters?.properties ?? {};
