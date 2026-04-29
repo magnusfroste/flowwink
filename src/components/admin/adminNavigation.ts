@@ -4,7 +4,7 @@ import {
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
   Network, Snowflake, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
-  RefreshCw, AlertTriangle, CheckSquare, Sparkles,
+  RefreshCw, AlertTriangle, CheckSquare, Sparkles, Factory,
 } from 'lucide-react';
 
 import type { AppRole } from '@/types/cms';
@@ -117,6 +117,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Vendors", href: "/admin/vendors", icon: Building2, moduleId: "purchasing", allowedRoles: ['purchasing'] },
       { name: "Purchase Orders", href: "/admin/purchase-orders", icon: Truck, moduleId: "purchasing", allowedRoles: ['purchasing'] },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "ecommerce" },
+      { name: "Manufacturing", href: "/admin/manufacturing", icon: Factory, moduleId: "manufacturing", allowedRoles: ['warehouse'] },
     ],
   },
   {
