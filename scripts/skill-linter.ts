@@ -27,7 +27,7 @@ interface Finding {
 interface SkillReport {
   skill_name: string;
   handler: string | null;
-  module_id: string | null;
+  category: string | null;
   enabled: boolean;
   mcp_exposed: boolean;
   findings: Finding[];
@@ -47,7 +47,7 @@ interface AgentSkillRow {
   id: string;
   name: string;
   handler: string | null;
-  module_id: string | null;
+  category: string | null;
   enabled: boolean;
   mcp_exposed: boolean | null;
   description: string | null;
@@ -67,7 +67,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
 
   const { rows: skills } = await client.query<AgentSkillRow>(
     `
-    SELECT id, name, handler, module_id, enabled,
+    SELECT id, name, handler, category, enabled,
            COALESCE(mcp_exposed, false) AS mcp_exposed,
            description, tool_definition
     FROM public.agent_skills
