@@ -47,9 +47,13 @@ function mapRpcArgs(args: string[]): string[] {
 
 function collectSkillSeeds(): SkillSeed[] {
   const out: SkillSeed[] = [];
-  for (const mod of Object.values(modules) as Array<Record<string, unknown>>) {
-    const seeds = (mod as { skillSeeds?: SkillSeed[] }).skillSeeds;
-    if (Array.isArray(seeds)) out.push(...seeds);
+  for (const exported of Object.values(modules) as unknown[]) {
+    if (!exported || typeof exported !== 'object') continue;
+    const seeds = (exported as { skillSeeds?: SkillSeed[] }).skillSeeds;
+    if (!Array.isArray(seeds)) continue;
+    for (const s of seeds) {
+      if (s && typeof s === 'object' && typeof s.name === 'string') out.push(s);
+    }
   }
   return out;
 }
