@@ -1,6 +1,30 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+/**
+ * Subscribe to live manufacturing_orders changes and invalidate the React Query cache
+ * so the admin UI reflects status transitions in real time without polling.
+ */
+export function useManufacturingOrdersRealtime() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel('manufacturing_orders_admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'manufacturing_orders' },
+        () => {
+          qc.invalidateQueries({ queryKey: ['manufacturing_orders'] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+}
 
 export type MoStatus = 'draft' | 'planned' | 'confirmed' | 'in_progress' | 'done' | 'cancelled';
 
