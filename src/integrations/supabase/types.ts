@@ -9155,6 +9155,20 @@ export type Database = {
         Args: { p_employee_id: string }
         Returns: string
       }
+      lint_get_not_null_columns: {
+        Args: never
+        Returns: {
+          column_name: string
+          table_name: string
+        }[]
+      }
+      lint_get_rpc_signatures: {
+        Args: never
+        Returns: {
+          args: string[]
+          proname: string
+        }[]
+      }
       list_reorder_candidates: {
         Args: never
         Returns: {
