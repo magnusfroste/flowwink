@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCustomer360, type Customer360TimelineEvent } from '@/hooks/useCustomer360';
+import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 
 const KIND_ICON: Record<Customer360TimelineEvent['kind'], typeof Activity> = {
   lead_created: Sparkles,
@@ -258,6 +259,13 @@ export default function Customer360Page() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Discuss composer — log notes/calls/emails/meetings inline */}
+            <RecordDiscussPanel
+              leadId={data.identity.lead_id ?? undefined}
+              email={data.identity.email ?? undefined}
+              hideTimeline
+            />
 
             {/* Timeline */}
             <Card>
