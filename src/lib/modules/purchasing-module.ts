@@ -106,29 +106,85 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     },
   },
   {
-    name: 'receive_goods',
-    description: 'Record goods receipt against a confirmed purchase order, updating received quantities and inventory. Use when: goods arrive from a vendor, admin marks items as received. NOT for: creating POs (use create_purchase_order), sending POs (use send_purchase_order).',
+    name: 'receive_purchase_order',
+    description: 'Record physical goods receipt against a confirmed/sent PO. Creates goods_receipt + lines, updates received quantities, generates stock_moves (vendor → internal location), optionally captures lot/serial numbers, and advances PO status (partially_received / received). Use when: shipment arrives, warehouse confirms receipt. NOT for: creating POs, matching invoices.',
     category: 'commerce',
-    handler: 'db:goods_receipts',
+    handler: 'rpc:receive_purchase_order',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
-        name: 'receive_goods',
-        description: 'Record goods receipt and update inventory',
+        name: 'receive_purchase_order',
+        description: 'Atomic goods receipt with stock_move generation and PO status update',
         parameters: {
           type: 'object',
           properties: {
-            purchase_order_id: { type: 'string' }, receipt_date: { type: 'string' }, notes: { type: 'string' },
-            lines: { type: 'array', items: { type: 'object', properties: {
-              po_line_id: { type: 'string' }, quantity_received: { type: 'number' },
-            } } },
+            p_purchase_order_id: { type: 'string', description: 'PO UUID being received' },
+            p_lines: {
+              type: 'array',
+              description: 'Lines being received',
+              items: {
+                type: 'object',
+                properties: {
+                  po_line_id: { type: 'string' },
+                  quantity_received: { type: 'number' },
+                  lot_number: { type: 'string', description: 'Optional lot/serial' },
+                  expiration_date: { type: 'string', description: 'YYYY-MM-DD, optional' },
+                },
+                required: ['po_line_id', 'quantity_received'],
+              },
+            },
+            p_to_location_id: { type: 'string', description: 'Destination internal location; defaults to first internal' },
+            p_received_date: { type: 'string', description: 'YYYY-MM-DD, defaults to today' },
+            p_notes: { type: 'string' },
           },
-          required: ['purchase_order_id', 'lines'],
+          required: ['p_purchase_order_id', 'p_lines'],
         },
       },
     },
-    instructions: 'After recording receipt, update purchase_order_lines.received_quantity. If all lines are fully received, set PO status to received. If partially received, set to partially_received. Optionally update product stock levels.',
+    instructions: 'Quantities are capped at remaining (quantity - received_quantity) per line to prevent over-receipt. Emits goods.received event when complete.',
+  },
+  {
+    name: 'match_invoice_to_receipt',
+    description: 'Three-way match a vendor invoice against PO and physically received goods. Sets match_status = matched | partial | over_invoiced | under_invoiced | no_receipt | no_po. Configurable tolerance (default ±2%). Use when: vendor invoice registered, before approving payment. NOT for: approving (use auto_approve_vendor_invoice for matched).',
+    category: 'commerce',
+    handler: 'rpc:match_invoice_to_receipt',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'match_invoice_to_receipt',
+        description: '3-way matching (PO ↔ Receipt ↔ Invoice) with variance detection',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_invoice_id: { type: 'string', description: 'Vendor invoice UUID' },
+            p_tolerance_pct: { type: 'number', description: 'Variance tolerance % (default 2.0)' },
+          },
+          required: ['p_invoice_id'],
+        },
+      },
+    },
+    instructions: 'Run after register_vendor_invoice. Emits invoice.matched event so automations can auto-approve matched or escalate variance.',
+  },
+  {
+    name: 'auto_approve_vendor_invoice',
+    description: 'Auto-approve a vendor invoice that already has match_status=matched. Sets status=approved + records approver. Use when: invoice matched within tolerance and policy allows auto-approval. NOT for: invoices with variance (those require human review).',
+    category: 'commerce',
+    handler: 'rpc:auto_approve_vendor_invoice',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'auto_approve_vendor_invoice',
+        description: 'Approve invoice when match_status=matched',
+        parameters: {
+          type: 'object',
+          properties: { invoice_id: { type: 'string', description: 'Vendor invoice UUID' } },
+          required: ['invoice_id'],
+        },
+      },
+    },
   },
   {
     name: 'purchase_reorder_check',
@@ -160,6 +216,14 @@ const PURCHASING_AUTOMATIONS: AutomationSeed[] = [
     skill_name: 'purchase_reorder_check',
     skill_arguments: {},
   },
+  {
+    name: 'Auto-match vendor invoice on registration',
+    description: 'When a vendor invoice is registered, immediately run 3-way matching against PO + goods receipts.',
+    trigger_type: 'event',
+    trigger_config: { event: 'invoice.registered' },
+    skill_name: 'match_invoice_to_receipt',
+    skill_arguments: { p_invoice_id: '{{event.payload.invoice_id}}' },
+  },
 ];
 
 export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>({
@@ -172,8 +236,10 @@ export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>(
   outputSchema: purchasingOutputSchema,
 
   skills: [
-    'manage_vendor', 'create_purchase_order', 'send_purchase_order', 'receive_goods', 'purchase_reorder_check',
-    'register_vendor_invoice', 'match_po_to_invoice', 'auto_approve_vendor_invoice', 'flag_invoice_variance',
+    'manage_vendor', 'create_purchase_order', 'send_purchase_order',
+    'receive_purchase_order', 'match_invoice_to_receipt', 'auto_approve_vendor_invoice',
+    'purchase_reorder_check',
+    'register_vendor_invoice', 'match_po_to_invoice', 'flag_invoice_variance',
   ],
   skillSeeds: PURCHASING_SKILLS,
   automations: PURCHASING_AUTOMATIONS,
