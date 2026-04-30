@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   useServiceOrders,
@@ -41,8 +41,18 @@ const PRIORITY_COLOR: Record<string, string> = {
 export default function FieldServicePage() {
   const [activeTab, setActiveTab] = useState<'all' | ServiceOrderStatus>('all');
   const [newOpen, setNewOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const filter = activeTab === 'all' ? undefined : (activeTab as ServiceOrderStatus);
   const { data: orders = [], isLoading } = useServiceOrders(filter);
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setNewOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('new');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const counts = {
     draft: orders.filter((o) => o.status === 'draft').length,
