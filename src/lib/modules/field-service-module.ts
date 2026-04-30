@@ -58,7 +58,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
     name: 'manage_service_order',
     description:
       'Create, update, schedule, complete and cancel field-service orders. Use when: a customer reports an on-site issue, technician needs to be dispatched, recurring maintenance is due. NOT for: digital subscriptions (manage_subscription), simple bookings (manage_booking), warranty tickets without on-site work (create_ticket).',
-    category: 'operations',
+    category: 'system',
     handler: 'edge:field-service-skill',
     scope: 'internal',
     tool_definition: {
@@ -116,16 +116,14 @@ const FIELD_SERVICE_AUTOMATIONS: AutomationSeed[] = [
     trigger_type: 'event',
     trigger_config: { event: 'service_order.completed' },
     skill_name: 'create_invoice_from_service_order',
-    arguments: {},
-    enabled: false,
-    executor: 'flowpilot',
+    skill_arguments: {},
   },
 ];
 
 const fieldServiceModule = defineModule<Input, Output>({
   id: 'fieldService',
   name: 'Field Service',
-  category: 'operations',
+  category: 'system',
   description:
     'Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion.',
   icon: 'Truck',
@@ -133,7 +131,7 @@ const fieldServiceModule = defineModule<Input, Output>({
   enhancedByFlowPilot: true,
   inputSchema,
   outputSchema,
-  skills: FIELD_SERVICE_SKILLS,
+  skillSeeds: FIELD_SERVICE_SKILLS,
   automations: FIELD_SERVICE_AUTOMATIONS,
   execute: async (input: Input): Promise<Output> => {
     try {
