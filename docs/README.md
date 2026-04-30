@@ -54,9 +54,18 @@
 
 | Document | Summary | Read When |
 |----------|---------|-----------|
-| [overview.md](./modules/overview.md) | All 32+ modules, their skills, and relationships | Planning module work |
+| [overview.md](./modules/overview.md) | All 50+ modules, their skills, and relationships | Planning module work |
 
-*Module-specific docs will be added as modules mature.*
+**Per-module reference (auto-generated from `defineModule()` + skill seeds):**
+
+Browse [`docs/modules/`](./modules/) — every module has a dedicated page with its skill catalog, input/output contract, owned tables, webhook events, and the end-to-end processes it participates in. Re-generate with `bun run scripts/generate-module-docs.ts` after changing a module definition.
+
+Highlights to read first:
+- [`accounting.md`](./modules/accounting.md) — locale-pack architecture, BAS 2024 / IFRS / US GAAP, autonomous reconciliation
+- [`flowpilot.md`](./modules/flowpilot.md) — the local operator
+- [`federation.md`](./modules/federation.md) — A2A peer integration
+- [`leads.md`](./modules/leads.md) — CRM with 11 agent skills (sample of typical depth)
+- [`hr.md`](./modules/hr.md), [`expenses.md`](./modules/expenses.md), [`reconciliation.md`](./modules/reconciliation.md) — full procure-to-pay + record-to-report coverage
 
 ---
 

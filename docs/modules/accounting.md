@@ -4,202 +4,83 @@ module_id: "accounting"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
+generated: true
+generated_at: "2026-04-30"
 ---
 
 # Accounting
 
-> Double-entry bookkeeping with pluggable **locale packs** (chart of accounts, VAT
-> rules, payroll, bank import). Default: BAS 2024 (Sweden); also ships with an
-> IFRS-generic pack. Designed to be **agent-capable** — FlowPilot books invoices,
-> closes periods, and learns from corrections autonomously.
+> Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also supports IFRS-generic. Add new market packs in src/lib/locale-packs/.
+
+Ships with **13 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
 | Property | Value |
-|---|---|
+|----------|-------|
 | **Module ID** | `accounting` |
 | **Version** | 1.0.0 |
 | **Category** | data |
 | **Autonomy** | agent-capable |
-| **Capabilities** | `data:read`, `data:write` |
-| **Default locale** | `se-bas2024` (BAS 2024) |
-| **Other locales** | `ifrs-generic` (extend via `src/lib/locale-packs/`) |
-| **Related modules** | `reconciliation`, `invoicing`, `purchasing`, `expenses`, `hr` |
+| **Core** | No |
+| **Capabilities** | `data:write`, `data:read` |
+| **MCP-exposed skills** | 13 |
+| **Owns tables** | — |
 
-## Core concepts
+## Skills
 
-### 1. Double-entry bookkeeping
-Every journal entry is a set of balanced lines (Σ debit = Σ credit). Stored in:
-- `journal_entries` — header (date, description, reference, status, source)
-- `journal_entry_lines` — debit/credit per `account_code`
-- `chart_of_accounts` — account catalog per locale
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
 
-The `publish()` handler refuses to insert unbalanced entries.
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `manage_journal_entry` | internal | Create, list, or void double-entry journal entries (verifikat). Use when: admin asks to book/record a transaction, invoice is paid and needs journal entry, salary/rent/VAT or other recurring transa… |
+| `accounting_reports` | internal | Generate financial reports: balance sheet (balansräkning), income statement (resultaträkning), general ledger (huvudbok), trial balance, or check for unbooked invoices. Use when: admin asks for fin… |
+| `manage_accounting_template` | internal | Create, list, or update reusable accounting templates for common transactions. Templates have keyword matching for AI auto-selection. Use when: admin wants to add a new template, or a new transacti… |
+| `manage_opening_balances` | internal | Create, list, update, or delete opening balances (ingående balanser / IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fis… |
+| `manage_chart_of_accounts` | internal | List, add, update, or deactivate accounts in the chart of accounts. Supports multiple locales (se-bas2024, ifrs, us-gaap). Use when: admin asks about available accounts, needs to add a custom accou… |
+| `suggest_accounting_template` | internal | Analyze recent journal entries to identify recurring transaction patterns and suggest new reusable templates. Use when: heartbeat detects repeated similar bookings, admin asks FlowPilot to learn fr… |
+| `close_accounting_period` | internal | Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and rec… |
+| `reopen_accounting_period` | internal | Reopen a previously closed accounting period to allow corrections. Fails if the period was permanently locked. Use when: late-arriving correction needs to be booked, auditor requests adjustment. NO… |
+| `list_accounting_periods` | internal | List accounting periods with their status (open/closed/locked) and snapshot totals. Use when: admin asks "is March closed?", before attempting to close a new month, or for the month-end dashboard. |
+| `manage_analytic_account` | internal | Create, list, update, or archive analytic accounts (cost centers, projects, departments, campaigns) used to tag journal entries for profitability and per-project reporting. Use when: admin asks to … |
+| `tag_journal_entry_analytics` | internal | Tag an existing journal entry line with one or more analytic accounts to attribute the cost/revenue to projects, cost centers, departments or campaigns. Supports splitting (e.g. 60% Project A / 40%… |
+| `manage_vendor_defaults` | internal | Read or update a vendor\ |
+| `record_accounting_correction` | internal | Record that a manually-corrected journal entry differed from what was originally booked (auto or by template). This is the learning signal — every call makes the agent smarter for similar future tr… |
 
-### 2. Locale packs (Odoo-style addons)
-Country/standard-specific behaviour lives in `src/lib/locale-packs/<id>/index.ts`
-implementing the `AccountingLocalePack` contract. The accounting module is
-**locale-neutral** — it reads chart, templates, VAT rates and AI instructions
-from `getActivePack()`. See [`accounting-locale-packs.md`](../architecture/accounting-locale-packs.md).
+## Module API Contract
 
-Switching pack (Settings → Accounting) is non-destructive — existing journal
-entries keep their original `account_code`.
+**Actions:** `create_entry`, `list_entries`, `balance_sheet`, `profit_loss`
 
-### 3. Templates (autokontering)
-`accounting_templates` rows hold reusable patterns with keywords + usage_count.
-The agent ranks templates by keyword overlap × usage_count when booking.
+**Input fields:** `action`, `entry_date`, `description`, `reference_number`, `lines`, `account_code`, `account_name`, `debit_cents`, `credit_cents`, `description`
 
-### 4. Vendor defaults & learning
-Three feedback signals make booking smarter over time:
+**Output fields:** `success`, `entry_id`, `message`
 
-| Signal | Table | When it fires |
-|---|---|---|
-| `vendors.default_account_code` / `last_used_template_id` | `vendors` | Set after first successful booking via `manage_vendor_defaults` |
-| `accounting_templates.usage_count` | `accounting_templates` | Auto-incremented when `template_id` is passed to `manage_journal_entry` |
-| `accounting_corrections` | `accounting_corrections` | Logged when a user/agent re-books an entry; consulted before next similar booking |
+## Used in Processes
 
-**Routing priority** (enforced via skill `instructions`):
-1. `vendor.default_account_code` (if vendor known)
-2. `accounting_templates` keyword match (score ≥ 0.6)
-3. Manual fallback + `suggest_accounting_template` to register the new pattern
+This module participates in the following end-to-end business processes:
 
-### 5. Period control
-`accounting_periods` (year, month, status: `open` / `closed` / `locked`).
+- [record-to-report](../processes/record-to-report.md)
 
-- `close_accounting_period(year, month)` → snapshots totals, blocks further bookings
-- `reopen_accounting_period(year, month, reason)` → admin override (audit-logged)
-- `guard_time_entries_period` trigger also locks `time_entries` for closed periods (HR/Timesheet integration)
-
-### 6. Analytic accounting
-`analytic_accounts` (cost center / project / department / campaign) +
-`analytic_lines` tag JE lines with attribution. Supports splits (60/40 across
-projects) — sum of `analytic_lines.amount_cents` must match the source line.
-
-## Skills (MCP-exposed)
-
-All skills live in `agent_skills` and are exposed via MCP unless noted.
-
-| Skill | Action set | Purpose |
-|---|---|---|
-| `manage_journal_entry` | create / list / void | Core bookkeeping. Enforces vendor-default → template → fallback routing |
-| `accounting_reports` | balance_sheet / income_statement / general_ledger / trial_balance / unbooked_invoices | Read-only reporting |
-| `manage_accounting_template` | create / list / update | CRUD on `accounting_templates` |
-| `manage_opening_balances` | list / set / delete | IB per fiscal year (must balance) |
-| `manage_chart_of_accounts` | list / add / update / deactivate | Per-locale account catalog |
-| `suggest_accounting_template` | — | Mines `journal_entries` for recurring patterns |
-| `close_accounting_period` | — | Month-end close (RPC) |
-| `reopen_accounting_period` | — | Admin reopen (RPC, requires `reason`) |
-| `list_accounting_periods` | — | Status dashboard |
-| `manage_analytic_account` | list / get / create / update / delete | Cost-center/project catalog |
-| `tag_journal_entry_analytics` | list / create / delete | Attribute JE lines to analytic accounts |
-| `manage_vendor_defaults` | get / update | Read/write vendor autokontering |
-| `record_accounting_correction` | create / list | Learning signal — logs every override |
-
-### Mandatory create-flow for `manage_journal_entry`
-The skill `description` enforces this order on the agent side:
-1. If `vendor_id` known → fetch `manage_vendor_defaults` first
-2. Else → `manage_accounting_template action=list`, score by keywords × usage
-3. If no template scores ≥ 0.6 → manual booking + `suggest_accounting_template`
-4. Always pass `template_id` and `vendor_id` so usage stats and learning fire
-
-## Automations
-
-| Name | Trigger | Skill | Purpose |
-|---|---|---|---|
-| Invoice Reconciliation | Cron `0 8 * * *` | `accounting_reports` (`type=unbooked_invoices`) | Daily check; FlowPilot books missing entries autonomously |
-
-## Database tables
-
-| Table | Purpose |
-|---|---|
-| `journal_entries` | Verifikat header (status: draft/posted/voided, source: manual/flowpilot/template/import) |
-| `journal_entry_lines` | Debit/credit lines |
-| `chart_of_accounts` | Account catalog (per `locale`) |
-| `accounting_templates` | Reusable patterns with keywords + usage_count |
-| `accounting_periods` | Month-level open/closed/locked status + snapshot totals |
-| `opening_balances` | IB per fiscal year + account |
-| `analytic_accounts` | Cost centers / projects / departments / campaigns |
-| `analytic_lines` | JE-line attribution (supports splits) |
-| `accounting_corrections` | Learning trail (original vs corrected account/VAT) |
-| `vendors.default_account_code` / `last_used_template_id` | Per-vendor autokontering |
-
-All tables have RLS — admin-only write, authenticated read.
-
-## Admin UI (`/admin/accounting`)
-
-Tabs:
-- **Journal** — list/create entries, with template picker
-- **Opening Balances** — IB per fiscal year
-- **General Ledger** — per-account drill-down
-- **Profit & Loss** — income statement
-- **Balance Sheet** — assets/liabilities/equity
-- **Tax** / **VAT Report** — period-based VAT summary
-- **Analytic** — cost-center/project reports
-- **Templates** — autokontering catalog
-- **Audit Trail** — `accounting_corrections` + period close history
-- **Export** — SIE 4 (SE), CAMT-out, CSV
-- **Settings** — locale-pack switcher
-
-## Process integration
-
-The module is one node in the **Record-to-Report** process. See
-[`docs/processes/record-to-report.md`](../processes/record-to-report.md).
-
-| Source module | Hand-off | Accounting reaction |
-|---|---|---|
-| `invoicing` | Invoice paid | Heartbeat → unbooked_invoices → `manage_journal_entry` |
-| `purchasing` | Vendor bill approved | `expenses.book_expense` → JE Dt 5410 / Cr 2440 |
-| `expenses` | Approved expense report | `expenses.book_expense` RPC posts Dt 5410+2641 / Cr 2890 |
-| `reconciliation` | Bank tx matched / one-click "Book" | Creates JE + `reconciliation_match` atomically |
-| `hr` (`payroll`) | Payroll run finalized | JE Dt 7010 (gross) / Cr 1930 + Cr 2710 (skatt) + Cr 2730 (sociala) |
-
-## Locale packs — extend to a new market
-
-To add Germany (SKR04), UK (FRS 102), US (GAAP), …:
-
-1. Create `src/lib/locale-packs/<id>/index.ts` exporting an `AccountingLocalePack`:
-   - `chart` — `chart_of_accounts` rows
-   - `templates` — `accounting_templates` rows
-   - `currency`, `vat`
-   - `payroll_adapters[]` (PAXml, DATEV-Lohn, BACS, ADP-CSV, …)
-   - `bank_import_adapters[]` (CAMT.053, MT940, OFX, CSV — SIE for SE)
-   - `ai_instructions.{journal_entry,invoicing,purchasing}` — injected into skill prompts
-2. Register it in `src/lib/locale-packs/index.ts`
-3. Done — Settings UI and bootstrap-seeding pick it up automatically
-
-Guardrail test: `src/lib/__tests__/locale-packs.guardrails.test.ts` enforces
-the contract.
-
-## File map
+## File Map
 
 | Purpose | Path |
-|---|---|
+|---------|------|
 | Module definition | `src/lib/modules/accounting-module.ts` |
-| Hook (UI data) | `src/hooks/useAccounting.ts` |
-| Periods hook | `src/hooks/useAccounting.ts` (periods slice) |
-| Opening balances | `src/hooks/useOpeningBalances.ts` |
-| Analytic | `src/hooks/useAnalyticAccounting.ts` |
-| Audit trail | `src/hooks/useAuditTrail.ts` |
-| Locale registry | `src/lib/locale-packs/index.ts` |
-| Locale contract | `src/lib/locale-packs/types.ts` |
-| Default pack (SE) | `src/lib/locale-packs/se/index.ts` |
-| Generic pack | `src/lib/locale-packs/generic/index.ts` |
+| Hook | `src/hooks/useAccounting.ts` |
 | Admin page | `src/pages/admin/AccountingPage.tsx` |
-| Period close RPC | `supabase/migrations/*close_accounting_period*` |
-| Locale pack guide | `docs/architecture/accounting-locale-packs.md` |
 
-## Related memories
+## Contributing
 
-- `mem://accounting/template-first-instrument-logic` — 4D matching algorithm
-- `mem://accounting/autonomous-reconciliation-philosophy` — no hard triggers, flow-driven
-- `mem://accounting/multi-market-localization-and-bas2024` — pack strategy
-- `mem://accounting/export-adapters-pluggable` — SIE/DATEV/FEC/SAF-T per pack
-- `mem://erp/timesheet-period-lock` — period close also locks time entries
+To enhance this module, see [Contributing Guide](../contributing/contributing.md).
 
-## Future work
+Key rules:
+- Follow `ModuleDefinition<I, O>` contract pattern
+- All schema changes require idempotent migrations
+- Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
+- Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))
+- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
 
-- **Live bank connectivity** (GoCardless / Tink / Plaid) → currently file/OCR import only via `reconciliation` module
-- **VAT-return adapters** per locale (`tax_return_adapters[]` field exists in pack contract; SE-only today)
-- **Multi-currency JEs** with FX gain/loss auto-posting
-- **Year-end close** with retained-earnings auto-roll
-- **Consolidation** across multiple `accounting_locale` tenants
+---
+
+*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually — re-run the script after changing the module definition.*

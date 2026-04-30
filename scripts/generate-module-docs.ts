@@ -42,7 +42,15 @@ interface ModuleInfo {
   inputFields: string[];
   outputFields: string[];
   actions: string[];
+  skills: SkillInfo[];
   sourceFile: string;
+}
+
+interface SkillInfo {
+  name: string;
+  description: string;
+  category?: string;
+  scope?: string;
 }
 
 function parseModuleFile(filePath: string): ModuleInfo | null {
@@ -81,8 +89,59 @@ function parseModuleFile(filePath: string): ModuleInfo | null {
     inputFields,
     outputFields,
     actions,
+    skills: extractSkillSeeds(src),
     sourceFile: path.relative(ROOT, filePath),
   };
+}
+
+/**
+ * Extract skillSeeds from a module file. Each seed has at minimum `name` and
+ * `description`. We do a tolerant parse — name + description per seed object.
+ */
+function extractSkillSeeds(src: string): SkillInfo[] {
+  const seeds: SkillInfo[] = [];
+  // Match the SKILL_SEEDS or *Skills array definition body
+  const arrMatch = src.match(/(?:SKILLS?|skillSeeds|_SKILLS|Skills)[^=]*=\s*\[([\s\S]*?)\n\];/);
+  if (!arrMatch) return seeds;
+  const body = arrMatch[1];
+
+  // Split into top-level objects {  } at depth 1
+  let depth = 0;
+  let start = -1;
+  const objects: string[] = [];
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (c === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (c === '}') {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        objects.push(body.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  for (const obj of objects) {
+    const nameM = obj.match(/\bname:\s*['"]([^'"]+)['"]/);
+    if (!nameM) continue;
+    // description may be a backtick template, single, or double quote string
+    const descM =
+      obj.match(/\bdescription:\s*`([^`]+)`/) ||
+      obj.match(/\bdescription:\s*'([^']+)'/) ||
+      obj.match(/\bdescription:\s*"([^"]+)"/);
+    const catM = obj.match(/\bcategory:\s*['"]([^'"]+)['"]/);
+    const scopeM = obj.match(/\bscope:\s*['"]([^'"]+)['"]/);
+
+    seeds.push({
+      name: nameM[1],
+      description: descM?.[1]?.replace(/\s+/g, ' ').trim() ?? '',
+      category: catM?.[1],
+      scope: scopeM?.[1],
+    });
+  }
+  return seeds;
 }
 
 function extractDefineModuleBlock(src: string): string | null {
@@ -295,6 +354,70 @@ function capitalize(s: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// 4b. Extract table names from migrations
+// ---------------------------------------------------------------------------
+
+function extractTablesFromMigrations(migrationPaths: string[]): string[] {
+  const tables = new Set<string>();
+  for (const rel of migrationPaths) {
+    try {
+      const sql = fs.readFileSync(path.join(ROOT, rel), 'utf-8');
+      const matches = sql.matchAll(
+        /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?["`]?(\w+)["`]?/gi,
+      );
+      for (const m of matches) tables.add(m[1]);
+    } catch { /* ignore */ }
+  }
+  return [...tables].sort();
+}
+
+// ---------------------------------------------------------------------------
+// 4c. Map module → end-to-end processes it participates in
+// ---------------------------------------------------------------------------
+
+const MODULE_TO_PROCESSES: Record<string, string[]> = {
+  // CRM / Sales
+  forms: ['lead-to-customer'],
+  crm: ['lead-to-customer'],
+  leads: ['lead-to-customer'],
+  companies: ['lead-to-customer'],
+  'sales-intelligence': ['lead-to-customer'],
+  deals: ['lead-to-customer', 'quote-to-cash'],
+  newsletter: ['lead-to-customer', 'content-to-conversion'],
+  // Quote-to-cash
+  quotes: ['quote-to-cash'],
+  invoicing: ['quote-to-cash'],
+  subscriptions: ['quote-to-cash'],
+  // Order-to-delivery
+  products: ['order-to-delivery'],
+  orders: ['order-to-delivery'],
+  inventory: ['order-to-delivery', 'procure-to-pay'],
+  // Procure-to-pay
+  purchasing: ['procure-to-pay'],
+  expenses: ['procure-to-pay', 'record-to-report'],
+  // Record-to-report
+  accounting: ['record-to-report'],
+  reconciliation: ['record-to-report'],
+  // Hire-to-retire
+  hr: ['hire-to-retire'],
+  recruitment: ['hire-to-retire'],
+  contracts: ['hire-to-retire'],
+  timesheets: ['hire-to-retire', 'quote-to-cash'],
+  // Content
+  pages: ['content-to-conversion'],
+  blog: ['content-to-conversion'],
+  kb: ['content-to-conversion', 'support-to-resolution'],
+  // Support
+  tickets: ['support-to-resolution'],
+  'live-support': ['support-to-resolution'],
+  sla: ['support-to-resolution'],
+  // Cross-cutting
+  documents: ['hire-to-retire', 'procure-to-pay'],
+  approvals: ['procure-to-pay', 'quote-to-cash'],
+  projects: ['quote-to-cash'],
+};
+
+// ---------------------------------------------------------------------------
 // 5. Map module ID ↔ settings key
 // ---------------------------------------------------------------------------
 
@@ -361,6 +484,8 @@ function generateMarkdown(
   adminPage: string | null,
   blocks: string[],
   migrations: string[],
+  tables: string[],
+  processes: string[],
 ): string {
   const lines: string[] = [];
 
@@ -376,11 +501,26 @@ function generateMarkdown(
   lines.push('---');
   lines.push('');
 
-  // Title
+  // Title + lead
   lines.push(`# ${mod.name}`);
   lines.push('');
-  lines.push(`> ${mod.description || settings?.settingsDescription || 'No description available.'}`);
+  const lead = mod.description || settings?.settingsDescription || 'No description available.';
+  lines.push(`> ${lead}`);
   lines.push('');
+
+  // What it gives you (high-signal one-liner)
+  const skillCount = mod.skills.length;
+  const tableCount = tables.length;
+  const blockCount = blocks.length;
+  const summaryParts: string[] = [];
+  if (skillCount) summaryParts.push(`**${skillCount} agent skill${skillCount === 1 ? '' : 's'}**`);
+  if (tableCount) summaryParts.push(`**${tableCount} database table${tableCount === 1 ? '' : 's'}**`);
+  if (blockCount) summaryParts.push(`**${blockCount} public block${blockCount === 1 ? '' : 's'}**`);
+  if (adminPage) summaryParts.push('an **admin UI**');
+  if (summaryParts.length) {
+    lines.push(`Ships with ${summaryParts.join(', ')}.`);
+    lines.push('');
+  }
 
   // Quick facts
   lines.push('## Quick Facts');
@@ -393,6 +533,8 @@ function generateMarkdown(
   lines.push(`| **Autonomy** | ${settings?.autonomy ?? '—'} |`);
   lines.push(`| **Core** | ${settings?.core ? 'Yes' : 'No'} |`);
   lines.push(`| **Capabilities** | ${mod.capabilities.map(c => `\`${c}\``).join(', ') || '—'} |`);
+  lines.push(`| **MCP-exposed skills** | ${skillCount || '—'} |`);
+  lines.push(`| **Owns tables** | ${tableCount || '—'} |`);
   lines.push('');
 
   // Integrations
@@ -408,32 +550,50 @@ function generateMarkdown(
     lines.push('');
   }
 
+  // Skills (the real value for an agent integrator)
+  if (mod.skills.length) {
+    lines.push('## Skills');
+    lines.push('');
+    lines.push('These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.');
+    lines.push('External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.');
+    lines.push('');
+    lines.push('| Skill | Scope | Description |');
+    lines.push('|-------|-------|-------------|');
+    for (const s of mod.skills) {
+      const desc = s.description.length > 200 ? s.description.slice(0, 197) + '…' : s.description;
+      lines.push(`| \`${s.name}\` | ${s.scope ?? '—'} | ${desc} |`);
+    }
+    lines.push('');
+  }
+
+  // Database tables owned
+  if (tables.length) {
+    lines.push('## Data Model');
+    lines.push('');
+    lines.push('Tables created by this module (from migrations):');
+    lines.push('');
+    for (const t of tables) lines.push(`- \`public.${t}\``);
+    lines.push('');
+    lines.push('All tables ship with Row-Level Security policies. See migration files for the exact rules.');
+    lines.push('');
+  }
+
   // API Contract
-  lines.push('## API Contract');
-  lines.push('');
-  if (mod.actions.length) {
-    lines.push(`**Actions:** ${mod.actions.map(a => `\`${a}\``).join(', ')}`);
+  if (mod.actions.length || mod.inputFields.length || mod.outputFields.length) {
+    lines.push('## Module API Contract');
     lines.push('');
-  }
-  if (mod.inputFields.length) {
-    lines.push('### Input Fields');
-    lines.push('');
-    lines.push('| Field | Source |');
-    lines.push('|-------|--------|');
-    for (const f of mod.inputFields) {
-      lines.push(`| \`${f}\` | \`${mod.sourceFile}\` |`);
+    if (mod.actions.length) {
+      lines.push(`**Actions:** ${mod.actions.map(a => `\`${a}\``).join(', ')}`);
+      lines.push('');
     }
-    lines.push('');
-  }
-  if (mod.outputFields.length) {
-    lines.push('### Output Fields');
-    lines.push('');
-    lines.push('| Field | Source |');
-    lines.push('|-------|--------|');
-    for (const f of mod.outputFields) {
-      lines.push(`| \`${f}\` | \`${mod.sourceFile}\` |`);
+    if (mod.inputFields.length) {
+      lines.push(`**Input fields:** ${mod.inputFields.map(f => `\`${f}\``).join(', ')}`);
+      lines.push('');
     }
-    lines.push('');
+    if (mod.outputFields.length) {
+      lines.push(`**Output fields:** ${mod.outputFields.map(f => `\`${f}\``).join(', ')}`);
+      lines.push('');
+    }
   }
 
   // Webhook Events
@@ -446,6 +606,18 @@ function generateMarkdown(
     lines.push('|-------|-------------|');
     for (const e of webhookEvents) {
       lines.push(`| \`${e.event}\` | ${e.description} |`);
+    }
+    lines.push('');
+  }
+
+  // Related processes
+  if (processes.length) {
+    lines.push('## Used in Processes');
+    lines.push('');
+    lines.push('This module participates in the following end-to-end business processes:');
+    lines.push('');
+    for (const p of processes) {
+      lines.push(`- [${p}](../processes/${p}.md)`);
     }
     lines.push('');
   }
@@ -465,25 +637,30 @@ function generateMarkdown(
   for (const b of blocks) {
     lines.push(`| Public block | \`${b}\` |`);
   }
-  for (const m of migrations) {
-    lines.push(`| Migration | \`${m}\` |`);
+  if (migrations.length) {
+    const shown = migrations.slice(0, 5);
+    for (const m of shown) lines.push(`| Migration | \`${m}\` |`);
+    if (migrations.length > shown.length) {
+      lines.push(`| … | _${migrations.length - shown.length} more migration${migrations.length - shown.length === 1 ? '' : 's'}_ |`);
+    }
   }
   lines.push('');
 
   // Contributing
   lines.push('## Contributing');
   lines.push('');
-  lines.push('To enhance this module, see [Contributing Guide](../contributing/contributing.md) and [Module API](../reference/module-api.md).');
+  lines.push('To enhance this module, see [Contributing Guide](../contributing/contributing.md).');
   lines.push('');
   lines.push('Key rules:');
   lines.push('- Follow `ModuleDefinition<I, O>` contract pattern');
   lines.push('- All schema changes require idempotent migrations');
-  lines.push('- Skills must be self-describing (Law 2)');
-  lines.push('- Blocks are interfaces, not pipelines (Law 3)');
+  lines.push('- Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))');
+  lines.push('- Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))');
+  lines.push('- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)');
   lines.push('');
   lines.push('---');
   lines.push('');
-  lines.push('*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually.*');
+  lines.push('*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually — re-run the script after changing the module definition.*');
 
   return lines.join('\n');
 }
@@ -525,8 +702,10 @@ function main() {
     const adminPage = findAdminPage(mod.name, mod.id);
     const blocks = findBlocks(mod.name);
     const migrations = findMigrations(mod.id);
+    const tables = extractTablesFromMigrations(migrations);
+    const processes = MODULE_TO_PROCESSES[mod.id] ?? [];
 
-    const markdown = generateMarkdown(mod, settings, webhookEvents, hooks, adminPage, blocks, migrations);
+    const markdown = generateMarkdown(mod, settings, webhookEvents, hooks, adminPage, blocks, migrations, tables, processes);
     const kebabId = mod.id.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
     const outFile = path.join(OUTPUT_DIR, `${kebabId}.md`);
     fs.writeFileSync(outFile, markdown, 'utf-8');
