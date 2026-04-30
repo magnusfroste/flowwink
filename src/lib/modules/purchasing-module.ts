@@ -180,8 +180,8 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         description: 'Approve invoice when match_status=matched',
         parameters: {
           type: 'object',
-          properties: { p_invoice_id: { type: 'string' } },
-          required: ['p_invoice_id'],
+          properties: { invoice_id: { type: 'string', description: 'Vendor invoice UUID' } },
+          required: ['invoice_id'],
         },
       },
     },
