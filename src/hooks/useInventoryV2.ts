@@ -197,7 +197,7 @@ export function useTransferStock() {
         p_quantity: args.quantity,
         p_lot_id: args.lot_id ?? null,
         p_notes: args.notes ?? null,
-      });
+      } as never);
       if (error) throw error;
     },
     onSuccess: () => {
