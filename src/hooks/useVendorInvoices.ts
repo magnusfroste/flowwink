@@ -65,6 +65,67 @@ export function useVendorInvoices(filter?: { status?: VendorInvoiceStatus | 'all
   });
 }
 
+/** Vendor invoices for a specific PO (drilldown). */
+export function useVendorInvoicesForPo(poId: string | null) {
+  return useQuery({
+    queryKey: ['vendor-invoices-for-po', poId],
+    enabled: !!poId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vendor_invoices')
+        .select('*, vendors(name), purchase_orders(po_number, status)')
+        .eq('purchase_order_id', poId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as VendorInvoice[];
+    },
+  });
+}
+
+/** Match / approve / register history for one or more invoices, sourced from agent_events. */
+export interface InvoiceHistoryEvent {
+  id: string;
+  invoice_id: string;
+  event_name: string;
+  match_status?: MatchStatus;
+  variance_cents?: number;
+  variance_pct?: number;
+  source: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+}
+
+export function useInvoiceHistory(invoiceIds: string[]) {
+  return useQuery({
+    queryKey: ['invoice-history', [...invoiceIds].sort().join(',')],
+    enabled: invoiceIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_events')
+        .select('id, event_name, payload, source, created_at')
+        .like('event_name', 'invoice.%')
+        .in('payload->>invoice_id', invoiceIds)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []).map((row) => {
+        const p = (row.payload ?? {}) as Record<string, unknown>;
+        return {
+          id: row.id,
+          invoice_id: String(p.invoice_id ?? ''),
+          event_name: row.event_name,
+          match_status: p.match_status as MatchStatus | undefined,
+          variance_cents: typeof p.variance_cents === 'number' ? p.variance_cents : undefined,
+          variance_pct: typeof p.variance_pct === 'number' ? p.variance_pct : undefined,
+          source: row.source,
+          created_at: row.created_at,
+          payload: p,
+        } satisfies InvoiceHistoryEvent;
+      });
+    },
+  });
+}
+
 /** Aggregated invoice/match status per PO — used to render a small badge in the PO list. */
 export function usePoMatchSummaries(poIds: string[]) {
   return useQuery({

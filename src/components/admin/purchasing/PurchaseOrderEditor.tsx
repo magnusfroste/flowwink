@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, Trash2, Send, CheckCircle, PackageCheck } from 'lucide-react';
 import { GoodsReceiptDialog } from './GoodsReceiptDialog';
+import { PoInvoicesDrilldown } from './PoInvoicesDrilldown';
 
 interface POLine {
   id?: string;
@@ -344,6 +345,10 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
           )}
         </div>
       </div>
+
+      {poId && (
+        <PoInvoicesDrilldown purchaseOrderId={poId} currency={currency} />
+      )}
 
       {poId && (
         <GoodsReceiptDialog
