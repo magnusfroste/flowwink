@@ -151,8 +151,8 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
 export const subscriptionsModule = defineModule<Input, Output>({
   id: 'subscriptions',
   name: 'Subscriptions',
-  version: '1.0.0',
-  description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, plan changes',
+  version: '2.0.0',
+  description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back',
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
@@ -160,6 +160,10 @@ export const subscriptionsModule = defineModule<Input, Output>({
   skills: [
     'list_subscriptions',
     'subscription_mrr',
+    'upcoming_renewals',
+    'flag_at_risk_subscriptions',
+    'record_churn_reason',
+    'list_winback_campaigns',
     'list_dunning_sequences',
     'pause_dunning',
     'escalate_dunning',
