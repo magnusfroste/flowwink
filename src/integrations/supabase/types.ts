@@ -6751,6 +6751,44 @@ export type Database = {
           },
         ]
       }
+      pos_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          metadata: Json
+          method: string
+          reference: string | null
+          sale_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          method: string
+          reference?: string | null
+          sale_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          method?: string
+          reference?: string | null
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_registers: {
         Row: {
           active: boolean
@@ -6931,6 +6969,7 @@ export type Database = {
           closing_cash_cents: number | null
           expected_cash_cents: number | null
           id: string
+          metadata: Json
           notes: string | null
           opened_at: string
           opening_cash_cents: number
@@ -6947,6 +6986,7 @@ export type Database = {
           closing_cash_cents?: number | null
           expected_cash_cents?: number | null
           id?: string
+          metadata?: Json
           notes?: string | null
           opened_at?: string
           opening_cash_cents?: number
@@ -6963,6 +7003,7 @@ export type Database = {
           closing_cash_cents?: number | null
           expected_cash_cents?: number | null
           id?: string
+          metadata?: Json
           notes?: string | null
           opened_at?: string
           opening_cash_cents?: number
@@ -7143,6 +7184,8 @@ export type Database = {
       products: {
         Row: {
           allow_backorder: boolean
+          available_in_pos: boolean
+          barcode: string | null
           category_id: string | null
           created_at: string
           currency: string
@@ -7152,6 +7195,7 @@ export type Database = {
           is_active: boolean
           low_stock_threshold: number
           name: string
+          pos_category_id: string | null
           price_cents: number
           sort_order: number | null
           stock_quantity: number | null
@@ -7162,6 +7206,8 @@ export type Database = {
         }
         Insert: {
           allow_backorder?: boolean
+          available_in_pos?: boolean
+          barcode?: string | null
           category_id?: string | null
           created_at?: string
           currency?: string
@@ -7171,6 +7217,7 @@ export type Database = {
           is_active?: boolean
           low_stock_threshold?: number
           name: string
+          pos_category_id?: string | null
           price_cents?: number
           sort_order?: number | null
           stock_quantity?: number | null
@@ -7181,6 +7228,8 @@ export type Database = {
         }
         Update: {
           allow_backorder?: boolean
+          available_in_pos?: boolean
+          barcode?: string | null
           category_id?: string | null
           created_at?: string
           currency?: string
@@ -7190,6 +7239,7 @@ export type Database = {
           is_active?: boolean
           low_stock_threshold?: number
           name?: string
+          pos_category_id?: string | null
           price_cents?: number
           sort_order?: number | null
           stock_quantity?: number | null
@@ -7202,6 +7252,13 @@ export type Database = {
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_pos_category_id_fkey"
+            columns: ["pos_category_id"]
             isOneToOne: false
             referencedRelation: "product_categories"
             referencedColumns: ["id"]
@@ -10670,6 +10727,14 @@ export type Database = {
         Args: { p_closing_cash_cents: number; p_session_id: string }
         Returns: Json
       }
+      close_pos_session_v2: {
+        Args: {
+          p_closing_cash_cents: number
+          p_notes?: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
       complete_mo: {
         Args: { p_actual_qty?: number; p_mo_id: string }
         Returns: Json
@@ -11138,6 +11203,19 @@ export type Database = {
           p_discount_cents?: number
           p_lines: Json
           p_payment_method?: string
+          p_register_id: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
+      record_pos_sale_v2: {
+        Args: {
+          p_customer_email?: string
+          p_customer_id?: string
+          p_discount_cents?: number
+          p_lines: Json
+          p_metadata?: Json
+          p_payments: Json
           p_register_id: string
           p_session_id: string
         }

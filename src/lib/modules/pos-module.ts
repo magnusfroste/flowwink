@@ -124,19 +124,97 @@ const POS_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'record_pos_sale_v2',
+    description: 'Odoo-style POS sale: split payments, product validation, stock event. Use when: cashier finalizes a basket. NOT for: e-commerce orders (use place_order).',
+    category: 'commerce',
+    handler: 'rpc:record_pos_sale_v2',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_pos_sale_v2',
+        description: 'Atomic sale with split tender. Validates products are available_in_pos, emits stock.movement event, supports N payments per sale.',
+        parameters: {
+          type: 'object',
+          required: ['p_register_id', 'p_session_id', 'p_lines', 'p_payments'],
+          properties: {
+            p_register_id: { type: 'string', format: 'uuid' },
+            p_session_id: { type: 'string', format: 'uuid' },
+            p_lines: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['product_name', 'quantity', 'unit_price_cents'],
+                properties: {
+                  product_id: { type: 'string', format: 'uuid' },
+                  product_name: { type: 'string' },
+                  sku: { type: 'string' },
+                  quantity: { type: 'number' },
+                  unit_price_cents: { type: 'number' },
+                  discount_cents: { type: 'number' },
+                  tax_rate: { type: 'number' },
+                },
+              },
+            },
+            p_payments: {
+              type: 'array',
+              description: 'One or more payment rows; sum must >= total.',
+              items: {
+                type: 'object',
+                required: ['method', 'amount_cents'],
+                properties: {
+                  method: { type: 'string', enum: ['cash','card','swish','klarna','gift_card','invoice','other'] },
+                  amount_cents: { type: 'number' },
+                  reference: { type: 'string' },
+                },
+              },
+            },
+            p_customer_id: { type: 'string', format: 'uuid' },
+            p_customer_email: { type: 'string' },
+            p_discount_cents: { type: 'number' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'close_pos_session_v2',
+    description: 'Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting.',
+    category: 'commerce',
+    handler: 'rpc:close_pos_session_v2',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'close_pos_session_v2',
+        description: 'Closes session, returns Z-report with totals split by payment method, emits event for accounting.',
+        parameters: {
+          type: 'object',
+          required: ['p_session_id', 'p_closing_cash_cents'],
+          properties: {
+            p_session_id: { type: 'string', format: 'uuid' },
+            p_closing_cash_cents: { type: 'number' },
+            p_notes: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const posModule = defineModule<Input, Output>({
   id: 'pos',
   name: 'Point of Sale',
-  version: '1.0.0',
-  description: 'In-store register — sessions, receipts, cash counting, multi-payment',
+  version: '2.0.0',
+  description: 'In-store register — sessions, receipts, split payments, stock-aware product catalog',
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
 
-  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales'],
+  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2'],
   skillSeeds: POS_SKILLS,
+
 
   async publish(input: Input): Promise<Output> {
     try {
