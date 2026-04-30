@@ -42,7 +42,15 @@ interface ModuleInfo {
   inputFields: string[];
   outputFields: string[];
   actions: string[];
+  skills: SkillInfo[];
   sourceFile: string;
+}
+
+interface SkillInfo {
+  name: string;
+  description: string;
+  category?: string;
+  scope?: string;
 }
 
 function parseModuleFile(filePath: string): ModuleInfo | null {
