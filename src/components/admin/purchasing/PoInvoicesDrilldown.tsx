@@ -147,6 +147,45 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
                 ))}
               </div>
 
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+                <span className="font-semibold text-muted-foreground uppercase tracking-wide">
+                  {filter === 'all' ? 'All' :
+                    filter === 'registered' ? 'Registered' :
+                    filter === 'matched' ? 'Matched' :
+                    filter === 'auto_approved' ? 'Auto-approved' : 'Variance'}
+                </span>
+                <span className="text-muted-foreground">
+                  <span className="font-medium text-foreground tabular-nums">{summary.count}</span> invoice{summary.count === 1 ? '' : 's'}
+                </span>
+                <span className="text-muted-foreground">
+                  Total <span className="font-mono text-foreground">{fmt(summary.total, summary.cur)}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  Variance{' '}
+                  <span className={`font-mono ${summary.variance > 0 ? 'text-red-600' : summary.variance < 0 ? 'text-orange-600' : 'text-foreground'}`}>
+                    {summary.variance === 0 ? '—' : fmt(summary.variance, summary.cur)}
+                  </span>
+                </span>
+                <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <FileText className="h-3 w-3 text-blue-600" />
+                    <span className="tabular-nums text-foreground">{summary.registered}</span> registered
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                    <span className="tabular-nums text-foreground">{summary.matched}</span> matched
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-emerald-600" />
+                    <span className="tabular-nums text-foreground">{summary.autoApproved}</span> auto-approved
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <AlertTriangle className="h-3 w-3 text-amber-600" />
+                    <span className="tabular-nums text-foreground">{summary.variances}</span> variance
+                  </span>
+                </div>
+              </div>
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
