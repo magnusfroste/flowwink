@@ -10063,6 +10063,10 @@ export type Database = {
         }
         Returns: Json
       }
+      match_invoice_to_receipt: {
+        Args: { p_invoice_id: string; p_tolerance_pct?: number }
+        Returns: Json
+      }
       match_po_to_invoice: {
         Args: { p_invoice_id: string; p_variance_tolerance_pct?: number }
         Returns: {
@@ -10120,6 +10124,16 @@ export type Database = {
           rules_evaluated: number
           suggestions_created: number
         }[]
+      }
+      receive_purchase_order: {
+        Args: {
+          p_lines: Json
+          p_notes?: string
+          p_purchase_order_id: string
+          p_received_date?: string
+          p_to_location_id?: string
+        }
+        Returns: Json
       }
       reconcile_invoice_payments:
         | {
