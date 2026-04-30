@@ -104,6 +104,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
       { name: "Subscriptions", href: "/admin/subscriptions", icon: RefreshCw, moduleId: "subscriptions" },
       { name: "Dunning", href: "/admin/subscriptions/dunning", icon: AlertTriangle, moduleId: "subscriptions", featureFlag: "dunning.enabled" },
+      { name: "Point of Sale", href: "/admin/pos", icon: Receipt, moduleId: "pos" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
       { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
       { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },

@@ -6751,6 +6751,236 @@ export type Database = {
           },
         ]
       }
+      pos_registers: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          default_tax_rate: number | null
+          id: string
+          location: string | null
+          metadata: Json | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          default_tax_rate?: number | null
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          default_tax_rate?: number | null
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pos_sale_lines: {
+        Row: {
+          created_at: string
+          discount_cents: number
+          id: string
+          line_total_cents: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sale_id: string
+          sku: string | null
+          tax_rate: number | null
+          unit_price_cents: number
+        }
+        Insert: {
+          created_at?: string
+          discount_cents?: number
+          id?: string
+          line_total_cents?: number
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sale_id: string
+          sku?: string | null
+          tax_rate?: number | null
+          unit_price_cents?: number
+        }
+        Update: {
+          created_at?: string
+          discount_cents?: number
+          id?: string
+          line_total_cents?: number
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          sku?: string | null
+          tax_rate?: number | null
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sale_lines_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_sales: {
+        Row: {
+          cashier_id: string | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_id: string | null
+          discount_cents: number
+          id: string
+          metadata: Json | null
+          payment_details: Json | null
+          payment_method: string
+          receipt_number: string | null
+          refund_of: string | null
+          register_id: string
+          session_id: string | null
+          status: string
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+        }
+        Insert: {
+          cashier_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          discount_cents?: number
+          id?: string
+          metadata?: Json | null
+          payment_details?: Json | null
+          payment_method?: string
+          receipt_number?: string | null
+          refund_of?: string | null
+          register_id: string
+          session_id?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+        }
+        Update: {
+          cashier_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          discount_cents?: number
+          id?: string
+          metadata?: Json | null
+          payment_details?: Json | null
+          payment_method?: string
+          receipt_number?: string | null
+          refund_of?: string | null
+          register_id?: string
+          session_id?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sales_refund_of_fkey"
+            columns: ["refund_of"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_sales_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "pos_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_sales_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_sessions: {
+        Row: {
+          cash_variance_cents: number | null
+          cashier_id: string | null
+          cashier_name: string | null
+          closed_at: string | null
+          closing_cash_cents: number | null
+          expected_cash_cents: number | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opening_cash_cents: number
+          register_id: string
+          sales_count: number
+          status: string
+          total_sales_cents: number
+        }
+        Insert: {
+          cash_variance_cents?: number | null
+          cashier_id?: string | null
+          cashier_name?: string | null
+          closed_at?: string | null
+          closing_cash_cents?: number | null
+          expected_cash_cents?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_cash_cents?: number
+          register_id: string
+          sales_count?: number
+          status?: string
+          total_sales_cents?: number
+        }
+        Update: {
+          cash_variance_cents?: number | null
+          cashier_id?: string | null
+          cashier_name?: string | null
+          closed_at?: string | null
+          closing_cash_cents?: number | null
+          expected_cash_cents?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_cash_cents?: number
+          register_id?: string
+          sales_count?: number
+          status?: string
+          total_sales_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sessions_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "pos_registers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procurement_suggestions: {
         Row: {
           created_at: string
@@ -8685,6 +8915,50 @@ export type Database = {
           },
         ]
       }
+      subscription_churn_reasons: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          feedback: string | null
+          id: string
+          metadata: Json | null
+          nps_score: number | null
+          reason: Database["public"]["Enums"]["churn_reason_category"]
+          subscription_id: string | null
+          would_return: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          feedback?: string | null
+          id?: string
+          metadata?: Json | null
+          nps_score?: number | null
+          reason?: Database["public"]["Enums"]["churn_reason_category"]
+          subscription_id?: string | null
+          would_return?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          feedback?: string | null
+          id?: string
+          metadata?: Json | null
+          nps_score?: number | null
+          reason?: Database["public"]["Enums"]["churn_reason_category"]
+          subscription_id?: string | null
+          would_return?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_churn_reasons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_events: {
         Row: {
           created_at: string
@@ -8723,8 +8997,121 @@ export type Database = {
           },
         ]
       }
+      subscription_winback_campaigns: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          cta_url: string | null
+          description: string | null
+          discount_duration_months: number | null
+          discount_percent: number | null
+          email_body: string | null
+          email_subject: string | null
+          id: string
+          name: string
+          offer_type: string
+          target_segment: Json | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          cta_url?: string | null
+          description?: string | null
+          discount_duration_months?: number | null
+          discount_percent?: number | null
+          email_body?: string | null
+          email_subject?: string | null
+          id?: string
+          name: string
+          offer_type?: string
+          target_segment?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          cta_url?: string | null
+          description?: string | null
+          discount_duration_months?: number | null
+          discount_percent?: number | null
+          email_body?: string | null
+          email_subject?: string | null
+          id?: string
+          name?: string
+          offer_type?: string
+          target_segment?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_winback_sends: {
+        Row: {
+          campaign_id: string | null
+          channel: string
+          converted_at: string | null
+          created_at: string
+          customer_email: string
+          id: string
+          metadata: Json | null
+          opened_at: string | null
+          sent_at: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          channel?: string
+          converted_at?: string | null
+          created_at?: string
+          customer_email: string
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          channel?: string
+          converted_at?: string | null
+          created_at?: string
+          customer_email?: string
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_winback_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_winback_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_winback_sends_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
+          at_risk: boolean
+          at_risk_reason: string | null
           billing_interval: string | null
           cancel_at: string | null
           cancel_at_period_end: boolean
@@ -8736,6 +9123,7 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           ended_at: string | null
+          health_score: number | null
           id: string
           metadata: Json
           product_id: string | null
@@ -8745,6 +9133,7 @@ export type Database = {
           provider_price_id: string | null
           provider_subscription_id: string | null
           quantity: number
+          renewal_reminder_sent_at: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           trial_end: string | null
           trial_start: string | null
@@ -8753,6 +9142,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          at_risk?: boolean
+          at_risk_reason?: string | null
           billing_interval?: string | null
           cancel_at?: string | null
           cancel_at_period_end?: boolean
@@ -8764,6 +9155,7 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           ended_at?: string | null
+          health_score?: number | null
           id?: string
           metadata?: Json
           product_id?: string | null
@@ -8773,6 +9165,7 @@ export type Database = {
           provider_price_id?: string | null
           provider_subscription_id?: string | null
           quantity?: number
+          renewal_reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_end?: string | null
           trial_start?: string | null
@@ -8781,6 +9174,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          at_risk?: boolean
+          at_risk_reason?: string | null
           billing_interval?: string | null
           cancel_at?: string | null
           cancel_at_period_end?: boolean
@@ -8792,6 +9187,7 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           ended_at?: string | null
+          health_score?: number | null
           id?: string
           metadata?: Json
           product_id?: string | null
@@ -8801,6 +9197,7 @@ export type Database = {
           provider_price_id?: string | null
           provider_subscription_id?: string | null
           quantity?: number
+          renewal_reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_end?: string | null
           trial_start?: string | null
@@ -10269,6 +10666,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      close_pos_session: {
+        Args: { p_closing_cash_cents: number; p_session_id: string }
+        Returns: Json
+      }
       complete_mo: {
         Args: { p_actual_qty?: number; p_mo_id: string }
         Returns: Json
@@ -10388,6 +10789,7 @@ export type Database = {
           rule_name: string
         }[]
       }
+      flag_at_risk_subscriptions: { Args: never; Returns: Json }
       generate_monthly_expense_report: {
         Args: { p_period?: string; p_user_id?: string }
         Returns: Json
@@ -10396,6 +10798,7 @@ export type Database = {
         Args: { p_month: number; p_year: number }
         Returns: string
       }
+      generate_pos_receipt_number: { Args: never; Returns: string }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -10612,6 +11015,14 @@ export type Database = {
         }
       }
       next_mo_number: { Args: never; Returns: string }
+      open_pos_session: {
+        Args: {
+          p_cashier_name?: string
+          p_opening_cash_cents?: number
+          p_register_id: string
+        }
+        Returns: string
+      }
       preview_payroll_period: {
         Args: { p_month: number; p_year: number }
         Returns: {
@@ -10711,6 +11122,27 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      record_churn_reason: {
+        Args: {
+          p_feedback?: string
+          p_nps_score?: number
+          p_reason: Database["public"]["Enums"]["churn_reason_category"]
+          p_subscription_id: string
+          p_would_return?: boolean
+        }
+        Returns: string
+      }
+      record_pos_sale: {
+        Args: {
+          p_customer_email?: string
+          p_discount_cents?: number
+          p_lines: Json
+          p_payment_method?: string
+          p_register_id: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
@@ -10994,6 +11426,21 @@ export type Database = {
             }
           }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
+      upcoming_renewals: {
+        Args: { p_days_ahead?: number }
+        Returns: {
+          cancel_at_period_end: boolean
+          currency: string
+          current_period_end: string
+          customer_email: string
+          customer_name: string
+          days_until_renewal: number
+          id: string
+          product_name: string
+          status: string
+          unit_amount_cents: number
+        }[]
+      }
       update_cowork_document_extraction: {
         Args: {
           p_content_md?: string
@@ -11070,6 +11517,15 @@ export type Database = {
       approval_decision_kind: "approve" | "reject"
       approval_status: "pending" | "approved" | "rejected" | "cancelled"
       automation_trigger_type: "cron" | "event" | "signal"
+      churn_reason_category:
+        | "too_expensive"
+        | "missing_feature"
+        | "switched_competitor"
+        | "no_longer_needed"
+        | "poor_support"
+        | "technical_issues"
+        | "temporary_pause"
+        | "other"
       company_lifecycle_stage: "prospect" | "customer" | "churned"
       connection_direction: "outbound" | "inbound" | "bidirectional"
       connection_transport: "a2a" | "openresponses" | "mcp"
@@ -11389,6 +11845,16 @@ export const Constants = {
       approval_decision_kind: ["approve", "reject"],
       approval_status: ["pending", "approved", "rejected", "cancelled"],
       automation_trigger_type: ["cron", "event", "signal"],
+      churn_reason_category: [
+        "too_expensive",
+        "missing_feature",
+        "switched_competitor",
+        "no_longer_needed",
+        "poor_support",
+        "technical_issues",
+        "temporary_pause",
+        "other",
+      ],
       company_lifecycle_stage: ["prospect", "customer", "churned"],
       connection_direction: ["outbound", "inbound", "bidirectional"],
       connection_transport: ["a2a", "openresponses", "mcp"],

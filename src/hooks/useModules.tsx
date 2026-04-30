@@ -94,6 +94,7 @@ export interface ModulesSettings {
   customer360: ModuleConfig;
   surveys: ModuleConfig;
   fieldService: ModuleConfig;
+  pos: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -636,6 +637,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  pos: {
+    enabled: false,
+    name: 'Point of Sale',
+    description:
+      'Counter-sales register for in-store retail: open/close cashier shifts with cash counting, ring up sales with multi-payment (cash, card, Swish, Klarna), print receipts and reconcile end-of-day variance. Sales feed the same revenue ledger as e-commerce.',
+    icon: 'Receipt',
+    category: 'data',
+    autonomy: 'view-required',
+    adminUI: true,
+    enhancedByFlowPilot: false,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -657,6 +669,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/customers': 'ecommerce',
   '/admin/surveys': 'surveys',
   '/admin/field-service': 'fieldService',
+  '/admin/pos': 'pos',
   '/admin/developer': 'developer',
   '/admin/global-blocks': 'pages',
   '/admin/media': 'mediaLibrary',

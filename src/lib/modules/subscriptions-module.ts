@@ -63,9 +63,85 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
       function: {
         name: 'subscription_mrr',
         description: 'Returns aggregated recurring revenue metrics: MRR, ARR, active subscriber count, churn 30d.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'upcoming_renewals',
+    description: 'List subscriptions renewing within N days. Use when: planning outreach, weekly briefing on renewals, identifying win-back candidates with cancel_at_period_end. NOT for: aggregate MRR (subscription_mrr) or risk flagging (flag_at_risk_subscriptions).',
+    category: 'commerce',
+    handler: 'rpc:upcoming_renewals',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'upcoming_renewals',
+        description: 'Subscriptions renewing within p_days_ahead days (default 7).',
         parameters: {
           type: 'object',
-          properties: {},
+          properties: { p_days_ahead: { type: 'number', description: 'Window in days (default 7, max 90)' } },
+        },
+      },
+    },
+  },
+  {
+    name: 'flag_at_risk_subscriptions',
+    description: 'Sweep subscriptions and flag at-risk ones (past_due, scheduled cancel, low health). Use when: daily health check, before sending win-back. NOT for: reading current at-risk list (use list_subscriptions with status=past_due).',
+    category: 'commerce',
+    handler: 'rpc:flag_at_risk_subscriptions',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'flag_at_risk_subscriptions',
+        description: 'Marks subscriptions with at_risk=true based on payment status, cancellation, and health score.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'record_churn_reason',
+    description: 'Record why a customer churned (reason category + free-text feedback + NPS). Use when: customer cancels via portal, exit survey returned. NOT for: technical cancellation (use Stripe customer-portal flow).',
+    category: 'commerce',
+    handler: 'rpc:record_churn_reason',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_churn_reason',
+        description: 'Stores a structured churn reason for a subscription.',
+        parameters: {
+          type: 'object',
+          required: ['p_subscription_id', 'p_reason'],
+          properties: {
+            p_subscription_id: { type: 'string', format: 'uuid' },
+            p_reason: { type: 'string', enum: ['too_expensive','missing_feature','switched_competitor','no_longer_needed','poor_support','technical_issues','temporary_pause','other'] },
+            p_feedback: { type: 'string' },
+            p_nps_score: { type: 'number', minimum: 0, maximum: 10 },
+            p_would_return: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'list_winback_campaigns',
+    description: 'List configured win-back campaigns (active or all). Use when: choosing which offer to send, auditing win-back program. NOT for: sending the campaign (send_winback) or campaign creation (create via /admin/subscriptions UI).',
+    category: 'commerce',
+    handler: 'edge:agent-execute',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_winback_campaigns',
+        description: 'Lists subscription_winback_campaigns rows.',
+        parameters: {
+          type: 'object',
+          properties: {
+            active_only: { type: 'boolean', description: 'Only return active=true campaigns' },
+            limit: { type: 'number' },
+          },
         },
       },
     },
@@ -75,8 +151,8 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
 export const subscriptionsModule = defineModule<Input, Output>({
   id: 'subscriptions',
   name: 'Subscriptions',
-  version: '1.0.0',
-  description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, plan changes',
+  version: '2.0.0',
+  description: 'Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back',
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
@@ -84,6 +160,10 @@ export const subscriptionsModule = defineModule<Input, Output>({
   skills: [
     'list_subscriptions',
     'subscription_mrr',
+    'upcoming_renewals',
+    'flag_at_risk_subscriptions',
+    'record_churn_reason',
+    'list_winback_campaigns',
     'list_dunning_sequences',
     'pause_dunning',
     'escalate_dunning',
