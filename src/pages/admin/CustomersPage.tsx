@@ -31,6 +31,7 @@ interface AggregatedCustomer {
 }
 
 export default function CustomersPage() {
+  const navigate = useNavigate();
   // Aggregate customers from orders + augment with profile data when available
   const { data: customers, isLoading } = useQuery({
     queryKey: ['admin-customers-aggregated'],
