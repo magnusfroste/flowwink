@@ -73,7 +73,7 @@ export default function DocsArticlePage() {
                   </header>
 
                   <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border">
-                    <ReactMarkdown>{page.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{page.content}</ReactMarkdown>
                   </div>
 
                   <footer className="mt-12 pt-6 border-t border-border flex items-center justify-between">
