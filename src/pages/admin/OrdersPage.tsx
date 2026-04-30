@@ -32,7 +32,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2 } from 'lucide-react';
+import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2, UserSearch } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { Tables } from '@/integrations/supabase/types';
 import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
 import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
@@ -298,13 +299,26 @@ export default function OrdersPage() {
                        {format(new Date(order.created_at), 'PPp')}
                      </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                          title="View order"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {order.customer_email && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/admin/customer/${encodeURIComponent(order.customer_email)}`)}
+                            title="Open Customer 360°"
+                          >
+                            <UserSearch className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

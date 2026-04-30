@@ -13,7 +13,7 @@ import { formatPrice } from '@/hooks/useProducts';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -326,11 +326,12 @@ function LeadCard({ lead, showStatus, onClick }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
   const companyName = lead.companies?.name || lead.company;
+  const navigate = useNavigate();
 
   return (
     <Card 
       className={cn(
-        "cursor-pointer hover:bg-muted/50 transition-colors",
+        "cursor-pointer hover:bg-muted/50 transition-colors group",
         lead.needs_review && "border-amber-500/50"
       )}
       onClick={onClick}
@@ -370,6 +371,19 @@ function LeadCard({ lead, showStatus, onClick }: LeadCardProps) {
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admin/customer/${lead.id}`);
+              }}
+              title="Open Customer 360°"
+            >
+              <UserSearch className="h-3.5 w-3.5 mr-1" />
+              360°
+            </Button>
           </div>
         </div>
       </CardContent>
