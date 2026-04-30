@@ -46,6 +46,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `send_email_to_lead` | internal | Send a one-to-one outreach, follow-up, or nurture email to a single lead via Resend. AI-drafts subject + body if not provided. Use when: reaching out to a specific lead, following up after lead act… |
 | `lead_pipeline_review` | internal | Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads). |
 
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [lead-to-customer](../processes/lead-to-customer.md)
+
 ## File Map
 
 | Purpose | Path |
