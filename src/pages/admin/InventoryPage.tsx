@@ -210,6 +210,10 @@ export default function InventoryPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="pickpack">
+          <PickPackPanel />
+        </TabsContent>
+
         <TabsContent value="moves">
           <Card>
             <CardContent className="p-0">
