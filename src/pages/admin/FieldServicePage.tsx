@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Loader2, Plus, Truck, CheckCircle2, Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
