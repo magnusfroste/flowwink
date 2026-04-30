@@ -91,6 +91,7 @@ export interface ModulesSettings {
   recruitment: ModuleConfig;
   workspaceChat: ModuleConfig;
   docs: ModuleConfig;
+  customer360: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -600,6 +601,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     requiresAI: true,
     optionalIntegrations: ['openai', 'gemini', 'local_llm', 'firecrawl'],
+  },
+  customer360: {
+    enabled: true,
+    name: 'Customer 360',
+    description:
+      'Unified view of every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person — with timeline and lifetime-value KPIs.',
+    icon: 'UserSearch',
+    category: 'data',
+    autonomy: 'view-required',
+    adminUI: true,
   },
 };
 
