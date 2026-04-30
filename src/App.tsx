@@ -69,6 +69,7 @@ import Customer360Page from "./pages/admin/Customer360Page";
 import SurveysPage from "./pages/admin/SurveysPage";
 import PublicSurveyPage from "./pages/PublicSurveyPage";
 import FieldServicePage from "./pages/admin/FieldServicePage";
+import POSPage from "./pages/admin/POSPage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
