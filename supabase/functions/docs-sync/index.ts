@@ -69,42 +69,38 @@ async function walk(
   }
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+async function runSync(
+  repo_owner: string,
+  repo_name: string,
+  path: string,
+  branch: string,
+) {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
-  try {
-    const {
-      repo_owner = "magnusfroste",
-      repo_name = "flowwink",
-      path = "docs",
-      branch = "main",
-    } = await req.json().catch(() => ({}));
+  const files: GitHubEntry[] = [];
+  await walk(repo_owner, repo_name, path, branch, files);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+  const { data: existing } = await supabase
+    .from("docs_pages")
+    .select("file_path, sha")
+    .eq("repo_owner", repo_owner)
+    .eq("repo_name", repo_name);
+  const existingMap = new Map((existing ?? []).map((e) => [e.file_path, e.sha]));
 
-    const files: GitHubEntry[] = [];
-    await walk(repo_owner, repo_name, path, branch, files);
+  let synced = 0;
+  let skipped = 0;
+  const errors: string[] = [];
 
-    const { data: existing } = await supabase
-      .from("docs_pages")
-      .select("file_path, sha")
-      .eq("repo_owner", repo_owner)
-      .eq("repo_name", repo_name);
-    const existingMap = new Map((existing ?? []).map((e) => [e.file_path, e.sha]));
-
-    let synced = 0;
-    let skipped = 0;
-    const errors: string[] = [];
-
-    for (const file of files) {
-      if (existingMap.get(file.path) === file.sha) {
-        skipped++;
-        continue;
-      }
-      if (!file.download_url) continue;
+  for (const file of files) {
+    if (existingMap.get(file.path) === file.sha) {
+      skipped++;
+      continue;
+    }
+    if (!file.download_url) continue;
+    try {
       const r = await fetch(file.download_url);
       if (!r.ok) {
         errors.push(`fetch ${file.path}: ${r.status}`);
@@ -113,7 +109,6 @@ serve(async (req) => {
       const raw = await r.text();
       const { frontmatter, content } = parseFrontmatter(raw);
 
-      // Derive category from first subfolder under `path` (e.g. docs/modules/foo.md -> "modules")
       const rel = file.path.startsWith(path + "/") ? file.path.slice(path.length + 1) : file.path;
       const segments = rel.split("/");
       const category = (frontmatter.category as string) ||
@@ -144,32 +139,68 @@ serve(async (req) => {
       );
       if (error) errors.push(`upsert ${file.path}: ${error.message}`);
       else synced++;
+    } catch (err) {
+      errors.push(`${file.path}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  const currentPaths = new Set(files.map((f) => f.path));
+  const toDelete = [...existingMap.keys()].filter((p) => !currentPaths.has(p));
+  if (toDelete.length > 0) {
+    await supabase
+      .from("docs_pages")
+      .delete()
+      .eq("repo_owner", repo_owner)
+      .eq("repo_name", repo_name)
+      .in("file_path", toDelete);
+  }
+
+  console.log(
+    `[docs-sync] done — synced=${synced} skipped=${skipped} deleted=${toDelete.length} errors=${errors.length}`,
+  );
+  if (errors.length) console.error("[docs-sync] errors:", errors.slice(0, 10));
+  return { synced, skipped, deleted: toDelete.length, total: files.length, errors };
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const {
+      repo_owner = "magnusfroste",
+      repo_name = "flowwink",
+      path = "docs",
+      branch = "main",
+      wait = false, // when true, block and return full result (used by curl/CI). UI uses default fire-and-forget.
+    } = await req.json().catch(() => ({}));
+
+    if (wait) {
+      const result = await runSync(repo_owner, repo_name, path, branch);
+      return new Response(
+        JSON.stringify({ success: true, ...result, errors: result.errors.length ? result.errors : undefined }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Prune deleted files
-    const currentPaths = new Set(files.map((f) => f.path));
-    const toDelete = [...existingMap.keys()].filter((p) => !currentPaths.has(p));
-    if (toDelete.length > 0) {
-      await supabase
-        .from("docs_pages")
-        .delete()
-        .eq("repo_owner", repo_owner)
-        .eq("repo_name", repo_name)
-        .in("file_path", toDelete);
-    }
+    // Fire-and-forget: return 202 immediately, run sync in background.
+    // Avoids 60s edge-function timeout for large repos / cold cache.
+    // @ts-ignore - EdgeRuntime is available in Supabase Deno runtime
+    EdgeRuntime.waitUntil(
+      runSync(repo_owner, repo_name, path, branch).catch((e) =>
+        console.error("[docs-sync] background failure:", e),
+      ),
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
-        synced,
-        skipped,
-        deleted: toDelete.length,
-        total: files.length,
-        errors: errors.length ? errors : undefined,
+        accepted: true,
+        message: "Sync started in background. Refresh in ~30s to see results.",
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    console.error("[docs-sync] error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
