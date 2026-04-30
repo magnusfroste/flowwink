@@ -708,6 +708,17 @@ function main() {
     const markdown = generateMarkdown(mod, settings, webhookEvents, hooks, adminPage, blocks, migrations, tables, processes);
     const kebabId = mod.id.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
     const outFile = path.join(OUTPUT_DIR, `${kebabId}.md`);
+
+    // Skip files marked as manually maintained (frontmatter: manual: true)
+    if (fs.existsSync(outFile)) {
+      const existing = fs.readFileSync(outFile, 'utf-8');
+      const fmMatch = existing.match(/^---\n([\s\S]*?)\n---/);
+      if (fmMatch && /\bmanual:\s*true\b/.test(fmMatch[1])) {
+        summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md (manual — skipped)` });
+        continue;
+      }
+    }
+
     fs.writeFileSync(outFile, markdown, 'utf-8');
 
     generated++;
