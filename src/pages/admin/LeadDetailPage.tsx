@@ -18,7 +18,7 @@ import { useCompanies, useCreateCompany } from '@/hooks/useCompanies';
 import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { DealSection } from '@/components/admin/DealSection';
-import { UnifiedTimeline } from '@/components/admin/crm/UnifiedTimeline';
+import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -326,8 +326,8 @@ export default function LeadDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Unified Cross-Module Timeline */}
-          <UnifiedTimeline leadId={lead.id} email={lead.email} />
+          {/* Discuss: composer + unified cross-module timeline */}
+          <RecordDiscussPanel leadId={lead.id} email={lead.email} />
         </div>
 
         {/* Sidebar */}
