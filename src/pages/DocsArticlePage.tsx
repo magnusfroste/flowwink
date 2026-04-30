@@ -72,7 +72,7 @@ export default function DocsArticlePage() {
                     )}
                   </header>
 
-                  <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border">
+                  <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-a:text-primary prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:border-border prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:code:bg-transparent prose-pre:code:p-0">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{page.content}</ReactMarkdown>
                   </div>
 
