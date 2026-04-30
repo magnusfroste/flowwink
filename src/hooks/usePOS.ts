@@ -219,31 +219,29 @@ export function useCloseSession() {
 export interface PosProduct {
   id: string;
   name: string;
-  sku: string | null;
   barcode: string | null;
   price_cents: number;
   currency: string;
-  tax_rate: number | null;
+  image_url: string | null;
+  stock_quantity: number | null;
 }
 
 export function usePosProducts(search: string) {
   return useQuery({
     queryKey: ['pos-products', search],
     queryFn: async () => {
-      let q = supabase
+      const s = search.trim();
+      const builder = supabase
         .from('products')
-        .select('id, name, sku, barcode, price_cents, currency, tax_rate')
+        .select('id, name, barcode, price_cents, currency, image_url, stock_quantity')
         .eq('available_in_pos', true)
-        .eq('active', true)
-        .order('name')
-        .limit(40);
-      if (search.trim()) {
-        const s = search.trim();
-        q = q.or(`name.ilike.%${s}%,sku.ilike.%${s}%,barcode.eq.${s}`);
-      }
-      const { data, error } = await q;
+        .eq('is_active', true);
+      const filtered = s
+        ? builder.or(`name.ilike.%${s}%,barcode.eq.${s}`)
+        : builder;
+      const { data, error } = await filtered.order('name').limit(40);
       if (error) throw error;
-      return (data ?? []) as PosProduct[];
+      return ((data ?? []) as unknown) as PosProduct[];
     },
   });
 }
