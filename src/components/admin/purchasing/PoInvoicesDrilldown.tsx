@@ -110,38 +110,71 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
               No vendor invoices registered against this PO yet. When one arrives, it will be matched against received goods automatically.
             </p>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-8" />
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
-                    <TableHead>Match</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.map(inv => (
-                    <InvoiceRow
-                      key={inv.id}
-                      inv={inv}
-                      isOpen={expanded.has(inv.id)}
-                      onToggle={() => toggle(inv.id)}
-                      events={historyByInvoice.get(inv.id) ?? []}
-                      onRematch={() => rematch.mutate(inv.id)}
-                      onApprove={() => autoApprove.mutate(inv.id)}
-                      rematching={rematch.isPending}
-                      approving={autoApprove.isPending}
-                      fmt={fmt}
-                      currency={currency}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {([
+                  ['all', 'All'],
+                  ['registered', 'Registered'],
+                  ['matched', 'Matched'],
+                  ['auto_approved', 'Auto-approved'],
+                  ['variance', 'Variance'],
+                ] as const).map(([key, label]) => (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant={filter === key ? 'default' : 'outline'}
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => setFilter(key)}
+                  >
+                    {key === 'auto_approved' && <Sparkles className="h-3 w-3" />}
+                    {key === 'variance' && <AlertTriangle className="h-3 w-3" />}
+                    {label}
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] tabular-nums">
+                      {counts[key]}
+                    </Badge>
+                  </Button>
+                ))}
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8" />
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="text-right">Variance</TableHead>
+                      <TableHead>Match</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-6 text-sm text-muted-foreground">
+                          No invoices match this filter.
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredInvoices.map(inv => (
+                      <InvoiceRow
+                        key={inv.id}
+                        inv={inv}
+                        isOpen={expanded.has(inv.id)}
+                        onToggle={() => toggle(inv.id)}
+                        events={historyByInvoice.get(inv.id) ?? []}
+                        onRematch={() => rematch.mutate(inv.id)}
+                        onApprove={() => autoApprove.mutate(inv.id)}
+                        rematching={rematch.isPending}
+                        approving={autoApprove.isPending}
+                        fmt={fmt}
+                        currency={currency}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
