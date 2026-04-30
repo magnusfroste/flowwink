@@ -216,6 +216,14 @@ const PURCHASING_AUTOMATIONS: AutomationSeed[] = [
     skill_name: 'purchase_reorder_check',
     skill_arguments: {},
   },
+  {
+    name: 'Auto-match vendor invoice on registration',
+    description: 'When a vendor invoice is registered, immediately run 3-way matching against PO + goods receipts.',
+    trigger_type: 'event',
+    trigger_config: { event: 'invoice.registered' },
+    skill_name: 'match_invoice_to_receipt',
+    skill_arguments: { p_invoice_id: '{{event.payload.invoice_id}}' },
+  },
 ];
 
 export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>({
