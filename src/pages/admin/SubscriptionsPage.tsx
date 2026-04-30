@@ -81,56 +81,67 @@ export default function SubscriptionsPage() {
         />
       </div>
 
-      {/* Filter */}
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+      <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="trialing">Trialing</TabsTrigger>
-          <TabsTrigger value="past_due">Past due</TabsTrigger>
-          <TabsTrigger value="canceled">Canceled</TabsTrigger>
+          <TabsTrigger value="list">Subscriptions</TabsTrigger>
+          <TabsTrigger value="renewals">Renewals & Risk</TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{subs?.length ?? 0} subscription(s)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : !subs || subs.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Renews</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {subs.map((s) => (
-                  <SubscriptionRow
-                    key={s.id}
-                    sub={s}
-                    onCancel={() => action.mutate({ action: 'cancel', subscriptionId: s.id, atPeriodEnd: true })}
-                    onResume={() => action.mutate({ action: 'resume', subscriptionId: s.id })}
-                    onPortal={() => openCustomerPortal(s.id)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="list" className="space-y-4">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="trialing">Trialing</TabsTrigger>
+              <TabsTrigger value="past_due">Past due</TabsTrigger>
+              <TabsTrigger value="canceled">Canceled</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{subs?.length ?? 0} subscription(s)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                </div>
+              ) : !subs || subs.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Renews</TableHead>
+                      <TableHead className="w-12" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subs.map((s) => (
+                      <SubscriptionRow
+                        key={s.id}
+                        sub={s}
+                        onCancel={() => action.mutate({ action: 'cancel', subscriptionId: s.id, atPeriodEnd: true })}
+                        onResume={() => action.mutate({ action: 'resume', subscriptionId: s.id })}
+                        onPortal={() => openCustomerPortal(s.id)}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="renewals">
+          <RenewalsPanel />
+        </TabsContent>
+      </Tabs>
     </div>
     </AdminLayout>
   );
