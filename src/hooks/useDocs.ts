@@ -63,13 +63,21 @@ export function useSyncDocs() {
       const body = { ...DEFAULT_REPO, ...overrides };
       const { data, error } = await supabase.functions.invoke('docs-sync', { body });
       if (error) throw error;
-      return data as { synced: number; skipped: number; deleted: number; total: number };
+      return data as
+        | { synced: number; skipped: number; deleted: number; total: number }
+        | { accepted: true; message: string };
     },
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['docs-pages'] });
-      toast.success(
-        `Docs synced — ${data.synced} updated, ${data.skipped} unchanged, ${data.deleted} removed`,
-      );
+      if ('accepted' in data) {
+        toast.success('Sync started — refresh in ~30s to see updated counts');
+        // Re-fetch after the background job has had time to complete.
+        setTimeout(() => qc.invalidateQueries({ queryKey: ['docs-pages'] }), 30000);
+      } else {
+        qc.invalidateQueries({ queryKey: ['docs-pages'] });
+        toast.success(
+          `Docs synced — ${data.synced} updated, ${data.skipped} unchanged, ${data.deleted} removed`,
+        );
+      }
     },
     onError: (e: Error) => toast.error(`Sync failed: ${e.message}`),
   });
