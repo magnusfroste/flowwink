@@ -12,7 +12,7 @@ import {
   Receipt,
   ShoppingCart,
   Briefcase,
-  FileQuote,
+  FileText as FileQuote,
   Ticket,
   CalendarDays,
   RefreshCw,
