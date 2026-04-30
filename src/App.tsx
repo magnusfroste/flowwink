@@ -303,6 +303,7 @@ const router = createBrowserRouter([
       { path: "/admin/customer", element: <Customer360Page /> },
       { path: "/admin/customer/:identifier", element: <Customer360Page /> },
       { path: "/admin/surveys", element: <SurveysPage /> },
+      { path: "/admin/field-service", element: <FieldServicePage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },
