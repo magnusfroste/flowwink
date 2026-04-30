@@ -25,7 +25,10 @@ function parseUnifiedModules(): ParsedModule[] {
     .map((fileName) => {
       const source = fs.readFileSync(path.join(modulesDir, fileName), 'utf8');
       const exportMatch = source.match(/export const\s+(\w+)\s*=\s*defineModule/);
-      const idMatch = source.match(/id:\s*'([^']+)'(?:\s+as\s+any)?/);
+      // Match the module's own id field on `defineModule({ id: '...' })` —
+      // not arbitrary `*_id: '...'` keys (e.g. skill_arguments templates) that
+      // happen to appear earlier in the file.
+      const idMatch = source.match(/defineModule[\s\S]*?(?:^|\n)\s*id:\s*'([^']+)'(?:\s+as\s+any)?/);
       const skillsMatch = source.match(/skills:\s*\[([\s\S]*?)\]/);
 
       if (!exportMatch || !idMatch) {
