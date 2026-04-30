@@ -50,7 +50,7 @@ export function useLogActivity() {
       const { error } = await supabase.from('lead_activities').insert([{
         lead_id: targetLeadId,
         type,
-        metadata,
+        metadata: metadata as never,
         points: POINTS[type],
       }]);
 
