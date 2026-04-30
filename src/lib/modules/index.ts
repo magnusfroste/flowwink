@@ -32,6 +32,7 @@ export { liveSupportModule } from './live-support-module';
 export { webinarsModule } from './webinars-module';
 export { workspaceChatModule } from './workspace-chat-module';
 export { customer360Module } from './customer360-module';
+export { surveysModule } from './surveys-module';
 
 // ── Insights ──
 export { analyticsModule } from './analytics-module';

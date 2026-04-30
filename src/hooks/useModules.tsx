@@ -92,6 +92,7 @@ export interface ModulesSettings {
   workspaceChat: ModuleConfig;
   docs: ModuleConfig;
   customer360: ModuleConfig;
+  surveys: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -611,6 +612,17 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'view-required',
     adminUI: true,
+  },
+  surveys: {
+    enabled: false,
+    name: 'Surveys & NPS',
+    description:
+      'Send one-click NPS, CSAT and custom surveys triggered by lifecycle events (order delivered, ticket closed, subscription renewed). Auto-categorizes promoters/passives/detractors and emits platform events FlowPilot can act on.',
+    icon: 'Smile',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
   },
 };
 

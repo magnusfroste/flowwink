@@ -66,6 +66,8 @@ import LiveSupportPage from "./pages/admin/LiveSupportPage";
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
 import DocsAdminPage from "./pages/admin/DocsAdminPage";
 import Customer360Page from "./pages/admin/Customer360Page";
+import SurveysPage from "./pages/admin/SurveysPage";
+import PublicSurveyPage from "./pages/PublicSurveyPage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -298,6 +300,7 @@ const router = createBrowserRouter([
       { path: "/admin/docs", element: <DocsAdminPage /> },
       { path: "/admin/customer", element: <Customer360Page /> },
       { path: "/admin/customer/:identifier", element: <Customer360Page /> },
+      { path: "/admin/surveys", element: <SurveysPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },
