@@ -51,6 +51,25 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
   const rematch = useMatchInvoice();
   const autoApprove = useAutoApproveInvoice();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<'all' | 'registered' | 'matched' | 'auto_approved' | 'variance'>('all');
+
+  const counts = useMemo(() => ({
+    all: invoices.length,
+    registered: invoices.filter(i => i.status === 'registered').length,
+    matched: invoices.filter(i => i.match_status === 'matched').length,
+    auto_approved: invoices.filter(i => i.status === 'approved' && i.match_status === 'matched' && !i.approved_by).length,
+    variance: invoices.filter(i => i.match_status === 'over_invoiced' || i.match_status === 'under_invoiced').length,
+  }), [invoices]);
+
+  const filteredInvoices = useMemo(() => {
+    switch (filter) {
+      case 'registered': return invoices.filter(i => i.status === 'registered');
+      case 'matched': return invoices.filter(i => i.match_status === 'matched');
+      case 'auto_approved': return invoices.filter(i => i.status === 'approved' && i.match_status === 'matched' && !i.approved_by);
+      case 'variance': return invoices.filter(i => i.match_status === 'over_invoiced' || i.match_status === 'under_invoiced');
+      default: return invoices;
+    }
+  }, [invoices, filter]);
 
   const historyByInvoice = useMemo(() => {
     const map = new Map<string, InvoiceHistoryEvent[]>();
@@ -91,38 +110,71 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
               No vendor invoices registered against this PO yet. When one arrives, it will be matched against received goods automatically.
             </p>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-8" />
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
-                    <TableHead>Match</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.map(inv => (
-                    <InvoiceRow
-                      key={inv.id}
-                      inv={inv}
-                      isOpen={expanded.has(inv.id)}
-                      onToggle={() => toggle(inv.id)}
-                      events={historyByInvoice.get(inv.id) ?? []}
-                      onRematch={() => rematch.mutate(inv.id)}
-                      onApprove={() => autoApprove.mutate(inv.id)}
-                      rematching={rematch.isPending}
-                      approving={autoApprove.isPending}
-                      fmt={fmt}
-                      currency={currency}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {([
+                  ['all', 'All'],
+                  ['registered', 'Registered'],
+                  ['matched', 'Matched'],
+                  ['auto_approved', 'Auto-approved'],
+                  ['variance', 'Variance'],
+                ] as const).map(([key, label]) => (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant={filter === key ? 'default' : 'outline'}
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => setFilter(key)}
+                  >
+                    {key === 'auto_approved' && <Sparkles className="h-3 w-3" />}
+                    {key === 'variance' && <AlertTriangle className="h-3 w-3" />}
+                    {label}
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] tabular-nums">
+                      {counts[key]}
+                    </Badge>
+                  </Button>
+                ))}
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8" />
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="text-right">Variance</TableHead>
+                      <TableHead>Match</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-6 text-sm text-muted-foreground">
+                          No invoices match this filter.
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredInvoices.map(inv => (
+                      <InvoiceRow
+                        key={inv.id}
+                        inv={inv}
+                        isOpen={expanded.has(inv.id)}
+                        onToggle={() => toggle(inv.id)}
+                        events={historyByInvoice.get(inv.id) ?? []}
+                        onRematch={() => rematch.mutate(inv.id)}
+                        onApprove={() => autoApprove.mutate(inv.id)}
+                        rematching={rematch.isPending}
+                        approving={autoApprove.isPending}
+                        fmt={fmt}
+                        currency={currency}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
