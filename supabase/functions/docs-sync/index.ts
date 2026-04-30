@@ -27,8 +27,10 @@ interface Frontmatter {
 }
 
 function parseFrontmatter(raw: string): { frontmatter: Frontmatter; content: string } {
-  const m = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!m) return { frontmatter: {}, content: raw };
+  // Normalize CRLF → LF so GitHub-fetched files parse the same as local.
+  const normalized = raw.replace(/\r\n/g, "\n").replace(/^\uFEFF/, "");
+  const m = normalized.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!m) return { frontmatter: {}, content: normalized };
   const fm: Frontmatter = {};
   for (const line of m[1].split("\n")) {
     const kv = line.match(/^(\w[\w-]*):\s*(.+)$/);
