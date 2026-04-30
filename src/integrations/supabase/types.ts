@@ -6550,6 +6550,156 @@ export type Database = {
           },
         ]
       }
+      picking_lines: {
+        Row: {
+          created_at: string
+          id: string
+          lot_id: string | null
+          notes: string | null
+          picked_at: string | null
+          picked_by: string | null
+          picking_order_id: string
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          qty_picked: number
+          qty_requested: number
+          reservation_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          picked_at?: string | null
+          picked_by?: string | null
+          picking_order_id: string
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          qty_picked?: number
+          qty_requested: number
+          reservation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          picked_at?: string | null
+          picked_by?: string | null
+          picking_order_id?: string
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          qty_picked?: number
+          qty_requested?: number
+          reservation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "picking_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picking_lines_picking_order_id_fkey"
+            columns: ["picking_order_id"]
+            isOneToOne: false
+            referencedRelation: "picking_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picking_lines_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "stock_reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      picking_orders: {
+        Row: {
+          allocated_at: string | null
+          assigned_to: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          picked_at: string | null
+          picking_number: string
+          ship_to_address: Json | null
+          ship_to_name: string | null
+          shipped_at: string | null
+          source_location_id: string | null
+          status: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          allocated_at?: string | null
+          assigned_to?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          picked_at?: string | null
+          picking_number?: string
+          ship_to_address?: Json | null
+          ship_to_name?: string | null
+          shipped_at?: string | null
+          source_location_id?: string | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allocated_at?: string | null
+          assigned_to?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          picked_at?: string | null
+          picking_number?: string
+          ship_to_address?: Json | null
+          ship_to_name?: string | null
+          shipped_at?: string | null
+          source_location_id?: string | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "picking_orders_source_location_id_fkey"
+            columns: ["source_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procurement_suggestions: {
         Row: {
           created_at: string
@@ -9469,6 +9619,10 @@ export type Database = {
         }
         Returns: string
       }
+      allocate_picking: {
+        Args: { p_order_id: string; p_source_location_id?: string }
+        Returns: Json
+      }
       apply_onboarding_template: {
         Args: { p_employee_id: string; p_template_id: string }
         Returns: {
@@ -9557,6 +9711,10 @@ export type Database = {
         }[]
       }
       cancel_mo: { Args: { p_mo_id: string; p_reason?: string }; Returns: Json }
+      cancel_picking: {
+        Args: { p_picking_order_id: string; p_reason?: string }
+        Returns: Json
+      }
       cancel_reservation: {
         Args: { p_reservation_id: string }
         Returns: undefined
@@ -9642,6 +9800,10 @@ export type Database = {
         Returns: Json
       }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
+      confirm_pick: {
+        Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
+        Returns: Json
+      }
       consume_reservation: {
         Args: { p_reservation_id: string; p_to_location_code?: string }
         Returns: string
@@ -10172,6 +10334,14 @@ export type Database = {
           invoice_number: string
           total_cents: number
         }[]
+      }
+      ship_picking: {
+        Args: {
+          p_carrier?: string
+          p_picking_order_id: string
+          p_tracking_number?: string
+        }
+        Returns: Json
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
