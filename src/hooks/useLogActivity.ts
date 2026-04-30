@@ -47,12 +47,12 @@ export function useLogActivity() {
       const metadata: Record<string, unknown> = { note: body };
       if (subject) metadata.subject = subject;
 
-      const { error } = await supabase.from('lead_activities').insert({
+      const { error } = await supabase.from('lead_activities').insert([{
         lead_id: targetLeadId,
         type,
         metadata,
         points: POINTS[type],
-      });
+      }]);
 
       if (error) throw error;
       return { leadId: targetLeadId };
