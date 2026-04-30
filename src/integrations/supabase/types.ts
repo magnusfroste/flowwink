@@ -6550,6 +6550,82 @@ export type Database = {
           },
         ]
       }
+      procurement_suggestions: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          materialized_ref_id: string | null
+          materialized_ref_type: string | null
+          needed_by: string | null
+          preferred_vendor_id: string | null
+          procurement_method: string
+          product_id: string
+          reasoning: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+          status: string
+          suggested_qty: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_id: string
+          materialized_ref_id?: string | null
+          materialized_ref_type?: string | null
+          needed_by?: string | null
+          preferred_vendor_id?: string | null
+          procurement_method: string
+          product_id: string
+          reasoning?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+          suggested_qty: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          materialized_ref_id?: string | null
+          materialized_ref_type?: string | null
+          needed_by?: string | null
+          preferred_vendor_id?: string | null
+          procurement_method?: string
+          product_id?: string
+          reasoning?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string
+          suggested_qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_suggestions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_suggestions_preferred_vendor_id_fkey"
+            columns: ["preferred_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_suggestions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           created_at: string
@@ -7456,6 +7532,73 @@ export type Database = {
           },
         ]
       }
+      reorder_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_time_days: number
+          location_id: string
+          max_qty: number
+          min_qty: number
+          preferred_vendor_id: string | null
+          procurement_method: string
+          product_id: string
+          reorder_qty: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number
+          location_id: string
+          max_qty?: number
+          min_qty?: number
+          preferred_vendor_id?: string | null
+          procurement_method?: string
+          product_id: string
+          reorder_qty?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number
+          location_id?: string
+          max_qty?: number
+          min_qty?: number
+          preferred_vendor_id?: string | null
+          procurement_method?: string
+          product_id?: string
+          reorder_qty?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reorder_rules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reorder_rules_preferred_vendor_id_fkey"
+            columns: ["preferred_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reorder_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_bids: {
         Row: {
           created_at: string
@@ -7851,11 +7994,101 @@ export type Database = {
           },
         ]
       }
+      stock_locations: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          location_type: string
+          name: string
+          notes: string | null
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_type?: string
+          name: string
+          notes?: string | null
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_type?: string
+          name?: string
+          notes?: string | null
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_locations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_lots: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          lot_number: string
+          lot_type: string
+          manufactured_at: string | null
+          notes: string | null
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          lot_number: string
+          lot_type?: string
+          manufactured_at?: string | null
+          notes?: string | null
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          lot_number?: string
+          lot_type?: string
+          manufactured_at?: string | null
+          notes?: string | null
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_lots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_moves: {
         Row: {
           created_at: string
           created_by: string | null
+          from_location_id: string | null
           id: string
+          lot_id: string | null
           mo_id: string | null
           move_type: string
           notes: string | null
@@ -7863,11 +8096,15 @@ export type Database = {
           quantity: number
           reference_id: string | null
           reference_type: string | null
+          state: string
+          to_location_id: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          from_location_id?: string | null
           id?: string
+          lot_id?: string | null
           mo_id?: string | null
           move_type?: string
           notes?: string | null
@@ -7875,11 +8112,15 @@ export type Database = {
           quantity: number
           reference_id?: string | null
           reference_type?: string | null
+          state?: string
+          to_location_id?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          from_location_id?: string | null
           id?: string
+          lot_id?: string | null
           mo_id?: string | null
           move_type?: string
           notes?: string | null
@@ -7887,8 +8128,24 @@ export type Database = {
           quantity?: number
           reference_id?: string | null
           reference_type?: string | null
+          state?: string
+          to_location_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_moves_from_location_id_fkey"
+            columns: ["from_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_moves_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_moves_mo_id_fkey"
             columns: ["mo_id"]
@@ -7898,6 +8155,135 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_moves_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_moves_to_location_id_fkey"
+            columns: ["to_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_quants: {
+        Row: {
+          id: string
+          location_id: string
+          lot_id: string | null
+          product_id: string
+          quantity: number
+          reserved_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          location_id: string
+          lot_id?: string | null
+          product_id: string
+          quantity?: number
+          reserved_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          location_id?: string
+          lot_id?: string | null
+          product_id?: string
+          quantity?: number
+          reserved_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_quants_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_quants_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_quants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_reservations: {
+        Row: {
+          cancelled_at: string | null
+          consumed_at: string | null
+          id: string
+          location_id: string
+          lot_id: string | null
+          notes: string | null
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          reserved_at: string
+          reserved_by: string | null
+          state: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          consumed_at?: string | null
+          id?: string
+          location_id: string
+          lot_id?: string | null
+          notes?: string | null
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          reserved_at?: string
+          reserved_by?: string | null
+          state?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          consumed_at?: string | null
+          id?: string
+          location_id?: string
+          lot_id?: string | null
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          reserved_at?: string
+          reserved_by?: string | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -9064,6 +9450,25 @@ export type Database = {
     }
     Functions: {
       _ensure_manual_journal: { Args: never; Returns: string }
+      _upsert_quant: {
+        Args: {
+          _delta: number
+          _location_id: string
+          _lot_id: string
+          _product_id: string
+        }
+        Returns: undefined
+      }
+      adjust_quant: {
+        Args: {
+          p_location_id: string
+          p_lot_id?: string
+          p_product_id: string
+          p_qty_delta: number
+          p_reason?: string
+        }
+        Returns: string
+      }
       apply_onboarding_template: {
         Args: { p_employee_id: string; p_template_id: string }
         Returns: {
@@ -9084,6 +9489,7 @@ export type Database = {
         }
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
+      approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
       auto_allocate_vacation: {
         Args: { p_dry_run?: boolean; p_year: number }
         Returns: {
@@ -9151,6 +9557,10 @@ export type Database = {
         }[]
       }
       cancel_mo: { Args: { p_mo_id: string; p_reason?: string }; Returns: Json }
+      cancel_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: undefined
+      }
       check_mo_availability: { Args: { p_mo_id: string }; Returns: Json }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
@@ -9232,6 +9642,10 @@ export type Database = {
         Returns: Json
       }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
+      consume_reservation: {
+        Args: { p_reservation_id: string; p_to_location_code?: string }
+        Returns: string
+      }
       create_agent_document: {
         Args: {
           p_category?: string
@@ -9538,6 +9952,13 @@ export type Database = {
           vacation_days: number
         }[]
       }
+      procurement_run: {
+        Args: never
+        Returns: {
+          rules_evaluated: number
+          suggestions_created: number
+        }[]
+      }
       reconcile_invoice_payments:
         | {
             Args: {
@@ -9606,6 +10027,10 @@ export type Database = {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
       }
+      reject_procurement_suggestion: {
+        Args: { p_id: string; p_reason?: string }
+        Returns: undefined
+      }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
       reopen_accounting_period: {
         Args: { p_month: number; p_reason?: string; p_year: number }
@@ -9631,6 +10056,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reserve_stock: {
+        Args: {
+          p_location_id: string
+          p_lot_id?: string
+          p_notes?: string
+          p_product_id: string
+          p_quantity: number
+          p_reference_id?: string
+          p_reference_type?: string
+        }
+        Returns: string
       }
       reset_all_role_module_access: { Args: never; Returns: undefined }
       reset_role_module_access: {
@@ -9776,6 +10213,17 @@ export type Database = {
       }
       start_mo: { Args: { p_mo_id: string }; Returns: Json }
       submit_expense_report: { Args: { p_report_id: string }; Returns: Json }
+      transfer_stock: {
+        Args: {
+          p_from_location_id: string
+          p_lot_id?: string
+          p_notes?: string
+          p_product_id: string
+          p_quantity: number
+          p_to_location_id: string
+        }
+        Returns: string
+      }
       trigger_procurement_for_mo: { Args: { p_mo_id: string }; Returns: Json }
       try_acquire_agent_lock: {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
