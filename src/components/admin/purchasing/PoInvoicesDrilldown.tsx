@@ -71,6 +71,17 @@ export function PoInvoicesDrilldown({ purchaseOrderId, currency = 'SEK' }: Props
     }
   }, [invoices, filter]);
 
+  const summary = useMemo(() => {
+    const cur = filteredInvoices[0]?.currency || currency;
+    const total = filteredInvoices.reduce((s, i) => s + (i.total_cents || 0), 0);
+    const variance = filteredInvoices.reduce((s, i) => s + (i.variance_cents || 0), 0);
+    const registered = filteredInvoices.filter(i => i.status === 'registered').length;
+    const matched = filteredInvoices.filter(i => i.match_status === 'matched').length;
+    const autoApproved = filteredInvoices.filter(i => i.status === 'approved' && i.match_status === 'matched' && !i.approved_by).length;
+    const variances = filteredInvoices.filter(i => i.match_status === 'over_invoiced' || i.match_status === 'under_invoiced').length;
+    return { cur, total, variance, registered, matched, autoApproved, variances, count: filteredInvoices.length };
+  }, [filteredInvoices, currency]);
+
   const historyByInvoice = useMemo(() => {
     const map = new Map<string, InvoiceHistoryEvent[]>();
     for (const ev of history) {
