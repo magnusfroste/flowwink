@@ -8052,6 +8052,199 @@ export type Database = {
         }
         Relationships: []
       }
+      service_order_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          position: number | null
+          product_id: string | null
+          quantity: number
+          service_order_id: string
+          total: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          kind?: string
+          position?: number | null
+          product_id?: string | null
+          quantity?: number
+          service_order_id: string
+          total?: number | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          position?: number | null
+          product_id?: string | null
+          quantity?: number
+          service_order_id?: string
+          total?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_order_lines_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_orders: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          deal_id: string | null
+          description: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          notes: string | null
+          order_number: string | null
+          priority: string
+          project_id: string | null
+          requested_date: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          service_address: string | null
+          status: string
+          title: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          priority?: string
+          project_id?: string | null
+          requested_date?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          service_address?: string | null
+          status?: string
+          title: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          priority?: string
+          project_id?: string | null
+          requested_date?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          service_address?: string | null
+          status?: string
+          title?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_visits: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          calendar_event_id: string | null
+          created_at: string
+          id: string
+          scheduled_end: string
+          scheduled_start: string
+          service_order_id: string
+          signature_url: string | null
+          signed_at: string | null
+          status: string
+          technician_id: string | null
+          technician_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          calendar_event_id?: string | null
+          created_at?: string
+          id?: string
+          scheduled_end: string
+          scheduled_start: string
+          service_order_id: string
+          signature_url?: string | null
+          signed_at?: string | null
+          status?: string
+          technician_id?: string | null
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          calendar_event_id?: string | null
+          created_at?: string
+          id?: string
+          scheduled_end?: string
+          scheduled_start?: string
+          service_order_id?: string
+          signature_url?: string | null
+          signed_at?: string | null
+          status?: string
+          technician_id?: string | null
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_visits_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           created_at: string
@@ -10079,6 +10272,43 @@ export type Database = {
       complete_mo: {
         Args: { p_actual_qty?: number; p_mo_id: string }
         Returns: Json
+      }
+      complete_service_order: {
+        Args: { _completion_notes?: string; _order_id: string }
+        Returns: {
+          assigned_to: string | null
+          completed_at: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          deal_id: string | null
+          description: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json | null
+          notes: string | null
+          order_number: string | null
+          priority: string
+          project_id: string | null
+          requested_date: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          service_address: string | null
+          status: string
+          title: string
+          total_amount: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "service_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
       confirm_pick: {
