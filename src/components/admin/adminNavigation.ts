@@ -92,6 +92,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Activities", href: "/admin/activities", icon: CheckSquare },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Calendar", href: "/admin/calendar", icon: CalendarDays, moduleId: "calendar" },
+      { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
     ],
   },
   {
