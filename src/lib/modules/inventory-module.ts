@@ -241,8 +241,6 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
   webhookEvents: [
     { event: 'stock.adjusted', description: 'Stock was adjusted' },
     { event: 'stock.low', description: 'Stock fell below threshold' },
-    { event: 'stock.transferred', description: 'Stock moved between locations' },
-    { event: 'procurement.suggested', description: 'New procurement suggestion created' },
   ],
 
   async publish(input: InventoryInput): Promise<InventoryOutput> {
