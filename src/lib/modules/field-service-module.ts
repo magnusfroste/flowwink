@@ -268,7 +268,6 @@ async function execute(input: Input): Promise<Output> {
       logger.error('[fieldService] error', e);
       return { success: false, error: e instanceof Error ? e.message : String(e) };
     }
-  },
-});
+}
 
 export { fieldServiceModule };
