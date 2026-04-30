@@ -65,6 +65,7 @@ import LiveSupportPage from "./pages/admin/LiveSupportPage";
 
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
 import DocsAdminPage from "./pages/admin/DocsAdminPage";
+import Customer360Page from "./pages/admin/Customer360Page";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -295,6 +296,8 @@ const router = createBrowserRouter([
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/docs", element: <DocsAdminPage /> },
+      { path: "/admin/customer", element: <Customer360Page /> },
+      { path: "/admin/customer/:identifier", element: <Customer360Page /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },

@@ -83,6 +83,7 @@ export const navigationGroups: NavGroup[] = [
     allowedRoles: ['sales'],
     items: [
       { name: "Business Identity", href: "/admin/company-insights", icon: Building2, moduleId: "companyInsights" },
+      { name: "Customer 360", href: "/admin/customer", icon: UserSearch, moduleId: "customer360" },
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
