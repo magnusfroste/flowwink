@@ -3445,6 +3445,57 @@ export type Database = {
           },
         ]
       }
+      docs_pages: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          file_path: string
+          frontmatter: Json
+          id: string
+          repo_name: string
+          repo_owner: string
+          sha: string
+          slug: string
+          sort_order: number
+          synced_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          file_path: string
+          frontmatter?: Json
+          id?: string
+          repo_name: string
+          repo_owner: string
+          sha?: string
+          slug?: string
+          sort_order?: number
+          synced_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          file_path?: string
+          frontmatter?: Json
+          id?: string
+          repo_name?: string
+          repo_owner?: string
+          sha?: string
+          slug?: string
+          sort_order?: number
+          synced_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           category: string

@@ -64,6 +64,7 @@ import CopilotPage from "./pages/admin/CopilotPage";
 import LiveSupportPage from "./pages/admin/LiveSupportPage";
 
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
+import DocsAdminPage from "./pages/admin/DocsAdminPage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -74,6 +75,9 @@ import BlogPostPage from "./pages/BlogPostPage";
 import BlogCategoryPage from "./pages/BlogCategoryPage";
 import BlogTagPage from "./pages/BlogTagPage";
 import ChatPage from "./pages/ChatPage";
+const DocsLandingPage = lazy(() => import("./pages/DocsLandingPage"));
+const DocsCategoryPage = lazy(() => import("./pages/DocsCategoryPage"));
+const DocsArticlePage = lazy(() => import("./pages/DocsArticlePage"));
 import NewsletterManagePage from "./pages/NewsletterManagePage";
 import NewsletterConfirmedPage from "./pages/NewsletterConfirmedPage";
 import NotFound from "./pages/NotFound";
@@ -202,6 +206,9 @@ const router = createBrowserRouter([
       { path: "/blog/:slug", element: <BlogPostPage /> },
       { path: "/jobs", element: <JobsPage /> },
       { path: "/jobs/:slug", element: <JobDetailPage /> },
+      { path: "/docs", element: withPageFallback(<DocsLandingPage />) },
+      { path: "/docs/:category", element: withPageFallback(<DocsCategoryPage />) },
+      { path: "/docs/:category/:slug", element: withPageFallback(<DocsArticlePage />) },
       { path: "/admin", element: <AdminDashboard /> },
       { path: "/admin/analytics", element: <AnalyticsDashboardPage /> },
       { path: "/admin/pages", element: <PagesListPage /> },
@@ -287,6 +294,7 @@ const router = createBrowserRouter([
       { path: "/admin/accounting/locale-packs", element: <LocalePacksPage /> },
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
+      { path: "/admin/docs", element: <DocsAdminPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },

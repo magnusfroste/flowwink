@@ -14,6 +14,7 @@ export { kbModule } from './kb-module';
 export { mediaModule } from './media-module';
 export { newsletterModule } from './newsletter-module';
 export { handbookModule } from './handbook-module';
+export { docsModule } from './docs-module';
 export { templatesModule } from './templates-module';
 
 // ── CRM / Data ──

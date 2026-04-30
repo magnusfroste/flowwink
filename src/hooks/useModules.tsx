@@ -90,6 +90,7 @@ export interface ModulesSettings {
   email: ModuleConfig;
   recruitment: ModuleConfig;
   workspaceChat: ModuleConfig;
+  docs: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -417,6 +418,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  docs: {
+    enabled: true,
+    name: 'Docs',
+    description: 'Public documentation portal at /docs — auto-syncs the GitHub docs/ folder so evaluators can browse modules, processes and architecture, with embedded AI chat scoped to the docs.',
+    icon: 'BookOpen',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
   timesheets: {
     enabled: false,
     name: 'Timesheets',
@@ -630,6 +640,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/accounting': 'accounting',
   '/admin/expenses': 'expenses',
   '/admin/handbook': 'handbook',
+  '/admin/docs': 'docs',
   '/admin/timesheets': 'timesheets',
   '/admin/inventory': 'inventory',
   '/admin/vendors': 'purchasing',
