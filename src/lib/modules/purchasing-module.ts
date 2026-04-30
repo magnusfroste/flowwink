@@ -111,7 +111,6 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     category: 'commerce',
     handler: 'rpc:receive_purchase_order',
     scope: 'internal',
-    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -151,7 +150,6 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     category: 'commerce',
     handler: 'rpc:match_invoice_to_receipt',
     scope: 'internal',
-    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -175,7 +173,6 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     category: 'commerce',
     handler: 'rpc:auto_approve_vendor_invoice',
     scope: 'internal',
-    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
