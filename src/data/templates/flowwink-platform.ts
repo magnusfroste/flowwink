@@ -1797,6 +1797,11 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     showBrand: true,
     showQuickLinks: true,
     showContact: true,
+    quickLinks: [
+      { id: 'docs', label: 'Docs', url: '/docs', enabled: true },
+      { id: 'blog', label: 'Blog', url: '/blog', enabled: true },
+      { id: 'kb', label: 'Knowledge Base', url: '/kb', enabled: true },
+    ],
     legalLinks: [
       { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
       { id: 'terms', label: 'Terms', url: '/terms-of-service', enabled: true },
