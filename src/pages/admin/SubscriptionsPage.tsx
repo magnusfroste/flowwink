@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { RenewalsPanel } from '@/components/admin/subscriptions/RenewalsPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSubscriptions, useSubscriptionMetrics, useSubscriptionAction,
