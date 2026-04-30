@@ -10570,6 +10570,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_stock_movement_event: {
+        Args: { p_payload: Json }
+        Returns: undefined
+      }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
       approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
       auto_allocate_vacation: {

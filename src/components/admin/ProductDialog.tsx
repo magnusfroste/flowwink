@@ -38,6 +38,8 @@ interface FormData {
   stock_quantity: string;
   low_stock_threshold: string;
   allow_backorder: boolean;
+  available_in_pos: boolean;
+  barcode: string;
 }
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
@@ -56,11 +58,14 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       stock_quantity: '',
       low_stock_threshold: '5',
       allow_backorder: false,
+      available_in_pos: false,
+      barcode: '',
     },
   });
 
   const productType = watch('type');
   const trackInventory = watch('track_inventory');
+  const availableInPos = watch('available_in_pos');
   const priceCents = watch('price_cents');
 
   useEffect(() => {
@@ -76,6 +81,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         stock_quantity: product.stock_quantity?.toString() ?? '',
         low_stock_threshold: product.low_stock_threshold.toString(),
         allow_backorder: product.allow_backorder,
+        available_in_pos: product.available_in_pos ?? false,
+        barcode: product.barcode ?? '',
       });
     } else {
       reset({
@@ -89,6 +96,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         stock_quantity: '',
         low_stock_threshold: '5',
         allow_backorder: false,
+        available_in_pos: false,
+        barcode: '',
       });
     }
   }, [product, reset]);
@@ -108,6 +117,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       stock_quantity: data.track_inventory ? (data.stock_quantity ? parseInt(data.stock_quantity) : 0) : null,
       low_stock_threshold: parseInt(data.low_stock_threshold) || 5,
       allow_backorder: data.allow_backorder,
+      available_in_pos: data.available_in_pos,
+      barcode: data.barcode?.trim() || null,
     };
 
     if (product) {
@@ -261,6 +272,33 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                     onCheckedChange={(v) => setValue('allow_backorder', v)}
                   />
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Point of Sale */}
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Available in POS</Label>
+                <p className="text-xs text-muted-foreground">Show this product in the in-store register</p>
+              </div>
+              <Switch
+                checked={availableInPos}
+                onCheckedChange={(v) => setValue('available_in_pos', v)}
+              />
+            </div>
+            {availableInPos && (
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="barcode">Barcode (optional)</Label>
+                <Input
+                  id="barcode"
+                  {...register('barcode')}
+                  placeholder="Scan or type EAN/UPC"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for barcode scanner lookup at the register.
+                </p>
               </div>
             )}
           </div>

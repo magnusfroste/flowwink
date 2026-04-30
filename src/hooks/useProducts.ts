@@ -21,6 +21,9 @@ export interface Product {
   track_inventory: boolean;
   low_stock_threshold: number;
   allow_backorder: boolean;
+  available_in_pos?: boolean;
+  barcode?: string | null;
+  pos_category_id?: string | null;
   created_at: string;
   updated_at: string;
 }
