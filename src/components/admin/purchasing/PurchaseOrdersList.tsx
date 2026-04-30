@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePoMatchSummaries, MATCH_STATUS_LABEL, MATCH_STATUS_COLOR } from '@/hooks/useVendorInvoices';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -58,10 +60,14 @@ export function PurchaseOrdersList({ onEdit, onNew }: Props) {
     return true;
   });
 
+  const { data: matchSummaries = [] } = usePoMatchSummaries(filtered.map(o => o.id));
+  const summaryMap = new Map(matchSummaries.map(s => [s.purchase_order_id, s]));
+
   const formatCurrency = (cents: number, currency: string) =>
     new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(cents / 100);
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -90,14 +96,17 @@ export function PurchaseOrdersList({ onEdit, onNew }: Props) {
               <TableHead>Expected</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Invoicing</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No purchase orders found</TableCell></TableRow>
-            ) : filtered.map((o) => (
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No purchase orders found</TableCell></TableRow>
+            ) : filtered.map((o) => {
+              const sum = summaryMap.get(o.id);
+              return (
               <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onEdit(o.id)}>
                 <TableCell className="font-mono font-medium">{o.po_number}</TableCell>
                 <TableCell>{(o.vendors as any)?.name || '—'}</TableCell>
@@ -109,11 +118,38 @@ export function PurchaseOrdersList({ onEdit, onNew }: Props) {
                     {STATUS_LABELS[o.status] || o.status}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  {!sum ? (
+                    <span className="text-xs text-muted-foreground">No invoice</span>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge className={sum.worst_status ? MATCH_STATUS_COLOR[sum.worst_status] : ''}>
+                            {sum.worst_status ? MATCH_STATUS_LABEL[sum.worst_status] : '—'}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {sum.invoice_count} invoice(s) · {sum.matched_count} matched · {sum.approved_count} approved
+                        </TooltipContent>
+                      </Tooltip>
+                      {sum.approved_count > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>{sum.approved_count} auto/approved invoice(s)</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  )}
+                </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
