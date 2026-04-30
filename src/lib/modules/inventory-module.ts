@@ -305,6 +305,14 @@ const INVENTORY_AUTOMATIONS: AutomationSeed[] = [
     skill_name: 'procurement_run',
     skill_arguments: {},
   },
+  {
+    name: 'Auto-allocate picking on order paid',
+    description: 'When an order moves to paid, automatically create a pick-list and reserve stock so the warehouse can start picking immediately.',
+    trigger_type: 'event',
+    trigger_config: { event: 'order.paid' },
+    skill_name: 'allocate_picking',
+    skill_arguments: { p_order_id: '{{event.payload.order_id}}' },
+  },
 ];
 
 export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
