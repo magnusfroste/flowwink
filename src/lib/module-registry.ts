@@ -28,6 +28,7 @@ import {
   composioModule, ticketsModule, siteMigrationModule, developerModule,
   flowpilotModule, emailModule,
   quotesModule, approvalsModule, reconciliationModule, workspaceChatModule,
+  customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
   // Legacy modules (manual registration)
   globalBlocksModule, ordersModule,
 } from '@/lib/modules';
