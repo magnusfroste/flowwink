@@ -26,6 +26,8 @@ export interface SkillSeed {
   scope: 'internal' | 'external' | 'both';
   tool_definition: Record<string, unknown>;
   instructions?: string;
+  /** Approval gating. 'auto' = silent execute, 'notify' = execute + log (default), 'approve' = block until admin approves. */
+  trust_level?: 'auto' | 'notify' | 'approve';
 }
 
 export interface AutomationSeed {
@@ -136,7 +138,7 @@ export async function bootstrapModule(
               enabled: true,
               mcp_exposed: true,
               origin: 'bundled' as const,
-              trust_level: 'notify' as const,
+              trust_level: skill.trust_level ?? ('notify' as const),
             }]);
           if (error) throw error;
         }
