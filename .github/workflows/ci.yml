@@ -10,6 +10,7 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    if: github.actor != 'lovable-dev[bot]' && github.actor != 'lovable[bot]'
 
     steps:
       - name: Checkout code
@@ -56,6 +57,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    if: github.actor != 'lovable-dev[bot]' && github.actor != 'lovable[bot]'
 
     steps:
       - name: Checkout code
