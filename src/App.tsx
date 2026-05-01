@@ -70,6 +70,7 @@ import SurveysPage from "./pages/admin/SurveysPage";
 import PublicSurveyPage from "./pages/PublicSurveyPage";
 import FieldServicePage from "./pages/admin/FieldServicePage";
 import POSPage from "./pages/admin/POSPage";
+import PosAuditPage from "./pages/admin/PosAuditPage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
