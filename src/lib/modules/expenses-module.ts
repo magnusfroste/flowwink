@@ -101,6 +101,153 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     },
     instructions: 'Send the receipt image to AI vision. Extract: total amount (in cents), VAT amount (in cents), vendor name, date, line items if visible. Suggest a matching account_code from chart_of_accounts based on the vendor/category. Swedish receipts typically show "Moms" for VAT. Return structured JSON that can be passed directly to manage_expenses create action.',
   },
+
+  // ── Procure-to-Pay lifecycle: generate → submit → approve → book → pay ──
+  // Backed by SECURITY DEFINER RPCs. See mem://erp/expense-procure-to-pay-loop.
+  {
+    name: 'generate_monthly_expense_report',
+    description:
+      "Creates or refreshes a monthly expense report for the current user, aggregating all draft/submitted expenses in the period (YYYY-MM). Use when: user wants to compile this month's receipts into a submittable report. NOT for: approving or booking.",
+    category: 'commerce',
+    handler: 'rpc:generate_monthly_expense_report',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'generate_monthly_expense_report',
+        description: 'Generate or refresh a monthly expense report',
+        parameters: {
+          type: 'object',
+          properties: {
+            period: { type: 'string', pattern: '^\\d{4}-\\d{2}$', description: 'YYYY-MM, defaults to current month' },
+            user_id: { type: 'string', format: 'uuid', description: 'Admin only — defaults to caller' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'submit_expense_report',
+    description: 'Submits a draft expense report for approval. Locks all included expenses to submitted state.',
+    category: 'commerce',
+    handler: 'rpc:submit_expense_report',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'submit_expense_report',
+        description: 'Submit an expense report for approval',
+        parameters: {
+          type: 'object',
+          required: ['report_id'],
+          properties: { report_id: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
+  },
+  {
+    name: 'approve_expense_report',
+    description: 'Admin-only. Approves a submitted expense report and marks all included expenses as approved.',
+    category: 'commerce',
+    handler: 'rpc:approve_expense_report',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'approve_expense_report',
+        description: 'Approve a submitted expense report (admin only)',
+        parameters: {
+          type: 'object',
+          required: ['report_id'],
+          properties: { report_id: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
+  },
+  {
+    name: 'book_expense_report',
+    description:
+      'Admin-only. Posts a balanced journal entry for an approved expense report (Dt expense + VAT / Cr owed-to-employee) and marks the report as booked. Use when: an approved expense report needs to hit the general ledger. NOT for: paying out — use mark_expense_report_paid afterwards.',
+    category: 'commerce',
+    handler: 'rpc:book_expense_report',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_expense_report',
+        description: 'Post a journal entry for an approved expense report',
+        parameters: {
+          type: 'object',
+          required: ['report_id'],
+          properties: {
+            report_id: { type: 'string', format: 'uuid' },
+            expense_account: { type: 'string', description: 'Default 5410', default: '5410' },
+            vat_account: { type: 'string', default: '2641' },
+            liability_account: { type: 'string', description: 'Owed-to-employee account, default 2890', default: '2890' },
+            entry_date: { type: 'string', format: 'date' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'mark_expense_report_paid',
+    description:
+      'Admin-only. Records a payout to the employee for a booked expense report. Posts Dt 2890 / Cr 1930 and creates an expense_payments row. Use when: confirming the bank transfer / Swish / SEPA payout has been made.',
+    category: 'commerce',
+    handler: 'rpc:mark_expense_report_paid',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'mark_expense_report_paid',
+        description: 'Record an expense payout',
+        parameters: {
+          type: 'object',
+          required: ['report_id'],
+          properties: {
+            report_id: { type: 'string', format: 'uuid' },
+            method: { type: 'string', enum: ['manual', 'sepa', 'swish', 'bankgiro', 'stripe', 'other'], default: 'manual' },
+            reference: { type: 'string', description: 'Bank reference / payout ID' },
+            paid_at: { type: 'string', format: 'date' },
+            bank_account: { type: 'string', default: '1930' },
+            liability_account: { type: 'string', default: '2890' },
+            notes: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'list_expense_reports',
+    description:
+      'List expense reports filtered by status (draft / submitted / approved / booked / paid) and optionally by employee. Use when: admin reviews pending approvals, FlowPilot scans for reports to advance through the lifecycle, building the expense dashboard. NOT for: individual expense rows (use manage_expenses).',
+    category: 'commerce',
+    handler: 'db:expense_reports',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_expense_reports',
+        description: 'List expense reports by status/employee.',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', enum: ['draft', 'submitted', 'approved', 'booked', 'paid'] },
+            user_id: { type: 'string', description: 'Filter to one employee.' },
+            period: { type: 'string', description: 'YYYY-MM.' },
+            limit: { type: 'integer', description: 'Default 50.' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 const EXPENSE_AUTOMATIONS: AutomationSeed[] = [
