@@ -123,7 +123,16 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
   inputSchema: expensesInputSchema,
   outputSchema: expensesOutputSchema,
 
-  skills: ['manage_expenses', 'analyze_receipt'],
+  // Note: approve_/book_/mark_*_paid are seeded directly via migration (full
+  // record-to-report coverage). Listed here for module ownership in /admin/approvals
+  // → Gated Skills tab. See mem://accounting/full-record-to-report-skill-coverage.
+  skills: [
+    'manage_expenses',
+    'analyze_receipt',
+    'approve_expense_report',
+    'book_expense_report',
+    'mark_expense_report_paid',
+  ],
   skillSeeds: EXPENSE_SKILLS,
   automations: EXPENSE_AUTOMATIONS,
 

@@ -18,6 +18,9 @@ export const globalBlocksModule = defineModule<GlobalBlockModuleInput, GlobalBlo
   inputSchema: globalBlockModuleInputSchema,
   outputSchema: globalBlockModuleOutputSchema,
 
+  // Seeded via migration; declared here for ownership in /admin/approvals → Gated Skills.
+  skills: ['manage_global_blocks'],
+
   async publish(input: GlobalBlockModuleInput): Promise<GlobalBlockModuleOutput> {
     try {
       const validated = globalBlockModuleInputSchema.parse(input);

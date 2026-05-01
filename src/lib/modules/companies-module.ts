@@ -97,6 +97,8 @@ export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOut
 
   skills: [
     'manage_company',
+    // Seeded via migration; declared here for ownership in /admin/approvals → Gated Skills.
+    'update_company_profile',
   ],
   skillSeeds: COMPANIES_SKILLS,
 
