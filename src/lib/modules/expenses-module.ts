@@ -141,8 +141,8 @@ const EXPENSE_SKILLS: SkillSeed[] = [
         description: 'Submit an expense report for approval',
         parameters: {
           type: 'object',
-          required: ['report_id'],
-          properties: { report_id: { type: 'string', format: 'uuid' } },
+          required: ['p_report_id'],
+          properties: { p_report_id: { type: 'string', format: 'uuid' } },
         },
       },
     },
