@@ -851,10 +851,23 @@ app.get("/rest/groups", async (c) => {
     };
   });
 
+  // Composite groups: department-level shortcuts (marketing, sales, operations)
+  const composites = Object.entries(COMPOSITE_GROUPS).map(([id, expandsTo]) => {
+    const toolCount = expandsTo.reduce((sum, cat) => sum + (toolCountByCategory[cat] ?? 0), 0);
+    return {
+      id,
+      kind: "composite" as const,
+      expands_to: expandsTo,
+      tool_count: toolCount,
+      is_active: toolCount > 0,
+    };
+  });
+
   return c.json(
     {
       groups,
-      note: "available_modules = catalog (what could be enabled). active_modules = currently on. tool_count = skills actually exposed right now via ?groups=<id>. system has no module gating.",
+      composite_groups: composites,
+      note: "groups = raw skill categories. composite_groups = department-level shortcuts (e.g. ?groups=marketing expands to growth+content+search+analytics+automation). tool_count = skills actually exposed right now.",
     },
     200,
     corsHeaders,
