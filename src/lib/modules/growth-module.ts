@@ -216,6 +216,8 @@ Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, co
     category: 'automation',
     handler: 'db:ad_campaigns',
     scope: 'internal',
+    // Budget-affecting actions (pause/scale/rebalance) must be human-approved before execution.
+    trust_level: 'approve',
     tool_definition: {
       type: 'function',
       function: {
