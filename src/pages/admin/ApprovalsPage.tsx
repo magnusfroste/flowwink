@@ -274,7 +274,156 @@ export default function ApprovalsPage() {
             </Card>
           )}
         </TabsContent>
+
+        <TabsContent value="gated-skills" className="space-y-4">
+          <GatedSkillsPanel />
+        </TabsContent>
       </Tabs>
+    </div>
+    </AdminLayout>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gated Skills — transparent catalog of every agent skill that requires
+// approval or notify. Built from agent_skills + the unified module registry.
+// ─────────────────────────────────────────────────────────────────────────────
+function GatedSkillsPanel() {
+  const { data: skills, isLoading } = useGatedSkills();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading skill catalog…
+      </div>
+    );
+  }
+
+  if (!skills || skills.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          <Bot className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+          <p>No gated skills — every enabled agent action runs autonomously.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Group by module → category for readability
+  const groups = new Map<string, GatedSkillRow[]>();
+  for (const s of skills) {
+    const key = s.moduleName ?? '— Core / unowned —';
+    const arr = groups.get(key) ?? [];
+    arr.push(s);
+    groups.set(key, arr);
+  }
+
+  const approveCount = skills.filter((s) => s.trust_level === 'approve').length;
+  const notifyCount = skills.filter((s) => s.trust_level === 'notify').length;
+  const orphanCount = skills.filter((s) => !s.moduleId).length;
+
+  return (
+    <>
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div>
+              <div className="text-2xl font-semibold">{approveCount}</div>
+              <div className="text-muted-foreground">require approval</div>
+            </div>
+            <div>
+              <div className="text-2xl font-semibold">{notifyCount}</div>
+              <div className="text-muted-foreground">notify on use</div>
+            </div>
+            <div>
+              <div className="text-2xl font-semibold">{skills.length}</div>
+              <div className="text-muted-foreground">gated total</div>
+            </div>
+            {orphanCount > 0 && (
+              <div className="ml-auto flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-xs">{orphanCount} skill(s) not owned by any module</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {Array.from(groups.entries()).map(([moduleName, items]) => (
+        <Card key={moduleName}>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              {moduleName}
+              <Badge variant="outline" className="font-normal">{items.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Skill</TableHead>
+                  <TableHead>Trust</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>MCP</TableHead>
+                  <TableHead className="text-right">Pending</TableHead>
+                  <TableHead className="text-right">30d</TableHead>
+                  <TableHead>Last requested</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((s) => (
+                  <TableRow key={s.name}>
+                    <TableCell>
+                      <div className="font-mono text-sm">{s.name}</div>
+                      {s.description && (
+                        <div className="text-xs text-muted-foreground line-clamp-2 max-w-xl">
+                          {s.description}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={s.trust_level === 'approve' ? 'default' : 'secondary'}>
+                        {s.trust_level}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {s.category && <Badge variant="outline" className="text-xs">{s.category}</Badge>}
+                    </TableCell>
+                    <TableCell>
+                      {s.mcp_exposed ? (
+                        <Badge variant="outline" className="text-xs">exposed</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {s.pendingCount > 0 ? (
+                        <Badge>{s.pendingCount}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">0</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">{s.recentCount}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.lastRequestedAt
+                        ? formatDistanceToNow(new Date(s.lastRequestedAt), { addSuffix: true })
+                        : '—'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  );
+}
+
+type GatedSkillRow = ReturnType<typeof useGatedSkills>['data'] extends (infer U)[] | undefined
+  ? U
+  : never;
     </div>
     </AdminLayout>
   );
