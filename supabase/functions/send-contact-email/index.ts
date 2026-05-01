@@ -1,4 +1,7 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// send-contact-email — thin wrapper that delegates to the central
+// `email-send` router so provider choice (SMTP/Resend) lives in ONE place.
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,67 +14,34 @@ serve(async (req) => {
   }
 
   try {
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
-
     const { to, toName, subject, body } = await req.json();
 
     if (!to || !subject || !body) {
       throw new Error('Missing required fields: to, subject, body');
     }
 
-    // Get site settings for sender info
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    let fromEmail = 'noreply@flowwink.com';
-    let fromName = 'FlowWink';
-
-    try {
-      const settingsRes = await fetch(`${supabaseUrl}/rest/v1/site_settings?key=eq.general`, {
-        headers: {
-          'Authorization': `Bearer ${serviceKey}`,
-          'apikey': serviceKey,
-        },
-      });
-      const settings = await settingsRes.json();
-      if (settings?.[0]?.value) {
-        const val = settings[0].value;
-        if (val.site_name) fromName = val.site_name;
-      }
-    } catch (_) {
-      // Use defaults
-    }
-
-    // Convert plain text body to simple HTML
     const htmlBody = body
       .split('\n')
       .map((line: string) => line.trim() === '' ? '<br>' : `<p>${line}</p>`)
       .join('');
 
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: `${fromName} <${fromEmail}>`,
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data, error } = await supabase.functions.invoke('email-send', {
+      body: {
         to: toName ? `${toName} <${to}>` : to,
         subject,
         html: htmlBody,
-      }),
+        tags: { source: 'send-contact-email' },
+      },
     });
 
-    const resendData = await resendRes.json();
+    if (error) throw new Error(`email-send failed: ${error.message ?? error}`);
 
-    if (!resendRes.ok) {
-      throw new Error(`Resend API error: ${JSON.stringify(resendData)}`);
-    }
-
-    return new Response(JSON.stringify({ success: true, id: resendData.id }), {
+    return new Response(JSON.stringify({ success: true, result: data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -174,13 +171,17 @@ serve(async (req: Request) => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
-      to: [order.customer_email],
-      subject: `Order Confirmation - ${order.id.slice(0, 8)}`,
-      html: emailHtml,
+    const { data: emailResponse, error: emailError } = await supabase.functions.invoke('email-send', {
+      body: {
+        to: order.customer_email,
+        subject: `Order Confirmation - ${order.id.slice(0, 8)}`,
+        html: emailHtml,
+        fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
+        tags: { source: 'send-order-confirmation', order_id: order.id },
+      },
     });
 
+    if (emailError) throw new Error(`email-send failed: ${emailError.message ?? emailError}`);
     console.log("[send-order-confirmation] Email sent:", emailResponse);
 
     // Update order with confirmation timestamp

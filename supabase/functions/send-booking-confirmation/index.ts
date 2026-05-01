@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -332,16 +329,20 @@ const handler = async (req: Request): Promise<Response> => {
       emailId = composioResponse.data?.id || 'composio-sent';
       console.log("[send-booking-confirmation] Gmail sent successfully");
     } else {
-      // Send via Resend (default)
-      const emailResponse = await resend.emails.send({
-        from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
-        to: [booking.customer_email],
-        subject: `Booking Confirmation - ${formattedDate}`,
-        html: emailHtml,
+      // Send via central email-send router (provider-agnostic SMTP/Resend)
+      const { data: emailResponse, error: emailError } = await supabase.functions.invoke('email-send', {
+        body: {
+          to: booking.customer_email,
+          subject: `Booking Confirmation - ${formattedDate}`,
+          html: emailHtml,
+          fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
+          tags: { source: 'send-booking-confirmation', booking_id: bookingId },
+        },
       });
 
-      emailId = emailResponse.data?.id;
-      console.log("[send-booking-confirmation] Resend sent successfully:", emailResponse);
+      if (emailError) throw new Error(`email-send failed: ${emailError.message ?? emailError}`);
+      emailId = (emailResponse as any)?.result?.id;
+      console.log("[send-booking-confirmation] email-send result:", emailResponse);
     }
 
     // Update booking with confirmation timestamp
