@@ -46,19 +46,19 @@ jobs:
           fi
 
       - name: Setup Node.js
+        if: steps.secret_check.outputs.has_key == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.secret_check.outputs.has_key == 'true'
         run: npm ci
 
       - name: Run MCP regression (handshake + tools/list)
         id: regression
-        # MCP_URL is hardcoded as default in scripts/mcp-regression.ts (publik edge function URL).
-        # Endast MCP_API_KEY behövs som secret — anon-nyckeln finns inte tillgänglig i
-        # Lovable Cloud-projekt på samma sätt som i fristående Supabase-projekt.
+        if: steps.secret_check.outputs.has_key == 'true'
         run: npm run test:mcp-regression
         env:
           MCP_API_KEY: ${{ secrets.MCP_API_KEY }}
