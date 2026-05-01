@@ -1,107 +1,71 @@
-# POS — Point of Sale
+---
+title: "Point of Sale Module"
+module_id: "pos"
+version: "2.0.0"
+category: "data"
+autonomy: "view-required"
+generated: true
+generated_at: "2026-05-01"
+---
 
-Odoo-style register: an opt-in **module that reuses platform tables** (products, stock, customers, accounting) rather than running its own silo. POS is just one more consumer of `products` + `product_stock`, alongside e-commerce, B2B and invoicing.
+# Point of Sale
 
-## Architecture principle
+> In-store register — sessions, receipts, split payments, stock-aware product catalog
 
-> POS is a UI on top of existing ERP tables, plus three POS-specific things: **session-batched bookkeeping**, **split tender**, and (future) **offline cache**.
+Ships with **6 agent skills**.
 
-```
-products ──┬── e-commerce (orders)
-           ├── inventory (product_stock)
-           ├── invoicing (invoices)
-           └── POS (pos_sales)   ← just one more consumer
-```
+## Quick Facts
 
-## What it does
+| Property | Value |
+|----------|-------|
+| **Module ID** | `pos` |
+| **Version** | 2.0.0 |
+| **Category** | data |
+| **Autonomy** | view-required |
+| **Core** | No |
+| **Capabilities** | `data:read`, `data:write` |
+| **MCP-exposed skills** | 6 |
+| **Owns tables** | — |
 
-- Open / close cashier shifts (sessions) with opening cash and Z-report on close
-- Ring up sales with line items, multi-payment (split tender), tax breakdown
-- Validate products against the central catalog (`products.available_in_pos`)
-- Emit stock movements via the platform event bus (no direct stock writes)
-- Aggregate session totals per payment method for batch journal posting
+## Skills
 
-## Schema
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
 
-| Table | Purpose |
-|-------|---------|
-| `pos_registers` | Physical/virtual cash registers (location, currency, default tax rate) |
-| `pos_sessions` | Open/close shifts — opening/closing cash, variance, Z-report in `metadata.z_report` |
-| `pos_sales` | Sale headers — totals, summary `payment_method` ('cash'/'card'/.../'split'), customer, status |
-| `pos_sale_lines` | Line items (product, qty, unit price, discount, tax) |
-| `pos_payments` | **N payments per sale** — split tender (200 cash + 300 card on one receipt) |
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `open_pos_session` | internal | Open a cashier shift on a register with opening cash. Use when: cashier starts a shift in the morning. NOT for: closing the shift (close_pos_session). |
+| `close_pos_session` | internal | Close cashier shift, count cash and compute variance. Use when: end of day/shift. NOT for: refunding sales. |
+| `record_pos_sale` | internal | Record a completed in-store sale with line items and payment. Use when: cashier rings up a sale. NOT for: e-commerce orders (use place_order). |
+| `list_pos_sales` | internal | List recent POS sales with filters. Use when: reviewing daily takings, finding a receipt, audit. NOT for: aggregated revenue (today_summary). |
+| `record_pos_sale_v2` | internal | Odoo-style POS sale: split payments, product validation, stock event. Use when: cashier finalizes a basket. NOT for: e-commerce orders (use place_order). |
+| `close_pos_session_v2` | internal | Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting. |
 
-### Products integration (POS v2)
+## Module API Contract
 
-`products` table has three POS-specific columns:
+**Actions:** `list_sales`, `list_sessions`, `today_summary`
 
-| Column | Purpose |
-|--------|---------|
-| `available_in_pos` | Flag — product appears in the cashier's product grid |
-| `pos_category_id` | Touch-grid category (FK to `product_categories`) |
-| `barcode` | Unique scanner code |
+**Input fields:** `action`, `register_id`, `limit`
 
-No separate POS catalog. Same SKU drives web, B2B, and POS.
+**Output fields:** `success`, `data`, `error`
 
-## RPCs (SECURITY DEFINER)
+## File Map
 
-### v2 (current — Odoo-style)
+| Purpose | Path |
+|---------|------|
+| Module definition | `src/lib/modules/pos-module.ts` |
 
-- `record_pos_sale_v2(register_id, session_id, lines[], payments[], customer_id?, customer_email?, discount_cents?, metadata?)`
-  - Validates each line's `product_id` is `available_in_pos`
-  - Inserts N rows in `pos_payments` (split tender)
-  - Emits `stock.movement` event per product line (stock module decrements; POS doesn't write stock directly)
-  - **Does NOT post journal entries** — that happens at session close
-- `close_pos_session_v2(session_id, closing_cash_cents, notes?)`
-  - Aggregates `pos_payments` by method across the entire session
-  - Returns Z-report (totals, variance, payments-by-method)
-  - Stores Z-report in `pos_sessions.metadata.z_report`
-  - Emits `pos.session.closed` event → accounting module / FlowPilot picks up and posts ONE journal per session (not per sale)
+## Contributing
 
-### v1 (legacy — kept for backwards compat until UI migrates)
+To enhance this module, see [Contributing Guide](../contributing/contributing.md).
 
-- `open_pos_session(register_id, opening_cash_cents, cashier_name)`
-- `close_pos_session(session_id, closing_cash_cents)`
-- `record_pos_sale(register_id, session_id, lines[], payment_method, customer_email, discount_cents)`
+Key rules:
+- Follow `ModuleDefinition<I, O>` contract pattern
+- All schema changes require idempotent migrations
+- Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
+- Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))
+- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
 
-## Skills (MCP-exposed)
+---
 
-- `open_pos_session`
-- `close_pos_session` / `close_pos_session_v2`
-- `record_pos_sale` / `record_pos_sale_v2`
-- `list_pos_sales`
-
-## Routes
-
-- `/admin/pos` — register, session and history tabs
-
-## Events emitted
-
-- `stock.movement` — per line item with `product_id`, fan-out to inventory module
-- `pos.session.closed` — full Z-report, fan-out to accounting (batch journal) + FlowPilot (Morning Briefing, low-stock alerts)
-
-## Comparison to Sitoo / Odoo POS
-
-| Capability | Status |
-|---|---|
-| Shared product catalog | ✅ via `available_in_pos` |
-| Split tender | ✅ `pos_payments` |
-| Session-batched bookkeeping | ✅ via `pos.session.closed` event |
-| Stock decrement | ✅ via event bus (decoupled) |
-| Pricelists per register/customer | ⏳ pending pricelist module |
-| Returns linked to original receipt | ⏳ `refund_of` column exists, no flow yet |
-| Barcode scanner | ⏳ `products.barcode` exists, WebUSB integration pending |
-| Offline-first PWA | ⏳ requires IndexedDB + sync queue |
-| Hardware (printer / kortterminal) | ⏳ WebSerial/WebUSB or IoT-box style proxy |
-| SE Skatteverket kontrollenhet | ⏳ locale-pack adapter (separate module) |
-
-## Future development
-
-1. Migrate UI to use `record_pos_sale_v2` + `close_pos_session_v2`
-2. Product picker in cart (search `available_in_pos = true`, barcode input)
-3. Touch-grid by `pos_category_id` for fast ringup
-4. `pos_returns` table linked via `original_sale_id`
-5. Pricelist resolution per register/customer
-6. Offline-first PWA (IndexedDB + sync queue)
-7. Hardware abstraction (WebUSB barcode + ESC/POS printer)
-8. Locale-pack `pos_fiscal_adapter` for SE certified control unit
+*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually — re-run the script after changing the module definition.*

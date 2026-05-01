@@ -1,43 +1,70 @@
-# Surveys & NPS Module
+---
+title: "Surveys & NPS Module"
+module_id: "surveys"
+version: "1.0.0"
+category: "data"
+autonomy: "agent-capable"
+generated: true
+generated_at: "2026-05-01"
+---
 
-One-click email surveys (NPS, CSAT, custom) triggered by lifecycle events. Auto-categorizes responses and emits platform events that FlowPilot can act on (e.g. follow up with detractors, ask promoters for reviews).
+# Surveys & NPS
 
-## Tables
+> Capture customer satisfaction with one-click NPS, CSAT, and custom surveys. Triggered manually or automatically after orders, tickets, contracts and bookings. Detractor responses auto-route to FlowPilot for recovery; promoter responses boost lead score and surface testimonial opportunities.
 
-- `survey_templates` — JSON-based question structures (kind: `nps` | `csat` | `custom`).
-- `survey_campaigns` — Links a template to a trigger event (`order.delivered`, `ticket.closed`, `subscription.renewed`, `manual`, …).
-- `survey_sends` — One row per recipient invitation, with a unique `token` for the public response URL and an `expires_at`.
-- `survey_responses` — Captured score + optional comment. Trigger `categorize_nps_response` sets `category` (detractor 0–6, passive 7–8, promoter 9–10) and emits `survey.responded` via `emit_platform_event`.
+Ships with **3 agent skills**, an **admin UI**.
 
-All tables RLS-protected (admin/marketing read+write; public has token-scoped insert via SECURITY DEFINER RPC).
+## Quick Facts
 
-## Edge functions
+| Property | Value |
+|----------|-------|
+| **Module ID** | `surveys` |
+| **Version** | 1.0.0 |
+| **Category** | data |
+| **Autonomy** | agent-capable |
+| **Core** | No |
+| **Capabilities** | `data:read`, `data:write` |
+| **MCP-exposed skills** | 3 |
+| **Owns tables** | — |
 
-- `survey-send` — Renders branded HTML email with one-click rating buttons. Each button links to `/s/:token?score=N`. Goes through the standard `enqueue_email` queue.
+## Skills
 
-## Public route
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
 
-- `/s/:token` (`PublicSurveyPage.tsx`) — Anonymous-friendly response form. Reads the score from query string, lets the user add a comment, posts via `submit_survey_response` RPC.
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `create_survey_campaign` | internal | Create a new survey campaign attached to a template. Use when: launching a new NPS/CSAT program, automating feedback after an event (order delivered, ticket closed, contract renewed). NOT for: edit… |
+| `send_survey` | internal | Send an active survey campaign to one or more recipients via email. Each recipient gets a unique one-click token link. Use when: a triggering event fires (order delivered, ticket closed), running a… |
+| `list_survey_responses` | internal | List responses for a campaign with optional filters (category, score range, date range). Use when: reviewing detractor feedback, building a monthly NPS report, finding promoters to ask for testimon… |
 
-## Admin route
+## Module API Contract
 
-- `/admin/surveys` (`SurveysPage.tsx`) — KPI dashboard (NPS score, response rate, promoter/passive/detractor split), campaign list, response stream.
+**Actions:** `create_campaign`, `send_survey`, `list_responses`, `get_nps_score`
 
-## Skills (MCP-exposed)
+**Input fields:** `action`
 
-| Skill | Purpose |
-|-------|---------|
-| `create_survey_campaign` | Link a template to a trigger event |
-| `send_survey` | Manually dispatch to a contact / list |
-| `list_survey_responses` | Read responses with filters (campaign, category, date range) |
+**Output fields:** `success`, `error`
 
-## FlowPilot loop
+## File Map
 
-1. Platform emits a lifecycle event (`order.delivered`, `ticket.closed`, …).
-2. `survey_campaigns` row with matching trigger fires → `survey-send` invoked → email queued.
-3. Recipient clicks rating → response stored → `survey.responded` event emitted.
-4. FlowPilot automation reacts: detractors → create ticket + assign owner; promoters → ask for review / referral.
+| Purpose | Path |
+|---------|------|
+| Module definition | `src/lib/modules/surveys-module.ts` |
+| Hook | `src/hooks/useSurveys.ts` |
+| Admin page | `src/pages/admin/SurveysPage.tsx` |
 
-## Module flag
+## Contributing
 
-`surveys` in `ModulesSettings`. Disabled by default — enable in `/admin/modules`. `enhancedByFlowPilot: true` (works standalone, fully autonomous when FlowPilot is on).
+To enhance this module, see [Contributing Guide](../contributing/contributing.md).
+
+Key rules:
+- Follow `ModuleDefinition<I, O>` contract pattern
+- All schema changes require idempotent migrations
+- Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
+- Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))
+- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+
+---
+
+*This file is auto-generated by `scripts/generate-module-docs.ts`. Do not edit manually — re-run the script after changing the module definition.*

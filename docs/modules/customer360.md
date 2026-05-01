@@ -1,16 +1,16 @@
 ---
-title: "Business Identity Module"
-module_id: "companyInsights"
+title: "Customer 360 Module"
+module_id: "customer360"
 version: "1.0.0"
-category: "insights"
-autonomy: "agent-capable"
+category: "data"
+autonomy: "view-required"
 generated: true
 generated_at: "2026-05-01"
 ---
 
-# Business Identity
+# Customer 360
 
-> Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.
+> One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with a unified timeline and lifetime-value KPIs.
 
 Ships with an **admin UI**.
 
@@ -18,34 +18,30 @@ Ships with an **admin UI**.
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `companyInsights` |
+| **Module ID** | `customer360` |
 | **Version** | 1.0.0 |
-| **Category** | insights |
-| **Autonomy** | agent-capable |
+| **Category** | data |
+| **Autonomy** | view-required |
 | **Core** | No |
-| **Capabilities** | `data:read`, `data:write` |
+| **Capabilities** | `data:read` |
 | **MCP-exposed skills** | — |
 | **Owns tables** | — |
 
-## Integrations
-
-**Optional:** `firecrawl`
-
 ## Module API Contract
 
-**Actions:** `enrich`, `get_identity`
+**Actions:** `get_360`
 
-**Input fields:** `action`, `company_id`
+**Input fields:** `action`, `lead_id`, `email`
 
-**Output fields:** `success`, `message`, `error`
+**Output fields:** `success`, `error`
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/company-insights-module.ts` |
-| Hook | `src/hooks/useCompanyInsights.ts` |
-| Admin page | `src/pages/admin/CompanyInsightsPage.tsx` |
+| Module definition | `src/lib/modules/customer360-module.ts` |
+| Hook | `src/hooks/useCustomer360.ts` |
+| Admin page | `src/pages/admin/Customer360Page.tsx` |
 
 ## Contributing
 

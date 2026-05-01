@@ -1,30 +1,30 @@
 ---
 title: "Subscriptions Module"
 module_id: "subscriptions"
-version: "1.0.0"
+version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-04-30"
+generated_at: "2026-05-01"
 ---
 
 # Subscriptions
 
-> Recurring revenue lifecycle — active customers, MRR, churn, dunning, plan changes
+> Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **6 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
 | **Module ID** | `subscriptions` |
-| **Version** | 1.0.0 |
+| **Version** | 2.0.0 |
 | **Category** | data |
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -40,6 +40,10 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `list_subscriptions` | internal | List recurring subscriptions with filters. Use when: admin asks "who is subscribed?", reviewing billing, auditing customer base. NOT for: one-off orders (lookup_order); MRR/ARR aggregates (subscrip… |
 | `subscription_mrr` | internal | Compute current MRR, ARR, active subscriber count, and 30-day churn. Use when: reviewing recurring revenue, weekly briefings, business health checks. NOT for: listing individual subs (list_subscrip… |
+| `upcoming_renewals` | internal | List subscriptions renewing within N days. Use when: planning outreach, weekly briefing on renewals, identifying win-back candidates with cancel_at_period_end. NOT for: aggregate MRR (subscription_… |
+| `flag_at_risk_subscriptions` | internal | Sweep subscriptions and flag at-risk ones (past_due, scheduled cancel, low health). Use when: daily health check, before sending win-back. NOT for: reading current at-risk list (use list_subscripti… |
+| `record_churn_reason` | internal | Record why a customer churned (reason category + free-text feedback + NPS). Use when: customer cancels via portal, exit survey returned. NOT for: technical cancellation (use Stripe customer-portal … |
+| `list_winback_campaigns` | internal | List configured win-back campaigns (active or all). Use when: choosing which offer to send, auditing win-back program. NOT for: sending the campaign (send_winback) or campaign creation (create via … |
 
 ## Module API Contract
 
