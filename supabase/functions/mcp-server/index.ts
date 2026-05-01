@@ -210,13 +210,32 @@ const MODULE_TO_CATEGORY: Record<string, string> = (() => {
   return out;
 })();
 
+/**
+ * Composite groups: expand a single token into multiple categories so a
+ * specialized external claw can grab a whole department's toolkit in one go.
+ *
+ * Example: a marketing claw asks for `?groups=marketing` and gets paid-growth
+ * skills + web research utilities + content authoring + analytics — without
+ * having to know FlowWink's internal category taxonomy.
+ */
+const COMPOSITE_GROUPS: Record<string, string[]> = {
+  // Marketing department: paid ads + content + research + analytics
+  marketing: ["growth", "content", "search", "analytics", "automation"],
+  // Sales department: CRM + research + analytics
+  sales: ["crm", "search", "analytics", "automation"],
+  // Operations: commerce ops + analytics
+  operations: ["commerce", "analytics", "automation"],
+};
+
 /** Resolve a list of group/module tokens to their underlying skill categories. */
 function resolveGroupTokens(tokens: string[]): Set<string> {
   const cats = new Set<string>();
   for (const raw of tokens) {
     const t = raw.toLowerCase().trim();
     if (!t) continue;
-    if (SKILL_CATEGORY_MODULES[t]) {
+    if (COMPOSITE_GROUPS[t]) {
+      for (const child of COMPOSITE_GROUPS[t]) cats.add(child);
+    } else if (SKILL_CATEGORY_MODULES[t]) {
       cats.add(t); // already a category
     } else if (MODULE_TO_CATEGORY[t]) {
       cats.add(MODULE_TO_CATEGORY[t]); // module name → its category
