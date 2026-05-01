@@ -341,9 +341,11 @@ function GatedSkillsPanel() {
               <div className="text-muted-foreground">gated total</div>
             </div>
             {orphanCount > 0 && (
-              <div className="ml-auto flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-xs">{orphanCount} skill(s) not owned by any module</span>
+              <div className="ml-auto flex items-center gap-2 text-amber-600 dark:text-amber-400 max-w-md">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span className="text-xs">
+                  {orphanCount} gated skill(s) exist in <code className="font-mono">agent_skills</code> but no module declares them via <code className="font-mono">defineModule()</code>. They still work, but won't be enabled/disabled with any module — see "Core / unowned" below.
+                </span>
               </div>
             )}
           </div>
