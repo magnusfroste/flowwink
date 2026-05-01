@@ -111,12 +111,14 @@ export const reconciliationModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
+  // All listed skills are seeded elsewhere (sync_stripe_payouts, import_bank_file,
+  // auto_match_transactions seeded via legacy bootstrap; import_bank_image via skillSeeds).
+  // list_unmatched is exposed only as a publish() action, not as a standalone skill.
   skills: [
     'sync_stripe_payouts',
     'import_bank_file',
     'import_bank_image',
     'auto_match_transactions',
-    'list_unmatched_transactions',
   ],
 
   skillSeeds: RECONCILIATION_SKILLS,
