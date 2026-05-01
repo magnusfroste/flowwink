@@ -10576,6 +10576,7 @@ export type Database = {
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
       approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
+      audit_logs_retention_status: { Args: never; Returns: Json }
       auto_allocate_vacation: {
         Args: { p_dry_run?: boolean; p_year: number }
         Returns: {
@@ -11117,6 +11118,7 @@ export type Database = {
           suggestions_created: number
         }[]
       }
+      purge_audit_logs_past_retention: { Args: never; Returns: Json }
       receive_purchase_order: {
         Args: {
           p_lines: Json

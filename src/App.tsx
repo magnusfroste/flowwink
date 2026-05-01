@@ -70,6 +70,7 @@ import SurveysPage from "./pages/admin/SurveysPage";
 import PublicSurveyPage from "./pages/PublicSurveyPage";
 import FieldServicePage from "./pages/admin/FieldServicePage";
 import POSPage from "./pages/admin/POSPage";
+import PosAuditPage from "./pages/admin/PosAuditPage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -306,6 +307,7 @@ const router = createBrowserRouter([
       { path: "/admin/surveys", element: <SurveysPage /> },
       { path: "/admin/field-service", element: <FieldServicePage /> },
       { path: "/admin/pos", element: <POSPage /> },
+      { path: "/admin/pos/audit", element: <PosAuditPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },
