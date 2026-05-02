@@ -205,6 +205,66 @@ const PURCHASING_SKILLS: SkillSeed[] = [
     },
     instructions: 'Compare current stock_quantity against low_stock_threshold for each product. Group low-stock items by preferred vendor if available. Return structured suggestions with vendor_id, product_id, suggested_quantity (reorder to max(threshold * 3, 10)).',
   },
+  {
+    name: 'update_purchase_order',
+    description: 'General-purpose purchase order management. Use when: creating new POs, updating status (draft→sent→confirmed→received), changing expected delivery dates, adding notes, or processing vendor responses. Actions: create, update, get, list. NOT for: receiving goods (use receive_purchase_order). NOT for: stock checks (use purchase_reorder_check).',
+    category: 'commerce',
+    handler: 'db:purchase_orders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'update_purchase_order',
+        description: 'General-purpose purchase order management — create, update status/dates/notes, get details, or list POs.',
+        parameters: {
+          type: 'object',
+          required: ['action'],
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'get', 'list'] },
+            purchase_order_id: { type: 'string' },
+            vendor_id: { type: 'string' },
+            status: { type: 'string', enum: ['draft', 'sent', 'confirmed', 'partially_received', 'received', 'cancelled'] },
+            expected_delivery: { type: 'string' },
+            notes: { type: 'string' },
+            lines: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  product_id: { type: 'string' },
+                  description: { type: 'string' },
+                  quantity: { type: 'number' },
+                  unit_price_cents: { type: 'number' },
+                  tax_rate: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'auto_generate_purchase_orders',
+    description: 'Group reorder candidates by preferred vendor and auto-create one draft PO per vendor. Use when: nightly reorder run, "skapa inköpsordrar". Closes procure-to-pay loop. NOT for: single manual POs (use create_purchase_order).',
+    category: 'commerce',
+    handler: 'rpc:auto_generate_purchase_orders',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'auto_generate_purchase_orders',
+        description: 'Bulk-create draft POs from inventory reorder needs',
+        parameters: {
+          type: 'object',
+          properties: {
+            dry_run: { type: 'boolean', description: 'Preview without creating, default false' },
+          },
+        },
+      },
+    },
+    instructions: 'Creates one PO per vendor in draft status. Reports skipped products without preferred vendor. Quantities respect min_order_quantity. Tax 25%. Admin reviews before sending.',
+  },
 ];
 
 const PURCHASING_AUTOMATIONS: AutomationSeed[] = [
@@ -240,6 +300,7 @@ export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>(
     'receive_purchase_order', 'match_invoice_to_receipt', 'auto_approve_vendor_invoice',
     'purchase_reorder_check',
     'register_vendor_invoice', 'match_po_to_invoice', 'flag_invoice_variance',
+    'update_purchase_order', 'auto_generate_purchase_orders',
   ],
   skillSeeds: PURCHASING_SKILLS,
   automations: PURCHASING_AUTOMATIONS,

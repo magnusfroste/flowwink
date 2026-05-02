@@ -86,6 +86,30 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     instructions:
       'Two-step flow. (1) Preview: send contentBase64+mimeType, commit=false → get parsed transactions back. (2) Show them to the human, let them edit/remove rows, then re-call with commit=true and the approved transactions array. Never auto-commit OCR output unattended — vision models hallucinate amounts.',
   },
+  {
+    name: 'list_unmatched_transactions',
+    description: 'List bank_transactions still in status=unmatched, optionally filtered by bank account or date range. Use when: admin asks "what is left to reconcile?", before invoking auto_match_transactions, building the reconciliation review queue. NOT for: matched/booked transactions (use accounting_reports).',
+    category: 'commerce',
+    handler: 'db:bank_transactions',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_unmatched_transactions',
+        description: 'List unmatched bank transactions.',
+        parameters: {
+          type: 'object',
+          properties: {
+            bank_account_id: { type: 'string' },
+            from_date: { type: 'string' },
+            to_date: { type: 'string' },
+            limit: { type: 'integer', description: 'Default 100, max 500.' },
+          },
+        },
+      },
+    },
+    instructions: 'Returned rows are candidates for manage_journal_entry (book) or human matching. Order by transaction_date DESC by default.',
+  },
 ];
 
 /**
@@ -119,6 +143,7 @@ export const reconciliationModule = defineModule<Input, Output>({
     'import_bank_file',
     'import_bank_image',
     'auto_match_transactions',
+    'list_unmatched_transactions',
   ],
 
   skillSeeds: RECONCILIATION_SKILLS,
