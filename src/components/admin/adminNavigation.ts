@@ -40,7 +40,6 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "FlowPilot", href: "/admin/flowpilot", icon: Zap, moduleId: "flowpilot" },
-      { name: "Skills", href: "/admin/skills", icon: Sparkles },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
       { name: "Clawable", href: "/admin/clawable", icon: MessageSquare },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
@@ -150,7 +149,9 @@ export const navigationGroups: NavGroup[] = [
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Branding", href: "/admin/branding", icon: Image },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
-      
+      { name: "Skills", href: "/admin/skills", icon: Sparkles },
+      { name: "AI Usage", href: "/admin/ai-usage", icon: BarChart3 },
+
       { name: "Users", href: "/admin/users", icon: Users },
       { name: "Role Permissions", href: "/admin/roles", icon: Shield },
       { name: "Profile", href: "/admin/profile", icon: UserCircle },
