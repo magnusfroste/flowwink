@@ -2,8 +2,8 @@
 
 > From transaction to financial report. Bookkeeping + period-end close.
 
-**Maturity level:** L2 — Manual (parts L3 via templates)
-**Status:** ⚠️ Basic double-entry bookkeeping; lacks period-end automation
+**Maturity level:** L3 — Operational (period lock + reconciliation live)
+**Status:** ✅ Double-entry bookkeeping, period lock, bank file/image OCR import; ⚠️ no tax filings
 
 ---
 
@@ -11,9 +11,10 @@
 
 | Module | Role in the process |
 |--------|---------------------|
-| **Accounting** | Chart of accounts (BAS 2024), journal entries, templates |
+| **Accounting** | Chart of accounts (BAS 2024 / IFRS / US GAAP via locale packs), journal entries, templates, period lock, export adapters (SIE 4 / SAF-T) |
+| **Reconciliation** | Stripe payouts sync, bank file/image (OCR) import, auto-matching |
 | **Invoicing** | Source for AR bookings |
-| **Expenses** | Source for AP / expense bookings |
+| **Expenses** | Source for AP / expense bookings (auto-booked on approval) |
 | **Analytics** | Financial KPI reports |
 | **Documents** | Voucher / supporting document archive |
 

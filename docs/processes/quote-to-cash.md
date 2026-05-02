@@ -62,12 +62,12 @@ Overdue check → reminders
 
 ## Known gaps (missing for L5)
 
-- ❌ Quote/proposal module (offer before deal won)
+- ✅ Quote/proposal module — `manage_quote` available; deal-conversion automation still WIP
 - ❌ Versioned price lists
-- ❌ Recurring billing / subscriptions (partly via Stripe integration)
+- ⚠️ Recurring billing — `subscriptions` module covers MRR/dunning; Stripe is primary processor
 - ❌ Multi-currency at the invoice level
 - ❌ Approval workflow for invoices above X
-- ⚠️ Reconciliation requires manual matching for ambiguous cases
+- ⚠️ Reconciliation requires manual matching for ambiguous cases (auto via `auto_match_transactions`)
 
 ---
 

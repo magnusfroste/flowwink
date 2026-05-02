@@ -11,9 +11,9 @@
 
 | Module | Role in the process |
 |--------|---------------------|
-| **E-commerce** | Order records, fulfillment stages |
-| **Products** | Product catalog, variants, pricing |
-| **Inventory** | Stock reservation, picking, adjustments |
+| **Products** | Order records (`manage_orders`, `place_order`, `lookup_order`), catalog, pricing, cart recovery |
+| **Inventory** | Stock reservation, picking (`allocate_picking`/`confirm_pick`/`ship_picking`), adjustments |
+| **POS** | In-store sales channel that emits `stock.movement` events into the same fulfillment pipe |
 | **SLA** | Monitors that manual steps happen on time |
 | **Documents** | Delivery notes, shipping labels |
 | **Newsletter** | Order confirmations, delivery notifications |

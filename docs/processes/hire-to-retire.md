@@ -11,10 +11,11 @@
 
 | Module | Role in the process |
 |--------|---------------------|
-| **HR** | Employee records, leave handling, onboarding checklists |
-| **Contracts** | Employment agreements, lifecycle |
+| **Recruitment** | Job postings, applications, AI scoring, hire bridge (`hire_application`) |
+| **HR** | Employee records, leave handling, onboarding checklists, vacation auto-allocation |
+| **Contracts** | Employment agreements, lifecycle, renewal checks |
 | **Documents** | HR documents (contracts, certificates, policies) |
-| **Expenses** | Employee expense claims |
+| **Expenses** | Employee expense claims (full P2P loop: submit → approve → book → pay) |
 | **Resume** | Consultant profiles / talent matching |
 
 ---
