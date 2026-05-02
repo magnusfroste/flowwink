@@ -41,18 +41,18 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
       function: {
         name: 'import_bank_image',
         description:
-          'Extract bank transactions from an image/PDF of a bank statement using vision AI. Returns a preview list by default; pass commit=true with the approved transactions to write them.',
+          'Extract bank transactions from an image/PDF of a bank statement using vision AI. Two modes: PREVIEW (default, commit=false) REQUIRES contentBase64+mimeType — returns parsed transactions. COMMIT (commit=true) REQUIRES fileName+transactions — writes the user-approved rows. Never auto-commit unattended.',
         parameters: {
           type: 'object',
           properties: {
-            fileName: { type: 'string' },
+            fileName: { type: 'string', description: 'Required for commit=true.' },
             contentBase64: {
               type: 'string',
-              description: 'Base64-encoded image or PDF bytes (no data: prefix). Required for preview mode.',
+              description: 'Base64-encoded image or PDF bytes (no data: prefix). Required for preview (commit=false).',
             },
             mimeType: {
               type: 'string',
-              description: 'MIME type of the upload, e.g. image/png, image/jpeg, application/pdf.',
+              description: 'MIME type, e.g. image/png, image/jpeg, application/pdf. Required for preview (commit=false).',
             },
             provider: { type: 'string', enum: ['openai', 'gemini'], description: 'Vision provider. Default openai.' },
             commit: { type: 'boolean', description: 'false = preview only (default), true = write rows.' },
@@ -73,13 +73,12 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
               },
             },
           },
-          allOf: [
-            {
-              if: { properties: { commit: { const: true } } },
-              then: { required: ['fileName', 'transactions'] },
-              else: { required: ['contentBase64', 'mimeType'] },
-            },
-          ],
+          required: [],
+          // OpenAI-safe per-mode required fields. Handler enforces at runtime.
+          'x-mode-required': {
+            'commit:false': ['contentBase64', 'mimeType'],
+            'commit:true': ['fileName', 'transactions'],
+          },
         },
       },
     },
