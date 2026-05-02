@@ -2,8 +2,8 @@
 
 > From need identification to paid vendor invoice.
 
-**Maturity level:** L3 — Operational
-**Status:** ✅ Happy path works; lacks approval workflows
+**Maturity level:** L3 — Operational (3-way match auto-approve live)
+**Status:** ✅ Happy path + auto-approve match works; lacks tiered approval thresholds
 
 ---
 
@@ -54,13 +54,14 @@ Payment
 | PO dispatch | ✅ | ✅ (`send_purchase_order`) | — |
 | Goods receipt | ✅ | ✅ (`receive_goods`) | — |
 | Expense handling | ✅ | ✅ (`manage_expenses`, `analyze_receipt`) | — |
-| 3-way match | ⚠️ Manual | ❌ | 🔗 Delegation possible |
+| 3-way match | ⚠️ Manual fallback | ✅ (`match_invoice_to_receipt`, `auto_approve_vendor_invoice`) | 🔗 Delegation possible |
+| Expense P2P loop | ✅ | ✅ (`submit_/approve_/book_/mark_expense_report_paid`) | — |
 
 ---
 
 ## Known gaps (missing for L5)
 
-- ❌ **3-way match approval workflow** (PO ↔ GR ↔ Invoice automatically)
+- ✅ **3-way match auto-approve** — `match_invoice_to_receipt` + `auto_approve_vendor_invoice` live; tolerance config still manual
 - ❌ Multi-step approval based on amount thresholds
 - ❌ Vendor portal (vendor self-service login)
 - ❌ EDI integration for large suppliers

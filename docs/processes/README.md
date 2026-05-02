@@ -39,14 +39,14 @@ For each process we mark **who does what**:
 
 | Process | Maturity | Modules | Doc |
 |---------|----------|---------|-----|
-| **Lead-to-Customer** | L4 | Forms, Leads, Sales Intelligence, Deals, Companies | [lead-to-customer.md](./lead-to-customer.md) |
-| **Quote-to-Cash** | L3 | Deals, Projects, Timesheets, Invoicing, Accounting | [quote-to-cash.md](./quote-to-cash.md) |
-| **Procure-to-Pay** | L3 | Purchasing, Inventory, Expenses, Invoicing, Accounting | [procure-to-pay.md](./procure-to-pay.md) |
-| **Order-to-Delivery** | L3 | E-commerce, Inventory, SLA, Documents | [order-to-delivery.md](./order-to-delivery.md) |
-| **Hire-to-Retire** | L2 | HR, Contracts, Documents, Expenses | [hire-to-retire.md](./hire-to-retire.md) |
-| **Content-to-Conversion** | L4 | Pages, Blog, Newsletter, Paid Growth, Analytics | [content-to-conversion.md](./content-to-conversion.md) |
-| **Record-to-Report** | L2 | Accounting, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
-| **Support-to-Resolution** | L3 | Tickets, Live Support, Knowledge Base, SLA | [support-to-resolution.md](./support-to-resolution.md) |
+| **Lead-to-Customer** | L4 | Forms, Leads/CRM, Sales Intelligence, Companies, Deals, Newsletter | [lead-to-customer.md](./lead-to-customer.md) |
+| **Quote-to-Cash** | L3 | Quotes, Deals, Projects, Timesheets, Invoicing, Accounting, Reconciliation, Contracts | [quote-to-cash.md](./quote-to-cash.md) |
+| **Procure-to-Pay** | L3 | Purchasing (3-way match), Inventory, Expenses (full P2P), Invoicing, Accounting | [procure-to-pay.md](./procure-to-pay.md) |
+| **Order-to-Delivery** | L3 | Products, Inventory, POS, SLA, Documents | [order-to-delivery.md](./order-to-delivery.md) |
+| **Hire-to-Retire** | L3 | Recruitment, HR, Contracts, Documents, Expenses, Resume | [hire-to-retire.md](./hire-to-retire.md) |
+| **Content-to-Conversion** | L4 | Pages, Blog, KB, Newsletter, Growth (Paid), Analytics, Sales Intelligence | [content-to-conversion.md](./content-to-conversion.md) |
+| **Record-to-Report** | L3 | Accounting (period lock + SIE/SAF-T), Reconciliation, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
+| **Support-to-Resolution** | L3 | Chat, Tickets, Live Support, Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
 
 ---
 
