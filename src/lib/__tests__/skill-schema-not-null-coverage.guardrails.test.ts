@@ -60,12 +60,13 @@ function getActions(params: JsonSchemaNode | undefined): string[] {
   return actionProp?.enum ?? [];
 }
 
-/** Compute which fields are required for a given action value, considering allOf/if-then branches. */
+/** Compute which fields are required for a given action value, considering allOf/if-then branches AND the x-action-required extension. */
 function requiredForAction(
   params: JsonSchemaNode | undefined,
   action: string,
 ): Set<string> {
   const required = new Set<string>(params?.required ?? []);
+  // Legacy allOf/if-then branches
   for (const branch of params?.allOf ?? []) {
     const ifAction = branch.if?.properties?.action;
     if (!ifAction) continue;
@@ -75,6 +76,11 @@ function requiredForAction(
     if (matches) {
       for (const f of branch.then?.required ?? []) required.add(f);
     }
+  }
+  // OpenAI-safe x-action-required extension
+  const xActionRequired = params?.['x-action-required'];
+  if (xActionRequired && Array.isArray(xActionRequired[action])) {
+    for (const f of xActionRequired[action]) required.add(f);
   }
   return required;
 }
