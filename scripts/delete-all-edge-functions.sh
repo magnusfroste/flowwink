@@ -3,8 +3,8 @@
 # Usage: ./scripts/delete-all-edge-functions.sh <project-ref>
 # Example: ./scripts/delete-all-edge-functions.sh rzhjotxffjfsdlhrdkpj
 #
-# Requires: supabase CLI authenticated (`supabase login`)
-# DANGER: This is irreversible. You will be asked to type DELETE to confirm.
+# Requires: supabase CLI (logged in), jq
+# DANGER: Irreversible. You must type DELETE to confirm.
 
 set -euo pipefail
 
@@ -14,19 +14,34 @@ if [[ -z "$PROJECT_REF" ]]; then
   exit 1
 fi
 
-if ! command -v supabase >/dev/null 2>&1; then
-  echo "Error: supabase CLI not found in PATH."
-  exit 1
-fi
+for cmd in supabase jq; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: '$cmd' not found in PATH."
+    exit 1
+  fi
+done
 
 echo "Fetching deployed functions for project: $PROJECT_REF"
-# `supabase functions list` outputs a table; extract the NAME column (skip header + separators).
-FUNCTIONS=$(supabase functions list --project-ref "$PROJECT_REF" \
-  | awk 'NR>1 && $1 !~ /^[-+|]+$/ && $2 != "" && $2 != "NAME" {print $2}' \
-  | grep -v '^$' || true)
+
+# Use JSON output (works on supabase CLI >= 1.150). Fallback to table parsing if JSON fails.
+RAW_JSON="$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null || true)"
+
+if [[ -n "$RAW_JSON" ]] && echo "$RAW_JSON" | jq empty 2>/dev/null; then
+  FUNCTIONS=$(echo "$RAW_JSON" | jq -r '.[] | (.slug // .name)' | grep -v '^$' || true)
+else
+  echo "JSON output unavailable, falling back to table parsing..."
+  # Strip box-drawing chars, then grab the 2nd column (NAME / SLUG).
+  FUNCTIONS=$(supabase functions list --project-ref "$PROJECT_REF" \
+    | sed 's/[│┃|]/ /g; s/[─━┄┈]//g' \
+    | awk 'NR>2 && NF>=2 && $2 !~ /^(NAME|SLUG|ID)$/ {print $2}' \
+    | grep -v '^$' || true)
+fi
 
 if [[ -z "$FUNCTIONS" ]]; then
-  echo "No deployed functions found."
+  echo "No deployed functions found (or could not parse output)."
+  echo ""
+  echo "Try running manually to see raw output:"
+  echo "  supabase functions list --project-ref $PROJECT_REF"
   exit 0
 fi
 
@@ -43,12 +58,13 @@ if [[ "$CONFIRM" != "DELETE" ]]; then
 fi
 
 FAILED=()
+DELETED=0
 while IFS= read -r fn; do
   [[ -z "$fn" ]] && continue
   echo "→ Deleting $fn ..."
-  if supabase functions delete "$fn" --project-ref "$PROJECT_REF" --no-verify-jwt 2>/dev/null \
-     || supabase functions delete "$fn" --project-ref "$PROJECT_REF"; then
+  if supabase functions delete "$fn" --project-ref "$PROJECT_REF"; then
     echo "  ✓ deleted"
+    DELETED=$((DELETED + 1))
   else
     echo "  ✗ failed"
     FAILED+=("$fn")
@@ -56,10 +72,10 @@ while IFS= read -r fn; do
 done <<< "$FUNCTIONS"
 
 echo ""
-if [[ ${#FAILED[@]} -eq 0 ]]; then
-  echo "✅ All $COUNT functions deleted."
-else
-  echo "⚠️  ${#FAILED[@]} function(s) failed:"
+echo "Deleted: $DELETED / $COUNT"
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+  echo "⚠️  Failed:"
   printf '  - %s\n' "${FAILED[@]}"
   exit 1
 fi
+echo "✅ Done."
