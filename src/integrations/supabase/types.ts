@@ -10640,6 +10640,10 @@ export type Database = {
           total_cents: number
         }[]
       }
+      bump_kb_article_feedback: {
+        Args: { p_rating: string; p_slugs: string[] }
+        Returns: Json
+      }
       calculate_vacation_days: {
         Args: { p_employee_id: string; p_year: number }
         Returns: number
@@ -10908,6 +10912,10 @@ export type Database = {
           year: number
         }[]
       }
+      get_order_status: {
+        Args: { p_email?: string; p_id: string }
+        Returns: Json
+      }
       get_survey_by_token: { Args: { _token: string }; Returns: Json }
       get_team_member_ids: {
         Args: { _manager_user_id: string }
@@ -11045,6 +11053,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      log_cache_invalidation: {
+        Args: { p_all?: boolean; p_slug?: string }
+        Returns: Json
       }
       mark_expense_report_paid: {
         Args: {
