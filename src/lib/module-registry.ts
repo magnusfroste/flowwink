@@ -5,7 +5,7 @@
  * validation, and execution of module operations.
  * 
  * Modules self-register via defineModule() on import.
- * Legacy modules (globalBlocks, orders) are registered explicitly.
+ * Legacy modules (globalBlocks) are registered explicitly.
  * 
  * @see docs/reference/module-api.md for full documentation
  */
@@ -30,7 +30,7 @@ import {
   quotesModule, approvalsModule, reconciliationModule, workspaceChatModule,
   customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
   // Legacy modules (manual registration)
-  globalBlocksModule, ordersModule,
+  globalBlocksModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -49,7 +49,7 @@ class ModuleRegistry {
     }
 
     // Legacy modules without ModulesSettings keys — register explicitly
-    const legacy = [globalBlocksModule, ordersModule];
+    const legacy = [globalBlocksModule];
     for (const mod of legacy) {
       if (!this.modules.has(mod.id)) {
         this.register(mod as ModuleDefinition<unknown, unknown>);
