@@ -24,12 +24,24 @@ interface ToolProperty {
 interface JsonSchemaNode {
   properties?: Record<string, ToolProperty>;
   required?: string[];
+  /**
+   * Legacy pattern — kept for backwards compat. New skills should use
+   * `x-action-required` instead because top-level allOf/if-then breaks
+   * OpenAI gpt-4.1 strict tool-calling (HTTP 400).
+   */
   allOf?: Array<{
     if?: { properties?: Record<string, { const?: string; enum?: string[] }> };
     then?: { required?: string[]; properties?: Record<string, ToolProperty> };
   }>;
   oneOf?: JsonSchemaNode[];
   anyOf?: JsonSchemaNode[];
+  /**
+   * OpenAI-safe alternative to allOf/if-then. Maps action enum value → list
+   * of additionally-required field names. Read by the guardrail and by the
+   * runtime handler. Invisible to MCP clients but kept inside the schema
+   * (JSON-Schema permits unknown `x-*` extensions).
+   */
+  'x-action-required'?: Record<string, string[]>;
 }
 
 interface SkillSeed {
