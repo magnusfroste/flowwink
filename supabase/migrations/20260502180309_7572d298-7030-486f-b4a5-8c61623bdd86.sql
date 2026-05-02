@@ -1,0 +1,4 @@
+UPDATE public.agent_skills SET handler = 'edge:reconciliation/auto-match' WHERE name = 'auto_match_transactions' AND handler = 'edge:reconciliation-auto-match';
+UPDATE public.agent_skills SET handler = 'edge:reconciliation/import-file' WHERE name = 'import_bank_file' AND handler = 'edge:reconciliation-import-file';
+UPDATE public.agent_skills SET handler = 'edge:reconciliation/import-image' WHERE name = 'import_bank_image' AND handler = 'edge:reconciliation-import-image';
+UPDATE public.agent_skills SET handler = 'edge:reconciliation/sync-stripe' WHERE name = 'sync_stripe_payouts' AND handler = 'edge:reconciliation-sync-stripe';
