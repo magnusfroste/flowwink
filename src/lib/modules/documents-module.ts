@@ -83,14 +83,6 @@ const DOCS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Central document store. action=create REQUIRES title + file_url + category; file_name auto-fills from title. Categories: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Use related_entity_type to link to a record (e.g. "deal" + deal_id). For PDFs from chat attachments, pass the attachment URL as file_url. The body/markdown of the document is NOT stored — only the file URL. Swedish: "dokument", "fil", "arkiv", "mapp".',
   },
-];
-
-// =============================================================================
-// Module Definition
-// =============================================================================
-
-// ── Bundled skill definitions (migrated from setup-flowpilot) ──
-const DOCUMENTS_SKILLS: SkillSeed[] = [
   {
     name: 'extract_pdf_text',
     description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
@@ -101,18 +93,12 @@ const DOCUMENTS_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'extract_pdf_text',
-        description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
+        description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text.',
         parameters: {
           type: 'object',
           properties: {
-            file_url: {
-              type: 'string',
-              description: 'Public URL of the PDF file',
-            },
-            storage_path: {
-              type: 'string',
-              description: 'Storage path (bucket/path) of the PDF in media library',
-            },
+            file_url: { type: 'string', description: 'Public URL of the PDF file' },
+            storage_path: { type: 'string', description: 'Storage path (bucket/path) of the PDF in media library' },
           },
         },
       },
@@ -129,7 +115,61 @@ After extracting text from a resume PDF, chain with:
 
 For non-resume PDFs, return the extracted text directly to the user.`,
   },
+  {
+    name: 'upload_document',
+    description: 'Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or received a file (PDF/text/markdown/notes/report) that should be archived and made searchable for humans and future agent sessions. NOT for: temporary scratch text used only inside the current conversation (use chat memory instead) or for binary blobs you want to share without making them searchable.',
+    category: 'content',
+    handler: 'internal:upload_document',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'upload_document',
+        description: 'Upload a file or text to the workspace knowledge base. Returns a document_id; the content is searchable in workspace chat immediately if extraction succeeds.',
+        parameters: {
+          type: 'object',
+          required: ['title'],
+          properties: {
+            title: { type: 'string', description: 'Human-readable title for the document.' },
+            description: { type: 'string', description: 'Optional short description / summary.' },
+            category: { type: 'string', description: 'Optional category tag (defaults to "agent-upload").' },
+            tags: { type: 'array', items: { type: 'string' }, description: 'Optional tags.' },
+            file_name: { type: 'string', description: 'File name including extension (e.g. "brief.pdf"). Required for binary mode; auto-generated from title for text mode if omitted.' },
+            mime_type: { type: 'string', description: 'IANA mime type for binary mode (e.g. application/pdf, text/plain).' },
+            content_text: { type: 'string', description: 'Markdown or plain text. Use this when you already have the textual content. Mutually exclusive with content_base64.' },
+            content_base64: { type: 'string', description: 'Base64-encoded binary file. Use with mime_type. Mutually exclusive with content_text.' },
+          },
+        },
+      },
+    },
+    instructions: `# upload_document
+
+Persist a file as a searchable document in the workspace.
+
+## Two input modes
+
+### Mode A — already extracted text (preferred)
+Provide \`content_text\` (string, markdown or plain text). The text is stored directly in \`content_md\` and becomes searchable immediately. No binary upload needed.
+
+### Mode B — binary file
+Provide \`content_base64\` + \`mime_type\` + \`file_name\`. The binary is stored and (where possible) parsed to markdown server-side. If the type is not parseable, the document is saved with status \`unsupported\` — still useful as an archive entry, but not full-text searchable until someone re-extracts it.
+
+## Returned
+{ document_id, source, extraction_status, searchable }
+- \`searchable=true\` means workspace-chat will find this in future queries.
+- \`source\` is \`agent-upload:<your-peer-name>\` so admins can trace origin.
+
+## Limits
+- \`content_text\` ≤ 500 000 chars
+- \`content_base64\` ≤ 10 MB raw (≈ 13.4 MB base64)
+- \`title\` required; \`file_name\` required for binary mode (auto-generated from title for text mode)`,
+  },
 ];
+
+// =============================================================================
+// Module Definition
+// =============================================================================
 
 export const documentsModule = defineModule<DocumentsInput, DocumentsOutput>({
   id: 'documents',
@@ -141,7 +181,7 @@ export const documentsModule = defineModule<DocumentsInput, DocumentsOutput>({
   outputSchema: documentsOutputSchema,
 
   // ── FlowPilot Integration ──
-  skills: ['manage_document'],
+  skills: ['manage_document', 'extract_pdf_text', 'upload_document'],
   skillSeeds: DOCS_SKILLS,
   automations: [],
 
