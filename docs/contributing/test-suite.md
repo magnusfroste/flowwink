@@ -55,7 +55,7 @@ These enforce `mem://architecture/agent-contract-integrity` — every skill expo
 | File | What it asserts |
 |---|---|
 | `period-lock.test.ts` | `close_accounting_period` locks `time_entries` via trigger. Requires Supabase env. |
-| `reconciliation.test.ts` | `reconciliation-import-image` preview→commit two-step never auto-commits. Requires Supabase env. |
+| `reconciliation.test.ts` | `reconciliation/import-image` preview→commit two-step never auto-commits. Requires Supabase env. |
 | `manage-deal-auto-lead.test.ts` | `manage_deal` auto-creates a lead if none exists, never duplicates. |
 
 ### 1d. Templates & locale

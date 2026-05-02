@@ -95,7 +95,7 @@ FlowWink exposes its capabilities through three complementary channels:
 | Channel | Purpose | Auth | Transport |
 |---------|---------|------|-----------|
 | **Skills** (internal) | FlowPilot autonomy — agent reasons and executes | Service role JWT | Edge Function (`agent-execute`) |
-| **A2A** (federation) | Peer-to-peer agent collaboration (e.g. OpenClaw) | Bearer token (hashed) | JSON-RPC via `a2a-ingest` |
+| **A2A** (federation) | Peer-to-peer agent collaboration (e.g. OpenClaw) | Bearer token (hashed) | JSON-RPC via `a2a/ingest` |
 | **MCP** (universal) | External AI clients (Cursor, Claude Desktop) | API Key (SHA-256 hashed) | Streamable HTTP via `mcp-server` |
 
 The MCP server dynamically exposes skills where `mcp_exposed = true` in the `agent_skills` table. Admin controls which skills are public via the Engine Room UI (shield toggle). API keys are managed under **Developer → MCP Keys**.

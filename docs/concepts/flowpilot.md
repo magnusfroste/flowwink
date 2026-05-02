@@ -485,7 +485,7 @@ FlowAgent can modify its own behavior:
 
 | # | Skill | Handler | Scope | Category |
 |---|-------|---------|-------|----------|
-| 1 | `a2a_chat` | `edge:a2a-chat` | external | system |
+| 1 | `a2a_chat` | `edge:a2a/chat` | external | system |
 | 2 | `composio_execute` | `edge:composio-proxy` | internal | system |
 | 3 | `composio_search_tools` | `edge:composio-proxy` | internal | system |
 | 4 | `manage_site_settings` | `db:site_settings` | internal | system |
@@ -770,7 +770,9 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 | `extract-pdf-text` | PDF text extraction |
 | `update-kb-feedback` | KB article feedback tracking |
 | `run-autonomy-tests` | Autonomy conformance suite |
-| `a2a-ingest` | A2A peer communication handler |
+| `a2a` | Unified A2A federation router (`/a2a/{chat,discover,ingest,outbound}`) |
+| `reconciliation` | Unified reconciliation router (`/reconciliation/{auto-match,import-file,import-image,sync-stripe}`) |
+| `subscriptions` | Unified subscriptions router (`/subscriptions/{checkout,portal,manage,skills}`) |
 
 ### Operations
 | Function | Purpose |
