@@ -56,9 +56,9 @@ const PROJECT_SKILLS: SkillSeed[] = [
             search_query: { type: 'string' },
           },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'name'] } },
-          ],
+          'x-action-required': {
+            create: ['name'],
+          },
         },
       },
     },
@@ -88,9 +88,9 @@ const PROJECT_SKILLS: SkillSeed[] = [
             due_date: { type: 'string' },
           },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'project_id', 'title'] } },
-          ],
+          'x-action-required': {
+            create: ['project_id', 'title'],
+          },
         },
       },
     },

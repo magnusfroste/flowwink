@@ -24,12 +24,24 @@ interface ToolProperty {
 interface JsonSchemaNode {
   properties?: Record<string, ToolProperty>;
   required?: string[];
+  /**
+   * Legacy pattern — kept for backwards compat. New skills should use
+   * `x-action-required` instead because top-level allOf/if-then breaks
+   * OpenAI gpt-4.1 strict tool-calling (HTTP 400).
+   */
   allOf?: Array<{
     if?: { properties?: Record<string, { const?: string; enum?: string[] }> };
     then?: { required?: string[]; properties?: Record<string, ToolProperty> };
   }>;
   oneOf?: JsonSchemaNode[];
   anyOf?: JsonSchemaNode[];
+  /**
+   * OpenAI-safe alternative to allOf/if-then. Maps action enum value → list
+   * of additionally-required field names. Read by the guardrail and by the
+   * runtime handler. Invisible to MCP clients but kept inside the schema
+   * (JSON-Schema permits unknown `x-*` extensions).
+   */
+  'x-action-required'?: Record<string, string[]>;
 }
 
 interface SkillSeed {
@@ -48,12 +60,13 @@ function getActions(params: JsonSchemaNode | undefined): string[] {
   return actionProp?.enum ?? [];
 }
 
-/** Compute which fields are required for a given action value, considering allOf/if-then branches. */
+/** Compute which fields are required for a given action value, considering allOf/if-then branches AND the x-action-required extension. */
 function requiredForAction(
   params: JsonSchemaNode | undefined,
   action: string,
 ): Set<string> {
   const required = new Set<string>(params?.required ?? []);
+  // Legacy allOf/if-then branches
   for (const branch of params?.allOf ?? []) {
     const ifAction = branch.if?.properties?.action;
     if (!ifAction) continue;
@@ -63,6 +76,11 @@ function requiredForAction(
     if (matches) {
       for (const f of branch.then?.required ?? []) required.add(f);
     }
+  }
+  // OpenAI-safe x-action-required extension
+  const xActionRequired = params?.['x-action-required'];
+  if (xActionRequired && Array.isArray(xActionRequired[action])) {
+    for (const f of xActionRequired[action]) required.add(f);
   }
   return required;
 }
@@ -174,7 +192,10 @@ describe('Skill schema NOT NULL coverage guardrails', () => {
           notRequired,
           `Skill "${skill.name}" exposes NOT NULL columns [${notRequired.join(', ')}] ` +
             `but does not mark them as required for action="${action}". ` +
-            `Add them via:\n` +
+            `RECOMMENDED (OpenAI-safe — flat top-level schema):\n` +
+            `  parameters: { type: 'object', properties: {...}, required: ['action'],\n` +
+            `    'x-action-required': { ${action}: [${notRequired.map((c) => `'${c}'`).join(', ')}] } }\n` +
+            `LEGACY (allOf/if-then — breaks gpt-4.1 strict tool-calling):\n` +
             `  allOf: [{ if: { properties: { action: { const: "${action}" } } }, ` +
             `then: { required: ["action", ${notRequired.map((c) => `"${c}"`).join(', ')}] } }]\n` +
             `Or, if the handler fills it automatically, add to ` +

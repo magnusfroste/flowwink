@@ -119,10 +119,20 @@ export async function bootstrapModule(
           .maybeSingle();
 
         if (existing) {
-          // Re-enable and update description/instructions; ensure MCP-exposed
+          // Re-enable and refresh ALL definition fields so schema fixes (e.g. OpenAI-safe
+          // flat schemas replacing allOf/if-then) propagate without a full module reset.
           await supabase
             .from('agent_skills')
-            .update({ enabled: true, mcp_exposed: true, description: skill.description, instructions: skill.instructions || null })
+            .update({
+              enabled: true,
+              mcp_exposed: true,
+              description: skill.description,
+              instructions: skill.instructions || null,
+              tool_definition: skill.tool_definition as Json,
+              category: skill.category,
+              handler: skill.handler,
+              scope: skill.scope,
+            })
             .eq('id', existing.id);
         } else {
           const { error } = await supabase

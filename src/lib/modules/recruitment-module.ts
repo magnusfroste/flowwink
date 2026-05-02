@@ -64,9 +64,9 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
             salary_range: { type: 'string' },
           },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'title'] } },
-          ],
+          'x-action-required': {
+            create: ['title'],
+          },
         },
       },
     },

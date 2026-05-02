@@ -10538,6 +10538,7 @@ export type Database = {
     }
     Functions: {
       _ensure_manual_journal: { Args: never; Returns: string }
+      _flatten_skill_schema: { Args: { td: Json }; Returns: Json }
       _upsert_quant: {
         Args: {
           _delta: number

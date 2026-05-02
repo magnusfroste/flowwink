@@ -55,12 +55,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             reference_number: { type: 'string' },
           },
           required: ['action'],
-          allOf: [
-            {
-              if: { properties: { action: { const: 'create' } } },
-              then: { required: ['action', 'description'] },
-            },
-          ],
+          'x-action-required': {
+            create: ['description'],
+          },
         },
       },
     },
@@ -94,9 +91,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
           type: 'object',
           properties: { action: { type: 'string', enum: ['create', 'list', 'update'] }, template_name: { type: 'string' }, description: { type: 'string' }, category: { type: 'string' }, keywords: { type: 'array', items: { type: 'string' } }, template_lines: { type: 'array' } },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'template_name'] } },
-          ],
+          'x-action-required': {
+            create: ['template_name'],
+          },
         },
       },
     },
@@ -124,12 +121,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             locale: { type: 'string', description: 'Chart locale, e.g. se-bas2024' },
           },
           required: ['action'],
-          allOf: [
-            {
-              if: { properties: { action: { const: 'set' } } },
-              then: { required: ['action', 'account_code', 'account_name', 'amount_cents'] },
-            },
-          ],
+          'x-action-required': {
+            set: ['account_code', 'account_name', 'amount_cents'],
+          },
         },
       },
     },
@@ -150,9 +144,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
           type: 'object',
           properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'add' } } }, then: { required: ['action', 'account_code', 'account_name', 'account_type', 'account_category', 'normal_balance'] } },
-          ],
+          'x-action-required': {
+            add: ['account_code', 'account_name', 'account_type', 'account_category', 'normal_balance'],
+          },
         },
       },
     },
@@ -268,9 +262,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             is_active: { type: 'boolean' },
           },
           required: ['action'],
-          allOf: [
-            { if: { properties: { action: { const: 'create' } } }, then: { required: ['action', 'code', 'name'] } },
-          ],
+          'x-action-required': {
+            create: ['code', 'name'],
+          },
         },
       },
     },
