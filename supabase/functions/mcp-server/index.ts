@@ -245,6 +245,85 @@ function resolveGroupTokens(tokens: string[]): Set<string> {
   return cats;
 }
 
+/**
+ * Flatten a JSON Schema for OpenAI gpt-4.1 tool-calling compatibility.
+ *
+ * OpenAI (and litellm proxies) reject the *entire* tools array with HTTP 400
+ * if any tool's top-level inputSchema contains `allOf` / `oneOf` / `anyOf` /
+ * `not` / `if` / `then` / `else`. We use these constructs in `manage_*` skills
+ * to express per-action required fields (e.g. action=create requires X).
+ *
+ * This helper merges all `allOf` branches into a single flat schema:
+ *   - properties: union of all branch properties
+ *   - required: only fields required by the BASE schema (per-action required is dropped)
+ *   - oneOf/anyOf branches: properties merged, required reduced to base
+ *   - if/then/else: branches merged into properties, no conditional required
+ *
+ * The skill's `description` should document per-action required fields.
+ * Runtime handlers in agent-execute still validate NOT NULL constraints.
+ *
+ * @param schema raw JSON schema from agent_skills.tool_definition.function.parameters
+ * @returns flattened schema safe for OpenAI gpt-4.1 / litellm
+ */
+function flattenSchemaForOpenAI(schema: unknown): Record<string, unknown> {
+  if (!schema || typeof schema !== "object") {
+    return { type: "object", properties: {} };
+  }
+  const s = schema as Record<string, unknown>;
+  const out: Record<string, unknown> = {
+    type: "object",
+    properties: { ...(s.properties as Record<string, unknown> || {}) },
+  };
+  // Preserve base-level required (these are always-required fields, e.g. `action`)
+  if (Array.isArray(s.required)) {
+    out.required = [...(s.required as string[])];
+  }
+  // Optionally preserve description
+  if (typeof s.description === "string") out.description = s.description;
+
+  // Helper: merge a branch's properties into out.properties (keeps base values, adds missing)
+  const mergeBranchProps = (branch: unknown) => {
+    if (!branch || typeof branch !== "object") return;
+    const b = branch as Record<string, unknown>;
+    if (b.properties && typeof b.properties === "object") {
+      const props = out.properties as Record<string, unknown>;
+      for (const [k, v] of Object.entries(b.properties as Record<string, unknown>)) {
+        if (!(k in props)) props[k] = v;
+      }
+    }
+    // Recursively flatten nested keywords inside the branch
+    for (const key of ["allOf", "oneOf", "anyOf"] as const) {
+      if (Array.isArray(b[key])) {
+        for (const sub of b[key] as unknown[]) mergeBranchProps(sub);
+      }
+    }
+    if (b.then) mergeBranchProps(b.then);
+    if (b.else) mergeBranchProps(b.else);
+  };
+
+  for (const key of ["allOf", "oneOf", "anyOf"] as const) {
+    if (Array.isArray(s[key])) {
+      for (const branch of s[key] as unknown[]) mergeBranchProps(branch);
+    }
+  }
+  if (s.if) {
+    if (s.then) mergeBranchProps(s.then);
+    if (s.else) mergeBranchProps(s.else);
+  }
+  // Drop `not` entirely — it's rare in our schemas and OpenAI rejects it
+  return out;
+}
+
+/**
+ * Detect whether a schema has any top-level construct OpenAI gpt-4.1 rejects.
+ * Used for logging / diagnostics only — flattenSchemaForOpenAI handles the fix.
+ */
+function hasUnsafeTopLevelKeyword(schema: unknown): boolean {
+  if (!schema || typeof schema !== "object") return false;
+  const s = schema as Record<string, unknown>;
+  return ["allOf", "oneOf", "anyOf", "not", "if", "then", "else"].some((k) => k in s);
+}
+
 async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
@@ -608,7 +687,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
 
 // ---------- MCP server factory ----------
 
-async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
+async function createMcpServer(filterGroups?: string[], openaiSafe = false): Promise<McpServer> {
   const server = new McpServer({
     name: "flowwink",
     version: "1.0.0",
@@ -616,16 +695,23 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
 
   const skills = await loadExposedSkills(filterGroups);
 
+  let flattenedCount = 0;
   for (const skill of skills) {
     const fn = skill.tool_definition?.function;
     if (!fn?.name) continue;
 
+    let inputSchema: any = (fn.parameters as any) || {
+      type: "object" as const,
+      properties: {},
+    };
+    if (openaiSafe && hasUnsafeTopLevelKeyword(inputSchema)) {
+      inputSchema = flattenSchemaForOpenAI(inputSchema);
+      flattenedCount++;
+    }
+
     server.tool(fn.name, {
       description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
-      inputSchema: (fn.parameters as any) || {
-        type: "object" as const,
-        properties: {},
-      },
+      inputSchema,
       handler: async (args: Record<string, unknown>) => {
         const ctx = requestContext.getStore();
         const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
@@ -634,6 +720,9 @@ async function createMcpServer(filterGroups?: string[]): Promise<McpServer> {
         };
       },
     });
+  }
+  if (openaiSafe && flattenedCount > 0) {
+    console.log(`MCP: flattened ${flattenedCount} schemas for OpenAI compatibility`);
   }
 
   // ── Lock tools for concurrency ──
@@ -875,26 +964,33 @@ app.get("/rest/groups", async (c) => {
 });
 
 app.get("/rest/tools", async (c) => {
-  // ?groups=crm,commerce filters to only those categories
   const groupsParam = c.req.query("groups");
   const filterGroups = groupsParam
     ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
     : undefined;
+  const openaiSafe = c.req.query("openai_safe") === "true";
 
   const skills = await loadExposedSkills(filterGroups);
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
-    .map((s) => ({
-      name: s.tool_definition.function.name,
-      description: s.tool_definition.function.description || s.description,
-      group: s.category,
-      parameters: s.tool_definition.function.parameters || {},
-    }));
+    .map((s) => {
+      const rawParams = s.tool_definition.function.parameters || {};
+      const params = openaiSafe && hasUnsafeTopLevelKeyword(rawParams)
+        ? flattenSchemaForOpenAI(rawParams)
+        : rawParams;
+      return {
+        name: s.tool_definition.function.name,
+        description: s.tool_definition.function.description || s.description,
+        group: s.category,
+        parameters: params,
+      };
+    });
   return c.json(
-    { tools, count: tools.length, available_groups: TOOLSET_GROUPS },
+    { tools, count: tools.length, available_groups: TOOLSET_GROUPS, openai_safe: openaiSafe },
     200, corsHeaders,
   );
 });
+
 
 app.get("/rest/resources", (c) => {
   const resources = [
@@ -999,11 +1095,12 @@ app.post("/rest/execute", async (c) => {
 // Cache MCP handlers by group key
 const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
 
-async function getMcpHandler(filterGroups?: string[]) {
-  const cacheKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
+async function getMcpHandler(filterGroups?: string[], openaiSafe = false) {
+  const groupKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
+  const cacheKey = openaiSafe ? `${groupKey}::safe` : groupKey;
   let handler = mcpHandlerCache.get(cacheKey);
   if (!handler) {
-    const server = await createMcpServer(filterGroups);
+    const server = await createMcpServer(filterGroups, openaiSafe);
     const transport = new StreamableHttpTransport();
     handler = transport.bind(server);
     mcpHandlerCache.set(cacheKey, handler);
@@ -1015,12 +1112,16 @@ async function getMcpHandler(filterGroups?: string[]) {
 
 app.all("/*", async (c) => {
   // Support ?groups=crm,commerce for MCP native clients
-  const groupsParam = new URL(c.req.url).searchParams.get("groups");
+  const url = new URL(c.req.url);
+  const groupsParam = url.searchParams.get("groups");
   const filterGroups = groupsParam
     ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
     : undefined;
+  // ?openai_safe=true → flatten allOf/oneOf/anyOf/if-then schemas (gpt-4.1 / litellm compatibility)
+  const openaiSafe = url.searchParams.get("openai_safe") === "true";
 
-  const handler = await getMcpHandler(filterGroups);
+  const handler = await getMcpHandler(filterGroups, openaiSafe);
+
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
   const response = await requestContext.run({ callerUserId, callerApiKeyId }, () => handler(c.req.raw));
