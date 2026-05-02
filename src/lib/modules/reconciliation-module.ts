@@ -34,7 +34,7 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     description:
       'OCR a bank statement image or PDF (screenshot, scan, exported PDF) and turn it into bank_transactions rows. Use when: user uploads a picture/PDF of a bank account printout instead of a structured CSV/CAMT/SIE file. NOT for: structured files (use import_bank_file), or for booking journal entries (use manage_journal_entry). MANDATORY: default to commit=false (preview) so a human can verify rows before they hit the books; only set commit=true when the caller has already shown the parsed rows to the user and got approval.',
     category: 'commerce',
-    handler: 'edge:reconciliation-import-image',
+    handler: 'edge:reconciliation/import-image',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -137,10 +137,10 @@ export const reconciliationModule = defineModule<Input, Output>({
         return { success: true, result: data };
       }
       const fnMap: Record<string, string> = {
-        sync_stripe: 'reconciliation-sync-stripe',
-        import_file: 'reconciliation-import-file',
-        import_image: 'reconciliation-import-image',
-        auto_match: 'reconciliation-auto-match',
+        sync_stripe: 'reconciliation/sync-stripe',
+        import_file: 'reconciliation/import-file',
+        import_image: 'reconciliation/import-image',
+        auto_match: 'reconciliation/auto-match',
       };
       const body =
         v.action === 'import_file'

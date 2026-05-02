@@ -179,7 +179,7 @@ export function useSyncStripe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('reconciliation-sync-stripe', {
+      const { data, error } = await supabase.functions.invoke('reconciliation/sync-stripe', {
         body: {},
       });
       if (error) throw error;
@@ -199,7 +199,7 @@ export function useImportBankFile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { fileName: string; content: string; format: 'csv' | 'camt053' | 'sie' }) => {
-      const { data, error } = await supabase.functions.invoke('reconciliation-import-file', {
+      const { data, error } = await supabase.functions.invoke('reconciliation/import-file', {
         body: input,
       });
       if (error) throw error;
@@ -233,7 +233,7 @@ export function usePreviewBankImage() {
       provider?: 'openai' | 'gemini';
       model?: string;
     }) => {
-      const { data, error } = await supabase.functions.invoke('reconciliation-import-image', {
+      const { data, error } = await supabase.functions.invoke('reconciliation/import-image', {
         body: { ...input, commit: false },
       });
       if (error) throw error;
@@ -252,7 +252,7 @@ export function useCommitBankImage() {
       transactions: OcrTransaction[];
       currency_default?: string;
     }) => {
-      const { data, error } = await supabase.functions.invoke('reconciliation-import-image', {
+      const { data, error } = await supabase.functions.invoke('reconciliation/import-image', {
         body: { ...input, commit: true },
       });
       if (error) throw error;
@@ -272,7 +272,7 @@ export function useAutoMatch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('reconciliation-auto-match', {
+      const { data, error } = await supabase.functions.invoke('reconciliation/auto-match', {
         body: {},
       });
       if (error) throw error;
