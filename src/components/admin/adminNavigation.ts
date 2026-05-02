@@ -3,7 +3,7 @@ import {
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
-  Network, Snowflake, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
+  Network, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
   RefreshCw, AlertTriangle, CheckSquare, Sparkles, Factory, UserSearch, Plus,
 } from 'lucide-react';
 
