@@ -72,12 +72,9 @@ const DOCS_SKILLS: SkillSeed[] = [
             search_query: { type: 'string' },
           },
           required: ['action'],
-          allOf: [
-            {
-              if: { properties: { action: { const: 'create' } } },
-              then: { required: ['action', 'title', 'file_url', 'category'] },
-            },
-          ],
+          'x-action-required': {
+            create: ['title', 'file_url', 'category'],
+          },
         },
       },
     },

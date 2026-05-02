@@ -79,12 +79,9 @@ const CONTRACT_SKILLS: SkillSeed[] = [
             search_query: { type: 'string', description: 'Free-text search in title/counterparty' },
           },
           required: ['action'],
-          allOf: [
-            {
-              if: { properties: { action: { const: 'create' } } },
-              then: { required: ['action', 'counterparty_name', 'title'] },
-            },
-          ],
+          'x-action-required': {
+            create: ['counterparty_name', 'title'],
+          },
         },
       },
     },
