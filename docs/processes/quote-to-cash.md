@@ -11,11 +11,13 @@
 
 | Module | Role in the process |
 |--------|---------------------|
+| **Quotes** | Pre-deal offers / proposals — convert to deal on accept |
 | **Deals** | Source — a won deal triggers project start |
 | **Projects** | Projects + tasks (Kanban) |
 | **Timesheets** | Time logging against projects/tasks |
 | **Invoicing** | Invoice generation from timesheets |
-| **Accounting** | Booking invoices against the chart of accounts (BAS 2024) |
+| **Accounting** | Booking invoices against the chart of accounts (BAS 2024) + period lock |
+| **Reconciliation** | Stripe payouts + bank file matching against AR |
 | **Contracts** | Underlying agreements that govern price/terms |
 
 ---
