@@ -16,6 +16,7 @@
 - MCP exposure invariants: (1) `mcp_exposed=true → enabled=true` (inga orphan tools); (2) utility-skills (migrate_url, scrape_url, search_web, extract_pdf_text, sla_check, process_signal, competitor_monitor) är ALLTID MCP-exposade så externa operatörer kan köra t.ex. site-migration utan FlowPilot. Operator-internal skills (a2a_*, openclaw_*, dispatch_claw_mission) förblir ej-MCP. Se mem://architecture/mcp-exposure-invariants.
 - Agent Contract Integrity = paraplyprincip: 4 lager (arg-mapping, NOT NULL-täckning, värde-domän/enums, modul-registrering) MÅSTE vara guardrail-verifierade innan en skill släpps. Se mem://architecture/agent-contract-integrity.
 - Composite MCP groups (`marketing`, `sales`, `operations`) i mcp-server expanderar till flera kategorier — externa department-claws frågar `?groups=marketing` och får hela toolkit:en utan att veta intern taxonomi. Mall för fler departments finns. Se mem://federation/marketing-claw-department-pattern.
+- Lifecycle events: 11 DB-triggers emittar `invoice.paid`, `quote.accepted`, `contract.signed`, `subscription.created/churned`, `shipment.dispatched`, `return.received`, `expense.approved`, `application.received`, `employee.hired`, `ticket.resolved`. Se mem://architecture/lifecycle-event-emitters.
 
 ## Claws & Integration
 - Claws (external agents) use `?openai_safe=true` for compatibility. Schemas are now flat in the DB, so this flag is a no-op but remains supported for existing configurations.
