@@ -2462,6 +2462,36 @@ export type Database = {
           },
         ]
       }
+      carriers: {
+        Row: {
+          api_credentials_secret_ref: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          tracking_url_template: string | null
+        }
+        Insert: {
+          api_credentials_secret_ref?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          tracking_url_template?: string | null
+        }
+        Update: {
+          api_credentials_secret_ref?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          tracking_url_template?: string | null
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_number: string | null
@@ -7032,6 +7062,120 @@ export type Database = {
           },
         ]
       }
+      pricelist_items: {
+        Row: {
+          created_at: string
+          discount_pct: number | null
+          fixed_price_cents: number | null
+          id: string
+          min_quantity: number
+          notes: string | null
+          pricelist_id: string
+          product_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          discount_pct?: number | null
+          fixed_price_cents?: number | null
+          id?: string
+          min_quantity?: number
+          notes?: string | null
+          pricelist_id: string
+          product_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          discount_pct?: number | null
+          fixed_price_cents?: number | null
+          id?: string
+          min_quantity?: number
+          notes?: string | null
+          pricelist_id?: string
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricelist_items_pricelist_id_fkey"
+            columns: ["pricelist_id"]
+            isOneToOne: false
+            referencedRelation: "pricelists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricelist_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricelists: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          lead_id: string | null
+          name: string
+          priority: number
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          lead_id?: string | null
+          name: string
+          priority?: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          lead_id?: string | null
+          name?: string
+          priority?: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricelists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricelists_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procurement_suggestions: {
         Row: {
           created_at: string
@@ -8097,6 +8241,144 @@ export type Database = {
           },
         ]
       }
+      return_items: {
+        Row: {
+          condition: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_item_id: string | null
+          product_id: string | null
+          quantity: number
+          restock: boolean
+          return_id: string
+          unit_refund_cents: number | null
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          restock?: boolean
+          return_id: string
+          unit_refund_cents?: number | null
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          restock?: boolean
+          return_id?: string
+          unit_refund_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_items_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "return_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      returns: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          customer_notes: string | null
+          id: string
+          internal_notes: string | null
+          order_id: string
+          reason: string | null
+          received_at: string | null
+          refund_amount_cents: number | null
+          refund_currency: string | null
+          refund_method: string | null
+          refund_processed_at: string | null
+          return_carrier_code: string | null
+          return_label_url: string | null
+          return_tracking_number: string | null
+          rma_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          order_id: string
+          reason?: string | null
+          received_at?: string | null
+          refund_amount_cents?: number | null
+          refund_currency?: string | null
+          refund_method?: string | null
+          refund_processed_at?: string | null
+          return_carrier_code?: string | null
+          return_label_url?: string | null
+          return_tracking_number?: string | null
+          rma_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_notes?: string | null
+          id?: string
+          internal_notes?: string | null
+          order_id?: string
+          reason?: string | null
+          received_at?: string | null
+          refund_amount_cents?: number | null
+          refund_currency?: string | null
+          refund_method?: string | null
+          refund_processed_at?: string | null
+          return_carrier_code?: string | null
+          return_label_url?: string | null
+          return_tracking_number?: string | null
+          rma_number?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "returns_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_bids: {
         Row: {
           created_at: string
@@ -8538,6 +8820,75 @@ export type Database = {
             columns: ["service_order_id"]
             isOneToOne: false
             referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipments: {
+        Row: {
+          carrier_code: string | null
+          carrier_id: string | null
+          cost_cents: number | null
+          created_at: string
+          delivered_at: string | null
+          id: string
+          label_url: string | null
+          metadata: Json | null
+          order_id: string
+          shipped_at: string | null
+          status: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          weight_grams: number | null
+        }
+        Insert: {
+          carrier_code?: string | null
+          carrier_id?: string | null
+          cost_cents?: number | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          label_url?: string | null
+          metadata?: Json | null
+          order_id: string
+          shipped_at?: string | null
+          status?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          weight_grams?: number | null
+        }
+        Update: {
+          carrier_code?: string | null
+          carrier_id?: string | null
+          cost_cents?: number | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          label_url?: string | null
+          metadata?: Json | null
+          order_id?: string
+          shipped_at?: string | null
+          status?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          weight_grams?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -9942,6 +10293,45 @@ export type Database = {
           },
         ]
       }
+      tolerance_policies: {
+        Row: {
+          created_at: string
+          currency: string
+          entity_type: string
+          id: string
+          is_active: boolean
+          max_absolute_variance_cents: number | null
+          max_price_variance_pct: number
+          max_qty_variance_pct: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          max_absolute_variance_cents?: number | null
+          max_price_variance_pct?: number
+          max_qty_variance_pct?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          max_absolute_variance_cents?: number | null
+          max_price_variance_pct?: number
+          max_qty_variance_pct?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -10587,6 +10977,10 @@ export type Database = {
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
       approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
+      approve_return: {
+        Args: { p_notes?: string; p_return_id: string }
+        Returns: Json
+      }
       audit_logs_retention_status: { Args: never; Returns: Json }
       auto_allocate_vacation: {
         Args: { p_dry_run?: boolean; p_year: number }
@@ -10884,6 +11278,7 @@ export type Database = {
         Returns: string
       }
       generate_pos_receipt_number: { Args: never; Returns: string }
+      generate_rma_number: { Args: never; Returns: string }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -11153,6 +11548,7 @@ export type Database = {
         }
         Returns: Json
       }
+      receive_return: { Args: { p_return_id: string }; Returns: Json }
       reconcile_invoice_payments:
         | {
             Args: {
@@ -11251,6 +11647,10 @@ export type Database = {
         }
         Returns: Json
       }
+      refund_return: {
+        Args: { p_method?: string; p_refund_cents: number; p_return_id: string }
+        Returns: Json
+      }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
@@ -11345,6 +11745,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resolve_pricelist_price: {
+        Args: {
+          p_at?: string
+          p_company_id?: string
+          p_currency?: string
+          p_lead_id?: string
+          p_product_id: string
+          p_quantity?: number
+        }
+        Returns: {
+          price_cents: number
+          pricelist_id: string
+          pricelist_name: string
+          source: string
+        }[]
       }
       run_period_lock_tests: {
         Args: never
