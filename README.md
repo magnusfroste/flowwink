@@ -405,9 +405,15 @@ Contributions are welcome. Open an issue or submit a pull request. See **[docs/C
 
 ## Learn More — The Agentic Handbook
 
-Understand the architecture behind FlowPilot and autonomous business agents:
+FlowWink is the reference implementation of a thesis: **traditional SaaS becomes radically more valuable when it's operable by agents over an open protocol**. The handbook explains why, how, and what patterns hold up in production.
 
-📖 **[The Agentic Handbook](https://github.com/magnusfroste/clawable)** — A practical guide to building agentic systems, with real-world patterns from FlowWink's implementation.
+📖 **[clawable — The Agentic Handbook & OpenClaw](https://github.com/magnusfroste/clawable)** — Practical guide to building agentic systems, the OpenClaw operator, and the architectural laws FlowWink follows.
+
+Cross-references inside this repo:
+- [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) — Why FlowPilot is a *module*, not the core
+- [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md) — The rule that keeps modules + MCP independent of any operator
+- [`docs/architecture/mcp-overview.md`](docs/architecture/mcp-overview.md) — MCP endpoints, auth, schemas, group filtering
+- [`docs/concepts/openclaw-law.md`](docs/concepts/openclaw-law.md) — The 10 inviolable agentic architecture laws
 
 ## License
 
@@ -415,6 +421,6 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Stop managing tools. Start directing outcomes. FlowPilot is your agentic operator.*
+*Stop managing tools. Start directing outcomes. Bring your own operator — or use the one in the box.*
 
 **Made in Sweden 🇸🇪**
