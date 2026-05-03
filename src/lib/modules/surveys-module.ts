@@ -134,7 +134,7 @@ export const surveysModule = defineModule<Input, Output>({
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
-  skills: [],
+  skills: ['create_survey_campaign', 'send_survey', 'list_survey_responses'],
   skillSeeds: SURVEY_SKILLS,
 
   async publish(_input: Input): Promise<Output> {
