@@ -759,10 +759,155 @@ async function executeModuleAction(
       return await executeTimesheetsAction(supabase, skillName, args);
     }
 
+    case 'calendar': {
+      return await executeCalendarAction(supabase, skillName, args);
+    }
+
+    case 'templates': {
+      return await executeTemplatesAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
   }
 }
+
+// =============================================================================
+// Calendar module handler — aggregates events across enabled domain tables
+// =============================================================================
+async function executeCalendarAction(
+  supabase: any,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  if (skillName !== 'list_events') {
+    return { error: `Unknown calendar skill: ${skillName}` };
+  }
+  const a = args as { start?: string; end?: string; sources?: string[] };
+  if (!a.start || !a.end) {
+    return { error: 'start and end (ISO dates) are required', status: 'failed' };
+  }
+  const start = a.start;
+  const end = a.end;
+  const wanted = (a.sources && a.sources.length) ? new Set(a.sources) : null;
+  const include = (id: string) => !wanted || wanted.has(id);
+
+  const events: Array<Record<string, unknown>> = [];
+
+  if (include('bookings')) {
+    const { data } = await supabase
+      .from('bookings')
+      .select('id, customer_name, start_time, end_time, status')
+      .gte('start_time', start)
+      .lte('start_time', end)
+      .order('start_time', { ascending: true })
+      .limit(500);
+    for (const r of data ?? []) {
+      events.push({
+        id: `booking:${r.id}`, sourceId: 'bookings',
+        title: `Booking — ${r.customer_name}`,
+        start: r.start_time, end: r.end_time, status: r.status,
+        url: `/admin/bookings`,
+      });
+    }
+  }
+
+  if (include('tasks')) {
+    const { data } = await supabase
+      .from('project_tasks')
+      .select('id, title, due_date, status, project_id')
+      .gte('due_date', start)
+      .lte('due_date', end)
+      .order('due_date', { ascending: true })
+      .limit(500);
+    for (const r of data ?? []) {
+      events.push({
+        id: `task:${r.id}`, sourceId: 'tasks',
+        title: `Task — ${r.title}`,
+        start: r.due_date, allDay: true, status: r.status,
+        url: `/admin/projects/${r.project_id}`,
+      });
+    }
+  }
+
+  if (include('leave')) {
+    const { data } = await supabase
+      .from('leave_requests')
+      .select('id, employee_id, start_date, end_date, leave_type, status')
+      .gte('start_date', start)
+      .lte('start_date', end)
+      .order('start_date', { ascending: true })
+      .limit(500);
+    for (const r of data ?? []) {
+      events.push({
+        id: `leave:${r.id}`, sourceId: 'leave',
+        title: `Leave — ${r.leave_type}`,
+        start: r.start_date, end: r.end_date, allDay: true, status: r.status,
+        url: `/admin/hr`,
+      });
+    }
+  }
+
+  if (include('contracts')) {
+    const { data } = await supabase
+      .from('contracts')
+      .select('id, title, end_date, status')
+      .gte('end_date', start)
+      .lte('end_date', end)
+      .order('end_date', { ascending: true })
+      .limit(500);
+    for (const r of data ?? []) {
+      events.push({
+        id: `contract:${r.id}`, sourceId: 'contracts',
+        title: `Contract renewal — ${r.title}`,
+        start: r.end_date, allDay: true, status: r.status,
+        url: `/admin/contracts/${r.id}`,
+      });
+    }
+  }
+
+  events.sort((x: any, y: any) => String(x.start).localeCompare(String(y.start)));
+  return { success: true, count: events.length, events };
+}
+
+// =============================================================================
+// Templates module handler — list catalog + currently installed
+// =============================================================================
+const TEMPLATE_CATALOG = [
+  { id: 'launchpad', name: 'Launchpad', tagline: 'Modern SaaS launch site', category: 'saas' },
+  { id: 'momentum', name: 'Momentum', tagline: 'Marketing agency site', category: 'agency' },
+  { id: 'trustcorp', name: 'TrustCorp', tagline: 'Corporate trust & finance', category: 'corporate' },
+  { id: 'securehealth', name: 'SecureHealth', tagline: 'Healthcare provider site', category: 'healthcare' },
+  { id: 'flowwink-platform', name: 'FlowWink Platform', tagline: 'Platform showcase site', category: 'platform' },
+  { id: 'helpcenter', name: 'Help Center', tagline: 'Knowledge base & support hub', category: 'support' },
+  { id: 'service-pro', name: 'ServicePro', tagline: 'Field-service business site', category: 'services' },
+  { id: 'digital-shop', name: 'Digital Shop', tagline: 'E-commerce starter', category: 'ecommerce' },
+  { id: 'flowwink-agency', name: 'FlowWink Agency', tagline: 'Agency portfolio', category: 'agency' },
+  { id: 'consult-agency', name: 'Consult Agency', tagline: 'Consulting firm site', category: 'consulting' },
+];
+
+async function executeTemplatesAction(
+  supabase: any,
+  skillName: string,
+  _args: Record<string, unknown>,
+): Promise<unknown> {
+  if (skillName !== 'list_templates') {
+    return { error: `Unknown templates skill: ${skillName}` };
+  }
+  const { data: installed } = await supabase
+    .from('installed_template')
+    .select('template_id, template_name, installed_at')
+    .order('installed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return {
+    success: true,
+    catalog: TEMPLATE_CATALOG,
+    installed: installed ?? null,
+    note: 'Installation requires the admin Template Gallery UI (interactive image-handling and overwrite review).',
+  };
+}
+
 
 // =============================================================================
 // Timesheets module handler
