@@ -29,7 +29,60 @@ import {
   FolderOpen,
   FolderKanban,
   Factory,
+  Rocket,
 } from "lucide-react";
+
+// Roadmap — small/easy modules planned next. Pure presentation; no toggles.
+const PLANNED_MODULES: Array<{
+  id: string;
+  name: string;
+  description: string;
+  category: 'content' | 'data' | 'communication' | 'system' | 'insights';
+  effort: 'S' | 'M' | 'L';
+}> = [
+  {
+    id: 'vendor-portal',
+    name: 'Vendor Portal',
+    description: 'Self-service login for suppliers to view POs, upload invoices and track payments.',
+    category: 'data',
+    effort: 'M',
+  },
+  {
+    id: 'carrier-labels',
+    name: 'Carrier Labels (PostNord)',
+    description: 'Generate shipping labels and tracking numbers via PostNord API from the Shipping module.',
+    category: 'data',
+    effort: 'S',
+  },
+  {
+    id: 'performance-reviews',
+    name: 'Performance Reviews',
+    description: '1:1s, goals and appraisal cycles on top of the HR module.',
+    category: 'data',
+    effort: 'M',
+  },
+  {
+    id: 'budgets',
+    name: 'Budgets vs Actuals',
+    description: 'Yearly/quarterly budget per account and analytic dimension, compared with bookings.',
+    category: 'insights',
+    effort: 'M',
+  },
+  {
+    id: 'utm-attribution',
+    name: 'UTM Attribution',
+    description: 'Track UTM params through forms and orders to attribute revenue to campaigns.',
+    category: 'insights',
+    effort: 'S',
+  },
+  {
+    id: 'csat-survey',
+    name: 'CSAT Auto-Survey',
+    description: 'Auto-trigger short survey when a ticket is resolved; feeds into Surveys module.',
+    category: 'communication',
+    effort: 'S',
+  },
+];
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -294,6 +347,40 @@ export default function ModulesPage() {
             ))}
           </div>
         )}
+
+        {/* Roadmap — Planned modules (read-only) */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Rocket className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Roadmap — Coming soon
+            </h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Small, high-value modules planned next. Tackling the simplest first — vote or comment in GitHub Issues to influence priority.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PLANNED_MODULES.map((m) => (
+              <Card key={m.id} className="border-dashed bg-muted/20">
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-sm">{m.name}</h3>
+                    <div className="flex gap-1.5 shrink-0">
+                      <Badge variant="outline" className="text-[10px]">Planned</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{m.effort}</Badge>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {m.description}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                    {CATEGORY_LABELS[m.category]}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
