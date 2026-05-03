@@ -4,7 +4,9 @@
   <img src=".github/social-preview.jpg" alt="FlowWink — The Business Operating System" width="100%" />
 </p>
 
-> **The Business Operating System — powered by an autonomous AI operator.**
+> **The Business Operating System — operable by any agent. Ships with one.**
+>
+> A modular, self-hosted SaaS platform whose every capability is exposed as a skill over **MCP**. Run it with the built-in vertically-integrated operator **FlowPilot**, swap in an external one like **[OpenClaw](https://github.com/magnusfroste/clawable)**, mix several in parallel — or run it as a pure SaaS with humans in the loop. The platform doesn't care.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/magnusfroste/flowwink/pkgs/container/flowwink)
@@ -14,11 +16,11 @@
 
 ## Vision
 
-> **Every business will have an agentic operator. FlowWink is the operating system it runs on.**
+> **Every business will have an agentic operator. FlowWink is the operating system it runs on — and it lets you bring your own operator.**
 
 ## Mission
 
-> **Give every business a self-hosted agentic operator that runs their website, qualifies their leads, creates their content, fulfills their orders, and grows their business — around the clock, without being prompted.**
+> **Give every business a self-hosted, fully-featured SaaS platform that any agent can operate via an open protocol — with a great default operator included, and the freedom to swap it out for whatever the agent ecosystem produces next.**
 
 ---
 
@@ -26,9 +28,42 @@
 
 For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is a Business Operating System (BOS):** a unified platform where an autonomous AI operator called **FlowPilot** runs your content, leads, orders, campaigns, accounting, and fulfillment — continuously, around the clock, without hand-holding.
+**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (50+ across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
 
-You set the direction. FlowPilot operates the business.
+You set the direction. The operator runs the business. You choose which operator.
+
+---
+
+## The Operator Layer — bring your own brain
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  FlowWink SaaS Platform  (always on, agent-agnostic)         │
+│  • 50+ modules · 187 MCP-exposed skills                      │
+│  • Database + RLS · Automations · Event bus · Workflows      │
+│  • MCP server — the universal surface for any operator       │
+└──────────────────────────────────────────────────────────────┘
+                              ▲
+                              │   any combination, swap freely
+                              │
+┌──────────────────────────────────────────────────────────────┐
+│  Operators  (opt-in, interchangeable)                        │
+│  • FlowPilot      — local, vertically integrated, included   │
+│  • OpenClaw       — external, community-driven (clawable)    │
+│  • Claude Desktop · Salesforce · Microsoft · Oracle · custom │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Profile | Recommended operator |
+|---|---|
+| SMB, no agent stack, wants "it just works" | **FlowPilot** (built-in) |
+| Already runs OpenClaw / Claude Desktop / custom MCP | **External**, FlowPilot off |
+| Wants belt-and-braces — local heartbeat + external power | **Both**, on the same skill catalog |
+| Pure SaaS, humans in the loop | **Neither** — modules work without an agent |
+
+All four are first-class. Disabling FlowPilot does **not** reduce what FlowWink can do — every skill is still callable over MCP, every automation still fires. See [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) and [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md).
+
+> **Why this matters:** the rationale for letting traditional SaaS be orchestrated by agents — and the architecture that makes it work — is the subject of the **[Agentic Handbook (clawable)](https://github.com/magnusfroste/clawable)**. FlowWink is the reference implementation.
 
 ---
 
@@ -60,30 +95,58 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 
 ---
 
-## Modules — 37 integrated domains
+## Modules — 50+ integrated domains
 
-FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and FlowPilot integration. Modules are registered as plugins with typed contracts.
+FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and skill seeds. Modules register via `defineModule()` with typed contracts.
 
 | Category | Modules |
 |----------|---------|
-| **Content** | Pages, Blog, Knowledge Base, Global Blocks, Media, Templates, Handbook |
-| **CRM** | Leads, Companies, Deals, Forms, Sales Intelligence |
-| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory |
-| **Finance** | Accounting, Expenses, Timesheets |
-| **Communication** | Newsletter, Webinars |
-| **Support** | Tickets (Kanban + auto-triage via FlowPilot), Live Support |
-| **Growth** | Analytics, Paid Growth, Company Insights, Resume/CV, Content Hub |
-| **System** | FlowPilot, Federation (A2A), Browser Control, Developer, Site Migration |
+| **Content** | Pages, Blog, Knowledge Base, Docs, Global Blocks, Global Elements, Media Library, Templates, Handbook, Forms, Surveys |
+| **CRM & Sales** | Leads, Companies, Deals, Quotes, Sales Intelligence, Customer 360, Company Insights |
+| **Commerce** | Products, Orders, POS, Bookings, Subscriptions, Inventory |
+| **Finance** | Accounting (BAS 2024 / IFRS / US GAAP), Invoicing, Expenses, Reconciliation, Timesheets |
+| **HR & People** | HR, Recruitment, Resume, Contracts, Signature, Calendar |
+| **Operations** | Projects, Tasks, Field Service, Manufacturing (MRP-light), Purchasing, SLA, Approvals |
+| **Communication** | Email, Newsletter, Webinars, Chat, Workspace Chat |
+| **Support** | Tickets (Kanban + auto-triage), Live Support |
+| **Growth** | Analytics, Paid Growth, Content Campaigns |
+| **System & Operator** | FlowPilot, Federation (A2A + MCP), Browser Control, Composio, Site Migration, Developer, Documents |
 
 Each module provides:
-- **Data layer** — Supabase table + RLS policies
-- **Admin views** — React components in `/admin/`
-- **FlowPilot skills** — Agent capabilities auto-registered
-- **Webhook events** — `module.action` signals for automation
+- **Data layer** — Supabase tables + RLS policies + RPCs
+- **Admin UI** — React pages under `/admin/`
+- **Skill seeds** — capabilities auto-registered into `agent_skills` and exposed over MCP
+- **Webhook events** — `module.action` signals on the platform event bus
+
+Composite MCP groups (`marketing`, `sales`, `operations`, …) let an external operator request a curated toolkit with `?groups=marketing` — no need to know the internal taxonomy.
 
 ---
 
-## FlowPilot — Full Autonomy Engine
+## Skills — 187 capabilities, exposed over MCP
+
+| Domain | Sample skills |
+|--------|---------------|
+| **CMS & Content** | `manage_page`, `manage_blog_post`, `manage_kb_article`, `manage_global_block`, `migrate_url`, `scrape_url` |
+| **CRM** | `manage_leads`, `manage_companies`, `manage_deals`, `qualify_lead`, `enrich_company`, `process_signal` |
+| **Commerce** | `manage_product`, `place_order`, `record_pos_sale_v2`, `close_pos_session_v2`, `manage_subscription` |
+| **Finance** | `manage_journal_entry`, `import_bank_image`, `reconcile_transaction`, `auto_approve_vendor_invoice`, `book_expense`, `mark_paid` |
+| **HR & People** | `hire_application`, `auto_allocate_vacation`, `lock_timesheet_period`, `manage_contract`, `manage_employee` |
+| **Procure-to-Pay** | `generate_expense`, `submit_expense`, `approve_expense`, `book_expense`, `create_purchase_order`, `receive_goods` |
+| **Operations** | `manage_project`, `manage_task`, `manage_field_service`, `sla_check`, `dispatch_automation_event` |
+| **Communication** | `send_newsletter_campaign`, `manage_webinar`, `upload_document` |
+| **Support** | `triage_ticket`, KB-powered auto-resolve |
+| **Intelligence** | `search_web`, `extract_pdf_text`, `competitor_monitor`, `prospect_research` |
+| **Operator-internal** *(FlowPilot only, not MCP)* | objectives, soul, reflect, planning, A2A delegation |
+
+All skills follow Anthropic's MCP best practices: self-describing (`Use when:` / `NOT for:`), flat OpenAI-strict-mode-safe JSON Schemas, namespaced. See [`docs/architecture/mcp-overview.md`](docs/architecture/mcp-overview.md).
+
+---
+
+## FlowPilot — the included operator
+
+FlowPilot is FlowWink's **vertically-integrated, local autonomous operator** — one of many possible MCP consumers, but the one that ships in the box. It runs *inside* the platform's trust boundary, which gives it advantages no external operator can replicate: zero-config onboarding, direct DB/event access, brand-aligned defaults, predictable cost.
+
+External operators like **[OpenClaw](https://github.com/magnusfroste/clawable)** instead win on velocity, plugin ecosystem and frontier reasoning. FlowWink supports both — see [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) for the honest trade-off.
 
 ### Heartbeat Protocol (7 steps)
 
@@ -96,21 +159,6 @@ Each module provides:
 6. REFLECT   — Review recent actions, distill learnings
 7. REMEMBER  — Save insights to semantic memory for future cycles
 ```
-
-### Skills — 118 across your business
-
-| Domain | Skills |
-|--------|--------|
-| **CMS** | Pages (create/publish/rollback), block manipulation, Global Elements |
-| **Content** | Blog posts, KB articles, content research, SEO briefs, social batches |
-| **CRM** | Leads, Companies, Deals, Form processing, Lead qualification, Company enrichment |
-| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory management |
-| **Finance** | Accounting entries, Expense tracking, Timesheet analysis |
-| **Communication** | Newsletter campaigns, Webinars |
-| **Support** | Ticket triage, KB-powered auto-resolve |
-| **Intelligence** | Analytics, SEO audits, web research, browser automation, prospect research |
-| **Growth** | Ad campaigns, competitor monitoring, prospect fit analysis |
-| **Learning** | Memory read/write (vector search), reflection, soul evolution |
 
 ### Workflow DAGs — Multi-step automation chains
 
@@ -154,22 +202,26 @@ skill_pack_install("CRM Nurture Pack")       → lead_pipeline_review, deal_stal
 
 ---
 
-## A2A Federation — Agent-to-Agent Protocol
+## Federation — MCP + A2A
 
-FlowWink implements the **A2A JSON-RPC 2.0** protocol for peer-to-peer agent communication:
+FlowWink speaks two open protocols so any operator can connect:
+
+- **MCP (Model Context Protocol)** — the primary surface. 187 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
+- **A2A (Agent-to-Agent JSON-RPC 2.0)** — peer-to-peer delegation between agents.
 
 ```
-┌─────────────┐    JSON-RPC 2.0    ┌─────────────┐
-│  FlowPilot  │◄──────────────────▶│  Peer Agent  │
-│ (gatekeeper)│   message/send     │  (e.g. OpenClaw)
-│             │   tasks/send       │              │
-└─────────────┘                    └─────────────┘
+┌─────────────┐   MCP / A2A    ┌────────────────────┐
+│  FlowWink   │◄──────────────▶│  Operator           │
+│  Platform   │   tools/call   │  • FlowPilot (local)│
+│ (modules +  │   resources    │  • OpenClaw         │
+│  187 skills)│   message/send │  • Claude Desktop   │
+└─────────────┘                │  • custom           │
+                                └────────────────────┘
 ```
 
-- **FlowPilot as gatekeeper** — all peer interactions routed through the autonomous agent
-- **Peer management** — add, test, discover, and audit external agents
+- **Directional connections** — peers can be inbound (MCP), outbound (`/v1/responses`) or bidirectional (A2A)
 - **Graceful degradation** — 503 `peer_unavailable` handling when peers are offline
-- **Audit loop** — architectural findings from peers auto-convert to agent objectives
+- **Audit loop** — architectural findings from peers auto-convert to platform objectives
 - **Agent Card** — `/.well-known/agent.json` discovery endpoint
 
 ---
@@ -353,9 +405,15 @@ Contributions are welcome. Open an issue or submit a pull request. See **[docs/C
 
 ## Learn More — The Agentic Handbook
 
-Understand the architecture behind FlowPilot and autonomous business agents:
+FlowWink is the reference implementation of a thesis: **traditional SaaS becomes radically more valuable when it's operable by agents over an open protocol**. The handbook explains why, how, and what patterns hold up in production.
 
-📖 **[The Agentic Handbook](https://github.com/magnusfroste/clawable)** — A practical guide to building agentic systems, with real-world patterns from FlowWink's implementation.
+📖 **[clawable — The Agentic Handbook & OpenClaw](https://github.com/magnusfroste/clawable)** — Practical guide to building agentic systems, the OpenClaw operator, and the architectural laws FlowWink follows.
+
+Cross-references inside this repo:
+- [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) — Why FlowPilot is a *module*, not the core
+- [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md) — The rule that keeps modules + MCP independent of any operator
+- [`docs/architecture/mcp-overview.md`](docs/architecture/mcp-overview.md) — MCP endpoints, auth, schemas, group filtering
+- [`docs/concepts/openclaw-law.md`](docs/concepts/openclaw-law.md) — The 10 inviolable agentic architecture laws
 
 ## License
 
@@ -363,6 +421,6 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Stop managing tools. Start directing outcomes. FlowPilot is your agentic operator.*
+*Stop managing tools. Start directing outcomes. Bring your own operator — or use the one in the box.*
 
 **Made in Sweden 🇸🇪**
