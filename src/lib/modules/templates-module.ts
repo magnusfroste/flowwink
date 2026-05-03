@@ -23,7 +23,7 @@ const TEMPLATE_SKILLS: SkillSeed[] = [
     name: 'list_templates',
     description:
       'List the starter-template catalog (static JSON in /templates) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am I running?", or before installing/switching a template. NOT for: actually installing a template (use the admin UI — install requires interactive image-handling and overwrite review).',
-    category: 'platform',
+    category: 'system',
     handler: 'module:templates',
     scope: 'internal',
     tool_definition: {
