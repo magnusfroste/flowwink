@@ -16,11 +16,11 @@
 
 ## Vision
 
-> **Every business will have an agentic operator. FlowWink is the operating system it runs on.**
+> **Every business will have an agentic operator. FlowWink is the operating system it runs on — and it lets you bring your own operator.**
 
 ## Mission
 
-> **Give every business a self-hosted agentic operator that runs their website, qualifies their leads, creates their content, fulfills their orders, and grows their business — around the clock, without being prompted.**
+> **Give every business a self-hosted, fully-featured SaaS platform that any agent can operate via an open protocol — with a great default operator included, and the freedom to swap it out for whatever the agent ecosystem produces next.**
 
 ---
 
@@ -28,9 +28,42 @@
 
 For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is a Business Operating System (BOS):** a unified platform where an autonomous AI operator called **FlowPilot** runs your content, leads, orders, campaigns, accounting, and fulfillment — continuously, around the clock, without hand-holding.
+**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (50+ across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
 
-You set the direction. FlowPilot operates the business.
+You set the direction. The operator runs the business. You choose which operator.
+
+---
+
+## The Operator Layer — bring your own brain
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  FlowWink SaaS Platform  (always on, agent-agnostic)         │
+│  • 50+ modules · 187 MCP-exposed skills                      │
+│  • Database + RLS · Automations · Event bus · Workflows      │
+│  • MCP server — the universal surface for any operator       │
+└──────────────────────────────────────────────────────────────┘
+                              ▲
+                              │   any combination, swap freely
+                              │
+┌──────────────────────────────────────────────────────────────┐
+│  Operators  (opt-in, interchangeable)                        │
+│  • FlowPilot      — local, vertically integrated, included   │
+│  • OpenClaw       — external, community-driven (clawable)    │
+│  • Claude Desktop · Salesforce · Microsoft · Oracle · custom │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Profile | Recommended operator |
+|---|---|
+| SMB, no agent stack, wants "it just works" | **FlowPilot** (built-in) |
+| Already runs OpenClaw / Claude Desktop / custom MCP | **External**, FlowPilot off |
+| Wants belt-and-braces — local heartbeat + external power | **Both**, on the same skill catalog |
+| Pure SaaS, humans in the loop | **Neither** — modules work without an agent |
+
+All four are first-class. Disabling FlowPilot does **not** reduce what FlowWink can do — every skill is still callable over MCP, every automation still fires. See [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) and [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md).
+
+> **Why this matters:** the rationale for letting traditional SaaS be orchestrated by agents — and the architecture that makes it work — is the subject of the **[Agentic Handbook (clawable)](https://github.com/magnusfroste/clawable)**. FlowWink is the reference implementation.
 
 ---
 
