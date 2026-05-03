@@ -1,4 +1,5 @@
 import { defineModule } from '@/lib/module-def';
+import type { SkillSeed } from '@/lib/module-bootstrap';
 import { z } from 'zod';
 
 const inputSchema = z.object({
@@ -15,16 +16,36 @@ const outputSchema = z.object({
 type Input = z.infer<typeof inputSchema>;
 type Output = z.infer<typeof outputSchema>;
 
+const CUSTOMER360_SKILLS: SkillSeed[] = [
+  {
+    name: 'get_customer_360',
+    description:
+      'Fetch the unified Customer 360 view for a person — lead profile, all deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars and tasks plus a merged timeline and lifetime-value KPIs. Lookup by lead_id (preferred) OR email. Use when: an agent needs full context about a customer before answering a question, building a follow-up, or routing a ticket. NOT for: editing data — this is read-only.',
+    category: 'crm',
+    handler: 'edge:customer-360',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_customer_360',
+        description: 'Aggregated 360° customer profile with timeline and KPIs.',
+        parameters: {
+          type: 'object',
+          properties: {
+            lead_id: { type: 'string', description: 'UUID of the lead row (preferred)' },
+            email: { type: 'string', description: 'Email fallback when no lead row exists yet' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Always pass lead_id when known. Email fallback resolves e-commerce customers without a CRM row.',
+  },
+];
+
 /**
  * Customer 360 — unified view of everything tied to a person/customer.
- *
- * Aggregates leads + activities + deals + orders + invoices + quotes + tickets +
- * bookings + subscriptions + chats + webinars + tasks into one timeline + KPI
- * dashboard. Lookup by lead_id or email — the latter handles e-commerce
- * customers without a CRM lead row.
- *
- * Read-only. No mutations. No skills exposed (the value is the UI).
- * The aggregation runs in `customer-360` edge function (admin-auth required).
+ * Read aggregation runs in `customer-360` edge function.
  */
 export const customer360Module = defineModule<Input, Output>({
   id: 'customer360',
@@ -36,7 +57,8 @@ export const customer360Module = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: [],
+  skills: ['get_customer_360'],
+  skillSeeds: CUSTOMER360_SKILLS,
 
   async publish(_input: Input): Promise<Output> {
     return { success: true };
