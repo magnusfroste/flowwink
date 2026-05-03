@@ -35,7 +35,7 @@ type TimelineEvent = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Require authenticated admin user.
+  // Require authenticated admin user OR service-role caller (agent-execute).
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -44,36 +44,47 @@ serve(async (req) => {
     });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
+  const token = authHeader.replace("Bearer ", "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const isServiceRole = token === serviceKey;
 
-  const { data: claims, error: authError } = await supabase.auth.getClaims(
-    authHeader.replace("Bearer ", ""),
-  );
-  if (authError || !claims?.claims) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  if (!isServiceRole) {
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: claims, error: authError } = await userClient.auth.getClaims(token);
+    if (authError || !claims?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   // Service-role client for cross-table aggregation (bypasses per-table RLS).
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    serviceKey,
   );
 
   try {
+    // Accept params from query string (admin UI) OR JSON body (agent-execute).
     const url = new URL(req.url);
-    const leadIdParam = url.searchParams.get("lead_id");
-    const emailParam = url.searchParams.get("email")?.toLowerCase().trim();
+    let leadIdParam: string | null = url.searchParams.get("lead_id");
+    let emailParam: string | null = url.searchParams.get("email")?.toLowerCase().trim() ?? null;
+    if (!leadIdParam && !emailParam && (req.method === "POST" || req.method === "PUT")) {
+      try {
+        const body = await req.json();
+        leadIdParam = body?.lead_id ?? null;
+        emailParam = (body?.email ?? "").toString().toLowerCase().trim() || null;
+      } catch { /* no body */ }
+    }
 
     if (!leadIdParam && !emailParam) {
       return new Response(
-        JSON.stringify({ error: "Provide ?lead_id= or ?email=" }),
+        JSON.stringify({ error: "Provide lead_id or email" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
