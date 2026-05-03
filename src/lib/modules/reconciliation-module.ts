@@ -30,6 +30,76 @@ type Output = z.infer<typeof outputSchema>;
 
 const RECONCILIATION_SKILLS: SkillSeed[] = [
   {
+    name: 'sync_stripe_payouts',
+    description:
+      'Pull recent Stripe payouts and balance transactions into bank_transactions for matching. Use when: admin asks to refresh Stripe activity, daily payout reconciliation, before running auto_match_transactions. NOT for: bank file imports (use import_bank_file) or OCR of statement images (use import_bank_image).',
+    category: 'commerce',
+    handler: 'edge:reconciliation/sync-stripe',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'sync_stripe_payouts',
+        description: 'Sync recent Stripe payouts/balance transactions into bank_transactions.',
+        parameters: {
+          type: 'object',
+          properties: {
+            since: { type: 'string', description: 'ISO date — only sync transactions after this date. Defaults to last 30 days.' },
+          },
+        },
+      },
+    },
+    instructions: 'Idempotent — safe to call repeatedly. Existing rows (matched on Stripe id) are skipped.',
+  },
+  {
+    name: 'import_bank_file',
+    description:
+      'Import a structured bank statement file (CAMT.053 XML, MT940, OFX, CSV, or SIE 4) into bank_transactions. Auto-detects format and links to the correct bank account via IBAN/BBAN/GL match. Use when: user uploads a file from their bank/accounting system. NOT for: images/PDFs of statements (use import_bank_image), Stripe payouts (use sync_stripe_payouts).',
+    category: 'commerce',
+    handler: 'edge:reconciliation/import-file',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'import_bank_file',
+        description: 'Parse a bank statement file and insert bank_transactions.',
+        parameters: {
+          type: 'object',
+          properties: {
+            fileName: { type: 'string' },
+            content: { type: 'string', description: 'File contents as text (XML/CSV/SIE).' },
+            format: { type: 'string', enum: ['csv', 'camt053', 'mt940', 'ofx', 'sie'], description: 'Optional — auto-detected from filename/content if omitted.' },
+          },
+          required: ['fileName', 'content'],
+        },
+      },
+    },
+    instructions: 'Format auto-detection works in most cases — pass format explicitly only when filename is ambiguous. Account linking priority: IBAN/BBAN match → GL account match (SIE) → default bank_account. Duplicate transactions (same external_id) are skipped.',
+  },
+  {
+    name: 'auto_match_transactions',
+    description:
+      'Run the auto-matcher across all unmatched bank_transactions, scoring against open invoices, expenses, and orders. Creates reconciliation_match rows for confident hits and leaves ambiguous ones for human review. Use when: after import_bank_file/sync_stripe_payouts, daily reconciliation cron, before showing the unmatched queue. NOT for: booking unmatched rows (use manage_journal_entry instead).',
+    category: 'commerce',
+    handler: 'edge:reconciliation/auto-match',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'auto_match_transactions',
+        description: 'Auto-match unmatched bank_transactions against invoices/expenses/orders.',
+        parameters: {
+          type: 'object',
+          properties: {
+            limit: { type: 'integer', description: 'Max transactions to process this run. Default 200.' },
+            min_confidence: { type: 'number', description: '0-1 threshold. Default 0.85. Lower = more matches, more false positives.' },
+          },
+        },
+      },
+    },
+    instructions: 'Only matches above min_confidence are auto-applied. Lower-confidence candidates are stored as suggestions for the manual review queue. Always idempotent — re-running on the same data does nothing.',
+  },
+  {
     name: 'import_bank_image',
     description:
       'OCR a bank statement image or PDF (screenshot, scan, exported PDF) and turn it into bank_transactions rows. Use when: user uploads a picture/PDF of a bank account printout instead of a structured CSV/CAMT/SIE file. NOT for: structured files (use import_bank_file), or for booking journal entries (use manage_journal_entry). MANDATORY: default to commit=false (preview) so a human can verify rows before they hit the books; only set commit=true when the caller has already shown the parsed rows to the user and got approval.',
