@@ -202,22 +202,26 @@ skill_pack_install("CRM Nurture Pack")       → lead_pipeline_review, deal_stal
 
 ---
 
-## A2A Federation — Agent-to-Agent Protocol
+## Federation — MCP + A2A
 
-FlowWink implements the **A2A JSON-RPC 2.0** protocol for peer-to-peer agent communication:
+FlowWink speaks two open protocols so any operator can connect:
+
+- **MCP (Model Context Protocol)** — the primary surface. 187 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
+- **A2A (Agent-to-Agent JSON-RPC 2.0)** — peer-to-peer delegation between agents.
 
 ```
-┌─────────────┐    JSON-RPC 2.0    ┌─────────────┐
-│  FlowPilot  │◄──────────────────▶│  Peer Agent  │
-│ (gatekeeper)│   message/send     │  (e.g. OpenClaw)
-│             │   tasks/send       │              │
-└─────────────┘                    └─────────────┘
+┌─────────────┐   MCP / A2A    ┌────────────────────┐
+│  FlowWink   │◄──────────────▶│  Operator           │
+│  Platform   │   tools/call   │  • FlowPilot (local)│
+│ (modules +  │   resources    │  • OpenClaw         │
+│  187 skills)│   message/send │  • Claude Desktop   │
+└─────────────┘                │  • custom           │
+                                └────────────────────┘
 ```
 
-- **FlowPilot as gatekeeper** — all peer interactions routed through the autonomous agent
-- **Peer management** — add, test, discover, and audit external agents
+- **Directional connections** — peers can be inbound (MCP), outbound (`/v1/responses`) or bidirectional (A2A)
 - **Graceful degradation** — 503 `peer_unavailable` handling when peers are offline
-- **Audit loop** — architectural findings from peers auto-convert to agent objectives
+- **Audit loop** — architectural findings from peers auto-convert to platform objectives
 - **Agent Card** — `/.well-known/agent.json` discovery endpoint
 
 ---
