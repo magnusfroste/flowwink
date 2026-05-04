@@ -98,10 +98,10 @@ export function useCreateQuote() {
     }) => {
       const taxRate = input.tax_rate ?? 0.25;
 
-      // Fetch lead for customer info auto-fill
+      // Fetch lead for customer info auto-fill + pricelist context
       const { data: lead } = await supabase
         .from('leads')
-        .select('name, email, companies(name)')
+        .select('name, email, company_id, companies(name)')
         .eq('id', input.lead_id)
         .maybeSingle();
 
