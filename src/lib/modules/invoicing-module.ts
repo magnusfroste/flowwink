@@ -97,7 +97,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'bulk_invoice_from_timesheets',
-    description: 'Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "skapa månadsfaktura från timmar". NOT for: single manual invoices (use manage_invoice).',
+    description: 'Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use manage_invoice).',
     category: 'commerce',
     handler: 'rpc:bulk_invoice_from_timesheets',
     scope: 'external',
