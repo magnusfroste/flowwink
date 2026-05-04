@@ -179,7 +179,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'list_contract_documents',
-    description: 'List all documents linked to a specific contract. Use when: admin or agent asks "vilka dokument finns på avtal X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
+    description: 'List all documents linked to a specific contract. Use when: admin or agent asks "which documents are attached to contract X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',
