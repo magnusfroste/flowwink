@@ -23,3 +23,5 @@
 - MCP best practices: Anthropic Sept 2025-guidance applied (self-describing tools, `Use when:`/`NOT for:`, composite high-impact tools). Gaps: ingen `response_format`-enum än, ingen per-tool token-budget. Se mem://architecture/anthropic-mcp-best-practices-applied.
 - MCP-dokumentation: docs/architecture/mcp-overview.md är operational reference (endpoints, auth, schemas, gruppfiltrering, caching). docs/architecture/mcp-as-platform.md = arkitektoniskt varför.
 - [Pricelist Auto-Resolution on Lines](mem://ecommerce/pricelist-auto-resolution-on-lines) — Sprint 3: invoice/quote-rader med product_id resolvas automatiskt via resolve_pricelist_price RPC, locked rows och free-text-rader passerar oförändrat
+- [AI Task Hub](mem://architecture/ai-task-hub) — Sprint 4: konsoliderar tunna AI-edge-functions till en `ai-task` router. Nya AI-arbetsflöden = TaskSpec i `tasks.ts`, INTE ny edge function.
+- [New Module Checklist](mem://development/new-module-checklist) — Mandatory PR-checklista. Scaffolding via `bun run new:module <id>`. Konsoliderad doc: `docs/contributing/building-a-module.md`.
