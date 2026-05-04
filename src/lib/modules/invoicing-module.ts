@@ -93,7 +93,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Aggregate billable hours from time_entries for the given project and period. Each entry becomes a line item with hours × project hourly rate. Group options: "entry" (one line per entry), "user" (sum per user), "week" (sum per week). Auto-set due_date to issue_date + due_days. Swedish: "fakturera timmar", "faktura från tidsrapport".',
+    instructions: 'Aggregate billable hours from time_entries for the given project and period. Each entry becomes a line item with hours × project hourly rate. Group options: "entry" (one line per entry), "user" (sum per user), "week" (sum per week). Auto-set due_date to issue_date + due_days.',
   },
   {
     name: 'bulk_invoice_from_timesheets',
