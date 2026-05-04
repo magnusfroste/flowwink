@@ -19,7 +19,8 @@
     "test:mcp-regression": "npx -y tsx scripts/mcp-regression.ts",
     "test:timesheet-regression": "npx -y tsx scripts/timesheet-regression.ts",
     "lint:skill": "bun run scripts/skill-linter.ts",
-    "lint:skills": "bun run scripts/skill-linter.ts"
+    "lint:skills": "bun run scripts/skill-linter.ts",
+    "new:module": "bun run scripts/new-module.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
