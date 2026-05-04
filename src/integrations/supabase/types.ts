@@ -10721,6 +10721,10 @@ export type Database = {
           name: string
           phone: string | null
           registered_at: string
+          reminder_confirm_sent_at: string | null
+          reminder_post_sent_at: string | null
+          reminder_t1_sent_at: string | null
+          reminder_t24_sent_at: string | null
           webinar_id: string
         }
         Insert: {
@@ -10732,6 +10736,10 @@ export type Database = {
           name: string
           phone?: string | null
           registered_at?: string
+          reminder_confirm_sent_at?: string | null
+          reminder_post_sent_at?: string | null
+          reminder_t1_sent_at?: string | null
+          reminder_t24_sent_at?: string | null
           webinar_id: string
         }
         Update: {
@@ -10743,6 +10751,10 @@ export type Database = {
           name?: string
           phone?: string | null
           registered_at?: string
+          reminder_confirm_sent_at?: string | null
+          reminder_post_sent_at?: string | null
+          reminder_t1_sent_at?: string | null
+          reminder_t24_sent_at?: string | null
           webinar_id?: string
         }
         Relationships: [
@@ -12011,6 +12023,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      webinar_reminder_tick: { Args: never; Returns: Json }
       webinar_tick: { Args: never; Returns: Json }
     }
     Enums: {
