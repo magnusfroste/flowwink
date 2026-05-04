@@ -100,7 +100,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_opening_balances',
-    description: 'Create, list, update, or delete opening balances (ingående balanser / IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).',
+    description: 'Create, list, update, or delete opening balances (IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).',
     category: 'commerce',
     handler: 'db:opening_balances',
     scope: 'internal',
