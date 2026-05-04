@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { computeInvoiceTotals, type InvoiceLineItem, type InvoiceLead } from '@/hooks/useInvoices';
+import { applyPricelistToLineItems } from '@/lib/pricelist-resolver';
 
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
