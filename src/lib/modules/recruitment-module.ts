@@ -71,7 +71,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Job posting lifecycle: draft → published → closed. When publishing, ensure title, description and slug are set. Default employment_type to full_time. Swedish: "tjänst", "rekrytering", "ledig position".',
+      'Job posting lifecycle: draft → published → closed. When publishing, ensure title, description and slug are set. Default employment_type to full_time.',
   },
   {
     name: 'parse_resume',
