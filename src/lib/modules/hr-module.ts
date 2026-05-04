@@ -56,7 +56,7 @@ const HR_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Employee directory management. Status flow: active → on_leave → active, or active → terminated. When creating, default employment_type to full_time. For search, match against name, email, department. Swedish: "anställd", "medarbetare", "personal".',
+    instructions: 'Employee directory management. Status flow: active → on_leave → active, or active → terminated. When creating, default employment_type to full_time. For search, match against name, email, department.',
   },
   {
     name: 'manage_leave',
