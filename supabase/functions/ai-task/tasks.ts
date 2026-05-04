@@ -266,11 +266,100 @@ ${JSON.stringify((input as any).recent_activities, null, 2)}`,
   options: { temperature: 0.3, max_tokens: 400 },
 };
 
+// ─── generate_blog_from_webinar ──────────────────────────────────────────────
+// Closes the webinar → content loop. Loads completed webinar metadata,
+// produces a blog draft (title + slug + tiptap-friendly markdown), and
+// inserts it into blog_posts as status='draft'.
+const generateBlogFromWebinarInput = z.object({
+  webinar_id: z.string().uuid(),
+  source_text: z.string().optional(), // optional transcript / summary
+});
+
+const generateBlogFromWebinarTask: TaskSpec<
+  z.infer<typeof generateBlogFromWebinarInput>,
+  any
+> = {
+  name: "generate_blog_from_webinar",
+  description:
+    "Turn a completed webinar into a blog post draft. Loads webinar metadata; if source_text is omitted, the model writes from title + description + agenda + recording_url. Inserts blog_posts row as status=draft.",
+  tier: "reasoning",
+  inputSchema: generateBlogFromWebinarInput,
+  load: async (input, supabase) => {
+    const { data: w, error } = await supabase
+      .from("webinars")
+      .select(
+        "id, title, description, agenda, date, recording_url, cover_image, platform"
+      )
+      .eq("id", input.webinar_id)
+      .maybeSingle();
+    if (error || !w) throw new Error("Webinar not found");
+    if (w.status && w.status !== "completed") {
+      // soft warning — still allow drafting, but flag
+    }
+    return { webinar: w };
+  },
+  system: () =>
+    `You are a B2B content writer. Convert the supplied webinar into a single, evergreen blog post draft. Rules:
+- Title: clear value proposition, 50–70 chars, no clickbait.
+- Slug: lowercase kebab-case derived from title, max 60 chars.
+- Body: well-structured Markdown — short intro, 3–5 H2 sections drawn from the agenda, a "Key takeaways" bullet list, and a closing CTA paragraph that links to the recording_url if present.
+- Excerpt: 1–2 sentences, ≤ 160 chars, suitable as meta-description.
+- Tags: 3–6 lowercase topical tags.
+Never invent statistics, names, or product features that are not in the source.`,
+  user: (input) => {
+    const w = (input as any).webinar;
+    const txt = (input as any).source_text;
+    return `## Webinar metadata\n${JSON.stringify(w, null, 2)}\n\n${
+      txt ? `## Source transcript / notes\n${txt}` : "## Source\n(no transcript provided — write from metadata only)"
+    }`;
+  },
+  tool: {
+    name: "submit_blog_draft",
+    description: "Return a structured blog draft to be inserted as draft.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        slug: { type: "string" },
+        excerpt: { type: "string" },
+        body_markdown: { type: "string" },
+        tags: { type: "array", items: { type: "string" } },
+      },
+      required: ["title", "slug", "excerpt", "body_markdown"],
+    },
+  },
+  apply: async (input, result, supabase) => {
+    const w = (input as any).webinar;
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .insert({
+        title: result.title,
+        slug: result.slug,
+        excerpt: result.excerpt,
+        content: result.body_markdown, // raw markdown — Tiptap loader handles it
+        status: "draft",
+        cover_image: w?.cover_image ?? null,
+        tags: result.tags ?? [],
+        source: "webinar",
+        source_id: w?.id ?? null,
+      })
+      .select("id, slug")
+      .maybeSingle();
+    if (error) {
+      // Don't crash the AI call — return error info so caller can decide
+      return { inserted: false, error: error.message };
+    }
+    return { inserted: true, blog_post_id: data?.id, slug: data?.slug };
+  },
+  options: { temperature: 0.5, max_tokens: 2000 },
+};
+
 // ─── Registry ───────────────────────────────────────────────────────────────
 export const TASKS: Record<string, TaskSpec<any, any>> = {
   score_candidate: scoreCandidateTask,
   analyze_receipt: analyzeReceiptTask,
   qualify_lead_summary: qualifyLeadSummaryTask,
+  generate_blog_from_webinar: generateBlogFromWebinarTask,
 };
 
 export function listTasks() {
