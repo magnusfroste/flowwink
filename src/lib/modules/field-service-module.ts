@@ -104,7 +104,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Lifecycle: draft → scheduled (assign technician + slot) → in_progress (auto when visit starts) → completed (sets completed_at, emits service_order.completed) → invoiced (when invoice is generated). Use add_line to append labor/material before completion. After completion, the platform event triggers invoicing automation. Swedish: "serviceorder", "fältarbete", "tekniker".',
+      'Lifecycle: draft → scheduled (assign technician + slot) → in_progress (auto when visit starts) → completed (sets completed_at, emits service_order.completed) → invoiced (when invoice is generated). Use add_line to append labor/material before completion. After completion, the platform event triggers invoicing automation.',
   },
 ];
 
