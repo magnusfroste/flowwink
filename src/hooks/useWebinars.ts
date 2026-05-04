@@ -288,3 +288,82 @@ export function useWebinarStats() {
     },
   });
 }
+
+// ─── Lifecycle (RPC-backed) ──────────────────────────────────
+
+type LifecycleAction =
+  | { kind: 'publish'; webinarId: string }
+  | { kind: 'start'; webinarId: string }
+  | { kind: 'complete'; webinarId: string; recordingUrl?: string }
+  | { kind: 'cancel'; webinarId: string; reason?: string };
+
+export function useWebinarLifecycle() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (action: LifecycleAction) => {
+      let result;
+      switch (action.kind) {
+        case 'publish':
+          result = await (supabase.rpc as any)('publish_webinar', { p_webinar_id: action.webinarId });
+          break;
+        case 'start':
+          result = await (supabase.rpc as any)('start_webinar', { p_webinar_id: action.webinarId });
+          break;
+        case 'complete':
+          result = await (supabase.rpc as any)('complete_webinar', {
+            p_webinar_id: action.webinarId,
+            p_recording_url: action.recordingUrl ?? null,
+          });
+          break;
+        case 'cancel':
+          result = await (supabase.rpc as any)('cancel_webinar', {
+            p_webinar_id: action.webinarId,
+            p_reason: action.reason ?? null,
+          });
+          break;
+      }
+      if (result?.error) throw result.error;
+      return result?.data;
+    },
+    onSuccess: (_d, action) => {
+      queryClient.invalidateQueries({ queryKey: ['webinars'] });
+      queryClient.invalidateQueries({ queryKey: ['webinar-stats'] });
+      toast({ title: `Webinar ${action.kind}ed` });
+    },
+    onError: (e) => {
+      logger.error('webinar lifecycle error', e);
+      toast({
+        title: 'Error',
+        description: e instanceof Error ? e.message : 'Lifecycle action failed',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useMarkAttendance() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ registrationId, attended }: { registrationId: string; attended: boolean }) => {
+      const { error, data } = await (supabase.rpc as any)('mark_webinar_attendance', {
+        p_registration_id: registrationId,
+        p_attended: attended,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webinar-registrations'] });
+      toast({ title: 'Attendance updated' });
+    },
+    onError: (e) =>
+      toast({
+        title: 'Error',
+        description: e instanceof Error ? e.message : 'Failed to update attendance',
+        variant: 'destructive',
+      }),
+  });
+}
