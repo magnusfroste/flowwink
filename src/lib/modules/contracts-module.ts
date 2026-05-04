@@ -133,7 +133,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'search_contracts',
-    description: 'Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "hitta avtalet med X", "vilka avtal nämner Y-klausulen?", "sök NDA med ACME". Uses pg_trgm for fuzzy matching. NOT for: filtering by status only (use manage_contract action=list with status).',
+    description: 'Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "find the contract with X", "which contracts mention the Y clause?", "search NDA with ACME". Uses pg_trgm for fuzzy matching. NOT for: filtering by status only (use manage_contract action=list with status).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',
