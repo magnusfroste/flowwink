@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # Customer 360
 
 > One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with a unified timeline and lifetime-value KPIs.
 
-Ships with an **admin UI**.
+Ships with **1 agent skill**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,8 +24,17 @@ Ships with an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read` |
-| **MCP-exposed skills** | — |
+| **MCP-exposed skills** | 1 |
 | **Owns tables** | — |
+
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `get_customer_360` | internal | Fetch the unified Customer 360 view for a person — lead profile, all deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars and tasks plus a merged timeline and lifetime… |
 
 ## Module API Contract
 

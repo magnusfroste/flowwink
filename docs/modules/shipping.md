@@ -1,35 +1,35 @@
 ---
-title: "Consultants Module"
-module_id: "resume"
+title: "Shipping Module"
+module_id: "shipping"
 version: "1.0.0"
 category: "data"
-autonomy: "agent-capable"
+autonomy: "config-required"
 generated: true
 generated_at: "2026-05-04"
 ---
 
-# Consultants
+# Shipping
 
-> Match consultant profiles against job descriptions with AI-powered scoring and cover letters
+> Outbound shipping with multi-parcel support and carrier integrations. Built-in: PostNord, DHL, Bring. Tracking URLs are auto-rendered from per-carrier templates.
 
-Ships with **2 agent skills**.
+Ships with **2 agent skills**, **1 public block**, an **admin UI**.
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
-| **Module ID** | `resume` |
+| **Module ID** | `shipping` |
 | **Version** | 1.0.0 |
 | **Category** | data |
-| **Autonomy** | agent-capable |
+| **Autonomy** | config-required |
 | **Core** | No |
-| **Capabilities** | `data:read`, `content:produce` |
+| **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 2 |
 | **Owns tables** | — |
 
 ## Integrations
 
-**Optional:** `openai`, `gemini`
+**Optional:** `postnord`, `dhl`, `bring`
 
 ## Skills
 
@@ -38,20 +38,22 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_consultant_profile` | internal | Manage consultant/resume profiles: list, create, update, delete, deduplicate. Use when: adding a new consultant; updating skills or availability; cleaning up duplicate entries. NOT for: matching co… |
-| `match_consultant` | internal | Match consultants to a job description using AI. Use when: finding suitable candidates for an open position; a user provides a job description and needs recommendations; identifying best-fit consul… |
+| `manage_carrier` | internal | CRUD for shipping carriers (PostNord, DHL, Bring, custom). Use when: enabling/disabling a carrier, updating tracking-URL templates, or rotating API credentials. NOT for: creating shipments (use man… |
+| `manage_shipment` | internal | Create/list/update shipments (parcels) for an order. Use when: warehouse books a parcel with a carrier and gets a tracking number. NOT for: marking the whole order as shipped (use manage_orders ful… |
 
 ## Module API Contract
 
-**Input fields:** `job_description`, `max_results`
+**Actions:** `list_carriers`, `list_shipments`, `create_shipment`
 
-**Output fields:** `success`, `matches`, `consultant_id`, `name`, `title`, `score`, `reasoning`, `tailored_summary`, `cover_letter`, `matching_skills`, `missing_skills`, `error`
+**Input fields:** `action`, `order_id`
 
 ## File Map
 
 | Purpose | Path |
 |---------|------|
-| Module definition | `src/lib/modules/resume-module.ts` |
+| Module definition | `src/lib/modules/shipping-module.ts` |
+| Admin page | `src/pages/admin/ShippingPage.tsx` |
+| Public block | `src/components/public/blocks/ShippingInfoBlock.tsx` |
 
 ## Contributing
 

@@ -5,14 +5,14 @@ version: "1.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # Reconciliation
 
 > Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches against invoices/expenses/orders.
 
-Ships with **1 agent skill**, an **admin UI**.
+Ships with **5 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **1 agent skill**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 1 |
+| **MCP-exposed skills** | 5 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -38,7 +38,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `sync_stripe_payouts` | internal | Pull recent Stripe payouts and balance transactions into bank_transactions for matching. Use when: admin asks to refresh Stripe activity, daily payout reconciliation, before running auto_match_tran… |
+| `import_bank_file` | internal | Import a structured bank statement file (CAMT.053 XML, MT940, OFX, CSV, or SIE 4) into bank_transactions. Auto-detects format and links to the correct bank account via IBAN/BBAN/GL match. Use when:… |
+| `auto_match_transactions` | internal | Run the auto-matcher across all unmatched bank_transactions, scoring against open invoices, expenses, and orders. Creates reconciliation_match rows for confident hits and leaves ambiguous ones for … |
 | `import_bank_image` | internal | OCR a bank statement image or PDF (screenshot, scan, exported PDF) and turn it into bank_transactions rows. Use when: user uploads a picture/PDF of a bank account printout instead of a structured C… |
+| `list_unmatched_transactions` | internal | List bank_transactions still in status=unmatched, optionally filtered by bank account or date range. Use when: admin asks "what is left to reconcile?", before invoking auto_match_transactions, buil… |
 
 ## Module API Contract
 
