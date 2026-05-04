@@ -183,13 +183,37 @@ Manages webinars and registrations.
       },
     },
   },
+  {
+    name: 'generate_blog_from_webinar',
+    description: 'Turn a completed webinar into a blog post draft (title, slug, excerpt, markdown body, tags) and insert it as a draft in blog_posts. Use when: a webinar is completed and we want evergreen content from it. NOT for: editing existing blogs (use manage_blog), publishing live (admin reviews and publishes manually).',
+    category: 'content',
+    handler: 'edge:ai-task',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'generate_blog_from_webinar',
+        description: 'Generate a blog draft from a completed webinar. Inserts blog_posts row as status=draft.',
+        parameters: {
+          type: 'object',
+          required: ['webinar_id'],
+          properties: {
+            webinar_id: { type: 'string', format: 'uuid' },
+            source_text: { type: 'string', description: 'Optional transcript or notes. If omitted, the model writes from the webinar metadata only.' },
+          },
+        },
+      },
+    },
+    instructions: 'Pre-condition: webinar must be in status=completed (recording_url is helpful but not required). Posts the result as a blog draft for admin review — never auto-publishes. Routed via edge:ai-task with task=generate_blog_from_webinar.',
+  },
 ];
 
 export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutput>({
   id: 'webinars',
   name: 'Webinars',
-  version: '1.1.0',
-  description: 'Plan, promote, run and follow up webinars — lifecycle automation + lead-loop integration',
+  version: '1.2.0',
+  description: 'Plan, promote, run and follow up webinars — lifecycle, lead-loop, reminders and content-loop',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: webinarModuleInputSchema,
   outputSchema: webinarModuleOutputSchema,
@@ -202,6 +226,7 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
     'complete_webinar',
     'cancel_webinar',
     'mark_webinar_attendance',
+    'generate_blog_from_webinar',
   ],
   skillSeeds: WEBINARS_SKILLS,
 

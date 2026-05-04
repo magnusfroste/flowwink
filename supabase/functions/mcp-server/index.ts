@@ -221,10 +221,16 @@ const MODULE_TO_CATEGORY: Record<string, string> = (() => {
 const COMPOSITE_GROUPS: Record<string, string[]> = {
   // Marketing department: paid ads + content + research + analytics
   marketing: ["growth", "content", "search", "analytics", "automation"],
-  // Sales department: CRM + research + analytics
-  sales: ["crm", "search", "analytics", "automation"],
+  // Sales department: CRM + research + analytics + commerce (quotes, contracts)
+  sales: ["crm", "search", "analytics", "automation", "commerce"],
   // Operations: commerce ops + analytics
   operations: ["commerce", "analytics", "automation"],
+  // Support: tickets, SLA, KB lookup, customer comms
+  support: ["communication", "crm", "content", "analytics", "automation"],
+  // Customer success: subscriptions retention + comms + insights
+  success: ["subscriptions", "communication", "crm", "identity", "analytics", "automation"],
+  // Finance / record-to-report: accounting, expenses, invoicing, subscriptions
+  finance: ["commerce", "subscriptions", "analytics", "automation"],
 };
 
 /** Resolve a list of group/module tokens to their underlying skill categories. */
