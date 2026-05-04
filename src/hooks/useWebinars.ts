@@ -203,48 +203,15 @@ export function useRegisterForWebinar() {
 
   return useMutation({
     mutationFn: async (input: { webinar_id: string; name: string; email: string; phone?: string }) => {
-      // Check if already registered
-      const { data: existing } = await supabase
-        .from('webinar_registrations')
-        .select('id')
-        .eq('webinar_id', input.webinar_id)
-        .eq('email', input.email)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error('Already registered for this webinar');
-      }
-
-      // Get webinar title for lead activity
-      const { data: webinar } = await supabase
-        .from('webinars')
-        .select('title')
-        .eq('id', input.webinar_id)
-        .single();
-
-      // Create/update lead via centralized lead-utils contract
-      const { leadId } = await createLeadFromWebinar({
-        email: input.email,
-        name: input.name,
-        phone: input.phone,
-        webinarId: input.webinar_id,
-        webinarTitle: webinar?.title || 'Unknown webinar',
+      // SECURITY DEFINER RPC handles dedup, lead-link/create, score boost and event emission.
+      const { data, error } = await (supabase.rpc as any)('register_for_webinar', {
+        p_webinar_id: input.webinar_id,
+        p_name: input.name,
+        p_email: input.email,
+        p_phone: input.phone ?? null,
       });
-
-      const { data, error } = await supabase
-        .from('webinar_registrations')
-        .insert({
-          webinar_id: input.webinar_id,
-          name: input.name,
-          email: input.email,
-          phone: input.phone || null,
-          lead_id: leadId,
-        })
-        .select()
-        .single();
-
       if (error) throw error;
-      return data as WebinarRegistration;
+      return data as { success: boolean; registration_id: string; lead_id: string };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['webinar-registrations', variables.webinar_id] });
