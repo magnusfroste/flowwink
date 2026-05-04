@@ -11061,6 +11061,10 @@ export type Database = {
         Args: { p_reservation_id: string }
         Returns: undefined
       }
+      cancel_webinar: {
+        Args: { p_reason?: string; p_webinar_id: string }
+        Returns: Json
+      }
       check_mo_availability: { Args: { p_mo_id: string }; Returns: Json }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
@@ -11189,6 +11193,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      complete_webinar: {
+        Args: { p_recording_url?: string; p_webinar_id: string }
+        Returns: Json
       }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
       confirm_pick: {
@@ -11466,6 +11474,10 @@ export type Database = {
         }
         Returns: Json
       }
+      mark_webinar_attendance: {
+        Args: { p_attended?: boolean; p_registration_id: string }
+        Returns: Json
+      }
       match_invoice_to_receipt: {
         Args: { p_invoice_id: string; p_tolerance_pct?: number }
         Returns: Json
@@ -11537,6 +11549,7 @@ export type Database = {
         }[]
       }
       publish_scheduled_pages: { Args: never; Returns: Json }
+      publish_webinar: { Args: { p_webinar_id: string }; Returns: Json }
       purge_audit_logs_past_retention: { Args: never; Returns: Json }
       receive_purchase_order: {
         Args: {
@@ -11653,6 +11666,15 @@ export type Database = {
       }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
+        Returns: Json
+      }
+      register_for_webinar: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_phone?: string
+          p_webinar_id: string
+        }
         Returns: Json
       }
       reject_procurement_suggestion: {
@@ -11878,6 +11900,7 @@ export type Database = {
         }
       }
       start_mo: { Args: { p_mo_id: string }; Returns: Json }
+      start_webinar: { Args: { p_webinar_id: string }; Returns: Json }
       submit_expense_report: { Args: { p_report_id: string }; Returns: Json }
       submit_survey_response: {
         Args: {
@@ -11988,6 +12011,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      webinar_tick: { Args: never; Returns: Json }
     }
     Enums: {
       a2a_activity_status: "success" | "error" | "pending" | "dispatched"
