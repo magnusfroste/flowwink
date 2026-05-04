@@ -567,6 +567,80 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
     },
     instructions: 'Use when a client has filled in their Business Identity and wants a website generated. AI analyzes available data fields and composes appropriate blocks. Requires approval. Page created as draft.',
   },
+  {
+    // Exposes the admin Copilot site-builder reasoning loop as a first-class
+    // MCP skill so external claws (OpenClaw, sales/ops claws) can drive the
+    // same block-by-block site builder that the admin /admin/copilot UI uses.
+    // ONE implementation of the loop — two consumers (admin UI + MCP).
+    name: 'build_site_step',
+    description: 'Run one step of the site-builder reasoning loop: takes conversation history + current module state, returns next assistant message and optionally a tool_call (create_block / migrate_url / update_footer / activate_modules). Caller is responsible for applying the tool_call and feeding the result back as the next user message. Use when: an external operator wants to drive the AI site builder programmatically; building or migrating a website block-by-block from another agent. NOT for: directly creating a single page (manage_page) or block (create_page_block); migrating a single URL without iterative feedback (migrate_url).',
+    category: 'content',
+    handler: 'edge:copilot-action',
+    scope: 'both',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'build_site_step',
+        description: 'Run one step of the site-builder reasoning loop. Returns { message, toolCall? } — caller applies the toolCall (creating a block, migrating a URL, updating footer, activating a module), then calls again with the result appended to messages. Loop ends when no toolCall is returned.',
+        parameters: {
+          type: 'object',
+          properties: {
+            messages: {
+              type: 'array',
+              description: 'Full conversation history. Each item: { role: "user"|"assistant", content: string }.',
+              items: {
+                type: 'object',
+                properties: {
+                  role: { type: 'string', enum: ['user', 'assistant'] },
+                  content: { type: 'string' },
+                },
+                required: ['role', 'content'],
+              },
+              minItems: 1,
+            },
+            currentModules: {
+              type: 'object',
+              description: 'Optional current ModulesSettings snapshot so the builder knows which modules are already enabled. If omitted, defaults are used.',
+              additionalProperties: true,
+            },
+            migrationState: {
+              type: 'object',
+              description: 'Optional active migration context: { sourceUrl, platform } when a migration loop is in progress.',
+              properties: {
+                sourceUrl: { type: 'string' },
+                platform: { type: 'string' },
+              },
+              additionalProperties: false,
+            },
+          },
+          required: ['messages'],
+          additionalProperties: false,
+        },
+      },
+    },
+    instructions: `## build_site_step
+### What
+Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, exposed for external claws.
+### When to use
+- An external operator wants to build or migrate a website iteratively
+- You want block-by-block control with approval between each step
+### How to drive the loop
+1. Send messages = [{ role: 'user', content: 'Build a SaaS landing page for X' }]
+2. Receive { message, toolCall? }
+3. If toolCall.name === 'create_block' → render/save the block, then continue with messages += [{ role: 'assistant', content: message }, { role: 'user', content: 'approved, next' }]
+4. If toolCall.name === 'migrate_url' → run migrate_url skill, feed extracted blocks back
+5. If toolCall.name === 'update_footer' → call manage_global_blocks with slot=footer
+6. If toolCall.name === 'activate_modules' → enable listed modules, continue
+7. Loop until response has no toolCall
+### Tool calls returned
+- create_<type>_block — extract data, persist via create_page_block
+- migrate_url — call site-migration migrate_url skill
+- update_footer — phone/email/address fields → global footer block
+- activate_modules — list of module ids to enable
+### Edge cases
+- Stateless on the server side — caller owns the conversation history.
+- Returns 429/402 on AI provider rate-limit / credits exhausted — back off and retry.`,
+  },
 ];
 
 export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
@@ -585,6 +659,7 @@ export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
     'manage_global_blocks',
     'generate_site_from_identity',
     'landing_page_compose',
+    'build_site_step',
   ],
   skillSeeds: PAGES_SKILLS,
 

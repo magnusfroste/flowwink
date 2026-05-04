@@ -25,3 +25,4 @@
 - [Pricelist Auto-Resolution on Lines](mem://ecommerce/pricelist-auto-resolution-on-lines) — Sprint 3: invoice/quote-rader med product_id resolvas automatiskt via resolve_pricelist_price RPC, locked rows och free-text-rader passerar oförändrat
 - [AI Task Hub](mem://architecture/ai-task-hub) — Sprint 4: konsoliderar tunna AI-edge-functions till en `ai-task` router. Nya AI-arbetsflöden = TaskSpec i `tasks.ts`, INTE ny edge function.
 - [New Module Checklist](mem://development/new-module-checklist) — Mandatory PR-checklista. Scaffolding via `bun run new:module <id>`. Konsoliderad doc: `docs/contributing/building-a-module.md`.
+- [Copilot Builder as MCP Skill](mem://federation/copilot-builder-as-mcp-skill) — `copilot-action` (admin /admin/copilot site-builder loop) exponerad som MCP-skill `build_site_step`. En implementation, två konsumenter (admin UI + externa claws).
