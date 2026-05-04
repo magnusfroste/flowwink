@@ -125,7 +125,21 @@ export function useCreateInvoice() {
       notes?: string;
     }) => {
       const taxRate = input.tax_rate ?? 0.25;
-      const totals = computeInvoiceTotals(input.line_items, taxRate);
+
+      // Resolve customer context for pricelist lookup
+      const { data: leadCtx } = await supabase
+        .from('leads')
+        .select('company_id')
+        .eq('id', input.lead_id)
+        .maybeSingle();
+
+      const pricedLines = await applyPricelistToLineItems(input.line_items, {
+        lead_id: input.lead_id,
+        company_id: leadCtx?.company_id ?? null,
+        currency: input.currency || 'SEK',
+      });
+
+      const totals = computeInvoiceTotals(pricedLines, taxRate);
 
       // Generate invoice number: INV-XXXX
       const { count } = await supabase
