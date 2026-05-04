@@ -69,7 +69,7 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
   //   src/lib/__tests__/skill-schema-not-null-coverage.guardrails.test.ts
   {
     name: 'timesheet_summary',
-    description: 'Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "hur mycket tid har vi lagt på projekt X". NOT for: logging time (use log_time).',
+    description: 'Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "how much time have we spent on project X". NOT for: logging time (use log_time).',
     category: 'commerce',
     handler: 'db:timesheets',
     scope: 'internal',
