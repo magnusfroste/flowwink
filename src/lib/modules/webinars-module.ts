@@ -188,8 +188,8 @@ Manages webinars and registrations.
 export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutput>({
   id: 'webinars',
   name: 'Webinars',
-  version: '1.0.0',
-  description: 'Plan, promote and follow up webinars and online events',
+  version: '1.1.0',
+  description: 'Plan, promote, run and follow up webinars — lifecycle automation + lead-loop integration',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: webinarModuleInputSchema,
   outputSchema: webinarModuleOutputSchema,
