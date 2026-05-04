@@ -570,11 +570,16 @@ function WebinarDetailDialog({
                       <p className="text-muted-foreground">{reg.email}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {reg.attended && (
-                        <Badge variant="secondary" className="bg-success/10 text-success">
-                          Attended
-                        </Badge>
-                      )}
+                      <Button
+                        variant={reg.attended ? 'secondary' : 'outline'}
+                        size="sm"
+                        className={reg.attended ? 'bg-success/10 text-success hover:bg-success/20' : ''}
+                        onClick={() => markAttendance.mutate({ registrationId: reg.id, attended: !reg.attended })}
+                        disabled={markAttendance.isPending}
+                      >
+                        <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                        {reg.attended ? 'Attended' : 'Mark attended'}
+                      </Button>
                       {reg.follow_up_sent && (
                         <Badge variant="outline">Follow-up sent</Badge>
                       )}
