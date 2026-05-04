@@ -31,7 +31,7 @@ type TimesheetsOutput = z.infer<typeof timesheetsOutputSchema>;
 const TIMESHEET_SKILLS: SkillSeed[] = [
   {
     name: 'log_time',
-    description: 'Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says "jag jobbade 4 timmar på X". NOT for: project management (use manage_projects), summaries (use timesheet_summary).',
+    description: 'Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says "I worked 4 hours on X". NOT for: project management (use manage_projects), summaries (use timesheet_summary).',
     category: 'commerce',
     handler: 'db:timesheets',
     scope: 'internal',
