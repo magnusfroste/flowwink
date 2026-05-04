@@ -33,7 +33,7 @@ const POS_SKILLS: SkillSeed[] = [
           required: ['p_register_id'],
           properties: {
             p_register_id: { type: 'string', format: 'uuid' },
-            p_opening_cash_cents: { type: 'number', description: 'Opening cash drawer (in cents/öre)' },
+            p_opening_cash_cents: { type: 'number', description: 'Opening cash drawer (in minor currency units, e.g. cents)' },
             p_cashier_name: { type: 'string' },
           },
         },
