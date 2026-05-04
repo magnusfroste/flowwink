@@ -82,7 +82,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     name: 'analyze_receipt',
     description: 'Analyze a receipt image using AI vision to extract structured data: amount, VAT, vendor, date, and suggest matching account code. Use when: employee uploads a receipt photo, FlowPilot processes expense attachments. NOT for: managing expenses (use manage_expenses), creating journal entries (use manage_journal_entry).',
     category: 'commerce',
-    handler: 'edge:analyze-receipt',
+    handler: 'ai-task:analyze_receipt',
     scope: 'internal',
     tool_definition: {
       type: 'function',

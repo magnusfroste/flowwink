@@ -195,7 +195,24 @@ serve(async (req) => {
     const handler = skill.handler as string;
 
     try {
-      if (handler.startsWith('edge:') || handler.startsWith('function:')) {
+      if (handler.startsWith('ai-task:')) {
+        // Consolidated AI task hub — handler value is the task name.
+        const taskName = handler.replace('ai-task:', '');
+        const response = await fetch(`${supabaseUrl}/functions/v1/ai-task`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ task: taskName, input: args }),
+        });
+        const taskResult = await response.json();
+        if (!response.ok && !taskResult.error) {
+          taskResult.error = `ai-task '${taskName}' returned HTTP ${response.status}`;
+        }
+        result = taskResult;
+
+      } else if (handler.startsWith('edge:') || handler.startsWith('function:')) {
         const fnName = handler.startsWith('edge:')
           ? handler.replace('edge:', '')
           : handler.replace('function:', '');

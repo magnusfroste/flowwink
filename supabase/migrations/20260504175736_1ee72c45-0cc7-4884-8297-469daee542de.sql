@@ -1,0 +1,2 @@
+UPDATE public.agent_skills SET handler = 'ai-task:score_candidate', updated_at = now() WHERE name = 'score_candidate' AND handler = 'edge:score-candidate';
+UPDATE public.agent_skills SET handler = 'ai-task:analyze_receipt', updated_at = now() WHERE name = 'analyze_receipt' AND handler = 'edge:analyze-receipt';
