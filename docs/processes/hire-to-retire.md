@@ -69,10 +69,10 @@ Offboarding → contracts terminated, access revoked
 
 ## Known gaps (missing for L3+)
 
-- ❌ **Payroll integration** (Fortnox Lön, Visma, Hogia)
+- ❌ **Payroll integration** (Fortnox Payroll, Visma, Hogia)
 - ❌ Performance management / PDP / 1:1 notes
 - ❌ Compensation planning
-- ✅ Time-off accrual: `auto_allocate_vacation` matchar `vacation_policies` (ålder/tenure) + capped carry-over, audit-loggas per anställd
+- ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee
 - ❌ Org chart / reporting structure
 - ❌ Employment contract templates with Swedish collective agreements
 
