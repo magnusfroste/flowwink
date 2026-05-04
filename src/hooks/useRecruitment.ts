@@ -214,12 +214,12 @@ export function useScoreCandidate() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (application_id: string) => {
-      const { data, error } = await supabase.functions.invoke('score-candidate', {
-        body: { application_id },
+      const { data, error } = await supabase.functions.invoke('ai-task', {
+        body: { task: 'score_candidate', input: { application_id } },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Scoring failed');
-      return data.scoring;
+      return data.result;
     },
     onSuccess: (_d, application_id) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
