@@ -477,6 +477,7 @@ function WebinarDetailDialog({
   onEdit: (w: Webinar) => void;
 }) {
   const { data: registrations = [] } = useWebinarRegistrations(webinar?.id);
+  const markAttendance = useMarkAttendance();
 
   if (!webinar) return null;
 
