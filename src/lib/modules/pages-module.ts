@@ -659,6 +659,7 @@ export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
     'manage_global_blocks',
     'generate_site_from_identity',
     'landing_page_compose',
+    'build_site_step',
   ],
   skillSeeds: PAGES_SKILLS,
 
