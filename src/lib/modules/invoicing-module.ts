@@ -123,7 +123,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'send_dunning_reminders',
-    description: 'Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "kör påminnelser", "send overdue reminders". NOT for: single invoice reminders.',
+    description: 'Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "run reminders", "send overdue reminders". NOT for: single invoice reminders.',
     category: 'commerce',
     handler: 'rpc:send_dunning_reminders',
     scope: 'external',
