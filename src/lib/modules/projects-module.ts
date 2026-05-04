@@ -94,7 +94,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Swedish: "uppgift", "ärende", "kanban".',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order.',
   },
 ];
 
