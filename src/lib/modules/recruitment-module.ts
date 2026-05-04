@@ -104,7 +104,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     description:
       'Evaluate a parsed candidate against a job posting and assign ai_score (0-100), ai_summary and matching/missing skills. Use when: a candidate has been parsed and needs ranking against the role. NOT for: moving stage (use move_application_stage).',
     category: 'crm',
-    handler: 'edge:score-candidate',
+    handler: 'ai-task:score_candidate',
     scope: 'internal',
     tool_definition: {
       type: 'function',
