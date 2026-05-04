@@ -246,7 +246,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'auto_generate_purchase_orders',
-    description: 'Group reorder candidates by preferred vendor and auto-create one draft PO per vendor. Use when: nightly reorder run, "skapa inköpsordrar". Closes procure-to-pay loop. NOT for: single manual POs (use create_purchase_order).',
+    description: 'Group reorder candidates by preferred vendor and auto-create one draft PO per vendor. Use when: nightly reorder run, "create purchase orders". Closes procure-to-pay loop. NOT for: single manual POs (use create_purchase_order).',
     category: 'commerce',
     handler: 'rpc:auto_generate_purchase_orders',
     scope: 'external',

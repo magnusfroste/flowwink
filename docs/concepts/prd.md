@@ -461,8 +461,7 @@ The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full 
 - **Task-level time logging**: Time entries can optionally reference a specific task via `task_id`
 - **Auto-completion**: Database trigger automatically sets `completed_at` when task status changes to "done"
 - **Invoice integration**: "From Timesheets" dialog generates invoice drafts from billable hours — aggregates time entries by project and period
-- **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
-- **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
+- **FlowPilot chat**: Natural language — "create a task to design the landing page" triggers `manage_tasks`, "I worked 4 hours on X" triggers `log_time`
 - **RLS**: Authenticated users can CRUD tasks and time entries; invoiced entries cannot be deleted
 
 ### Invoicing Module (Quote-to-Cash)
@@ -477,7 +476,7 @@ The invoicing module (`src/lib/module-bootstraps/invoicing.ts`) closes the Quote
 - **PDF generation**: `generate-invoice-pdf` edge function renders invoice as downloadable PDF
 - **Status lifecycle**: draft → sent (sets sent_at) → paid (sets paid_at) | overdue (auto-flagged) | cancelled
 - **Accounting bridge**: When invoice is marked paid, FlowPilot can trigger `manage_journal_entry` to book revenue (via accounting reconciliation automation)
-- **FlowPilot chat**: "skapa faktura för projekt X" triggers `manage_invoice`, "fakturera timmarna från förra månaden" triggers `invoice_from_timesheets`
+- **FlowPilot chat**: "create invoice for project X" triggers `manage_invoice`, "invoice the hours from last month" triggers `invoice_from_timesheets`
 
 | Reference doc | Path |
 |---|---|

@@ -31,7 +31,7 @@ type TimesheetsOutput = z.infer<typeof timesheetsOutputSchema>;
 const TIMESHEET_SKILLS: SkillSeed[] = [
   {
     name: 'log_time',
-    description: 'Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says "jag jobbade 4 timmar på X". NOT for: project management (use manage_projects), summaries (use timesheet_summary).',
+    description: 'Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says "I worked 4 hours on X". NOT for: project management (use manage_projects), summaries (use timesheet_summary).',
     category: 'commerce',
     handler: 'db:timesheets',
     scope: 'internal',
@@ -69,7 +69,7 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
   //   src/lib/__tests__/skill-schema-not-null-coverage.guardrails.test.ts
   {
     name: 'timesheet_summary',
-    description: 'Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "hur mycket tid har vi lagt på projekt X". NOT for: logging time (use log_time).',
+    description: 'Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "how much time have we spent on project X". NOT for: logging time (use log_time).',
     category: 'commerce',
     handler: 'db:timesheets',
     scope: 'internal',
@@ -95,7 +95,7 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'For custom date ranges pass start_date/end_date (from_date/to_date also accepted) — period auto-switches to "custom". When include_revenue is true, multiply hours × hourly_rate per project. Swedish: "tidssammanställning", "fakturerbar tid", "rapportera timmar".',
+    instructions: 'For custom date ranges pass start_date/end_date (from_date/to_date also accepted) — period auto-switches to "custom". When include_revenue is true, multiply hours × hourly_rate per project.',
   },
 ];
 

@@ -5,12 +5,14 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # Templates
 
 > Template gallery, export current site as reusable template, and import templates from file
+
+Ships with **1 agent skill**.
 
 ## Quick Facts
 
@@ -22,8 +24,17 @@ generated_at: "2026-05-01"
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | — |
+| **MCP-exposed skills** | 1 |
 | **Owns tables** | — |
+
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `list_templates` | internal | List the starter-template catalog (static JSON in /templates) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am … |
 
 ## Module API Contract
 

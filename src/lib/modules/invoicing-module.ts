@@ -93,11 +93,11 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Aggregate billable hours from time_entries for the given project and period. Each entry becomes a line item with hours × project hourly rate. Group options: "entry" (one line per entry), "user" (sum per user), "week" (sum per week). Auto-set due_date to issue_date + due_days. Swedish: "fakturera timmar", "faktura från tidsrapport".',
+    instructions: 'Aggregate billable hours from time_entries for the given project and period. Each entry becomes a line item with hours × project hourly rate. Group options: "entry" (one line per entry), "user" (sum per user), "week" (sum per week). Auto-set due_date to issue_date + due_days.',
   },
   {
     name: 'bulk_invoice_from_timesheets',
-    description: 'Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "skapa månadsfaktura från timmar". NOT for: single manual invoices (use manage_invoice).',
+    description: 'Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use manage_invoice).',
     category: 'commerce',
     handler: 'rpc:bulk_invoice_from_timesheets',
     scope: 'external',
@@ -123,7 +123,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'send_dunning_reminders',
-    description: 'Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "kör påminnelser", "send overdue reminders". NOT for: single invoice reminders.',
+    description: 'Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "run reminders", "send overdue reminders". NOT for: single invoice reminders.',
     category: 'commerce',
     handler: 'rpc:send_dunning_reminders',
     scope: 'external',
@@ -144,7 +144,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'invoice_overdue_check',
-    description: 'Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "vilka fakturor är förfallna". NOT for: creating invoices (use manage_invoice).',
+    description: 'Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "which invoices are overdue". NOT for: creating invoices (use manage_invoice).',
     category: 'commerce',
     handler: 'db:invoices',
     scope: 'internal',
@@ -162,7 +162,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Query invoices with status=sent and due_date < today. Report count and total amount. If auto_flag is true, update their status to overdue. Format output showing invoice number, customer, amount, and days overdue. Swedish: "förfallna fakturor", "påminnelse".',
+    instructions: 'Query invoices with status=sent and due_date < today. Report count and total amount. If auto_flag is true, update their status to overdue. Format output showing invoice number, customer, amount, and days overdue.',
   },
 ];
 

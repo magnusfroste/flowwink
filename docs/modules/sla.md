@@ -1,35 +1,48 @@
 ---
 title: "SLA Monitor Module"
 module_id: "sla"
-version: "1.0.0"
+version: "1.1.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # SLA Monitor
 
-> Service level agreement monitoring for order fulfillment, response times, and operational metrics
+> Service level agreement monitoring for order fulfillment, ticket response, lead handling, chat reply times, and booking confirmations. Auto-detects violations, auto-resolves when entities are handled.
+
+Ships with **3 agent skills**.
 
 ## Quick Facts
 
 | Property | Value |
 |----------|-------|
 | **Module ID** | `sla` |
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
 | **Category** | insights |
 | **Autonomy** | agent-capable |
 | **Core** | No |
-| **Capabilities** | `data:read` |
-| **MCP-exposed skills** | — |
+| **Capabilities** | `data:read`, `data:write` |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
+
+## Skills
+
+These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
+External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can call them directly.
+
+| Skill | Scope | Description |
+|-------|-------|-------------|
+| `sla_check` | internal | Check all SLA policies against current data — finds overdue tickets, orders, leads, chats, and bookings. Auto-creates violations and auto-resolves when entities are handled. Use when: monitoring se… |
+| `manage_sla_policy` | internal | CRUD for SLA policies — define thresholds (in minutes) per entity_type + metric. Use when: setting up monitoring for a new entity, tightening/loosening response targets. NOT for: running checks (us… |
+| `list_sla_violations` | internal | List SLA violations — open (unresolved) by default, with optional filters by entity_type and time window. Use when: building a dashboard, asked about overdue work, investigating SLA health. |
 
 ## Module API Contract
 
-**Actions:** `check`, `report`
+**Actions:** `check`, `list_policies`, `list_violations`
 
-**Input fields:** `action`, `period_days`
+**Input fields:** `action`, `entity_type`, `period_days`
 
 **Output fields:** `success`, `message`
 

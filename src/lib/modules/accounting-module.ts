@@ -65,7 +65,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'accounting_reports',
-    description: 'Generate financial reports: balance sheet (balansräkning), income statement (resultaträkning), general ledger (huvudbok), trial balance, or check for unbooked invoices. Use when: admin asks for financial overview, month-end closing, reconciliation checks. NOT for: creating entries (use manage_journal_entry).',
+    description: 'Generate financial reports: balance sheet, income statement, general ledger, trial balance, or check for unbooked invoices. Use when: admin asks for financial overview, month-end closing, reconciliation checks. NOT for: creating entries (use manage_journal_entry).',
     category: 'commerce',
     handler: 'db:journal_entries',
     scope: 'internal',
@@ -100,7 +100,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_opening_balances',
-    description: 'Create, list, update, or delete opening balances (ingående balanser / IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).',
+    description: 'Create, list, update, or delete opening balances (IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).',
     category: 'commerce',
     handler: 'db:opening_balances',
     scope: 'internal',
@@ -302,7 +302,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_vendor_defaults',
-    description: 'Read or update a vendor\'s autokontering defaults — `default_account_code` (e.g. 6540 for IT-tjänster), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
+    description: 'Read or update a vendor\'s auto-coding defaults — `default_account_code` (e.g. 6540 for IT services), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
     category: 'commerce',
     handler: 'db:vendors',
     scope: 'internal',

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # Invoicing
@@ -40,9 +40,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_invoice` | internal | ISO currency code, default ${getActivePack().currency.code} |
 | `invoice_from_timesheets` | internal | Generate invoice draft from billable time entries. Use when: user wants to invoice a client for logged hours, "fakturera timmar", "invoice project X for last month". NOT for: manual invoices (use m… |
-| `bulk_invoice_from_timesheets` | external | Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "skapa månadsfaktura från timmar". NOT for: single manual invoices (use m… |
-| `send_dunning_reminders` | external | Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "kör påminnelser", "send overdue reminders". NOT for: single invoice re… |
-| `invoice_overdue_check` | internal | Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "vilka fakturor är förfallna". NOT for: creating invoices… |
+| `bulk_invoice_from_timesheets` | external | Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use… |
+| `send_dunning_reminders` | external | Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "run reminders", "send overdue reminders". NOT for: single invoice remi… |
+| `invoice_overdue_check` | internal | Check for overdue invoices and optionally send reminders. Use when: FlowPilot runs daily overdue check, admin asks "any overdue invoices?", "which invoices are overdue". NOT for: creating invoices … |
 
 ## Module API Contract
 

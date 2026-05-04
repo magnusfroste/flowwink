@@ -85,11 +85,11 @@ const CONTRACT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Contracts track agreements with external parties. Status flow: draft → pending_signature → active → expired/terminated. When creating, default currency to SEK. ALWAYS write the full agreement text into body_markdown (Parties, Scope, Term, Fees, Payment, Confidentiality, Termination, Governing law, Signatures) — do NOT create a contract with an empty body unless a file_url PDF is attached. notes is for short internal metadata only, NOT the contract text. For search, match against title and counterparty_name. Swedish: "avtal", "kontrakt", "NDA", "tjänsteavtal".',
+    instructions: 'Contracts track agreements with external parties. Status flow: draft → pending_signature → active → expired/terminated. When creating, default currency to SEK. ALWAYS write the full agreement text into body_markdown (Parties, Scope, Term, Fees, Payment, Confidentiality, Termination, Governing law, Signatures) — do NOT create a contract with an empty body unless a file_url PDF is attached. notes is for short internal metadata only, NOT the contract text. For search, match against title and counterparty_name.',
   },
   {
     name: 'contract_renewal_check',
-    description: 'Check for contracts expiring soon and alert. Use when: autonomous heartbeat checks for renewal deadlines, or admin asks "vilka avtal går ut snart?". NOT for: creating contracts (use manage_contract).',
+    description: 'Check for contracts expiring soon and alert. Use when: autonomous heartbeat checks for renewal deadlines, or admin asks "which contracts are expiring soon?". NOT for: creating contracts (use manage_contract).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',
@@ -107,7 +107,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Query active contracts where end_date is within the specified window. Group by urgency: critical (<7 days), warning (<30 days), notice (<90 days). For auto-renew contracts, check if renewal_notice_days has passed. Swedish: "förnyelse", "utgående avtal", "uppsägningstid".',
+    instructions: 'Query active contracts where end_date is within the specified window. Group by urgency: critical (<7 days), warning (<30 days), notice (<90 days). For auto-renew contracts, check if renewal_notice_days has passed.',
   },
   {
     name: 'get_contract_content',
@@ -133,7 +133,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'search_contracts',
-    description: 'Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "hitta avtalet med X", "vilka avtal nämner Y-klausulen?", "sök NDA med ACME". Uses pg_trgm for fuzzy matching. NOT for: filtering by status only (use manage_contract action=list with status).',
+    description: 'Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "find the contract with X", "which contracts mention the Y clause?", "search NDA with ACME". Uses pg_trgm for fuzzy matching. NOT for: filtering by status only (use manage_contract action=list with status).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',
@@ -179,7 +179,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'list_contract_documents',
-    description: 'List all documents linked to a specific contract. Use when: admin or agent asks "vilka dokument finns på avtal X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
+    description: 'List all documents linked to a specific contract. Use when: admin or agent asks "which documents are attached to contract X?", or wants to verify that a signed PDF is attached. NOT for: uploading new documents (use manage_document with related_entity_type=contract).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',

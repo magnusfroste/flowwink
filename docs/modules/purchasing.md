@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-05-01"
+generated_at: "2026-05-04"
 ---
 
 # Purchasing
 
 > Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt
 
-Ships with **7 agent skills**.
+Ships with **9 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **7 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 7 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -45,6 +45,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `match_invoice_to_receipt` | internal | Three-way match a vendor invoice against PO and physically received goods. Sets match_status = matched | partial | over_invoiced | under_invoiced | no_receipt | no_po. Configurable tolerance (defau… |
 | `auto_approve_vendor_invoice` | internal | Auto-approve a vendor invoice that already has match_status=matched. Sets status=approved + records approver. Use when: invoice matched within tolerance and policy allows auto-approval. NOT for: in… |
 | `purchase_reorder_check` | internal | Analyze current stock levels against reorder points and suggest purchase orders for low-stock items. Use when: heartbeat detects low inventory, admin asks for reorder suggestions, or as part of dai… |
+| `update_purchase_order` | internal | General-purpose purchase order management. Use when: creating new POs, updating status (draft→sent→confirmed→received), changing expected delivery dates, adding notes, or processing vendor response… |
+| `auto_generate_purchase_orders` | external | Group reorder candidates by preferred vendor and auto-create one draft PO per vendor. Use when: nightly reorder run, "create purchase orders". Closes procure-to-pay loop. NOT for: single manual POs… |
 
 ## Module API Contract
 
