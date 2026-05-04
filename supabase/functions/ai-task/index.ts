@@ -143,13 +143,20 @@ serve(async (req) => {
       }
       const data = await resp.json();
       const toolUse = (data.content || []).find((b: any) => b.type === "tool_use");
-      const result = toolUse?.input
+      const rawResult = toolUse?.input
         ?? (data.content || []).find((b: any) => b.type === "text")?.text
         ?? null;
+      const finalResult = spec.parse ? spec.parse(rawResult) : rawResult;
+      let applied: unknown = undefined;
+      if (spec.apply && finalResult != null) {
+        try { applied = await spec.apply(promptInput, finalResult, supabase); }
+        catch (err: any) { return jsonResponse({ error: `apply failed: ${err?.message}`, result: finalResult }, 500); }
+      }
       return jsonResponse({
         success: true,
         task: taskName,
-        result: spec.parse ? spec.parse(result) : result,
+        result: finalResult,
+        apply: applied,
         provider_used: ai.provider,
         provider_fallback: ai.fallback,
       });
