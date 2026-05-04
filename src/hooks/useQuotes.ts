@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { computeInvoiceTotals, type InvoiceLineItem, type InvoiceLead } from '@/hooks/useInvoices';
+import { applyPricelistToLineItems } from '@/lib/pricelist-resolver';
 
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
@@ -97,10 +98,10 @@ export function useCreateQuote() {
     }) => {
       const taxRate = input.tax_rate ?? 0.25;
 
-      // Fetch lead for customer info auto-fill
+      // Fetch lead for customer info auto-fill + pricelist context
       const { data: lead } = await supabase
         .from('leads')
-        .select('name, email, companies(name)')
+        .select('name, email, company_id, companies(name)')
         .eq('id', input.lead_id)
         .maybeSingle();
 
@@ -126,7 +127,12 @@ export function useCreateQuote() {
         }
       }
 
-      const lineItems = seededItems || [{ description: '', qty: 1, unit_price_cents: 0 }];
+      const baseItems = seededItems || [{ description: '', qty: 1, unit_price_cents: 0 }];
+      const lineItems = await applyPricelistToLineItems(baseItems, {
+        lead_id: input.lead_id,
+        company_id: (lead as any)?.company_id ?? null,
+        currency,
+      });
       const totals = computeInvoiceTotals(lineItems, taxRate);
 
       const { count } = await supabase
@@ -175,7 +181,20 @@ export function useUpdateQuote() {
 
       let computed = {};
       if (dbUpdates.line_items || dbUpdates.tax_rate !== undefined) {
-        const lineItems = dbUpdates.line_items || [];
+        let lineItems = dbUpdates.line_items || [];
+        if (dbUpdates.line_items) {
+          const { data: current } = await supabase
+            .from('quotes')
+            .select('lead_id, currency, leads(company_id)')
+            .eq('id', id)
+            .maybeSingle();
+          lineItems = await applyPricelistToLineItems(lineItems, {
+            lead_id: (current as any)?.lead_id ?? null,
+            company_id: (current as any)?.leads?.company_id ?? null,
+            currency: dbUpdates.currency || (current as any)?.currency || 'SEK',
+          });
+          dbUpdates.line_items = lineItems;
+        }
         const taxRate = dbUpdates.tax_rate ?? 0.25;
         computed = computeInvoiceTotals(lineItems, taxRate);
       }

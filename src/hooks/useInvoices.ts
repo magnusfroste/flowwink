@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { applyPricelistToLineItems } from '@/lib/pricelist-resolver';
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
@@ -9,6 +10,14 @@ export interface InvoiceLineItem {
   description: string;
   qty: number;
   unit_price_cents: number;
+  /** Optional product reference — enables automatic pricelist lookup */
+  product_id?: string | null;
+  /** When true, skip pricelist resolution (sales rep set price manually) */
+  unit_price_locked?: boolean;
+  /** Audit: which pricelist supplied this price (set by resolver) */
+  pricelist_id?: string | null;
+  /** Audit: 'pricelist' | 'product_base' | 'manual' */
+  price_source?: 'pricelist' | 'product_base' | 'manual' | null;
 }
 
 export interface InvoiceLead {
@@ -116,7 +125,21 @@ export function useCreateInvoice() {
       notes?: string;
     }) => {
       const taxRate = input.tax_rate ?? 0.25;
-      const totals = computeInvoiceTotals(input.line_items, taxRate);
+
+      // Resolve customer context for pricelist lookup
+      const { data: leadCtx } = await supabase
+        .from('leads')
+        .select('company_id')
+        .eq('id', input.lead_id)
+        .maybeSingle();
+
+      const pricedLines = await applyPricelistToLineItems(input.line_items, {
+        lead_id: input.lead_id,
+        company_id: leadCtx?.company_id ?? null,
+        currency: input.currency || 'SEK',
+      });
+
+      const totals = computeInvoiceTotals(pricedLines, taxRate);
 
       // Generate invoice number: INV-XXXX
       const { count } = await supabase
@@ -132,7 +155,7 @@ export function useCreateInvoice() {
           lead_id: input.lead_id,
           customer_email: '',
           customer_name: '',
-          line_items: input.line_items as any,
+          line_items: pricedLines as any,
           tax_rate: taxRate,
           ...totals,
           currency: input.currency || 'SEK',
@@ -163,10 +186,24 @@ export function useUpdateInvoice() {
       // Strip joined data before sending to DB
       const { leads, ...dbUpdates } = updates as any;
 
-      // Recompute totals if line_items or tax_rate changed
+      // Recompute totals if line_items or tax_rate changed; resolve pricelist if lines changed
       let computed = {};
       if (dbUpdates.line_items || dbUpdates.tax_rate !== undefined) {
-        const lineItems = dbUpdates.line_items || [];
+        let lineItems = dbUpdates.line_items || [];
+        if (dbUpdates.line_items) {
+          // Need lead context — fetch from current invoice
+          const { data: current } = await supabase
+            .from('invoices')
+            .select('lead_id, currency, leads(company_id)')
+            .eq('id', id)
+            .maybeSingle();
+          lineItems = await applyPricelistToLineItems(lineItems, {
+            lead_id: (current as any)?.lead_id ?? null,
+            company_id: (current as any)?.leads?.company_id ?? null,
+            currency: dbUpdates.currency || (current as any)?.currency || 'SEK',
+          });
+          dbUpdates.line_items = lineItems;
+        }
         const taxRate = dbUpdates.tax_rate ?? 0.25;
         computed = computeInvoiceTotals(lineItems, taxRate);
       }
