@@ -302,7 +302,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_vendor_defaults',
-    description: 'Read or update a vendor\'s autokontering defaults — `default_account_code` (e.g. 6540 for IT-tjänster), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
+    description: 'Read or update a vendor\'s auto-coding defaults — `default_account_code` (e.g. 6540 for IT services), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just booked a vendor invoice and wants to remember the choice for next time, admin onboards a new supplier, OR before booking a vendor invoice (read defaults first). NOT for: actual bookkeeping (use manage_journal_entry).',
     category: 'commerce',
     handler: 'db:vendors',
     scope: 'internal',
