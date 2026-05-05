@@ -152,16 +152,27 @@ export default function PublicQuotePage() {
                       unit?: string;
                       unit_price_cents: number;
                       line_total_cents: number;
+                      is_optional?: boolean;
+                      selected_by_customer?: boolean;
                     };
+                    const isOptional = !!item.is_optional;
+                    const isSelected = item.selected_by_customer !== false;
+                    const dimmed = isOptional && !isSelected;
                     return (
-                      <div key={item.id} className="p-3 flex items-center justify-between gap-4">
+                      <div key={item.id} className={`p-3 flex items-center gap-3 ${dimmed ? 'opacity-50' : ''}`}>
+                        {isOptional && !isFinal && (
+                          <Checkbox checked={isSelected} onCheckedChange={(v) => toggleOptional(item.id, !!v)} />
+                        )}
                         <div className="flex-1">
-                          <p className="text-sm">{item.description}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm">{item.description}</p>
+                            {isOptional && <Badge variant="outline" className="text-xs">Optional</Badge>}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {item.quantity} {item.unit || ''} × {fmt(item.unit_price_cents)}
                           </p>
                         </div>
-                        <p className="font-mono text-sm">{fmt(item.line_total_cents)}</p>
+                        <p className={`font-mono text-sm ${dimmed ? 'line-through' : ''}`}>{fmt(item.line_total_cents)}</p>
                       </div>
                     );
                   })
