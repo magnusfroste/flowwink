@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -340,12 +341,15 @@ function LeadCard({ lead, showStatus, onClick }: LeadCardProps) {
   // Display company name from linked company, fallback to text field for legacy data
   const companyName = lead.companies?.name || lead.company;
   const navigate = useNavigate();
+  const { data: overdue } = useOverdueActivityIndex();
+  const hasOverdue = overdue?.leadIds.has(lead.id) ?? false;
 
   return (
     <Card 
       className={cn(
-        "cursor-pointer hover:bg-muted/50 transition-colors group",
-        lead.needs_review && "border-amber-500/50"
+        "cursor-pointer hover:bg-muted/50 transition-colors group relative overflow-hidden",
+        lead.needs_review && "border-amber-500/50",
+        hasOverdue && "before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-destructive"
       )}
       onClick={onClick}
     >
