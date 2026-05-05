@@ -374,7 +374,7 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const [skillsResult, activeModules] = await Promise.all([
     sb
       .from("agent_skills")
-      .select("name, description, category, tool_definition")
+      .select("name, description, category, handler, tool_definition")
       .eq("enabled", true)
       .eq("mcp_exposed", true)
       .order("category"),
@@ -389,10 +389,16 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
   let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
 
-  // Apply toolset group filter if requested — accepts both category ids and module ids
+  // Apply toolset group filter — supports category tokens, composite tokens,
+  // and module-level sub-filters (e.g. ?groups=invoicing narrows commerce).
   if (filterGroups && filterGroups.length > 0) {
-    const catSet = resolveGroupTokens(filterGroups);
-    filtered = filtered.filter((s) => catSet.has(s.category));
+    const { categories, modules } = resolveGroupTokens(filterGroups);
+    filtered = filtered.filter((s) => {
+      if (categories.has(s.category)) return true;
+      if (modules.size === 0) return false;
+      const mod = classifySkillModule(s.name, s.handler);
+      return mod ? modules.has(mod) : false;
+    });
   }
 
   console.log(
