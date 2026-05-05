@@ -18,11 +18,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
+import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const { data: stats, isLoading: statsLoading } = useLeadStats();
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: leads, isLoading: leadsLoading } = useLeads();
@@ -193,18 +195,29 @@ export default function LeadsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="all">All Contacts</TabsTrigger>
-          <TabsTrigger value="review" className="relative">
-            Needs Review
-            {(reviewLeads?.length || 0) > 0 && (
-              <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
-                {reviewLeads?.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="all">All Contacts</TabsTrigger>
+            <TabsTrigger value="review" className="relative">
+              Needs Review
+              {(reviewLeads?.length || 0) > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
+                  {reviewLeads?.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+          <SavedViewsMenu
+            scope="leads"
+            currentConfig={{ activeTab }}
+            activeViewId={activeViewId}
+            onActiveViewChange={setActiveViewId}
+            onApply={(cfg) => {
+              if (typeof cfg.activeTab === 'string') setActiveTab(cfg.activeTab);
+            }}
+          />
+        </div>
 
         <TabsContent value="pipeline" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
