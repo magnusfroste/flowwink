@@ -38,6 +38,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
 import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
 import { EntityActivityTimeline } from '@/components/admin/EntityActivityTimeline';
+import { EntityTags } from '@/components/admin/EntityTags';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
