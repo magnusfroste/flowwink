@@ -116,10 +116,10 @@ export default function ActivitiesPage() {
 function TaskList({
   tasks, isLoading, emptyText, onComplete,
 }: {
-  tasks: CrmTask[];
+  tasks: UnifiedActivity[];
   isLoading: boolean;
   emptyText: string;
-  onComplete: (id: string) => void;
+  onComplete: (id: string, source: UnifiedActivity['source']) => void;
 }) {
   if (isLoading) {
     return (
@@ -143,13 +143,13 @@ function TaskList({
   return (
     <div className="space-y-2">
       {tasks.map((t) => (
-        <TaskRow key={t.id} task={t} onComplete={onComplete} />
+        <TaskRow key={`${t.source}:${t.id}`} task={t} onComplete={onComplete} />
       ))}
     </div>
   );
 }
 
-function TaskRow({ task, onComplete }: { task: CrmTask; onComplete: (id: string) => void }) {
+function TaskRow({ task, onComplete }: { task: UnifiedActivity; onComplete: (id: string, source: UnifiedActivity['source']) => void }) {
   const due = task.due_date ? parseISO(task.due_date) : null;
   const overdue = due ? isPast(due) && !isToday(due) : false;
 
@@ -157,10 +157,13 @@ function TaskRow({ task, onComplete }: { task: CrmTask; onComplete: (id: string)
     ? `/admin/deals/${task.deal_id}`
     : task.lead_id
       ? `/admin/contacts/${task.lead_id}`
-      : null;
+      : task.entity_type && task.entity_id
+        ? `/admin/${task.entity_type}s/${task.entity_id}`
+        : null;
 
+  const TypeIcon = TYPE_ICON[task.activity_type ?? 'todo'] ?? ClipboardList;
   const linkIcon = task.deal_id ? Briefcase : User;
-  const linkLabel = task.deal_id ? 'Deal' : task.lead_id ? 'Contact' : null;
+  const linkLabel = task.deal_id ? 'Deal' : task.lead_id ? 'Contact' : task.entity_type;
 
   return (
     <Card className={cn(overdue && 'border-destructive/30')}>
