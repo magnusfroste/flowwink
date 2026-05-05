@@ -9,19 +9,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle2, Plus, Briefcase, User, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Plus, Briefcase, User, Calendar as CalendarIcon, AlertTriangle, Phone, Users as UsersIcon, ClipboardList } from 'lucide-react';
 import {
-  useAllPendingTasks,
-  useCompleteCrmTask,
-  type CrmTask,
-} from '@/hooks/useCrmTasks';
+  useUnifiedPendingActivities,
+  useCompleteUnifiedActivity,
+  type UnifiedActivity,
+} from '@/hooks/useUnifiedActivities';
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
 import { format, isToday, isPast, isFuture, parseISO, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 type Bucket = 'overdue' | 'today' | 'upcoming' | 'no_date';
 
-function bucketize(task: CrmTask): Bucket {
+function bucketize(task: UnifiedActivity): Bucket {
   if (!task.due_date) return 'no_date';
   const d = parseISO(task.due_date);
   if (isToday(d)) return 'today';
@@ -36,14 +36,20 @@ const PRIORITY_VARIANT: Record<string, 'destructive' | 'default' | 'secondary'> 
   low: 'secondary',
 };
 
+const TYPE_ICON: Record<string, typeof ClipboardList> = {
+  todo: ClipboardList,
+  call: Phone,
+  meeting: UsersIcon,
+};
+
 export default function ActivitiesPage() {
-  const { data: tasks = [], isLoading } = useAllPendingTasks();
-  const complete = useCompleteCrmTask();
+  const { data: tasks = [], isLoading } = useUnifiedPendingActivities();
+  const complete = useCompleteUnifiedActivity();
   const [createOpen, setCreateOpen] = useState(false);
   const [tab, setTab] = useState<Bucket>('today');
 
   const grouped = useMemo(() => {
-    const out: Record<Bucket, CrmTask[]> = { overdue: [], today: [], upcoming: [], no_date: [] };
+    const out: Record<Bucket, UnifiedActivity[]> = { overdue: [], today: [], upcoming: [], no_date: [] };
     for (const t of tasks) out[bucketize(t)].push(t);
     return out;
   }, [tasks]);
@@ -95,7 +101,7 @@ export default function ActivitiesPage() {
                   b === 'upcoming' ? 'No upcoming activities scheduled.' :
                   'No undated tasks.'
                 }
-                onComplete={(id) => complete.mutate(id)}
+                onComplete={(id, source) => complete.mutate({ id, source })}
               />
             </TabsContent>
           ))}
@@ -110,10 +116,10 @@ export default function ActivitiesPage() {
 function TaskList({
   tasks, isLoading, emptyText, onComplete,
 }: {
-  tasks: CrmTask[];
+  tasks: UnifiedActivity[];
   isLoading: boolean;
   emptyText: string;
-  onComplete: (id: string) => void;
+  onComplete: (id: string, source: UnifiedActivity['source']) => void;
 }) {
   if (isLoading) {
     return (
@@ -137,13 +143,13 @@ function TaskList({
   return (
     <div className="space-y-2">
       {tasks.map((t) => (
-        <TaskRow key={t.id} task={t} onComplete={onComplete} />
+        <TaskRow key={`${t.source}:${t.id}`} task={t} onComplete={onComplete} />
       ))}
     </div>
   );
 }
 
-function TaskRow({ task, onComplete }: { task: CrmTask; onComplete: (id: string) => void }) {
+function TaskRow({ task, onComplete }: { task: UnifiedActivity; onComplete: (id: string, source: UnifiedActivity['source']) => void }) {
   const due = task.due_date ? parseISO(task.due_date) : null;
   const overdue = due ? isPast(due) && !isToday(due) : false;
 
@@ -151,22 +157,26 @@ function TaskRow({ task, onComplete }: { task: CrmTask; onComplete: (id: string)
     ? `/admin/deals/${task.deal_id}`
     : task.lead_id
       ? `/admin/contacts/${task.lead_id}`
-      : null;
+      : task.entity_type && task.entity_id
+        ? `/admin/${task.entity_type}s/${task.entity_id}`
+        : null;
 
+  const TypeIcon = TYPE_ICON[task.activity_type ?? 'todo'] ?? ClipboardList;
   const linkIcon = task.deal_id ? Briefcase : User;
-  const linkLabel = task.deal_id ? 'Deal' : task.lead_id ? 'Contact' : null;
+  const linkLabel = task.deal_id ? 'Deal' : task.lead_id ? 'Contact' : task.entity_type;
 
   return (
     <Card className={cn(overdue && 'border-destructive/30')}>
       <CardContent className="p-3 flex items-start gap-3">
         <Checkbox
           checked={false}
-          onCheckedChange={() => onComplete(task.id)}
+          onCheckedChange={() => onComplete(task.id, task.source)}
           className="mt-1"
           aria-label="Mark complete"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
+            <TypeIcon className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="font-medium text-sm">{task.title}</p>
             <Badge variant={PRIORITY_VARIANT[task.priority] ?? 'secondary'} className="text-xs">
               {task.priority}
