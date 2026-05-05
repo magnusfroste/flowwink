@@ -12,6 +12,7 @@ import { FlowPilotBriefingBell } from './FlowPilotBriefingBell';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { usePinnedPages } from '@/hooks/usePinnedPages';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
+import { QuickCreateMenu } from './QuickCreateMenu';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
