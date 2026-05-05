@@ -34,6 +34,17 @@ interface DealKanbanProps {
 
 const STAGES: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
 
+// Sensible defaults inspired by Odoo / typical SaaS pipelines.
+// 0 = no limit. Closed columns are unbounded.
+const WIP_LIMITS: Record<DealStage, number> = {
+  lead: 25,
+  qualified: 15,
+  proposal: 10,
+  negotiation: 8,
+  closed_won: 0,
+  closed_lost: 0,
+};
+
 interface KanbanColumnProps {
   stage: DealStage;
   deals: Deal[];
@@ -44,12 +55,16 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const stageInfo = getDealStageInfo(stage);
   const isActive = stage !== 'closed_won' && stage !== 'closed_lost';
+  const limit = WIP_LIMITS[stage];
+  const overLimit = limit > 0 && deals.length > limit;
+  const atLimit = limit > 0 && deals.length === limit;
 
   return (
     <div className="flex flex-col min-w-[280px] max-w-[320px] flex-1">
       <Card className={cn(
         'flex flex-col h-full transition-colors',
-        isOver && 'ring-2 ring-primary bg-primary/5'
+        isOver && 'ring-2 ring-primary bg-primary/5',
+        overLimit && 'ring-2 ring-destructive/60'
       )}>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -57,14 +72,27 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
               <Badge className={stageInfo.color} variant="secondary">
                 {stageInfo.label}
               </Badge>
-              <span className="text-muted-foreground font-normal">
-                {deals.length}
+              <span className={cn(
+                "font-normal",
+                overLimit ? "text-destructive font-semibold" : "text-muted-foreground"
+              )}>
+                {deals.length}{limit > 0 ? ` / ${limit}` : ''}
               </span>
             </CardTitle>
           </div>
           {isActive && totalValue > 0 && (
             <p className="text-xs text-muted-foreground">
               {formatPrice(totalValue)}
+            </p>
+          )}
+          {overLimit && (
+            <p className="text-[11px] text-destructive font-medium">
+              Over WIP limit — focus on closing before adding more
+            </p>
+          )}
+          {atLimit && !overLimit && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+              At WIP limit
             </p>
           )}
         </CardHeader>
@@ -92,6 +120,7 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
     </div>
   );
 }
+
 
 export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps) {
   const updateDeal = useUpdateDeal();
