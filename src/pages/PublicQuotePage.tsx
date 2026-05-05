@@ -9,26 +9,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { usePublicQuote, useSignQuote, markQuoteViewed } from '@/hooks/useQuoteWorkflow';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
 export default function PublicQuotePage() {
   const { token } = useParams<{ token: string }>();
   const { data: quote, isLoading, refetch } = usePublicQuote(token);
   const signQuote = useSignQuote();
+  const qc = useQueryClient();
 
   const [signerName, setSignerName] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
   const [comment, setComment] = useState('');
   const [mode, setMode] = useState<'view' | 'accept' | 'reject'>('view');
 
-  // Items via separate query so RLS public-via-token kicks in
+  const itemsKey = ['public-quote-items', quote?.id];
   const { data: items = [] } = useQuery({
-    queryKey: ['public-quote-items', quote?.id],
+    queryKey: itemsKey,
     queryFn: async () => {
       if (!quote?.id) return [];
       const { data } = await supabase
@@ -40,6 +42,17 @@ export default function PublicQuotePage() {
     },
     enabled: !!quote?.id,
   });
+
+  const toggleOptional = async (itemId: string, selected: boolean) => {
+    if (!token) return;
+    const { error } = await supabase.rpc('set_quote_item_selection' as never, {
+      _accept_token: token, _item_id: itemId, _selected: selected,
+    } as never);
+    if (!error) {
+      qc.invalidateQueries({ queryKey: itemsKey });
+      refetch();
+    }
+  };
 
   // Mark viewed once
   useEffect(() => {
