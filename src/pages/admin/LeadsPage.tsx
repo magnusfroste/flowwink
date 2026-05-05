@@ -358,6 +358,14 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect }: LeadC
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
+          {onToggleSelect && (
+            <div
+              className="pt-1"
+              onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
+            >
+              <Checkbox checked={selected} onCheckedChange={() => onToggleSelect()} />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="font-medium truncate">
