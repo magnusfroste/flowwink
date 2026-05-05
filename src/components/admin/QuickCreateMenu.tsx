@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, UserPlus, Briefcase, CheckSquare, LifeBuoy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,7 +8,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
-import { CreateDealDialog } from '@/components/admin/CreateDealDialog';
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
 import { CreateTicketDialog } from '@/components/admin/tickets/CreateTicketDialog';
 import { useIsModuleEnabled } from '@/hooks/useModules';
