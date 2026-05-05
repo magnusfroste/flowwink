@@ -341,7 +341,10 @@ export default function OrdersPage() {
 
           {selectedOrder && (
             <div className="space-y-6">
-              <EntityTags entityType="order" entityId={selectedOrder.id} scope="order" />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <EntityTags entityType="order" entityId={selectedOrder.id} scope="order" />
+                <EntityFollowers entityType="order" entityId={selectedOrder.id} compact />
+              </div>
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
