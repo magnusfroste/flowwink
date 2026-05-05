@@ -309,6 +309,12 @@ export default function DealsPage() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
         />
+
+        <ScheduleNextActivityDialog
+          deal={scheduleFor?.deal ?? null}
+          closedAs={scheduleFor?.stage ?? null}
+          onOpenChange={(o) => { if (!o) setScheduleFor(null); }}
+        />
       </AdminPageContainer>
     </AdminLayout>
   );
