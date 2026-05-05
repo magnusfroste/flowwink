@@ -253,6 +253,8 @@ function resolveGroupTokens(tokens: string[]): { categories: Set<string>; module
     if (!t) continue;
     if (COMPOSITE_GROUPS[t]) {
       for (const child of COMPOSITE_GROUPS[t]) categories.add(child);
+    } else if (SUB_COMPOSITE_GROUPS[t]) {
+      for (const child of SUB_COMPOSITE_GROUPS[t]) modules.add(child);
     } else if (SKILL_CATEGORY_MODULES[t]) {
       categories.add(t); // whole category
     } else if (MODULE_TO_CATEGORY[t]) {
