@@ -43,6 +43,7 @@ import { useLeads } from '@/hooks/useLeads';
 import { DealKanban } from '@/components/admin/DealKanban';
 import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
 import { PipelineSummary } from '@/components/admin/deals/PipelineSummary';
+import { ScheduleNextActivityDialog } from '@/components/admin/deals/ScheduleNextActivityDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
