@@ -140,6 +140,7 @@ interface SkillRow {
   name: string;
   description: string | null;
   category: string;
+  handler?: string | null;
   tool_definition: {
     type: string;
     function: {
