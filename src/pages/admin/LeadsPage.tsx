@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
