@@ -730,6 +730,32 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       };
     }
 
+    case "accounting_chart": {
+      const { data, error } = await sb
+        .from("chart_of_accounts")
+        .select("account_code, account_name, account_type, account_category, normal_balance, locale, is_active")
+        .order("account_code");
+      return {
+        accounts: data ?? [],
+        count: data?.length ?? 0,
+        error: error?.message ?? null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    case "accounting_templates": {
+      const { data, error } = await sb
+        .from("accounting_templates")
+        .select("id, template_name, description, category, keywords, template_lines, usage_count, is_system, locale")
+        .order("usage_count", { ascending: false });
+      return {
+        templates: data ?? [],
+        count: data?.length ?? 0,
+        error: error?.message ?? null,
+        usage_hint: "When booking a journal entry, rank these by keyword overlap × usage_count and pass template_id back via manage_journal_entry to increment learning.",
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     default: {
       if (resourceKey.startsWith("template:")) {
         const templateId = resourceKey.replace("template:", "");
@@ -913,6 +939,8 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false): Pro
     { key: "automations", uri: "flowwink://automations", name: "Automations",          description: "All configured automations with trigger type, schedule, last run, and error status. Use to avoid duplicating scheduled work." },
     { key: "heartbeat",   uri: "flowwink://heartbeat",   name: "Heartbeat Status",     description: "FlowPilot's last heartbeat run: timing, token usage, and current state. Use to understand when FlowPilot last operated and what it prioritized." },
     { key: "briefing",    uri: "flowwink://briefing",    name: "Context Briefing",      description: "Aggregated situational awareness in ONE call: agent identity (soul), company_profile (what the business sells, ICP, value prop, services, clients), branding (tone, colors), health metrics, active objectives, recent activity, modules, automations, heartbeat status, and skill count. Use this FIRST to understand both WHO you operate as AND WHAT business you operate for. ~50ms latency vs ~500ms+ for individual resource calls." },
+    { key: "accounting_chart",     uri: "flowwink://accounting/chart",     name: "Accounting — Chart of Accounts", description: "Full chart of accounts for the active locale pack (e.g. BAS 2024 for Sweden). Includes account_code, name, type, category, normal_balance. Use BEFORE booking journal entries — never invent account codes." },
+    { key: "accounting_templates", uri: "flowwink://accounting/templates", name: "Accounting — Booking Templates", description: "Reusable journal-entry templates with keywords + usage_count. When a transaction needs booking, rank these by keyword overlap × usage_count and reuse the highest match (pass template_id back via manage_journal_entry to increment learning). Only invent a new pattern if no template scores ≥0.6." },
   ];
 
   for (const r of resourceDefs) {
@@ -1071,6 +1099,8 @@ app.get("/rest/resources", (c) => {
     { key: "automations",  description: "All automations with triggers, schedules, and run history" },
     { key: "heartbeat",    description: "Last heartbeat run timing, state, and token usage" },
     { key: "briefing",     description: "Aggregated context: identity + health + objectives + activity + modules + automations + heartbeat in ONE call" },
+    { key: "accounting_chart",     description: "Chart of accounts (BAS 2024 / active locale pack). Read before booking journal entries." },
+    { key: "accounting_templates", description: "Reusable booking templates with keywords + usage_count for AI-driven journal selection." },
   ];
   return c.json({ resources }, 200, corsHeaders);
 });
