@@ -289,6 +289,32 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center gap-3 py-3">
+            <span className="text-sm font-medium">{selectedIds.size} selected</span>
+            <Separator orientation="vertical" className="h-5" />
+            <span className="text-xs text-muted-foreground">Set status:</span>
+            <Select onValueChange={(v) => bulkUpdateStatus.mutate(v)} disabled={bulkUpdateStatus.isPending}>
+              <SelectTrigger className="w-40 h-8">
+                <SelectValue placeholder="Choose…" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="ml-auto">
+              <Button variant="ghost" size="sm" onClick={clearSelection}>
+                <X className="h-4 w-4 mr-1" /> Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Orders Table */}
       <Card>
         <CardContent className="p-0">
@@ -305,6 +331,18 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                  <TableRow>
+                   <TableHead className="w-10">
+                     <Checkbox
+                       checked={
+                         (orders?.length ?? 0) > 0 && orders!.every((o) => selectedIds.has(o.id))
+                       }
+                       onCheckedChange={(checked) => {
+                         if (checked) setSelectedIds(new Set(orders!.map((o) => o.id)));
+                         else clearSelection();
+                       }}
+                       aria-label="Select all"
+                     />
+                   </TableHead>
                    <TableHead>Order</TableHead>
                    <TableHead>Customer</TableHead>
                    <TableHead>Status</TableHead>
@@ -316,7 +354,14 @@ export default function OrdersPage() {
               </TableHeader>
               <TableBody>
                 {orders?.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} data-state={selectedIds.has(order.id) ? 'selected' : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(order.id)}
+                        onCheckedChange={() => toggleId(order.id)}
+                        aria-label={`Select order ${order.id.slice(0, 8)}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-sm">
                       {order.id.slice(0, 8)}...
                     </TableCell>
