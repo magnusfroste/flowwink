@@ -247,6 +247,19 @@ export default function OrdersPage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
+            <div className="ml-auto">
+              <SavedViewsMenu
+                scope="orders"
+                currentConfig={{ statusFilter }}
+                activeViewId={activeViewId}
+                onActiveViewChange={setActiveViewId}
+                onApply={(cfg) => {
+                  if (typeof cfg.statusFilter === 'string') setStatusFilter(cfg.statusFilter);
+                }}
+              />
+            </div>
+              Refresh
+            </Button>
           </div>
         </CardContent>
       </Card>
