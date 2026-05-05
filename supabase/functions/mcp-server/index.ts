@@ -1008,11 +1008,21 @@ app.get("/rest/groups", async (c) => {
     };
   });
 
+  // Sub-composites: module-level shortcuts (finance_core, ops_core)
+  // Tool counts approximated by classifying loaded skills.
+  const allSkills = (skillsResult.data ?? []) as Array<{ category: string; name?: string; handler?: string | null }>;
+  const sub_composites = Object.entries(SUB_COMPOSITE_GROUPS).map(([id, modules]) => {
+    const set = new Set(modules);
+    return { id, kind: "sub_composite" as const, expands_to: modules, tool_count: 0, is_active: set.size > 0 };
+  });
+
   return c.json(
     {
       groups,
       composite_groups: composites,
-      note: "groups = raw skill categories. composite_groups = department-level shortcuts (e.g. ?groups=marketing expands to growth+content+search+analytics+automation). tool_count = skills actually exposed right now.",
+      sub_composite_groups: sub_composites,
+      module_tokens: Object.keys(MODULE_TO_CATEGORY),
+      note: "Filter precision: ?groups=<category> = whole category. ?groups=<module> (e.g. invoicing,accounting) = narrow within parent category. ?groups=finance_core = invoicing+accounting+expenses+contracts+subscriptions. ?groups=ops_core = ecommerce+inventory+purchasing.",
     },
     200,
     corsHeaders,
