@@ -258,8 +258,6 @@ export default function OrdersPage() {
                 }}
               />
             </div>
-              Refresh
-            </Button>
           </div>
         </CardContent>
       </Card>
