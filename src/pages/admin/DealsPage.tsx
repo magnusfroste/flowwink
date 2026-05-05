@@ -43,6 +43,7 @@ import { useLeads } from '@/hooks/useLeads';
 import { DealKanban } from '@/components/admin/DealKanban';
 import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
 import { PipelineSummary } from '@/components/admin/deals/PipelineSummary';
+import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
@@ -54,6 +55,7 @@ export default function DealsPage() {
   const updateDeal = useUpdateDeal();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
 
   const handleStageChange = (dealId: string, stage: DealStage) => {
     updateDeal.mutate({ id: dealId, stage });
