@@ -88,6 +88,32 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleId = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkUpdateStatus = useMutation({
+    mutationFn: async (status: string) => {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase.from('orders').update({ status }).in('id', ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (count, status) => {
+      toast.success(`Updated ${count} order${count === 1 ? '' : 's'} to ${status}`);
+      clearSelection();
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (e: Error) => toast.error(`Bulk update failed: ${e.message}`),
+  });
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders', statusFilter],
