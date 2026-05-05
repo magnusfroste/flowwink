@@ -6091,6 +6091,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'tolerance_policies',
   // O2D — carriers, shipments, returns/RMA
   'carriers', 'shipments', 'returns', 'return_items',
+  // Quick-wins: polymorphic activities + multi-address contacts
+  'activities', 'addresses',
 ]);
 
 /**
