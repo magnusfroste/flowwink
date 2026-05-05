@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 interface DealKanbanProps {
   deals: Deal[];
   isLoading?: boolean;
+  onStageChanged?: (deal: Deal, newStage: DealStage) => void;
 }
 
 const STAGES: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
