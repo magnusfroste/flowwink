@@ -93,7 +93,7 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
   );
 }
 
-export function DealKanban({ deals, isLoading }: DealKanbanProps) {
+export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps) {
   const updateDeal = useUpdateDeal();
   const [activeId, setActiveId] = useState<string | null>(null);
 
