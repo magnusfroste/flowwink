@@ -730,6 +730,32 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       };
     }
 
+    case "accounting_chart": {
+      const { data, error } = await sb
+        .from("chart_of_accounts")
+        .select("account_code, account_name, account_type, account_category, normal_balance, locale, is_active")
+        .order("account_code");
+      return {
+        accounts: data ?? [],
+        count: data?.length ?? 0,
+        error: error?.message ?? null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    case "accounting_templates": {
+      const { data, error } = await sb
+        .from("accounting_templates")
+        .select("id, template_name, description, category, keywords, template_lines, usage_count, is_system, locale")
+        .order("usage_count", { ascending: false });
+      return {
+        templates: data ?? [],
+        count: data?.length ?? 0,
+        error: error?.message ?? null,
+        usage_hint: "When booking a journal entry, rank these by keyword overlap × usage_count and pass template_id back via manage_journal_entry to increment learning.",
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     default: {
       if (resourceKey.startsWith("template:")) {
         const templateId = resourceKey.replace("template:", "");
