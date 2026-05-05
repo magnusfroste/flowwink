@@ -82,7 +82,10 @@ export function EntityActivityTimeline({ entityType, entityId, title = 'Activity
         {!compact && (
           <Textarea placeholder="Details (optional)" value={body} onChange={(e) => setBody(e.target.value)} rows={2} />
         )}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Tip: type <code className="px-1 rounded bg-muted">@name</code> to auto-follow teammates.
+          </p>
           <Button size="sm" onClick={handleAdd} disabled={create.isPending}>Add</Button>
         </div>
       </div>
