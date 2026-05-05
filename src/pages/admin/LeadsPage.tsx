@@ -305,7 +305,45 @@ export default function LeadsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="all" className="mt-6">
+        <TabsContent value="all" className="mt-6 space-y-3">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">{selectedIds.size} selected</span>
+                <Button variant="ghost" size="sm" onClick={clearSelection}>
+                  <X className="h-4 w-4 mr-1" /> Clear
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  onValueChange={(v) => bulkUpdateStatus.mutate(v as LeadStatus)}
+                  disabled={bulkUpdateStatus.isPending}
+                >
+                  <SelectTrigger className="w-[180px] h-8">
+                    <SelectValue placeholder="Set status…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="opportunity">Opportunity</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="lost">Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={bulkDelete.isPending}
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedIds.size} contact(s)? This cannot be undone.`)) {
+                      bulkDelete.mutate();
+                    }
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          )}
           <Card>
             <CardHeader>
               <CardTitle>All Contacts</CardTitle>
@@ -323,6 +361,8 @@ export default function LeadsPage() {
                       key={lead.id}
                       lead={lead}
                       showStatus
+                      selected={selectedIds.has(lead.id)}
+                      onToggleSelect={() => toggleId(lead.id)}
                       onClick={() => navigate(`/admin/contacts/${lead.id}`)}
                     />
                   ))}
