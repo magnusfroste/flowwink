@@ -153,6 +153,7 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
     // Update if stage changed
     if (targetStage && targetStage !== deal.stage) {
       updateDeal.mutate({ id: dealId, stage: targetStage });
+      onStageChanged?.(deal, targetStage);
     }
   };
 
