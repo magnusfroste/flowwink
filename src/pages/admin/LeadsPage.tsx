@@ -18,11 +18,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
+import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const { data: stats, isLoading: statsLoading } = useLeadStats();
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: leads, isLoading: leadsLoading } = useLeads();
