@@ -47,6 +47,7 @@ These enforce `mem://architecture/agent-contract-integrity` — every skill expo
 | `mcp-contract.guardrails.test.ts` | MCP server's exposed tool list matches `skillSeeds` of all modules with `mcp_exposed=true`. |
 | `mcp-flowpilot-decoupling.test.ts` | MCP and skill bootstrap happen even when FlowPilot module is OFF (Law: MCP is platform-level). |
 | `hr-suite-mcp-registry.guardrails.test.ts` | Static CI version of `verify-hr-modules.ts` — HR-suite skills reachable via MCP. |
+| **DB trigger** `enforce_mcp_exposure_invariant` on `agent_skills` | Blocks `mcp_exposed=true + enabled=false` at INSERT/UPDATE — orphan MCP tools physically impossible from any channel (SQL editor, migration, agent-execute, RPC). No CI step needed. See `mem://architecture/mcp-invariant-ci-guardrail`. |
 | `recruitment-module.e2e.test.ts` | Toggle module → bootstrap → MCP exposure pipeline end-to-end. |
 | `federation-invite-peer.test.ts` | `invite_peer` flow generates valid gateway tokens + connection rows. |
 
