@@ -4001,12 +4001,14 @@ export type Database = {
           end_date: string | null
           id: string
           manager_id: string | null
+          monthly_salary_cents: number
           name: string
           notes: string | null
           personal_number: string | null
           phone: string | null
           start_date: string | null
           status: string
+          tax_rate_pct: number
           title: string | null
           updated_at: string
           user_id: string | null
@@ -4023,12 +4025,14 @@ export type Database = {
           end_date?: string | null
           id?: string
           manager_id?: string | null
+          monthly_salary_cents?: number
           name: string
           notes?: string | null
           personal_number?: string | null
           phone?: string | null
           start_date?: string | null
           status?: string
+          tax_rate_pct?: number
           title?: string | null
           updated_at?: string
           user_id?: string | null
@@ -4045,12 +4049,14 @@ export type Database = {
           end_date?: string | null
           id?: string
           manager_id?: string | null
+          monthly_salary_cents?: number
           name?: string
           notes?: string | null
           personal_number?: string | null
           phone?: string | null
           start_date?: string | null
           status?: string
+          tax_rate_pct?: number
           title?: string | null
           updated_at?: string
           user_id?: string | null
@@ -6647,6 +6653,50 @@ export type Database = {
           },
         ]
       }
+      payroll_components: {
+        Row: {
+          active: boolean
+          amount_cents: number
+          component_type: string
+          created_at: string
+          employee_id: string
+          id: string
+          label: string
+          recurring: boolean
+          taxable: boolean
+        }
+        Insert: {
+          active?: boolean
+          amount_cents?: number
+          component_type: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          label: string
+          recurring?: boolean
+          taxable?: boolean
+        }
+        Update: {
+          active?: boolean
+          amount_cents?: number
+          component_type?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          label?: string
+          recurring?: boolean
+          taxable?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_components_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_export_lines: {
         Row: {
           created_at: string
@@ -6778,6 +6828,129 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      payroll_lines: {
+        Row: {
+          benefits_cents: number
+          components: Json
+          created_at: string
+          deductions_cents: number
+          employee_id: string
+          gross_cents: number
+          id: string
+          net_cents: number
+          run_id: string
+          social_fee_cents: number
+          tax_cents: number
+          taxable_cents: number
+        }
+        Insert: {
+          benefits_cents?: number
+          components?: Json
+          created_at?: string
+          deductions_cents?: number
+          employee_id: string
+          gross_cents?: number
+          id?: string
+          net_cents?: number
+          run_id: string
+          social_fee_cents?: number
+          tax_cents?: number
+          taxable_cents?: number
+        }
+        Update: {
+          benefits_cents?: number
+          components?: Json
+          created_at?: string
+          deductions_cents?: number
+          employee_id?: string
+          gross_cents?: number
+          id?: string
+          net_cents?: number
+          run_id?: string
+          social_fee_cents?: number
+          tax_cents?: number
+          taxable_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_lines_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_lines_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          approval_journal_id: string | null
+          approved_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_journal_id: string | null
+          period_date: string
+          status: string
+          total_gross_cents: number
+          total_net_cents: number
+          total_social_fee_cents: number
+          total_tax_cents: number
+        }
+        Insert: {
+          approval_journal_id?: string | null
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_journal_id?: string | null
+          period_date: string
+          status?: string
+          total_gross_cents?: number
+          total_net_cents?: number
+          total_social_fee_cents?: number
+          total_tax_cents?: number
+        }
+        Update: {
+          approval_journal_id?: string | null
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_journal_id?: string | null
+          period_date?: string
+          status?: string
+          total_gross_cents?: number
+          total_net_cents?: number
+          total_social_fee_cents?: number
+          total_tax_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_runs_approval_journal_id_fkey"
+            columns: ["approval_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_runs_payment_journal_id_fkey"
+            columns: ["payment_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       peer_invitations: {
         Row: {
@@ -11362,6 +11535,7 @@ export type Database = {
         Returns: undefined
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
+      approve_payroll_run: { Args: { p_run_id: string }; Returns: Json }
       approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
       approve_return: {
         Args: { p_notes?: string; p_return_id: string }
@@ -11639,6 +11813,7 @@ export type Database = {
         }
         Returns: string
       }
+      create_payroll_run: { Args: { p_period_date: string }; Returns: Json }
       current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {
         Args: {
@@ -11805,6 +11980,8 @@ export type Database = {
           proname: string
         }[]
       }
+      list_payroll_lines: { Args: { p_run_id: string }; Returns: Json }
+      list_payroll_runs: { Args: { p_limit?: number }; Returns: Json }
       list_reorder_candidates: {
         Args: never
         Returns: {
@@ -11890,6 +12067,10 @@ export type Database = {
         }
         Returns: Json
       }
+      mark_payroll_paid: {
+        Args: { p_payment_date?: string; p_run_id: string }
+        Returns: Json
+      }
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
         Returns: Json
@@ -11930,6 +12111,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mcp_approve_payroll_run: { Args: { args: Json }; Returns: Json }
+      mcp_create_payroll_run: { Args: { args: Json }; Returns: Json }
       mcp_dispose_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_global_search: {
         Args: { p_result_limit?: number; p_search_query: string }
@@ -11942,6 +12125,9 @@ export type Database = {
           url: string
         }[]
       }
+      mcp_list_payroll_lines: { Args: { args: Json }; Returns: Json }
+      mcp_list_payroll_runs: { Args: { args: Json }; Returns: Json }
+      mcp_mark_payroll_paid: { Args: { args: Json }; Returns: Json }
       mcp_register_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_revalue_open_balances: { Args: { args: Json }; Returns: Json }
       mcp_run_monthly_depreciation: { Args: { args: Json }; Returns: Json }

@@ -100,6 +100,7 @@ export interface ModulesSettings {
   fixedAssets: ModuleConfig;
   shipping: ModuleConfig;
   multiCurrency: ModuleConfig;
+  payroll: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -706,6 +707,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  payroll: {
+    enabled: false,
+    name: 'Payroll',
+    description:
+      'Monthly payroll runs (SE-locale): snapshots active employees + recurring components, posts wage journals (BAS 7210/7510/2710/2731/2890), 31.42% employer social fee default.',
+    icon: 'Wallet',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -768,6 +780,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/shipping': 'shipping',
   '/admin/currencies': 'multiCurrency',
   '/admin/fixed-assets': 'fixedAssets',
+  '/admin/payroll': 'payroll',
 };
 
 export function useModules() {
