@@ -98,6 +98,7 @@ export interface ModulesSettings {
   pricelists: ModuleConfig;
   returns: ModuleConfig;
   shipping: ModuleConfig;
+  multiCurrency: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
