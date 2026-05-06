@@ -61,6 +61,7 @@ export { pricelistsModule } from './pricelists-module';
 export { returnsModule } from './returns-module';
 export { shippingModule } from './shipping-module';
 export { multiCurrencyModule } from './multi-currency-module';
+export { fixedAssetsModule } from './fixed-assets-module';
 
 // ── Growth ──
 export { salesIntelligenceModule } from './sales-intelligence-module';
