@@ -284,37 +284,183 @@ function RunDetails({ run }: { run: PayrollRun }) {
       return ((data as any)?.lines ?? []) as PayrollLine[];
     },
   });
+
+  const period = run.period_date.slice(0, 7);
+  const sorted = [...(lines ?? [])].sort((a, b) =>
+    (a.employee_name ?? '').localeCompare(b.employee_name ?? ''),
+  );
+  const totals = sorted.reduce(
+    (a, l) => {
+      a.gross += l.gross_cents;
+      a.tax += l.tax_cents;
+      a.social += l.social_fee_cents;
+      a.net += l.net_cents;
+      a.employer += l.gross_cents + l.social_fee_cents;
+      return a;
+    },
+    { gross: 0, tax: 0, social: 0, net: 0, employer: 0 },
+  );
+
+  const fmtNum = (cents: number) => (cents / 100).toFixed(2);
+
+  const exportCSV = () => {
+    const header = ['Employee', 'Gross', 'PAYE tax', 'Social fee (31.42%)', 'Net wages', 'Employer cost'];
+    const rows = sorted.map((l) => [
+      l.employee_name ?? l.employee_id,
+      fmtNum(l.gross_cents),
+      fmtNum(l.tax_cents),
+      fmtNum(l.social_fee_cents),
+      fmtNum(l.net_cents),
+      fmtNum(l.gross_cents + l.social_fee_cents),
+    ]);
+    rows.push([
+      'TOTAL',
+      fmtNum(totals.gross),
+      fmtNum(totals.tax),
+      fmtNum(totals.social),
+      fmtNum(totals.net),
+      fmtNum(totals.employer),
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payroll_${period}_per-employee.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV downloaded');
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Payroll ${period} — per employee`, 14, 16);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Status: ${run.status}    Currency: SEK    ${sorted.length} employees`, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Employee', 'Gross', 'PAYE tax', 'Social fee', 'Net wages', 'Employer cost']],
+      body: sorted.map((l) => [
+        l.employee_name ?? l.employee_id.slice(0, 8),
+        fmtNum(l.gross_cents),
+        fmtNum(l.tax_cents),
+        fmtNum(l.social_fee_cents),
+        fmtNum(l.net_cents),
+        fmtNum(l.gross_cents + l.social_fee_cents),
+      ]),
+      foot: [[
+        'TOTAL',
+        fmtNum(totals.gross),
+        fmtNum(totals.tax),
+        fmtNum(totals.social),
+        fmtNum(totals.net),
+        fmtNum(totals.employer),
+      ]],
+      headStyles: { fillColor: [40, 40, 40] },
+      footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' },
+      columnStyles: {
+        1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' },
+        4: { halign: 'right' }, 5: { halign: 'right' },
+      },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`payroll_${period}_per-employee.pdf`);
+    toast.success('PDF downloaded');
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /></Button>
+        <Button variant="ghost" size="sm" title="Per-employee drilldown"><Eye className="h-3.5 w-3.5" /></Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader><DialogTitle>{run.period_date.slice(0, 7)} — {run.status}</DialogTitle></DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle>Payroll {period} — per employee</DialogTitle>
+              <div className="text-xs text-muted-foreground mt-1">
+                Status: <span className="capitalize">{run.status}</span> · {sorted.length} employees
+              </div>
+            </div>
+            <div className="flex gap-2 mr-6">
+              <Button size="sm" variant="outline" onClick={exportCSV} disabled={sorted.length === 0}>
+                <FileDown className="mr-1 h-3.5 w-3.5" /> CSV
+              </Button>
+              <Button size="sm" onClick={exportPDF} disabled={sorted.length === 0}>
+                <FileText className="mr-1 h-3.5 w-3.5" /> PDF
+              </Button>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
+          <MiniStat label="Gross" value={fmtSEK(totals.gross)} />
+          <MiniStat label="PAYE tax" value={fmtSEK(totals.tax)} />
+          <MiniStat label="Social fee" value={fmtSEK(totals.social)} />
+          <MiniStat label="Net" value={fmtSEK(totals.net)} />
+          <MiniStat label="Employer cost" value={fmtSEK(totals.employer)} highlight />
+        </div>
+
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Employee</TableHead>
               <TableHead className="text-right">Gross</TableHead>
-              <TableHead className="text-right">Tax</TableHead>
-              <TableHead className="text-right">Social</TableHead>
+              <TableHead className="text-right">PAYE tax</TableHead>
+              <TableHead className="text-right">Social fee</TableHead>
               <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Employer cost</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(lines ?? []).map((l) => (
+            {sorted.map((l) => (
               <TableRow key={l.id}>
-                <TableCell>{l.employee_name ?? l.employee_id.slice(0, 8)}</TableCell>
+                <TableCell className="font-medium">{l.employee_name ?? l.employee_id.slice(0, 8)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.gross_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.tax_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.social_fee_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.net_cents)}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {fmtSEK(l.gross_cents + l.social_fee_cents)}
+                </TableCell>
               </TableRow>
             ))}
+            {sorted.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                  No employee lines for this run.
+                </TableCell>
+              </TableRow>
+            )}
+            {sorted.length > 0 && (
+              <TableRow className="font-semibold bg-muted/40">
+                <TableCell>Total</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.gross)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.tax)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.social)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.net)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.employer)}</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MiniStat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-md border px-3 py-2 ${highlight ? 'border-primary' : ''}`}>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-semibold font-mono">{value}</div>
+    </div>
   );
 }
 
