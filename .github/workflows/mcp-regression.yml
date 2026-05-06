@@ -56,12 +56,9 @@ jobs:
         if: steps.secret_check.outputs.has_key == 'true'
         run: npm ci
 
-      - name: Verify MCP exposure invariant (no orphan tools)
-        if: steps.secret_check.outputs.has_key == 'true'
-        run: npm run verify:mcp-invariant
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # MCP exposure invariant enforced at DB-level via trigger
+      # `enforce_mcp_exposure_invariant` on agent_skills — no CI step needed.
+      # See mem/architecture/mcp-invariant-ci-guardrail.md
 
       - name: Run MCP regression (handshake + tools/list)
         id: regression
