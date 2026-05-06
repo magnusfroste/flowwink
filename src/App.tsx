@@ -305,6 +305,7 @@ const router = createBrowserRouter([
       { path: "/admin/accounting", element: <AccountingPage /> },
       { path: "/admin/accounting/locale-packs", element: <LocalePacksPage /> },
       { path: "/admin/currencies", element: <CurrenciesPage /> },
+      { path: "/admin/fixed-assets", element: <FixedAssetsPage /> },
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/docs", element: <DocsAdminPage /> },
