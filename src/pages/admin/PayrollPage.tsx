@@ -165,6 +165,7 @@ export default function PayrollPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="runs">Runs</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
             <TabsTrigger value="new">New run</TabsTrigger>
             <TabsTrigger value="components">Salary & components</TabsTrigger>
           </TabsList>
