@@ -229,6 +229,10 @@ export default function PayrollPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="reports">
+            <ReportsTab runs={runsData ?? []} />
+          </TabsContent>
+
           <TabsContent value="new">
             <NewRunForm onCreate={(p) => createRun.mutate(p)} pending={createRun.isPending} />
           </TabsContent>
