@@ -826,7 +826,7 @@ function ReportsTab({ runs }: { runs: PayrollRun[] }) {
             ))}
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No runs match the selected period and status.
                 </TableCell>
               </TableRow>
@@ -840,6 +840,7 @@ function ReportsTab({ runs }: { runs: PayrollRun[] }) {
                 <TableCell className="text-right font-mono">{fmtSEK(totals.social)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.net)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.employer_cost)}</TableCell>
+                <TableCell></TableCell>
               </TableRow>
             )}
           </TableBody>
