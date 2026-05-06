@@ -12111,6 +12111,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mcp_approve_payroll_run: { Args: { args: Json }; Returns: Json }
+      mcp_create_payroll_run: { Args: { args: Json }; Returns: Json }
       mcp_dispose_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_global_search: {
         Args: { p_result_limit?: number; p_search_query: string }
@@ -12123,6 +12125,9 @@ export type Database = {
           url: string
         }[]
       }
+      mcp_list_payroll_lines: { Args: { args: Json }; Returns: Json }
+      mcp_list_payroll_runs: { Args: { args: Json }; Returns: Json }
+      mcp_mark_payroll_paid: { Args: { args: Json }; Returns: Json }
       mcp_register_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_revalue_open_balances: { Args: { args: Json }; Returns: Json }
       mcp_run_monthly_depreciation: { Args: { args: Json }; Returns: Json }
