@@ -13,7 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Wallet, Plus, CheckCircle2, Banknote, Eye, Trash2 } from 'lucide-react';
+import { Wallet, Plus, CheckCircle2, Banknote, Eye, Trash2, FileDown, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface PayrollRun {
   id: string;
@@ -163,6 +165,7 @@ export default function PayrollPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="runs">Runs</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
             <TabsTrigger value="new">New run</TabsTrigger>
             <TabsTrigger value="components">Salary & components</TabsTrigger>
           </TabsList>
@@ -224,6 +227,10 @@ export default function PayrollPage() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <ReportsTab runs={runsData ?? []} />
           </TabsContent>
 
           <TabsContent value="new">
@@ -485,5 +492,222 @@ function ComponentsList({
         </div>
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Reports tab — period aggregation + CSV/PDF export
+// ─────────────────────────────────────────────────────────────────────────
+
+function ReportsTab({ runs }: { runs: PayrollRun[] }) {
+  const currentYear = new Date().getFullYear();
+  const [from, setFrom] = useState(`${currentYear}-01-01`);
+  const [to, setTo] = useState(`${currentYear}-12-31`);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'approved+paid'>('approved+paid');
+
+  const filtered = runs.filter((r) => {
+    if (r.period_date < from || r.period_date > to) return false;
+    if (statusFilter === 'paid') return r.status === 'paid';
+    if (statusFilter === 'approved+paid') return r.status === 'approved' || r.status === 'paid';
+    return r.status !== 'cancelled';
+  });
+
+  const sorted = [...filtered].sort((a, b) => a.period_date.localeCompare(b.period_date));
+
+  const totals = sorted.reduce(
+    (a, r) => {
+      a.gross += r.total_gross_cents;
+      a.tax += r.total_tax_cents;
+      a.social += r.total_social_fee_cents;
+      a.net += r.total_net_cents;
+      a.employer_cost += r.total_gross_cents + r.total_social_fee_cents;
+      return a;
+    },
+    { gross: 0, tax: 0, social: 0, net: 0, employer_cost: 0 },
+  );
+
+  const fmtNum = (cents: number) => (cents / 100).toFixed(2);
+
+  const exportCSV = () => {
+    const header = ['Period', 'Status', 'Gross', 'PAYE tax', 'Employer social fee (31.42%)', 'Net wages', 'Total employer cost'];
+    const rows = sorted.map((r) => [
+      r.period_date.slice(0, 7),
+      r.status,
+      fmtNum(r.total_gross_cents),
+      fmtNum(r.total_tax_cents),
+      fmtNum(r.total_social_fee_cents),
+      fmtNum(r.total_net_cents),
+      fmtNum(r.total_gross_cents + r.total_social_fee_cents),
+    ]);
+    rows.push([
+      'TOTAL', '',
+      fmtNum(totals.gross),
+      fmtNum(totals.tax),
+      fmtNum(totals.social),
+      fmtNum(totals.net),
+      fmtNum(totals.employer_cost),
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payroll-report_${from}_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV downloaded');
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Payroll Report', 14, 16);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Period: ${from} → ${to}    Filter: ${statusFilter}    Currency: SEK`, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Period', 'Status', 'Gross', 'PAYE tax', 'Social fee', 'Net wages', 'Employer cost']],
+      body: sorted.map((r) => [
+        r.period_date.slice(0, 7),
+        r.status,
+        fmtNum(r.total_gross_cents),
+        fmtNum(r.total_tax_cents),
+        fmtNum(r.total_social_fee_cents),
+        fmtNum(r.total_net_cents),
+        fmtNum(r.total_gross_cents + r.total_social_fee_cents),
+      ]),
+      foot: [[
+        'TOTAL', '',
+        fmtNum(totals.gross),
+        fmtNum(totals.tax),
+        fmtNum(totals.social),
+        fmtNum(totals.net),
+        fmtNum(totals.employer_cost),
+      ]],
+      headStyles: { fillColor: [40, 40, 40] },
+      footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' },
+      columnStyles: {
+        2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' },
+        5: { halign: 'right' }, 6: { halign: 'right' },
+      },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`payroll-report_${from}_${to}.pdf`);
+    toast.success('PDF downloaded');
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Payment report per period</CardTitle>
+        <CardDescription>
+          Aggregated gross wages, PAYE tax, employer social fee, and net paid per period. Export to CSV or PDF.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label>From</Label>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>To</Label>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paid">Paid only</SelectItem>
+                <SelectItem value="approved+paid">Approved + Paid</SelectItem>
+                <SelectItem value="all">All (excl. cancelled)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button variant="outline" onClick={exportCSV} disabled={sorted.length === 0}>
+              <FileDown className="mr-2 h-4 w-4" /> CSV
+            </Button>
+            <Button onClick={exportPDF} disabled={sorted.length === 0}>
+              <FileText className="mr-2 h-4 w-4" /> PDF
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <SummaryCard label="Gross wages" value={fmtSEK(totals.gross)} />
+          <SummaryCard label="PAYE tax (2710)" value={fmtSEK(totals.tax)} />
+          <SummaryCard label="Social fee (2731)" value={fmtSEK(totals.social)} />
+          <SummaryCard label="Net paid (2890)" value={fmtSEK(totals.net)} />
+          <SummaryCard label="Employer cost" value={fmtSEK(totals.employer_cost)} highlight />
+        </div>
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Period</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Gross</TableHead>
+              <TableHead className="text-right">PAYE tax</TableHead>
+              <TableHead className="text-right">Social fee</TableHead>
+              <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Employer cost</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="font-medium">{r.period_date.slice(0, 7)}</TableCell>
+                <TableCell>
+                  <Badge variant={r.status === 'paid' ? 'default' : 'outline'} className="capitalize">{r.status}</Badge>
+                </TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(r.total_gross_cents)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(r.total_tax_cents)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(r.total_social_fee_cents)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(r.total_net_cents)}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {fmtSEK(r.total_gross_cents + r.total_social_fee_cents)}
+                </TableCell>
+              </TableRow>
+            ))}
+            {sorted.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  No runs match the selected period and status.
+                </TableCell>
+              </TableRow>
+            )}
+            {sorted.length > 0 && (
+              <TableRow className="font-semibold bg-muted/40">
+                <TableCell>Total</TableCell>
+                <TableCell></TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.gross)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.tax)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.social)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.net)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtSEK(totals.employer_cost)}</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SummaryCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <Card className={highlight ? 'border-primary' : ''}>
+      <CardHeader className="pb-1 pt-3">
+        <CardDescription className="text-xs">{label}</CardDescription>
+      </CardHeader>
+      <CardContent className="pb-3 text-lg font-semibold font-mono">{value}</CardContent>
+    </Card>
   );
 }
