@@ -3432,6 +3432,39 @@ export type Database = {
           },
         ]
       }
+      currencies: {
+        Row: {
+          code: string
+          created_at: string
+          decimals: number
+          enabled: boolean
+          is_base: boolean
+          name: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          decimals?: number
+          enabled?: boolean
+          is_base?: boolean
+          name: string
+          symbol?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          decimals?: number
+          enabled?: boolean
+          is_base?: boolean
+          name?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_addresses: {
         Row: {
           address_line1: string
@@ -4168,6 +4201,51 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          id: string
+          quote_currency: string
+          rate: number
+          rate_date: string
+          source: string
+        }
+        Insert: {
+          base_currency: string
+          created_at?: string
+          id?: string
+          quote_currency: string
+          rate: number
+          rate_date?: string
+          source?: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          quote_currency?: string
+          rate?: number
+          rate_date?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rates_base_currency_fkey"
+            columns: ["base_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "exchange_rates_quote_currency_fkey"
+            columns: ["quote_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       expense_attachments: {
         Row: {
           created_at: string
@@ -4334,6 +4412,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string
+          exchange_rate: number
           expense_date: string
           id: string
           is_representation: boolean
@@ -4356,6 +4435,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string
+          exchange_rate?: number
           expense_date?: string
           id?: string
           is_representation?: boolean
@@ -4378,6 +4458,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string
+          exchange_rate?: number
           expense_date?: string
           id?: string
           is_representation?: boolean
@@ -4806,6 +4887,7 @@ export type Database = {
           customer_name: string | null
           deal_id: string | null
           due_date: string | null
+          exchange_rate: number
           id: string
           invoice_number: string
           issue_date: string
@@ -4836,6 +4918,7 @@ export type Database = {
           customer_name?: string | null
           deal_id?: string | null
           due_date?: string | null
+          exchange_rate?: number
           id?: string
           invoice_number: string
           issue_date?: string
@@ -4866,6 +4949,7 @@ export type Database = {
           customer_name?: string | null
           deal_id?: string | null
           due_date?: string | null
+          exchange_rate?: number
           id?: string
           invoice_number?: string
           issue_date?: string
@@ -6155,6 +6239,7 @@ export type Database = {
           customer_email: string
           customer_name: string | null
           delivered_at: string | null
+          exchange_rate: number
           fulfillment_notes: string | null
           fulfillment_status: string
           id: string
@@ -6179,6 +6264,7 @@ export type Database = {
           customer_email: string
           customer_name?: string | null
           delivered_at?: string | null
+          exchange_rate?: number
           fulfillment_notes?: string | null
           fulfillment_status?: string
           id?: string
@@ -6203,6 +6289,7 @@ export type Database = {
           customer_email?: string
           customer_name?: string | null
           delivered_at?: string | null
+          exchange_rate?: number
           fulfillment_notes?: string | null
           fulfillment_status?: string
           id?: string
@@ -7836,6 +7923,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          exchange_rate: number
           expected_delivery: string | null
           id: string
           notes: string | null
@@ -7852,6 +7940,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          exchange_rate?: number
           expected_delivery?: string | null
           id?: string
           notes?: string | null
@@ -7868,6 +7957,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          exchange_rate?: number
           expected_delivery?: string | null
           id?: string
           notes?: string | null
@@ -8112,6 +8202,7 @@ export type Database = {
           customer_name: string | null
           deal_id: string | null
           discount_cents: number
+          exchange_rate: number
           id: string
           intro_text: string | null
           invoice_id: string | null
@@ -8150,6 +8241,7 @@ export type Database = {
           customer_name?: string | null
           deal_id?: string | null
           discount_cents?: number
+          exchange_rate?: number
           id?: string
           intro_text?: string | null
           invoice_id?: string | null
@@ -8188,6 +8280,7 @@ export type Database = {
           customer_name?: string | null
           deal_id?: string | null
           discount_cents?: number
+          exchange_rate?: number
           id?: string
           intro_text?: string | null
           invoice_id?: string | null
@@ -11495,6 +11588,10 @@ export type Database = {
           year: number
         }[]
       }
+      get_exchange_rate: {
+        Args: { p_base: string; p_date?: string; p_quote: string }
+        Returns: number
+      }
       get_leave_balance: {
         Args: { p_employee_id: string; p_leave_type: string; p_year?: number }
         Returns: {
@@ -11728,6 +11825,8 @@ export type Database = {
           url: string
         }[]
       }
+      mcp_revalue_open_balances: { Args: { args: Json }; Returns: Json }
+      mcp_set_exchange_rate: { Args: { args: Json }; Returns: Json }
       next_mo_number: { Args: never; Returns: string }
       open_pos_session: {
         Args: {
@@ -11998,6 +12097,16 @@ export type Database = {
           source: string
         }[]
       }
+      revalue_open_balances: {
+        Args: {
+          p_ap_account?: string
+          p_ar_account?: string
+          p_fx_gain_account?: string
+          p_fx_loss_account?: string
+          p_revaluation_date?: string
+        }
+        Returns: Json
+      }
       run_period_lock_tests: {
         Args: never
         Returns: {
@@ -12066,6 +12175,30 @@ export type Database = {
           invoice_number: string
           total_cents: number
         }[]
+      }
+      set_exchange_rate: {
+        Args: {
+          p_base: string
+          p_quote: string
+          p_rate: number
+          p_rate_date?: string
+          p_source?: string
+        }
+        Returns: {
+          base_currency: string
+          created_at: string
+          id: string
+          quote_currency: string
+          rate: number
+          rate_date: string
+          source: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exchange_rates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_quote_item_selection: {
         Args: { _accept_token: string; _item_id: string; _selected: boolean }
