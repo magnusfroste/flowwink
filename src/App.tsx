@@ -124,6 +124,7 @@ import QuoteTemplatesPage from "./pages/admin/QuoteTemplatesPage";
 import PublicQuotePage from "./pages/PublicQuotePage";
 import PublicInvoicePage from "./pages/PublicInvoicePage";
 import AccountingPage from "./pages/admin/AccountingPage";
+import CurrenciesPage from "./pages/admin/CurrenciesPage";
 import LocalePacksPage from "./pages/admin/LocalePacksPage";
 import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
