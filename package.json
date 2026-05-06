@@ -15,6 +15,7 @@
     "cli": "bash scripts/flowwink.sh",
     "sync-blocks": "bun run scripts/sync-block-schema.ts",
     "verify:hr-modules": "npx -y tsx scripts/verify-hr-modules.ts",
+    "verify:mcp-invariant": "npx -y tsx scripts/verify-mcp-invariant.ts",
     "pretest:mcp": "npm run verify:hr-modules",
     "test:mcp-regression": "npx -y tsx scripts/mcp-regression.ts",
     "test:timesheet-regression": "npx -y tsx scripts/timesheet-regression.ts",
