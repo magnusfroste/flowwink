@@ -125,6 +125,7 @@ import PublicQuotePage from "./pages/PublicQuotePage";
 import PublicInvoicePage from "./pages/PublicInvoicePage";
 import AccountingPage from "./pages/admin/AccountingPage";
 import CurrenciesPage from "./pages/admin/CurrenciesPage";
+import FixedAssetsPage from "./pages/admin/FixedAssetsPage";
 import LocalePacksPage from "./pages/admin/LocalePacksPage";
 import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
@@ -304,6 +305,7 @@ const router = createBrowserRouter([
       { path: "/admin/accounting", element: <AccountingPage /> },
       { path: "/admin/accounting/locale-packs", element: <LocalePacksPage /> },
       { path: "/admin/currencies", element: <CurrenciesPage /> },
+      { path: "/admin/fixed-assets", element: <FixedAssetsPage /> },
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/docs", element: <DocsAdminPage /> },

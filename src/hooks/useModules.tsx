@@ -97,6 +97,7 @@ export interface ModulesSettings {
   pos: ModuleConfig;
   pricelists: ModuleConfig;
   returns: ModuleConfig;
+  fixedAssets: ModuleConfig;
   shipping: ModuleConfig;
   multiCurrency: ModuleConfig;
 }
@@ -694,6 +695,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  fixedAssets: {
+    enabled: false,
+    name: 'Fixed Assets',
+    description:
+      'Capitalize equipment, run monthly depreciation, and post disposals. Auto-bookkeeping per BAS 2024 (1210 cost / 1219 accum / 7832 expense, 3970/7970 disposal gain/loss).',
+    icon: 'Building2',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -755,6 +767,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/returns': 'returns',
   '/admin/shipping': 'shipping',
   '/admin/currencies': 'multiCurrency',
+  '/admin/fixed-assets': 'fixedAssets',
 };
 
 export function useModules() {

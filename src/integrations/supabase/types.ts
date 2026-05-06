@@ -3623,6 +3623,41 @@ export type Database = {
           },
         ]
       }
+      depreciation_entries: {
+        Row: {
+          amount_cents: number
+          asset_id: string
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          period_date: string
+        }
+        Insert: {
+          amount_cents: number
+          asset_id: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          period_date: string
+        }
+        Update: {
+          amount_cents?: number
+          asset_id?: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          period_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_entries_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       docs_pages: {
         Row: {
           category: string
@@ -4618,6 +4653,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fixed_assets: {
+        Row: {
+          accumulated_account: string
+          accumulated_cents: number
+          asset_account: string
+          cost_cents: number
+          created_at: string
+          declining_rate: number | null
+          depreciation_account: string
+          depreciation_method: string
+          description: string | null
+          disposed_amount_cents: number | null
+          disposed_at: string | null
+          id: string
+          in_service_date: string
+          name: string
+          purchase_date: string
+          salvage_cents: number
+          status: string
+          updated_at: string
+          useful_life_months: number
+        }
+        Insert: {
+          accumulated_account?: string
+          accumulated_cents?: number
+          asset_account?: string
+          cost_cents: number
+          created_at?: string
+          declining_rate?: number | null
+          depreciation_account?: string
+          depreciation_method?: string
+          description?: string | null
+          disposed_amount_cents?: number | null
+          disposed_at?: string | null
+          id?: string
+          in_service_date?: string
+          name: string
+          purchase_date?: string
+          salvage_cents?: number
+          status?: string
+          updated_at?: string
+          useful_life_months: number
+        }
+        Update: {
+          accumulated_account?: string
+          accumulated_cents?: number
+          asset_account?: string
+          cost_cents?: number
+          created_at?: string
+          declining_rate?: number | null
+          depreciation_account?: string
+          depreciation_method?: string
+          description?: string | null
+          disposed_amount_cents?: number | null
+          disposed_at?: string | null
+          id?: string
+          in_service_date?: string
+          name?: string
+          purchase_date?: string
+          salvage_cents?: number
+          status?: string
+          updated_at?: string
+          useful_life_months?: number
+        }
+        Relationships: []
       }
       flowpilot_briefings: {
         Row: {
@@ -11483,6 +11584,10 @@ export type Database = {
         Args: { p_recording_url?: string; p_webinar_id: string }
         Returns: Json
       }
+      compute_monthly_depreciation: {
+        Args: { p_asset: Database["public"]["Tables"]["fixed_assets"]["Row"] }
+        Returns: number
+      }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
       confirm_pick: {
         Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
@@ -11544,6 +11649,17 @@ export type Database = {
           signal_name: string
         }
         Returns: undefined
+      }
+      dispose_fixed_asset: {
+        Args: {
+          p_asset_id: string
+          p_disposal_date?: string
+          p_gain_account?: string
+          p_loss_account?: string
+          p_proceeds_account?: string
+          p_sale_amount_cents?: number
+        }
+        Returns: Json
       }
       emit_platform_event: {
         Args: { _event_name: string; _payload?: Json; _source?: string }
@@ -11814,6 +11930,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mcp_dispose_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_global_search: {
         Args: { p_result_limit?: number; p_search_query: string }
         Returns: {
@@ -11825,7 +11942,9 @@ export type Database = {
           url: string
         }[]
       }
+      mcp_register_fixed_asset: { Args: { args: Json }; Returns: Json }
       mcp_revalue_open_balances: { Args: { args: Json }; Returns: Json }
+      mcp_run_monthly_depreciation: { Args: { args: Json }; Returns: Json }
       mcp_set_exchange_rate: { Args: { args: Json }; Returns: Json }
       next_mo_number: { Args: never; Returns: string }
       open_pos_session: {
@@ -11977,6 +12096,51 @@ export type Database = {
         Args: { p_method?: string; p_refund_cents: number; p_return_id: string }
         Returns: Json
       }
+      register_fixed_asset: {
+        Args: {
+          p_accumulated_account?: string
+          p_asset_account?: string
+          p_cost_cents: number
+          p_create_journal_entry?: boolean
+          p_credit_account?: string
+          p_declining_rate?: number
+          p_depreciation_account?: string
+          p_description?: string
+          p_in_service_date?: string
+          p_method?: string
+          p_name: string
+          p_purchase_date?: string
+          p_salvage_cents?: number
+          p_useful_life_months: number
+        }
+        Returns: {
+          accumulated_account: string
+          accumulated_cents: number
+          asset_account: string
+          cost_cents: number
+          created_at: string
+          declining_rate: number | null
+          depreciation_account: string
+          depreciation_method: string
+          description: string | null
+          disposed_amount_cents: number | null
+          disposed_at: string | null
+          id: string
+          in_service_date: string
+          name: string
+          purchase_date: string
+          salvage_cents: number
+          status: string
+          updated_at: string
+          useful_life_months: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "fixed_assets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       register_flowpilot_cron: {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
@@ -12105,6 +12269,10 @@ export type Database = {
           p_fx_loss_account?: string
           p_revaluation_date?: string
         }
+        Returns: Json
+      }
+      run_monthly_depreciation: {
+        Args: { p_period_date?: string }
         Returns: Json
       }
       run_period_lock_tests: {
