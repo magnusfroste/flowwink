@@ -1,6 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Search,
+  Building2,
+  UserPlus,
+  HandCoins,
+  ShoppingCart,
+  FileText,
+  FileSignature,
+  LifeBuoy,
+  ScrollText,
+  FolderOpen,
+  BookOpen,
+  Package,
+  FileCode,
+  Newspaper,
+  User,
+  Truck,
+  Briefcase,
+} from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,11 +27,50 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
 import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { navigationGroups } from './adminNavigation';
+import { supabase } from '@/integrations/supabase/client';
+
+const ENTITY_META: Record<string, { label: string; icon: any; group: string }> = {
+  company:    { label: 'Company',    icon: Building2,     group: 'Companies' },
+  lead:       { label: 'Lead',       icon: UserPlus,      group: 'Leads' },
+  deal:       { label: 'Deal',       icon: HandCoins,     group: 'Deals' },
+  order:      { label: 'Order',      icon: ShoppingCart,  group: 'Orders' },
+  invoice:    { label: 'Invoice',    icon: FileText,      group: 'Invoices' },
+  quote:      { label: 'Quote',      icon: FileSignature, group: 'Quotes' },
+  ticket:     { label: 'Ticket',     icon: LifeBuoy,      group: 'Tickets' },
+  contract:   { label: 'Contract',   icon: ScrollText,    group: 'Contracts' },
+  document:   { label: 'Document',   icon: FolderOpen,    group: 'Documents' },
+  kb_article: { label: 'KB',         icon: BookOpen,      group: 'Knowledge' },
+  product:    { label: 'Product',    icon: Package,       group: 'Products' },
+  page:       { label: 'Page',       icon: FileCode,      group: 'Pages' },
+  blog_post:  { label: 'Blog post',  icon: Newspaper,     group: 'Blog' },
+  employee:   { label: 'Employee',   icon: User,          group: 'Employees' },
+  vendor:     { label: 'Vendor',     icon: Truck,         group: 'Vendors' },
+  project:    { label: 'Project',    icon: Briefcase,     group: 'Projects' },
+};
+
+interface SearchHit {
+  entity_type: string;
+  entity_id: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+  rank: number;
+}
+
+function useDebounced<T>(value: T, ms = 200): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return v;
+}
 
 export function useAdminSearch() {
   const [searchOpen, setSearchOpen] = useState(false);
