@@ -60,6 +60,7 @@ export { reconciliationModule } from './reconciliation-module';
 export { pricelistsModule } from './pricelists-module';
 export { returnsModule } from './returns-module';
 export { shippingModule } from './shipping-module';
+export { multiCurrencyModule } from './multi-currency-module';
 
 // ── Growth ──
 export { salesIntelligenceModule } from './sales-intelligence-module';
