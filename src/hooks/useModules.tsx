@@ -767,6 +767,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/returns': 'returns',
   '/admin/shipping': 'shipping',
   '/admin/currencies': 'multiCurrency',
+  '/admin/fixed-assets': 'fixedAssets',
 };
 
 export function useModules() {
