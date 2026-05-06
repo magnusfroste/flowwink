@@ -695,6 +695,17 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  fixedAssets: {
+    enabled: false,
+    name: 'Fixed Assets',
+    description:
+      'Capitalize equipment, run monthly depreciation, and post disposals. Auto-bookkeeping per BAS 2024 (1210 cost / 1219 accum / 7832 expense, 3970/7970 disposal gain/loss).',
+    icon: 'Building2',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
