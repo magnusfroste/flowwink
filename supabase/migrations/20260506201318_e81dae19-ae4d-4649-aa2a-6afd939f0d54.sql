@@ -1,0 +1,1 @@
+UPDATE public.agent_skills SET enabled = true WHERE name IN ('accounting_reports','manage_deal','manage_leads') AND mcp_exposed = true AND enabled = false;
