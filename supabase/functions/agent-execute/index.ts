@@ -6063,7 +6063,8 @@ async function writeAuditTrail(
 const GENERIC_CRUD_TABLES = new Set([
   'employees', 'leave_requests', 'projects', 'project_tasks',
   'time_entries', 'contracts', 'contract_documents',
-  'expenses', 'documents', 'invoices', 'invoice_lines',
+  'expenses', 'expense_reports', 'expense_attachments', 'expense_payments',
+  'documents', 'invoices', 'invoice_lines',
   'vendors', 'purchase_orders', 'purchase_order_lines',
   'consultant_profiles', 'ad_campaigns', 'ad_creatives',
   'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
