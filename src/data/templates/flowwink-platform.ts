@@ -66,8 +66,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'hero-main',
           type: 'hero',
           data: {
-            title: 'The First Agent-Native ERP',
-            subtitle: 'A complete ERP for mid-sized businesses — Quote-to-Cash, HR & Payroll, Accounting, Procure-to-Pay, Projects. Every module exposed via MCP. Run it with our built-in FlowPilot, or plug in your own agent (Claude, GPT, OpenClaw) to operate FlowWink alongside your other SaaS.',
+            title: 'Your Business, Run by an Operator',
+            subtitle: 'FlowWink is the Business Operating System — a self-hosted CMS, CRM and ERP (Quote-to-Cash, HR & Payroll, Accounting, Procure-to-Pay, Projects) wired together and run by an autonomous operator. Use the built-in FlowPilot, or plug in your own agent (Claude, GPT, OpenClaw) via MCP.',
             backgroundType: 'video',
             videoUrl: 'https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4',
             videoPosterUrl: 'https://images.pexels.com/videos/3209828/free-video-3209828.jpg?auto=compress&w=1920',
