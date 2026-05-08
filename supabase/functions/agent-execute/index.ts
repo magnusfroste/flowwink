@@ -5343,9 +5343,17 @@ async function executeDbAction(
       }
 
       if (action === 'update') {
-        const { expense_id, ...updates } = args as any;
+        const { expense_id, ...rest } = args as any;
         if (!expense_id) throw new Error('expense_id is required');
-        delete updates.action;
+        // Strip agent-internal underscore-prefixed fields (_caller_user_id,
+        // _caller_api_key_id, etc.) and the routing 'action' field — they are
+        // not real expense columns and PostgREST rejects them.
+        const updates: Record<string, any> = {};
+        for (const [k, v] of Object.entries(rest)) {
+          if (k === 'action') continue;
+          if (k.startsWith('_')) continue;
+          updates[k] = v;
+        }
         if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
           throw new Error('Representation expenses require attendees');
         }
