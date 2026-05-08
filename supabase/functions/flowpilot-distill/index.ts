@@ -53,6 +53,30 @@ function groupKey(row: any): string {
   return `day:${day}`;
 }
 
+/**
+ * Heuristic: did this row originate from an automation/cron/event vs a
+ * real user/agent reasoning turn? We use this to drop ping-pong patterns
+ * where two skills just trigger each other in the background.
+ */
+function isAutomationRow(row: any): boolean {
+  if (row.conversation_id) return false; // user/agent conversation
+  const inp = row?.input ?? {};
+  const src = String(inp.source ?? inp.trigger_source ?? inp.trigger_type ?? "").toLowerCase();
+  if (src.includes("automation") || src.includes("cron") || src.includes("event") || src.includes("schedule")) {
+    return true;
+  }
+  // No conversation + no trace → almost certainly background work
+  if (!inp.trace_id) return true;
+  const trace = String(inp.trace_id).toLowerCase();
+  return trace.startsWith("auto") || trace.startsWith("cron") || trace.startsWith("event") || trace.startsWith("sched");
+}
+
+/** Detects oscillation like A→B→A or A→B→A→B (only 2 distinct skills, length ≥ 3). */
+function isPingPong(seq: string[]): boolean {
+  if (seq.length < 3) return false;
+  return new Set(seq).size <= 2;
+}
+
 function suggestSkillName(seq: string[]): string {
   // pick the verb of the last skill + a domain hint from the first
   const last = seq[seq.length - 1].split("_").pop() || "do";
@@ -116,11 +140,22 @@ serve(async (req) => {
       groups.set(key, arr);
     }
 
+    // Track per-group whether it was an automation-only sequence
+    const groupAutomation = new Map<string, { auto: number; total: number }>();
+    for (const row of activity) {
+      const key = groupKey(row);
+      const cur = groupAutomation.get(key) ?? { auto: 0, total: 0 };
+      cur.total += 1;
+      if (isAutomationRow(row)) cur.auto += 1;
+      groupAutomation.set(key, cur);
+    }
+
     // 3. Build N-gram counter
     type NgramStat = {
       sequence: string[];
       count: number;
       groups: Set<string>;
+      automation_only_groups: number;
       first_seen: string;
       last_seen: string;
     };
@@ -140,16 +175,19 @@ serve(async (req) => {
     for (const [gKey, seq] of groups.entries()) {
       if (seq.length < NGRAM_MIN) continue;
       const times = groupTimes.get(gKey)!;
+      const autoStat = groupAutomation.get(gKey);
+      const isAutoGroup = autoStat ? autoStat.auto / Math.max(1, autoStat.total) >= 0.7 : false;
       for (let n = NGRAM_MIN; n <= NGRAM_MAX; n++) {
         for (let i = 0; i + n <= seq.length; i++) {
           const window = seq.slice(i, i + n);
-          // skip same-skill windows (e.g. ['x','x','x'])
           if (new Set(window).size === 1) continue;
+          if (isPingPong(window)) continue; // drop A→B→A oscillations
           const k = window.join("→");
           const existing = ngrams.get(k);
           if (existing) {
             existing.count += 1;
             existing.groups.add(gKey);
+            if (isAutoGroup) existing.automation_only_groups += 1;
             if (times.last > existing.last_seen) existing.last_seen = times.last;
             if (times.first < existing.first_seen) existing.first_seen = times.first;
           } else {
@@ -157,6 +195,7 @@ serve(async (req) => {
               sequence: window,
               count: 1,
               groups: new Set([gKey]),
+              automation_only_groups: isAutoGroup ? 1 : 0,
               first_seen: times.first,
               last_seen: times.last,
             });
@@ -165,9 +204,12 @@ serve(async (req) => {
       }
     }
 
-    // 4. Filter — must repeat ≥ MIN_REPEATS across ≥2 distinct groups
+    // 4. Filter — must repeat ≥ MIN_REPEATS across ≥2 distinct groups,
+    //    and at least one group must be a real human/agent conversation
+    //    (i.e. not 100% automation-driven).
     const proposals = Array.from(ngrams.values())
       .filter((s) => s.count >= MIN_REPEATS && s.groups.size >= 2)
+      .filter((s) => s.automation_only_groups < s.groups.size) // ≥1 non-auto group
       .sort((a, b) => b.count * b.sequence.length - a.count * a.sequence.length)
       .slice(0, MAX_PROPOSALS)
       .map((s) => ({
@@ -175,9 +217,10 @@ serve(async (req) => {
         sequence: s.sequence,
         observed_count: s.count,
         distinct_sessions: s.groups.size,
+        automation_only_sessions: s.automation_only_groups,
         first_seen: s.first_seen,
         last_seen: s.last_seen,
-        rationale: `Sequence "${s.sequence.join(" → ")}" observed ${s.count}× across ${s.groups.size} sessions in last ${WINDOW_DAYS}d. Candidate for a chained skill.`,
+        rationale: `Sequence "${s.sequence.join(" → ")}" observed ${s.count}× across ${s.groups.size} sessions (${s.groups.size - s.automation_only_groups} human-driven) in last ${WINDOW_DAYS}d. Candidate for a chained skill.`,
       }));
 
     // 5. De-duplicate against existing skills (don't propose what already exists)
