@@ -78,17 +78,24 @@ async function lintSkills(only?: string): Promise<LintResult> {
   );
 
   // Pre-fetch RPC signatures
-  const { rows: rpcRows } = await client.query<{ proname: string; args: string[] }>(`
+  const { rows: rpcRows } = await client.query<{ proname: string; args: string[] | string }>(`
     SELECT p.proname,
            COALESCE(array_agg(pa.parameter_name ORDER BY pa.ordinal_position)
-                    FILTER (WHERE pa.parameter_name IS NOT NULL), '{}') AS args
+                    FILTER (WHERE pa.parameter_name IS NOT NULL), ARRAY[]::text[]) AS args
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
     LEFT JOIN information_schema.parameters pa
       ON pa.specific_name = p.proname || '_' || p.oid
     GROUP BY p.proname
   `);
-  const rpcArgsByName = new Map(rpcRows.map((r) => [r.proname, new Set(r.args)]));
+  // Defensive: pg sometimes returns text[] as a literal "{a,b}" string. Normalize.
+  const toArray = (v: string[] | string): string[] => {
+    if (Array.isArray(v)) return v;
+    const s = String(v ?? '').trim();
+    if (!s || s === '{}') return [];
+    return s.replace(/^\{|\}$/g, '').split(',').map((x) => x.trim()).filter(Boolean);
+  };
+  const rpcArgsByName = new Map(rpcRows.map((r) => [r.proname, new Set(toArray(r.args))]));
 
   // Pre-fetch NOT NULL columns per public table
   const { rows: notNullRows } = await client.query<{ table_name: string; column_name: string }>(`
@@ -104,6 +111,14 @@ async function lintSkills(only?: string): Promise<LintResult> {
     notNullByTable.get(table_name)!.add(column_name);
   }
 
+  // Separately fetch the full table list — some valid tables have no NOT NULL
+  // columns without defaults and would otherwise be misreported as non-existent.
+  const { rows: tableRows } = await client.query<{ table_name: string }>(`
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+  `);
+  const publicTables = new Set(tableRows.map((r) => r.table_name));
+
   const fixture = fs.existsSync(NOT_NULL_FIXTURE)
     ? JSON.parse(fs.readFileSync(NOT_NULL_FIXTURE, 'utf8'))
     : { _skill_auto_filled_columns: {} };
@@ -112,7 +127,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
   await client.end();
 
   const reports: SkillReport[] = skills.map((skill) =>
-    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, autoFilled }),
+    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, publicTables, autoFilled }),
   );
 
   const totalFindings = reports.reduce((s, r) => s + r.findings.length, 0);
@@ -138,6 +153,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
 interface LintCtx {
   rpcArgsByName: Map<string, Set<string>>;
   notNullByTable: Map<string, Set<string>>;
+  publicTables: Set<string>;
   autoFilled: Record<string, string[]>;
 }
 
@@ -183,8 +199,7 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
   // ─── Layer 2: Schema coverage (db:* only) ──────────────────────────
   if (handler.startsWith('db:')) {
     const table = handler.replace('db:', '');
-    const required = ctx.notNullByTable.get(table);
-    if (!required) {
+    if (!ctx.publicTables.has(table)) {
       findings.push({
         layer: 2,
         severity: 'error',
@@ -192,6 +207,7 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
         message: `Handler points to table "${table}" but it does not exist in public schema.`,
       });
     } else {
+      const required = ctx.notNullByTable.get(table) ?? new Set<string>();
       const exempt = new Set(ctx.autoFilled[skill.name] ?? []);
       const propSet = new Set(propNames);
       for (const col of required) {
