@@ -35,7 +35,8 @@ type SourceKey =
   | 'kb'
   | 'pages'
   | 'crm'
-  | 'employees';
+  | 'employees'
+  | 'wiki';
 
 const ALL_SOURCES: SourceKey[] = [
   'documents',
@@ -44,6 +45,7 @@ const ALL_SOURCES: SourceKey[] = [
   'pages',
   'crm',
   'employees',
+  'wiki',
 ];
 
 interface Citation {
