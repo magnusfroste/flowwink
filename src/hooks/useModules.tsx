@@ -102,6 +102,7 @@ export interface ModulesSettings {
   multiCurrency: ModuleConfig;
   payroll: ModuleConfig;
   clawable: ModuleConfig;
+  wiki: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -729,6 +730,17 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'view-required',
     adminUI: true,
   },
+  wiki: {
+    enabled: false,
+    name: 'Wiki',
+    description:
+      'Internal TEdit-style wiki / intranet. Authenticated staff can read and edit; CamelCase or [[WikiWord]] auto-links create missing pages on click. Surfaces as a selectable knowledge source in Cowork Chat.',
+    icon: 'BookOpen',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -792,6 +804,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/currencies': 'multiCurrency',
   '/admin/fixed-assets': 'fixedAssets',
   '/admin/payroll': 'payroll',
+  '/admin/wiki': 'wiki',
 };
 
 export function useModules() {

@@ -42,7 +42,6 @@ const WIKI_SKILLS: SkillSeed[] = [
     category: 'content',
     handler: 'module:wiki',
     scope: 'internal',
-    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
@@ -111,7 +110,6 @@ in the UI auto-creates the page.
     category: 'content',
     handler: 'module:wiki',
     scope: 'internal',
-    mcp_exposed: true,
     tool_definition: {
       type: 'function',
       function: {
