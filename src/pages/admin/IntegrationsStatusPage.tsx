@@ -646,6 +646,17 @@ export default function IntegrationsStatusPage() {
     });
   };
 
+  const [search, setSearch] = useState("");
+
+  const handleBulkToggle = (keys: (keyof IntegrationsSettings)[], enabled: boolean) => {
+    if (keys.length === 0) return;
+    const patch: Partial<IntegrationsSettings> = {};
+    for (const k of keys) {
+      patch[k] = { ...(integrationSettings?.[k] || defaultIntegrationsSettings[k]), enabled } as any;
+    }
+    updateIntegrations.mutate(patch);
+  };
+
   const openDrawer = (key: keyof IntegrationsSettings, currentConfig: IntegrationProviderConfig | undefined) => {
     setOpenDrawerKey(key);
     setDrawerConfig(currentConfig);
