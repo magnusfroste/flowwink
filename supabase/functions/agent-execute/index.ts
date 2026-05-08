@@ -5275,6 +5275,133 @@ async function executeDbAction(
       throw new Error(`Unknown accounting_templates action: ${action}`);
     }
 
+    case 'quotes': {
+      // ─── Quotes CRUD with line-items extraction ─────────────────────────
+      // The `quotes` table has no `items` column — line items live in
+      // `quote_items`. Generic CRUD would reject `items: [...]` with
+      // "Could not find the 'items' column". This handler extracts items[]
+      // (or line_items[] passed as an array) and inserts them into
+      // quote_items after the parent quote is created.
+      const { action = 'list' } = args as any;
+
+      const stripQuoteInternal = (obj: Record<string, any>): Record<string, any> => {
+        const out: Record<string, any> = {};
+        for (const [k, v] of Object.entries(obj)) {
+          if (k === 'action' || k === 'items' || k === 'line_items') continue;
+          if (k.startsWith('_')) continue;
+          out[k] = v;
+        }
+        return out;
+      };
+
+      const insertQuoteItems = async (quote_id: string, rawItems: unknown): Promise<number> => {
+        if (!Array.isArray(rawItems) || rawItems.length === 0) return 0;
+        const rows = rawItems.map((it: any, idx: number) => ({
+          quote_id,
+          position: typeof it.position === 'number' ? it.position : idx,
+          description: it.description ?? it.name ?? '',
+          quantity: it.quantity ?? it.qty ?? 1,
+          unit: it.unit ?? null,
+          unit_price_cents: it.unit_price_cents ?? Math.round((it.unit_price ?? 0) * 100),
+          tax_rate_pct: it.tax_rate_pct ?? 25,
+          discount_pct: it.discount_pct ?? 0,
+          product_id: it.product_id ?? null,
+        }));
+        const { error } = await supabase.from('quote_items').insert(rows);
+        if (error) throw new Error(`Insert quote_items failed: ${error.message}`);
+        return rows.length;
+      };
+
+      if (action === 'list') {
+        const { limit = 50, status, lead_id, deal_id } = args as any;
+        let q = supabase.from('quotes')
+          .select('id, quote_number, status, total_cents, currency, valid_until, lead_id, deal_id, created_at')
+          .order('created_at', { ascending: false }).limit(limit);
+        if (status) q = q.eq('status', status);
+        if (lead_id) q = q.eq('lead_id', lead_id);
+        if (deal_id) q = q.eq('deal_id', deal_id);
+        const { data, error } = await q;
+        if (error) throw new Error(`List quotes failed: ${error.message}`);
+        return { quotes: data, count: (data || []).length };
+      }
+
+      if (action === 'get') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const [quoteRes, itemsRes] = await Promise.all([
+          supabase.from('quotes').select('*').eq('id', qid).maybeSingle(),
+          supabase.from('quote_items').select('*').eq('quote_id', qid).order('position'),
+        ]);
+        if (quoteRes.error) throw new Error(`Get quote failed: ${quoteRes.error.message}`);
+        if (!quoteRes.data) return { error: `Quote ${qid} not found` };
+        return { quote: quoteRes.data, items: itemsRes.data || [] };
+      }
+
+      if (action === 'create') {
+        const a = args as any;
+        const items = Array.isArray(a.items) ? a.items
+                    : Array.isArray(a.line_items) ? a.line_items
+                    : null;
+        const insertData = stripQuoteInternal(a);
+        if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
+          throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
+        }
+        if (a._caller_user_id && !insertData.created_by) insertData.created_by = a._caller_user_id;
+        const { data, error } = await supabase.from('quotes')
+          .insert(insertData).select('id, quote_number').single();
+        if (error) throw new Error(`Create quote failed: ${error.message}`);
+        const itemsInserted = await insertQuoteItems(data.id, items);
+        return { created: true, quote_id: data.id, quote_number: data.quote_number, items_inserted: itemsInserted };
+      }
+
+      if (action === 'update') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const items = Array.isArray(a.items) ? a.items
+                    : Array.isArray(a.line_items) ? a.line_items
+                    : null;
+        const updateData = stripQuoteInternal(a);
+        delete updateData.id;
+        delete updateData.quote_id;
+        updateData.updated_at = new Date().toISOString();
+        if (Object.keys(updateData).length > 1) {
+          const { error } = await supabase.from('quotes').update(updateData).eq('id', qid);
+          if (error) throw new Error(`Update quote failed: ${error.message}`);
+        }
+        let itemsInserted = 0;
+        if (items) {
+          await supabase.from('quote_items').delete().eq('quote_id', qid);
+          itemsInserted = await insertQuoteItems(qid, items);
+        }
+        return { updated: true, quote_id: qid, items_inserted: itemsInserted };
+      }
+
+      if (action === 'add_item') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const inserted = await insertQuoteItems(qid, [{
+          description: a.description, quantity: a.quantity, unit: a.unit,
+          unit_price_cents: a.unit_price_cents, tax_rate_pct: a.tax_rate_pct,
+          product_id: a.product_id,
+        }]);
+        return { added: true, quote_id: qid, items_inserted: inserted };
+      }
+
+      if (action === 'delete') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const { error } = await supabase.from('quotes').delete().eq('id', qid);
+        if (error) throw new Error(`Delete quote failed: ${error.message}`);
+        return { deleted: true, quote_id: qid };
+      }
+
+      throw new Error(`Unknown quotes action: ${action}. Supported: list, get, create, update, add_item, delete.`);
+    }
+
     case 'expenses': {
       // ─── Expense Reporting CRUD ─────────────────────────────────────────
       const { action = 'list' } = args as any;
@@ -5343,9 +5470,17 @@ async function executeDbAction(
       }
 
       if (action === 'update') {
-        const { expense_id, ...updates } = args as any;
+        const { expense_id, ...rest } = args as any;
         if (!expense_id) throw new Error('expense_id is required');
-        delete updates.action;
+        // Strip agent-internal underscore-prefixed fields (_caller_user_id,
+        // _caller_api_key_id, etc.) and the routing 'action' field — they are
+        // not real expense columns and PostgREST rejects them.
+        const updates: Record<string, any> = {};
+        for (const [k, v] of Object.entries(rest)) {
+          if (k === 'action') continue;
+          if (k.startsWith('_')) continue;
+          updates[k] = v;
+        }
         if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
           throw new Error('Representation expenses require attendees');
         }
