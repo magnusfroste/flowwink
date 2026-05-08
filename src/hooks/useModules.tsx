@@ -719,6 +719,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  clawable: {
+    enabled: false,
+    name: 'Clawable',
+    description:
+      'Internal admin chat for external operator peers (OpenClaw /v1/responses). UI-only cockpit for testing & administering peers from FlowWink — no MCP, no skills.',
+    icon: 'MessageSquare',
+    category: 'integration',
+    autonomy: 'view-required',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
