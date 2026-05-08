@@ -112,6 +112,7 @@ import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
 import ConsultantProfilesPage from "./pages/admin/ConsultantProfilesPage";
 import FederationPage from "./pages/admin/FederationPage";
 import ClawablePage from "./pages/admin/ClawablePage";
+import WikiPage from "./pages/admin/WikiPage";
 import SkillsCatalogPage from "./pages/admin/SkillsCatalogPage";
 import CompanyInsightsPage from "./pages/admin/CompanyInsightsPage";
 import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
@@ -293,6 +294,8 @@ const router = createBrowserRouter([
       { path: "/admin/resume", element: <ConsultantProfilesPage /> },
       { path: "/admin/federation", element: <FederationPage /> },
       { path: "/admin/clawable", element: <ClawablePage /> },
+      { path: "/admin/wiki", element: <WikiPage /> },
+      { path: "/admin/wiki/:slug", element: <WikiPage /> },
       { path: "/admin/company-insights", element: <CompanyInsightsPage /> },
       { path: "/admin/growth", element: <GrowthDashboardPage /> },
       

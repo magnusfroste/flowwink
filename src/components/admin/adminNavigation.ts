@@ -56,6 +56,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Media Library", href: "/admin/media", icon: Image, moduleId: "mediaLibrary" },
       { name: "Handbook", href: "/admin/handbook", icon: BookMarked, moduleId: "handbook" },
       { name: "Docs", href: "/admin/docs", icon: BookOpen, moduleId: "docs" },
+      { name: "Wiki", href: "/admin/wiki", icon: BookMarked, moduleId: "wiki" },
     ],
   },
   {

@@ -496,6 +496,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   webinars: 'webinars',
   handbook: 'handbook',
   purchasing: 'purchasing',
+  wiki: 'wiki',
 };
 
 async function autoActivateModule(
@@ -738,6 +739,10 @@ async function executeModuleAction(
 
     case 'kb': {
       return await executeKbAction(supabase, skillName, args);
+    }
+
+    case 'wiki': {
+      return await executeWikiAction(supabase, skillName, args);
     }
 
     case 'globalElements': {
@@ -2686,6 +2691,111 @@ async function executeKbAction(
   }
 
   return { error: `Unknown KB action: ${action}` };
+}
+
+// =============================================================================
+// Wiki module handlers
+// =============================================================================
+
+function toWikiSlug(input: string): string {
+  return String(input || '')
+    .normalize('NFKD')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/[-_]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join('')
+    .slice(0, 80);
+}
+
+async function executeWikiAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  if (skillName === 'search_wiki') {
+    const query = String((args as any).query || '').trim();
+    const limit = Math.min(Math.max(Number((args as any).limit) || 10, 1), 50);
+    if (!query) return { matches: [] };
+    const { data, error } = await supabase
+      .from('wiki_pages')
+      .select('slug, title, updated_at, content_md')
+      .or(`title.ilike.%${query}%,content_md.ilike.%${query}%`)
+      .limit(limit);
+    if (error) throw new Error(`search_wiki failed: ${error.message}`);
+    return {
+      matches: (data || []).map((p: any) => ({
+        slug: p.slug,
+        title: p.title,
+        updated_at: p.updated_at,
+        excerpt: String(p.content_md || '').slice(0, 240),
+        url: `/admin/wiki/${p.slug}`,
+      })),
+    };
+  }
+
+  const action = String((args as any).action || 'list');
+
+  if (action === 'list') {
+    const limit = Math.min(Math.max(Number((args as any).limit) || 50, 1), 200);
+    const { data, error } = await supabase
+      .from('wiki_pages')
+      .select('slug, title, updated_at, created_at')
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`list wiki failed: ${error.message}`);
+    return { pages: data || [] };
+  }
+
+  if (action === 'get') {
+    const slug = String((args as any).slug || '');
+    if (!slug) throw new Error('slug is required');
+    const { data, error } = await supabase
+      .from('wiki_pages').select('*').eq('slug', slug).maybeSingle();
+    if (error) throw new Error(`get wiki failed: ${error.message}`);
+    if (!data) return { found: false, slug };
+    return { found: true, ...data };
+  }
+
+  if (action === 'create') {
+    const title = String((args as any).title || '').trim();
+    if (!title) throw new Error('title is required');
+    const slug = String((args as any).slug || '').trim() || toWikiSlug(title);
+    if (!slug) throw new Error('could not derive slug');
+    const content_md = String((args as any).content_md || '');
+    const { data, error } = await supabase
+      .from('wiki_pages')
+      .insert({ slug, title, content_md })
+      .select('slug, title, updated_at')
+      .single();
+    if (error) throw new Error(`create wiki failed: ${error.message}`);
+    return { ...data, url: `/admin/wiki/${data.slug}`, status: 'created' };
+  }
+
+  if (action === 'update') {
+    const slug = String((args as any).slug || '');
+    if (!slug) throw new Error('slug is required');
+    const patch: Record<string, unknown> = {};
+    if (typeof (args as any).title === 'string') patch.title = (args as any).title;
+    if (typeof (args as any).content_md === 'string') patch.content_md = (args as any).content_md;
+    if (Object.keys(patch).length === 0) throw new Error('nothing to update');
+    const { data, error } = await supabase
+      .from('wiki_pages').update(patch).eq('slug', slug)
+      .select('slug, title, updated_at').single();
+    if (error) throw new Error(`update wiki failed: ${error.message}`);
+    return { ...data, url: `/admin/wiki/${data.slug}`, status: 'updated' };
+  }
+
+  if (action === 'delete') {
+    const slug = String((args as any).slug || '');
+    if (!slug) throw new Error('slug is required');
+    const { error } = await supabase.from('wiki_pages').delete().eq('slug', slug);
+    if (error) throw new Error(`delete wiki failed: ${error.message}`);
+    return { slug, status: 'deleted' };
+  }
+
+  return { error: `Unknown wiki action: ${action}` };
 }
 
 // =============================================================================

@@ -12,6 +12,7 @@ const SOURCE_META: Record<WorkspaceSource, { label: string; description: string;
   pages: { label: 'Pages', description: 'Published website pages', Icon: Layout },
   crm: { label: 'CRM', description: 'Leads & deals', Icon: Users },
   employees: { label: 'Employees', description: 'HR records', Icon: UserCheck },
+  wiki: { label: 'Wiki', description: 'Internal intranet pages', Icon: BookOpen },
 };
 
 interface Props {

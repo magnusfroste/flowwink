@@ -11446,6 +11446,36 @@ export type Database = {
         }
         Relationships: []
       }
+      wiki_pages: {
+        Row: {
+          content_md: string
+          created_at: string
+          created_by: string | null
+          slug: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_md?: string
+          created_at?: string
+          created_by?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       wishlist_items: {
         Row: {
           created_at: string

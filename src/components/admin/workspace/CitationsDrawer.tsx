@@ -59,6 +59,7 @@ const SOURCE_META: Record<
   pages: { label: 'Pages', Icon: Layout },
   crm: { label: 'CRM', Icon: Users },
   employees: { label: 'Employees', Icon: UserCheck },
+  wiki: { label: 'Wiki', Icon: BookOpen },
 };
 
 export function CitationsDrawer({

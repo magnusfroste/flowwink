@@ -8,7 +8,8 @@ export type WorkspaceSource =
   | 'kb'
   | 'pages'
   | 'crm'
-  | 'employees';
+  | 'employees'
+  | 'wiki';
 
 export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'documents',
@@ -17,6 +18,7 @@ export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'pages',
   'crm',
   'employees',
+  'wiki',
 ];
 
 export interface WorkspaceCitation {

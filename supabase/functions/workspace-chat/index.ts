@@ -35,7 +35,8 @@ type SourceKey =
   | 'kb'
   | 'pages'
   | 'crm'
-  | 'employees';
+  | 'employees'
+  | 'wiki';
 
 const ALL_SOURCES: SourceKey[] = [
   'documents',
@@ -44,6 +45,7 @@ const ALL_SOURCES: SourceKey[] = [
   'pages',
   'crm',
   'employees',
+  'wiki',
 ];
 
 interface Citation {
@@ -328,6 +330,22 @@ async function buildContext(
         return `[${r}] ${e.full_name || e.email} ${e.role ? `(${e.role})` : ''} ${e.department ? `— ${e.department}` : ''} status=${e.status || 'active'}`;
       });
       rawBlocks.push({ source: 'employees', text: `### Employees\n${lines.join('\n')}` });
+    }
+  }
+
+  if (sources.includes('wiki')) {
+    const { data } = await supabase
+      .from('wiki_pages')
+      .select('slug, title, content_md, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(PER_SOURCE_LIMIT);
+    if (data?.length) {
+      const lines = data.map((w: any) => {
+        const r = push('wiki', w.slug, w.title || w.slug, `/admin/wiki/${w.slug}`);
+        const excerpt = String(w.content_md || '').slice(0, 1200);
+        return `[${r}] ${w.title || w.slug} (slug=${w.slug})\n${excerpt}${(w.content_md || '').length > 1200 ? '\n[…truncated]' : ''}`;
+      });
+      rawBlocks.push({ source: 'wiki', text: `### Wiki\n${lines.join('\n\n')}` });
     }
   }
 
