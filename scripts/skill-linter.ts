@@ -111,6 +111,14 @@ async function lintSkills(only?: string): Promise<LintResult> {
     notNullByTable.get(table_name)!.add(column_name);
   }
 
+  // Separately fetch the full table list — some valid tables have no NOT NULL
+  // columns without defaults and would otherwise be misreported as non-existent.
+  const { rows: tableRows } = await client.query<{ table_name: string }>(`
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+  `);
+  const publicTables = new Set(tableRows.map((r) => r.table_name));
+
   const fixture = fs.existsSync(NOT_NULL_FIXTURE)
     ? JSON.parse(fs.readFileSync(NOT_NULL_FIXTURE, 'utf8'))
     : { _skill_auto_filled_columns: {} };
@@ -119,7 +127,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
   await client.end();
 
   const reports: SkillReport[] = skills.map((skill) =>
-    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, autoFilled }),
+    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, publicTables, autoFilled }),
   );
 
   const totalFindings = reports.reduce((s, r) => s + r.findings.length, 0);
