@@ -20,6 +20,7 @@ import { UnifiedChat } from '@/components/chat/UnifiedChat';
 import { ContextPanel } from '@/components/admin/copilot/ContextPanel';
 import { ObjectivesPanel } from '@/components/admin/skills/ObjectivesPanel';
 import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
+import { DistilledProposalsPanel } from '@/components/admin/skills/DistilledProposalsPanel';
 import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { AutonomyScheduleTab } from '@/components/admin/AutonomyScheduleTab';
 import { useAgentOperate } from '@/hooks/useAgentOperate';
@@ -457,7 +458,12 @@ export default function CopilotPage() {
                 </Alert>
 
                 {activeTab === 'objectives' && <ObjectivesPanel />}
-                {activeTab === 'evolution' && <EvolutionPanel />}
+                {activeTab === 'evolution' && (
+                  <div className="space-y-4">
+                    <DistilledProposalsPanel />
+                    <EvolutionPanel />
+                  </div>
+                )}
                 {activeTab === 'autonomy' && (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
