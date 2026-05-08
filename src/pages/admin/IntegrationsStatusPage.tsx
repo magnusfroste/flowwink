@@ -797,6 +797,35 @@ export default function IntegrationsStatusPage() {
           </div>
         </div>
 
+        {/* Search + bulk actions */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search integrations by name, description…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkToggle(visibleIntegrationKeys, true)}
+            disabled={updateIntegrations.isPending || visibleIntegrationKeys.length === 0}
+          >
+            Enable {search ? 'matching' : 'all'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkToggle(visibleIntegrationKeys, false)}
+            disabled={updateIntegrations.isPending || visibleIntegrationKeys.length === 0}
+          >
+            Disable {search ? 'matching' : 'all'}
+          </Button>
+        </div>
+
         {/* Company Profile moved to Sales Intelligence module */}
 
         {/* Gmail Signal Integration (standalone card) */}
