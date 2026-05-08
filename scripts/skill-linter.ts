@@ -153,6 +153,7 @@ async function lintSkills(only?: string): Promise<LintResult> {
 interface LintCtx {
   rpcArgsByName: Map<string, Set<string>>;
   notNullByTable: Map<string, Set<string>>;
+  publicTables: Set<string>;
   autoFilled: Record<string, string[]>;
 }
 
