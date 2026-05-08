@@ -72,6 +72,7 @@ export { resumeModule } from './resume-module';
 // ── System / Integration ──
 export { browserControlModule } from './browser-control-module';
 export { federationModule } from './federation-module';
+export { clawableModule } from './clawable-module';
 export { composioModule } from './composio-module';
 export { ticketsModule } from './tickets-module';
 export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';

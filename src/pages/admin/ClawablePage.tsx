@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -45,6 +47,32 @@ interface Message {
 }
 
 export default function ClawablePage() {
+  const enabled = useIsModuleEnabled('clawable');
+  if (!enabled) {
+    return (
+      <AdminLayout>
+        <AdminPageContainer>
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Clawable is disabled</h2>
+              <CardDescription className="max-w-md mx-auto">
+                Enable the Clawable module to chat with external operator peers
+                (OpenClaw / Anthropic /v1/responses) directly from FlowWink.
+              </CardDescription>
+              <Button asChild>
+                <Link to="/admin/modules">Manage modules</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </AdminPageContainer>
+      </AdminLayout>
+    );
+  }
+  return <ClawablePageInner />;
+}
+
+function ClawablePageInner() {
   const { toast } = useToast();
   const [peers, setPeers] = useState<Peer[]>([]);
   const [selectedPeerId, setSelectedPeerId] = useState<string>('');

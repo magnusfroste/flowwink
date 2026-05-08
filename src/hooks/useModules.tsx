@@ -101,6 +101,7 @@ export interface ModulesSettings {
   shipping: ModuleConfig;
   multiCurrency: ModuleConfig;
   payroll: ModuleConfig;
+  clawable: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -717,6 +718,16 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
     enhancedByFlowPilot: true,
+  },
+  clawable: {
+    enabled: false,
+    name: 'Clawable',
+    description:
+      'Internal admin chat for external operator peers (OpenClaw /v1/responses). UI-only cockpit for testing & administering peers from FlowWink — no MCP, no skills.',
+    icon: 'MessageSquare',
+    category: 'system',
+    autonomy: 'view-required',
+    adminUI: true,
   },
 };
 

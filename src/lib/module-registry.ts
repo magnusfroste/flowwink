@@ -29,7 +29,7 @@ import {
   flowpilotModule, emailModule,
   quotesModule, approvalsModule, reconciliationModule, workspaceChatModule,
   customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
-  pricelistsModule, returnsModule, shippingModule,
+  pricelistsModule, returnsModule, shippingModule, clawableModule,
   // Legacy modules (manual registration)
   globalBlocksModule,
 } from '@/lib/modules';
