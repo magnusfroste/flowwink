@@ -193,32 +193,10 @@ Deno.serve(async (req) => {
     // 7. Determine urgency and route accordingly
     const urgency = (body.urgency as string) || 'medium';
     
-    // For high/critical urgency, trigger immediate proactive reasoning
-    if ((urgency === 'high' || urgency === 'critical') && action === 'signal') {
-      try {
-        // Find admin conversation for proactive notification
-        const { data: conv } = await supabase.from('chat_conversations')
-          .select('id')
-          .not('user_id', 'is', null)
-          .eq('conversation_status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (conv?.id) {
-          const emoji = urgency === 'critical' ? '🚨' : '🔔';
-          await supabase.from('chat_messages').insert({
-            conversation_id: conv.id,
-            role: 'assistant',
-            source: 'proactive',
-            content: `${emoji} **Signal: ${sourceType}**\n\n${title || url}\n${cleanNote ? `\n${cleanNote}` : ''}\n\n_Processing signal..._`,
-            metadata: { signal_type: action, urgency, source_type: sourceType, activity_id: activity.id },
-          });
-        }
-      } catch (proactiveErr) {
-        console.warn('[signal-ingest] Proactive notification failed (non-fatal):', proactiveErr);
-      }
-    }
+    // High/critical signals are visible in /admin/activities and the Live
+    // Activity feed. We deliberately do NOT inject a chat_messages row here —
+    // chat is for dialogue, not raw signal logs. The signal-dispatcher below
+    // still routes to automations/FlowPilot for any reactive logic.
 
     // 8. Fire automation signal (non-blocking)
     try {
