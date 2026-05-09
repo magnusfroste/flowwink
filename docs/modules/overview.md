@@ -34,6 +34,8 @@ When FlowPilot is on, modules gain autonomous skills and automation.
 | **Knowledge Base** | `manage_kb_article` | — | Self-service help articles |
 | **Media Library** | `media_browse` | — | Asset management |
 | **Handbook** | `handbook_search` | — | Internal documentation |
+| **Wiki** | `manage_wiki_page`, `search_wiki` | — | TEdit-style internal intranet — `[[WikiWord]]` / CamelCase auto-links and auto-creates pages |
+| **River** | `post_to_river`, `search_river` | — | Internal team social feed (Slack/X-style) — short messages, images, threads, realtime |
 
 ### Data / CRM
 
