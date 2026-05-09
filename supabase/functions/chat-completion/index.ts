@@ -671,7 +671,14 @@ serve(async (req) => {
 
     // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
+    // Master switch for FlowPilot action skills (CRM, booking, etc.)
     const shouldLoadSkills = settings?.toolCallingEnabled && provider.supportsToolCalling;
+    // Infrastructure tools — independent of FlowPilot/tool-calling master switch.
+    // They are simple "sensor" tools that don't require agent reasoning to be useful.
+    const firecrawlActive =
+      settings?.firecrawlSearchEnabled && integrations?.firecrawl?.enabled && provider.supportsToolCalling;
+    const handoffActive = settings?.humanHandoffEnabled && provider.supportsToolCalling;
+    const profileSaveActive = !!conversationId && provider.supportsToolCalling;
     const visitorIdentifier = customerEmail || sessionId;
 
     const [{ soul, identity, agents }, knowledgeBase, skillTools, visitorContext] = await Promise.all([
@@ -720,24 +727,29 @@ serve(async (req) => {
     const tools: any[] = [];
     const chatToolNames = new Set<string>();
 
+    // Infrastructure tools — always available when their own flag is on (no FlowPilot dependency)
+    if (firecrawlActive) {
+      tools.push(CHAT_TOOLS.firecrawl_search);
+      chatToolNames.add('firecrawl_search');
+    }
+    if (handoffActive) {
+      tools.push(CHAT_TOOLS.handoff_to_human);
+      tools.push(CHAT_TOOLS.create_escalation);
+      chatToolNames.add('handoff_to_human');
+      chatToolNames.add('create_escalation');
+    }
+    if (profileSaveActive) {
+      tools.push(CHAT_TOOLS.save_visitor_profile);
+      chatToolNames.add('save_visitor_profile');
+    }
+
+    // FlowPilot action skills — gated on master switch + optional allow-list
     if (shouldLoadSkills) {
-      if (settings?.firecrawlSearchEnabled && integrations?.firecrawl?.enabled) {
-        tools.push(CHAT_TOOLS.firecrawl_search);
-        chatToolNames.add('firecrawl_search');
-      }
-      if (settings?.humanHandoffEnabled) {
-        tools.push(CHAT_TOOLS.handoff_to_human);
-        tools.push(CHAT_TOOLS.create_escalation);
-        chatToolNames.add('handoff_to_human');
-        chatToolNames.add('create_escalation');
-      }
-      // Visitor profile saving (always available when tools are enabled)
-      if (conversationId) {
-        tools.push(CHAT_TOOLS.save_visitor_profile);
-        chatToolNames.add('save_visitor_profile');
-      }
-      // External skills from DB registry
-      tools.push(...skillTools);
+      const allow = settings?.allowedSkillNames ?? [];
+      const filteredSkillTools = allow.length > 0
+        ? (skillTools as any[]).filter((t) => allow.includes(t?.function?.name))
+        : (skillTools as any[]);
+      tools.push(...filteredSkillTools);
     }
 
     // Add tool instructions to system prompt
