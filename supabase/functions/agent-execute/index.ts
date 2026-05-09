@@ -497,6 +497,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   handbook: 'handbook',
   purchasing: 'purchasing',
   wiki: 'wiki',
+  river: 'river',
 };
 
 async function autoActivateModule(
@@ -743,6 +744,10 @@ async function executeModuleAction(
 
     case 'wiki': {
       return await executeWikiAction(supabase, skillName, args);
+    }
+
+    case 'river': {
+      return await executeRiverAction(supabase, skillName, args);
     }
 
     case 'globalElements': {
