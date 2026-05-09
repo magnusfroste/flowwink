@@ -179,6 +179,7 @@ Each module has auto-generated documentation with API contracts, webhook events,
 | Tickets | [tickets.md](./tickets.md) |
 | Timesheets | [timesheets.md](./timesheets.md) |
 | Webinars | [webinars.md](./webinars.md) |
+| Wiki | [wiki.md](./wiki.md) |
 
 ---
 
