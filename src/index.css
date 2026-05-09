@@ -140,11 +140,17 @@
 
   html {
     scroll-behavior: smooth;
+    /* Mobile safety net: prevent rogue blocks (wide tables, marquees, full-bleed images)
+       from creating horizontal page scroll. Internal overflow-x:auto containers still scroll. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: var(--font-sans);
+    overflow-x: hidden;
+    /* Avoid layout shift caused by horizontal scrollbar on desktop */
+    max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {
