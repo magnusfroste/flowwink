@@ -96,6 +96,11 @@ serve(async (req) => {
       let status = "success";
       let lastError: string | null = null;
 
+      // Tag activity by who actually executes it — never label platform/cron work as flowpilot
+      const agentTag = executor === "flowpilot"
+        ? "flowpilot"
+        : auto.trigger_type === "cron" ? "cron" : "automation";
+
       try {
         const executeResponse = await fetch(
           `${supabaseUrl}/functions/v1/agent-execute`,
@@ -109,7 +114,7 @@ serve(async (req) => {
               skill_id: auto.skill_id,
               skill_name: auto.skill_name,
               arguments: auto.skill_arguments || {},
-              agent_type: "flowpilot",
+              agent_type: agentTag,
               conversation_id: null,
             }),
           }
@@ -183,7 +188,7 @@ serve(async (req) => {
               body: JSON.stringify({
                 skill_name: step.skill_name,
                 arguments: { ...step.arguments, ...stepContext },
-                agent_type: "flowpilot",
+                agent_type: "automation",
               }),
             }
           );

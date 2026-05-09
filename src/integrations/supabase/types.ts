@@ -12938,7 +12938,13 @@ export type Database = {
         | "growth"
         | "testing"
         | "subscriptions"
-      agent_type: "flowpilot" | "chat" | "mcp"
+      agent_type:
+        | "flowpilot"
+        | "chat"
+        | "mcp"
+        | "cron"
+        | "automation"
+        | "system"
       app_role:
         | "writer"
         | "approver"
@@ -13264,7 +13270,7 @@ export const Constants = {
         "testing",
         "subscriptions",
       ],
-      agent_type: ["flowpilot", "chat", "mcp"],
+      agent_type: ["flowpilot", "chat", "mcp", "cron", "automation", "system"],
       app_role: [
         "writer",
         "approver",
