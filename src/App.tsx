@@ -296,6 +296,7 @@ const router = createBrowserRouter([
       { path: "/admin/clawable", element: <ClawablePage /> },
       { path: "/admin/wiki", element: <WikiPage /> },
       { path: "/admin/wiki/:slug", element: <WikiPage /> },
+      { path: "/admin/river", element: <RiverPage /> },
       { path: "/admin/company-insights", element: <CompanyInsightsPage /> },
       { path: "/admin/growth", element: <GrowthDashboardPage /> },
       
