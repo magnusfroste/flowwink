@@ -452,11 +452,66 @@ export async function loadSkillTools(
         }
       } catch { /* safety net */ }
 
+      // Flatten allOf/oneOf/anyOf/if/then at top level — OpenAI rejects them
+      try {
+        const params = td?.function?.parameters;
+        if (params && typeof params === 'object') {
+          td.function.parameters = flattenSchemaForOpenAI(params);
+        }
+      } catch { /* safety net */ }
+
       if (tier === 'compact' || tier === 'drop') {
         return compactToolDefinition(td);
       }
       return td;
     });
+}
+
+/**
+ * Flatten schemas containing allOf/oneOf/anyOf/if/then/else at the top level.
+ * OpenAI's strict tool-calling validator rejects these constructs. We merge
+ * all conditional branches' `properties` into a single flat object and
+ * preserve only the always-required base `required` array.
+ */
+function flattenSchemaForOpenAI(schema: any): any {
+  if (!schema || typeof schema !== 'object') return { type: 'object', properties: {} };
+  const hasUnsafe = ['allOf', 'oneOf', 'anyOf', 'not', 'if', 'then', 'else']
+    .some((k) => k in schema);
+  if (!hasUnsafe) return schema;
+
+  const out: any = {
+    type: 'object',
+    properties: { ...(schema.properties || {}) },
+  };
+  if (Array.isArray(schema.required)) out.required = [...schema.required];
+  if (typeof schema.description === 'string') out.description = schema.description;
+
+  const mergeBranchProps = (branch: any) => {
+    if (!branch || typeof branch !== 'object') return;
+    if (branch.properties && typeof branch.properties === 'object') {
+      for (const [k, v] of Object.entries(branch.properties)) {
+        if (!(k in out.properties)) out.properties[k] = v;
+      }
+    }
+    for (const key of ['allOf', 'oneOf', 'anyOf'] as const) {
+      if (Array.isArray(branch[key])) {
+        for (const sub of branch[key]) mergeBranchProps(sub);
+      }
+    }
+    if (branch.then) mergeBranchProps(branch.then);
+    if (branch.else) mergeBranchProps(branch.else);
+  };
+
+  for (const key of ['allOf', 'oneOf', 'anyOf'] as const) {
+    if (Array.isArray(schema[key])) {
+      for (const branch of schema[key]) mergeBranchProps(branch);
+    }
+  }
+  if (schema.if) {
+    if (schema.then) mergeBranchProps(schema.then);
+    if (schema.else) mergeBranchProps(schema.else);
+  }
+  return out;
 }
 
 // ─── Context Pruning ──────────────────────────────────────────────────────────
