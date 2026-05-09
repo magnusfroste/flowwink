@@ -427,6 +427,7 @@ export function useChat(options?: UseChatOptions) {
               includeKbArticles: settings?.includeKbArticles || false,
               // Tool calling settings
               toolCallingEnabled: settings?.toolCallingEnabled || false,
+              allowedSkillNames: settings?.allowedSkillNames || [],
               firecrawlSearchEnabled: settings?.firecrawlSearchEnabled || false,
               humanHandoffEnabled: settings?.humanHandoffEnabled || false,
               sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
