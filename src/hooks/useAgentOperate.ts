@@ -741,6 +741,9 @@ export function useAgentOperate() {
     setMessages([]);
     localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
     setConversationId(null);
+    // Force the next send to insert a brand-new chat_conversations row
+    // instead of reusing today's existing session.
+    forceNewConversationRef.current = true;
   }, []);
 
   // ─── Extension relay handler ──────────────────────────────────────────
