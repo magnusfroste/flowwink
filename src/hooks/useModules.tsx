@@ -848,15 +848,29 @@ export function useModules() {
         delete storedAny.orders;
       }
       
+      // Structural fields are owned by code, not the DB. Stored rows from
+      // older versions may have stale values (e.g. flowpilot persisted with
+      // core:true) — those must never override the current defaults, otherwise
+      // admins can't toggle modules that used to be marked core.
+      const STRUCTURAL_KEYS = [
+        'core', 'name', 'description', 'icon', 'category', 'autonomy',
+        'adminUI', 'requiresFlowPilot', 'enhancedByFlowPilot', 'requiresAI',
+        'requiredIntegrations', 'optionalIntegrations',
+      ] as const;
+
       return {
         ...defaultModulesSettings,
         ...Object.fromEntries(
           Object.entries(stored)
             .filter(([key]) => key in defaultModulesSettings)
-            .map(([key, value]) => [
-              key,
-              { ...defaultModulesSettings[key as keyof ModulesSettings], ...value }
-            ])
+            .map(([key, value]) => {
+              const def = defaultModulesSettings[key as keyof ModulesSettings];
+              const merged = { ...def, ...(value as object) } as ModuleConfig;
+              for (const k of STRUCTURAL_KEYS) {
+                (merged as unknown as Record<string, unknown>)[k] = (def as unknown as Record<string, unknown>)[k];
+              }
+              return [key, merged];
+            })
         ),
       } as ModulesSettings;
     },
