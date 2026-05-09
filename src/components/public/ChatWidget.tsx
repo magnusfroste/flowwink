@@ -108,16 +108,8 @@ export function ChatWidget() {
             </Button>
           </div>
 
-          {/* Context indicator */}
-          <ChatContextIndicator variant="detailed" />
-          
           {/* Chat content - pass compact mode and max prompts for widget */}
-          <div className={cn(
-            'h-[calc(100%-56px)]',
-            settings.showContextIndicator && 
-            (settings.includeContentAsContext || settings.includeKbArticles) && 
-            'h-[calc(100%-88px)]'
-          )}>
+          <div className="h-[calc(100%-56px)]">
             <ChatConversation 
               mode="widget" 
               maxPrompts={settings.widgetMaxPrompts ?? 3}
