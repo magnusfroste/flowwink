@@ -292,7 +292,7 @@ export const defaultChatSettings: ChatSettings = {
   openaiBaseUrl: 'https://api.openai.com/v1',
   geminiModel: 'gemini-2.0-flash-exp',
   localEndpoint: '',
-  localModel: 'llama3',
+  localModel: '',
   n8nWebhookUrl: '',
   n8nWebhookType: 'chat',
   n8nTriggerMode: 'always',
