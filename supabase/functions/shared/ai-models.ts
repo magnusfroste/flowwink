@@ -30,7 +30,7 @@ export const AI_MODELS = {
 
   // Local LLM (user-configurable)
   local_llm: {
-    default: 'llama3',
+    default: '', // user-configurable, no silent fallback
   },
 } as const;
 
