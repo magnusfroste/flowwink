@@ -506,15 +506,16 @@ function tryResolveProvider(provider: string, settings: ChatSettings | undefined
 
   if (provider === 'local') {
     const localConfig = integrations?.local_llm?.config || {};
+    const integrationEndpoint = localConfig?.endpoint;
     const chatEndpoint = settings?.localEndpoint;
     const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
-    const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
+    const endpoint = integrationEndpoint || (isPlaceholder ? undefined : chatEndpoint);
     if (!endpoint) return null;
 
     const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig?.apiKey || settings?.localApiKey;
     const baseEndpoint = endpoint.replace(/\/+$/, '');
     const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
-    const model = settings?.localModel || localConfig?.model;
+    const model = localConfig?.model || settings?.localModel;
     if (!model) {
       console.error('[chat-completion] Local LLM model not configured. Set it in Integrations → Local LLM or Chat settings.');
       return null;

@@ -413,11 +413,8 @@ export function useChat(options?: UseChatOptions) {
             conversationId: convId,
             sessionId: getSessionId(),
             ...(options?.checkinId && { mode: 'checkin', checkinId: options.checkinId }),
-          settings: {
+            settings: {
               aiProvider: settings?.aiProvider || 'openai',
-              // Only send if actually configured (not empty string) - let edge function use Integration config
-              localEndpoint: settings?.localEndpoint || undefined,
-              localModel: settings?.localModel || undefined,
               n8nWebhookUrl: settings?.n8nWebhookUrl || undefined,
               n8nWebhookType: settings?.n8nWebhookType || 'chat',
               systemPrompt: settings?.systemPrompt,
