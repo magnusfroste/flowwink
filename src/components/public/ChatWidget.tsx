@@ -6,6 +6,7 @@ import { useChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ChatContextIndicator } from '@/components/chat/ChatContextIndicator';
+import { useCookieConsent } from '@/components/public/CookieBanner';
 import { cn } from '@/lib/utils';
 
 const radiusMap: Record<string, { window: string; button: string }> = {
