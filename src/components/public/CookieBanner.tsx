@@ -56,12 +56,14 @@ export function CookieBanner() {
     localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
     setConsent('accepted');
     setIsVisible(false);
+    window.dispatchEvent(new CustomEvent('cookie-consent-changed', { detail: 'accepted' }));
   };
 
   const handleReject = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
     setConsent('rejected');
     setIsVisible(false);
+    window.dispatchEvent(new CustomEvent('cookie-consent-changed', { detail: 'rejected' }));
   };
 
   // Don't show if disabled in settings
