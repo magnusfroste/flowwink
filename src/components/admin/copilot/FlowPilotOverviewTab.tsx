@@ -98,7 +98,7 @@ function useLatestBriefing() {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('agent_activity')
-        .select('created_at, output, log_message')
+        .select('created_at, output')
         .eq('agent', 'flowpilot')
         .eq('skill_name', 'morning_briefing')
         .gte('created_at', since)
@@ -119,7 +119,7 @@ function usePendingHil() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agent_activity')
-        .select('id, skill_name, input, created_at, agent, log_message')
+        .select('id, skill_name, input, created_at, agent')
         .eq('status', 'pending_approval')
         .order('created_at', { ascending: false })
         .limit(5);
