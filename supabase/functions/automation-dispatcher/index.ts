@@ -188,7 +188,7 @@ serve(async (req) => {
               body: JSON.stringify({
                 skill_name: step.skill_name,
                 arguments: { ...step.arguments, ...stepContext },
-                agent_type: "flowpilot",
+                agent_type: "automation",
               }),
             }
           );
