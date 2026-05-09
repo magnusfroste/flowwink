@@ -654,15 +654,28 @@ export function useAgentOperate() {
   // ─── Conversation history ────────────────────────────────────────────
 
   const loadConversations = useCallback(async () => {
+    // Only show conversations that have at least one user message —
+    // filters out auto-generated "Session — May X" buckets that contain
+    // only briefings or stale autonomous logs.
     const { data } = await supabase
       .from('chat_conversations')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, created_at, updated_at, chat_messages!inner(role)')
       .eq('conversation_status', 'active')
       .not('title', 'is', null)
       .is('session_id', null)        // Exclude public/visitor chats
+      .eq('chat_messages.role', 'user')
       .order('updated_at', { ascending: false })
       .limit(50);
-    if (data) setConversations(data as FlowPilotConversation[]);
+    if (data) {
+      // Dedupe — inner join can repeat the conversation per matching message
+      const seen = new Set<string>();
+      const unique = (data as any[]).filter((c) => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+      setConversations(unique as FlowPilotConversation[]);
+    }
   }, []);
 
   const switchConversation = useCallback(async (targetId: string) => {
