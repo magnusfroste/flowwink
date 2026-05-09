@@ -329,31 +329,10 @@ serve(async (req) => {
       await trackObjectiveProgress(supabase, skill.name, activityId);
     }
 
-    // 7. For 'notify' trust level, send proactive notification to admin chat
-    if (trustLevel === 'notify' && activityId) {
-      try {
-        // Find active admin conversation for notification
-        const { data: conv } = await supabase.from('chat_conversations')
-          .select('id')
-          .not('user_id', 'is', null)
-          .eq('conversation_status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (conv?.id) {
-          await supabase.from('chat_messages').insert({
-            conversation_id: conv.id,
-            role: 'assistant',
-            source: 'proactive',
-            content: `✅ Executed **${skill.name}** autonomously.\n\n${JSON.stringify(args, null, 2).slice(0, 500)}`,
-            metadata: { trust_level: 'notify', activity_id: activityId, skill_name: skill.name },
-          });
-        }
-      } catch (notifyErr) {
-        console.warn('[agent-execute] Notify failed (non-fatal):', notifyErr);
-      }
-    }
+    // 7. 'notify' trust level: activity is already recorded in agent_activities
+    // and visible in /admin/activities + Live Activity feed. We deliberately do
+    // NOT inject a chat_messages row here — chat is for dialogue, not exec logs.
+    // (See mem://features/internal-flowchat-and-noise-separation.)
 
     return new Response(JSON.stringify({ status: 'success', result, trust_level: trustLevel }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
