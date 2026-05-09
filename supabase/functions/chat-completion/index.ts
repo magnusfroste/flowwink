@@ -62,6 +62,8 @@ interface ChatSettings {
   includedPageSlugs?: string[];
   includeKbArticles?: boolean;
   toolCallingEnabled?: boolean;
+  /** Optional allow-list of skill names. Empty/undefined = all external skills. */
+  allowedSkillNames?: string[];
   firecrawlSearchEnabled?: boolean;
   humanHandoffEnabled?: boolean;
   sentimentDetectionEnabled?: boolean;
