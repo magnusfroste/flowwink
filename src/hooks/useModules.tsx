@@ -865,9 +865,9 @@ export function useModules() {
             .filter(([key]) => key in defaultModulesSettings)
             .map(([key, value]) => {
               const def = defaultModulesSettings[key as keyof ModulesSettings];
-              const merged = { ...def, ...(value as object) };
+              const merged = { ...def, ...(value as object) } as ModuleConfig;
               for (const k of STRUCTURAL_KEYS) {
-                (merged as Record<string, unknown>)[k] = (def as Record<string, unknown>)[k];
+                (merged as unknown as Record<string, unknown>)[k] = (def as unknown as Record<string, unknown>)[k];
               }
               return [key, merged];
             })
