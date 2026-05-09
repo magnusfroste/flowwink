@@ -21,7 +21,7 @@ const CAMEL_RE = /\b([A-Z][a-z]+(?:[A-Z][a-zA-Z0-9]*)+)\b/g;
  */
 function preprocess(md: string): string {
   // 1) [[Slug]] → [Slug](wiki:Slug)
-  let out = md.replace(WIKI_LINK_RE, (_m, slug) => `[${slug}](wiki:${slug})`);
+  const out = md.replace(WIKI_LINK_RE, (_m, slug) => `[${slug}](wiki:${slug})`);
 
   // 2) Bare CamelCase. Skip inside code spans / fences / existing links.
   // Naive but workable: process line-by-line, leave fenced/inline code alone.
