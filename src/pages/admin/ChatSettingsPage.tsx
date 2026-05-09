@@ -137,6 +137,22 @@ export default function ChatSettingsPage() {
   const isOpenAIConfigured = useIsOpenAIConfigured();
   const isGeminiConfigured = useIsGeminiConfigured();
   const { data: integrationSettings } = useIntegrations();
+  const flowpilotReadiness = useModuleReadiness('chat');
+  const flowpilotMissing = flowpilotReadiness.flowPilotEnhancedButMissing || flowpilotReadiness.missingFlowPilot;
+  // Available external skills for the allow-list
+  const { data: availableSkills = [] } = useQuery({
+    queryKey: ['agent-skills', 'external-for-chat'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('agent_skills')
+        .select('name, description, category')
+        .eq('enabled', true)
+        .in('scope', ['external', 'both'])
+        .order('category', { ascending: true })
+        .order('name', { ascending: true });
+      return data ?? [];
+    },
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'general';
 
