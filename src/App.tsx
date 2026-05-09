@@ -113,6 +113,7 @@ import ConsultantProfilesPage from "./pages/admin/ConsultantProfilesPage";
 import FederationPage from "./pages/admin/FederationPage";
 import ClawablePage from "./pages/admin/ClawablePage";
 import WikiPage from "./pages/admin/WikiPage";
+import RiverPage from "./pages/admin/RiverPage";
 import SkillsCatalogPage from "./pages/admin/SkillsCatalogPage";
 import CompanyInsightsPage from "./pages/admin/CompanyInsightsPage";
 import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
