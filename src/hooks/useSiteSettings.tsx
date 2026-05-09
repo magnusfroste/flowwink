@@ -211,6 +211,8 @@ export interface ChatSettings {
   
   // Tool Calling (Agentic AI)
   toolCallingEnabled: boolean;
+  /** Optional allow-list of skill names (FlowPilot action skills). Empty = all external skills. */
+  allowedSkillNames: string[];
   firecrawlSearchEnabled: boolean;
   humanHandoffEnabled: boolean;
   sentimentDetectionEnabled: boolean;
