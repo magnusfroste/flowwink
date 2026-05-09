@@ -6,6 +6,7 @@ import { useChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ChatContextIndicator } from '@/components/chat/ChatContextIndicator';
+import { useCookieConsent } from '@/components/public/CookieBanner';
 import { cn } from '@/lib/utils';
 
 const radiusMap: Record<string, { window: string; button: string }> = {
@@ -35,6 +36,7 @@ export function ChatWidget() {
   const { data: settings, isLoading } = useChatSettings();
   const { branding } = useBranding();
   const chatModuleEnabled = useIsModuleEnabled('chat');
+  const cookieConsent = useCookieConsent();
 
   // Listen for external open-chat-widget events (from AiAssistantBlock, etc.)
   useEffect(() => {
@@ -71,7 +73,14 @@ export function ChatWidget() {
   const isPill = style === 'pill';
 
   return (
-    <div className={cn('fixed bottom-4 sm:bottom-6 z-50', positionClasses)}>
+    <div className={cn(
+      'fixed z-50 transition-[bottom] duration-300',
+      positionClasses,
+      // Lift above the cookie banner on mobile while consent is pending
+      cookieConsent === 'pending'
+        ? 'bottom-[260px] sm:bottom-[140px] md:bottom-6'
+        : 'bottom-4 sm:bottom-6'
+    )}>
       {/* Chat window */}
       {isOpen && (
         <div className={cn(

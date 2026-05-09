@@ -36,10 +36,10 @@ const textAlignmentClasses: Record<string, string> = {
 
 // Design System 2026: Title size classes
 const titleSizeClasses: Record<HeroTitleSize, string> = {
-  default: 'text-4xl md:text-5xl',
-  large: 'text-5xl md:text-6xl',
-  display: 'text-6xl md:text-7xl lg:text-display',
-  massive: 'text-7xl md:text-8xl lg:text-display-lg xl:text-display-xl',
+  default: 'text-3xl sm:text-4xl md:text-5xl',
+  large: 'text-4xl sm:text-5xl md:text-6xl',
+  display: 'text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-display',
+  massive: 'text-[2.75rem] leading-[1.05] sm:text-6xl md:text-7xl lg:text-display-lg xl:text-display-xl',
 };
 
 // Extract video ID from YouTube or Vimeo URL
