@@ -132,7 +132,9 @@ export function ModuleSkillsSection({
 
 function SkillRow({ skill }: { skill: AgentSkill }) {
   const flowpilotEnabled = useIsModuleEnabled('flowpilot');
+  const [testerOpen, setTesterOpen] = useState(false);
   const tryPrompt = encodeURIComponent(`Use the ${skill.name} skill`);
+  const isAiTask = skill.handler?.startsWith('ai-task:') ?? false;
   return (
     <div
       className={cn(
@@ -153,6 +155,11 @@ function SkillRow({ skill }: { skill: AgentSkill }) {
               <Cpu className="h-2 w-2" /> MCP
             </Badge>
           )}
+          {isAiTask && (
+            <Badge variant="outline" className="text-[9px] h-4 gap-0.5 border-primary/40 text-primary">
+              <FlaskConical className="h-2 w-2" /> ai-task
+            </Badge>
+          )}
           {skill.trust_level && skill.trust_level !== 'auto' && (
             <Badge variant="outline" className="text-[9px] h-4">
               {skill.trust_level}
@@ -165,19 +172,33 @@ function SkillRow({ skill }: { skill: AgentSkill }) {
           </p>
         )}
       </div>
-      {skill.enabled && flowpilotEnabled && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-          asChild
-          title="Try in FlowPilot"
-        >
-          <Link to={`/admin/flowpilot?prompt=${tryPrompt}`}>
-            <Play className="h-3 w-3" />
-          </Link>
-        </Button>
-      )}
+      <div className="flex items-center gap-0.5 shrink-0">
+        {isAiTask && skill.enabled && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setTesterOpen(true)}
+            title="Test ai-task skill"
+          >
+            <FlaskConical className="h-3 w-3" />
+          </Button>
+        )}
+        {skill.enabled && flowpilotEnabled && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            asChild
+            title="Try in FlowPilot"
+          >
+            <Link to={`/admin/flowpilot?prompt=${tryPrompt}`}>
+              <Play className="h-3 w-3" />
+            </Link>
+          </Button>
+        )}
+      </div>
+      <SkillTesterSheet skill={skill} open={testerOpen} onOpenChange={setTesterOpen} />
     </div>
   );
 }
