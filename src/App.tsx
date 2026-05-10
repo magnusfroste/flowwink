@@ -118,6 +118,7 @@ import RiverPage from "./pages/admin/RiverPage";
 import SkillsCatalogPage from "./pages/admin/SkillsCatalogPage";
 import CompanyInsightsPage from "./pages/admin/CompanyInsightsPage";
 import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
+import PlatformTestsPage from "./pages/admin/PlatformTestsPage";
 import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
 
 import TicketsPage from "./pages/admin/TicketsPage";
