@@ -133,7 +133,25 @@ interface LogParams {
 }
 
 export async function logAiUsage(p: LogParams): Promise<void> {
+  // Primary path: SECURITY DEFINER RPC — works with anon key, no service_role needed.
   try {
+    const { error } = await p.supabase.rpc('log_ai_usage', {
+      p_source: p.source,
+      p_provider: p.provider || null,
+      p_model: p.model || null,
+      p_prompt_tokens: p.promptTokens || 0,
+      p_completion_tokens: p.completionTokens || 0,
+      p_total_tokens: p.totalTokens || 0,
+      p_latency_ms: p.latencyMs ?? null,
+      p_status: p.status || 'success',
+      p_error: p.error ? String(p.error).slice(0, 1000) : null,
+      p_user_id: p.userId || null,
+      p_conversation_id: p.conversationId || null,
+      p_request_id: p.requestId || null,
+      p_metadata: p.metadata || {},
+    });
+    if (!error) return;
+    // Fallback to direct insert (works if caller is service_role)
     await p.supabase.from('ai_usage_logs').insert({
       source: p.source,
       provider: p.provider || null,
@@ -150,6 +168,6 @@ export async function logAiUsage(p: LogParams): Promise<void> {
       metadata: p.metadata || {},
     });
   } catch (e) {
-    console.warn('[ai-usage-logger] insert failed:', (e as any)?.message);
+    console.warn('[ai-usage-logger] log failed:', (e as any)?.message);
   }
 }

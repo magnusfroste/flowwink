@@ -301,33 +301,24 @@ const suite_ai_usage_logging: SuiteFn = async (admin) => {
   );
 
   out.push(
-    await runCheck("ai_usage_logging", "service-role can insert (RLS bypass works)", async () => {
+    await runCheck("ai_usage_logging", "log_ai_usage RPC works (no service_role needed)", async () => {
       const marker = `platform-test-${Date.now()}`;
-      const { data, error } = await admin
-        .from("ai_usage_logs")
-        .insert({
-          source: "platform-test",
-          provider: "test",
-          model: "test-model",
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0,
-          status: "success",
-          metadata: { marker },
-        })
-        .select("id")
-        .single();
+      const { data, error } = await admin.rpc("log_ai_usage", {
+        p_source: "platform-test",
+        p_provider: "test",
+        p_model: "test-model",
+        p_metadata: { marker },
+      });
       if (error) {
-        if (/row-level security/i.test(error.message)) {
+        if (/function .* does not exist|schema cache/i.test(error.message)) {
           throw new Error(
-            "RLS blocked INSERT — SUPABASE_SERVICE_ROLE_KEY is missing or invalid in edge env (logger fell back to anon).",
+            "RPC public.log_ai_usage is missing — apply the latest migration (adds SECURITY DEFINER logger so anon-key edge functions can log without service_role).",
           );
         }
         throw new Error(error.message);
       }
-      // Cleanup
-      if (data?.id) await admin.from("ai_usage_logs").delete().eq("id", data.id);
-      return { details: { marker } };
+      if (data) await admin.from("ai_usage_logs").delete().eq("id", data);
+      return { details: { marker, inserted_id: data } };
     }),
   );
 
