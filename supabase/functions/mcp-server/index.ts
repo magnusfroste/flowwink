@@ -3,6 +3,13 @@ import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
+import { flattenSchemaForOpenAI, hasUnsafeTopLevelKeyword } from "../_shared/mcp/schema.ts";
+import {
+  buildModuleToCategory,
+  classifySkillModule,
+  isCategoryActive as isCategoryActiveShared,
+  resolveGroupTokens as resolveGroupTokensShared,
+} from "../_shared/mcp/groups.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
 const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null }>();
@@ -192,24 +199,14 @@ async function loadActiveModules(): Promise<Set<string>> {
 }
 
 function isCategoryActive(category: string, activeModules: Set<string>): boolean {
-  if (activeModules.has("__all__")) return true;
-  const requiredModules = SKILL_CATEGORY_MODULES[category];
-  if (!requiredModules || requiredModules.length === 0) return true; // system = always
-  return requiredModules.some((m) => activeModules.has(m));
+  return isCategoryActiveShared(category, activeModules, SKILL_CATEGORY_MODULES);
 }
 
 // All valid toolset groups — used for validation and discovery
 const TOOLSET_GROUPS = Object.keys(SKILL_CATEGORY_MODULES) as string[];
 
 // Reverse map: module-id → category, so ?groups=leads resolves to "crm".
-// Built once from SKILL_CATEGORY_MODULES.
-const MODULE_TO_CATEGORY: Record<string, string> = (() => {
-  const out: Record<string, string> = {};
-  for (const [cat, mods] of Object.entries(SKILL_CATEGORY_MODULES)) {
-    for (const m of mods) out[m.toLowerCase()] = cat;
-  }
-  return out;
-})();
+const MODULE_TO_CATEGORY: Record<string, string> = buildModuleToCategory(SKILL_CATEGORY_MODULES);
 
 /**
  * Composite groups: expand a single token into multiple categories so a
@@ -237,142 +234,15 @@ const SUB_COMPOSITE_GROUPS: Record<string, string[]> = {
   ops_core: ["ecommerce", "inventory", "purchasing"],
 };
 
-/**
- * Resolve a list of group/module tokens.
- *  - categoryTokens: include ALL skills in those categories
- *  - moduleTokens:   include only skills mapped to those modules (sub-category filter)
- * Composites expand to category tokens. This lets a Finance claw ask for
- * `?groups=invoicing,accounting,expenses,contracts` and get ~20 tools instead
- * of the full 67-tool commerce blob.
- */
 function resolveGroupTokens(tokens: string[]): { categories: Set<string>; modules: Set<string> } {
-  const categories = new Set<string>();
-  const modules = new Set<string>();
-  for (const raw of tokens) {
-    const t = raw.toLowerCase().trim();
-    if (!t) continue;
-    if (COMPOSITE_GROUPS[t]) {
-      for (const child of COMPOSITE_GROUPS[t]) categories.add(child);
-    } else if (SUB_COMPOSITE_GROUPS[t]) {
-      for (const child of SUB_COMPOSITE_GROUPS[t]) modules.add(child);
-    } else if (SKILL_CATEGORY_MODULES[t]) {
-      categories.add(t); // whole category
-    } else if (MODULE_TO_CATEGORY[t]) {
-      modules.add(t); // narrow within its parent category
-    }
-    // unknown tokens silently dropped
-  }
-  return { categories, modules };
+  return resolveGroupTokensShared(tokens, {
+    skillCategoryModules: SKILL_CATEGORY_MODULES,
+    compositeGroups: COMPOSITE_GROUPS,
+    subCompositeGroups: SUB_COMPOSITE_GROUPS,
+    moduleToCategory: MODULE_TO_CATEGORY,
+  });
 }
 
-/**
- * Classify a skill by its likely owning module — used for sub-category filtering
- * (e.g. `?groups=invoicing` returns only invoicing skills out of commerce's 67).
- *
- * Heuristic: handler hints first, then name keywords. Returns null if no module
- * can be determined (skill will only match category-level filters).
- */
-function classifySkillModule(name: string, handler: string | null | undefined): string | null {
-  const n = name.toLowerCase();
-  const h = (handler ?? "").toLowerCase();
-
-  // Handler hints
-  if (h.startsWith("module:orders")) return "ecommerce";
-  if (h.startsWith("module:products")) return n.includes("invent") ? "inventory" : "products";
-  if (h.includes("reconciliation/")) return "accounting";
-
-  // Name keywords (ordered most-specific first)
-  if (/(^|_)(contract|signature)/.test(n)) return "contracts";
-  if (/(^|_)(expense|receipt)/.test(n)) return "expenses";
-  if (/(^|_)(invoice|dunning)/.test(n) && !n.includes("vendor")) return "invoicing";
-  if (/(vendor|purchase_order|^send_purchase|match_po|reorder|procurement)/.test(n)) return "purchasing";
-  if (/(manufactur|^mo_|_mo$|^check_mo|^start_mo|^complete_mo|^cancel_mo|^confirm_mo|bom|trigger_procurement)/.test(n)) return "inventory";
-  if (/(timesheet)/.test(n)) return "timesheets";
-  if (/(accounting|journal|chart_of_accounts|opening_balance|analytic|bank_|stripe_payout|fiscal_period)/.test(n)) return "accounting";
-  if (/(subscription|mrr)/.test(n)) return "subscriptions";
-  if (/(^manage_quote|^browse_products|^manage_product|^manage_inventory|^manage_orders|order_status|send_invoice_for_order)/.test(n)) return "ecommerce";
-
-  return null;
-}
-
-/**
- * Flatten a JSON Schema for OpenAI gpt-4.1 tool-calling compatibility.
- *
- * OpenAI (and litellm proxies) reject the *entire* tools array with HTTP 400
- * if any tool's top-level inputSchema contains `allOf` / `oneOf` / `anyOf` /
- * `not` / `if` / `then` / `else`. We use these constructs in `manage_*` skills
- * to express per-action required fields (e.g. action=create requires X).
- *
- * This helper merges all `allOf` branches into a single flat schema:
- *   - properties: union of all branch properties
- *   - required: only fields required by the BASE schema (per-action required is dropped)
- *   - oneOf/anyOf branches: properties merged, required reduced to base
- *   - if/then/else: branches merged into properties, no conditional required
- *
- * The skill's `description` should document per-action required fields.
- * Runtime handlers in agent-execute still validate NOT NULL constraints.
- *
- * @param schema raw JSON schema from agent_skills.tool_definition.function.parameters
- * @returns flattened schema safe for OpenAI gpt-4.1 / litellm
- */
-function flattenSchemaForOpenAI(schema: unknown): Record<string, unknown> {
-  if (!schema || typeof schema !== "object") {
-    return { type: "object", properties: {} };
-  }
-  const s = schema as Record<string, unknown>;
-  const out: Record<string, unknown> = {
-    type: "object",
-    properties: { ...(s.properties as Record<string, unknown> || {}) },
-  };
-  // Preserve base-level required (these are always-required fields, e.g. `action`)
-  if (Array.isArray(s.required)) {
-    out.required = [...(s.required as string[])];
-  }
-  // Optionally preserve description
-  if (typeof s.description === "string") out.description = s.description;
-
-  // Helper: merge a branch's properties into out.properties (keeps base values, adds missing)
-  const mergeBranchProps = (branch: unknown) => {
-    if (!branch || typeof branch !== "object") return;
-    const b = branch as Record<string, unknown>;
-    if (b.properties && typeof b.properties === "object") {
-      const props = out.properties as Record<string, unknown>;
-      for (const [k, v] of Object.entries(b.properties as Record<string, unknown>)) {
-        if (!(k in props)) props[k] = v;
-      }
-    }
-    // Recursively flatten nested keywords inside the branch
-    for (const key of ["allOf", "oneOf", "anyOf"] as const) {
-      if (Array.isArray(b[key])) {
-        for (const sub of b[key] as unknown[]) mergeBranchProps(sub);
-      }
-    }
-    if (b.then) mergeBranchProps(b.then);
-    if (b.else) mergeBranchProps(b.else);
-  };
-
-  for (const key of ["allOf", "oneOf", "anyOf"] as const) {
-    if (Array.isArray(s[key])) {
-      for (const branch of s[key] as unknown[]) mergeBranchProps(branch);
-    }
-  }
-  if (s.if) {
-    if (s.then) mergeBranchProps(s.then);
-    if (s.else) mergeBranchProps(s.else);
-  }
-  // Drop `not` entirely — it's rare in our schemas and OpenAI rejects it
-  return out;
-}
-
-/**
- * Detect whether a schema has any top-level construct OpenAI gpt-4.1 rejects.
- * Used for logging / diagnostics only — flattenSchemaForOpenAI handles the fix.
- */
-function hasUnsafeTopLevelKeyword(schema: unknown): boolean {
-  if (!schema || typeof schema !== "object") return false;
-  const s = schema as Record<string, unknown>;
-  return ["allOf", "oneOf", "anyOf", "not", "if", "then", "else"].some((k) => k in s);
-}
 
 async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const sb = serviceClient();
