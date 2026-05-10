@@ -110,15 +110,15 @@ export default function PlatformTestsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <AdminPageHeader
-          title="Platform Tests"
-          description="The catalog of every test in FlowWink — runnable from here, or executed by CI / run manually. Module tests appear automatically when modules are registered."
-          actions={
-            <Button onClick={runAllPlatform} variant="default" size="sm">
-              <Play className="h-4 w-4 mr-2" /> Run all platform suites
-            </Button>
-          }
-        />
+        <div className="flex items-start justify-between gap-4">
+          <AdminPageHeader
+            title="Platform Tests"
+            description="The catalog of every test in FlowWink — runnable from here, or executed by CI / run manually. Module tests appear automatically when modules are registered."
+          />
+          <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1">
+            <Play className="h-4 w-4 mr-2" /> Run all platform suites
+          </Button>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           <Tabs value={scopeFilter} onValueChange={(v) => setScopeFilter(v as 'all' | TestScope)}>
