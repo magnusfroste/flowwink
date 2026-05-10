@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 // 1x1 transparent GIF
 const TRANSPARENT_GIF = new Uint8Array([
@@ -31,9 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            const supabase = getServiceClient();
 
     // Get user agent and IP for analytics
     const userAgent = req.headers.get("user-agent") || null;

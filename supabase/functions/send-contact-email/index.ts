@@ -2,6 +2,7 @@
 // `email-send` router so provider choice (SMTP/Resend) lives in ONE place.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,10 +26,7 @@ serve(async (req) => {
       .map((line: string) => line.trim() === '' ? '<br>' : `<p>${line}</p>`)
       .join('');
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const supabase = getServiceClient();
 
     const { data, error } = await supabase.functions.invoke('email-send', {
       body: {

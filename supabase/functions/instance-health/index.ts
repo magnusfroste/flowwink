@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { computeSkillHash, runIntegrityChecks } from '../_shared/integrity.ts';
 import type { HealthCheckResult } from '../_shared/integrity.ts';
 
@@ -12,9 +13,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const url = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(url, serviceKey);
+      const supabase = getServiceClient();
 
   try {
     let checksTotal = 0;

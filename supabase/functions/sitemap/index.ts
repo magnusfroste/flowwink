@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * sitemap — Generates a dynamic sitemap.xml from published pages and blog posts.
@@ -12,9 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+            const supabase = getServiceClient();
 
     // Determine base URL from request or fallback
     const url = new URL(req.url);
