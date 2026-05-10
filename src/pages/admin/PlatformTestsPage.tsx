@@ -14,6 +14,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { getAllSuites, type TestSuite, type TestScope } from '@/lib/platform-tests/registry';
+import { useModules } from '@/hooks/useModules';
+import { bootstrapModule } from '@/lib/module-bootstrap';
+import { RefreshCw } from 'lucide-react';
 
 interface CheckResult {
   suite: string;
