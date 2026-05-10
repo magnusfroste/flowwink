@@ -41,22 +41,38 @@ interface RunResult {
   raw?: unknown;
 }
 
+function placeholderForString(key: string, schema: any): string {
+  if (schema?.example) return String(schema.example);
+  if (schema?.format === 'uuid' || /_id$|^id$/i.test(key)) return '<uuid>';
+  if (schema?.format === 'uri' || schema?.format === 'url' || /url$/i.test(key)) return 'https://example.com/path';
+  if (schema?.format === 'email' || /email/i.test(key)) return 'user@example.com';
+  if (schema?.format === 'date') return new Date().toISOString().slice(0, 10);
+  if (schema?.format === 'date-time') return new Date().toISOString();
+  if (Array.isArray(schema?.enum) && schema.enum.length) return String(schema.enum[0]);
+  return `<${key}>`;
+}
+
 function buildExampleInput(skill: AgentSkill): string {
-  // Parse tool_definition.parameters and emit a stub object with empty values
   try {
     const params: any = (skill.tool_definition as any)?.parameters;
     const props = params?.properties ?? {};
+    const required: string[] = Array.isArray(params?.required) ? params.required : [];
     const example: Record<string, unknown> = {};
-    for (const [key, schema] of Object.entries<any>(props)) {
-      // Skip 'action' selector unless required (most skills)
+    // Required first, then optional
+    const orderedKeys = [
+      ...required.filter((k) => k in props),
+      ...Object.keys(props).filter((k) => !required.includes(k)),
+    ];
+    for (const key of orderedKeys) {
+      const schema = props[key];
       if (key === 'action' && Array.isArray(schema?.enum) && schema.enum.length === 1) {
         example[key] = schema.enum[0];
         continue;
       }
       const t = schema?.type;
-      if (t === 'string') example[key] = schema?.format === 'uuid' ? '' : (schema?.example ?? '');
-      else if (t === 'number' || t === 'integer') example[key] = 0;
-      else if (t === 'boolean') example[key] = false;
+      if (t === 'string') example[key] = placeholderForString(key, schema);
+      else if (t === 'number' || t === 'integer') example[key] = schema?.example ?? 0;
+      else if (t === 'boolean') example[key] = schema?.example ?? false;
       else if (t === 'array') example[key] = [];
       else if (t === 'object') example[key] = {};
       else example[key] = null;
@@ -111,16 +127,25 @@ export function SkillTesterSheet({ skill, open, onOpenChange }: Props) {
     setRunning(true);
     const t0 = performance.now();
     try {
-      const { data, error } = await supabase.functions.invoke('ai-task', {
-        body: { task: taskName, input: parsed },
-      });
+      // Use raw fetch so we always get the JSON body even on non-2xx (supabase.functions.invoke
+      // hides the body inside FunctionsHttpError.context as a Response).
+      const session = (await supabase.auth.getSession()).data.session;
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-task`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ task: taskName, input: parsed }),
+        },
+      );
       const dt = performance.now() - t0;
       setElapsedMs(Math.round(dt));
-      if (error) {
-        setResult({ error: error.message, details: (error as any).context });
-      } else {
-        setResult(data as RunResult);
-      }
+      const data = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+      setResult(data as RunResult);
     } catch (err: any) {
       setElapsedMs(Math.round(performance.now() - t0));
       setResult({ error: err?.message ?? 'Unknown error' });
