@@ -127,16 +127,25 @@ export function SkillTesterSheet({ skill, open, onOpenChange }: Props) {
     setRunning(true);
     const t0 = performance.now();
     try {
-      const { data, error } = await supabase.functions.invoke('ai-task', {
-        body: { task: taskName, input: parsed },
-      });
+      // Use raw fetch so we always get the JSON body even on non-2xx (supabase.functions.invoke
+      // hides the body inside FunctionsHttpError.context as a Response).
+      const session = (await supabase.auth.getSession()).data.session;
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-task`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ task: taskName, input: parsed }),
+        },
+      );
       const dt = performance.now() - t0;
       setElapsedMs(Math.round(dt));
-      if (error) {
-        setResult({ error: error.message, details: (error as any).context });
-      } else {
-        setResult(data as RunResult);
-      }
+      const data = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+      setResult(data as RunResult);
     } catch (err: any) {
       setElapsedMs(Math.round(performance.now() - t0));
       setResult({ error: err?.message ?? 'Unknown error' });
