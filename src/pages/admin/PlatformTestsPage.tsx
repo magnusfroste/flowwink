@@ -279,6 +279,15 @@ function SuiteCard({
                 )}
               </Button>
             )}
+            {onReseed && state?.summary && state.summary.failed > 0 && (
+              <Button onClick={onReseed} disabled={!!reseeding} variant="outline" size="sm">
+                {reseeding ? (
+                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Re-seeding…</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-1" /> Re-seed</>
+                )}
+              </Button>
+            )}
             {isDocsOnly && !suite.docs && (
               <Badge variant="outline" className="text-xs">Dedicated page</Badge>
             )}
