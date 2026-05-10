@@ -90,7 +90,7 @@ export const emailModule = defineModule<Input, Output>({
 
   // send_email/configure_email_provider/preview_email_template were declared
   // but never had SkillSeed entries. Removed to align manifest with reality.
-  skills: [],
+  skills: ['scan_gmail_inbox'],
   skillSeeds: EMAIL_SKILLS,
 
   async publish(input: Input): Promise<Output> {
