@@ -12231,6 +12231,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      log_ai_usage: {
+        Args: {
+          p_completion_tokens?: number
+          p_conversation_id?: string
+          p_error?: string
+          p_latency_ms?: number
+          p_metadata?: Json
+          p_model?: string
+          p_prompt_tokens?: number
+          p_provider?: string
+          p_request_id?: string
+          p_source: string
+          p_status?: string
+          p_total_tokens?: number
+          p_user_id?: string
+        }
+        Returns: string
+      }
       log_cache_invalidation: {
         Args: { p_all?: boolean; p_slug?: string }
         Returns: Json
