@@ -67,12 +67,12 @@ serve(async (req) => {
     // See mem://architecture/flowwink-as-business-os-three-shells
     //     mem://architecture/mcp-as-platform-not-flowpilot-feature
     const { data: moduleSettings } = await supabase
-      .from('agent_memory')
+      .from('site_settings')
       .select('value')
-      .eq('key', 'modules_settings')
+      .eq('key', 'modules')
       .maybeSingle();
 
-    const flowpilotEnabled = moduleSettings?.value?.flowpilot?.enabled ?? true;
+    const flowpilotEnabled = moduleSettings?.value?.flowpilot?.enabled ?? false;
 
     // Concurrency guard — one agent run per conversation
     const lane = conversation_id ? `operate:${conversation_id}` : null;
