@@ -107,7 +107,12 @@ serve(async (req) => {
     });
 
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
+    // Platform-level built-ins (always on for the FlowChat shell): memory (read), workflows, a2a, skill-packs.
+    // FlowPilot-internal built-ins (autonomous-operator only): objectives, self-mod, reflect, soul, planning, automations-exec.
+    const builtInGroups = flowpilotEnabled
+      ? ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']
+      : ['memory', 'workflows', 'a2a', 'skill-packs'];
+    const builtInTools = getBuiltInTools(builtInGroups);
     const skillCache = await loadSkillsRaw(supabase, 'internal');
     const [externalSkills, usageBoost] = await Promise.all([
       loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
