@@ -39,6 +39,7 @@ export function ModuleSkillsSection({
   defaultOpen = false,
 }: ModuleSkillsSectionProps) {
   const { data: allSkills = [], isLoading } = useSkills();
+  const moduleEnabled = useIsModuleEnabled(moduleId as keyof ModulesSettings);
 
   const moduleSkills = useMemo(() => {
     const declaredNames = getUnifiedSkillNames(moduleId as keyof ModulesSettings);
