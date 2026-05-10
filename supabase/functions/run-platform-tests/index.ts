@@ -351,6 +351,7 @@ const SUITES: Record<string, SuiteFn> = {
   rls_smoke: suite_rls_smoke,
   event_bus: suite_event_bus,
   ai_usage_logging: suite_ai_usage_logging,
+  skill_manifest_coverage: suite_skill_manifest_coverage,
 };
 
 // ─── HTTP ────────────────────────────────────────────────────────────────────
