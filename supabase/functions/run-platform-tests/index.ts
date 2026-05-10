@@ -280,6 +280,78 @@ const suite_instance_health: SuiteFn = async (admin) => {
   return out;
 };
 
+/** Suite: AI usage logging — table exists, service-role can insert, recent activity. */
+const suite_ai_usage_logging: SuiteFn = async (admin) => {
+  const out: TestResult[] = [];
+
+  out.push(
+    await runCheck("ai_usage_logging", "ai_usage_logs table reachable", async () => {
+      const { error } = await admin
+        .from("ai_usage_logs")
+        .select("*", { count: "exact", head: true });
+      if (error) {
+        if (/does not exist|schema cache/i.test(error.message)) {
+          throw new Error(
+            "Table public.ai_usage_logs is missing. Migration 20260428222712_*.sql has not been applied.",
+          );
+        }
+        throw new Error(error.message);
+      }
+    }),
+  );
+
+  out.push(
+    await runCheck("ai_usage_logging", "service-role can insert (RLS bypass works)", async () => {
+      const marker = `platform-test-${Date.now()}`;
+      const { data, error } = await admin
+        .from("ai_usage_logs")
+        .insert({
+          source: "platform-test",
+          provider: "test",
+          model: "test-model",
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+          status: "success",
+          metadata: { marker },
+        })
+        .select("id")
+        .single();
+      if (error) {
+        if (/row-level security/i.test(error.message)) {
+          throw new Error(
+            "RLS blocked INSERT — SUPABASE_SERVICE_ROLE_KEY is missing or invalid in edge env (logger fell back to anon).",
+          );
+        }
+        throw new Error(error.message);
+      }
+      // Cleanup
+      if (data?.id) await admin.from("ai_usage_logs").delete().eq("id", data.id);
+      return { details: { marker } };
+    }),
+  );
+
+  out.push(
+    await runCheck("ai_usage_logging", "recent AI activity recorded (last 7 days)", async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count, error } = await admin
+        .from("ai_usage_logs")
+        .select("*", { count: "exact", head: true })
+        .neq("source", "platform-test")
+        .gte("created_at", since);
+      if (error) throw new Error(error.message);
+      if ((count ?? 0) === 0) {
+        throw new Error(
+          "No AI usage logged in the last 7 days. Either no AI traffic, or edge functions (chat-completion / workspace-chat / flowpilot-heartbeat / mcp-server) are running an old build without logAiUsage().",
+        );
+      }
+      return { details: { rows_last_7d: count } };
+    }),
+  );
+
+  return out;
+};
+
 const SUITES: Record<string, SuiteFn> = {
   instance_health: suite_instance_health,
   mcp_invariants: suite_mcp_invariants,
@@ -287,6 +359,7 @@ const SUITES: Record<string, SuiteFn> = {
   module_skills: suite_module_skills,
   rls_smoke: suite_rls_smoke,
   event_bus: suite_event_bus,
+  ai_usage_logging: suite_ai_usage_logging,
 };
 
 // ─── HTTP ────────────────────────────────────────────────────────────────────
