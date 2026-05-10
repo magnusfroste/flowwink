@@ -92,11 +92,11 @@ serve(async (req) => {
         .gte("created_at", weekAgo.toISOString())
         .neq("status", "cancelled"),
 
-      // FlowPilot activity
-      supabase.from("agent_activity").select("skill_name, status, created_at")
+      // Agent activity (all shells: flowpilot autonomous, mcp agents, cron, chat/user)
+      supabase.from("agent_activity").select("agent, skill_name, status, created_at")
         .gte("created_at", yesterday.toISOString())
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(100),
 
       // Objectives
       supabase.from("agent_objectives").select("id, goal, status, progress")
@@ -151,11 +151,32 @@ serve(async (req) => {
     const bookingsCount = bookingsWeek.count ?? 0;
     const chatCount = chatConversations.count ?? 0;
 
-    // FlowPilot actions summary
+    // ─── Check whether FlowPilot module is enabled ─────────────────
+    // When disabled, the briefing must be presented as FlowWink (no
+    // FlowPilot mentions, no autonomous-actions wording).
+    const { data: modulesRow } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "modules")
+      .maybeSingle();
+    const fpEnabled = (modulesRow?.value as any)?.flowpilot?.enabled === true;
+    const productName = fpEnabled ? "FlowPilot" : "FlowWink";
+
+    // Activity summary — split per shell so we don't conflate human
+    // FlowChat / external MCP / cron with FlowPilot's autonomous loop.
     const actions = agentActivity.data || [];
     const successActions = actions.filter((a: any) => a.status === "success").length;
     const failedActions = actions.filter((a: any) => a.status === "failed").length;
     const skillsUsed = [...new Set(actions.map((a: any) => a.skill_name).filter(Boolean))];
+
+    // Per-shell counts (defensive: rows missing `agent` are treated as 'flowpilot'
+    // for backward compatibility with older rows).
+    const countByShell = (shell: string) =>
+      actions.filter((a: any) => (a.agent ?? "flowpilot") === shell).length;
+    const fpAutonomousActions = countByShell("flowpilot");
+    const mcpActions = countByShell("mcp");
+    const cronActions = countByShell("cron");
+    const humanActions = countByShell("chat") + countByShell("user");
 
     // Active objectives progress
     const objectives = (objectivesActive.data || []).map((o: any) => {
@@ -185,17 +206,35 @@ serve(async (req) => {
       ],
     });
 
-    // 2. FlowPilot Activity
-    sections.push({
-      title: "🤖 FlowPilot Activity (24h)",
-      type: "activity",
-      items: [
-        { label: "Actions executed", value: actions.length },
-        { label: "Successful", value: successActions },
-        { label: "Failed", value: failedActions },
-        { label: "Skills used", value: skillsUsed.join(", ") || "none" },
-      ],
-    });
+    // 2. Activity — only mention FlowPilot when the module is enabled.
+    if (fpEnabled) {
+      sections.push({
+        title: "🤖 FlowPilot Activity (24h)",
+        type: "activity",
+        items: [
+          { label: "Autonomous actions", value: fpAutonomousActions },
+          { label: "Successful", value: actions.filter((a: any) => (a.agent ?? "flowpilot") === "flowpilot" && a.status === "success").length },
+          { label: "Failed", value: actions.filter((a: any) => (a.agent ?? "flowpilot") === "flowpilot" && a.status === "failed").length },
+          { label: "Skills used", value: skillsUsed.join(", ") || "none" },
+        ],
+      });
+    } else if (actions.length > 0) {
+      // FlowPilot off — show a neutral shell breakdown so admins still
+      // see who/what is touching the system. With the autonomous loop
+      // off, any rows tagged 'flowpilot' must have originated from
+      // human-driven calls (FlowChat / agent-execute), so we fold them
+      // into "You" rather than show a misleading FlowPilot row.
+      sections.push({
+        title: "⚙️ Skill Activity (24h)",
+        type: "activity",
+        items: [
+          { label: "You (FlowChat)", value: humanActions + fpAutonomousActions },
+          { label: "External agents (MCP)", value: mcpActions },
+          { label: "Platform (cron)", value: cronActions },
+          { label: "Failed", value: failedActions },
+        ],
+      });
+    }
 
     // 3. Objective Progress
     if (objectives.length > 0) {
@@ -261,8 +300,8 @@ serve(async (req) => {
     if (failedActions > 0) {
       actionItems.push({
         priority: "high",
-        text: `${failedActions} FlowPilot action${failedActions > 1 ? "s" : ""} failed — check Engine Room`,
-        link: "/admin/skills",
+        text: `${failedActions} skill execution${failedActions > 1 ? "s" : ""} failed — check Activities`,
+        link: "/admin/activities",
       });
     }
 
@@ -296,7 +335,9 @@ serve(async (req) => {
     const summaryParts: string[] = [];
     if (trafficToday > 0) summaryParts.push(`${trafficToday} visitors today`);
     if (newLeadsToday > 0) summaryParts.push(`${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""}`);
-    if (successActions > 0) summaryParts.push(`FlowPilot completed ${successActions} action${successActions > 1 ? "s" : ""}`);
+    if (fpEnabled && fpAutonomousActions > 0) {
+      summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+    }
     if (publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
 
     const summary = summaryParts.length > 0
@@ -356,104 +397,103 @@ serve(async (req) => {
 
     console.log(`[briefing] Created: ${title} | Health: ${healthScore} | Actions: ${actionItems.length}`);
 
-    // ─── Inject proactive chat message into today's FlowPilot session ──
-    try {
-      // Find the first admin user to associate the conversation with
-      const { data: adminRoleRow } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin")
-        .limit(1)
-        .maybeSingle();
-
-      const adminUserId = adminRoleRow?.user_id ?? null;
-
-      // Find or create today's FlowPilot session — matching the same pattern
-      // used by useAgentOperate.getOrCreateConversation() on the frontend
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-      let conversationId: string | null = null;
-
-      // Look for existing today session (same query shape as the frontend hook)
-      if (adminUserId) {
-        const { data: todaySession } = await supabase
-          .from("chat_conversations")
-          .select("id")
-          .eq("conversation_status", "active")
-          .is("session_id", null)
-          .eq("user_id", adminUserId)
-          .gte("created_at", todayStart.toISOString())
-          .order("created_at", { ascending: false })
+    // ─── Inject proactive chat message ─────────────────────────────
+    // Only when FlowPilot is enabled — the chat thread is FlowPilot's
+    // autonomous voice. With FP off, FlowChat stays a pure human web-CLI
+    // and the briefing is consumed via the dashboard widget instead.
+    if (fpEnabled) {
+      try {
+        const { data: adminRoleRow } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin")
           .limit(1)
           .maybeSingle();
 
-        if (todaySession) {
-          conversationId = todaySession.id;
+        const adminUserId = adminRoleRow?.user_id ?? null;
+
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+        let conversationId: string | null = null;
+
+        if (adminUserId) {
+          const { data: todaySession } = await supabase
+            .from("chat_conversations")
+            .select("id")
+            .eq("conversation_status", "active")
+            .is("session_id", null)
+            .eq("user_id", adminUserId)
+            .gte("created_at", todayStart.toISOString())
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (todaySession) conversationId = todaySession.id;
         }
+
+        if (!conversationId) {
+          const { data: newConv } = await supabase
+            .from("chat_conversations")
+            .insert({
+              title: `Session — ${todayLabel}`,
+              conversation_status: "active",
+              priority: "normal",
+              user_id: adminUserId,
+            })
+            .select("id")
+            .single();
+          conversationId = newConv?.id ?? null;
+        }
+
+        if (conversationId) {
+          const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+          const lines: string[] = [
+            `☀️ **Good morning!** Here's your daily briefing:`,
+            ``,
+            `${healthEmoji} **Health Score: ${healthScore}/100**`,
+          ];
+          if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
+          if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
+          if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
+          if (fpAutonomousActions > 0) lines.push(`• FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+          lines.push(``);
+          lines.push(`Anything you'd like me to focus on today?`);
+
+          const chatContent = lines.join("\n");
+
+          const actionPayload = {
+            type: "briefing",
+            title,
+            healthScore,
+            metrics: [
+              { label: "Visitors", value: trafficToday },
+              { label: "Leads", value: newLeadsToday },
+              { label: "Traffic", value: `${trafficTrend >= 0 ? "+" : ""}${trafficTrend}%` },
+            ],
+            actions: actionItems.slice(0, 3).map((item: any) => ({
+              label: item.text.length > 40 ? item.text.substring(0, 40) + "…" : item.text,
+              link: item.link,
+              variant: item.priority === "high" ? "default" : "outline",
+            })),
+          };
+
+          await supabase.from("chat_messages").insert({
+            conversation_id: conversationId,
+            role: "assistant",
+            content: chatContent,
+            source: "proactive",
+            action_payload: actionPayload,
+          });
+
+          console.log(`[briefing] Proactive message injected into "Session — ${todayLabel}" (${conversationId})`);
+        }
+      } catch (chatErr: any) {
+        console.error("[briefing] Failed to inject chat message:", chatErr.message);
       }
-
-      // If no today-session exists, create one with the correct format
-      if (!conversationId) {
-        const { data: newConv } = await supabase
-          .from("chat_conversations")
-          .insert({
-            title: `Session — ${todayLabel}`,
-            conversation_status: "active",
-            priority: "normal",
-            user_id: adminUserId,
-          })
-          .select("id")
-          .single();
-        conversationId = newConv?.id ?? null;
-      }
-
-      if (conversationId) {
-        // Build a markdown briefing message
-        const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
-        const lines: string[] = [
-          `☀️ **Good morning!** Here's your daily briefing:`,
-          ``,
-          `${healthEmoji} **Health Score: ${healthScore}/100**`,
-        ];
-        if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
-        if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
-        if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
-        if (successActions > 0) lines.push(`• FlowPilot completed ${successActions} action${successActions > 1 ? "s" : ""}`);
-        lines.push(``);
-        lines.push(`Anything you'd like me to focus on today?`);
-
-        const chatContent = lines.join("\n");
-
-        const actionPayload = {
-          type: "briefing",
-          title,
-          healthScore,
-          metrics: [
-            { label: "Visitors", value: trafficToday },
-            { label: "Leads", value: newLeadsToday },
-            { label: "Traffic", value: `${trafficTrend >= 0 ? "+" : ""}${trafficTrend}%` },
-          ],
-          actions: actionItems.slice(0, 3).map((item: any) => ({
-            label: item.text.length > 40 ? item.text.substring(0, 40) + "…" : item.text,
-            link: item.link,
-            variant: item.priority === "high" ? "default" : "outline",
-          })),
-        };
-
-        await supabase.from("chat_messages").insert({
-          conversation_id: conversationId,
-          role: "assistant",
-          content: chatContent,
-          source: "proactive",
-          action_payload: actionPayload,
-        });
-
-        console.log(`[briefing] Proactive message injected into "Session — ${todayLabel}" (${conversationId})`);
-      }
-    } catch (chatErr: any) {
-      console.error("[briefing] Failed to inject chat message:", chatErr.message);
+    } else {
+      console.log("[briefing] FlowPilot disabled — skipping proactive chat injection");
     }
 
     // ─── Send email via Resend ──────────────────────────────────────
@@ -488,7 +528,12 @@ serve(async (req) => {
             sections,
             actionItems,
             metrics,
+            productName,
           });
+
+          const fromAddress = fpEnabled
+            ? "FlowPilot <flowpilot@news.flowwink.com>"
+            : "FlowWink <briefing@news.flowwink.com>";
 
           const resendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -497,7 +542,7 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "FlowPilot <flowpilot@news.flowwink.com>",
+              from: fromAddress,
               to: adminEmails,
               subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
               html: emailHtml,
@@ -551,8 +596,13 @@ function buildBriefingEmail(data: {
   sections: any[];
   actionItems: any[];
   metrics: any;
+  productName?: string;
 }) {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
+  const productName = data.productName ?? "FlowPilot";
+  const footerLine = productName === "FlowPilot"
+    ? "Sent by FlowPilot · Your autonomous business co-pilot"
+    : "Sent by FlowWink · Your business operating system";
 
   const priorityColors: Record<string, string> = {
     high: "#ef4444",
@@ -613,7 +663,7 @@ function buildBriefingEmail(data: {
         
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#111827,#1f2937);padding:32px 24px;text-align:center;">
-          <div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">FlowPilot</div>
+          <div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">${productName}</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">${title}</div>
         </td></tr>
 
@@ -652,7 +702,7 @@ function buildBriefingEmail(data: {
 
         <!-- Footer -->
         <tr><td style="padding:16px 24px;text-align:center;background:#f9fafb;border-top:1px solid #f3f4f6;">
-          <div style="font-size:11px;color:#9ca3af;">Sent by FlowPilot · Your autonomous business co-pilot</div>
+          <div style="font-size:11px;color:#9ca3af;">${footerLine}</div>
         </td></tr>
 
       </table>
