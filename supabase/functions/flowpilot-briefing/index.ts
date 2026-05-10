@@ -220,12 +220,15 @@ serve(async (req) => {
       });
     } else if (actions.length > 0) {
       // FlowPilot off — show a neutral shell breakdown so admins still
-      // see who/what is touching the system.
+      // see who/what is touching the system. With the autonomous loop
+      // off, any rows tagged 'flowpilot' must have originated from
+      // human-driven calls (FlowChat / agent-execute), so we fold them
+      // into "You" rather than show a misleading FlowPilot row.
       sections.push({
         title: "⚙️ Skill Activity (24h)",
         type: "activity",
         items: [
-          { label: "You (FlowChat)", value: humanActions },
+          { label: "You (FlowChat)", value: humanActions + fpAutonomousActions },
           { label: "External agents (MCP)", value: mcpActions },
           { label: "Platform (cron)", value: cronActions },
           { label: "Failed", value: failedActions },
