@@ -351,7 +351,42 @@ const SUITES: Record<string, SuiteFn> = {
   rls_smoke: suite_rls_smoke,
   event_bus: suite_event_bus,
   ai_usage_logging: suite_ai_usage_logging,
+  skill_manifest_coverage: suite_skill_manifest_coverage,
 };
+
+// ─── Suite: Skill Manifest Coverage ──────────────────────────────────────────
+// Detects DB skills with no module-manifest declaration. These "orphans" still
+// work but never receive schema/description updates from a module bootstrap —
+// they have to be edited via direct SQL. See mem://architecture/skill-manifest-coverage.
+
+import declaredSkillsSnapshot from "./_declared-skills.json" with { type: "json" };
+
+async function suite_skill_manifest_coverage(admin: any): Promise<TestResult[]> {
+  const out: TestResult[] = [];
+  const declared = new Set<string>((declaredSkillsSnapshot as any).declared ?? []);
+
+  out.push(
+    await runCheck("skill_manifest_coverage", "every DB skill is declared in a module manifest", async () => {
+      const { data, error } = await admin
+        .from("agent_skills")
+        .select("name")
+        .eq("origin", "bundled");
+      if (error) throw new Error(error.message);
+      const dbNames = (data ?? []).map((r: any) => r.name as string);
+      const orphans = dbNames.filter((n) => !declared.has(n)).sort();
+      if (orphans.length > 0) {
+        throw new Error(
+          `${orphans.length} orphan skills in DB without manifest seed: [${orphans.join(", ")}]. ` +
+          `These skills cannot be schema-updated via module bootstrap. Move them into the matching ` +
+          `*-module.ts skillSeeds, then run: bun run scripts/snapshot-declared-skills.ts`,
+        );
+      }
+      return { details: { db_skills: dbNames.length, declared: declared.size } };
+    }),
+  );
+
+  return out;
+}
 
 // ─── HTTP ────────────────────────────────────────────────────────────────────
 
