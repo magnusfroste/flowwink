@@ -130,6 +130,7 @@ export default function SkillsCatalogPage() {
                 <Cpu className="h-3 w-3" />
                 MCP
               </TabsTrigger>
+              <TabsTrigger value="ai-task" className="text-xs">ai-task</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
