@@ -87,6 +87,15 @@ export const PLATFORM_SUITES: TestSuite[] = [
     run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['ai_usage_logging'] } },
     docs: 'supabase/functions/_shared/ai-usage-logger.ts',
   },
+  {
+    id: 'skill_manifest_coverage',
+    title: 'Skill manifest coverage',
+    description: 'Detects DB skills (origin=bundled) without a matching skillSeed in any src/lib/modules/*-module.ts manifest. Orphans still work but never receive schema/description updates from module bootstrap. Refresh snapshot via: bun run scripts/snapshot-declared-skills.ts',
+    scope: 'platform',
+    category: 'integration',
+    run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['skill_manifest_coverage'] } },
+    docs: 'scripts/snapshot-declared-skills.ts',
+  },
 ];
 
 // ── Operator (FlowPilot) suites ─────────────────────────────────────────────
