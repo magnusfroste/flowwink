@@ -660,7 +660,7 @@ function buildBriefingEmail(data: {
         
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#111827,#1f2937);padding:32px 24px;text-align:center;">
-          <div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">FlowPilot</div>
+          <div style="font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">${productName}</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;">${title}</div>
         </td></tr>
 
