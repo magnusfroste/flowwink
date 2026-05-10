@@ -525,7 +525,12 @@ serve(async (req) => {
             sections,
             actionItems,
             metrics,
+            productName,
           });
+
+          const fromAddress = fpEnabled
+            ? "FlowPilot <flowpilot@news.flowwink.com>"
+            : "FlowWink <briefing@news.flowwink.com>";
 
           const resendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -534,7 +539,7 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "FlowPilot <flowpilot@news.flowwink.com>",
+              from: fromAddress,
               to: adminEmails,
               subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
               html: emailHtml,
