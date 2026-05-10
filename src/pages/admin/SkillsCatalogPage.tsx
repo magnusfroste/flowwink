@@ -27,7 +27,7 @@ import { useModules } from '@/hooks/useModules';
 import { ModuleSkillsSection } from '@/components/admin/modules/ModuleSkillsSection';
 import type { ModulesSettings } from '@/hooks/useModules';
 
-type StatusFilter = 'all' | 'enabled' | 'disabled' | 'mcp';
+type StatusFilter = 'all' | 'enabled' | 'disabled' | 'mcp' | 'ai-task';
 
 export default function SkillsCatalogPage() {
   const [search, setSearch] = useState('');
