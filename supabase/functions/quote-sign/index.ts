@@ -5,6 +5,7 @@
 //   - emails customer the receipt and admins an internal notice via `email-send`
 // Bypasses JWT verification — auth is by accept_token + quote.status check.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,10 +43,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    const supabase = getServiceClient();
 
     // 1) Look up quote by accept_token
     const { data: quote, error: qErr } = await supabase

@@ -2,6 +2,7 @@
 // Provider selection (SMTP / Resend) is handled centrally in `email-send`,
 // driven by `site_settings.integrations.email.config.provider`.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -97,10 +98,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const supabase = getServiceClient();
 
     const { data: quote, error: qErr } = await supabase
       .from('quotes')

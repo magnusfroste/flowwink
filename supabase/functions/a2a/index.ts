@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * a2a — Unified router for all A2A federation traffic.
@@ -72,7 +73,7 @@ interface ConversationEntry {
 async function handleChat(req: Request): Promise<Response> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = getServiceClient();
 
   const body = await req.json();
   const text = body.text || '';
@@ -311,7 +312,7 @@ async function handleDiscover(req: Request): Promise<Response> {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return json({ error: 'Unauthorized' }, 401);
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = getServiceClient();
   const { data: roles } = await supabase
     .from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin');
   if (!roles || roles.length === 0) return json({ error: 'Admin access required' }, 403);
@@ -542,7 +543,7 @@ async function handleIngest(req: Request): Promise<Response> {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = getServiceClient();
 
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(token));
@@ -736,7 +737,7 @@ async function handleOutbound(req: Request): Promise<Response> {
 
   if (!isAuthorized) return json({ error: 'Unauthorized — admin or service role only' }, 401);
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = getServiceClient();
   const body: OutboundRequest = await req.json();
   const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
   const effectiveSkill = (rawMessage && !skill) ? 'message' : (skill || 'message');

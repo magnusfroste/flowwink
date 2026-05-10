@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig } from "../_shared/ai-config.ts";
 
 const corsHeaders = {
@@ -205,9 +206,7 @@ async function extractPdfTextCore(params: {
 }
 
 async function updateDocumentExtraction(documentId: string, status: 'success' | 'failed', contentMd: string | null, errorMessage: string | null) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+      const supabase = getServiceClient();
   const payload: Record<string, string | null> = {
     extraction_status: status,
     extraction_error: errorMessage,
@@ -250,7 +249,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = getServiceClient();
 
     if (document_id) {
       EdgeRuntime.waitUntil((async () => {

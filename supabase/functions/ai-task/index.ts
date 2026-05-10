@@ -21,6 +21,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
 import { TASKS, listTasks } from "./tasks.ts";
 
@@ -65,10 +66,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Invalid input", details: parsedInput.error.flatten() }, 400);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = getServiceClient();
 
     // Optional load step — hydrate context from DB
     let promptInput: any = parsedInput.data;

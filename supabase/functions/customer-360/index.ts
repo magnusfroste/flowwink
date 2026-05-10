@@ -3,6 +3,7 @@
 // Returns a unified timeline + counts + KPIs ready for the /admin/customer/:id view.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
