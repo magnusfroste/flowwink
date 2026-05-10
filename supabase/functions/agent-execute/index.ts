@@ -2,6 +2,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
+import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
+import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
+import {
+  type AuditContext,
+  ACCOUNTING_AUDIT_TABLES,
+  sha256Hex,
+  diffSnapshots,
+  writeAuditTrail,
+} from '../_shared/agent-audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
