@@ -25,55 +25,15 @@ const ticketModuleOutputSchema = z.object({
 type TicketModuleInput = z.infer<typeof ticketModuleInputSchema>;
 type TicketModuleOutput = z.infer<typeof ticketModuleOutputSchema>;
 
-// ── Bundled skill definitions (migrated from setup-flowpilot) ──
-const TICKETS_SKILLS: SkillSeed[] = [
-  {
-    name: 'ticket_triage',
-    description: 'Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler).',
-    category: 'crm',
-    handler: 'ticket_triage',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'ticket_triage',
-        parameters: {
-          type: 'object',
-          required: [
-            'ticket_id',
-          ],
-          properties: {
-            ticket_id: {
-              type: 'string',
-              description: 'UUID of the ticket to triage',
-            },
-            auto_respond: {
-              type: 'boolean',
-              description: 'Whether to auto-respond if KB match found',
-            },
-          },
-        },
-        description: 'Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler).',
-      },
-    },
-    instructions: `You are triaging a support ticket. Follow these steps:
-
-1. CATEGORIZE: Analyze the ticket subject and description to determine the category (bug, feature, question, billing, other) and priority (low, medium, high, urgent).
-
-2. KB MATCH: Search the Knowledge Base for articles that match the ticket content.
-
-3. AUTO-RESPOND: If a KB article provides a clear answer, draft a response and add it as a ticket comment. Set status to waiting.
-
-4. ESCALATE: If no KB match or the issue is complex, set status to open and leave for human agent.
-
-5. UPDATE: Always update the ticket with your determined category and priority.
-
-Rules:
-- Never auto-close tickets
-- Always be empathetic and professional
-- For billing issues, always escalate to human`,
-  },
-];
+// ── Bundled skill definitions ──
+// NOTE: `ticket_triage` was removed in 2026-05 — the seed pointed at a non-existent
+// handler (`ticket_triage` with no prefix), so calls failed silently. Triage is a
+// reasoning-skill that requires composition (categorize → KB search → comment →
+// status update); when re-introduced, model it as `ai-task:ticket_triage` or as a
+// composite workflow, NOT as a single deterministic skill. Until then, FlowPilot /
+// external operators should compose `manage_ticket` + `kb_search` + `add_comment`
+// directly.
+const TICKETS_SKILLS: SkillSeed[] = [];
 
 export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>({
   id: 'tickets',
