@@ -92,11 +92,11 @@ serve(async (req) => {
         .gte("created_at", weekAgo.toISOString())
         .neq("status", "cancelled"),
 
-      // FlowPilot activity
-      supabase.from("agent_activity").select("skill_name, status, created_at")
+      // Agent activity (all shells: flowpilot autonomous, mcp agents, cron, chat/user)
+      supabase.from("agent_activity").select("agent, skill_name, status, created_at")
         .gte("created_at", yesterday.toISOString())
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(100),
 
       // Objectives
       supabase.from("agent_objectives").select("id, goal, status, progress")
