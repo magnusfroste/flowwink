@@ -69,7 +69,7 @@ export const calendarModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['check_calendar', 'list_events'],
+  skills: ['list_events'],
   skillSeeds: CALENDAR_SKILLS,
 
 
