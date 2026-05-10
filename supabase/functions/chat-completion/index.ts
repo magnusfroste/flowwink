@@ -667,22 +667,4 @@ serve(async (req) => {
   }
 });
 
-// ─── Error handling ──────────────────────────────────────────────────────────
-
-async function handleAiError(response: Response): Promise<Response> {
-  if (response.status === 429) {
-    return new Response(JSON.stringify({ error: 'Too many requests. Please wait and try again.' }), {
-      status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  if (response.status === 402) {
-    return new Response(JSON.stringify({ error: 'Credits exhausted. Contact administrator.' }), {
-      status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  const errorText = await response.text();
-  console.error('AI provider error:', response.status, errorText);
-  return new Response(JSON.stringify({ error: 'AI service error.' }), {
-    status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
+// handleAiError moved to ../_shared/ai-providers.ts (now takes corsHeaders param)
