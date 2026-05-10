@@ -9,6 +9,7 @@
 - Strict CRUD Limits: `DEDICATED_SKILL_TABLES` block generic CRUD. Use domain skills (e.g., `place_order`).
 - Module states are controlled by flags: `requiresFlowPilot`, `enhancedByFlowPilot`, `requiresAI`.
 - MCP = platform-level. Skills seedas alltid med mcp_exposed=true när modul aktiveras, oberoende av FlowPilot. Skills-UI bor i /admin/developer.
+- FlowChat (web-CLI shell) gateas ALDRIG på flowpilot.enabled. När FP off: bara FP-interna built-ins (objectives/soul/reflect/planning/automations-exec) strippas; skills + platform built-ins (memory/workflows/a2a/skill-packs) körs vidare. FlowPilot = optional operator-lager med samma access som extern OpenClaw + interna vertikal-perks (in-process tools, lägre latens, heartbeat). Se mem://architecture/flowpilot-as-optional-operator-layer.
 - Bridge polling: ALLTID `since_id=0` vid "läs bridge" — hela tråden, inte bara nyaste. Visa råa msgs vid tvekan.
 - Modules = real Odoo-style SaaS (real tables/RLS/admin-UI) that expose skills for agent operation. NEVER build sandbox/simulation/demo modes.
 - Skill schemas MUST use FLAT top-level (OpenAI gpt-4.1 strict-mode kräver det). Per-action required → `x-action-required` extension, INTE `allOf/if-then`. Guardrail-test enforcer detta.

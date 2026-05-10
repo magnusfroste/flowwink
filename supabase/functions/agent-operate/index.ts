@@ -57,20 +57,22 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Module gate — FlowPilot must be enabled (Scenario B guard)
+    // Separation of concerns:
+    //   FlowChat (this endpoint, as web-CLI shell) ALWAYS works — it's the human shell over the
+    //   FlowWink platform skills, just like MCP is the agent shell. It does not require the
+    //   FlowPilot autonomous-operator module to be enabled.
+    //   FlowPilot, when ON, layers autonomous behaviors on top: objectives, soul-driven
+    //   reasoning, reflection, planning, and automation execution. When OFF, those FlowPilot-
+    //   internal built-in tools are stripped, but skills + reasoning remain available.
+    // See mem://architecture/flowwink-as-business-os-three-shells
+    //     mem://architecture/mcp-as-platform-not-flowpilot-feature
     const { data: moduleSettings } = await supabase
       .from('agent_memory')
       .select('value')
       .eq('key', 'modules_settings')
       .maybeSingle();
-    
+
     const flowpilotEnabled = moduleSettings?.value?.flowpilot?.enabled ?? true;
-    if (!flowpilotEnabled) {
-      return new Response(
-        JSON.stringify({ error: 'FlowPilot module is disabled' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Concurrency guard — one agent run per conversation
     const lane = conversation_id ? `operate:${conversation_id}` : null;
@@ -105,7 +107,12 @@ serve(async (req) => {
     });
 
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
+    // Platform-level built-ins (always on for the FlowChat shell): memory (read), workflows, a2a, skill-packs.
+    // FlowPilot-internal built-ins (autonomous-operator only): objectives, self-mod, reflect, soul, planning, automations-exec.
+    const builtInGroups = flowpilotEnabled
+      ? ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']
+      : ['memory', 'workflows', 'a2a', 'skill-packs'];
+    const builtInTools = getBuiltInTools(builtInGroups);
     const skillCache = await loadSkillsRaw(supabase, 'internal');
     const [externalSkills, usageBoost] = await Promise.all([
       loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
