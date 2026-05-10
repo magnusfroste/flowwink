@@ -325,9 +325,8 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
   outputSchema: inventoryOutputSchema,
 
   skills: [
-    'check_stock',
-    'adjust_stock',
-    'low_stock_report',
+    // v1 stubs (check_stock/adjust_stock/low_stock_report) removed —
+    // superseded by Odoo-style v2 (adjust_quant, procurement_run, …).
     'list_reorder_candidates',
     'transfer_stock',
     'reserve_stock',
