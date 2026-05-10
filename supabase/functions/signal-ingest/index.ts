@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * Signal Ingest — External operator endpoint
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = getServiceClient();
 
     // Accept anon key, publishable key, or custom token from site_settings
     let authorized = (anonKey && token === anonKey) || (publishableKey && token === publishableKey);

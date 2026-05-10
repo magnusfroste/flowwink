@@ -12,6 +12,7 @@
  * Logged to ai_usage_logs with source='expense-receipt'.
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
 import { callAiCompletion } from '../_shared/ai-usage-logger.ts';
 
@@ -228,10 +229,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const supabase = getServiceClient();
 
     // Get user (optional — utility works for any authenticated admin)
     let userId: string | null = null;

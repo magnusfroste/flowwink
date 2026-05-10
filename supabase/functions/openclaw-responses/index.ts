@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
  * openclaw-responses — Call OpenClaw's POST /v1/responses endpoint.
@@ -56,13 +57,11 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Auth: log and accept any request with valid headers
+        // Auth: log and accept any request with valid headers
     // Single-tenant self-hosted — protection is on the peer side (gateway_token)
     const authHeader = req.headers.get('authorization');
 
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = getServiceClient();
     const body: ResponsesRequest = await req.json();
     const { peer_name, peer_id, prompt, system, response_format, model, timeout_ms = 60000, fire_and_forget = false, inject_mcp_credentials = false } = body;
 

@@ -2,6 +2,7 @@
 // Atomically: records signature, updates contract status, sends confirmation emails.
 // Bypasses JWT verification — auth is by accept_token + status check.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,10 +35,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const supabase = getServiceClient();
 
     const { data: contract, error: cErr } = await supabase
       .from('contracts')

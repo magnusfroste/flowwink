@@ -1,6 +1,7 @@
 // Send an invoice to the customer via the provider-agnostic `email-send` router.
 // Includes PDF attachment + link to public payment page.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,10 +101,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
+    const supabase = getServiceClient();
 
     const { data: invoice, error: invErr } = await supabase
       .from('invoices')

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.87.1';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
@@ -766,7 +767,7 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = getServiceClient();
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
 

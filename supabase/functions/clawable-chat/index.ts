@@ -1,5 +1,6 @@
 // Clawable POC chat proxy — calls peer's /v1/responses with previous_response_id chaining
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,8 +24,7 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
     // Verify user
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = getServiceClient();
     const { data: roleRow } = await admin
       .from('user_roles')
       .select('role')
