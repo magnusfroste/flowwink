@@ -506,7 +506,7 @@ serve(async (req) => {
           conversationId: conversationId || null,
           metadata: { iteration, http_status: upstream.status, has_tools: tools.length > 0 },
         });
-        return handleAiError(upstream);
+        return handleAiError(upstream, corsHeaders);
       }
 
       // Wrap upstream stream so we can sniff the final usage chunk without changing client behaviour
