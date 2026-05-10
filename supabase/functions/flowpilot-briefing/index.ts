@@ -332,7 +332,9 @@ serve(async (req) => {
     const summaryParts: string[] = [];
     if (trafficToday > 0) summaryParts.push(`${trafficToday} visitors today`);
     if (newLeadsToday > 0) summaryParts.push(`${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""}`);
-    if (successActions > 0) summaryParts.push(`FlowPilot completed ${successActions} action${successActions > 1 ? "s" : ""}`);
+    if (fpEnabled && fpAutonomousActions > 0) {
+      summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+    }
     if (publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
 
     const summary = summaryParts.length > 0
