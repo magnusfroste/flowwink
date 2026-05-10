@@ -228,9 +228,9 @@ const suite_event_bus: SuiteFn = async (admin) => {
       const marker = `platform-test-${Date.now()}`;
       // Try the helper RPC; if it doesn't exist we skip.
       const { error: rpcErr } = await admin.rpc("emit_platform_event", {
-        p_event_name: "platform.test.ping",
-        p_payload: { marker },
-        p_source: "run-platform-tests",
+        _event_name: "platform.test.ping",
+        _payload: { marker },
+        _source: "run-platform-tests",
       });
       if (rpcErr) {
         if (/function .* does not exist/i.test(rpcErr.message)) {
