@@ -78,6 +78,15 @@ export const PLATFORM_SUITES: TestSuite[] = [
     run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['event_bus'] } },
     docs: 'mem://architecture/event-bus-platform-layer',
   },
+  {
+    id: 'ai_usage_logging',
+    title: 'AI usage logging',
+    description: 'Verifies ai_usage_logs table exists, service-role can insert (catches missing SUPABASE_SERVICE_ROLE_KEY in edge env / un-applied migration), and at least one row was logged in the last 7 days (catches stale edge function deploys).',
+    scope: 'platform',
+    category: 'integration',
+    run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['ai_usage_logging'] } },
+    docs: 'supabase/functions/_shared/ai-usage-logger.ts',
+  },
 ];
 
 // ── Operator (FlowPilot) suites ─────────────────────────────────────────────
