@@ -4,6 +4,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import {
   TIPTAP_FIELDS,
   normalizeBlockData,
