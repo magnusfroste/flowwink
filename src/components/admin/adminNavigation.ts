@@ -90,7 +90,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
       { name: "Consultants", href: "/admin/resume", icon: FileUser, moduleId: "resume" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
-      { name: "Activities", href: "/admin/activities", icon: CheckSquare },
+      { name: "Activities", href: "/admin/activities", icon: CheckSquare, moduleId: "crm" },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Calendar", href: "/admin/calendar", icon: CalendarDays, moduleId: "calendar" },
       { name: "Surveys & NPS", href: "/admin/surveys", icon: Sparkles, moduleId: "surveys" },
