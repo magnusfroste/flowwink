@@ -47,6 +47,7 @@ import { FlowPilotDetails } from "./FlowPilotDetails";
 import { ModuleSkillsSection } from "./ModuleSkillsSection";
 import { SubscriptionsDunningToggle } from "./SubscriptionsDunningToggle";
 import { ComposioPanel } from "./ComposioPanel";
+import { ReBootstrapButton } from "./ReBootstrapButton";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
