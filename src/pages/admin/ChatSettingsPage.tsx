@@ -1393,6 +1393,10 @@ export default function ChatSettingsPage() {
             </TabsContent>
 
             {/* Privacy settings */}
+            <TabsContent value="sessions">
+              <VisitorSessionsTab />
+            </TabsContent>
+
             <TabsContent value="privacy">
               <Card>
                 <CardHeader>
