@@ -489,6 +489,11 @@ serve(async (req) => {
         messages: msgs,
         stream: true,
         stream_options: { include_usage: true },
+        // Disable reasoning/thinking to cut TTFT on local LLMs (Qwen/DeepSeek-style).
+        // Multiple flags sent for cross-provider compatibility (vLLM, llama.cpp, OpenAI-style).
+        enable_thinking: false,
+        chat_template_kwargs: { enable_thinking: false },
+        reasoning: { effort: 'none' },
       };
 
       if (tools.length > 0 && iteration < MAX_TOOL_ITERATIONS - 1) {
