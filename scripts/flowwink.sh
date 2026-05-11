@@ -86,14 +86,14 @@ cmd_help() {
     echo -e "  ${CYAN}/link${NC}            Select and link a Supabase project to this directory"
     echo ""
     echo -e "  ${BOLD}── First-time setup ──────────────────────────────────${NC}"
-    echo -e "  ${CYAN}/install${NC}         Full install: migrations → functions → admin → keys → FlowPilot"
+    echo -e "  ${CYAN}/install${NC}         Full install: migrations → functions → admin → keys"
     echo ""
     echo -e "  ${BOLD}── Update existing installation ──────────────────────${NC}"
     echo -e "  ${CYAN}/update-db${NC}       Push new database migrations to linked project"
     echo -e "  ${CYAN}/update-funcs${NC}    Re-deploy all edge functions (picks up code changes)"
     echo -e "  ${CYAN}/set-keys${NC}        Add or rotate API keys & Supabase secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create a new admin user account"
-    echo -e "  ${CYAN}/patch-flowpilot${NC} Patch FlowPilot: sync missing skills/soul or renew heartbeat cron"
+    echo -e "  ${CYAN}/patch-flowpilot${NC} (deprecated) FlowPilot is now seeded via /admin/modules"
     echo ""
     echo -e "  ${BOLD}── Info ──────────────────────────────────────────────${NC}"
     echo -e "  ${CYAN}/env${NC}             Print environment variables needed for hosting (Vercel/Easypanel)"
@@ -563,66 +563,19 @@ cmd_status() {
 
 cmd_setup_flowpilot() {
     echo ""
-    print_section "Patch FlowPilot"
-    require_link || return 1
-
-    if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" = "null" ]; then
-        echo -e "  ${RED}✗ Service role key not available.${NC}"
-        echo -e "  ${DIM}Run /link to reload project keys.${NC}"
-        echo ""
-        return 1
-    fi
-
-    echo -e "  ${DIM}Project: ${PROJECT_NAME}${NC}"
+    print_section "Patch FlowPilot (deprecated)"
     echo ""
-    echo -e "  ${DIM}↑↓ navigate  Enter select${NC}"
+    echo -e "  ${YELLOW}⚠ The setup-flowpilot edge function has been removed.${NC}"
     echo ""
-
-    local -a OPTIONS=(
-        "Sync missing skills & soul"
-        "Register / renew heartbeat cron only"
-        "Cancel"
-    )
-
-    _fw_select "${OPTIONS[@]}"
-    local idx=$_FW_IDX
-    [ "$idx" -eq -1 ] || [ "$idx" -eq 2 ] && echo "" && return 0
-
+    echo -e "  FlowPilot is now seeded via the module system:"
+    echo -e "    1. Open ${CYAN}/admin/modules${NC} in the web UI"
+    echo -e "    2. Toggle the ${CYAN}FlowPilot${NC} module ON"
+    echo -e "       → bootstrapModule('flowpilot') seeds soul, identity,"
+    echo -e "         agent rules, starter objectives, core skills and the"
+    echo -e "         weekly digest automation."
     echo ""
-
-    local payload
-    if [ "$idx" -eq 0 ]; then
-        echo -e "  Syncing missing skills & soul..."
-        payload="{\"seed_skills\":true,\"seed_soul\":true}"
-    else
-        echo -e "  Registering heartbeat cron..."
-        payload="{\"seed_skills\":false,\"seed_soul\":false}"
-    fi
-
-    local response
-    response=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-flowpilot" \
-        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-        -H "apikey: ${SERVICE_ROLE_KEY}" \
-        -H "Content-Type: application/json" \
-        -d "$payload" 2>&1)
-
-    if echo "$response" | grep -qE '"success"\s*:\s*true|"objectives_seeded"|"cron_registered"'; then
-        echo -e "  ${GREEN}✓ FlowPilot setup complete${NC}"
-        local obj_count
-        obj_count=$(echo "$response" | jq -r '.objectives_seeded // empty' 2>/dev/null || echo "")
-        [ -n "$obj_count" ] && echo -e "  ${DIM}Objectives seeded: ${obj_count}${NC}"
-        local auto_count
-        auto_count=$(echo "$response" | jq -r '.automations_seeded // empty' 2>/dev/null || echo "")
-        [ -n "$auto_count" ] && echo -e "  ${DIM}Automations seeded: ${auto_count}${NC}"
-        local cron_ok
-        cron_ok=$(echo "$response" | jq -r '.cron_registered // empty' 2>/dev/null || echo "")
-        [ "$cron_ok" = "true" ] && echo -e "  ${DIM}Cron registered ✓${NC}"
-    else
-        echo -e "  ${RED}✗ Setup failed${NC}"
-        local err
-        err=$(echo "$response" | jq -r '.error // .message // .' 2>/dev/null || echo "$response")
-        echo "$err" | head -3 | sed 's/^/  /'
-    fi
+    echo -e "  ${DIM}If soul is missing on a site where FlowPilot is enabled,${NC}"
+    echo -e "  ${DIM}useFlowPilotBootstrap auto-repairs on next admin login.${NC}"
     echo ""
 }
 
@@ -631,7 +584,8 @@ cmd_install() {
     print_section "Full Installation"
     require_link || return 1
 
-    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC} → ${CYAN}/patch-flowpilot${NC}"
+    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC}"
+    echo -e "  ${DIM}FlowPilot is seeded later via /admin/modules (toggle on).${NC}"
     echo ""
     read -e -p "  Continue? [y/N]: " confirm
     [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "" && return 0
@@ -641,22 +595,10 @@ cmd_install() {
     cmd_create_admin
     cmd_env
 
-    # Seed skills + soul directly — no menu needed on fresh install.
-    # Objectives and automations are seeded automatically on first admin login.
-    print_section "Patch FlowPilot"
-    require_link || return 1
-    echo -e "  Seeding skills & soul..."
-    local fp_response
-    fp_response=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-flowpilot" \
-        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-        -H "apikey: ${SERVICE_ROLE_KEY}" \
-        -H "Content-Type: application/json" \
-        -d "{\"seed_skills\":true,\"seed_soul\":true}" 2>&1)
-    if echo "$fp_response" | grep -qE '"success"\s*:\s*true'; then
-        echo -e "  ${GREEN}✓ FlowPilot setup complete${NC}"
-    else
-        echo -e "  ${YELLOW}⚠ FlowPilot setup may have failed — check logs${NC}"
-    fi
+    echo ""
+    echo -e "  ${GREEN}✓ Base install complete.${NC}"
+    echo -e "  ${DIM}Next: log in to /admin, open /admin/modules, and enable FlowPilot${NC}"
+    echo -e "  ${DIM}(or any other module) — seeding runs automatically on toggle.${NC}"
     echo ""
 
     read -e -p "  Configure API keys now? [y/N]: " keys
