@@ -17,6 +17,7 @@ import { getAllSuites, type TestSuite, type TestScope } from '@/lib/platform-tes
 import { useModules } from '@/hooks/useModules';
 import { bootstrapModule } from '@/lib/module-bootstrap';
 import { RefreshCw } from 'lucide-react';
+import { InstanceHealthCard } from '@/components/admin/InstanceHealthCard';
 
 interface CheckResult {
   suite: string;
