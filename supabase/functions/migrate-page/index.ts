@@ -1327,6 +1327,10 @@ ${html.substring(0, MAX_HTML_FOR_AI)}
 Respond only with JSON.`;
 
     // Unified AI call via OpenAI-compatible endpoint (all providers)
+    const _aiStart = Date.now();
+    const _aiProvider = aiConfig.apiUrl.includes('openai.com') ? 'openai'
+      : aiConfig.apiUrl.includes('generativelanguage') ? 'gemini'
+      : aiConfig.apiUrl.includes('anthropic') ? 'anthropic' : 'unknown';
     aiResponse = await fetch(aiConfig.apiUrl, {
       method: 'POST',
       headers: {
@@ -1347,6 +1351,14 @@ Respond only with JSON.`;
     if (!aiResponse.ok) {
       const aiError = await aiResponse.text();
       console.error('AI error:', aiResponse.status, aiError);
+      void logAiUsage({
+        supabase, source: 'migrate-page', provider: _aiProvider, model: aiConfig.model,
+        promptTokens: 0, completionTokens: 0, totalTokens: 0,
+        latencyMs: Date.now() - _aiStart,
+        status: aiResponse.status === 429 ? 'rate_limited' : aiResponse.status === 402 ? 'payment_required' : 'error',
+        error: aiError?.slice(0, 500),
+        metadata: { http_status: aiResponse.status, url: formattedUrl },
+      });
       
       if (aiResponse.status === 429) {
         return new Response(
@@ -1368,6 +1380,17 @@ Respond only with JSON.`;
     }
 
     const aiData = await aiResponse.json();
+    {
+      const u = aiData?.usage || {};
+      const p = Number(u.prompt_tokens || u.input_tokens || 0);
+      const c = Number(u.completion_tokens || u.output_tokens || 0);
+      void logAiUsage({
+        supabase, source: 'migrate-page', provider: _aiProvider, model: aiConfig.model,
+        promptTokens: p, completionTokens: c, totalTokens: Number(u.total_tokens || p + c),
+        latencyMs: Date.now() - _aiStart, status: 'success',
+        metadata: { url: formattedUrl },
+      });
+    }
     
     // Unified response parsing (OpenAI-compatible format from all providers)
     const aiContent = aiData.choices?.[0]?.message?.content || '';
