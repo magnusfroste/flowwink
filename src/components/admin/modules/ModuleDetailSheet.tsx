@@ -890,10 +890,11 @@ export function ModuleDetailSheet({
               </>
             )}
 
-            {/* Generic per-module re-bootstrap (idempotent) */}
+            {/* Generic per-module re-bootstrap (idempotent) + history */}
             {isEnabled && (
               <>
                 <Separator />
+                <BootstrapHealthCard moduleId={moduleId} />
                 <div className="space-y-2">
                   <ReBootstrapButton moduleId={moduleId} />
                   <p className="text-[10px] text-muted-foreground text-center">
