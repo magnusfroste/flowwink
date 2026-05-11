@@ -109,6 +109,10 @@ async function extractPdfTextCore(params: {
 
     const result = await response.json();
     extractedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const um = result?.usageMetadata || {};
+    _pTok = Number(um.promptTokenCount || 0);
+    _cTok = Number(um.candidatesTokenCount || 0);
+    _tTok = Number(um.totalTokenCount || _pTok + _cTok);
   } else if (ai.provider === 'openai') {
     const uploadForm = new FormData();
     uploadForm.append('purpose', 'user_data');
