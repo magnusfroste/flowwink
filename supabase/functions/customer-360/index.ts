@@ -50,11 +50,7 @@ serve(async (req) => {
   const isServiceRole = token === serviceKey;
 
   if (!isServiceRole) {
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
+    const userClient = getUserClient(authHeader)!;
     const { data: claims, error: authError } = await userClient.auth.getClaims(token);
     if (authError || !claims?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -65,10 +61,7 @@ serve(async (req) => {
   }
 
   // Service-role client for cross-table aggregation (bypasses per-table RLS).
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    serviceKey,
-  );
+  const admin = getServiceClient();
 
   try {
     // Accept params from query string (admin UI) OR JSON body (agent-execute).

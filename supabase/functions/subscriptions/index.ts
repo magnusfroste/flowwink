@@ -75,10 +75,7 @@ async function handleCheckout(req: Request, body: Record<string, any>) {
   const { priceId, successUrl, cancelUrl, trialDays, quantity, provider = "stripe" } = body;
   if (!priceId) throw new Error("priceId is required");
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-  );
+  const supabase = getAnonClient();
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) throw new Error("No authorization header");
   const { data: userData } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
@@ -102,11 +99,7 @@ async function handleCheckout(req: Request, body: Record<string, any>) {
 async function handlePortal(req: Request, body: Record<string, any>) {
   const { subscriptionId, providerCustomerId, returnUrl, provider = "stripe" } = body;
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
+  const supabase = getServiceClient();
 
   let customerId = providerCustomerId as string | undefined;
   if (!customerId && subscriptionId) {
@@ -139,16 +132,8 @@ async function handleManage(req: Request, body: Record<string, any>) {
   const auth = req.headers.get("Authorization");
   if (!auth) throw new Error("No authorization header");
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
-  const supabaseAuthed = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: auth } } },
-  );
+  const supabase = getServiceClient();
+  const supabaseAuthed = getUserClient(auth)!;
   const { data: userData } = await supabaseAuthed.auth.getUser(auth.replace("Bearer ", ""));
   const user = userData.user;
   if (!user) throw new Error("Not authenticated");

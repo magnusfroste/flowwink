@@ -50,10 +50,7 @@ serve(async (req: Request) => {
   }
 });
 
-const sb = () => createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+const sb = () => getServiceClient();
 
 // =============================================================================
 // AUTO-MATCH (was reconciliation-auto-match)
