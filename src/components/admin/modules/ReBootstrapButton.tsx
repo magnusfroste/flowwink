@@ -38,15 +38,25 @@ export function ReBootstrapButton({ moduleId, hideIfNoSeeds = true }: ReBootstra
     return null;
   }
 
-  const handleClick = async () => {
+  const handleClick = async (force = false) => {
     if (!modules) {
       toast.error('Module settings not loaded yet');
       return;
     }
     setBusy(true);
     try {
-      const result = await bootstrapModule(moduleId as keyof ModulesSettings, modules);
-      if (result.errors.length > 0) {
+      const result = await bootstrapModule(moduleId as keyof ModulesSettings, modules, { force, triggeredBy: force ? 'admin-force' : 'admin' });
+      if (result.degraded) {
+        toast.error(
+          `Module is degraded — circuit breaker tripped. Click "Force retry" to override.`,
+          {
+            action: {
+              label: 'Force retry',
+              onClick: () => handleClick(true),
+            },
+          },
+        );
+      } else if (result.errors.length > 0) {
         toast.error(`Re-bootstrap finished with ${result.errors.length} error(s): ${result.errors[0]}`);
       } else {
         toast.success(
@@ -55,6 +65,8 @@ export function ReBootstrapButton({ moduleId, hideIfNoSeeds = true }: ReBootstra
       }
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
       queryClient.invalidateQueries({ queryKey: ['flowpilot-bootstrap-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['bootstrap-runs', moduleId] });
+      queryClient.invalidateQueries({ queryKey: ['bootstrap-health', moduleId] });
     } catch (err) {
       logger.error('[ReBootstrap] Failed:', err);
       toast.error('Re-bootstrap failed — check console');
@@ -65,7 +77,7 @@ export function ReBootstrapButton({ moduleId, hideIfNoSeeds = true }: ReBootstra
 
   return (
     <Button
-      onClick={handleClick}
+      onClick={() => handleClick(false)}
       disabled={busy}
       variant="outline"
       size="sm"
