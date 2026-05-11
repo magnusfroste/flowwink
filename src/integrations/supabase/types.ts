@@ -2532,6 +2532,45 @@ export type Database = {
           },
         ]
       }
+      bootstrap_runs: {
+        Row: {
+          config_hash: string | null
+          created_at: string
+          duration_ms: number | null
+          errors: Json
+          id: string
+          module_id: string
+          seeded_automations: number
+          seeded_skills: number
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          config_hash?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          errors?: Json
+          id?: string
+          module_id: string
+          seeded_automations?: number
+          seeded_skills?: number
+          status: string
+          triggered_by?: string | null
+        }
+        Update: {
+          config_hash?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          errors?: Json
+          id?: string
+          module_id?: string
+          seeded_automations?: number
+          seeded_skills?: number
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       candidate_notes: {
         Row: {
           application_id: string
@@ -12043,6 +12082,16 @@ export type Database = {
       }
       generate_pos_receipt_number: { Args: never; Returns: string }
       generate_rma_number: { Args: never; Returns: string }
+      get_bootstrap_health: {
+        Args: { _module_id: string }
+        Returns: {
+          failure_streak: number
+          is_degraded: boolean
+          last_hash: string
+          last_run_at: string
+          last_status: string
+        }[]
+      }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
