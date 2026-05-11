@@ -724,7 +724,7 @@ async function handleOutbound(req: Request): Promise<Response> {
 
   if (!isAuthorized && token) {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
-    const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
+    const authClient = getUserClient(`Bearer ${token}`)!;
     const { data: { user } } = await authClient.auth.getUser();
     if (user) {
       const { data: roles } = await getServiceClient()
