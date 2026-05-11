@@ -501,7 +501,7 @@ serve(async (req) => {
       const upstream = await fetch(provider.apiUrl, { method: 'POST', headers, body: JSON.stringify(reqBody) });
       if (!upstream.ok) {
         void logAiUsage({
-          supabase, source: 'chat-completion', provider: provider.id, model: provider.model,
+          supabase, source: 'chat-completion', provider: provider.resolvedProvider, model: provider.model,
           promptTokens: 0, completionTokens: 0, totalTokens: 0,
           latencyMs: Date.now() - tIter,
           status: upstream.status === 429 ? 'rate_limited' : 'error',
@@ -556,7 +556,7 @@ serve(async (req) => {
               controller.close();
               void logAiUsage({
                 supabase, source: 'chat-completion',
-                provider: provider.id || provider.name || 'unknown',
+                provider: provider.resolvedProvider,
                 model: provider.model,
                 promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
                 latencyMs: Date.now() - tIter, status: 'success',

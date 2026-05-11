@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig } from "../_shared/ai-config.ts";
+import { logAiUsage } from "../_shared/ai-usage-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,6 +79,8 @@ async function extractPdfTextCore(params: {
 - Return ONLY the extracted text. No commentary.`;
 
   let extractedText = '';
+  const _aiStart = Date.now();
+  let _pTok = 0, _cTok = 0, _tTok = 0;
 
   if (ai.provider === 'gemini') {
     const response = await fetch(
@@ -106,6 +109,10 @@ async function extractPdfTextCore(params: {
 
     const result = await response.json();
     extractedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const um = result?.usageMetadata || {};
+    _pTok = Number(um.promptTokenCount || 0);
+    _cTok = Number(um.candidatesTokenCount || 0);
+    _tTok = Number(um.totalTokenCount || _pTok + _cTok);
   } else if (ai.provider === 'openai') {
     const uploadForm = new FormData();
     uploadForm.append('purpose', 'user_data');
@@ -154,6 +161,10 @@ async function extractPdfTextCore(params: {
 
     const result = await response.json();
     extractedText = result.choices?.[0]?.message?.content || '';
+    const u = result?.usage || {};
+    _pTok = Number(u.prompt_tokens || 0);
+    _cTok = Number(u.completion_tokens || 0);
+    _tTok = Number(u.total_tokens || _pTok + _cTok);
 
     fetch(`https://api.openai.com/v1/files/${fileId}`, {
       method: 'DELETE',
@@ -188,6 +199,10 @@ async function extractPdfTextCore(params: {
 
     const result = await response.json();
     extractedText = result.content?.[0]?.text || '';
+    const u = result?.usage || {};
+    _pTok = Number(u.input_tokens || 0);
+    _cTok = Number(u.output_tokens || 0);
+    _tTok = _pTok + _cTok;
   } else {
     throw new Error(`Provider "${ai.provider}" does not support PDF extraction`);
   }
@@ -195,6 +210,13 @@ async function extractPdfTextCore(params: {
   if (!extractedText || extractedText.length < 10) {
     throw new Error('Could not extract text from PDF');
   }
+
+  void logAiUsage({
+    supabase, source: 'extract-pdf-text', provider: ai.provider, model: ai.model,
+    promptTokens: _pTok, completionTokens: _cTok, totalTokens: _tTok,
+    latencyMs: Date.now() - _aiStart, status: 'success',
+    metadata: { char_count: extractedText.length, fallback: ai.fallback },
+  });
 
   return {
     success: true,
