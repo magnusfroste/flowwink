@@ -41,24 +41,22 @@ export default function ChatPage() {
   }, [settings, settingsLoading, navigate, checkinId]);
 
   const loadConversations = useCallback(async () => {
+    // /chat is the visitor surface — only show anonymous visitor threads
+    // tied to this browser's session_id. Admin history lives in
+    // /admin/flowchat (operator) and /admin/cowork (workspace Q&A).
     const sessionId = localStorage.getItem('chat-session-id');
-    
-    const query = supabase
+    if (!sessionId) {
+      setConversations([]);
+      return;
+    }
+    const { data } = await supabase
       .from('chat_conversations')
       .select('id, title, created_at')
+      .eq('scope', 'visitor')
+      .eq('session_id', sessionId)
       .order('created_at', { ascending: false });
-
-    if (user?.id) {
-      query.eq('user_id', user.id);
-    } else if (sessionId) {
-      query.eq('session_id', sessionId);
-    }
-
-    const { data } = await query;
-    if (data) {
-      setConversations(data);
-    }
-  }, [user?.id]);
+    if (data) setConversations(data);
+  }, []);
 
   // Load conversations on mount
   useEffect(() => {

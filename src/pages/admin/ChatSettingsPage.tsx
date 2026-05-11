@@ -29,6 +29,7 @@ import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { toast } from 'sonner';
 import { IntegrationsSettings } from '@/hooks/useIntegrations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { VisitorSessionsTab } from '@/components/admin/chat/VisitorSessionsTab';
 
 // Component to show which AI provider is currently active
 function ActiveProviderIndicator({ 
@@ -237,7 +238,7 @@ export default function ChatSettingsPage() {
 
         
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-9 w-full">
+            <TabsList className="grid grid-cols-10 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
@@ -246,6 +247,7 @@ export default function ChatSettingsPage() {
               <TabsTrigger value="display">Display</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="feedback">Feedback</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
 
@@ -1391,6 +1393,10 @@ export default function ChatSettingsPage() {
             </TabsContent>
 
             {/* Privacy settings */}
+            <TabsContent value="sessions">
+              <VisitorSessionsTab />
+            </TabsContent>
+
             <TabsContent value="privacy">
               <Card>
                 <CardHeader>
