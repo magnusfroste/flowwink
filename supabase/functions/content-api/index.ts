@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1508,10 +1509,7 @@ Deno.serve(async (req) => {
   console.log('[Content API] Request:', req.method, url.pathname, 'Parts:', pathParts);
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
+    const supabase = getAnonClient();
 
     // ============= GraphQL Endpoint =============
     if (pathParts[0] === 'graphql' || url.pathname.endsWith('/graphql')) {

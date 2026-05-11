@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -286,12 +287,7 @@ Deno.serve(async (req) => {
     console.log('[setup-database] Creating admin client...');
     
     // Create admin client with service role key
-    const supabaseAdmin = createClient(url, service_role_key, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const supabaseAdmin = getServiceClient();
 
     // If this is a request to create admin user
     if (create_admin) {
