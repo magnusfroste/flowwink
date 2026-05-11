@@ -8,6 +8,51 @@
 
 export type GroupMap = Record<string, string[]>;
 
+/**
+ * Skill category → module IDs that must be enabled for the category to be exposed.
+ * Shared across MCP server and chat-completion so /chat sees the same module-gating
+ * as external MCP clients. When a module is turned off, all skills in its categories
+ * disappear from the LLM's tool list — same behaviour the user sees in MCP discovery.
+ *
+ * NOTE: This map is grep-checked by mcp-regression CI. Keep it in sync with
+ * the unified module registry (src/lib/modules/*).
+ */
+export const SKILL_CATEGORY_MODULES: GroupMap = {
+  content: ["pages", "blog", "knowledgeBase", "handbook", "resume", "mediaLibrary", "siteMigration"],
+  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
+  communication: ["newsletter", "chat", "liveSupport", "webinars"],
+  automation: [],
+  search: ["browserControl"],
+  analytics: ["analytics", "sla"],
+  system: [],
+  commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
+  growth: ["paidGrowth"],
+  subscriptions: ["subscriptions"],
+  identity: ["companyInsights"],
+  agent: ["flowpilot"],
+};
+
+/**
+ * Load enabled module ids from site_settings. Returns Set with sentinel
+ * `__all__` if settings are missing — fail-open to avoid hiding tools by accident.
+ */
+export async function loadActiveModuleIds(supabase: any): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "modules")
+    .maybeSingle();
+
+  if (error || !data?.value) return new Set(["__all__"]);
+
+  const modules = data.value as Record<string, { enabled?: boolean }>;
+  const active = new Set<string>();
+  for (const [id, config] of Object.entries(modules)) {
+    if (config?.enabled) active.add(id);
+  }
+  return active;
+}
+
 export interface ResolvedGroups {
   /** Whole categories to include (ALL skills in these categories) */
   categories: Set<string>;

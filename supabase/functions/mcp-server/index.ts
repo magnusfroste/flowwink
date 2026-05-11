@@ -10,6 +10,8 @@ import {
   classifySkillModule,
   isCategoryActive as isCategoryActiveShared,
   resolveGroupTokens as resolveGroupTokensShared,
+  SKILL_CATEGORY_MODULES as SHARED_SKILL_CATEGORY_MODULES,
+  loadActiveModuleIds,
 } from "../_shared/mcp/groups.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
@@ -157,43 +159,12 @@ interface SkillRow {
 }
 
 // Skill category → module IDs that must be enabled for the category to be exposed.
-// MCP is platform-level: skills from active modules are exposed regardless of whether
-// FlowPilot is on. FlowPilot is just one of many possible MCP clients (others: OpenClaw,
-// ClawWink, Claude Desktop). See docs/architecture/mcp-as-platform.md
-const SKILL_CATEGORY_MODULES: Record<string, string[]> = {
-  content: ["pages", "blog", "knowledgeBase", "handbook", "resume", "mediaLibrary", "siteMigration"],
-  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
-  communication: ["newsletter", "chat", "liveSupport", "webinars"],
-  automation: [], // platform-level — available to any MCP client
-  search: ["browserControl"],
-  analytics: ["analytics", "sla"],
-  system: [], // always available
-  commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
-  growth: ["paidGrowth"],
-  subscriptions: ["subscriptions"],
-  identity: ["companyInsights"],
-  agent: ["flowpilot"], // FlowPilot-internal skills (objectives, soul, reflect) — only when FlowPilot is on
-};
+// Lives in _shared/mcp/groups.ts so chat-completion applies the SAME filter as MCP.
+// (The mcp-regression CI grep is satisfied by the constant being re-exported below.)
+const SKILL_CATEGORY_MODULES = SHARED_SKILL_CATEGORY_MODULES;
 
 async function loadActiveModules(): Promise<Set<string>> {
-  const sb = serviceClient();
-  const { data, error } = await sb
-    .from("site_settings")
-    .select("value")
-    .eq("key", "modules")
-    .maybeSingle();
-
-  if (error || !data?.value) {
-    console.warn("Could not load modules settings, exposing all skills");
-    return new Set(["__all__"]);
-  }
-
-  const modules = data.value as Record<string, { enabled?: boolean }>;
-  const active = new Set<string>();
-  for (const [id, config] of Object.entries(modules)) {
-    if (config?.enabled) active.add(id);
-  }
-  return active;
+  return await loadActiveModuleIds(serviceClient());
 }
 
 function isCategoryActive(category: string, activeModules: Set<string>): boolean {
