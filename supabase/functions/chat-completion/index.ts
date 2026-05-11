@@ -475,18 +475,6 @@ serve(async (req) => {
       ...messages,
     ];
 
-    // Qwen3/vLLM: append `/no_think` token to last user message to skip reasoning.
-    // Avoids API-level flag rejection (`chat_template_kwargs` etc.) while still
-    // disabling the slow thinking phase. Native Qwen3 chat-template token.
-    if (provider.id === 'local') {
-      for (let i = conversationMessages.length - 1; i >= 0; i--) {
-        const m = conversationMessages[i];
-        if (m.role === 'user' && typeof m.content === 'string' && !m.content.includes('/no_think')) {
-          conversationMessages[i] = { ...m, content: `${m.content} /no_think` };
-          break;
-        }
-      }
-    }
 
     // ─── Streaming-first tool loop ───────────────────────────────────────────
     // Always streams immediately. Tool calls are detected from the stream,
