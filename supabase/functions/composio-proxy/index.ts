@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,11 +31,7 @@ Deno.serve(async (req) => {
 
     if (!isServiceRole) {
       // Regular user auth
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
+      const supabaseClient = getUserClient(authHeader)!;
 
       const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
       if (authError || !user) {
