@@ -29,6 +29,7 @@ import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { toast } from 'sonner';
 import { IntegrationsSettings } from '@/hooks/useIntegrations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { VisitorSessionsTab } from '@/components/admin/chat/VisitorSessionsTab';
 
 // Component to show which AI provider is currently active
 function ActiveProviderIndicator({ 
