@@ -47,6 +47,7 @@ import { FlowPilotDetails } from "./FlowPilotDetails";
 import { ModuleSkillsSection } from "./ModuleSkillsSection";
 import { SubscriptionsDunningToggle } from "./SubscriptionsDunningToggle";
 import { ComposioPanel } from "./ComposioPanel";
+import { ReBootstrapButton } from "./ReBootstrapButton";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -884,6 +885,19 @@ export function ModuleDetailSheet({
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
                     See <code className="bg-muted px-1 py-0.5 rounded">docs/MODULE-API.md</code> for full documentation.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Generic per-module re-bootstrap (idempotent) */}
+            {isEnabled && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <ReBootstrapButton moduleId={moduleId} />
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Re-runs seed data + skill registration. Safe to repeat.
                   </p>
                 </div>
               </>

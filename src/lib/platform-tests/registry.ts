@@ -104,11 +104,11 @@ export const OPERATOR_SUITES: TestSuite[] = [
   {
     id: 'flowpilot_autonomy_l1_l9',
     title: 'FlowPilot autonomy (L1–L9)',
-    description: 'Full reasoning suite: unit (prompt builder, tokens), integration (edge endpoints), scenarios (DB state), wiring, behavior, and L9 skill-selection accuracy benchmark.',
+    description: 'Full reasoning suite: unit (prompt builder, tokens), integration (edge endpoints), scenarios (DB state), wiring, behavior, and L9 skill-selection accuracy benchmark. Runs on its dedicated page so layer selection, history, and trend charts stay focused.',
     scope: 'operator',
     module: 'flowpilot',
     category: 'behavior',
-    run: { mode: 'docs-only' }, // lives on its own dedicated page
+    run: { mode: 'docs-only' },
     docs: '/admin/autonomy-tests',
   },
 ];
