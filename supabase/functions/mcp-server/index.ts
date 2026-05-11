@@ -10,6 +10,8 @@ import {
   classifySkillModule,
   isCategoryActive as isCategoryActiveShared,
   resolveGroupTokens as resolveGroupTokensShared,
+  SKILL_CATEGORY_MODULES as SHARED_SKILL_CATEGORY_MODULES,
+  loadActiveModuleIds,
 } from "../_shared/mcp/groups.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
