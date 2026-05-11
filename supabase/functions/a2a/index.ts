@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 /**
  * a2a — Unified router for all A2A federation traffic.
