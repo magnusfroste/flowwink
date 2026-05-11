@@ -162,8 +162,8 @@ export default function AutonomyTestSuitePage() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader
-          title="Service Room"
-          description="FlowPilot autonomy testing, skill accuracy benchmarks, and system health diagnostics"
+          title="Operator Tests — Autonomy L1–L9"
+          description="Deep-dive runner for the FlowPilot operator. Discoverable via Platform Tests → Operator scope. Includes skill-accuracy benchmark and history."
         />
 
         <Tabs defaultValue="run" className="space-y-4">
