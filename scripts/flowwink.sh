@@ -86,7 +86,7 @@ cmd_help() {
     echo -e "  ${CYAN}/link${NC}            Select and link a Supabase project to this directory"
     echo ""
     echo -e "  ${BOLD}── First-time setup ──────────────────────────────────${NC}"
-    echo -e "  ${CYAN}/install${NC}         Full install: migrations → functions → admin → keys → FlowPilot"
+    echo -e "  ${CYAN}/install${NC}         Full install: migrations → functions → admin → keys"
     echo ""
     echo -e "  ${BOLD}── Update existing installation ──────────────────────${NC}"
     echo -e "  ${CYAN}/update-db${NC}       Push new database migrations to linked project"
