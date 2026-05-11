@@ -20,6 +20,7 @@ import type { ModuleCapability } from '@/types/module-contracts';
 import type { ModulesSettings } from '@/hooks/useModules';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import type { WebhookEventInfo } from '@/lib/module-webhook-events';
+import type { ModuleTier } from '@/lib/module-tiers';
 
 // =============================================================================
 // Unified Module Definition
@@ -71,6 +72,19 @@ export interface UnifiedModuleDef<TInput = unknown, TOutput = unknown> {
   version: string;
   description?: string;
   capabilities: ModuleCapability[];
+  /**
+   * Module tier — see `src/lib/module-tiers.ts` and
+   * `docs/architecture/module-tiers.md`. Required from v2 onwards.
+   *
+   *  - `core`         always-on platform layer (no opt-out)
+   *  - `standard`     common business module, opt-in
+   *  - `extended`     vertical-specific, opt-in
+   *  - `experimental` unstable / preview, excluded from default install
+   *
+   * Defaults to `'standard'` if omitted (with a console warning) so legacy
+   * modules keep working until they are explicitly classified.
+   */
+  tier?: ModuleTier;
 
   // ── API Contract ──
   inputSchema: z.ZodSchema<TInput>;

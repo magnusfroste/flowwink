@@ -19,6 +19,7 @@
 - Composite MCP groups (`marketing`, `sales`, `operations`) i mcp-server expanderar till flera kategorier — externa department-claws frågar `?groups=marketing` och får hela toolkit:en utan att veta intern taxonomi. Mall för fler departments finns. Se mem://federation/marketing-claw-department-pattern.
 - Lifecycle events: 11 DB-triggers emittar `invoice.paid`, `quote.accepted`, `contract.signed`, `subscription.created/churned`, `shipment.dispatched`, `return.received`, `expense.approved`, `application.received`, `employee.hired`, `ticket.resolved`. Se mem://architecture/lifecycle-event-emitters.
 - NEVER point a skill at `rpc:mcp_X(args jsonb)` wrapper — agent-execute spreader `p_*`-fält, inte ett jsonb-objekt → tyst trasig skill. Repointa till underliggande `p_*`-arg RPC. Se mem://constraints/no-mcp-jsonb-wrapper-rpcs.
+- Module Tiers: varje modul har tier (core/standard/extended/experimental). `core` har hard budget = 8 (idag: 4), höjs bara via RFC. Vitest-guardrail enforcer. Bias nya verticals till `extended`. Se mem://architecture/module-tiers.
 
 ## Claws & Integration
 - Claws (external agents) use `?openai_safe=true` for compatibility. Schemas are now flat in the DB, so this flag is a no-op but remains supported for existing configurations.
