@@ -381,7 +381,16 @@ export async function loadSkillsRaw(
     : skills;
 
   const gatedSkills = await filterGatedSkills(supabase, unblockedSkills);
-  return { skills: gatedSkills, scope, categories };
+
+  // Module-aware filter: drop skills whose category belongs to a disabled module.
+  // Mirrors the same gating MCP applies in mcp-server, so /chat and external MCP
+  // clients see the SAME tool list when an admin toggles a module off.
+  const activeModules = await loadActiveModuleIds(supabase);
+  const moduleFilteredSkills = activeModules.has('__all__')
+    ? gatedSkills
+    : gatedSkills.filter((s: any) => isCategoryActive(s.category, activeModules, SKILL_CATEGORY_MODULES));
+
+  return { skills: moduleFilteredSkills, scope, categories };
 }
 
 export async function loadSkillTools(
