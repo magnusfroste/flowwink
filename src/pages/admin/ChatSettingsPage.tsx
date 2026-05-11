@@ -237,7 +237,7 @@ export default function ChatSettingsPage() {
 
         
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-9 w-full">
+            <TabsList className="grid grid-cols-10 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
@@ -246,6 +246,7 @@ export default function ChatSettingsPage() {
               <TabsTrigger value="display">Display</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="feedback">Feedback</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
 
