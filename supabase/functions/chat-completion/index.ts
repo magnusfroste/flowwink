@@ -511,10 +511,29 @@ serve(async (req) => {
         return handleAiError(upstream, corsHeaders);
       }
 
-      // Wrap upstream stream so we can sniff the final usage chunk without changing client behaviour
+      // Wrap upstream stream so we can sniff the final usage chunk without changing client behaviour.
+      // Parse SSE line-by-line and update token counters whenever we see a `usage` object —
+      // robust to chunk boundaries and the buffer-trim bug that previously zeroed every log row.
       const sniffStream = (src: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> => {
         const decoder = new TextDecoder();
-        let buf = '';
+        let lineBuf = '';
+        let pTok = 0, cTok = 0, tTok = 0;
+        const ingestLine = (line: string) => {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) return;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === '[DONE]') return;
+          try {
+            const obj = JSON.parse(payload);
+            const u = obj?.usage;
+            if (u && typeof u === 'object') {
+              const p = Number(u.prompt_tokens ?? u.input_tokens ?? 0);
+              const c = Number(u.completion_tokens ?? u.output_tokens ?? 0);
+              const t = Number(u.total_tokens ?? p + c);
+              if (p || c || t) { pTok = p; cTok = c; tTok = t; }
+            }
+          } catch { /* non-JSON keep-alive or partial — ignore */ }
+        };
         return new ReadableStream({
           async start(controller) {
             const reader = src.getReader();
@@ -523,25 +542,22 @@ serve(async (req) => {
                 const { done, value } = await reader.read();
                 if (done) break;
                 controller.enqueue(value);
-                buf += decoder.decode(value, { stream: true });
-                if (buf.length > 8000) buf = buf.slice(-4000);
+                lineBuf += decoder.decode(value, { stream: true });
+                let nl: number;
+                while ((nl = lineBuf.indexOf('\n')) !== -1) {
+                  ingestLine(lineBuf.slice(0, nl));
+                  lineBuf = lineBuf.slice(nl + 1);
+                }
               }
+              if (lineBuf) ingestLine(lineBuf);
             } catch (e) {
               console.error('[chat-completion] stream sniff error:', e);
             } finally {
               controller.close();
-              let pTok = 0, cTok = 0, tTok = 0;
-              const matches = buf.match(/"usage"\s*:\s*\{[^}]*\}/g);
-              if (matches && matches.length) {
-                try {
-                  const u = JSON.parse(`{${matches[matches.length - 1]}}`).usage;
-                  pTok = u.prompt_tokens || 0;
-                  cTok = u.completion_tokens || 0;
-                  tTok = u.total_tokens || pTok + cTok;
-                } catch { /* ignore */ }
-              }
               void logAiUsage({
-                supabase, source: 'chat-completion', provider: provider.id, model: provider.model,
+                supabase, source: 'chat-completion',
+                provider: provider.id || provider.name || 'unknown',
+                model: provider.model,
                 promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
                 latencyMs: Date.now() - tIter, status: 'success',
                 conversationId: conversationId || null,
