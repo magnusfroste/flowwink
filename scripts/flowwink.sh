@@ -584,7 +584,8 @@ cmd_install() {
     print_section "Full Installation"
     require_link || return 1
 
-    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC} → ${CYAN}/patch-flowpilot${NC}"
+    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC}"
+    echo -e "  ${DIM}FlowPilot is seeded later via /admin/modules (toggle on).${NC}"
     echo ""
     read -e -p "  Continue? [y/N]: " confirm
     [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "" && return 0
@@ -594,22 +595,10 @@ cmd_install() {
     cmd_create_admin
     cmd_env
 
-    # Seed skills + soul directly — no menu needed on fresh install.
-    # Objectives and automations are seeded automatically on first admin login.
-    print_section "Patch FlowPilot"
-    require_link || return 1
-    echo -e "  Seeding skills & soul..."
-    local fp_response
-    fp_response=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-flowpilot" \
-        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-        -H "apikey: ${SERVICE_ROLE_KEY}" \
-        -H "Content-Type: application/json" \
-        -d "{\"seed_skills\":true,\"seed_soul\":true}" 2>&1)
-    if echo "$fp_response" | grep -qE '"success"\s*:\s*true'; then
-        echo -e "  ${GREEN}✓ FlowPilot setup complete${NC}"
-    else
-        echo -e "  ${YELLOW}⚠ FlowPilot setup may have failed — check logs${NC}"
-    fi
+    echo ""
+    echo -e "  ${GREEN}✓ Base install complete.${NC}"
+    echo -e "  ${DIM}Next: log in to /admin, open /admin/modules, and enable FlowPilot${NC}"
+    echo -e "  ${DIM}(or any other module) — seeding runs automatically on toggle.${NC}"
     echo ""
 
     read -e -p "  Configure API keys now? [y/N]: " keys
