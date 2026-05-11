@@ -184,6 +184,8 @@ export default function PlatformTestsPage() {
           </div>
         </div>
 
+        <InstanceHealthCard />
+
         <div className="space-y-3">
           {filtered.length === 0 && (
             <Card>
