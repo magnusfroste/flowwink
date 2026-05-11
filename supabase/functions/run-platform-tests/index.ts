@@ -408,9 +408,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const admin = getServiceClient();
-    const anon = createClient(supabaseUrl, anonKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const anon = getAnonClient();
 
     const start = Date.now();
     const allResults: TestResult[] = [];
