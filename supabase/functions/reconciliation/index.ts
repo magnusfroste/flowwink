@@ -501,9 +501,27 @@ async function handleImportImage(req: Request): Promise<Response> {
     }
     const dataUrl = `data:${mimeType};base64,${contentBase64}`;
     const useModel = model || (provider === "gemini" ? "gemini-2.5-pro" : "gpt-5");
-    parsed = provider === "gemini"
-      ? await ocrWithGemini(dataUrl, mimeType, contentBase64, useModel)
-      : await ocrWithOpenAI(dataUrl, useModel);
+    const _aiStart = Date.now();
+    try {
+      parsed = provider === "gemini"
+        ? await ocrWithGemini(dataUrl, mimeType, contentBase64, useModel)
+        : await ocrWithOpenAI(dataUrl, useModel);
+      void logAiUsage({
+        supabase, source: 'reconciliation:image', provider, model: useModel,
+        promptTokens: 0, completionTokens: 0, totalTokens: 0,
+        latencyMs: Date.now() - _aiStart, status: 'success',
+        metadata: { fileName, txCount: parsed?.transactions?.length || 0 },
+      });
+    } catch (err: any) {
+      void logAiUsage({
+        supabase, source: 'reconciliation:image', provider, model: useModel,
+        promptTokens: 0, completionTokens: 0, totalTokens: 0,
+        latencyMs: Date.now() - _aiStart, status: 'error',
+        error: String(err?.message || err).slice(0, 500),
+        metadata: { fileName },
+      });
+      throw err;
+    }
   }
 
   const defaultCurrency = (parsed.currency_default || "SEK").toUpperCase();
