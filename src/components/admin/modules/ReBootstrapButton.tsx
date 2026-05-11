@@ -34,7 +34,7 @@ export function ReBootstrapButton({ moduleId, hideIfNoSeeds = true }: ReBootstra
   const queryClient = useQueryClient();
 
   // Skip render if the module has no declared skill seeds and no unified definition.
-  if (hideIfNoSeeds && isUnifiedModule(moduleId) && getUnifiedSkillNames(moduleId).length === 0) {
+  if (hideIfNoSeeds && isUnifiedModule(moduleId) && getUnifiedSkillNames(moduleId as keyof ModulesSettings).length === 0) {
     return null;
   }
 
