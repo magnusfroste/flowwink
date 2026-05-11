@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   FlaskConical, Play, CheckCircle2, XCircle, Clock, Loader2, Search,
   ExternalLink, Terminal, BookOpen, Layers, Boxes, Bot, Shield,
