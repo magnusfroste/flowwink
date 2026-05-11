@@ -556,7 +556,7 @@ serve(async (req) => {
               controller.close();
               void logAiUsage({
                 supabase, source: 'chat-completion',
-                provider: provider.id || provider.name || 'unknown',
+                provider: provider.resolvedProvider,
                 model: provider.model,
                 promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
                 latencyMs: Date.now() - tIter, status: 'success',
