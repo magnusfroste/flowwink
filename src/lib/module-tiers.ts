@@ -150,6 +150,15 @@ export const MODULE_TIER_MAP: Readonly<Record<string, ModuleTier>> = {
   clawable: 'extended',
   siteMigration: 'extended',
   globalBlocks: 'extended',
+  globalElements: 'extended',
+
+  // ── Aliases (legacy IDs that still appear in some defineModule calls) ──
+  knowledgeBase: 'standard', // alias for `kb`
+  mediaLibrary: 'standard',  // alias for `media`
+  leads: 'standard',         // alias for `crm`
+  bookings: 'standard',      // alias for `booking`
+  ecommerce: 'standard',     // umbrella for products/inventory/orders
+  paidGrowth: 'extended',    // alias for `growth`
 };
 
 export function getModuleTier(moduleId: string): ModuleTier {
