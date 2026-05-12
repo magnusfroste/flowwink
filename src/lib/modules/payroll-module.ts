@@ -133,7 +133,7 @@ export const payrollModule = defineModule<Input, Output>({
   outputSchema,
   skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines'],
   skillSeeds: SKILLS,
-  async publish(input: Input): Promise<Output> {
-    return { success: true, result: { action: input.action } };
-  },
+  // No publish() — Payroll exposes its behaviour exclusively through MCP skills
+  // (mcp_create_payroll_run, mcp_approve_payroll_run, mcp_mark_payroll_paid).
+  // The registry returns a clear "no_publish_handler" error for direct calls.
 });
