@@ -2509,9 +2509,20 @@ async function executeKbAction(
     return { article_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
   }
 
+  // Resolve article_id from slug if missing — common when agent chains create→publish
+  async function resolveArticleId(args: any): Promise<string | null> {
+    if (args?.article_id) return args.article_id;
+    if (args?.slug) {
+      const { data } = await supabase.from('kb_articles').select('id').eq('slug', args.slug).maybeSingle();
+      return data?.id ?? null;
+    }
+    return null;
+  }
+
   if (action === 'update') {
-    const { article_id, ...updateData } = args as any;
-    if (!article_id) throw new Error('article_id is required');
+    const { article_id: _aid, slug: _slug, ...updateData } = args as any;
+    const article_id = await resolveArticleId(args);
+    if (!article_id) throw new Error('article_id or slug is required');
     delete updateData.action;
     const { data, error } = await supabase.from('kb_articles')
       .update({ ...updateData, updated_at: new Date().toISOString() })
@@ -2521,8 +2532,8 @@ async function executeKbAction(
   }
 
   if (action === 'publish') {
-    const { article_id } = args as any;
-    if (!article_id) throw new Error('article_id is required');
+    const article_id = await resolveArticleId(args);
+    if (!article_id) throw new Error('article_id or slug is required');
     const { data, error } = await supabase.from('kb_articles')
       .update({ is_published: true, updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title, slug').single();
@@ -2531,8 +2542,8 @@ async function executeKbAction(
   }
 
   if (action === 'unpublish') {
-    const { article_id } = args as any;
-    if (!article_id) throw new Error('article_id is required');
+    const article_id = await resolveArticleId(args);
+    if (!article_id) throw new Error('article_id or slug is required');
     const { data, error } = await supabase.from('kb_articles')
       .update({ is_published: false, updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title').single();
