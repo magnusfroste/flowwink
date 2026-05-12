@@ -89,7 +89,14 @@ export interface UnifiedModuleDef<TInput = unknown, TOutput = unknown> {
   // ── API Contract ──
   inputSchema: z.ZodSchema<TInput>;
   outputSchema: z.ZodSchema<TOutput>;
-  publish: (input: TInput) => Promise<TOutput>;
+  /**
+   * Optional direct-publish handler. Most modules expose their behaviour through
+   * skills (executed via `agent-execute` → RPC), not through `publish()`. Keep
+   * this only when there is a real UI publish button (e.g. blog, newsletter,
+   * pages). Returning a stub `{ success: true }` from here is forbidden — omit
+   * the field instead so the registry returns a clear "not implemented" error.
+   */
+  publish?: (input: TInput) => Promise<TOutput>;
 
   // ── Namespaced shape (preferred) ──
   agent?: AgentNamespace;
