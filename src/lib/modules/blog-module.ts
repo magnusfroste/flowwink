@@ -55,6 +55,11 @@ const BLOG_SKILLS: SkillSeed[] = [
               type: 'string',
               description: 'Language code (en, sv, etc.)',
             },
+            status: {
+              type: 'string',
+              enum: ['draft', 'published'],
+              description: 'draft (default) or published. Use "published" when the user asks to publish immediately.',
+            },
           },
           required: [
             'title',
