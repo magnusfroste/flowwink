@@ -17,6 +17,9 @@ interface OperateChatProps {
   onSendMessage: (message: string) => void;
   onReset: () => void;
   onCancel?: () => void;
+  onExecuteSkill?: (skillName: string, args: Record<string, unknown>) => Promise<void>;
+  onApproveAction?: (activityId: string) => Promise<void>;
+  onRejectAction?: (activityId: string) => Promise<void>;
 }
 
 interface AttachedFile {
@@ -76,7 +79,7 @@ function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolS
   );
 }
 
-export function OperateChat({ messages, skills, isLoading, onSendMessage, onReset, onCancel }: OperateChatProps) {
+export function OperateChat({ messages, skills, isLoading, onSendMessage, onReset, onCancel, onExecuteSkill, onApproveAction, onRejectAction }: OperateChatProps) {
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -163,7 +166,6 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
 
   const getSkillResults = (msg: OperateMessage) => {
     if (msg.skillResults?.length) return msg.skillResults;
-    if (msg.skillResult) return [msg.skillResult];
     return [];
   };
 
@@ -206,7 +208,12 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
 
             <div className="flex flex-wrap gap-1.5 justify-center max-w-sm">
               {skills.slice(0, 8).map(s => (
-                <Badge key={s.id} variant="secondary" className="text-xs font-normal">
+                <Badge
+                  key={s.id}
+                  variant="secondary"
+                  className={cn('text-xs font-normal', onExecuteSkill && 'cursor-pointer hover:bg-secondary/80')}
+                  onClick={() => onExecuteSkill?.(s.name, { action: 'list' })}
+                >
                   {s.name.replace(/_/g, ' ')}
                 </Badge>
               ))}

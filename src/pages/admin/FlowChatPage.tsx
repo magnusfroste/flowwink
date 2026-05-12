@@ -32,6 +32,9 @@ export default function FlowChatPage() {
     conversationId,
     conversations,
     sendMessage,
+    executeSkill,
+    approveAction,
+    rejectAction,
     cancelRequest,
     loadSkills,
     loadConversations,
@@ -121,6 +124,9 @@ export default function FlowChatPage() {
             onSendMessage={sendMessage}
             onReset={handleNew}
             onCancel={cancelRequest}
+            onExecuteSkill={executeSkill}
+            onApproveAction={approveAction}
+            onRejectAction={rejectAction}
           />
         </div>
       </div>

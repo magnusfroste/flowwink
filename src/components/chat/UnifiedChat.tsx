@@ -120,7 +120,7 @@ function AdminMessage({ msg, onApproveAction, onRejectAction }: {
   onApproveAction?: (activityId: string) => Promise<void>;
   onRejectAction?: (activityId: string) => Promise<void>;
 }) {
-  const results = msg.skillResults?.length ? msg.skillResults : msg.skillResult ? [msg.skillResult] : [];
+  const results = msg.skillResults?.length ? msg.skillResults : [];
   const isStreaming = msg.role === 'assistant' && msg.toolStatus && msg.toolStatus.phase !== 'done';
   const showCursor = isStreaming && msg.toolStatus?.phase === 'streaming';
 

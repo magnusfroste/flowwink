@@ -31,12 +31,6 @@ export interface OperateMessage {
     status: 'success' | 'pending_approval' | 'error';
     result?: unknown;
   }>;
-  /** @deprecated Use skillResults instead */
-  skillResult?: {
-    skill: string;
-    status: 'success' | 'pending_approval' | 'error';
-    result?: unknown;
-  };
 }
 
 const FLOWPILOT_CONVERSATION_KEY = 'flowpilot_conversation_id';
@@ -144,10 +138,20 @@ export function useAgentOperate() {
   const [conversations, setConversations] = useState<FlowPilotConversation[]>([]);
   const [skillStats, setSkillStats] = useState<{ exposed: number; disabled: number; modulesOff: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Refs for latest values — avoids stale closures in sendMessage without
+  // recreating the callback on every message change.
+  const messagesRef = useRef<OperateMessage[]>([]);
+  const skillsRef = useRef<AgentSkill[]>([]);
+  const conversationIdRef = useRef<string | null>(null);
   // When true, the next getOrCreateConversation() will skip the "reuse today's
   // session" shortcut and always insert a fresh chat_conversations row. Set by
   // startNewConversation() so the user can keep multiple distinct sessions per day.
   const forceNewConversationRef = useRef(false);
+
+  // Keep refs in sync with state — ensures sendMessage always reads latest values
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { skillsRef.current = skills; }, [skills]);
+  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
 
   // ─── Conversation persistence ───────────────────────────────────────
 
@@ -167,6 +171,7 @@ export function useAgentOperate() {
           .maybeSingle();
         if (data) {
           setConversationId(existingId);
+          conversationIdRef.current = existingId;
           return existingId;
         }
       }
@@ -194,6 +199,7 @@ export function useAgentOperate() {
       if (todaySession) {
         localStorage.setItem(FLOWPILOT_CONVERSATION_KEY, todaySession.id);
         setConversationId(todaySession.id);
+        conversationIdRef.current = todaySession.id;
         return todaySession.id;
       }
     }
@@ -216,6 +222,7 @@ export function useAgentOperate() {
     
     localStorage.setItem(FLOWPILOT_CONVERSATION_KEY, data.id);
     setConversationId(data.id);
+    conversationIdRef.current = data.id;
     return data.id;
   }, [conversationId]);
 
@@ -248,6 +255,7 @@ export function useAgentOperate() {
           
           if (isFromToday) {
             setConversationId(existingId);
+            conversationIdRef.current = existingId;
             const { data: msgs } = await supabase
               .from('chat_messages')
               .select('*')
@@ -263,9 +271,9 @@ export function useAgentOperate() {
                   content: m.content,
                   createdAt: new Date(m.created_at),
                   skillResults: m.metadata?.skill_results || undefined,
-                  skillResult: m.metadata?.skill_results?.[0] || undefined,
                 }));
               setMessages(loaded);
+              messagesRef.current = loaded;
             }
             return;
           }
@@ -291,6 +299,7 @@ export function useAgentOperate() {
       if (todaySession) {
         localStorage.setItem(FLOWPILOT_CONVERSATION_KEY, todaySession.id);
         setConversationId(todaySession.id);
+        conversationIdRef.current = todaySession.id;
 
         const { data: msgs } = await supabase
           .from('chat_messages')
@@ -307,9 +316,9 @@ export function useAgentOperate() {
               content: m.content,
               createdAt: new Date(m.created_at),
               skillResults: m.metadata?.skill_results || undefined,
-              skillResult: m.metadata?.skill_results?.[0] || undefined,
             }));
           setMessages(loaded);
+          messagesRef.current = loaded;
         }
       } else {
         // Clear stale reference — new session will be created on first message
@@ -328,7 +337,11 @@ export function useAgentOperate() {
       .eq('enabled', true)
       .in('scope', ['internal', 'both'])
       .order('category');
-    if (data) setSkills(data as unknown as AgentSkill[]);
+    if (data) {
+      const typed = data as unknown as AgentSkill[];
+      setSkills(typed);
+      skillsRef.current = typed;
+    }
   }, []);
 
   // Load recent activity
@@ -376,12 +389,13 @@ export function useAgentOperate() {
       await persistMessage(convId, 'user', content);
 
       // Update conversation title from first user message
-      if (messages.length === 0) {
+      if (messagesRef.current.length === 0) {
         const shortTitle = content.replace(/^@\w+\s*/, '').slice(0, 80) || 'FlowPilot Session';
         supabase.from('chat_conversations').update({ title: shortTitle }).eq('id', convId).then();
       }
 
-      const history = [...messages, userMsg].map(m => ({
+      // Read from refs — always gets the latest state, never stale closure
+      const history = [...messagesRef.current, userMsg].map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -394,7 +408,7 @@ export function useAgentOperate() {
         },
         body: JSON.stringify({
           messages: history,
-          available_skills: skills.map(s => s.tool_definition),
+          available_skills: skillsRef.current.map(s => s.tool_definition),
         }),
         signal: controller.signal,
       });
@@ -479,7 +493,7 @@ export function useAgentOperate() {
           skillResults = results;
           setMessages(prev => prev.map(m =>
             m.id === assistantId
-              ? { ...m, skillResults: results, skillResult: results[0] }
+              ? { ...m, skillResults: results }
               : m
           ));
         },
@@ -539,7 +553,7 @@ export function useAgentOperate() {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [messages, skills, loadActivity, getOrCreateConversation, persistMessage]);
+  }, [loadActivity, getOrCreateConversation, persistMessage]);
 
   // Execute a specific skill directly
   const executeSkill = useCallback(async (skillName: string, args: Record<string, unknown>) => {
@@ -552,9 +566,8 @@ export function useAgentOperate() {
       if (error) throw new Error(error.message);
 
       if (data.status === 'pending_approval') {
-        // Inject a proactive HIL card into the chat as a chat_message
         const activityId = data.activity_id;
-        const currentConvId = conversationId;
+        const currentConvId = conversationIdRef.current;
         if (currentConvId) {
           const actionPayload = {
             type: 'approval',
@@ -566,7 +579,6 @@ export function useAgentOperate() {
               { label: 'Reject', action: 'reject', variant: 'destructive', activityId },
             ],
           };
-          // Persist the HIL card as a proactive message
           await supabase.from('chat_messages').insert({
             conversation_id: currentConvId,
             role: 'assistant',
@@ -584,9 +596,13 @@ export function useAgentOperate() {
           ? `⏳ "${skillName}" requires approval before executing.`
           : `✅ Executed "${skillName}" successfully.`,
         createdAt: new Date(),
-        skillResult: { skill: skillName, status: data.status, result: data.result },
+        skillResults: [{ skill: skillName, status: data.status, result: data.result }],
       };
-      setMessages(prev => [...prev, msg]);
+      setMessages(prev => {
+        const next = [...prev, msg];
+        messagesRef.current = next;
+        return next;
+      });
       await loadActivity();
       return data;
 
@@ -639,9 +655,13 @@ export function useAgentOperate() {
         role: 'assistant',
         content: `✅ Approved and executed "${activity.skill_name}" successfully.`,
         createdAt: new Date(),
-        skillResult: { skill: activity.skill_name || '', status: 'success', result: data?.result },
+        skillResults: [{ skill: activity.skill_name || '', status: 'success', result: data?.result }],
       };
-      setMessages(prev => [...prev, msg]);
+      setMessages(prev => {
+        const next = [...prev, msg];
+        messagesRef.current = next;
+        return next;
+      });
       toast.success(`"${activity.skill_name}" executed`);
     } catch (err: any) {
       toast.error('Re-execution failed', { description: err.message });
@@ -666,7 +686,11 @@ export function useAgentOperate() {
       content: '❌ Action rejected.',
       createdAt: new Date(),
     };
-    setMessages(prev => [...prev, msg]);
+    setMessages(prev => {
+      const next = [...prev, msg];
+      messagesRef.current = next;
+      return next;
+    });
     toast.success('Action rejected');
     await loadActivity();
   }, [loadActivity]);
@@ -703,11 +727,13 @@ export function useAgentOperate() {
   }, []);
 
   const switchConversation = useCallback(async (targetId: string) => {
-    if (targetId === conversationId) return;
+    if (targetId === conversationIdRef.current) return;
 
     localStorage.setItem(FLOWPILOT_CONVERSATION_KEY, targetId);
     setConversationId(targetId);
+    conversationIdRef.current = targetId;
     setMessages([]);
+    messagesRef.current = [];
 
     const { data: msgs } = await supabase
       .from('chat_messages')
@@ -724,9 +750,9 @@ export function useAgentOperate() {
           content: m.content,
           createdAt: new Date(m.created_at),
           skillResults: m.metadata?.skill_results || undefined,
-          skillResult: m.metadata?.skill_results?.[0] || undefined,
         }));
       setMessages(loaded);
+      messagesRef.current = loaded;
     }
   }, [conversationId]);
 
@@ -742,17 +768,21 @@ export function useAgentOperate() {
       return;
     }
     setConversations(prev => prev.filter(c => c.id !== targetId));
-    if (conversationId === targetId) {
+    if (conversationIdRef.current === targetId) {
       setConversationId(null);
+      conversationIdRef.current = null;
       setMessages([]);
+      messagesRef.current = [];
       localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
     }
-  }, [conversationId]);
+  }, []);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
+    messagesRef.current = [];
     localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
     setConversationId(null);
+    conversationIdRef.current = null;
     // Force the next send to insert a brand-new chat_conversations row
     // instead of reusing today's existing session.
     forceNewConversationRef.current = true;
