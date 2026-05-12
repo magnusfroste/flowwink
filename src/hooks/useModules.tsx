@@ -940,8 +940,11 @@ export function useIsModuleEnabled(moduleId: keyof ModulesSettings): boolean {
 
 export function useEnabledModules(): (keyof ModulesSettings)[] {
   const { data: modules } = useModules();
-  if (!modules) return Object.keys(defaultModulesSettings) as (keyof ModulesSettings)[];
-  
+  // During initial load we MUST return [] — returning all keys made every
+  // gating check (MCP exposure, nav, FlowPilot skill filter) believe disabled
+  // modules like payroll/manufacturing/pos were active until hydration.
+  if (!modules) return [];
+
   return Object.entries(modules)
     .filter(([_, config]) => config.enabled)
     .map(([key]) => key as keyof ModulesSettings);
