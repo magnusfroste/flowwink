@@ -317,6 +317,31 @@ serve(async (req) => {
         try { await writer.write(encoder.encode(': keepalive\n\n')); } catch { clearInterval(keepalive); }
       }, 10_000);
 
+      // Honesty meta — tells the UI how many skills are actually exposed vs hidden by disabled modules.
+      await sseEvent(writer, encoder, 'flowchat_meta', {
+        exposed_skill_count: exposedSkillCount,
+        disabled_skill_count: disabledSkillCount,
+        modules_off_count: modulesOffCount,
+      });
+
+      // Module-disabled early return: if the user clearly wants something only a
+      // disabled module's skill can do, refuse honestly instead of letting the
+      // LLM substitute the wrong skill. No tool calls, no hallucinated success.
+      if (disabledMatch) {
+        const skillsList = disabledMatch.skills.map(s => `\`${s}\``).join(', ');
+        const reply =
+          `I can't do that right now — it needs the **${disabledMatch.module}** module, which is currently disabled.\n\n` +
+          `Skills that would handle this: ${skillsList}.\n\n` +
+          `Enable the module in [Modules](/admin/modules), then ask me again.`;
+        await sseEvent(writer, encoder, 'delta', { content: reply });
+        await sseEvent(writer, encoder, 'done', {});
+        clearInterval(keepalive);
+        clearTimeout(operateTimeout);
+        try { await writer.close(); } catch { /* already closed */ }
+        if (lane) await releaseLock(supabase, lane).catch(() => {});
+        return;
+      }
+
       try {
         // Apply context pruning before starting
         let conversationMessages: any[] = await pruneConversationHistory(
