@@ -151,8 +151,9 @@ export async function logAiUsage(p: LogParams): Promise<void> {
       p_metadata: p.metadata || {},
     });
     if (!error) return;
+    console.error('[ai-usage-logger] RPC log_ai_usage failed:', error.message, error.code || '', '— falling back to direct insert. If this repeats on a fresh instance the migration 20260510215228_*.sql (SECURITY DEFINER log_ai_usage) is not applied. Run /admin/platform-tests → ai_usage_logging to confirm.');
     // Fallback to direct insert (works if caller is service_role)
-    await p.supabase.from('ai_usage_logs').insert({
+    const { error: insertError } = await p.supabase.from('ai_usage_logs').insert({
       source: p.source,
       provider: p.provider || null,
       model: p.model || null,
