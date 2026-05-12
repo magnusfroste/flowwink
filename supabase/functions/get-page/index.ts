@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
               ...corsHeaders,
               'Content-Type': 'application/json',
               'X-Cache': 'HIT',
-              'Cache-Control': `public, max-age=${ttlMinutes * 60}`,
+              'Cache-Control': `public, max-age=${ttlMinutes * 60}, s-maxage=${ttlMinutes * 60}, stale-while-revalidate=60`,
             },
           }
         )
@@ -117,7 +117,9 @@ Deno.serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json',
           'X-Cache': 'MISS',
-          'Cache-Control': cachingEnabled ? `public, max-age=${ttlMinutes * 60}` : 'no-cache',
+          'Cache-Control': cachingEnabled
+            ? `public, max-age=${ttlMinutes * 60}, s-maxage=${ttlMinutes * 60}, stale-while-revalidate=60`
+            : 'no-cache',
         },
       }
     )

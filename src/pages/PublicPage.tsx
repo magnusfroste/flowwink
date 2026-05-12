@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { logger } from '@/lib/logger';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock, Wrench } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
@@ -70,8 +70,10 @@ export default function PublicPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check if any published pages exist (to detect fresh installs)
-  const { data: hasAnyPages, isLoading: checkingPages } = useQuery({
+  // Check if any published pages exist (to detect fresh installs).
+  // Only fires when the requested page wasn't found, so it stays off the critical path.
+  const queryClient = useQueryClient();
+  const { data: hasAnyPages, isLoading: checkingPages, refetch: refetchHasAnyPages } = useQuery({
     queryKey: ['has-published-pages'],
     queryFn: async (): Promise<boolean> => {
       try {
@@ -93,6 +95,8 @@ export default function PublicPage() {
     },
     staleTime: 5 * 60 * 1000, // 5 min cache
     retry: false,
+    // Defer until we know the requested page is missing — keeps it off the happy-path render.
+    enabled: false,
   });
 
   const { data: page, isLoading } = useQuery({
@@ -213,7 +217,15 @@ export default function PublicPage() {
     pageTitle: pageData?.title,
   });
 
-  if (isLoading || authLoading || checkingPages) {
+  // Lazily kick off the "do any pages exist?" check only when the requested page came back null.
+  // Keeps it off the happy-path render so cached pages paint immediately.
+  useEffect(() => {
+    if (!isLoading && page === null && hasAnyPages === undefined) {
+      refetchHasAnyPages();
+    }
+  }, [isLoading, page, hasAnyPages, refetchHasAnyPages]);
+
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -282,6 +294,15 @@ export default function PublicPage() {
 
   // No page found - show Coming Soon if no pages exist, otherwise 404
   if (!pageData) {
+    // hasAnyPages still resolving — keep spinner instead of flashing 404
+    if (checkingPages || hasAnyPages === undefined) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
     // If no pages exist in the database at all (fresh install or template switch),
     // show Coming Soon page for all routes to avoid 404 errors during setup
     if (!hasAnyPages) {

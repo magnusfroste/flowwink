@@ -1,68 +1,75 @@
+import { lazy, Suspense } from 'react';
 import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, SectionBackground, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
+
+// Eagerly imported blocks: small, frequently used, often above the fold.
+// Keeping these inline avoids a Suspense gap on the LCP render.
 import {
   HeroBlock,
   TextBlock,
   ImageBlock,
   CTABlock,
-  ContactBlock,
-  LinkGridBlock,
   TwoColumnBlock,
   InfoBoxBlock,
-  AccordionBlock,
-  ArticleGridBlock,
-  YouTubeBlock,
   QuoteBlock,
   SeparatorBlock,
-  GalleryBlock,
-  StatsBlock,
-  ChatBlock,
-  MapBlock,
-  FormBlock,
-  NewsletterBlock,
-  PopupBlock,
-  BookingBlock,
-  PricingBlock,
-  TestimonialsBlock,
-  TeamBlock,
-  LogosBlock,
-  ComparisonBlock,
-  FeaturesBlock,
-  TimelineBlock,
-  ProductsBlock,
-  CartBlock,
-  KbFeaturedBlock,
-  KbHubBlock,
-  KbSearchBlock,
-  KbAccordionBlock,
   AnnouncementBarBlock,
-  TabsBlock,
-  MarqueeBlock,
-  EmbedBlock,
-  LottieBlock,
-  TableBlock,
-  CountdownBlock,
-  ProgressBlock,
-  BadgeBlock,
-  SocialProofBlock,
-  NotificationToastBlock,
-  FloatingCTABlock,
-  ChatLauncherBlock,
-  WebinarBlock,
-  ParallaxSectionBlock,
-  BentoGridBlock,
-  SectionDividerBlock,
-  FeaturedCarouselBlock,
-  ResumeMatcherBlock,
-  FeaturedProductBlock,
   TrustBarBlock,
+  LogosBlock,
+  FeaturesBlock,
+  StatsBlock,
+  BadgeBlock,
+  ProgressBlock,
+  SectionDividerBlock,
+  LinkGridBlock,
+  QuickLinksBlock,
   CategoryNavBlock,
   ShippingInfoBlock,
-  AiAssistantBlock,
-  QuickLinksBlock,
-  HandbookBlock,
 } from './blocks';
+
+// Lazy-loaded blocks: heavier, rarer, or below the fold. Each becomes its own chunk
+// so a simple landing page no longer pays for Lottie/Map/Webinar/Carousel JS.
+const ContactBlock = lazy(() => import('./blocks/ContactBlock').then(m => ({ default: m.ContactBlock })));
+const AccordionBlock = lazy(() => import('./blocks/AccordionBlock').then(m => ({ default: m.AccordionBlock })));
+const ArticleGridBlock = lazy(() => import('./blocks/ArticleGridBlock').then(m => ({ default: m.ArticleGridBlock })));
+const YouTubeBlock = lazy(() => import('./blocks/YouTubeBlock').then(m => ({ default: m.YouTubeBlock })));
+const GalleryBlock = lazy(() => import('./blocks/GalleryBlock').then(m => ({ default: m.GalleryBlock })));
+const ChatBlock = lazy(() => import('./blocks/ChatBlock').then(m => ({ default: m.ChatBlock })));
+const MapBlock = lazy(() => import('./blocks/MapBlock').then(m => ({ default: m.MapBlock })));
+const FormBlock = lazy(() => import('./blocks/FormBlock').then(m => ({ default: m.FormBlock })));
+const NewsletterBlock = lazy(() => import('./blocks/NewsletterBlock').then(m => ({ default: m.NewsletterBlock })));
+const PopupBlock = lazy(() => import('./blocks/PopupBlock').then(m => ({ default: m.PopupBlock })));
+const BookingBlock = lazy(() => import('./blocks/BookingBlock').then(m => ({ default: m.BookingBlock })));
+const PricingBlock = lazy(() => import('./blocks/PricingBlock').then(m => ({ default: m.PricingBlock })));
+const TestimonialsBlock = lazy(() => import('./blocks/TestimonialsBlock').then(m => ({ default: m.TestimonialsBlock })));
+const TeamBlock = lazy(() => import('./blocks/TeamBlock').then(m => ({ default: m.TeamBlock })));
+const ComparisonBlock = lazy(() => import('./blocks/ComparisonBlock').then(m => ({ default: m.ComparisonBlock })));
+const TimelineBlock = lazy(() => import('./blocks/TimelineBlock').then(m => ({ default: m.TimelineBlock })));
+const ProductsBlock = lazy(() => import('./blocks/ProductsBlock').then(m => ({ default: m.ProductsBlock })));
+const CartBlock = lazy(() => import('./blocks/CartBlock').then(m => ({ default: m.CartBlock })));
+const KbFeaturedBlock = lazy(() => import('./blocks/KbFeaturedBlock').then(m => ({ default: m.KbFeaturedBlock })));
+const KbHubBlock = lazy(() => import('./blocks/KbHubBlock').then(m => ({ default: m.KbHubBlock })));
+const KbSearchBlock = lazy(() => import('./blocks/KbSearchBlock').then(m => ({ default: m.KbSearchBlock })));
+const KbAccordionBlock = lazy(() => import('./blocks/KbAccordionBlock').then(m => ({ default: m.KbAccordionBlock })));
+const TabsBlock = lazy(() => import('./blocks/TabsBlock').then(m => ({ default: m.TabsBlock })));
+const MarqueeBlock = lazy(() => import('./blocks/MarqueeBlock').then(m => ({ default: m.MarqueeBlock })));
+const EmbedBlock = lazy(() => import('./blocks/EmbedBlock').then(m => ({ default: m.EmbedBlock })));
+const LottieBlock = lazy(() => import('./blocks/LottieBlock').then(m => ({ default: m.LottieBlock })));
+const TableBlock = lazy(() => import('./blocks/TableBlock').then(m => ({ default: m.TableBlock })));
+const CountdownBlock = lazy(() => import('./blocks/CountdownBlock').then(m => ({ default: m.CountdownBlock })));
+const SocialProofBlock = lazy(() => import('./blocks/SocialProofBlock').then(m => ({ default: m.SocialProofBlock })));
+const NotificationToastBlock = lazy(() => import('./blocks/NotificationToastBlock').then(m => ({ default: m.NotificationToastBlock })));
+const FloatingCTABlock = lazy(() => import('./blocks/FloatingCTABlock').then(m => ({ default: m.FloatingCTABlock })));
+const ChatLauncherBlock = lazy(() => import('./blocks/ChatLauncherBlock').then(m => ({ default: m.ChatLauncherBlock })));
+const WebinarBlock = lazy(() => import('./blocks/WebinarBlock').then(m => ({ default: m.WebinarBlock })));
+const ParallaxSectionBlock = lazy(() => import('./blocks/ParallaxSectionBlock').then(m => ({ default: m.ParallaxSectionBlock })));
+const BentoGridBlock = lazy(() => import('./blocks/BentoGridBlock').then(m => ({ default: m.BentoGridBlock })));
+const FeaturedCarouselBlock = lazy(() => import('./blocks/FeaturedCarouselBlock').then(m => ({ default: m.FeaturedCarouselBlock })));
+const ResumeMatcherBlock = lazy(() => import('./blocks/ResumeMatcherBlock').then(m => ({ default: m.ResumeMatcherBlock })));
+const FeaturedProductBlock = lazy(() => import('./blocks/FeaturedProductBlock').then(m => ({ default: m.FeaturedProductBlock })));
+const AiAssistantBlock = lazy(() => import('./blocks/AiAssistantBlock').then(m => ({ default: m.AiAssistantBlock })));
+const HandbookBlock = lazy(() => import('./blocks/HandbookBlock').then(m => ({ default: m.HandbookBlock })));
 import type { ChatLauncherBlockData } from './blocks/ChatLauncherBlock';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -317,7 +324,9 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
     }
   };
 
-  const content = renderBlock();
+  // Wrap in Suspense so lazy-loaded block chunks resolve gracefully without
+  // blocking the rest of the page. fallback={null} avoids a visible flicker.
+  const content = <Suspense fallback={null}>{renderBlock()}</Suspense>;
   const anchorId = block.anchorId || block.id;
   // Overlay blocks (fixed position) render without any wrapper to avoid taking up document flow
   if (OVERLAY_TYPES.has(block.type)) {
