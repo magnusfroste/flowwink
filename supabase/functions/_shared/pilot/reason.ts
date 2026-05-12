@@ -129,7 +129,15 @@ function compactToolDefinition(td: any): any {
   const fn = clone.function;
   if (!fn) return clone;
   if (fn.description && fn.description.length > 80) {
-    fn.description = fn.description.slice(0, 77) + '...';
+    // Preserve "Use when:" marker if present — the intent scorer relies on it
+    // to score skills by relevance. Extract up to 77 chars starting from
+    // "Use when:" so the LLM still gets meaningful trigger information.
+    const useWhen = fn.description.match(/Use when:[^.]*\.?/i);
+    if (useWhen && useWhen[0].length <= 77) {
+      fn.description = useWhen[0];
+    } else {
+      fn.description = fn.description.slice(0, 77) + '...';
+    }
   }
   const props = fn.parameters?.properties;
   if (props) {
@@ -356,7 +364,7 @@ export async function loadSkillsRaw(
 
   let query = supabase
     .from('agent_skills')
-    .select('name, tool_definition, scope, requires, category')
+    .select('name, tool_definition, scope, requires, category, mcp_exposed')
     .eq('enabled', true)
     .in('scope', scopes);
   
@@ -382,13 +390,20 @@ export async function loadSkillsRaw(
 
   const gatedSkills = await filterGatedSkills(supabase, unblockedSkills);
 
+  // Visitor-facing surfaces (scope=external) must respect mcp_exposed to
+  // prevent experimental/internal skills from leaking to anonymous visitors.
+  // Internal agents bypass this gate since they operate within the trust boundary.
+  const mcpFilteredSkills = scope === 'external'
+    ? gatedSkills.filter((s: any) => s.mcp_exposed !== false)
+    : gatedSkills;
+
   // Module-aware filter: drop skills whose category belongs to a disabled module.
   // Mirrors the same gating MCP applies in mcp-server, so /chat and external MCP
   // clients see the SAME tool list when an admin toggles a module off.
   const activeModules = await loadActiveModuleIds(supabase);
   const moduleFilteredSkills = activeModules.has('__all__')
-    ? gatedSkills
-    : gatedSkills.filter((s: any) => isCategoryActive(s.category, activeModules, SKILL_CATEGORY_MODULES));
+    ? mcpFilteredSkills
+    : mcpFilteredSkills.filter((s: any) => isCategoryActive(s.category, activeModules, SKILL_CATEGORY_MODULES));
 
   return { skills: moduleFilteredSkills, scope, categories };
 }

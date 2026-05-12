@@ -344,7 +344,7 @@ serve(async (req) => {
     const profileSaveActive = !!conversationId && provider.supportsToolCalling;
     const visitorIdentifier = customerEmail || sessionId;
 
-    const [{ soul, identity, agents }, knowledgeBase, skillTools, visitorContext] = await Promise.all([
+    const [{ soul, identity, agents }, knowledgeBase, rawSkillTools, visitorContext] = await Promise.all([
       loadWorkspaceFiles(supabase),
       shouldLoadKB
         ? buildKnowledgeBase(
@@ -357,6 +357,17 @@ serve(async (req) => {
       shouldLoadSkills ? loadSkillTools(supabase, 'external') : Promise.resolve([]),
       visitorIdentifier ? loadVisitorContext(supabase, visitorIdentifier, conversationId) : Promise.resolve(''),
     ]);
+
+    // Intent-based tool selection — dynamically filter skills to keep only relevant
+    // ones. Reduces context by ~60-80% for focused conversations. Mirrors the
+    // same scoring the internal agent loop uses (reason.ts:820).
+    const lastUserMessage = messages.filter(m => m.role === 'user').map(m => m.content).join(' ');
+    let skillTools = rawSkillTools;
+    if (lastUserMessage && rawSkillTools.length > 25) {
+      const { scoreSkillsByIntent, loadRecentUsageCounts } = await import('../_shared/pilot/intent-scorer.ts');
+      const usageBoost = await loadRecentUsageCounts(supabase);
+      skillTools = scoreSkillsByIntent(rawSkillTools as any, lastUserMessage, { maxSkills: 25, usageBoost });
+    }
 
     // Build system prompt with knowledge base context
     let chatPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';

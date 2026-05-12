@@ -148,6 +148,7 @@ interface SkillRow {
   description: string | null;
   category: string;
   handler?: string | null;
+  scope?: string | null;
   tool_definition: {
     type: string;
     function: {
@@ -213,12 +214,12 @@ function resolveGroupTokens(tokens: string[]): { categories: Set<string>; module
 }
 
 
-async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
+async function loadExposedSkills(filterGroups?: string[], scopeFilter?: string): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
     sb
       .from("agent_skills")
-      .select("name, description, category, handler, tool_definition")
+      .select("name, description, category, scope, handler, tool_definition")
       .eq("enabled", true)
       .eq("mcp_exposed", true)
       .order("category"),
@@ -231,7 +232,17 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   }
 
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
-  let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
+
+  // Filter by scope — default to external/both for MCP to prevent internal-only
+  // skills from leaking to external agents. Pass scopeFilter='internal' for
+  // internal MCP clients (e.g. ClawWink on the same tenant).
+  const allowedScopes = scopeFilter === 'internal'
+    ? ['internal', 'both']
+    : ['external', 'both'];
+  let filtered = all.filter((s) => allowedScopes.includes(s.scope ?? 'both'));
+
+  // Then filter by active modules
+  filtered = filtered.filter((s) => isCategoryActive(s.category, activeModules));
 
   // Apply toolset group filter — supports category tokens, composite tokens,
   // and module-level sub-filters (e.g. ?groups=invoicing narrows commerce).
@@ -248,7 +259,7 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   console.log(
     `MCP: ${filtered.length}/${all.length} skills exposed` +
     (filterGroups ? ` (groups: ${filterGroups.join(",")})` : "") +
-    ` (${activeModules.size} active modules)`,
+    ` (scope: ${scopeFilter ?? 'external'}, ${activeModules.size} active modules)`,
   );
   return filtered;
 }
@@ -608,13 +619,13 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
 
 // ---------- MCP server factory ----------
 
-async function createMcpServer(filterGroups?: string[], openaiSafe = false): Promise<McpServer> {
+async function createMcpServer(filterGroups?: string[], openaiSafe = false, scopeFilter?: string): Promise<McpServer> {
   const server = new McpServer({
     name: "flowwink",
     version: "1.0.0",
   });
 
-  const skills = await loadExposedSkills(filterGroups);
+  const skills = await loadExposedSkills(filterGroups, scopeFilter);
 
   let flattenedCount = 0;
   for (const skill of skills) {
@@ -902,8 +913,9 @@ app.get("/rest/tools", async (c) => {
     ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean)
     : undefined;
   const openaiSafe = c.req.query("openai_safe") === "true";
+  const scopeFilter = c.req.query("scope") ?? undefined;
 
-  const skills = await loadExposedSkills(filterGroups);
+  const skills = await loadExposedSkills(filterGroups, scopeFilter);
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
     .map((s) => {
@@ -1027,20 +1039,20 @@ app.post("/rest/execute", async (c) => {
 // Native MCP transport (JSON-RPC over POST)
 // ══════════════════════════════════════════════════════════
 
-// Cache MCP handlers by group key
+// Cache MCP handlers by group + scope key
 const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
 
-async function getMcpHandler(filterGroups?: string[], openaiSafe = false) {
+async function getMcpHandler(filterGroups?: string[], openaiSafe = false, scopeFilter?: string) {
   const groupKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
-  const cacheKey = openaiSafe ? `${groupKey}::safe` : groupKey;
+  const cacheKey = `${scopeFilter ?? 'external'}::${groupKey}${openaiSafe ? '::safe' : ''}`;
   let handler = mcpHandlerCache.get(cacheKey);
   if (!handler) {
-    const server = await createMcpServer(filterGroups, openaiSafe);
+    const server = await createMcpServer(filterGroups, openaiSafe, scopeFilter);
     const transport = new StreamableHttpTransport();
     handler = transport.bind(server);
     mcpHandlerCache.set(cacheKey, handler);
-    // Expire cache after 5 minutes to pick up skill changes
-    setTimeout(() => mcpHandlerCache.delete(cacheKey), 5 * 60 * 1000);
+    // Expire cache after 60 seconds to pick up skill changes promptly
+    setTimeout(() => mcpHandlerCache.delete(cacheKey), 60 * 1000);
   }
   return handler;
 }
@@ -1054,8 +1066,10 @@ app.all("/*", async (c) => {
     : undefined;
   // ?openai_safe=true → flatten allOf/oneOf/anyOf/if-then schemas (gpt-4.1 / litellm compatibility)
   const openaiSafe = url.searchParams.get("openai_safe") === "true";
+  // ?scope=internal|external — default external to prevent internal skill leakage
+  const scopeFilter = url.searchParams.get("scope") ?? undefined;
 
-  const handler = await getMcpHandler(filterGroups, openaiSafe);
+  const handler = await getMcpHandler(filterGroups, openaiSafe, scopeFilter);
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
