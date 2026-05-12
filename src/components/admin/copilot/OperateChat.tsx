@@ -224,6 +224,12 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               const isStreaming = msg.role === 'assistant' && msg.toolStatus && msg.toolStatus.phase !== 'done';
               const showCursor = isStreaming && msg.toolStatus?.phase === 'streaming';
 
+              // Hallucination guard: assistant claims success but every tool call failed.
+              const successWords = /\b(added|created|sent|published|saved|updated|posted|scheduled|done|completed)\b/i;
+              const claimsSuccess = msg.role === 'assistant' && !isStreaming && successWords.test(msg.content || '');
+              const allFailed = results.length > 0 && results.every(r => r.status === 'error' || r.status === 'failed' || (r as any).result?.error);
+              const showHallucinationWarning = claimsSuccess && allFailed;
+
               return (
                 <div key={msg.id} className={cn(
                   'flex gap-3',
