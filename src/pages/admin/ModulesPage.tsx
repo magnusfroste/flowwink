@@ -140,11 +140,30 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_ORDER = ["content", "communication", "data", "insights", "system"];
 
-// Module dependencies - key depends on value
-const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
+// Module dependencies - key depends on value.
+// Most edges are derived from each module's `requires` field on its
+// defineModule manifest (see src/lib/module-def.ts). The two entries below
+// are kept for legacy modules that don't yet self-describe their dependencies.
+const LEGACY_MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
   deals: 'leads',
   liveSupport: 'chat',
 };
+
+function buildModuleDependencies(): Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> {
+  const map: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = { ...LEGACY_MODULE_DEPENDENCIES };
+  for (const mod of moduleRegistry.list()) {
+    const def = moduleRegistry.get(mod.id) as { requires?: (keyof ModulesSettings)[] } | undefined;
+    const requires = def?.requires;
+    if (requires && requires.length > 0) {
+      // Today the toggle UI tracks one parent per child — pick the first.
+      // Multi-parent support arrives when we move to a real graph view.
+      map[mod.id as keyof ModulesSettings] = requires[0];
+    }
+  }
+  return map;
+}
+
+const MODULE_DEPENDENCIES = buildModuleDependencies();
 
 export default function ModulesPage() {
   const { data: modules, isLoading } = useModules();
