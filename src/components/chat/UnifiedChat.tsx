@@ -213,6 +213,7 @@ interface UnifiedChatProps {
     placeholder?: string;
     enabled?: boolean;
     feedbackEnabled?: boolean;
+    showIcons?: boolean;
   };
   conversationId?: string;
   compact?: boolean;
