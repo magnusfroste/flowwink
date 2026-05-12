@@ -104,23 +104,27 @@ export default function ChatPage() {
       )}
 
       <main className="flex-1 flex min-h-0">
-        {/* Sidebar — only shown once visitor has at least one prior conversation */}
-        {conversations.length > 0 && (
-          <aside className={cn(
-            'w-72 border-r bg-muted/30 flex flex-col transition-all flex-shrink-0',
-            !sidebarOpen && 'w-0 overflow-hidden'
-          )}>
-            <div className="p-4 border-b">
-              <Button
-                onClick={handleNewConversation}
-                className="w-full gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New conversation
-              </Button>
-            </div>
+        {/* Sidebar */}
+        <aside className={cn(
+          'w-72 border-r bg-muted/30 flex flex-col transition-all flex-shrink-0',
+          !sidebarOpen && 'w-0 overflow-hidden'
+        )}>
+          <div className="p-4 border-b">
+            <Button
+              onClick={handleNewConversation}
+              className="w-full gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New conversation
+            </Button>
+          </div>
 
-            <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1">
+            {conversations.length === 0 ? (
+              <div className="p-4 text-xs text-muted-foreground text-center">
+                Your conversations will appear here.
+              </div>
+            ) : (
               <div className="p-2 space-y-1">
                 {conversations.map((conv) => (
                   <button
@@ -145,9 +149,9 @@ export default function ChatPage() {
                   </button>
                 ))}
               </div>
-            </ScrollArea>
-          </aside>
-        )}
+            )}
+          </ScrollArea>
+        </aside>
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           <ChatConversation
