@@ -7,7 +7,7 @@ import {
   buildSystemPrompt,
   loadSkillTools,
 } from "../_shared/agent-reason.ts";
-import { logAiUsage } from "../_shared/ai-usage-logger.ts";
+import { scheduleAiUsageLog } from "../_shared/ai-usage-logger.ts";
 import {
   type ProviderConfig,
   tryResolveProvider,
@@ -500,7 +500,7 @@ serve(async (req) => {
       const tIter = Date.now();
       const upstream = await fetch(provider.apiUrl, { method: 'POST', headers, body: JSON.stringify(reqBody) });
       if (!upstream.ok) {
-        void logAiUsage({
+        scheduleAiUsageLog({
           supabase, source: 'chat-completion', provider: provider.resolvedProvider, model: provider.model,
           promptTokens: 0, completionTokens: 0, totalTokens: 0,
           latencyMs: Date.now() - tIter,
@@ -554,7 +554,7 @@ serve(async (req) => {
               console.error('[chat-completion] stream sniff error:', e);
             } finally {
               controller.close();
-              void logAiUsage({
+              scheduleAiUsageLog({
                 supabase, source: 'chat-completion',
                 provider: provider.resolvedProvider,
                 model: provider.model,
