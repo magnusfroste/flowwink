@@ -110,6 +110,7 @@ export function ChatConversation({
           placeholder: checkinId ? 'Tell me about your latest project...' : settings?.placeholder,
           enabled: true,
           feedbackEnabled: checkinId ? false : (settings?.feedbackEnabled ?? true),
+          showIcons: settings?.showChatIcons ?? true,
         }}
         conversationId={conversationId}
         compact={compact}
