@@ -27,9 +27,10 @@ interface AttachedFile {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Analyze this week', action: 'Analyze my site traffic for this week' },
-  { label: 'Write a blog post', action: 'Write a blog post about our latest product update' },
-  { label: 'Check leads', action: 'Show me recent lead activity' },
+  { label: 'Write KB article', action: 'Write a knowledge base article about how to reset a customer password. Draft the question and answer yourself, then publish it.' },
+  { label: 'Draft blog post', action: 'Draft and publish a short blog post about our latest product update. You write the body — pick a sensible angle.' },
+  { label: 'Add a lead', action: 'Add a new lead: Anna Eriksson, anna@example.com, source=referral, status=new.' },
+  { label: 'Recent activity', action: 'Summarize what has happened on the site in the last 7 days — leads, orders, traffic.' },
 ];
 
 function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolStatus'] }) {
@@ -176,13 +177,16 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               <Terminal className="h-8 w-8 text-primary" />
             </div>
             <div className="space-y-2 max-w-md">
-              <h2 className="text-lg font-semibold">Operate Mode</h2>
+              <h2 className="text-lg font-semibold">FlowChat — your reactive operator</h2>
               <p className="text-sm text-muted-foreground">
-                Tell me what you need — I can write blog posts, add leads, analyze traffic, 
-                send newsletters, and more. I have access to <strong>{skills.length}</strong> skills.
+                Tell me what to do and I'll do it now. I draft content, run skills,
+                chain actions and report back. I have access to <strong>{skills.length}</strong> skills.
               </p>
               <p className="text-xs text-muted-foreground">
-                📎 Attach PDF resumes or documents — I'll extract and process the content automatically.
+                Reactive only — for autonomous loops, briefings and overnight work, enable FlowPilot.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                📎 Attach PDFs, CSVs or notes — I'll read and act on them.
               </p>
             </div>
 
@@ -324,7 +328,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowPilot what to do..."}
+            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowChat what to do — be specific about the outcome..."}
             disabled={isLoading}
             className="rounded-full"
           />

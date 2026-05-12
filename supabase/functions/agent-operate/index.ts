@@ -36,8 +36,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const MAX_TOOL_ITERATIONS = 6;
-const MAX_OPERATE_WALL_CLOCK_MS = 90_000; // 90s wall-clock for interactive operate
+const MAX_TOOL_ITERATIONS = 10;
+const MAX_OPERATE_WALL_CLOCK_MS = 120_000; // 120s wall-clock for interactive operate (longer chains)
+
+/**
+ * FlowChat Operator Protocol — appended to the system prompt for FlowChat sessions.
+ *
+ * FlowChat is REACTIVE: it executes what the admin asks, here and now. No heartbeats,
+ * no objectives, no proactive memory writes. But within a turn it MUST be a potent
+ * operator — drafting content inline, chaining several skills, never bouncing the
+ * task back to the admin for text it can write itself.
+ *
+ * See mem://architecture/flowchat-vs-flowpilot-roles
+ *     mem://philosophy/flowpilot-development-laws (Law 3 — utilities are OK inline,
+ *     skills are interfaces, not pipelines)
+ */
+const FLOWCHAT_OPERATOR_PROTOCOL = `
+=== FLOWCHAT OPERATOR MODE ===
+You are FlowChat — the admin's reactive operator. Same skills as FlowPilot, but you
+act on this user's message, not on objectives or schedules. Be a potent doer.
+
+OPERATING PRINCIPLES:
+1. EXECUTE, DON'T DEFER. If the admin's request implies a content artifact (KB
+   article, blog post, page, product description, email, contract clause, job ad,
+   announcement), DRAFT THE CONTENT YOURSELF inside your reasoning, then call the
+   matching manage_* / write_* / create_* skill with the drafted text in the same turn.
+   Do NOT ask the admin "please provide the title/answer/body" — they already gave you
+   the topic. Drafting from a topic is a pure text utility (Law 3 refinement).
+
+2. ALWAYS POPULATE REQUIRED FIELDS. When a skill requires title + question + answer
+   (KB), or title + content (blog), or name + description (product) — generate every
+   required field from the topic. Never call a skill with only \`action\` set.
+
+3. CHAIN AGGRESSIVELY. You have up to ${MAX_TOOL_ITERATIONS} tool iterations per turn.
+   Use them: research → draft → save → publish → notify is one turn, not five.
+   Call multiple independent tools in parallel.
+
+4. NO AUTONOMY THEATRE. Do NOT say "I will check on this later", "I've added this to
+   my objectives", or "I'll monitor for changes". You are reactive — that's FlowPilot's
+   job, and it may be off. Finish the task in this turn or report what's missing.
+
+5. ASK ONLY FOR INPUTS YOU CANNOT SYNTHESIZE. URLs, IDs, prices, dates, customer
+   names, file uploads — yes, ask. Body copy, summaries, descriptions, taglines — no,
+   write them.
+
+6. REPORT WHAT YOU DID. End with a short summary: what was created/updated, IDs or
+   slugs/URLs, and the single best next action the admin might want to take.
+=== END FLOWCHAT OPERATOR MODE ===
+`;
 
 function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, event: string, data: any) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -98,7 +144,7 @@ serve(async (req) => {
     ]);
 
     // Use prompt compiler (OpenClaw Layer 1)
-    const systemPrompt = buildSystemPrompt({
+    const baseSystemPrompt = buildSystemPrompt({
       mode: 'operate',
       soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap),
       agents,
@@ -106,6 +152,10 @@ serve(async (req) => {
       objectiveContext,
       cmsSchemaContext: cmsSchemaCtx,
     });
+
+    // Append the FlowChat operator protocol — turns the generic operate-mode prompt
+    // into a "potent reactive doer" prompt without affecting heartbeat/autonomous flows.
+    const systemPrompt = `${baseSystemPrompt}\n${FLOWCHAT_OPERATOR_PROTOCOL}`;
 
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
     // Platform-level built-ins (always on for the FlowChat shell): memory (read), workflows, a2a, skill-packs.
@@ -119,13 +169,13 @@ serve(async (req) => {
       loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
       loadRecentUsageCounts(supabase),
     ]);
-    
-    // Intent-based adaptive tool window — always active
+
+    // Intent-based adaptive tool window — wider for FlowChat operator (broad admin tasks).
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
     const MAX_TOOLS = 128;
     const maxSkills = MAX_TOOLS - builtInTools.length;
     const filteredSkills = scoreSkillsByIntent(externalSkills, lastUserMsg, {
-      maxSkills: Math.min(maxSkills, 25),
+      maxSkills: Math.min(maxSkills, 40),
       usageBoost,
     });
     
