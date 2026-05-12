@@ -308,11 +308,19 @@ export async function teardownModule(
     }
   }
 
-  if (skillNames.length > 0) {
+  // Utility skills are platform-shared and ALWAYS MCP-exposed (see mem://architecture/mcp-exposure-invariants).
+  // Disabling them violates the MCP invariant (mcp_exposed=true requires enabled=true). Skip during teardown.
+  const UTILITY_SKILLS = new Set([
+    'migrate_url', 'scrape_url', 'search_web', 'extract_pdf_text',
+    'sla_check', 'process_signal', 'competitor_monitor',
+  ]);
+  const skillsToDisable = skillNames.filter(n => !UTILITY_SKILLS.has(n));
+
+  if (skillsToDisable.length > 0) {
     const { error } = await supabase
       .from('agent_skills')
       .update({ enabled: false })
-      .in('name', skillNames);
+      .in('name', skillsToDisable);
     if (error) logger.error(`[module-bootstrap] Failed to disable skills for ${moduleId}:`, error);
   }
 
