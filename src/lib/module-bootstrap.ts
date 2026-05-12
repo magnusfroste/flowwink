@@ -335,10 +335,10 @@ export async function teardownModule(
     if (error) logger.error(`[module-bootstrap] Failed to disable automations for ${moduleId}:`, error);
   }
 
-  logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillNames.length} skills disabled)`);
+  logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillsToDisable.length}/${skillNames.length} skills disabled, utility-skills preserved)`);
 
   // Recompute expected_skill_hash after disabling skills
-  if (skillNames.length > 0) {
+  if (skillsToDisable.length > 0) {
     try {
       await supabase.functions.invoke('instance-health', { body: {} });
     } catch { /* non-fatal */ }
