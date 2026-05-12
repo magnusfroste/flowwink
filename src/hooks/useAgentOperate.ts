@@ -770,6 +770,7 @@ export function useAgentOperate() {
     messages,
     isLoading,
     skills,
+    skillStats,
     activities,
     conversationId,
     conversations,
