@@ -168,7 +168,10 @@ export async function logAiUsage(p: LogParams): Promise<void> {
       request_id: p.requestId || null,
       metadata: p.metadata || {},
     });
+    if (insertError) {
+      console.error('[ai-usage-logger] Direct insert also failed:', insertError.message, insertError.code || '');
+    }
   } catch (e) {
-    console.warn('[ai-usage-logger] log failed:', (e as any)?.message);
+    console.error('[ai-usage-logger] log threw:', (e as any)?.message || e);
   }
 }
