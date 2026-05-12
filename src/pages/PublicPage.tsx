@@ -217,7 +217,15 @@ export default function PublicPage() {
     pageTitle: pageData?.title,
   });
 
-  if (isLoading || authLoading || checkingPages) {
+  // Lazily kick off the "do any pages exist?" check only when the requested page came back null.
+  // Keeps it off the happy-path render so cached pages paint immediately.
+  useEffect(() => {
+    if (!isLoading && page === null && hasAnyPages === undefined) {
+      refetchHasAnyPages();
+    }
+  }, [isLoading, page, hasAnyPages, refetchHasAnyPages]);
+
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
