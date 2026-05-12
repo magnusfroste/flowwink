@@ -124,6 +124,11 @@ export function useChat(options?: UseChatOptions) {
   // Load existing messages when conversationId is set
   useEffect(() => {
     if (!conversationId) return;
+    // Skip loading for conversations we just created locally —
+    // local state already has the freshly-sent user message and the
+    // streaming assistant reply. Loading from DB here would race and
+    // wipe the user message before it has been persisted.
+    if (locallyCreatedConvIdsRef.current.has(conversationId)) return;
 
     const loadMessages = async () => {
       const { data, error } = await supabase
