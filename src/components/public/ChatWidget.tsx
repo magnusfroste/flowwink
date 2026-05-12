@@ -114,6 +114,9 @@ export function ChatWidget() {
               mode="widget" 
               maxPrompts={settings.widgetMaxPrompts ?? 3}
               compact
+              skipRestore
+              initialMessage={initialMessage}
+              onInitialMessageSent={() => setInitialMessage(undefined)}
             />
           </div>
         </div>
