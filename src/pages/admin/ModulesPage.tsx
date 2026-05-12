@@ -96,6 +96,8 @@ import { useModuleStats } from "@/hooks/useModuleStats";
 import { ModuleCard } from "@/components/admin/modules/ModuleCard";
 import { moduleRegistry } from "@/lib/module-registry";
 import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
+import { runWithConcurrency } from "@/lib/run-with-concurrency";
+import { useToast } from "@/hooks/use-toast";
 import '@/lib/module-bootstraps'; // Register all module bootstraps
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -148,6 +150,7 @@ export default function ModulesPage() {
   const { data: modules, isLoading } = useModules();
   const { data: stats } = useModuleStats();
   const updateModules = useUpdateModules();
+  const { toast } = useToast();
   const [localModules, setLocalModules] = useState<ModulesSettings | null>(null);
   const [search, setSearch] = useState("");
 
