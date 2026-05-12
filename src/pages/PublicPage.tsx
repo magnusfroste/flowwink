@@ -294,6 +294,15 @@ export default function PublicPage() {
 
   // No page found - show Coming Soon if no pages exist, otherwise 404
   if (!pageData) {
+    // hasAnyPages still resolving — keep spinner instead of flashing 404
+    if (checkingPages || hasAnyPages === undefined) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
     // If no pages exist in the database at all (fresh install or template switch),
     // show Coming Soon page for all routes to avoid 404 errors during setup
     if (!hasAnyPages) {
