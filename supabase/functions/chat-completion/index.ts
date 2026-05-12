@@ -635,6 +635,7 @@ serve(async (req) => {
 
               let parsed: any;
               try { parsed = JSON.parse(data); } catch { continue; }
+              captureUsage(parsed);
 
               const delta = parsed.choices?.[0]?.delta;
               const finishReason = parsed.choices?.[0]?.finish_reason;
@@ -659,6 +660,9 @@ serve(async (req) => {
 
                 if (finishReason === 'tool_calls') {
                   console.log(`[chat] Tool iteration ${iteration + 1}:`, Object.values(tcMap).map(t => t.name));
+
+                  // Log this iteration's usage before recursing into the next one
+                  logOnce('success', { phase: 'tool_calls' });
 
                   msgs.push({
                     role: 'assistant', content: null,
@@ -692,8 +696,11 @@ serve(async (req) => {
               }
             }
           }
+          // Stream ended without a tool_calls handoff — log content-path usage
+          logOnce('success', { phase: 'content' });
         } catch (e) {
           console.error('[chat] Stream error:', e);
+          logOnce('error', { phase: 'stream_error', error: (e as any)?.message || String(e) });
           try { await writer.abort(e); } catch { /* ignore */ }
         }
       })();
