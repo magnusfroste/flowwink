@@ -228,18 +228,21 @@ export default function ModulesPage() {
         const results = await runWithConcurrency(targets, 5, (id) =>
           bootstrapModule(id, updated)
         );
-        const failed = results.filter((r) => !r.ok || (r.ok && r.value.errors.length > 0));
+        const failed = results.filter((r) => !r.ok || r.value.errors.length > 0);
         if (failed.length > 0) {
+          const description = failed
+            .slice(0, 3)
+            .map((r) => {
+              if (!r.ok) {
+                const msg = r.error instanceof Error ? r.error.message : 'failed';
+                return `${String(r.item)}: ${msg}`;
+              }
+              return `${String(r.item)}: ${r.value.errors[0] ?? 'errors'}`;
+            })
+            .join(' · ');
           toast({
             title: `FlowPilot reseed: ${failed.length}/${targets.length} module(s) had issues`,
-            description: failed
-              .slice(0, 3)
-              .map((r) =>
-                r.ok
-                  ? `${String(r.item)}: ${r.value.errors[0] ?? 'errors'}`
-                  : `${String(r.item)}: ${r.error instanceof Error ? r.error.message : 'failed'}`
-              )
-              .join(' · '),
+            description,
             variant: 'destructive',
           });
         }
