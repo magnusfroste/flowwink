@@ -1,112 +1,73 @@
 
-# FlowPilot Cockpit — förslag
+# FlowChat — module-aware honesty (no more silent wrong-skill picks)
 
-Mål: `/admin/flowpilot` ska kännas som en **agent-server** (Tesla autopilot / Hermes Operator), inte en chat. Chat finns på `/chat`. Automations ligger på `/admin/automations`. Engine Room slopas — dess innehåll fördelas in i cockpit + Developer + Automations.
+## Problem (confirmed by live test)
 
-## Layout
+Admin sa: *"Add a new lead Acme Industries… create CRM follow-up task"*. FlowChat:
+1. Anropade `manage_consultant_profile` (skapade en konsultprofil)
+2. Anropade `manage_blog_posts` med `page_status: "lead"` (enum-fel)
+3. Skrev i texten: *"Lead added, follow-up task created"* — ren hallucination
 
-```text
-+---------------------------------------------------------------+
-| AdminLayout sidebar  |  FlowPilot cockpit                     |
-|                      |                                        |
-|  ...moduler...       |  [Status bar] heartbeat • engine • HIL |
-|                      |  ────────────────────────────────────  |
-|                      |  Tabs: Overview | Objectives |         |
-|                      |        Sessions | Memory | Analytics   |
-|                      |  ────────────────────────────────────  |
-|                      |  <tab content>                         |
-+---------------------------------------------------------------+
-```
+Rotorsak: **CRM-modulen är av**. `add_lead`/`manage_leads`/`crm_task_create` finns inte i LLM:ens tool-array. Men agenten:
+- Vet inte att de saknas → väljer närmaste manage_*-skill från en aktiv modul
+- UI:t säger "257 skills" → admin tror allt är tillgängligt
+- Inget "module not enabled"-svar finns som arkitektonisk primitiv
 
-Ingen inbyggd chat-yta. En liten "Open chat" länk till `/chat` finns i status-baren.
+## Princip
 
-## Status-bar (alltid synlig högst upp)
+> **En agent som inte vet vad den inte kan får inte gissa. Den måste säga det.**
 
-Inspirerat av Hermes "Gateway Status / Active Sessions":
+Tre lager arkitektur, inga hardcoded intents (Lag 1):
 
-- **Engine** — `Running` / `Idle` / `Disabled` (knapp: Pause / Resume)
-- **Heartbeat** — "12s ago", nästa schemalagda i `Xs`, knapp `Run now`
-- **Active objectives** — antal aktiva / totalt
-- **HIL queue** — antal `pending_approval` (klick → Approvals)
-- **Today** — actions, success-rate, tokens, cost
-- **Persona** — namn + modell (klick → Memory-tab)
+### 1. Skill-katalog ≠ exponerade tools (ärlig UI)
 
-## Tab 1 — Overview (default)
+`useAgentOperate.loadSkills` ska returnera `{ exposed, disabledByModule }`:
+- `exposed` = de skills som faktiskt går till LLM:en (efter `loadActiveModuleIds` + per-skill `requires`)
+- `disabledByModule` = skills som hör till AV-slagna moduler, grupperade per modul
 
-Ren cockpit-vy, inga listor som dubblar Activity:
+Badge i `FlowChatPage.tsx`: `Operator · 86 skills · 171 disabled by 50 modules off` (klickbar → tooltip/dialog som listar disabled grupper). Slut på lögn.
 
-- **Morning Briefing-kort** (om < 24h gammalt) — annars knapp "Generate briefing"
-- **Next 3 priorities** från senaste heartbeat (`HeartbeatState.next_priorities`)
-- **Pending HIL-cards** (max 3) — Approve / Reject inline
-- **Live activity feed** — senaste 10 raderna från `agent_activity` med **executor-pill** (`flowpilot` / `mcp:peer` / `cron` / `automation` / `chat`). Filter-chips ovanför.
-- **Mini-graph** — actions/h senaste 24h
+### 2. Intent-router som svarar "modul av" istället för fan-out
 
-## Tab 2 — Objectives
+Ny edge-helper `resolveIntent({userMessage, exposedSkills, allSkillsCatalog})` som:
+- Kör SAMMA scoring som idag mot **hela katalogen** (inte bara exposed)
+- Om top-3 matchande skills är disabled → returnera `{kind:'module_disabled', module:'crm', skills:['add_lead','manage_leads']}`
+- Annars normal flow
 
-Ersätter dagens objective-hantering:
-- Lista över `agent_objectives` (active / paused / completed / failed)
-- Per objective: progress, sista 5 actions, lock-status, success-criteria
-- Skapa / pausa / avbryt / forcera heartbeat-iteration
+I `agent-operate/index.ts` precis innan tool-loopen: om `module_disabled` → svara direkt utan tool-call:
+> *"Det här kräver CRM-modulen, som är avstängd. Aktivera den i [Modules](/admin/modules) och be mig igen. Skills som skulle ha använts: `add_lead`, `crm_task_create`."*
 
-## Tab 3 — Sessions
+Det är inte hardcoded intent (Lag 1 ok) — det är **negativ delegering** baserad på samma scoring-metadata.
 
-Direkt motsvarighet till Hermes "Sessions":
-- En rad per heartbeat-iteration eller chat-session där FlowPilot agerat
-- Replay-vy: prompt → reasoning → tool-calls → result, med token/cost per steg
-- Filter på executor + datum
+### 3. Anti-hallucinations-vakt i FLOWCHAT_OPERATOR_PROTOCOL
 
-## Tab 4 — Memory & Persona
+Hård regel i system-prompten:
+- *"Påstå ALDRIG att en handling utfördes om motsvarande tool-call inte returnerade `success:true`. Om en tool returnerade fel, säg det rent ut. Om ingen lämplig tool finns, säg 'jag har ingen skill för detta'."*
 
-Samlat ställe för agent-DNA (det Hermes kallar Models / Profiles / Config):
-- **Soul** — persona, tone, language (read + edit)
-- **Memory** — `agent_memory` browser med kategori-filter (preference / context / fact)
-- **Models** — primary + fallback, temperatur, max tokens
-- **Trust levels** — översikt över skills med `auto` / `notify` / `approve` (länk till `/admin/developer` för full editing)
+Plus: i `OperateChat.tsx`, om sista assistant-meddelandet innehåller orden "added/created/sent/published" men sista tool_result var `error`/`failed` → visa varningschip *"⚠️ Hallucinationsrisk: senaste verktygsanropet misslyckades"*.
 
-## Tab 5 — Analytics
+## Filändringar
 
-Hermes "Analytics":
-- Tokens & cost (dag/vecka/månad)
-- Skill success-rate (top 10 + bottom 10)
-- Objectives velocity (started vs completed)
-- HIL approval-rate och median-tid
-- Heartbeat duration p50/p95
-
-## Vad som flyttas/tas bort
-
-| Tidigare | Ny plats |
+| Fil | Ändring |
 |---|---|
-| Chat-panel i `/admin/flowpilot` | Bort. Använd `/chat`. Liten länk i status-bar. |
-| Engine Room sub-route | Bort. Innehåll: heartbeat-kontroller → Status-bar; skill-katalog → `/admin/developer`; automations → `/admin/automations`. |
-| ContextPanel (höger side) | Ersätts av Live activity feed i Overview, nu med executor-pill. |
-| Objective-create modal | Behålls, flyttas in i Objectives-tab. |
+| `supabase/functions/_shared/pilot/reason.ts` | `loadSkillsRaw('internal')` returnerar `{exposed, disabledByModule, all}` istället för bara array |
+| `supabase/functions/agent-operate/index.ts` | Pre-loop intent-check: om top-matched-skill är disabled → tidigt svar med modul-aktiveringshint |
+| `supabase/functions/agent-operate/index.ts` | Skärpt `FLOWCHAT_OPERATOR_PROTOCOL` (anti-hallucination) |
+| `src/hooks/useAgentOperate.ts` | `loadSkills` exponerar `exposed/disabled` separat |
+| `src/pages/admin/FlowChatPage.tsx` | Badge visar `N skills · M disabled` med tooltip |
+| `src/components/admin/copilot/OperateChat.tsx` | Hallucinationsvarnings-chip när text säger "done" men tool-call failed |
 
-## Vad som ligger kvar utanför cockpit
+## Out of scope (med flit)
 
-- **Skills-katalog, MCP-keys, Activity (alla executors)** → `/admin/developer`
-- **Automations / Workflows / Events / Health** → `/admin/automations`
-- **Chat (visitor + admin skill-execution)** → `/chat`
+- Ingen ny skill-scoring-algoritm — den fungerar mot aktiva skills
+- Inga regex-routes (Lag 1)
+- Ingen "auto-enable module" knapp — admin måste medvetet slå på
+- Cowork Chat tas i nästa steg (efter att FlowChat-mönstret är validerat)
 
-## Dependency på FlowPilot-modulen
+## Verifiering
 
-- Modul **AV**: `/admin/flowpilot` visar en upsell-kort + read-only Sessions/Analytics av historik. Status-bar visar `Disabled`. Inga heartbeat-kontroller.
-- Modul **PÅ**: full cockpit enligt ovan.
+Efter deploy testar jag i browser samma två admin-prompts igen:
+1. *"Add a new lead Acme Industries…"* → förväntat: *"CRM-modulen är av. Aktivera den…"*
+2. Slå på CRM-modulen, samma prompt igen → förväntat: faktiskt `add_lead` + `crm_task_create` med `success:true`
 
-`/chat` och `/admin/automations` påverkas inte av FlowPilot-flaggan (per vår 3-lager-modell).
-
-## Tekniska detaljer
-
-- Ny `FlowPilotStatusBar.tsx` — query mot `agent_activity` (heartbeat) + `agent_objectives` + en ny edge `flowpilot-status` (engine state, next_run).
-- Återanvänd `ContextPanel`-query, lägg till executor-pill i row-rendering (samma data, ny kolumn).
-- Routing: ta bort `/admin/flowpilot/engine`. Lägg `?tab=` query-param för deep-linkning.
-- Inga DB-ändringar krävs i steg 1; allt finns redan (`agent_activity.agent`, `HeartbeatState`, `agent_objectives`, `agent_memory`).
-
-## Leveransordning (om du godkänner planen)
-
-1. Skala bort chat + engine-route från `/admin/flowpilot`, byt till tabs-skelett
-2. Bygg Status-bar + Overview-tab (briefing, priorities, HIL, activity m. executor-pill)
-3. Flytta över Objectives + Memory/Persona till egna tabs
-4. Lägg till Sessions + Analytics
-5. Uppdatera `mem://architecture/flowpilot-cockpit-and-engine-room-ui` så Engine Room officiellt är borta
-
-Säg till om något ska bytas/strykas, annars kör jag steg 1–2 först.
+Inga task-list behövs — ändringen är fokuserad och atomisk.
