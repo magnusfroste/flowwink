@@ -227,7 +227,10 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               // Hallucination guard: assistant claims success but every tool call failed.
               const successWords = /\b(added|created|sent|published|saved|updated|posted|scheduled|done|completed)\b/i;
               const claimsSuccess = msg.role === 'assistant' && !isStreaming && successWords.test(msg.content || '');
-              const allFailed = results.length > 0 && results.every(r => r.status === 'error' || r.status === 'failed' || (r as any).result?.error);
+              const allFailed = results.length > 0 && results.every(r => {
+                const s = String((r as any).status || '');
+                return s === 'error' || s === 'failed' || Boolean((r as any).result?.error);
+              });
               const showHallucinationWarning = claimsSuccess && allFailed;
 
               return (
