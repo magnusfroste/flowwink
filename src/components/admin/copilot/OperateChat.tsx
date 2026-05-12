@@ -27,9 +27,10 @@ interface AttachedFile {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Analyze this week', action: 'Analyze my site traffic for this week' },
-  { label: 'Write a blog post', action: 'Write a blog post about our latest product update' },
-  { label: 'Check leads', action: 'Show me recent lead activity' },
+  { label: 'Write KB article', action: 'Write a knowledge base article about how to reset a customer password. Draft the question and answer yourself, then publish it.' },
+  { label: 'Draft blog post', action: 'Draft and publish a short blog post about our latest product update. You write the body — pick a sensible angle.' },
+  { label: 'Add a lead', action: 'Add a new lead: Anna Eriksson, anna@example.com, source=referral, status=new.' },
+  { label: 'Recent activity', action: 'Summarize what has happened on the site in the last 7 days — leads, orders, traffic.' },
 ];
 
 function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolStatus'] }) {
