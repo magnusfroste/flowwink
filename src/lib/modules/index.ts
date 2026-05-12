@@ -77,7 +77,7 @@ export { federationModule } from './federation-module';
 export { clawableModule } from './clawable-module';
 export { composioModule } from './composio-module';
 export { ticketsModule } from './tickets-module';
-export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';
+export { siteMigrationModule } from './site-migration-module';
 export { developerModule } from './developer-module';
 export { flowpilotModule } from './flowpilot-module';
 

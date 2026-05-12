@@ -46,15 +46,11 @@ describe('module tiers', () => {
     }
   });
 
-  it('warns about unclassified modules (soft check)', () => {
-    if (audit.unclassified.length > 0) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[module-tiers] ${audit.unclassified.length} module(s) not in MODULE_TIER_MAP ` +
-          `— defaulting to 'standard': ${audit.unclassified.join(', ')}`,
-      );
-    }
-    // Soft: don't fail, just surface so contributors notice.
-    expect(audit.unclassified.length).toBeLessThanOrEqual(declared.length);
+  it('all declared modules are classified in MODULE_TIER_MAP', () => {
+    expect(
+      audit.unclassified,
+      `${audit.unclassified.length} module(s) are missing from MODULE_TIER_MAP and default to ` +
+        `'standard' — add them to src/lib/module-tiers.ts: ${audit.unclassified.join(', ')}`,
+    ).toHaveLength(0);
   });
 });

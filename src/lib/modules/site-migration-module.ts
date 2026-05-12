@@ -173,29 +173,4 @@ export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigratio
   },
 });
 
-// ---------------------------------------------------------------------------
-// Module Metadata (for registry & UI)
-// ---------------------------------------------------------------------------
 
-export const siteMigrationMeta = {
-  id: 'siteMigration',
-  name: 'Site Migration',
-  description: 'Clone external websites into FlowWink with visual fidelity. Discovers pages, extracts branding, and maps content to blocks.',
-  category: 'content' as const,
-  icon: 'Globe',
-  autonomy: 'agent-capable' as const,
-  defaultEnabled: true,
-  dependencies: [],
-  requiredIntegrations: ['firecrawl'],
-  optionalIntegrations: ['jina'],
-  aiProvider: 'auto' as const,
-  skills: ['migrate_url'],
-  features: [
-    'Sitemap discovery & URL mapping',
-    'Single page import',
-    'Full site migration',
-    'Branding extraction & design token mapping',
-    'AI-powered block generation with brand fidelity',
-    'Browser Control extension boost (optional)',
-  ],
-};

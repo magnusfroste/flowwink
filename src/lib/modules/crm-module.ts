@@ -650,10 +650,15 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
 
       if (existingLead) {
         const newScore = (existingLead.score || 0) + (validated.initial_score || 5);
-        await supabase
+        const { error: updateError } = await supabase
           .from('leads')
           .update({ score: newScore, updated_at: new Date().toISOString() })
           .eq('id', existingLead.id);
+
+        if (updateError) {
+          logger.error('[CRMModule] Score update error:', updateError);
+          return { success: false, error: updateError.message };
+        }
 
         return { success: true, lead_id: existingLead.id, is_new: false, score: newScore, status: existingLead.status };
       }
@@ -684,7 +689,7 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
 
       try {
         await triggerWebhook({
-          event: 'form.submitted',
+          event: 'lead.created',
           data: { type: 'lead_created', id: data.id, email: validated.email, source: validated.source, source_module: validated.meta?.source_module },
         });
       } catch (webhookError) {

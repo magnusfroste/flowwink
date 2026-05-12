@@ -23,6 +23,8 @@ const accountingOutputSchema = z.object({
   success: z.boolean(),
   entry_id: z.string().optional(),
   message: z.string().optional(),
+  entries: z.array(z.record(z.unknown())).optional(),
+  totals: z.record(z.number()).optional(),
 });
 
 type AccountingInput = z.infer<typeof accountingInputSchema>;
@@ -374,10 +376,12 @@ const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
 /** Seed chart of accounts from the active locale pack if not already present */
 async function seedChartOfAccounts() {
   const pack = getActivePack();
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from('chart_of_accounts')
     .select('id', { count: 'exact', head: true })
     .eq('locale', pack.id);
+
+  if (countError) throw countError;
 
   if ((count ?? 0) > 0) {
     logger.log(`[accounting] ${pack.label} chart already populated, skipping`);
@@ -396,10 +400,12 @@ async function seedChartOfAccounts() {
 /** Seed default accounting templates from the active locale pack */
 async function seedAccountingTemplates() {
   const pack = getActivePack();
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from('accounting_templates')
     .select('id', { count: 'exact', head: true })
     .eq('locale', pack.id);
+
+  if (countError) throw countError;
 
   if ((count ?? 0) > 0) {
     logger.log(`[accounting] ${pack.label} templates already populated, skipping`);
@@ -503,6 +509,116 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
       }
 
       return { success: true, entry_id: data.id, message: 'Journal entry created' };
+    }
+
+    if (validated.action === 'list_entries') {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('id, entry_date, description, reference_number, status, source, created_at')
+        .order('entry_date', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        logger.error('[accounting] list_entries failed', error);
+        return { success: false, message: error.message };
+      }
+
+      return { success: true, message: `Found ${data.length} journal entries`, entries: data };
+    }
+
+    if (validated.action === 'balance_sheet') {
+      // Aggregate posted journal entry lines by account to produce balance sheet totals
+      const { data, error } = await supabase
+        .from('journal_entry_lines')
+        .select('account_code, account_name, debit_cents, credit_cents, journal_entries!inner(status)')
+        .eq('journal_entries.status', 'posted');
+
+      if (error) {
+        logger.error('[accounting] balance_sheet query failed', error);
+        return { success: false, message: error.message };
+      }
+
+      // Aggregate net balance per account
+      const accountMap: Record<string, { account_name: string; net_cents: number }> = {};
+      for (const line of data) {
+        const code = line.account_code;
+        if (!accountMap[code]) accountMap[code] = { account_name: line.account_name, net_cents: 0 };
+        accountMap[code].net_cents += line.debit_cents - line.credit_cents;
+      }
+
+      // Split into assets/liabilities/equity by account code prefix (BAS 2024 convention)
+      const assets: typeof accountMap = {};
+      const liabilities: typeof accountMap = {};
+      const equity: typeof accountMap = {};
+
+      for (const [code, val] of Object.entries(accountMap)) {
+        const prefix = code.charAt(0);
+        if (prefix === '1') assets[code] = val;
+        else if (prefix === '2') liabilities[code] = val;
+        else if (prefix === '8') equity[code] = val;
+      }
+
+      const totalAssets = Object.values(assets).reduce((s, a) => s + a.net_cents, 0);
+      const totalLiabilities = Object.values(liabilities).reduce((s, a) => s + a.net_cents, 0);
+      const totalEquity = Object.values(equity).reduce((s, a) => s + a.net_cents, 0);
+
+      return {
+        success: true,
+        message: 'Balance sheet generated',
+        entries: Object.entries(accountMap).map(([code, v]) => ({ account_code: code, ...v })),
+        totals: { total_assets: totalAssets, total_liabilities: totalLiabilities, total_equity: totalEquity },
+      };
+    }
+
+    if (validated.action === 'profit_loss') {
+      // Income (3xxx) and expense (4xxx-7xxx) accounts — BAS 2024 convention
+      const { data, error } = await supabase
+        .from('journal_entry_lines')
+        .select('account_code, account_name, debit_cents, credit_cents, journal_entries!inner(status, entry_date)')
+        .eq('journal_entries.status', 'posted');
+
+      if (error) {
+        logger.error('[accounting] profit_loss query failed', error);
+        return { success: false, message: error.message };
+      }
+
+      let totalRevenueCents = 0;
+      let totalExpenseCents = 0;
+      const revenueLines: Record<string, { account_name: string; net_cents: number }> = {};
+      const expenseLines: Record<string, { account_name: string; net_cents: number }> = {};
+
+      for (const line of data) {
+        const prefix = line.account_code.charAt(0);
+        const net = line.credit_cents - line.debit_cents; // revenue = credit-normal
+        if (prefix === '3') {
+          // Revenue accounts
+          totalRevenueCents += net;
+          if (!revenueLines[line.account_code]) revenueLines[line.account_code] = { account_name: line.account_name, net_cents: 0 };
+          revenueLines[line.account_code].net_cents += net;
+        } else if (['4', '5', '6', '7'].includes(prefix)) {
+          // Expense accounts
+          const expense = line.debit_cents - line.credit_cents;
+          totalExpenseCents += expense;
+          if (!expenseLines[line.account_code]) expenseLines[line.account_code] = { account_name: line.account_name, net_cents: 0 };
+          expenseLines[line.account_code].net_cents += expense;
+        }
+      }
+
+      const netResultCents = totalRevenueCents - totalExpenseCents;
+
+      return {
+        success: true,
+        message: 'Profit & loss generated',
+        entries: [
+          ...Object.entries(revenueLines).map(([code, v]) => ({ account_code: code, type: 'revenue', ...v })),
+          ...Object.entries(expenseLines).map(([code, v]) => ({ account_code: code, type: 'expense', ...v })),
+        ],
+        totals: {
+          total_revenue_cents: totalRevenueCents,
+          total_expenses_cents: totalExpenseCents,
+          net_result_cents: netResultCents,
+        },
+      };
     }
 
     return { success: false, message: 'Unsupported action' };

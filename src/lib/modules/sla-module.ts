@@ -130,7 +130,7 @@ const SLA_SKILLS: SkillSeed[] = [
 ];
 
 export const slaModule = defineModule<SlaInput, SlaOutput>({
-  id: 'sla' as any, // SLA is operations-layer; not in user-facing ModulesSettings yet
+  id: 'sla',
   name: 'SLA Monitor',
   version: '1.1.0',
   description:

@@ -330,11 +330,39 @@ export default function ModulesPage() {
         }
       }
     }
+    // Apply dependency cascade for enable — same logic as single-toggle
+    if (enabled) {
+      for (const id of visibleToggleableIds) {
+        const parentId = MODULE_DEPENDENCIES[id];
+        if (parentId && !updated[parentId].enabled) {
+          updated = { ...updated, [parentId]: { ...updated[parentId], enabled: true } };
+        }
+      }
+    }
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
-    for (const id of visibleToggleableIds) {
-      if (enabled) bootstrapModule(id, updated).catch(() => {});
-      else teardownModule(id).catch(() => {});
+
+    // Run bootstrap/teardown with concurrency limit; surface errors via toast
+    const results = await runWithConcurrency(visibleToggleableIds, 5, (id) =>
+      enabled ? bootstrapModule(id, updated) : teardownModule(id).then(() => ({ seededSkills: 0, seededAutomations: 0, errors: [] as string[] }))
+    );
+    const failed = results.filter((r) => !r.ok || ('value' in r && r.value.errors.length > 0));
+    if (failed.length > 0) {
+      const description = failed
+        .slice(0, 3)
+        .map((r) => {
+          if (r.ok === false) {
+            const msg = r.error instanceof Error ? r.error.message : 'failed';
+            return `${String(r.item)}: ${msg}`;
+          }
+          return `${String(r.item)}: ${'value' in r ? r.value.errors[0] ?? 'errors' : 'errors'}`;
+        })
+        .join(' · ');
+      toast({
+        title: `Bulk ${enabled ? 'enable' : 'disable'}: ${failed.length}/${visibleToggleableIds.length} module(s) had issues`,
+        description,
+        variant: 'destructive',
+      });
     }
   };
 

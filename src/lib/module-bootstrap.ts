@@ -174,7 +174,7 @@ export async function bootstrapModule(
         if (existing) {
           // Re-enable and refresh ALL definition fields so schema fixes (e.g. OpenAI-safe
           // flat schemas replacing allOf/if-then) propagate without a full module reset.
-          await supabase
+          const { error: updateErr } = await supabase
             .from('agent_skills')
             .update({
               enabled: true,
@@ -187,6 +187,7 @@ export async function bootstrapModule(
               scope: skill.scope,
             })
             .eq('id', existing.id);
+          if (updateErr) throw updateErr;
         } else {
           const { error } = await supabase
             .from('agent_skills')
@@ -243,6 +244,21 @@ export async function bootstrapModule(
             }]);
           if (error) throw error;
           result.seededAutomations++;
+        } else {
+          // Update existing automation so definition drift (e.g. changed trigger_config
+          // or skill_arguments) is reflected without a manual DB reset.
+          const { error } = await supabase
+            .from('agent_automations')
+            .update({
+              description: auto.description,
+              trigger_type: auto.trigger_type,
+              trigger_config: auto.trigger_config as Json,
+              skill_name: auto.skill_name,
+              skill_arguments: auto.skill_arguments as Json,
+              enabled: true,
+            })
+            .eq('id', existing.id);
+          if (error) throw error;
         }
       } catch (err) {
         const msg = `Automation ${auto.name}: ${err instanceof Error ? err.message : 'Unknown'}`;

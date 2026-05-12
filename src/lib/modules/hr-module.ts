@@ -18,6 +18,7 @@ const hrInputSchema = z.object({
 const hrOutputSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
+  data: z.unknown().optional(),
 });
 
 type HrInput = z.infer<typeof hrInputSchema>;
@@ -91,6 +92,29 @@ const HR_SKILLS: SkillSeed[] = [
     instructions: 'Leave request lifecycle: pending → approved/rejected. Calculate days automatically from start/end dates when possible. Leave types: vacation, sick, parental.',
   },
   {
+    name: 'auto_allocate_vacation',
+    description: 'Automatically allocate vacation days to all active employees based on their employment start date and company policy. Use when: running year-start allocation, onboarding new employees, or correcting vacation balances. NOT for: approving specific leave requests (use manage_leave).',
+    category: 'crm',
+    handler: 'rpc:auto_allocate_vacation',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'auto_allocate_vacation',
+        description: 'Allocate vacation days to employees based on policy and tenure.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_year: { type: 'number', description: 'Fiscal year to allocate for, e.g. 2026' },
+            p_dry_run: { type: 'boolean', description: 'Preview allocation without committing. Default false.' },
+          },
+        },
+      },
+    },
+    instructions: 'Run at the start of each fiscal year or when onboarding a new employee. Checks employment start date and company vacation policy to calculate entitlement. Use p_dry_run=true to preview before committing.',
+    trust_level: 'approve',
+  },
+  {
     name: 'onboarding_checklist',
     description: 'Create and manage onboarding checklists for new employees. Use when: a new employee is added and needs onboarding steps, checking onboarding progress. NOT for: general task management.',
     category: 'crm',
@@ -158,7 +182,15 @@ export const hrModule = defineModule<HrInput, HrOutput>({
     if (validated.action === 'list_employees') {
       const { data, error } = await supabase.from('employees').select('*').order('name').limit(100);
       if (error) { logger.error('[hr] list_employees failed', error); return { success: false, message: error.message }; }
-      return { success: true, message: `Found ${data.length} employees` };
+      return { success: true, message: `Found ${data.length} employees`, data };
+    }
+
+    if (validated.action === 'get_employee') {
+      if (!validated.id) return { success: false, message: 'id (employee UUID) is required for get_employee' };
+      const { data, error } = await supabase.from('employees').select('*').eq('id', validated.id).maybeSingle();
+      if (error) { logger.error('[hr] get_employee failed', error); return { success: false, message: error.message }; }
+      if (!data) return { success: false, message: `Employee ${validated.id} not found` };
+      return { success: true, data };
     }
 
     if (validated.action === 'list_leave_requests') {
@@ -166,7 +198,21 @@ export const hrModule = defineModule<HrInput, HrOutput>({
       if (validated.employee_id) query = query.eq('employee_id', validated.employee_id);
       const { data, error } = await query;
       if (error) return { success: false, message: error.message };
-      return { success: true, message: `Found ${data.length} leave requests` };
+      return { success: true, message: `Found ${data.length} leave requests`, data };
+    }
+
+    if (validated.action === 'update_leave_status') {
+      if (!validated.id) return { success: false, message: 'id (leave request UUID) is required for update_leave_status' };
+      if (!validated.status) return { success: false, message: 'status (pending|approved|denied) is required for update_leave_status' };
+      const { data, error } = await supabase
+        .from('leave_requests')
+        .update({ status: validated.status, updated_at: new Date().toISOString() })
+        .eq('id', validated.id)
+        .select('id, status, employee_id')
+        .maybeSingle();
+      if (error) { logger.error('[hr] update_leave_status failed', error); return { success: false, message: error.message }; }
+      if (!data) return { success: false, message: `Leave request ${validated.id} not found` };
+      return { success: true, message: `Leave request status updated to ${validated.status}`, data };
     }
 
     return { success: false, message: 'Unsupported action' };
