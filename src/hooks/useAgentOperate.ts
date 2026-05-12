@@ -104,6 +104,9 @@ async function parseOperateStream(response: Response, callbacks: StreamCallbacks
                 case 'skill_results':
                   await callbacks.onSkillResults(data);
                   break;
+                case 'flowchat_meta':
+                  callbacks.onMeta?.(data);
+                  break;
                 case 'error':
                   callbacks.onError(data.message || 'Unknown error');
                   break;
