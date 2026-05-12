@@ -144,7 +144,7 @@ serve(async (req) => {
     ]);
 
     // Use prompt compiler (OpenClaw Layer 1)
-    const systemPrompt = buildSystemPrompt({
+    const baseSystemPrompt = buildSystemPrompt({
       mode: 'operate',
       soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap),
       agents,
@@ -152,6 +152,10 @@ serve(async (req) => {
       objectiveContext,
       cmsSchemaContext: cmsSchemaCtx,
     });
+
+    // Append the FlowChat operator protocol — turns the generic operate-mode prompt
+    // into a "potent reactive doer" prompt without affecting heartbeat/autonomous flows.
+    const systemPrompt = `${baseSystemPrompt}\n${FLOWCHAT_OPERATOR_PROTOCOL}`;
 
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
     // Platform-level built-ins (always on for the FlowChat shell): memory (read), workflows, a2a, skill-packs.
@@ -165,13 +169,13 @@ serve(async (req) => {
       loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
       loadRecentUsageCounts(supabase),
     ]);
-    
-    // Intent-based adaptive tool window — always active
+
+    // Intent-based adaptive tool window — wider for FlowChat operator (broad admin tasks).
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
     const MAX_TOOLS = 128;
     const maxSkills = MAX_TOOLS - builtInTools.length;
     const filteredSkills = scoreSkillsByIntent(externalSkills, lastUserMsg, {
-      maxSkills: Math.min(maxSkills, 25),
+      maxSkills: Math.min(maxSkills, 40),
       usageBoost,
     });
     
