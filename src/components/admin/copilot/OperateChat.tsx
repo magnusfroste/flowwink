@@ -328,7 +328,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowPilot what to do..."}
+            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowChat what to do — be specific about the outcome..."}
             disabled={isLoading}
             className="rounded-full"
           />
