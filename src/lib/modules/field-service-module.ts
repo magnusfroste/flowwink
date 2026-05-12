@@ -59,7 +59,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
     description:
       'Create, update, schedule, complete and cancel field-service orders. Use when: a customer reports an on-site issue, technician needs to be dispatched, recurring maintenance is due. NOT for: digital subscriptions (manage_subscription), simple bookings (manage_booking), warranty tickets without on-site work (create_ticket).',
     category: 'system',
-    handler: 'edge:field-service-skill',
+    handler: 'db:service_orders',
     scope: 'internal',
     tool_definition: {
       type: 'function',

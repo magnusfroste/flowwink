@@ -340,7 +340,6 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   forms: 'forms',
   webinars: 'webinars',
   handbook: 'handbook',
-  purchasing: 'purchasing',
   wiki: 'wiki',
   river: 'river',
 };
@@ -6203,8 +6202,12 @@ const GENERIC_CRUD_TABLES = new Set([
   'manufacturing_orders',
   // Analytics
   'page_views',
+  // Field service
+  'service_orders', 'service_order_lines', 'service_visits',
   // Products + profiles + site_settings (read-skills; writes guarded by RLS)
   'products', 'profiles', 'site_settings',
+  // Surveys
+  'survey_campaigns', 'survey_responses',
 ]);
 
 /**

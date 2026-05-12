@@ -16,7 +16,7 @@ const FEDERATION_SKILLS: SkillSeed[] = [
     name: 'a2a_chat',
     description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
     category: 'system',
-    handler: 'edge:a2a/chat',
+    handler: 'edge:a2a',
     scope: 'external',
     tool_definition: {
       type: 'function',
