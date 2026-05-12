@@ -128,14 +128,15 @@ export function useIsGeminiConfigured() {
   return hasKey && !explicitlyDisabled;
 }
 
-// Local LLM: enabled if the integration is enabled (no secret needed, just config)
+// Local LLM: configured when an endpoint is set, unless explicitly disabled.
+// (No API key required — endpoint presence is the source of truth, matching IntegrationsStatusPage.)
 export function useIsLocalLLMConfigured() {
   const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const isEnabled = enabledSettings?.local_llm?.enabled === true;
+
   const hasEndpoint = !!enabledSettings?.local_llm?.config?.endpoint;
-  
-  return isEnabled && hasEndpoint;
+  const explicitlyDisabled = enabledSettings?.local_llm?.enabled === false;
+
+  return hasEndpoint && !explicitlyDisabled;
 }
 
 // Combined helper: true if ANY AI provider is configured and not disabled
