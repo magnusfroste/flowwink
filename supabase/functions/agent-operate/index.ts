@@ -621,10 +621,106 @@ async function streamFinalResponse(
   fallbackContent: string,
 ) {
   try {
-    // Anthropic doesn't use OpenAI-compatible streaming — use fallback for Anthropic
     const isAnthropic = apiUrl.includes('anthropic.com');
+
     if (isAnthropic) {
-      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+      const streamResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: conversationMessages,
+          max_tokens: 4096,
+          stream: true,
+        }),
+      });
+
+      if (!streamResponse.ok || !streamResponse.body) {
+        await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+        await sseEvent(writer, encoder, 'done', {});
+        return;
+      }
+
+      const reader = streamResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.trim() === '' || line.startsWith(':')) continue;
+
+          if (line.startsWith('event: ')) {
+            const eventType = line.slice(7).trim();
+            // Find next data line
+            const dataIdx = buffer.indexOf('\n');
+            if (dataIdx === -1) {
+              buffer = line + '\n' + buffer;
+              break;
+            }
+            let dataLine = buffer.slice(0, dataIdx);
+            buffer = buffer.slice(dataIdx + 1);
+            if (dataLine.endsWith('\r')) dataLine = dataLine.slice(0, -1);
+
+            if (dataLine.startsWith('data: ')) {
+              const jsonStr = dataLine.slice(6).trim();
+              try {
+                const data = JSON.parse(jsonStr);
+                if (eventType === 'content_block_delta' && data.delta?.type === 'text_delta' && data.delta?.text) {
+                  await sseEvent(writer, encoder, 'delta', { content: data.delta.text });
+                } else if (eventType === 'message_stop') {
+                  await sseEvent(writer, encoder, 'done', {});
+                  return;
+                }
+              } catch { /* ignore parse errors, wait for more data */ }
+            }
+            continue;
+          }
+        }
+      }
+
+      // Flush remaining buffer
+      if (buffer.trim()) {
+        for (let raw of buffer.split('\n')) {
+          raw = raw.trim();
+          if (!raw || raw.startsWith(':')) continue;
+          if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+
+          if (raw.startsWith('event: ')) {
+            const eventType = raw.slice(7).trim();
+            if (eventType === 'message_stop') {
+              await sseEvent(writer, encoder, 'done', {});
+              return;
+            }
+            // Look for data line after event
+            const remainingLines = raw.split('\n');
+            for (const l of remainingLines) {
+              if (l.startsWith('data: ')) {
+                const jsonStr = l.slice(6).trim();
+                try {
+                  const data = JSON.parse(jsonStr);
+                  if (data.delta?.type === 'text_delta' && data.delta?.text) {
+                    await sseEvent(writer, encoder, 'delta', { content: data.delta.text });
+                  }
+                } catch { /* ignore */ }
+              }
+            }
+          }
+        }
+      }
+
       await sseEvent(writer, encoder, 'done', {});
       return;
     }

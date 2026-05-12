@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { AgentSkill, AgentActivity } from '@/types/agent';
@@ -31,6 +32,12 @@ export interface OperateMessage {
     status: 'success' | 'pending_approval' | 'error';
     result?: unknown;
   }>;
+  /** Human-in-the-loop approval payload rendered as inline approve/reject buttons */
+  actionPayload?: {
+    activityId: string;
+    skillName: string;
+    actions: Array<{ label: string; action: 'approve' | 'reject'; variant: string; activityId: string }>;
+  };
 }
 
 const FLOWPILOT_CONVERSATION_KEY = 'flowpilot_conversation_id';
@@ -271,6 +278,7 @@ export function useAgentOperate() {
                   content: m.content,
                   createdAt: new Date(m.created_at),
                   skillResults: m.metadata?.skill_results || undefined,
+                  actionPayload: m.metadata?.action_payload || m.action_payload || undefined,
                 }));
               setMessages(loaded);
               messagesRef.current = loaded;
@@ -316,6 +324,7 @@ export function useAgentOperate() {
               content: m.content,
               createdAt: new Date(m.created_at),
               skillResults: m.metadata?.skill_results || undefined,
+              actionPayload: m.metadata?.action_payload || m.action_payload || undefined,
             }));
           setMessages(loaded);
           messagesRef.current = loaded;
@@ -570,10 +579,8 @@ export function useAgentOperate() {
         const currentConvId = conversationIdRef.current;
         if (currentConvId) {
           const actionPayload = {
-            type: 'approval',
-            title: `"${skillName.replace(/_/g, ' ')}" needs your approval`,
             activityId,
-            skillName,
+            skillName: skillName,
             actions: [
               { label: 'Approve & Execute', action: 'approve', variant: 'default', activityId },
               { label: 'Reject', action: 'reject', variant: 'destructive', activityId },
@@ -584,10 +591,19 @@ export function useAgentOperate() {
             role: 'assistant',
             content: `⏳ I'd like to execute **${skillName.replace(/_/g, ' ')}** but it requires your approval first.\n\nPlease review and approve or reject below.`,
             source: 'proactive',
-            action_payload: actionPayload,
+            metadata: { action_payload: actionPayload },
           });
         }
       }
+
+      const actionPayloadFromDb = data.status === 'pending_approval' ? {
+        activityId: data.activity_id,
+        skillName: skillName,
+        actions: [
+          { label: 'Approve & Execute', action: 'approve', variant: 'default', activityId: data.activity_id },
+          { label: 'Reject', action: 'reject', variant: 'destructive', activityId: data.activity_id },
+        ],
+      } : undefined;
 
       const msg: OperateMessage = {
         id: crypto.randomUUID(),
@@ -597,6 +613,7 @@ export function useAgentOperate() {
           : `✅ Executed "${skillName}" successfully.`,
         createdAt: new Date(),
         skillResults: [{ skill: skillName, status: data.status, result: data.result }],
+        actionPayload: actionPayloadFromDb,
       };
       setMessages(prev => {
         const next = [...prev, msg];
@@ -750,6 +767,7 @@ export function useAgentOperate() {
           content: m.content,
           createdAt: new Date(m.created_at),
           skillResults: m.metadata?.skill_results || undefined,
+          actionPayload: m.metadata?.action_payload || m.action_payload || undefined,
         }));
       setMessages(loaded);
       messagesRef.current = loaded;
@@ -795,6 +813,55 @@ export function useAgentOperate() {
   const setRelayHandler = useCallback((handler: (url: string) => Promise<any>) => {
     relayHandlerRef.current = handler;
   }, []);
+
+  // ─── Realtime subscription ───────────────────────────────────────────
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    // Clean up existing subscription
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`chat:${conversationId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          const newMsg = payload.new as any;
+          // Skip duplicates — check if we already have this message by content + role
+          const exists = messagesRef.current.some(m => m.content === newMsg.content && m.role === newMsg.role);
+          if (exists) return;
+
+          const incoming: OperateMessage = {
+            id: newMsg.id,
+            role: newMsg.role as 'user' | 'assistant',
+            content: newMsg.content,
+            createdAt: new Date(newMsg.created_at),
+            skillResults: newMsg.metadata?.skill_results || undefined,
+            actionPayload: newMsg.metadata?.action_payload || newMsg.action_payload || undefined,
+          };
+
+          setMessages(prev => {
+            const next = [...prev, incoming];
+            messagesRef.current = next;
+            return next;
+          });
+        }
+      )
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      realtimeChannelRef.current = null;
+    };
+  }, [conversationId]);
 
   return {
     messages,

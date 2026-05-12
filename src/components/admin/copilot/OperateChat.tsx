@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import type { OperateMessage } from '@/hooks/useAgentOperate';
 import type { AgentSkill } from '@/types/agent';
+import { SkillResultCard } from './SkillResultCard';
+import { CommandPalette } from '@/components/chat/CommandPalette';
 
 interface OperateChatProps {
   messages: OperateMessage[];
@@ -83,14 +85,55 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
+  const [commandFilter, setCommandFilter] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, isLoading]);
+
+  const handleCommandSelect = (command: string) => {
+    const slashIndex = input.lastIndexOf('/');
+    const before = slashIndex >= 0 ? input.slice(0, slashIndex) : input;
+    const newValue = `${before}/${command} `;
+    setInput(newValue);
+    setShowPalette(false);
+    setCommandFilter('');
+    inputRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInput(newValue);
+
+    const cursorPos = e.target.selectionStart ?? newValue.length;
+    const textBeforeCursor = newValue.slice(0, cursorPos);
+    const slashMatch = textBeforeCursor.match(/\/(\w*)$/);
+
+    if (slashMatch) {
+      setShowPalette(true);
+      setCommandFilter(slashMatch[1]);
+    } else {
+      setShowPalette(false);
+      setCommandFilter('');
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+    if (e.key === 'Escape' && showPalette) {
+      e.preventDefault();
+      setShowPalette(false);
+    }
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,6 +203,8 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
 
     onSendMessage(message);
     setInput('');
+    setShowPalette(false);
+    setCommandFilter('');
   };
 
   const isEmpty = messages.length === 0;
@@ -281,22 +326,28 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     )}
 
+                    {msg.actionPayload && msg.actionPayload.actions && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {msg.actionPayload.actions.map((action, ai) => (
+                          <Button
+                            key={ai}
+                            size="sm"
+                            variant={action.variant === 'destructive' ? 'destructive' : 'default'}
+                            onClick={() => {
+                              if (action.action === 'approve') onApproveAction?.(action.activityId);
+                              else if (action.action === 'reject') onRejectAction?.(action.activityId);
+                            }}
+                          >
+                            {action.label}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+
                     {results.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-border/30 space-y-1.5">
                         {results.map((sr, i) => (
-                          <div key={i}>
-                            <Badge variant={
-                              sr.status === 'success' ? 'default' :
-                              sr.status === 'pending_approval' ? 'secondary' : 'destructive'
-                            } className="text-xs">
-                              {sr.skill.replace(/_/g, ' ')} — {sr.status}
-                            </Badge>
-                            {sr.result && (
-                              <pre className="mt-1 text-xs opacity-70 overflow-auto max-h-24">
-                                {JSON.stringify(sr.result, null, 2)}
-                              </pre>
-                            )}
-                          </div>
+                          <SkillResultCard key={i} skill={sr.skill} status={sr.status} result={sr.result} />
                         ))}
                       </div>
                     )}
@@ -323,7 +374,15 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
       )}
 
       {/* Input */}
-      <div className="border-t p-4">
+      <div className="relative border-t p-4">
+        <CommandPalette
+          open={showPalette}
+          onSelect={handleCommandSelect}
+          onClose={() => setShowPalette(false)}
+          skills={skills}
+          scope="admin"
+          filter={commandFilter}
+        />
         <input
           ref={fileInputRef}
           type="file"
@@ -349,14 +408,17 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               <Paperclip className="h-4 w-4" />
             )}
           </Button>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowChat what to do — be specific about the outcome..."}
-            disabled={isLoading}
-            className="rounded-full"
-          />
+          <div className="relative flex-1">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowChat what to do — be specific about the outcome..."}
+              disabled={isLoading}
+              className="rounded-full"
+            />
+          </div>
           {isLoading && onCancel ? (
             <Button
               size="icon"
