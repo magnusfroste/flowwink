@@ -142,6 +142,7 @@ export function useAgentOperate() {
   const [activities, setActivities] = useState<AgentActivity[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<FlowPilotConversation[]>([]);
+  const [skillStats, setSkillStats] = useState<{ exposed: number; disabled: number; modulesOff: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   // When true, the next getOrCreateConversation() will skip the "reuse today's
   // session" shortcut and always insert a fresh chat_conversations row. Set by
@@ -496,6 +497,13 @@ export function useAgentOperate() {
               ? { ...m, toolStatus: { ...m.toolStatus, phase: 'done' } }
               : m
           ));
+        },
+        onMeta: (meta) => {
+          setSkillStats({
+            exposed: meta.exposed_skill_count ?? 0,
+            disabled: meta.disabled_skill_count ?? 0,
+            modulesOff: meta.modules_off_count ?? 0,
+          });
         },
       }, controller.signal);
 
