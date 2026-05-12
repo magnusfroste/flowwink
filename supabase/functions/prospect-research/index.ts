@@ -51,7 +51,7 @@ serve(async (req) => {
     console.log(`Researching: ${company_name} (${company_url || 'no URL'})`);
 
     // Step 1: Web search for company info
-    const searchResult = await callSkill('web-search', {
+    const searchResult = await callSkill('web-tools?action=search', {
       query: `${company_name} company about`,
       limit: 3,
     });
@@ -60,7 +60,7 @@ serve(async (req) => {
     let scrapeResult = null;
     const scrapeUrl = company_url || searchResult?.results?.[0]?.url;
     if (scrapeUrl) {
-      scrapeResult = await callSkill('web-scrape', {
+      scrapeResult = await callSkill('web-tools?action=scrape', {
         url: scrapeUrl,
         max_length: 5000,
       });

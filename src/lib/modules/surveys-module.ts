@@ -58,7 +58,7 @@ const SURVEY_SKILLS: SkillSeed[] = [
     description:
       'Send an active survey campaign to one or more recipients via email. Each recipient gets a unique one-click token link. Use when: a triggering event fires (order delivered, ticket closed), running a manual feedback push, or following up on a specific customer interaction.',
     category: 'crm',
-    handler: 'edge:survey-send',
+    handler: 'edge:surveys',
     scope: 'internal',
     tool_definition: {
       type: 'function',

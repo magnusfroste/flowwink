@@ -40,8 +40,8 @@ const ACTION_MAP: Record<string, string> = {
   'research': 'prospect-research',
   'fit-analysis': 'prospect-fit-analysis',
   'profile-setup': 'sales-profile-setup',
-  'web-search': 'web-search',
-  'web-scrape': 'web-scrape',
+  'web-search': 'web-tools',
+  'web-scrape': 'web-tools',
   'contact-finder': 'contact-finder',
 };
 
@@ -134,7 +134,7 @@ Analyzes how well a prospect company fits your ideal customer profile using AI.
     name: 'process_signal',
     description: 'Process an incoming signal from Chrome extension or external webhook. Analyzes content and determines next actions. Use when: a website event is detected; an external system sends an update; responding to real-time data. NOT for: managing automations (manage_automations); scanning Gmail (scan_gmail_inbox).',
     category: 'automation',
-    handler: 'edge:signal-ingest',
+    handler: 'edge:signals',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -262,6 +262,18 @@ export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, Sale
           company_name: validated.company_name,
           decision_maker_first_name: validated.decision_maker_first_name,
           decision_maker_last_name: validated.decision_maker_last_name,
+        };
+      } else if (action === 'web-search') {
+        body = {
+          action: 'search',
+          query: validated.company_name || '',
+          limit: 3,
+        };
+      } else if (action === 'web-scrape') {
+        body = {
+          action: 'scrape',
+          url: validated.company_url || '',
+          max_length: 5000,
         };
       } else {
         body = {

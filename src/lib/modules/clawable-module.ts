@@ -13,7 +13,7 @@ type Output = z.infer<typeof outputSchema>;
  *
  * - Admin-only authenticated UI under /admin/clawable.
  * - Backed by `clawable_sessions` + `clawable_messages` and the
- *   `clawable-chat` edge function which proxies to peer.url + /v1/responses
+ *   `clawable?action=chat` edge function which proxies to peer.url + /v1/responses
  *   using the federation peer's gateway_token.
  * - Independent of FlowPilot — works as long as a peer is configured.
  * - Exposes NO skills (no MCP). This is a FlowWink-internal cockpit

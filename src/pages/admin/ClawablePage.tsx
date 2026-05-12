@@ -254,7 +254,10 @@ function ClawablePageInner() {
     setLoadingModels(true);
     setPeerModels([]);
     try {
-      const { data, error } = await supabase.functions.invoke('clawable-list-models', {
+      const { data, error } = await supabase.functions.invoke('clawable', {
+        body: { peer_id: selectedPeerId },
+        headers: { 'X-Action': 'list-models' },
+      });
         body: { peer_id: selectedPeerId },
       });
       if (error) throw error;
@@ -290,7 +293,7 @@ function ClawablePageInner() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/clawable-chat`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/clawable?action=chat`,
         {
           method: 'POST',
           headers: {
