@@ -154,6 +154,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
       { name: "Skills", href: "/admin/skills", icon: Sparkles },
       { name: "Platform Tests", href: "/admin/platform-tests", icon: FlaskConical },
+      { name: "Smoke Test", href: "/admin/smoke-test", icon: FlaskConical },
       { name: "AI Usage", href: "/admin/ai-usage", icon: BarChart3 },
 
       { name: "Users", href: "/admin/users", icon: Users },
