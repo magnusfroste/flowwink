@@ -70,7 +70,8 @@ export default function PublicPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check if any published pages exist (to detect fresh installs)
+  // Check if any published pages exist (to detect fresh installs).
+  // Only fires when the requested page wasn't found, so it stays off the critical path.
   const { data: hasAnyPages, isLoading: checkingPages } = useQuery({
     queryKey: ['has-published-pages'],
     queryFn: async (): Promise<boolean> => {
@@ -93,6 +94,8 @@ export default function PublicPage() {
     },
     staleTime: 5 * 60 * 1000, // 5 min cache
     retry: false,
+    // Defer until we know the requested page is missing — keeps it off the happy-path render.
+    enabled: false,
   });
 
   const { data: page, isLoading } = useQuery({
