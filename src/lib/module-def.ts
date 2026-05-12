@@ -86,6 +86,14 @@ export interface UnifiedModuleDef<TInput = unknown, TOutput = unknown> {
    */
   tier?: ModuleTier;
 
+  /**
+   * Other modules this module depends on. When this module is enabled, every
+   * `requires` parent is auto-enabled. When a parent is disabled, this module
+   * is auto-disabled. Drives `MODULE_DEPENDENCIES` in /admin/modules so the
+   * dependency graph lives next to the module, not in a giant lookup table.
+   */
+  requires?: (keyof ModulesSettings)[];
+
   // ── API Contract ──
   inputSchema: z.ZodSchema<TInput>;
   outputSchema: z.ZodSchema<TOutput>;
