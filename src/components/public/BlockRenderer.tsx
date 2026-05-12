@@ -324,7 +324,9 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
     }
   };
 
-  const content = renderBlock();
+  // Wrap in Suspense so lazy-loaded block chunks resolve gracefully without
+  // blocking the rest of the page. fallback={null} avoids a visible flicker.
+  const content = <Suspense fallback={null}>{renderBlock()}</Suspense>;
   const anchorId = block.anchorId || block.id;
   // Overlay blocks (fixed position) render without any wrapper to avoid taking up document flow
   if (OVERLAY_TYPES.has(block.type)) {
