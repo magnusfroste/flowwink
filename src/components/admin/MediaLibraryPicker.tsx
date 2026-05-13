@@ -97,8 +97,8 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
     queryFn: async () => {
       if (!debouncedUnsplashQuery.trim()) return null;
       
-      const { data, error } = await supabase.functions.invoke('unsplash-search', {
-        body: { query: debouncedUnsplashQuery, perPage: 24 },
+      const { data, error } = await supabase.functions.invoke('images', {
+        body: { action: 'unsplash', query: debouncedUnsplashQuery, perPage: 24 },
       });
 
       if (error) throw error;

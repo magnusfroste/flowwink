@@ -35,7 +35,7 @@ export function DocsChat() {
     setLoading(true);
 
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/docs-chat`;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/docs?action=chat`;
       const resp = await fetch(url, {
         method: 'POST',
         headers: {

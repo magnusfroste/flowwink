@@ -45,8 +45,8 @@ export function UnsplashPicker({ open, onOpenChange, onSelect }: UnsplashPickerP
     queryFn: async () => {
       if (!debouncedQuery.trim()) return null;
       
-      const { data, error } = await supabase.functions.invoke('unsplash-search', {
-        body: { query: debouncedQuery, perPage: 24 },
+      const { data, error } = await supabase.functions.invoke('images', {
+        body: { action: 'unsplash', query: debouncedQuery, perPage: 24 },
       });
 
       if (error) throw error;

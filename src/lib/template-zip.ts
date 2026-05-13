@@ -44,9 +44,9 @@ export interface ZipImportResult {
  */
 async function downloadImage(url: string): Promise<ArrayBuffer | null> {
   try {
-    // Use the process-image edge function to fetch the image
-    const { data, error } = await supabase.functions.invoke('fetch-image', {
-      body: { imageUrl: url },
+    // Use the images edge function to fetch the image
+    const { data, error } = await supabase.functions.invoke('images', {
+      body: { action: 'fetch', imageUrl: url },
     });
     
     if (error) {

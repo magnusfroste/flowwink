@@ -61,7 +61,7 @@ export function useSyncDocs() {
   return useMutation({
     mutationFn: async (overrides?: Partial<typeof DEFAULT_REPO>) => {
       const body = { ...DEFAULT_REPO, ...overrides };
-      const { data, error } = await supabase.functions.invoke('docs-sync', { body });
+      const { data, error } = await supabase.functions.invoke('docs', { body: { action: 'sync', ...body } });
       if (error) throw error;
       return data as
         | { synced: number; skipped: number; deleted: number; total: number }

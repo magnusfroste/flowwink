@@ -138,9 +138,9 @@ export function useTemplateInstaller() {
               urlMap.set(url, storageUrl);
             }
           } else {
-            // External URL: use the process-image edge function
-            const { data, error } = await supabase.functions.invoke('process-image', {
-              body: { imageUrl: url, folder: 'templates' }
+            // External URL: use the images edge function
+            const { data, error } = await supabase.functions.invoke('images', {
+              body: { action: 'process', imageUrl: url, folder: 'templates' }
             });
             if (error) { logger.warn(`Failed to process image ${url}:`, error); return; }
             if (data.success && data.url) {

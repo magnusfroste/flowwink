@@ -700,8 +700,8 @@ export function useCopilot(): UseCopilotReturn {
     
     for (const { blockIndex, path, url } of images) {
       try {
-        const { data, error } = await supabase.functions.invoke('process-image', {
-          body: { imageUrl: url, folder: 'flowpilot' }
+        const { data, error } = await supabase.functions.invoke('images', {
+          body: { action: 'process', imageUrl: url, folder: 'flowpilot' }
         });
         
         if (error) {
