@@ -110,7 +110,7 @@ serve(async (req) => {
 
     // Emit score signal for automations
     try {
-      await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
+      await fetch(`${supabaseUrl}/functions/v1/signals?action=dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
         body: JSON.stringify({

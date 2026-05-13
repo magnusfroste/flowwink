@@ -875,7 +875,7 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       "Content-Type": "application/json",
       "Authorization": `Bearer ${serviceKey}`,
     };
-    const resp = await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/signals?action=dispatch`, {
       method: 'POST', headers: hdrs,
       body: JSON.stringify({ signal: 'test_nonexistent_signal', data: {}, context: {} }),
     });

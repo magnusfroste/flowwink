@@ -229,7 +229,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
     name: 'search_web',
     description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',
-    handler: 'edge:web-search',
+    handler: 'edge:web-tools',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -293,7 +293,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
     name: 'scrape_url',
     description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
     category: 'search',
-    handler: 'edge:web-scrape',
+    handler: 'edge:web-tools',
     scope: 'internal',
     tool_definition: {
       type: 'function',

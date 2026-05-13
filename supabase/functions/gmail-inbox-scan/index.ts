@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
     // Dispatch signal for automations
     if (signals.length > 0) {
       try {
-        await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
+        await fetch(`${supabaseUrl}/functions/v1/signals?action=dispatch`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
