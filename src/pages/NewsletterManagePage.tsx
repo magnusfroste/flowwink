@@ -82,8 +82,8 @@ export default function NewsletterManagePage() {
   const verifyToken = async (emailToVerify: string, tokenToVerify: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("newsletter-gdpr", {
-        body: { action: "verify", email: emailToVerify, token: tokenToVerify },
+      const { data, error } = await supabase.functions.invoke("newsletter", {
+        body: { action: "gdpr-verify", email: emailToVerify, token: tokenToVerify },
       });
 
       if (error) throw error;
@@ -106,8 +106,8 @@ export default function NewsletterManagePage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("newsletter-gdpr", {
-        body: { action: "request", email: email.trim() },
+      const { data, error } = await supabase.functions.invoke("newsletter", {
+        body: { action: "gdpr-request", email: email.trim() },
       });
 
       if (error) throw error;
@@ -131,8 +131,8 @@ export default function NewsletterManagePage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("newsletter-gdpr", {
-        body: { action: "export", email, token },
+      const { data, error } = await supabase.functions.invoke("newsletter", {
+        body: { action: "gdpr-export", email, token },
       });
 
       if (error) throw error;
@@ -165,8 +165,8 @@ export default function NewsletterManagePage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("newsletter-gdpr", {
-        body: { action: "delete", email, token },
+      const { data, error } = await supabase.functions.invoke("newsletter", {
+        body: { action: "gdpr-delete", email, token },
       });
 
       if (error) throw error;

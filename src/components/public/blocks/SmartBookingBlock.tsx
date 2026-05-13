@@ -166,7 +166,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
             // Trigger confirmation email
             try {
               await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-dispatch?action=booking`,
                 {
                   method: 'POST',
                   headers: {
@@ -210,7 +210,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       // Trigger confirmation email
       try {
         await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-dispatch?action=booking`,
           {
             method: 'POST',
             headers: {

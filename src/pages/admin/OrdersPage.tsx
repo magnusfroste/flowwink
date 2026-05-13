@@ -166,8 +166,8 @@ export default function OrdersPage() {
 
   const sendConfirmationMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      const { error } = await supabase.functions.invoke('send-order-confirmation', {
-        body: { orderId },
+      const { error } = await supabase.functions.invoke('email-dispatch', {
+        body: { action: 'order', orderId },
       });
       if (error) throw error;
     },

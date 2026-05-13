@@ -35,8 +35,9 @@ export function SendEmailDialog({ open, onOpenChange, recipientEmail, recipientN
 
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+      const { data, error } = await supabase.functions.invoke('email-dispatch', {
         body: {
+          action: 'contact',
           to: recipientEmail,
           toName: recipientName || undefined,
           subject: subject.trim(),

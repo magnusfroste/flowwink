@@ -306,8 +306,8 @@ export function useCreateBooking() {
 
       // Trigger confirmation email
       try {
-        await supabase.functions.invoke('send-booking-confirmation', {
-          body: { bookingId: data.id },
+        await supabase.functions.invoke('email-dispatch', {
+          body: { action: 'booking', bookingId: data.id },
         });
       } catch (e) {
         logger.warn('Could not send confirmation email:', e);

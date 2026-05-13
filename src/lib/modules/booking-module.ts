@@ -324,7 +324,7 @@ export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutpu
 
       let confirmationSent = false;
       try {
-        await supabase.functions.invoke('send-booking-confirmation', { body: { bookingId: data.id } });
+        await supabase.functions.invoke('email-dispatch', { body: { action: 'booking', bookingId: data.id } });
         confirmationSent = true;
       } catch (e) {
         logger.warn('[BookingModule] Confirmation email failed:', e);

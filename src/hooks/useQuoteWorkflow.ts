@@ -145,8 +145,8 @@ export function useSendQuote() {
       let emailSent = false;
       let emailError: string | undefined;
       try {
-        const { data, error: fnErr } = await supabase.functions.invoke('send-quote-email', {
-          body: { quote_id: quote.id, public_url: url, custom_message },
+        const { data, error: fnErr } = await supabase.functions.invoke('email-dispatch', {
+          body: { action: 'quote', quote_id: quote.id, public_url: url, custom_message },
         });
         if (fnErr) throw fnErr;
         emailSent = !!(data as { success?: boolean })?.success;
@@ -176,8 +176,8 @@ export function useSendQuoteReminder() {
       const token = (input.quote as unknown as { accept_token?: string }).accept_token;
       if (!token) throw new Error('Quote has no public link yet — send it first');
       const url = publicQuoteUrl(token);
-      const { data, error } = await supabase.functions.invoke('send-quote-email', {
-        body: { quote_id: input.quote.id, public_url: url, reminder: true, custom_message: input.custom_message },
+      const { data, error } = await supabase.functions.invoke('email-dispatch', {
+        body: { action: 'quote', quote_id: input.quote.id, public_url: url, reminder: true, custom_message: input.custom_message },
       });
       if (error) throw error;
       return data;
