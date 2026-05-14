@@ -63,7 +63,7 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
 
-  skills: [],
+  skills: ['suggest_kb_for_ticket'],
   skillSeeds: TICKETS_SKILLS,
 
   async publish(input: TicketModuleInput): Promise<TicketModuleOutput> {
