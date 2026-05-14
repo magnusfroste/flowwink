@@ -489,7 +489,7 @@ Checks the current status of an order via the order-status edge function.
       },
     },
     instructions: 'Builds an invoice from order_items (qty × price_cents), applies tax_rate (default 0.25), marks status=sent, and emails the customer a link to /functions/v1/generate-invoice-pdf. Idempotent via notes "order:<id>". Use dry_run=true to preview totals before sending. Logs invoice_sent to audit_logs.',
-  },,
+  },
 ];
 
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
