@@ -25,15 +25,24 @@ const declared = new Set<string>();
 for (const file of readdirSync(MODULES_DIR).sort()) {
   if (!file.endsWith('.ts')) continue;
   const src = readFileSync(join(MODULES_DIR, file), 'utf-8');
-  // Match `name: 'snake_case_name'` and confirm a `tool_definition` and
-  // `handler` appear within ~3KB after — that disambiguates skill seeds
-  // from automation seeds, types, and other `name:` occurrences.
+  // 1) Full skillSeed objects: `name: 'snake'` followed by tool_definition+handler.
   const re = /name:\s*'([a-z_][a-z0-9_]*)'/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src)) !== null) {
     const window = src.slice(m.index + m[0].length, m.index + m[0].length + 3000);
     if (window.includes('tool_definition') && window.includes('handler')) {
       declared.add(m[1]);
+    }
+  }
+  // 2) String-only ownership arrays: `skills: ['foo', 'bar', ...]` on the
+  //    module manifest. These declare ownership without re-providing schema
+  //    (schema lives in DB seed migrations). Multi-line arrays supported.
+  const skillsArrayRe = /skills:\s*\[([\s\S]*?)\]/g;
+  let s: RegExpExecArray | null;
+  while ((s = skillsArrayRe.exec(src)) !== null) {
+    const body = s[1];
+    for (const nameMatch of body.matchAll(/'([a-z_][a-z0-9_]*)'/g)) {
+      declared.add(nameMatch[1]);
     }
   }
 }
