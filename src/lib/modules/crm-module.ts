@@ -635,6 +635,12 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
     'crm_task_list',
     'crm_task_create',
     'crm_task_update',
+    // Cross-cutting platform skills (polymorphic across entities) — owned here.
+    'manage_activities',
+    'manage_tags',
+    'tag_entity',
+    'follow_entity',
+    'manage_saved_views',
   ],
   skillSeeds: CRM_SKILLS,
 
