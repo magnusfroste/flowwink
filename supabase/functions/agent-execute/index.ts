@@ -2869,6 +2869,29 @@ async function executeDealsAction(
 
   const { action = 'list' } = args as any;
 
+  // Normalize friendly stage aliases to canonical deal_stage enum values.
+  // External agents commonly send "won"/"lost"/"new"/"open" — map them so we don't
+  // explode at the DB enum check.
+  const DEAL_STAGE_ALIASES: Record<string, string> = {
+    won: 'closed_won', closed: 'closed_won', closedwon: 'closed_won', 'closed-won': 'closed_won',
+    lost: 'closed_lost', closedlost: 'closed_lost', 'closed-lost': 'closed_lost',
+    new: 'lead', open: 'lead', cold: 'lead',
+    warm: 'prospecting', discovery: 'prospecting',
+    qualifying: 'qualified', sql: 'qualified',
+    quote: 'proposal', quoted: 'proposal', proposed: 'proposal',
+    negotiating: 'negotiation',
+  };
+  const normalizeDealStage = (v: unknown): string | undefined => {
+    if (v === undefined || v === null || v === '') return undefined;
+    const key = String(v).trim().toLowerCase().replace(/\s+/g, '_');
+    return DEAL_STAGE_ALIASES[key] ?? key;
+  };
+  // Re-normalize stage in args once so create/update/move_stage all benefit.
+  if ((args as any).stage !== undefined) {
+    const norm = normalizeDealStage((args as any).stage);
+    if (norm) (args as any).stage = norm;
+  }
+
   if (action === 'list') {
     const { stage, lead_id } = args as any;
     let query = supabase.from('deals')
