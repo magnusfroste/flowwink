@@ -11707,6 +11707,17 @@ export type Database = {
     Functions: {
       _ensure_manual_journal: { Args: never; Returns: string }
       _flatten_skill_schema: { Args: { td: Json }; Returns: Json }
+      _global_search_internal: {
+        Args: { result_limit?: number; search_query: string }
+        Returns: {
+          entity_id: string
+          entity_type: string
+          rank: number
+          subtitle: string
+          title: string
+          url: string
+        }[]
+      }
       _upsert_quant: {
         Args: {
           _delta: number
