@@ -13003,6 +13003,10 @@ export type Database = {
           }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
       unsubscribe_newsletter: { Args: { p_token: string }; Returns: boolean }
+      unsubscribe_newsletter_by_email: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       upcoming_renewals: {
         Args: { p_days_ahead?: number }
         Returns: {
