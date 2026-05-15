@@ -25,12 +25,9 @@ export default function PublicInvoicePage() {
     queryFn: async () => {
       if (!token) return null;
       const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('public_token', token)
-        .maybeSingle();
+        .rpc('get_invoice_by_token', { p_token: token });
       if (error) throw error;
-      return data;
+      return Array.isArray(data) ? data[0] ?? null : data;
     },
     enabled: !!token,
     refetchInterval: justPaid ? 3000 : false,
