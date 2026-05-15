@@ -247,16 +247,32 @@ serve(async (req) => {
 
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');
-        // Map skill arg names → RPC param names by prefixing p_
+        // Map skill arg names → RPC param names by prefixing p_.
+        // Some older MCP callers still send generic names like query/limit while newer
+        // skill contracts use domain-specific names such as search_query/result_limit.
+        // Normalize those aliases here so the RPC signature stays backward compatible.
         // IMPORTANT: strip underscore-prefixed agent-internal fields (e.g. _caller_user_id,
         // _approved, _bypass_approval, _objective_context, trace_id) BEFORE prefixing — otherwise
         // they get sent as `p__caller_user_id` and break Postgres function-signature lookup.
-        const rpcArgs: Record<string, unknown> = {};
+        const rawRpcArgs: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(args || {})) {
           if (k.startsWith('_')) continue;
           if (k === 'trace_id' || k === 'objective_context') continue;
-          rpcArgs[k.startsWith('p_') ? k : `p_${k}`] = v;
+          rawRpcArgs[k.startsWith('p_') ? k : `p_${k}`] = v;
         }
+
+        const rpcArgs = { ...rawRpcArgs };
+        if (fnName === 'mcp_global_search') {
+          if (rpcArgs.p_search_query === undefined && rpcArgs.p_query !== undefined) {
+            rpcArgs.p_search_query = rpcArgs.p_query;
+          }
+          if (rpcArgs.p_result_limit === undefined && rpcArgs.p_limit !== undefined) {
+            rpcArgs.p_result_limit = rpcArgs.p_limit;
+          }
+          delete rpcArgs.p_query;
+          delete rpcArgs.p_limit;
+        }
+
         const { data: rpcData, error: rpcErr } = await supabase.rpc(fnName, rpcArgs);
         if (rpcErr) {
           result = { error: `RPC ${fnName} failed: ${rpcErr.message}`, status: 'failed' };
