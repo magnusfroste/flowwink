@@ -11993,6 +11993,10 @@ export type Database = {
         Returns: number
       }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
+      confirm_newsletter_subscription: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
       confirm_pick: {
         Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
         Returns: Json
@@ -12123,6 +12127,46 @@ export type Database = {
         Args: { p_base: string; p_date?: string; p_quote: string }
         Returns: number
       }
+      get_invoice_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
+          deal_id: string | null
+          due_date: string | null
+          exchange_rate: number
+          id: string
+          invoice_number: string
+          issue_date: string
+          lead_id: string | null
+          line_items: Json
+          notes: string | null
+          paid_amount_cents: number
+          paid_at: string | null
+          payment_terms: string | null
+          payment_url: string | null
+          project_id: string | null
+          public_token: string | null
+          reconciliation_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents: number
+          tax_cents: number
+          tax_rate: number
+          total_cents: number
+          updated_at: string
+          viewed_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_leave_balance: {
         Args: { p_employee_id: string; p_leave_type: string; p_year?: number }
         Returns: {
@@ -12139,6 +12183,10 @@ export type Database = {
       get_order_status: {
         Args: { p_email?: string; p_id: string }
         Returns: Json
+      }
+      get_support_agent_user_id: {
+        Args: { p_agent_id: string }
+        Returns: string
       }
       get_survey_by_token: { Args: { _token: string }; Returns: Json }
       get_team_member_ids: {
@@ -12324,6 +12372,10 @@ export type Database = {
           p_report_id: string
         }
         Returns: Json
+      }
+      mark_invoice_viewed_by_token: {
+        Args: { p_token: string }
+        Returns: undefined
       }
       mark_payroll_paid: {
         Args: { p_payment_date?: string; p_run_id: string }
@@ -12950,6 +13002,7 @@ export type Database = {
             }
           }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
+      unsubscribe_newsletter: { Args: { p_token: string }; Returns: boolean }
       upcoming_renewals: {
         Args: { p_days_ahead?: number }
         Returns: {
