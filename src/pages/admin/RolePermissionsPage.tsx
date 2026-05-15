@@ -32,8 +32,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RotateCcw, Shield } from 'lucide-react';
 import { RoleAccessAuditPanel } from '@/components/admin/RoleAccessAuditPanel';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function RolePermissionsPage() {
+  return (
+    <AdminLayout>
+      <RolePermissionsContent />
+    </AdminLayout>
+  );
+}
+
+function RolePermissionsContent() {
   const { data: modules, isLoading: loadingModules } = useModules();
   const { data: accessMap, isLoading: loadingAccess } = useRoleModuleAccess();
   const toggle = useToggleRoleModuleAccess();
