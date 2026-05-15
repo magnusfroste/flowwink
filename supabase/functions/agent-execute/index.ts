@@ -2891,6 +2891,16 @@ async function executeDealsAction(
     const norm = normalizeDealStage((args as any).stage);
     if (norm) (args as any).stage = norm;
   }
+  // Hard guard against unknown enum values reaching Postgres.
+  const VALID_DEAL_STAGES = new Set([
+    'lead', 'prospecting', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost',
+  ]);
+  if ((args as any).stage !== undefined && !VALID_DEAL_STAGES.has((args as any).stage)) {
+    throw new Error(
+      `Invalid deal stage: "${(args as any).stage}". Valid stages: ${[...VALID_DEAL_STAGES].join(', ')}. ` +
+      `Friendly aliases (won/lost/new/open/etc.) are auto-normalized — see DEAL_STAGE_ALIASES.`
+    );
+  }
 
   if (action === 'list') {
     const { stage, lead_id } = args as any;
@@ -4839,7 +4849,7 @@ async function executeDbAction(
       }
 
       if (skillName === 'accounting_reports') {
-        const { report_type, period = 'all', account_code } = args as any;
+        const { report_type = 'profit_loss', period = 'all', account_code } = args as any;
 
         // Determine date filter
         let sinceDate: string | null = null;
@@ -6163,6 +6173,393 @@ async function executeDbAction(
 
       // Fallthrough: generic products table not handled here
       return { error: `Unknown products skill in purchasing context: ${skillName}` };
+    }
+
+    case 'contracts': {
+      // ─── Contracts module: 6 skills, all routed via handler='db:contracts' ──
+      const VALID_CONTRACT_STATUS = new Set(['draft', 'pending_signature', 'active', 'expired', 'terminated']);
+
+      // send_contract_for_signature — issue accept_token + signing URL
+      if (skillName === 'send_contract_for_signature') {
+        const { contract_id } = args as any;
+        if (!contract_id) throw new Error('contract_id is required');
+
+        const { data: contract, error: cErr } = await supabase.from('contracts')
+          .select('id, title, body_markdown, file_url, status, accept_token, version, counterparty_name, counterparty_email')
+          .eq('id', contract_id).maybeSingle();
+        if (cErr) throw new Error(`Fetch contract failed: ${cErr.message}`);
+        if (!contract) return { error: `Contract ${contract_id} not found` };
+
+        const hasBody = (contract.body_markdown && String(contract.body_markdown).trim().length > 0)
+          || !!contract.file_url;
+        if (!hasBody) {
+          return { error: 'Contract has empty body_markdown and no file_url. Write the agreement (manage_contract action=update body_markdown=...) before sending for signature.' };
+        }
+
+        // Reuse existing token, otherwise mint a new one.
+        let token: string = contract.accept_token;
+        if (!token) {
+          const bytes = new Uint8Array(24);
+          crypto.getRandomValues(bytes);
+          token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Snapshot current version (best-effort, idempotent on unique (contract_id, version_number))
+        try {
+          await supabase.from('contract_versions').insert({
+            contract_id: contract.id,
+            version_number: contract.version || 1,
+            snapshot: {
+              title: contract.title,
+              counterparty_name: contract.counterparty_name,
+              counterparty_email: contract.counterparty_email,
+              body_markdown: contract.body_markdown,
+              file_url: contract.file_url,
+            },
+            reason: 'sent_for_signature',
+          });
+        } catch (_e) { /* version may already exist — ignore */ }
+
+        const { error: uErr } = await supabase.from('contracts')
+          .update({
+            accept_token: token,
+            status: 'pending_signature',
+            sent_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }).eq('id', contract.id);
+        if (uErr) throw new Error(`Update contract failed: ${uErr.message}`);
+
+        // Resolve site origin (env first, then site_settings, fallback to lovable preview)
+        let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+        if (!origin) {
+          const { data: setting } = await supabase.from('site_settings')
+            .select('value').eq('key', 'general').maybeSingle();
+          origin = (setting?.value as any)?.site_url || (setting?.value as any)?.public_url || '';
+        }
+        if (!origin) origin = 'https://flowwink.lovable.app';
+        origin = origin.replace(/\/$/, '');
+
+        return {
+          contract_id: contract.id,
+          token,
+          url: `${origin}/contract/${token}`,
+          status: 'pending_signature',
+          version: contract.version || 1,
+        };
+      }
+
+      // get_contract_content — full markdown + metadata for LLM consumption
+      if (skillName === 'get_contract_content') {
+        const { contract_id } = args as any;
+        if (!contract_id) throw new Error('contract_id is required');
+        const { data, error } = await supabase.from('contracts')
+          .select('id, title, counterparty_name, counterparty_email, status, contract_type, value_cents, currency, start_date, end_date, signed_at, version, body_markdown')
+          .eq('id', contract_id).maybeSingle();
+        if (error) throw new Error(`Fetch contract failed: ${error.message}`);
+        if (!data) return { error: `Contract ${contract_id} not found` };
+        return { contract: data };
+      }
+
+      // search_contracts — fuzzy ILIKE across title/counterparty/body
+      if (skillName === 'search_contracts') {
+        const { query, limit = 10, status } = args as any;
+        if (!query || typeof query !== 'string') throw new Error('query is required');
+        const pattern = `%${query}%`;
+        let q = supabase.from('contracts')
+          .select('id, title, counterparty_name, counterparty_email, status, value_cents, currency, end_date, body_markdown')
+          .or(`title.ilike.${pattern},counterparty_name.ilike.${pattern},body_markdown.ilike.${pattern}`)
+          .order('updated_at', { ascending: false })
+          .limit(Math.min(Math.max(Number(limit) || 10, 1), 50));
+        if (status && VALID_CONTRACT_STATUS.has(status)) q = q.eq('status', status);
+        const { data, error } = await q;
+        if (error) throw new Error(`Search contracts failed: ${error.message}`);
+        const results = (data || []).map((c: any) => {
+          const body = c.body_markdown || '';
+          const idx = body.toLowerCase().indexOf(query.toLowerCase());
+          const snippet = idx >= 0
+            ? body.slice(Math.max(0, idx - 60), Math.min(body.length, idx + 200))
+            : body.slice(0, 200);
+          return {
+            id: c.id, title: c.title, counterparty_name: c.counterparty_name,
+            counterparty_email: c.counterparty_email, status: c.status,
+            value_cents: c.value_cents, currency: c.currency, end_date: c.end_date,
+            snippet,
+          };
+        });
+        return { query, count: results.length, contracts: results };
+      }
+
+      // contract_renewal_check — find expiring contracts grouped by urgency
+      if (skillName === 'contract_renewal_check') {
+        const { days_ahead = 30, include_auto_renew = true } = args as any;
+        const now = new Date();
+        const horizon = new Date(now.getTime() + Number(days_ahead) * 24 * 60 * 60 * 1000);
+        let q = supabase.from('contracts')
+          .select('id, title, counterparty_name, status, end_date, renewal_type, renewal_notice_days, value_cents, currency')
+          .eq('status', 'active')
+          .not('end_date', 'is', null)
+          .lte('end_date', horizon.toISOString().split('T')[0])
+          .order('end_date', { ascending: true });
+        if (!include_auto_renew) q = q.neq('renewal_type', 'auto');
+        const { data, error } = await q;
+        if (error) throw new Error(`Renewal check failed: ${error.message}`);
+        const today = now.getTime();
+        const grouped: Record<string, any[]> = { critical: [], warning: [], notice: [] };
+        for (const c of (data || []) as any[]) {
+          const days = Math.ceil((new Date(c.end_date).getTime() - today) / (24 * 60 * 60 * 1000));
+          const bucket = days < 7 ? 'critical' : days < 30 ? 'warning' : 'notice';
+          grouped[bucket].push({ ...c, days_until_expiry: days });
+        }
+        return {
+          horizon_days: days_ahead,
+          total: (data || []).length,
+          critical: grouped.critical, warning: grouped.warning, notice: grouped.notice,
+        };
+      }
+
+      // list_contract_documents — pull from documents archive
+      if (skillName === 'list_contract_documents') {
+        const { contract_id } = args as any;
+        if (!contract_id) throw new Error('contract_id is required');
+        const { data, error } = await supabase.from('documents')
+          .select('id, title, file_name, file_url, file_type, category, created_at')
+          .eq('related_entity_type', 'contract')
+          .eq('related_entity_id', contract_id)
+          .order('created_at', { ascending: false });
+        if (error) throw new Error(`List contract documents failed: ${error.message}`);
+        return { contract_id, count: (data || []).length, documents: data || [] };
+      }
+
+      // manage_contract — CRUD (default skill on table='contracts')
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { status } = args as any;
+        let q = supabase.from('contracts')
+          .select('id, title, counterparty_name, counterparty_email, status, contract_type, start_date, end_date, value_cents, currency, sent_at, signed_at, version, updated_at')
+          .order('updated_at', { ascending: false }).limit(100);
+        if (status && VALID_CONTRACT_STATUS.has(status)) q = q.eq('status', status);
+        const { data, error } = await q;
+        if (error) throw new Error(`List contracts failed: ${error.message}`);
+        return { contracts: data || [], count: (data || []).length };
+      }
+
+      if (action === 'create') {
+        const a = args as any;
+        if (!a.counterparty_name) throw new Error('counterparty_name is required (NOT NULL in DB)');
+        const insertData: Record<string, unknown> = {
+          title: a.title || `Contract — ${a.counterparty_name}`,
+          counterparty_name: a.counterparty_name,
+          counterparty_email: a.counterparty_email || null,
+          contract_type: a.contract_type || 'service',
+          status: a.status && VALID_CONTRACT_STATUS.has(a.status) ? a.status : 'draft',
+          start_date: a.start_date || null,
+          end_date: a.end_date || null,
+          renewal_type: a.renewal_type || 'none',
+          renewal_notice_days: a.renewal_notice_days ?? 30,
+          value_cents: a.value_cents ?? 0,
+          currency: a.currency || 'SEK',
+          notes: a.notes || null,
+          body_markdown: a.body_markdown || null,
+          file_url: a.file_url || null,
+        };
+        const { data, error } = await supabase.from('contracts').insert(insertData)
+          .select('id, title, status').single();
+        if (error) throw new Error(`Create contract failed: ${error.message}`);
+        return { created: true, contract_id: data.id, title: data.title, status: data.status };
+      }
+
+      if (action === 'update') {
+        const { contract_id, ...rest } = args as any;
+        if (!contract_id) throw new Error('contract_id is required');
+        const allowed = ['title', 'counterparty_name', 'counterparty_email', 'contract_type', 'status', 'start_date', 'end_date', 'renewal_type', 'renewal_notice_days', 'value_cents', 'currency', 'notes', 'body_markdown', 'file_url'];
+        const updates: Record<string, unknown> = {};
+        for (const k of allowed) if (rest[k] !== undefined) updates[k] = rest[k];
+        if (updates.status && !VALID_CONTRACT_STATUS.has(updates.status as string)) {
+          throw new Error(`Invalid contract status: ${updates.status}. Valid: ${[...VALID_CONTRACT_STATUS].join(', ')}`);
+        }
+        if (Object.keys(updates).length === 0) throw new Error('No updatable fields provided');
+        updates.updated_at = new Date().toISOString();
+        if (updates.body_markdown !== undefined) updates.body_updated_at = new Date().toISOString();
+        const { data, error } = await supabase.from('contracts').update(updates)
+          .eq('id', contract_id).select('id, status').single();
+        if (error) throw new Error(`Update contract failed: ${error.message}`);
+        return { updated: true, contract_id: data.id, status: data.status };
+      }
+
+      if (action === 'search') {
+        // Convenience alias for search_contracts called via manage_contract.
+        const { search_query, query, limit = 10, status } = args as any;
+        const q = search_query || query;
+        if (!q) throw new Error('search_query is required for action=search');
+        return await executeDbAction(supabase, 'contracts', 'search_contracts', { query: q, limit, status }, auditCtx);
+      }
+
+      throw new Error(`Unknown contracts action: ${action}. Supported: list, create, update, search.`);
+    }
+
+    case 'invoices': {
+      // ─── Invoicing module — full lifecycle ──────────────────────────────
+      const VALID_INVOICE_STATUS = new Set(['draft', 'sent', 'paid', 'cancelled', 'overdue']);
+      const { action = 'list' } = args as any;
+
+      // ── helpers ──
+      const computeTotals = (items: any[], taxRate: number) => {
+        const subtotal = (items || []).reduce((s, it) => s + (Number(it.qty || 0) * Number(it.unit_price_cents || 0)), 0);
+        const tax = Math.round(subtotal * Number(taxRate || 0));
+        return { subtotal_cents: subtotal, tax_cents: tax, total_cents: subtotal + tax };
+      };
+      const generateInvoiceNumber = async (): Promise<string> => {
+        const yr = new Date().getFullYear();
+        const { data } = await supabase.from('invoices')
+          .select('invoice_number')
+          .ilike('invoice_number', `INV-${yr}-%`)
+          .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
+        let next = 1;
+        if (data?.invoice_number) {
+          const m = String(data.invoice_number).match(/INV-\d{4}-(\d+)/);
+          if (m) next = parseInt(m[1], 10) + 1;
+        }
+        return `INV-${yr}-${String(next).padStart(5, '0')}`;
+      };
+
+      if (action === 'list') {
+        const { status_filter, status, deal_id, lead_id, project_id, limit = 50 } = args as any;
+        const stat = status_filter || status;
+        let q = supabase.from('invoices')
+          .select('id, invoice_number, customer_name, customer_email, status, subtotal_cents, tax_cents, total_cents, paid_amount_cents, currency, issue_date, due_date, sent_at, paid_at, deal_id, lead_id, project_id, created_at')
+          .order('created_at', { ascending: false })
+          .limit(Math.min(Math.max(Number(limit) || 50, 1), 200));
+        if (stat && VALID_INVOICE_STATUS.has(stat)) q = q.eq('status', stat);
+        if (deal_id) q = q.eq('deal_id', deal_id);
+        if (lead_id) q = q.eq('lead_id', lead_id);
+        if (project_id) q = q.eq('project_id', project_id);
+        const { data, error } = await q;
+        if (error) throw new Error(`List invoices failed: ${error.message}`);
+        return { invoices: data || [], count: (data || []).length };
+      }
+
+      if (action === 'get') {
+        const { invoice_id } = args as any;
+        if (!invoice_id) throw new Error('invoice_id is required');
+        const { data, error } = await supabase.from('invoices').select('*')
+          .eq('id', invoice_id).maybeSingle();
+        if (error) throw new Error(`Get invoice failed: ${error.message}`);
+        if (!data) return { error: `Invoice ${invoice_id} not found` };
+        return { invoice: data };
+      }
+
+      if (action === 'create') {
+        const a = args as any;
+        const items = Array.isArray(a.line_items) ? a.line_items : [];
+        if (items.length === 0) throw new Error('line_items is required (at least one row with description, qty, unit_price_cents)');
+        const taxRate = a.tax_rate !== undefined ? Number(a.tax_rate) : 0.25;
+        const totals = computeTotals(items, taxRate);
+        const invoiceNumber = a.invoice_number || await generateInvoiceNumber();
+        const insertData: Record<string, unknown> = {
+          invoice_number: invoiceNumber,
+          deal_id: a.deal_id || null,
+          lead_id: a.lead_id || null,
+          project_id: a.project_id || null,
+          customer_email: a.customer_email || null,
+          customer_name: a.customer_name || '',
+          line_items: items,
+          tax_rate: taxRate,
+          ...totals,
+          currency: a.currency || 'SEK',
+          due_date: a.due_date || null,
+          issue_date: a.issue_date || new Date().toISOString().split('T')[0],
+          payment_terms: a.payment_terms || null,
+          notes: a.notes || null,
+          status: a.status && VALID_INVOICE_STATUS.has(a.status) ? a.status : 'draft',
+        };
+        const { data, error } = await supabase.from('invoices').insert(insertData)
+          .select('id, invoice_number, status, total_cents, currency').single();
+        if (error) throw new Error(`Create invoice failed: ${error.message}`);
+        return { created: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status, total_cents: data.total_cents, currency: data.currency };
+      }
+
+      if (action === 'update') {
+        const { invoice_id, ...rest } = args as any;
+        if (!invoice_id) throw new Error('invoice_id is required');
+        const allowed = ['customer_name', 'customer_email', 'line_items', 'tax_rate', 'currency', 'due_date', 'payment_terms', 'notes', 'status', 'deal_id', 'lead_id', 'project_id'];
+        const updates: Record<string, unknown> = {};
+        for (const k of allowed) if (rest[k] !== undefined) updates[k] = rest[k];
+        if (updates.status && !VALID_INVOICE_STATUS.has(updates.status as string)) {
+          throw new Error(`Invalid invoice status: ${updates.status}. Valid: ${[...VALID_INVOICE_STATUS].join(', ')}`);
+        }
+        // Recompute totals if line_items or tax_rate changed
+        if (updates.line_items !== undefined || updates.tax_rate !== undefined) {
+          const { data: cur } = await supabase.from('invoices')
+            .select('line_items, tax_rate').eq('id', invoice_id).maybeSingle();
+          const items = (updates.line_items as any) ?? cur?.line_items ?? [];
+          const rate = (updates.tax_rate as any) ?? cur?.tax_rate ?? 0.25;
+          Object.assign(updates, computeTotals(items, Number(rate)));
+        }
+        if (Object.keys(updates).length === 0) throw new Error('No updatable fields provided');
+        updates.updated_at = new Date().toISOString();
+        const { data, error } = await supabase.from('invoices').update(updates)
+          .eq('id', invoice_id).select('id, status, total_cents').single();
+        if (error) throw new Error(`Update invoice failed: ${error.message}`);
+        return { updated: true, invoice_id: data.id, status: data.status, total_cents: data.total_cents };
+      }
+
+      if (action === 'send') {
+        const { invoice_id } = args as any;
+        if (!invoice_id) throw new Error('invoice_id is required');
+        const { data, error } = await supabase.from('invoices').update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq('id', invoice_id).select('id, invoice_number, status, public_token').single();
+        if (error) throw new Error(`Send invoice failed: ${error.message}`);
+        return { sent: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status, public_token: data.public_token };
+      }
+
+      if (action === 'mark_paid') {
+        const { invoice_id, paid_amount_cents, paid_at } = args as any;
+        if (!invoice_id) throw new Error('invoice_id is required');
+        const { data: cur, error: cErr } = await supabase.from('invoices')
+          .select('id, total_cents, status').eq('id', invoice_id).maybeSingle();
+        if (cErr) throw new Error(`Fetch invoice failed: ${cErr.message}`);
+        if (!cur) return { error: `Invoice ${invoice_id} not found` };
+        if (cur.status === 'cancelled') {
+          return { error: `Invoice ${invoice_id} is cancelled — cannot mark paid` };
+        }
+        const amount = paid_amount_cents !== undefined ? Number(paid_amount_cents) : cur.total_cents;
+        const { data, error } = await supabase.from('invoices').update({
+          status: 'paid',
+          paid_at: paid_at || new Date().toISOString(),
+          paid_amount_cents: amount,
+          updated_at: new Date().toISOString(),
+        }).eq('id', invoice_id).select('id, invoice_number, status, paid_amount_cents, paid_at').single();
+        if (error) throw new Error(`Mark paid failed: ${error.message}`);
+        return {
+          marked_paid: true,
+          invoice_id: data.id,
+          invoice_number: data.invoice_number,
+          status: data.status,
+          paid_amount_cents: data.paid_amount_cents,
+          paid_at: data.paid_at,
+          note: 'Status updated. Journal entry posting (Dt 1930 / Cr 1510) is handled separately by the accounting reconciliation flow.',
+        };
+      }
+
+      if (action === 'cancel') {
+        const { invoice_id, reason } = args as any;
+        if (!invoice_id) throw new Error('invoice_id is required');
+        const updates: Record<string, unknown> = {
+          status: 'cancelled',
+          updated_at: new Date().toISOString(),
+        };
+        if (reason) updates.notes = `[CANCELLED] ${reason}`;
+        const { data, error } = await supabase.from('invoices').update(updates)
+          .eq('id', invoice_id).select('id, invoice_number, status').single();
+        if (error) throw new Error(`Cancel invoice failed: ${error.message}`);
+        return { cancelled: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status };
+      }
+
+      throw new Error(`Unknown invoices action: ${action}. Supported: list, get, create, update, send, mark_paid, cancel.`);
     }
 
     default:
