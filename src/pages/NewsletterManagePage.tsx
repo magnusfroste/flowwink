@@ -57,12 +57,7 @@ export default function NewsletterManagePage() {
     setEmail(emailToUnsubscribe);
     try {
       const { error } = await supabase
-        .from("newsletter_subscribers")
-        .update({ 
-          status: "unsubscribed",
-          unsubscribed_at: new Date().toISOString()
-        })
-        .eq("email", emailToUnsubscribe);
+        .rpc("unsubscribe_newsletter_by_email", { p_email: emailToUnsubscribe });
 
       if (error) {
         logger.error("Unsubscribe error:", error);
