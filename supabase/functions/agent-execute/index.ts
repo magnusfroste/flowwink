@@ -3879,7 +3879,30 @@ async function executeOrdersAction(
   args: Record<string, unknown>,
 ): Promise<unknown> {
   if (skillName === 'manage_orders') {
-    const { action = 'list', order_id, status, period = 'month', limit = 20 } = args as any;
+    let { action = 'list', order_id, status, period = 'month', limit = 20 } = args as any;
+
+    // ACTION_ALIASES — tolerate natural verbs from MCP clients (Agent Contract Integrity layer 3).
+    // Verbs like ship/fulfill/deliver/cancel/refund/pay map to update_status with implied target.
+    const ACTION_ALIASES: Record<string, { action: string; status?: string }> = {
+      update: { action: 'update_status' },
+      set_status: { action: 'update_status' },
+      change_status: { action: 'update_status' },
+      ship: { action: 'update_status', status: 'shipped' },
+      mark_shipped: { action: 'update_status', status: 'shipped' },
+      fulfill: { action: 'update_status', status: 'fulfilled' },
+      mark_fulfilled: { action: 'update_status', status: 'fulfilled' },
+      deliver: { action: 'update_status', status: 'delivered' },
+      mark_delivered: { action: 'update_status', status: 'delivered' },
+      pay: { action: 'update_status', status: 'paid' },
+      mark_paid: { action: 'update_status', status: 'paid' },
+      cancel: { action: 'update_status', status: 'cancelled' },
+      refund: { action: 'update_status', status: 'refunded' },
+    };
+    const alias = ACTION_ALIASES[String(action).toLowerCase()];
+    if (alias) {
+      action = alias.action;
+      if (alias.status && !status) status = alias.status;
+    }
 
     if (action === 'list') {
       let query = supabase.from('orders')
