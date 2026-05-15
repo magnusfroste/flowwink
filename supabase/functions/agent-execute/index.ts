@@ -2891,6 +2891,16 @@ async function executeDealsAction(
     const norm = normalizeDealStage((args as any).stage);
     if (norm) (args as any).stage = norm;
   }
+  // Hard guard against unknown enum values reaching Postgres.
+  const VALID_DEAL_STAGES = new Set([
+    'lead', 'prospecting', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost',
+  ]);
+  if ((args as any).stage !== undefined && !VALID_DEAL_STAGES.has((args as any).stage)) {
+    throw new Error(
+      `Invalid deal stage: "${(args as any).stage}". Valid stages: ${[...VALID_DEAL_STAGES].join(', ')}. ` +
+      `Friendly aliases (won/lost/new/open/etc.) are auto-normalized — see DEAL_STAGE_ALIASES.`
+    );
+  }
 
   if (action === 'list') {
     const { stage, lead_id } = args as any;
