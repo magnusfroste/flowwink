@@ -4761,11 +4761,31 @@ async function executeDbAction(
       const { action = 'list', limit = 50 } = args as any;
       if (action === 'list') {
         const { data, error } = await supabase.from('profiles')
-          .select('id, email, full_name, role, created_at')
+          .select('id, email, full_name, created_at')
           .order('created_at', { ascending: false })
           .limit(limit);
         if (error) throw new Error(`List users failed: ${error.message}`);
-        return { users: data || [], count: (data || []).length };
+        const users = data || [];
+        // Roles live in user_roles (multi-role). Join in a second query.
+        const ids = users.map((u: any) => u.id);
+        let rolesByUser: Record<string, string[]> = {};
+        if (ids.length) {
+          const { data: roleRows } = await supabase
+            .from('user_roles')
+            .select('user_id, role')
+            .in('user_id', ids);
+          for (const r of (roleRows ?? []) as Array<{ user_id: string; role: string }>) {
+            (rolesByUser[r.user_id] ||= []).push(r.role);
+          }
+        }
+        return {
+          users: users.map((u: any) => ({
+            ...u,
+            roles: rolesByUser[u.id] ?? [],
+            role: (rolesByUser[u.id] ?? [])[0] ?? null,
+          })),
+          count: users.length,
+        };
       }
       return { error: `Unknown profiles action: ${action}` };
     }
