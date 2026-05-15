@@ -35,10 +35,10 @@ export default function PublicInvoicePage() {
 
   // Mark viewed once
   useEffect(() => {
-    if (invoice?.id && !invoice.viewed_at) {
-      supabase.from('invoices').update({ viewed_at: new Date().toISOString() }).eq('id', invoice.id).then(() => {});
+    if (invoice?.id && !invoice.viewed_at && token) {
+      supabase.rpc('mark_invoice_viewed_by_token', { p_token: token }).then(() => {});
     }
-  }, [invoice?.id, invoice?.viewed_at]);
+  }, [invoice?.id, invoice?.viewed_at, token]);
 
   const handlePay = async () => {
     if (!token) return;
