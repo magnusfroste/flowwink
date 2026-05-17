@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   FlaskConical, Play, CheckCircle2, XCircle, Clock, Loader2, Search,
   ExternalLink, Terminal, BookOpen, Layers, Boxes, Bot, Shield,
+  History, Info, RefreshCw,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -12,13 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { getAllSuites, type TestSuite, type TestScope } from '@/lib/platform-tests/registry';
 import { useModules } from '@/hooks/useModules';
 import { bootstrapModule } from '@/lib/module-bootstrap';
-import { RefreshCw } from 'lucide-react';
 import { InstanceHealthCard } from '@/components/admin/InstanceHealthCard';
+import { useLatestTestRuns, useSuiteRunHistory, formatRelativeTime, type PlatformTestRun } from '@/hooks/usePlatformTestRuns';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CheckResult {
   suite: string;
