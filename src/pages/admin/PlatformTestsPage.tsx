@@ -140,11 +140,15 @@ export default function PlatformTestsPage() {
     }
   };
 
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number; label: string } | null>(null);
   const runAllPlatform = async () => {
     const platformSuites = filtered.filter((s) => s.scope === 'platform' && s.run.mode === 'edge');
-    for (const s of platformSuites) {
-      await runSuite(s);
+    if (platformSuites.length === 0) return;
+    for (let i = 0; i < platformSuites.length; i++) {
+      setBulkProgress({ current: i + 1, total: platformSuites.length, label: platformSuites[i].title });
+      await runSuite(platformSuites[i]);
     }
+    setBulkProgress(null);
   };
 
   const { data: modules } = useModules();
@@ -206,13 +210,35 @@ export default function PlatformTestsPage() {
             title="Platform Tests"
             description="The single source of truth for every test in FlowWink — what we test, how to run it, and when it was last green."
           />
-          <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1">
-            <Play className="h-4 w-4 mr-2" /> Run all platform suites
+          <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1" disabled={!!bulkProgress}>
+            {bulkProgress ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {bulkProgress.current}/{bulkProgress.total}…</>
+            ) : (
+              <><Play className="h-4 w-4 mr-2" /> Run all platform suites</>
+            )}
           </Button>
-          <Button onClick={reseedAllFailing} variant="outline" size="sm" className="shrink-0 mt-1">
+          <Button onClick={reseedAllFailing} variant="outline" size="sm" className="shrink-0 mt-1" disabled={!!bulkProgress}>
             <RefreshCw className="h-4 w-4 mr-2" /> Re-seed failing modules
           </Button>
         </div>
+
+        {bulkProgress && (
+          <Alert className="border-primary/40 bg-primary/5">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <AlertDescription className="text-sm flex items-center justify-between gap-3">
+              <span>
+                Running suite <strong>{bulkProgress.current}</strong> of <strong>{bulkProgress.total}</strong>:{' '}
+                <span className="font-mono">{bulkProgress.label}</span>
+              </span>
+              <div className="w-40 h-1.5 bg-primary/15 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                />
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Alert>
           <Info className="h-4 w-4" />
@@ -329,7 +355,12 @@ function SuiteCard({
   const isDocsOnly = suite.run.mode === 'docs-only';
 
   return (
-    <Card>
+    <Card className={isRunning ? 'border-primary/40 shadow-sm' : undefined}>
+      {isRunning && (
+        <div className="h-0.5 w-full overflow-hidden bg-primary/10 rounded-t-lg">
+          <div className="h-full w-1/3 bg-primary animate-[pulse_1.2s_ease-in-out_infinite]" />
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -341,7 +372,11 @@ function SuiteCard({
                 <Badge variant="outline" className="text-xs">{String(suite.module)}</Badge>
               )}
               <Badge variant="outline" className="text-xs capitalize">{suite.category}</Badge>
-              {state?.summary ? (
+              {isRunning ? (
+                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30 gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Running…
+                </Badge>
+              ) : state?.summary ? (
                 <Badge
                   variant="outline"
                   className={state.summary.failed === 0
@@ -374,11 +409,6 @@ function SuiteCard({
             <Button onClick={onShowHistory} variant="ghost" size="sm" title="View run history">
               <History className="h-3.5 w-3.5" />
             </Button>
-            <CardTitle className="text-base">{suite.title}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
             {suite.docs && (
               suite.docs.startsWith('/') ? (
                 <Button variant="outline" size="sm" asChild>
