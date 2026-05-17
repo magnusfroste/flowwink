@@ -138,6 +138,7 @@ import HandbookPage from "./pages/admin/HandbookPage";
 import TimesheetsPage from "./pages/admin/TimesheetsPage";
 import ContractsPage from "./pages/admin/ContractsPage";
 import ContractEditorPage from "./pages/admin/ContractEditorPage";
+import ContractTemplatesPage from "./pages/admin/ContractTemplatesPage";
 import PublicContractPage from "./pages/PublicContractPage";
 import HRPage from "./pages/admin/HRPage";
 import RecruitmentPage from "./pages/admin/RecruitmentPage";
