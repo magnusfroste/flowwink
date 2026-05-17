@@ -7358,6 +7358,69 @@ export type Database = {
           },
         ]
       }
+      platform_test_runs: {
+        Row: {
+          category: string | null
+          created_at: string
+          duration_ms: number
+          error: string | null
+          failed: number
+          id: string
+          module: string | null
+          passed: number
+          results: Json | null
+          run_by: string | null
+          scope: string
+          skipped: number
+          started_at: string
+          status: string
+          suite_id: string
+          suite_title: string | null
+          total: number
+          triggered_by: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          failed?: number
+          id?: string
+          module?: string | null
+          passed?: number
+          results?: Json | null
+          run_by?: string | null
+          scope: string
+          skipped?: number
+          started_at?: string
+          status: string
+          suite_id: string
+          suite_title?: string | null
+          total?: number
+          triggered_by?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          failed?: number
+          id?: string
+          module?: string | null
+          passed?: number
+          results?: Json | null
+          run_by?: string | null
+          scope?: string
+          skipped?: number
+          started_at?: string
+          status?: string
+          suite_id?: string
+          suite_title?: string | null
+          total?: number
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       pos_payments: {
         Row: {
           amount_cents: number
@@ -11657,6 +11720,25 @@ export type Database = {
           path: string[] | null
           status: string | null
           toolset_groups: string[] | null
+        }
+        Relationships: []
+      }
+      platform_test_runs_latest: {
+        Row: {
+          category: string | null
+          duration_ms: number | null
+          error: string | null
+          failed: number | null
+          module: string | null
+          passed: number | null
+          scope: string | null
+          skipped: number | null
+          started_at: string | null
+          status: string | null
+          suite_id: string | null
+          suite_title: string | null
+          total: number | null
+          triggered_by: string | null
         }
         Relationships: []
       }

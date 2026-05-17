@@ -49,9 +49,10 @@ jobs:
         run: npx -y bun run scripts/check-doc-drift.ts --warn
         continue-on-error: true
 
-      - name: Skill linter (Agent Contract Integrity)
+      - name: Skill linter (Agent Contract Integrity — BLOCKING)
         run: npx -y bun run scripts/skill-linter.ts
-        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # MCP live regression runs in dedicated workflow (.github/workflows/mcp-regression.yml)
       # — triggered on module changes + daily cron. Kept out of PR CI to avoid

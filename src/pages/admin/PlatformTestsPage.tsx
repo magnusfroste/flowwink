@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   FlaskConical, Play, CheckCircle2, XCircle, Clock, Loader2, Search,
   ExternalLink, Terminal, BookOpen, Layers, Boxes, Bot, Shield,
+  History, Info, RefreshCw,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -12,13 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { getAllSuites, type TestSuite, type TestScope } from '@/lib/platform-tests/registry';
 import { useModules } from '@/hooks/useModules';
 import { bootstrapModule } from '@/lib/module-bootstrap';
-import { RefreshCw } from 'lucide-react';
 import { InstanceHealthCard } from '@/components/admin/InstanceHealthCard';
+import { useLatestTestRuns, useSuiteRunHistory, formatRelativeTime, type PlatformTestRun } from '@/hooks/usePlatformTestRuns';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CheckResult {
   suite: string;
@@ -78,6 +82,10 @@ export default function PlatformTestsPage() {
     return c;
   }, [allSuites]);
 
+  const queryClient = useQueryClient();
+  const { data: latestRuns } = useLatestTestRuns();
+  const [historySuite, setHistorySuite] = useState<TestSuite | null>(null);
+
   const runSuite = async (suite: TestSuite) => {
     if (suite.run.mode !== 'edge') return;
     setRunState((prev) => ({ ...prev, [suite.id]: { status: 'running' } }));
@@ -91,7 +99,20 @@ export default function PlatformTestsPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify(suite.run.payload ?? {}),
+          body: JSON.stringify({
+            ...(suite.run.payload ?? {}),
+            // Tell the edge function HOW to log this run — so per-module suites
+            // are grouped by their unique suite_id, not by the underlying
+            // 'module_skills' generic implementation.
+            loggedAs: {
+              suite_id: suite.id,
+              suite_title: suite.title,
+              scope: suite.scope,
+              category: suite.category,
+              module: suite.module ? String(suite.module) : undefined,
+            },
+            triggered_by: 'ui',
+          }),
         },
       );
       if (!response.ok) {
@@ -103,6 +124,8 @@ export default function PlatformTestsPage() {
         ...prev,
         [suite.id]: { status: 'done', results: data.results, summary: data.summary },
       }));
+      // Refresh "Last run" badges so the new run appears without a page reload.
+      queryClient.invalidateQueries({ queryKey: ['platform-test-runs-latest'] });
       if (data.summary?.failed === 0) {
         toast.success(`${suite.title}: ${data.summary.passed} checks passed`);
       } else {
@@ -160,13 +183,28 @@ export default function PlatformTestsPage() {
     }
   };
 
+  // Aggregate stats for the header
+  const aggregate = useMemo(() => {
+    if (!latestRuns) return { tested: 0, failing: 0, never: filtered.length };
+    let tested = 0, failing = 0, never = 0;
+    for (const s of filtered) {
+      const last = latestRuns.get(s.id);
+      if (!last) never++;
+      else {
+        tested++;
+        if (last.failed > 0) failing++;
+      }
+    }
+    return { tested, failing, never };
+  }, [filtered, latestRuns]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
           <AdminPageHeader
             title="Platform Tests"
-            description="The catalog of every test in FlowWink — runnable from here, or executed by CI / run manually. Module tests appear automatically when modules are registered."
+            description="The single source of truth for every test in FlowWink — what we test, how to run it, and when it was last green."
           />
           <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1">
             <Play className="h-4 w-4 mr-2" /> Run all platform suites
@@ -175,6 +213,44 @@ export default function PlatformTestsPage() {
             <RefreshCw className="h-4 w-4 mr-2" /> Re-seed failing modules
           </Button>
         </div>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1">
+                  <Layers className="h-3 w-3" /> Platform
+                </Badge>
+                <p className="text-muted-foreground">Live health of the running DB + edge stack. Runnable here. Logs to history.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 gap-1">
+                  <Boxes className="h-3 w-3" /> Module
+                </Badge>
+                <p className="text-muted-foreground">Auto-generated per module. Verifies skill seeds exist. Re-seed fixes drift.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1">
+                  <Bot className="h-3 w-3" /> Operator
+                </Badge>
+                <p className="text-muted-foreground">FlowPilot reasoning, skill selection, autonomy levels. Has its own page.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
+                  <Shield className="h-3 w-3" /> CI Guardrail
+                </Badge>
+                <p className="text-muted-foreground">Code-level contracts (skill linter, RPC drift). Runs on every PR — not UI-triggerable.</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t flex flex-wrap gap-4 text-muted-foreground">
+              <span><strong className="text-foreground">{aggregate.tested}</strong> suites with run history</span>
+              <span><strong className={aggregate.failing > 0 ? 'text-destructive' : 'text-foreground'}>{aggregate.failing}</strong> currently failing</span>
+              <span><strong className="text-foreground">{aggregate.never}</strong> never run</span>
+              <span className="ml-auto italic">Click <History className="h-3 w-3 inline" /> on a card to see last 10 runs.</span>
+            </div>
+          </AlertDescription>
+        </Alert>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           <Tabs value={scopeFilter} onValueChange={(v) => setScopeFilter(v as 'all' | TestScope)}>
@@ -213,12 +289,16 @@ export default function PlatformTestsPage() {
               key={suite.id}
               suite={suite}
               state={runState[suite.id]}
+              lastRun={latestRuns?.get(suite.id)}
               onRun={() => runSuite(suite)}
               onReseed={suite.scope === 'module' ? () => reseedModule(suite) : undefined}
               reseeding={reseeding === suite.id}
+              onShowHistory={() => setHistorySuite(suite)}
             />
           ))}
         </div>
+
+        <HistoryDialog suite={historySuite} onClose={() => setHistorySuite(null)} />
       </div>
     </AdminLayout>
   );
@@ -227,15 +307,19 @@ export default function PlatformTestsPage() {
 function SuiteCard({
   suite,
   state,
+  lastRun,
   onRun,
   onReseed,
   reseeding,
+  onShowHistory,
 }: {
   suite: TestSuite;
   state?: SuiteRunState;
+  lastRun?: PlatformTestRun;
   onRun: () => void;
   onReseed?: () => void;
   reseeding?: boolean;
+  onShowHistory: () => void;
 }) {
   const meta = SCOPE_META[suite.scope];
   const Icon = meta.icon;
@@ -257,17 +341,39 @@ function SuiteCard({
                 <Badge variant="outline" className="text-xs">{String(suite.module)}</Badge>
               )}
               <Badge variant="outline" className="text-xs capitalize">{suite.category}</Badge>
-              {state?.summary && (
+              {state?.summary ? (
                 <Badge
                   variant="outline"
                   className={state.summary.failed === 0
                     ? 'text-xs bg-green-500/10 text-green-600 border-green-500/30'
                     : 'text-xs bg-destructive/10 text-destructive border-destructive/30'}
                 >
-                  {state.summary.passed}/{state.summary.total} passed · {state.summary.duration_ms}ms
+                  {state.summary.passed}/{state.summary.total} passed · {state.summary.duration_ms}ms · just now
+                </Badge>
+              ) : lastRun ? (
+                <Badge
+                  variant="outline"
+                  className={lastRun.failed === 0
+                    ? 'text-xs bg-green-500/10 text-green-600 border-green-500/30'
+                    : 'text-xs bg-destructive/10 text-destructive border-destructive/30'}
+                  title={`Triggered by ${lastRun.triggered_by} at ${new Date(lastRun.started_at).toLocaleString()}`}
+                >
+                  {lastRun.passed}/{lastRun.total} passed · {formatRelativeTime(lastRun.started_at)}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  Never run
                 </Badge>
               )}
             </div>
+            <CardTitle className="text-base">{suite.title}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button onClick={onShowHistory} variant="ghost" size="sm" title="View run history">
+              <History className="h-3.5 w-3.5" />
+            </Button>
             <CardTitle className="text-base">{suite.title}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
           </div>
@@ -354,6 +460,50 @@ function SuiteCard({
         </CardContent>
       )}
     </Card>
+  );
+}
+
+function HistoryDialog({ suite, onClose }: { suite: TestSuite | null; onClose: () => void }) {
+  const { data: history, isLoading } = useSuiteRunHistory(suite?.id ?? null, 10);
+  return (
+    <Dialog open={!!suite} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-4 w-4" /> Run history: {suite?.title}
+          </DialogTitle>
+        </DialogHeader>
+        {isLoading && <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>}
+        {!isLoading && history && history.length === 0 && (
+          <p className="text-sm text-muted-foreground py-6 text-center">No runs recorded yet for this suite.</p>
+        )}
+        {history && history.length > 0 && (
+          <ScrollArea className="max-h-96">
+            <div className="space-y-1.5">
+              {history.map((run, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 px-3 rounded border text-xs">
+                  {run.failed === 0 ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono">
+                      {run.passed}/{run.total} passed
+                      {run.failed > 0 && <span className="text-destructive"> · {run.failed} failed</span>}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5">
+                      {new Date(run.started_at).toLocaleString()} · via {run.triggered_by} · {run.duration_ms}ms
+                    </p>
+                    {run.error && <p className="text-destructive font-mono mt-1 break-all">{run.error}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

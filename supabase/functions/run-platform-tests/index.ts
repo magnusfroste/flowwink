@@ -398,19 +398,19 @@ serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as {
       suiteIds?: string[];
       payload?: Record<string, unknown>;
+      // UI sends these so the history row is meaningful + grouped correctly.
+      loggedAs?: { suite_id: string; suite_title?: string; scope?: string; category?: string; module?: string };
+      triggered_by?: 'ui' | 'edge' | 'ci' | 'cron' | 'manual';
     };
     const suiteIds = body.suiteIds && body.suiteIds.length > 0
       ? body.suiteIds
       : Object.keys(SUITES);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
     const admin = getServiceClient();
     const anon = getAnonClient();
 
     const start = Date.now();
+    const startedAt = new Date().toISOString();
     const allResults: TestResult[] = [];
 
     for (const id of suiteIds) {
@@ -436,6 +436,39 @@ serve(async (req) => {
       skipped: allResults.filter((r) => r.status === "skip").length,
       duration_ms: Date.now() - start,
     };
+
+    // Persist run history. Best-effort: never block the response on a logging failure.
+    try {
+      const loggedSuiteId = body.loggedAs?.suite_id ?? suiteIds[0] ?? "unknown";
+      // Infer user from JWT (if provided by UI)
+      let runBy: string | null = null;
+      const authHeader = req.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const { data: u } = await admin.auth.getUser(authHeader.replace("Bearer ", ""));
+          runBy = u?.user?.id ?? null;
+        } catch { /* ignore */ }
+      }
+      await admin.from("platform_test_runs").insert({
+        suite_id: loggedSuiteId,
+        suite_title: body.loggedAs?.suite_title ?? null,
+        scope: body.loggedAs?.scope ?? "platform",
+        category: body.loggedAs?.category ?? null,
+        module: body.loggedAs?.module ?? null,
+        status: summary.failed > 0 ? "fail" : summary.total === 0 ? "skip" : "pass",
+        total: summary.total,
+        passed: summary.passed,
+        failed: summary.failed,
+        skipped: summary.skipped,
+        duration_ms: summary.duration_ms,
+        results: allResults,
+        triggered_by: body.triggered_by ?? "ui",
+        run_by: runBy,
+        started_at: startedAt,
+      });
+    } catch (logErr) {
+      console.error("[run-platform-tests] failed to log run:", logErr);
+    }
 
     return new Response(
       JSON.stringify({ summary, results: allResults }),
