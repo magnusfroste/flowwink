@@ -80,6 +80,7 @@ const SKILLS: SkillSeed[] = [
             delivered_at: { type: 'string' },
           },
           required: ['action'],
+          'x-action-required': { create: ['order_id'] },
         },
       },
     },
