@@ -330,6 +330,7 @@ const router = createBrowserRouter([
       { path: "/admin/pos/audit", element: <PosAuditPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
       { path: "/admin/contracts", element: <ContractsPage /> },
+      { path: "/admin/contracts/templates", element: <ContractTemplatesPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },
       { path: "/contract/:token", element: <PublicContractPage /> },
       { path: "/admin/hr", element: <HRPage /> },
