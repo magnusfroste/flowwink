@@ -313,12 +313,16 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
   // can't be reliably inferred via static regex — skipped here.)
   if (handler.startsWith('edge:') || handler.startsWith('function:')) {
     const fn = handler.replace(/^(edge|function):/, '');
-    if (!ctx.edgeFunctions.has(fn)) {
+    // Supabase routes sub-paths inside an edge function via internal routing
+    // (e.g. `edge:reconciliation/auto-match` → function `reconciliation`).
+    // Only check the first path segment for existence on disk.
+    const topLevel = fn.split('/')[0];
+    if (!ctx.edgeFunctions.has(topLevel)) {
       findings.push({
         layer: 5,
         severity: 'error',
         rule: 'edge-function-missing',
-        message: `Handler is "${handler}" but supabase/functions/${fn}/ does not exist.`,
+        message: `Handler is "${handler}" but supabase/functions/${topLevel}/ does not exist.`,
         fix: `Create the edge function, repoint the handler, or disable the skill.`,
       });
     }
