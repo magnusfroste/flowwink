@@ -183,13 +183,28 @@ export default function PlatformTestsPage() {
     }
   };
 
+  // Aggregate stats for the header
+  const aggregate = useMemo(() => {
+    if (!latestRuns) return { tested: 0, failing: 0, never: filtered.length };
+    let tested = 0, failing = 0, never = 0;
+    for (const s of filtered) {
+      const last = latestRuns.get(s.id);
+      if (!last) never++;
+      else {
+        tested++;
+        if (last.failed > 0) failing++;
+      }
+    }
+    return { tested, failing, never };
+  }, [filtered, latestRuns]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
           <AdminPageHeader
             title="Platform Tests"
-            description="The catalog of every test in FlowWink — runnable from here, or executed by CI / run manually. Module tests appear automatically when modules are registered."
+            description="The single source of truth for every test in FlowWink — what we test, how to run it, and when it was last green."
           />
           <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1">
             <Play className="h-4 w-4 mr-2" /> Run all platform suites
@@ -198,6 +213,44 @@ export default function PlatformTestsPage() {
             <RefreshCw className="h-4 w-4 mr-2" /> Re-seed failing modules
           </Button>
         </div>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1">
+                  <Layers className="h-3 w-3" /> Platform
+                </Badge>
+                <p className="text-muted-foreground">Live health of the running DB + edge stack. Runnable here. Logs to history.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 gap-1">
+                  <Boxes className="h-3 w-3" /> Module
+                </Badge>
+                <p className="text-muted-foreground">Auto-generated per module. Verifies skill seeds exist. Re-seed fixes drift.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1">
+                  <Bot className="h-3 w-3" /> Operator
+                </Badge>
+                <p className="text-muted-foreground">FlowPilot reasoning, skill selection, autonomy levels. Has its own page.</p>
+              </div>
+              <div className="space-y-1">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
+                  <Shield className="h-3 w-3" /> CI Guardrail
+                </Badge>
+                <p className="text-muted-foreground">Code-level contracts (skill linter, RPC drift). Runs on every PR — not UI-triggerable.</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t flex flex-wrap gap-4 text-muted-foreground">
+              <span><strong className="text-foreground">{aggregate.tested}</strong> suites with run history</span>
+              <span><strong className={aggregate.failing > 0 ? 'text-destructive' : 'text-foreground'}>{aggregate.failing}</strong> currently failing</span>
+              <span><strong className="text-foreground">{aggregate.never}</strong> never run</span>
+              <span className="ml-auto italic">Click <History className="h-3 w-3 inline" /> on a card to see last 10 runs.</span>
+            </div>
+          </AlertDescription>
+        </Alert>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           <Tabs value={scopeFilter} onValueChange={(v) => setScopeFilter(v as 'all' | TestScope)}>
@@ -236,12 +289,16 @@ export default function PlatformTestsPage() {
               key={suite.id}
               suite={suite}
               state={runState[suite.id]}
+              lastRun={latestRuns?.get(suite.id)}
               onRun={() => runSuite(suite)}
               onReseed={suite.scope === 'module' ? () => reseedModule(suite) : undefined}
               reseeding={reseeding === suite.id}
+              onShowHistory={() => setHistorySuite(suite)}
             />
           ))}
         </div>
+
+        <HistoryDialog suite={historySuite} onClose={() => setHistorySuite(null)} />
       </div>
     </AdminLayout>
   );
