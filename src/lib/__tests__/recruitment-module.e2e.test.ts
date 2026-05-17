@@ -56,6 +56,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: (table: string) => makeQuery(table),
     functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
+    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
   },
 }));
 
