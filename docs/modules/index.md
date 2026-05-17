@@ -62,7 +62,8 @@ generated: true
 | [Federation](./federation.md) | — | 6 | Multi-agent federation — connect FlowPilot to external Architects (Claude, OpenClaw peers) via MCP, A2A, and /v1/respons |
 | [FlowPilot](./flowpilot.md) | — | — | The autonomous AI operator at the heart of FlowWink. Soul + objectives + skills + memory + heartbeat + reflection — mode |
 | [river.md](./river.md) | — | — | — |
-| [subscriptions-v2.md](./subscriptions-v2.md) | — | — | — |
+| [subscriptions-v2.md](./subscriptions-v2.md) | — | — | Renewals, churn, win-back, at-risk scoring on top of v1 |
+| [subscriptions-invoice-billing.md](./subscriptions-invoice-billing.md) | — | 3 | B2B invoice-driven (manual) subscriptions — RPCs, daily cron, MCP skills, accounting flow |
 | [wiki.md](./wiki.md) | — | 2 | Internal TEdit-style wiki / intranet for FlowWink. |
 
 ## Data
