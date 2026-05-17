@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Plus, Trash2, FileText } from 'lucide-react';
+import { Pencil, Plus, Trash2, FileText, Languages, Copy, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { useAITextGeneration } from '@/hooks/useAITextGeneration';
 
 type ContractType = 'service' | 'nda' | 'employment' | 'lease' | 'other';
 type RenewalType = 'none' | 'auto' | 'manual';
