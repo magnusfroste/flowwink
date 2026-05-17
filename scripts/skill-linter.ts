@@ -237,11 +237,17 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
   // Read-only / list / check / summary skills never write, so missing NOT
   // NULL columns are not bugs there — downgrade to INFO so the linter
   // tells the truth and we can act on real issues only.
-  const WRITE_ACTIONS = ['create', 'insert', 'add', 'upsert', 'save'];
+  const WRITE_ACTIONS = ['create', 'insert', 'add', 'upsert', 'save', 'update', 'edit', 'patch'];
   const actionEnum: string[] = Array.isArray(props?.action?.enum) ? props.action.enum : [];
+  // Name-based read-only inference when no action enum is declared.
+  // Skills whose name signals a query/report/check never INSERT — treat
+  // missing NOT NULL columns as informational rather than a blocking error.
+  const READ_ONLY_NAME_RE =
+    /^(list_|search_|get_|find_|fetch_|read_|summarize_|analyze_|users_list$|crm_task_list$|accounting_reports$|site_branding_get$)|(_check|_reports|_list|_get|_status|_summary)$/;
+  const READ_ONLY_NAME_HIT = READ_ONLY_NAME_RE.test(skill.name);
   const canWrite =
-    actionEnum.length === 0 // no action enum → raw insert handler assumed
-      ? true
+    actionEnum.length === 0
+      ? !READ_ONLY_NAME_HIT
       : actionEnum.some((a) => WRITE_ACTIONS.includes(a));
 
   if (handler.startsWith('db:')) {
