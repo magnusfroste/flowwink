@@ -90,6 +90,7 @@ const SKILLS: SkillSeed[] = [
             notes: { type: 'string' },
           },
           required: ['action'],
+          'x-action-required': { create: ['pricelist_id'] },
         },
       },
     },
