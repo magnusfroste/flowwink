@@ -307,15 +307,19 @@ export default function PlatformTestsPage() {
 function SuiteCard({
   suite,
   state,
+  lastRun,
   onRun,
   onReseed,
   reseeding,
+  onShowHistory,
 }: {
   suite: TestSuite;
   state?: SuiteRunState;
+  lastRun?: PlatformTestRun;
   onRun: () => void;
   onReseed?: () => void;
   reseeding?: boolean;
+  onShowHistory: () => void;
 }) {
   const meta = SCOPE_META[suite.scope];
   const Icon = meta.icon;
