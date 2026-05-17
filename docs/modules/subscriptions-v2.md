@@ -50,3 +50,38 @@ Extends the v1 Subscriptions module with renewal awareness, churn intelligence a
 - `send_winback` skill (edge function that creates a `subscription_winback_sends` row + sends email)
 - Health-score computation (currently nullable; needs feeder pipeline from payments + tickets + login activity)
 - Customer-facing exit-survey block to populate `subscription_churn_reasons`
+
+---
+
+## Invoice-driven (manual) subscriptions — B2B
+
+Stripe is no longer the only billing path. The platform supports **invoice-billed subscriptions** for B2B customers (telecom plans, retainers, hosted services) who pay by invoice instead of card.
+
+### Data model
+On `subscriptions`:
+- `provider` — `'stripe'` (webhook-synced) or `'manual'` (platform-managed)
+- `payment_terms` — `invoice_30` | `invoice_14` | `invoice_7` | `direct_debit` | `manual` | `prepaid_card`
+- `next_invoice_date` — driven by the daily billing cron
+- `billing_interval_count` — e.g. 3 with `interval=month` for quarterly
+- `billing_contact_email` — B2B AP/AR contact (can differ from `customer_email`)
+- `po_number` — customer purchase order reference
+- `last_invoice_id` — link to most recent generated invoice
+
+### RPCs (all SECURITY DEFINER, MCP-exposed)
+- `create_manual_subscription(...)` — admin creates a recurring subscription
+- `generate_subscription_invoice(subscription_id, tax_rate?, due_in_days?)` — creates a `draft` invoice and advances `next_invoice_date`
+- `cancel_manual_subscription(subscription_id, reason?, effective_date?)` — stops further invoicing
+
+### Daily billing cron
+`supabase/functions/subscription-billing-cron` runs at **06:00 UTC** (`subscription-billing-daily` pg_cron job). It selects every active `provider='manual'` subscription with `next_invoice_date <= today` and calls `generate_subscription_invoice` per row. Idempotent (the RPC advances the date so reruns the same day do nothing).
+
+### Events emitted (platform event bus)
+- `subscription.created` — on manual sub creation
+- `subscription.invoiced` — every time a draft invoice is generated
+- `subscription.canceled` — on manual cancel
+
+### UI
+`/admin/subscriptions` → **New manual subscription** button opens a dialog with customer, plan, price, interval, payment terms, start date, billing contact, PO number.
+
+### Why not just use Stripe Invoicing?
+Stripe Invoicing works for digital-first SMBs but pulls B2B billing out of the platform's accounting/reconciliation flow. By keeping invoice-billed subs inside the platform, the generated invoices land in the same `invoices` table that BAS/SIE/SAF-T export adapters already read — so revenue recognition and reconciliation work uniformly across card and invoice channels.
