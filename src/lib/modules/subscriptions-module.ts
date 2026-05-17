@@ -245,6 +245,9 @@ export const subscriptionsModule = defineModule<Input, Output>({
     'flag_at_risk_subscriptions',
     'record_churn_reason',
     'list_winback_campaigns',
+    'create_manual_subscription',
+    'generate_subscription_invoice',
+    'cancel_manual_subscription',
     // Dunning skills (list_dunning_sequences, pause_dunning, escalate_dunning)
     // exist as edge function `subscriptions` but are not yet seeded as skills.
     // Re-add here once SkillSeed entries are written.
