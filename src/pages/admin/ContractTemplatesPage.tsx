@@ -293,7 +293,10 @@ function TemplateDialog({
           </div>
 
           <div className="md:col-span-2 space-y-2">
-            <Label>Body (Markdown, with tokens)</Label>
+            <div className="flex items-center justify-between">
+              <Label>Body (Markdown, with tokens)</Label>
+              <TranslatePreviewButton text={t.body_markdown || ''} />
+            </div>
             <Textarea
               rows={18}
               value={t.body_markdown || ''}
