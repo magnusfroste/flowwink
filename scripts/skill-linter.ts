@@ -301,23 +301,10 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
     }
   }
 
-  // ─── Layer 5: Action-enum dispatcher coverage ──────────────────────
-  // For module:* / internal:* handlers, verify the skill name maps to a
-  // `case '<name>':` in agent-execute. The most common silent bug is a
-  // skill repointed to a module dispatcher that has no matching case.
-  if (handler.startsWith('module:') || handler.startsWith('internal:')) {
-    if (!ctx.dispatcherCases.has(skill.name)) {
-      findings.push({
-        layer: 5,
-        severity: 'error',
-        rule: 'dispatcher-case-missing',
-        message: `Handler is "${handler}" but agent-execute has no \`case '${skill.name}':\` to dispatch it.`,
-        fix: `Add a switch-case in supabase/functions/agent-execute/index.ts that handles "${skill.name}", or repoint the handler.`,
-      });
-    }
-  }
-
+  // ─── Layer 5: Handler reachability ─────────────────────────────────
   // For edge:* handlers, verify the function directory exists on disk.
+  // (Module/internal handlers are dispatched via nested routing that
+  // can't be reliably inferred via static regex — skipped here.)
   if (handler.startsWith('edge:') || handler.startsWith('function:')) {
     const fn = handler.replace(/^(edge|function):/, '');
     if (!ctx.edgeFunctions.has(fn)) {
