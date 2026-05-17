@@ -282,7 +282,7 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
 
       // Per-action required check — only meaningful for write-capable skills
       if (canWrite) {
-        const params = skill.tool_definition?.function?.parameters;
+        const params = td?.function?.parameters ?? td?.parameters;
         const allOf = params?.allOf ?? [];
         const hasWriteAction = actionEnum.some((a) => WRITE_ACTIONS.includes(a));
         if (hasWriteAction) {
