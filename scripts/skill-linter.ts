@@ -126,8 +126,20 @@ async function lintSkills(only?: string): Promise<LintResult> {
 
   await client.end();
 
+  // Static scan of agent-execute for `case '<name>':` dispatch entries
+  // (Layer 5 — catches module:/internal: handlers without a dispatcher case)
+  const dispatcherCases = collectDispatcherCases();
+  const edgeFunctions = collectEdgeFunctions();
+
   const reports: SkillReport[] = skills.map((skill) =>
-    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, publicTables, autoFilled }),
+    lintSingleSkill(skill, {
+      rpcArgsByName,
+      notNullByTable,
+      publicTables,
+      autoFilled,
+      dispatcherCases,
+      edgeFunctions,
+    }),
   );
 
   const totalFindings = reports.reduce((s, r) => s + r.findings.length, 0);
@@ -150,11 +162,35 @@ async function lintSkills(only?: string): Promise<LintResult> {
   };
 }
 
+function collectDispatcherCases(): Set<string> {
+  const file = path.join(process.cwd(), 'supabase/functions/agent-execute/index.ts');
+  const set = new Set<string>();
+  if (!fs.existsSync(file)) return set;
+  const src = fs.readFileSync(file, 'utf8');
+  const re = /case\s+['"]([a-zA-Z0-9_]+)['"]\s*:/g;
+  let m;
+  while ((m = re.exec(src))) set.add(m[1]);
+  return set;
+}
+
+function collectEdgeFunctions(): Set<string> {
+  const dir = path.join(process.cwd(), 'supabase/functions');
+  if (!fs.existsSync(dir)) return new Set();
+  return new Set(
+    fs.readdirSync(dir).filter((n) => {
+      const stat = fs.statSync(path.join(dir, n));
+      return stat.isDirectory() && !n.startsWith('_') && n !== 'shared';
+    }),
+  );
+}
+
 interface LintCtx {
   rpcArgsByName: Map<string, Set<string>>;
   notNullByTable: Map<string, Set<string>>;
   publicTables: Set<string>;
   autoFilled: Record<string, string[]>;
+  dispatcherCases: Set<string>;
+  edgeFunctions: Set<string>;
 }
 
 function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
