@@ -3280,6 +3280,60 @@ export type Database = {
           },
         ]
       }
+      contract_templates: {
+        Row: {
+          body_markdown: string
+          contract_type: Database["public"]["Enums"]["contract_type"]
+          created_at: string
+          created_by: string | null
+          default_currency: string
+          default_renewal_notice_days: number | null
+          default_renewal_type: Database["public"]["Enums"]["renewal_type"]
+          default_value_cents: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          language: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          body_markdown: string
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          created_at?: string
+          created_by?: string | null
+          default_currency?: string
+          default_renewal_notice_days?: number | null
+          default_renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          default_value_cents?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          language?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          created_at?: string
+          created_by?: string | null
+          default_currency?: string
+          default_renewal_notice_days?: number | null
+          default_renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          default_value_cents?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          language?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contract_versions: {
         Row: {
           contract_id: string
@@ -3342,6 +3396,7 @@ export type Database = {
           signer_name: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["contract_status"]
+          template_id: string | null
           terminated_at: string | null
           title: string
           updated_at: string
@@ -3372,6 +3427,7 @@ export type Database = {
           signer_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
+          template_id?: string | null
           terminated_at?: string | null
           title: string
           updated_at?: string
@@ -3402,6 +3458,7 @@ export type Database = {
           signer_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
+          template_id?: string | null
           terminated_at?: string | null
           title?: string
           updated_at?: string
@@ -3409,7 +3466,15 @@ export type Database = {
           version?: number
           viewed_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_tasks: {
         Row: {
@@ -12115,6 +12180,19 @@ export type Database = {
           p_version?: string
         }
         Returns: Json
+      }
+      create_contract_from_template: {
+        Args: {
+          p_counterparty_email?: string
+          p_counterparty_name: string
+          p_overrides?: Json
+          p_template_id: string
+        }
+        Returns: {
+          contract_id: string
+          status: Database["public"]["Enums"]["contract_status"]
+          title: string
+        }[]
       }
       create_cowork_document: {
         Args: {
