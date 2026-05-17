@@ -2,10 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const mcpServerSource = fs.readFileSync(
-  path.join(process.cwd(), 'supabase/functions/mcp-server/index.ts'),
-  'utf8',
-);
+// MCP server splits its taxonomy across the entrypoint and a shared groups file.
+// Concatenate both so guardrails that match literal strings keep working after refactors.
+const mcpServerSource =
+  fs.readFileSync(path.join(process.cwd(), 'supabase/functions/mcp-server/index.ts'), 'utf8') +
+  '\n/* --- shared/mcp/groups.ts --- */\n' +
+  fs.readFileSync(path.join(process.cwd(), 'supabase/functions/_shared/mcp/groups.ts'), 'utf8');
 
 describe('MCP contract guardrails', () => {
   it('keeps briefing discoverable in both MCP and REST resource listings', () => {
