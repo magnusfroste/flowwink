@@ -1,53 +1,199 @@
 {
   "_comment": "NOT NULL columns without DB defaults, per public table that backs a db:<table> manage_* skill. Regenerate with: bun run scripts/snapshot-db-not-nulls.ts",
-  "_generated_at": "2026-04-27",
+  "_generated_at": "2026-05-17",
   "tables": {
-    "accounting_templates": ["template_name"],
-    "analytic_accounts": ["code", "name"],
-    "chart_of_accounts": ["account_category", "account_code", "account_name", "account_type", "normal_balance"],
-    "contracts": ["counterparty_name", "title"],
-    "documents": ["file_name", "file_url", "title"],
-    "employees": ["name"],
-    "expenses": ["user_id"],
-    "invoices": ["invoice_number"],
-    "job_postings": ["slug", "title"],
-    "journal_entries": ["description"],
-    "leave_requests": ["employee_id", "end_date", "start_date"],
-    "opening_balances": ["account_code", "account_name"],
-    "project_tasks": ["project_id", "title"],
-    "projects": ["name"],
-    "quotes": ["quote_number"],
-    "site_settings": ["key"],
-    "vendors": ["name"]
+    "accounting_templates": [
+      "template_name"
+    ],
+    "activities": [
+      "activity_type",
+      "entity_id",
+      "entity_type"
+    ],
+    "addresses": [
+      "owner_id",
+      "owner_type"
+    ],
+    "analytic_accounts": [
+      "code",
+      "name"
+    ],
+    "carriers": [
+      "code",
+      "name"
+    ],
+    "chart_of_accounts": [
+      "account_category",
+      "account_code",
+      "account_name",
+      "account_type",
+      "normal_balance"
+    ],
+    "contracts": [
+      "counterparty_name",
+      "title"
+    ],
+    "documents": [
+      "file_name",
+      "file_url",
+      "title"
+    ],
+    "employees": [
+      "name"
+    ],
+    "expenses": [
+      "user_id"
+    ],
+    "invoices": [
+      "invoice_number"
+    ],
+    "job_postings": [
+      "slug",
+      "title"
+    ],
+    "journal_entries": [
+      "description"
+    ],
+    "leave_requests": [
+      "employee_id",
+      "end_date",
+      "start_date"
+    ],
+    "opening_balances": [
+      "account_code",
+      "account_name"
+    ],
+    "pricelist_items": [
+      "pricelist_id"
+    ],
+    "pricelists": [
+      "name"
+    ],
+    "project_tasks": [
+      "project_id",
+      "title"
+    ],
+    "projects": [
+      "name"
+    ],
+    "quotes": [
+      "quote_number"
+    ],
+    "return_items": [
+      "return_id"
+    ],
+    "saved_views": [
+      "name",
+      "scope",
+      "user_id"
+    ],
+    "shipments": [
+      "order_id"
+    ],
+    "site_settings": [
+      "key"
+    ],
+    "sla_policies": [
+      "entity_type",
+      "metric",
+      "name",
+      "threshold_minutes"
+    ],
+    "tags": [
+      "name",
+      "slug"
+    ],
+    "vendors": [
+      "name"
+    ]
   },
   "_skill_auto_filled_columns": {
     "_comment": "Per-skill exemptions: columns the skill's handler/service-layer fills automatically (e.g. user_id from JWT, auto-generated invoice numbers, or update-only skills that never insert a new row).",
-    "manage_document": ["file_name"],
-    "manage_expenses": ["user_id"],
-    "manage_invoice": ["invoice_number"],
-    "manage_quote": ["quote_number"],
-    "manage_job_posting": ["slug"],
-    "manage_vendor_defaults": ["name"],
-    "manage_opening_balances": ["account_name"],
-    "manage_saved_views": ["user_id"],
-    "follow_entity": ["user_id"],
-    "manage_activities": ["entity_type", "entity_id", "activity_type"],
-    "manage_addresses": ["owner_type", "owner_id"],
-    "manage_tags": ["slug"],
-    "create_purchase_order": ["po_number"],
-    "update_purchase_order": ["po_number"],
-    "send_purchase_order": ["po_number", "vendor_id"],
-    "create_manufacturing_order": ["mo_number"],
-    "register_vendor_invoice": ["invoice_number"],
-    "invoice_from_timesheets": ["invoice_number"],
-    "research_content": ["research_data"],
-    "seo_content_brief": ["research_data"],
-    "social_post_batch": ["topic"],
-    "competitor_monitor": ["key"],
-    "site_branding_update": ["key"],
-    "move_application_stage": ["job_posting_id", "candidate_name", "candidate_email"],
-    "send_contract_for_signature": ["title", "counterparty_name"],
-    "flag_invoice_variance": ["invoice_number", "vendor_id"]
+    "manage_document": [
+      "file_name"
+    ],
+    "manage_expenses": [
+      "user_id"
+    ],
+    "manage_invoice": [
+      "invoice_number"
+    ],
+    "manage_quote": [
+      "quote_number"
+    ],
+    "manage_job_posting": [
+      "slug"
+    ],
+    "manage_vendor_defaults": [
+      "name"
+    ],
+    "manage_opening_balances": [
+      "account_name"
+    ],
+    "manage_saved_views": [
+      "user_id"
+    ],
+    "follow_entity": [
+      "user_id"
+    ],
+    "manage_activities": [
+      "entity_type",
+      "entity_id",
+      "activity_type"
+    ],
+    "manage_addresses": [
+      "owner_type",
+      "owner_id"
+    ],
+    "manage_tags": [
+      "slug"
+    ],
+    "create_purchase_order": [
+      "po_number"
+    ],
+    "update_purchase_order": [
+      "po_number"
+    ],
+    "send_purchase_order": [
+      "po_number",
+      "vendor_id"
+    ],
+    "create_manufacturing_order": [
+      "mo_number"
+    ],
+    "register_vendor_invoice": [
+      "invoice_number"
+    ],
+    "invoice_from_timesheets": [
+      "invoice_number"
+    ],
+    "research_content": [
+      "research_data"
+    ],
+    "seo_content_brief": [
+      "research_data"
+    ],
+    "social_post_batch": [
+      "topic"
+    ],
+    "competitor_monitor": [
+      "key"
+    ],
+    "site_branding_update": [
+      "key"
+    ],
+    "move_application_stage": [
+      "job_posting_id",
+      "candidate_name",
+      "candidate_email"
+    ],
+    "send_contract_for_signature": [
+      "title",
+      "counterparty_name"
+    ],
+    "flag_invoice_variance": [
+      "invoice_number",
+      "vendor_id"
+    ]
   }
 }
-
