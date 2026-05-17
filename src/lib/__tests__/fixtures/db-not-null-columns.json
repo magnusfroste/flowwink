@@ -28,6 +28,21 @@
     "manage_quote": ["quote_number"],
     "manage_job_posting": ["slug"],
     "manage_vendor_defaults": ["name"],
-    "manage_opening_balances": ["account_name"]
-  }
-}
+    "manage_opening_balances": ["account_name"],
+    "manage_saved_views": ["user_id"],
+    "follow_entity": ["user_id"],
+    "manage_activities": ["entity_type", "entity_id", "activity_type"],
+    "manage_addresses": ["owner_type", "owner_id"],
+    "manage_tags": ["slug"],
+    "create_purchase_order": ["po_number"],
+    "update_purchase_order": ["po_number"],
+    "send_purchase_order": ["po_number", "vendor_id"],
+    "create_manufacturing_order": ["mo_number"],
+    "register_vendor_invoice": ["invoice_number"],
+    "invoice_from_timesheets": ["invoice_number"],
+    "research_content": ["research_data"],
+    "seo_content_brief": ["research_data"],
+    "social_post_batch": ["topic"],
+    "competitor_monitor": ["key"],
+    "site_branding_update": ["key"],
+    "move_application_stage": ["job_posting_id", "candidate_name", "candidate_email"]
