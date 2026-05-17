@@ -17,7 +17,7 @@ import path from 'node:path';
 type Severity = 'error' | 'warn' | 'info';
 
 interface Finding {
-  layer: 1 | 2 | 3 | 4;
+  layer: 1 | 2 | 3 | 4 | 5;
   severity: Severity;
   rule: string;
   message: string;
@@ -126,8 +126,20 @@ async function lintSkills(only?: string): Promise<LintResult> {
 
   await client.end();
 
+  // Static scan of agent-execute for `case '<name>':` dispatch entries
+  // (Layer 5 — catches module:/internal: handlers without a dispatcher case)
+  const dispatcherCases = collectDispatcherCases();
+  const edgeFunctions = collectEdgeFunctions();
+
   const reports: SkillReport[] = skills.map((skill) =>
-    lintSingleSkill(skill, { rpcArgsByName, notNullByTable, publicTables, autoFilled }),
+    lintSingleSkill(skill, {
+      rpcArgsByName,
+      notNullByTable,
+      publicTables,
+      autoFilled,
+      dispatcherCases,
+      edgeFunctions,
+    }),
   );
 
   const totalFindings = reports.reduce((s, r) => s + r.findings.length, 0);
@@ -150,11 +162,35 @@ async function lintSkills(only?: string): Promise<LintResult> {
   };
 }
 
+function collectDispatcherCases(): Set<string> {
+  const file = path.join(process.cwd(), 'supabase/functions/agent-execute/index.ts');
+  const set = new Set<string>();
+  if (!fs.existsSync(file)) return set;
+  const src = fs.readFileSync(file, 'utf8');
+  const re = /case\s+['"]([a-zA-Z0-9_]+)['"]\s*:/g;
+  let m;
+  while ((m = re.exec(src))) set.add(m[1]);
+  return set;
+}
+
+function collectEdgeFunctions(): Set<string> {
+  const dir = path.join(process.cwd(), 'supabase/functions');
+  if (!fs.existsSync(dir)) return new Set();
+  return new Set(
+    fs.readdirSync(dir).filter((n) => {
+      const stat = fs.statSync(path.join(dir, n));
+      return stat.isDirectory() && !n.startsWith('_') && n !== 'shared';
+    }),
+  );
+}
+
 interface LintCtx {
   rpcArgsByName: Map<string, Set<string>>;
   notNullByTable: Map<string, Set<string>>;
   publicTables: Set<string>;
   autoFilled: Record<string, string[]>;
+  dispatcherCases: Set<string>;
+  edgeFunctions: Set<string>;
 }
 
 function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
@@ -197,6 +233,17 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
   }
 
   // ─── Layer 2: Schema coverage (db:* only) ──────────────────────────
+  // NOT NULL coverage is only an ERROR for skills that can actually INSERT.
+  // Read-only / list / check / summary skills never write, so missing NOT
+  // NULL columns are not bugs there — downgrade to INFO so the linter
+  // tells the truth and we can act on real issues only.
+  const WRITE_ACTIONS = ['create', 'insert', 'add', 'upsert', 'save'];
+  const actionEnum: string[] = Array.isArray(props?.action?.enum) ? props.action.enum : [];
+  const canWrite =
+    actionEnum.length === 0 // no action enum → raw insert handler assumed
+      ? true
+      : actionEnum.some((a) => WRITE_ACTIONS.includes(a));
+
   if (handler.startsWith('db:')) {
     const table = handler.replace('db:', '');
     if (!ctx.publicTables.has(table)) {
@@ -210,45 +257,64 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
       const required = ctx.notNullByTable.get(table) ?? new Set<string>();
       const exempt = new Set(ctx.autoFilled[skill.name] ?? []);
       const propSet = new Set(propNames);
+      const sev: Severity = canWrite ? 'error' : 'info';
       for (const col of required) {
         if (!propSet.has(col) && !exempt.has(col)) {
           findings.push({
             layer: 2,
-            severity: 'error',
+            severity: sev,
             rule: 'not-null-coverage',
-            message: `Column "${col}" is NOT NULL on ${table} but missing from skill schema.`,
+            message: `Column "${col}" is NOT NULL on ${table} but missing from skill schema${canWrite ? '' : ' (read-only skill — informational only)'}.`,
             fix: `Add "${col}" to tool_definition.function.parameters.properties, OR add it to _skill_auto_filled_columns.${skill.name} in db-not-null-columns.json if the handler auto-fills it.`,
           });
         }
       }
 
-      // Per-action required check
-      const params = skill.tool_definition?.function?.parameters;
-      const allOf = params?.allOf ?? [];
-      const writeActions = ['create', 'insert', 'add'];
-      const hasActionEnum = props?.action?.enum?.some((a: string) => writeActions.includes(a));
-      if (hasActionEnum) {
-        const requiredForCreate = new Set<string>();
-        for (const branch of allOf) {
-          const constVal = branch?.if?.properties?.action?.const;
-          if (writeActions.includes(constVal)) {
-            for (const r of branch?.then?.required ?? []) requiredForCreate.add(r);
+      // Per-action required check — only meaningful for write-capable skills
+      if (canWrite) {
+        const params = skill.tool_definition?.function?.parameters;
+        const allOf = params?.allOf ?? [];
+        const hasWriteAction = actionEnum.some((a) => WRITE_ACTIONS.includes(a));
+        if (hasWriteAction) {
+          const requiredForCreate = new Set<string>();
+          for (const branch of allOf) {
+            const constVal = branch?.if?.properties?.action?.const;
+            if (WRITE_ACTIONS.includes(constVal)) {
+              for (const r of branch?.then?.required ?? []) requiredForCreate.add(r);
+            }
           }
-        }
-        for (const r of params?.required ?? []) requiredForCreate.add(r);
-        for (const col of required) {
-          if (exempt.has(col)) continue;
-          if (!requiredForCreate.has(col)) {
-            findings.push({
-              layer: 2,
-              severity: 'warn',
-              rule: 'per-action-required',
-              message: `Column "${col}" is NOT NULL but not marked required for write actions.`,
-              fix: `Add "${col}" to allOf[if action=create].then.required.`,
-            });
+          for (const r of params?.required ?? []) requiredForCreate.add(r);
+          for (const col of required) {
+            if (exempt.has(col)) continue;
+            if (!requiredForCreate.has(col)) {
+              findings.push({
+                layer: 2,
+                severity: 'warn',
+                rule: 'per-action-required',
+                message: `Column "${col}" is NOT NULL but not marked required for write actions.`,
+                fix: `Add "${col}" to allOf[if action=create].then.required.`,
+              });
+            }
           }
         }
       }
+    }
+  }
+
+  // ─── Layer 5: Handler reachability ─────────────────────────────────
+  // For edge:* handlers, verify the function directory exists on disk.
+  // (Module/internal handlers are dispatched via nested routing that
+  // can't be reliably inferred via static regex — skipped here.)
+  if (handler.startsWith('edge:') || handler.startsWith('function:')) {
+    const fn = handler.replace(/^(edge|function):/, '');
+    if (!ctx.edgeFunctions.has(fn)) {
+      findings.push({
+        layer: 5,
+        severity: 'error',
+        rule: 'edge-function-missing',
+        message: `Handler is "${handler}" but supabase/functions/${fn}/ does not exist.`,
+        fix: `Create the edge function, repoint the handler, or disable the skill.`,
+      });
     }
   }
 
