@@ -45,7 +45,13 @@
     "social_post_batch": ["topic"],
     "competitor_monitor": ["key"],
     "site_branding_update": ["key"],
-    "move_application_stage": ["job_posting_id", "candidate_name", "candidate_email"]
+    "move_application_stage": ["job_posting_id", "candidate_name", "candidate_email"],
+    "send_contract_for_signature": ["title", "counterparty_name"],
+    "flag_invoice_variance": ["invoice_number", "vendor_id"],
+    "follow_entity": ["entity_type", "entity_id"],
+    "manage_saved_views_handler_fills": ["scope"],
+    "manage_saved_views": ["scope"],
+    "manage_tags": ["slug", "name"]
   }
 }
 
