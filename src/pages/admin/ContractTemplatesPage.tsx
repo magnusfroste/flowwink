@@ -120,15 +120,15 @@ export default function ContractTemplatesPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <AdminPageHeader
-          title="Contract Templates"
-          description="Reusable contract bodies with tokens. Agents render these via list_contract_templates + manage_contract template_id."
-          actions={
-            <Button onClick={() => setEditing({ ...EMPTY })}>
-              <Plus className="h-4 w-4 mr-2" /> New template
-            </Button>
-          }
-        />
+        <div className="flex items-start justify-between gap-4">
+          <AdminPageHeader
+            title="Contract Templates"
+            description="Reusable contract bodies with tokens. Agents render these via list_contract_templates + manage_contract template_id."
+          />
+          <Button onClick={() => setEditing({ ...EMPTY })}>
+            <Plus className="h-4 w-4 mr-2" /> New template
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
