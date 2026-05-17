@@ -196,7 +196,11 @@ interface LintCtx {
 function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
   const findings: Finding[] = [];
   const handler = skill.handler ?? '';
-  const props = skill.tool_definition?.function?.parameters?.properties ?? {};
+  // Support both shapes: { function: { parameters: { properties } } } (OpenAI tool format)
+  // AND the flat { parameters: { properties } } shape some legacy seeds use.
+  const td = skill.tool_definition ?? {};
+  const params = td?.function?.parameters ?? td?.parameters ?? {};
+  const props = params?.properties ?? {};
   const propNames = Object.keys(props);
   const description = skill.description ?? '';
 
