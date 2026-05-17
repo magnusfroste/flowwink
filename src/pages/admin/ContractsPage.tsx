@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { FileText } from 'lucide-react';
 import { ContractsList } from '@/components/admin/contracts/ContractsList';
 import { ContractAlerts } from '@/components/admin/contracts/ContractAlerts';
 
@@ -11,10 +14,17 @@ export default function ContractsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <AdminPageHeader
-          title="Contracts & Documents"
-          description="Manage contracts, track renewals, and store documents"
-        />
+        <div className="flex items-start justify-between gap-4">
+          <AdminPageHeader
+            title="Contracts & Documents"
+            description="Manage contracts, track renewals, and store documents"
+          />
+          <Button variant="outline" asChild>
+            <Link to="/admin/contracts/templates">
+              <FileText className="h-4 w-4 mr-2" /> Templates
+            </Link>
+          </Button>
+        </div>
 
         <ContractAlerts />
 
