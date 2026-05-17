@@ -50,11 +50,15 @@ export default function SubscriptionsPage() {
   return (
     <AdminLayout>
     <div className="container mx-auto py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-muted-foreground mt-1">
-          Recurring revenue lifecycle — synced from your payment provider via webhooks.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
+          <p className="text-muted-foreground mt-1">
+            Recurring revenue lifecycle — Stripe-billed subs sync via webhook;
+            invoice-billed (manual) subs are billed nightly by the platform.
+          </p>
+        </div>
+        <NewManualSubscriptionButton />
       </div>
 
       {/* Metrics */}
