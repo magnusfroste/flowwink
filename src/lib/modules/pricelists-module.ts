@@ -58,6 +58,7 @@ const SKILLS: SkillSeed[] = [
             is_active: { type: 'boolean' },
           },
           required: ['action'],
+          'x-action-required': { create: ['name'] },
         },
       },
     },
