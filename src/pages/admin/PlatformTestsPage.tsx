@@ -341,17 +341,39 @@ function SuiteCard({
                 <Badge variant="outline" className="text-xs">{String(suite.module)}</Badge>
               )}
               <Badge variant="outline" className="text-xs capitalize">{suite.category}</Badge>
-              {state?.summary && (
+              {state?.summary ? (
                 <Badge
                   variant="outline"
                   className={state.summary.failed === 0
                     ? 'text-xs bg-green-500/10 text-green-600 border-green-500/30'
                     : 'text-xs bg-destructive/10 text-destructive border-destructive/30'}
                 >
-                  {state.summary.passed}/{state.summary.total} passed · {state.summary.duration_ms}ms
+                  {state.summary.passed}/{state.summary.total} passed · {state.summary.duration_ms}ms · just now
+                </Badge>
+              ) : lastRun ? (
+                <Badge
+                  variant="outline"
+                  className={lastRun.failed === 0
+                    ? 'text-xs bg-green-500/10 text-green-600 border-green-500/30'
+                    : 'text-xs bg-destructive/10 text-destructive border-destructive/30'}
+                  title={`Triggered by ${lastRun.triggered_by} at ${new Date(lastRun.started_at).toLocaleString()}`}
+                >
+                  {lastRun.passed}/{lastRun.total} passed · {formatRelativeTime(lastRun.started_at)}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  Never run
                 </Badge>
               )}
             </div>
+            <CardTitle className="text-base">{suite.title}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button onClick={onShowHistory} variant="ghost" size="sm" title="View run history">
+              <History className="h-3.5 w-3.5" />
+            </Button>
             <CardTitle className="text-base">{suite.title}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">{suite.description}</p>
           </div>
