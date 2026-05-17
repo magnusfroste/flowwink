@@ -238,3 +238,170 @@ function EmptyState() {
     </div>
   );
 }
+
+// ----------------------------------------------------------------------
+// New manual subscription — for B2B customers paying by invoice.
+// Calls create_manual_subscription RPC; daily cron then generates invoices.
+// ----------------------------------------------------------------------
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+function NewManualSubscriptionButton() {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+  const [f, setF] = useState({
+    customer_email: '',
+    customer_name: '',
+    product_name: '',
+    unit_amount: '',
+    currency: 'EUR',
+    billing_interval: 'month',
+    billing_interval_count: '1',
+    quantity: '1',
+    payment_terms: 'invoice_30',
+    start_date: new Date().toISOString().slice(0, 10),
+    billing_contact_email: '',
+    po_number: '',
+  });
+  const set = (k: keyof typeof f, v: string) => setF((x) => ({ ...x, [k]: v }));
+
+  const submit = async () => {
+    if (!f.customer_email || !f.product_name || !f.unit_amount) {
+      toast.error('Customer email, product name and price are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('create_manual_subscription', {
+        _customer_email: f.customer_email,
+        _customer_name: f.customer_name || null,
+        _product_name: f.product_name,
+        _unit_amount_cents: Math.round(Number(f.unit_amount) * 100),
+        _currency: f.currency,
+        _billing_interval: f.billing_interval,
+        _billing_interval_count: Number(f.billing_interval_count),
+        _quantity: Number(f.quantity),
+        _payment_terms: f.payment_terms,
+        _start_date: f.start_date,
+        _billing_contact_email: f.billing_contact_email || null,
+        _po_number: f.po_number || null,
+      });
+      if (error) throw error;
+      toast.success('Manual subscription created');
+      qc.invalidateQueries({ queryKey: ['subscriptions'] });
+      qc.invalidateQueries({ queryKey: ['subscription-metrics'] });
+      setOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create subscription');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" /> New manual subscription
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>New invoice-billed subscription</DialogTitle>
+        </DialogHeader>
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="md:col-span-2 grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Customer email *</Label>
+              <Input value={f.customer_email} onChange={(e) => set('customer_email', e.target.value)} placeholder="ap@acme.com" />
+            </div>
+            <div className="space-y-1">
+              <Label>Customer name</Label>
+              <Input value={f.customer_name} onChange={(e) => set('customer_name', e.target.value)} placeholder="ACME AB" />
+            </div>
+          </div>
+          <div className="md:col-span-2 space-y-1">
+            <Label>Plan / product name *</Label>
+            <Input value={f.product_name} onChange={(e) => set('product_name', e.target.value)} placeholder="Business Mobile 100GB" />
+          </div>
+          <div className="space-y-1">
+            <Label>Price per period *</Label>
+            <Input type="number" step="0.01" value={f.unit_amount} onChange={(e) => set('unit_amount', e.target.value)} placeholder="199.00" />
+          </div>
+          <div className="space-y-1">
+            <Label>Currency</Label>
+            <Select value={f.currency} onValueChange={(v) => set('currency', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="SEK">SEK</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="GBP">GBP</SelectItem>
+                <SelectItem value="NOK">NOK</SelectItem>
+                <SelectItem value="DKK">DKK</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Billing interval</Label>
+            <Select value={f.billing_interval} onValueChange={(v) => set('billing_interval', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Monthly</SelectItem>
+                <SelectItem value="year">Yearly</SelectItem>
+                <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="day">Daily</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Interval count</Label>
+            <Input type="number" min="1" value={f.billing_interval_count} onChange={(e) => set('billing_interval_count', e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Quantity</Label>
+            <Input type="number" min="1" value={f.quantity} onChange={(e) => set('quantity', e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Payment terms</Label>
+            <Select value={f.payment_terms} onValueChange={(v) => set('payment_terms', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="invoice_30">Invoice — Net 30</SelectItem>
+                <SelectItem value="invoice_14">Invoice — Net 14</SelectItem>
+                <SelectItem value="invoice_7">Invoice — Net 7</SelectItem>
+                <SelectItem value="direct_debit">Direct debit</SelectItem>
+                <SelectItem value="manual">Manual / other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Start date</Label>
+            <Input type="date" value={f.start_date} onChange={(e) => set('start_date', e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Billing contact (optional)</Label>
+            <Input value={f.billing_contact_email} onChange={(e) => set('billing_contact_email', e.target.value)} placeholder="ap-team@acme.com" />
+          </div>
+          <div className="space-y-1">
+            <Label>PO number (optional)</Label>
+            <Input value={f.po_number} onChange={(e) => set('po_number', e.target.value)} placeholder="PO-2026-0042" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? 'Creating…' : 'Create subscription'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
