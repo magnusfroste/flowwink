@@ -89,10 +89,9 @@ Templates seed pages, blog posts, KB articles, products, consultant profiles, an
 
 | Doc | Why |
 |---|---|
-| [`../contributing/testing.md`](../contributing/testing.md) | Autonomy test framework (L1–L8) |
-| [`../contributing/running-tests.md`](../contributing/running-tests.md) | Vitest + module guardrails |
+| [`../contributing/test-suite.md`](../contributing/test-suite.md) | Master spec — every test, guardrail, snapshot, regression |
+| [`../contributing/running-tests.md`](../contributing/running-tests.md) | Quick reference — run tests locally + refresh snapshots |
 | [`../contributing/contributing.md`](../contributing/contributing.md) | PR conventions, idempotent migrations |
-| [`../contributing/developer-guide.md`](../contributing/developer-guide.md) | Deep development workflow |
 
 Pre-merge checklist:
 
