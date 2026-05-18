@@ -147,8 +147,8 @@ export default function DocsLandingPage() {
         </div>
       </main>
 
-      <PublicFooter />
-      <DocsChat />
+      {!embed && <PublicFooter />}
+      {!embed && <DocsChat />}
     </>
   );
 }
