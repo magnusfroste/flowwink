@@ -446,7 +446,6 @@ Analyzes page views, chat feedback, and lead conversions to distill learnings in
         name: 'manage_site_settings',
         description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
         parameters: {
-          'x-action-required': { create: ['key'] },
           type: 'object',
           properties: {
             action: {

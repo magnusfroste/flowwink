@@ -44,7 +44,6 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
         name: 'manage_job_posting',
         description: 'CRUD on job postings',
         parameters: {
-          'x-action-required': { create: ['title'] },
           type: 'object',
           properties: {
             action: {

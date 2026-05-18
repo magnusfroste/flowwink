@@ -53,7 +53,6 @@ const DOCS_SKILLS: SkillSeed[] = [
         name: 'manage_document',
         description: 'CRUD for the document archive. action=create REQUIRES title + file_url + file_name (file_name auto-defaults to title if omitted). For PDFs uploaded to chat, pass the public URL as file_url. Aliases accepted: mime_type→file_type, size_bytes→file_size_bytes, storage_path/url→file_url, name/filename→file_name. Body/markdown content is NOT stored — only the file at file_url.',
         parameters: {
-          'x-action-required': { create: ['title', 'file_url'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'search', 'list', 'get', 'update', 'delete', 'categorize'] },

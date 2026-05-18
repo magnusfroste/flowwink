@@ -43,7 +43,6 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         name: 'manage_journal_entry',
         description: 'Create or list double-entry journal entries. For create, prefer vendor.default_account_code → matching template → suggest new template last.',
         parameters: {
-          'x-action-required': { create: ['description'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'void'] },
@@ -142,7 +141,6 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         name: 'manage_chart_of_accounts',
         description: 'CRUD for chart of accounts across locales',
         parameters: {
-          'x-action-required': { create: ['account_code', 'account_name', 'account_type', 'account_category', 'normal_balance'] },
           type: 'object',
           properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } },
           required: ['action'],
@@ -251,7 +249,6 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         name: 'manage_analytic_account',
         description: 'CRUD for analytic accounts (cost centers / projects / departments / campaigns)',
         parameters: {
-          'x-action-required': { create: ['code', 'name'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
@@ -285,7 +282,6 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         name: 'tag_journal_entry_analytics',
         description: 'Create analytic_lines that tag a journal_entry_line to one or more analytic accounts',
         parameters: {
-          'x-action-required': { create: ['analytic_account_id', 'entry_date', 'amount_cents'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['list', 'create', 'delete'] },
@@ -343,7 +339,6 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         name: 'record_accounting_correction',
         description: 'Append a correction row so the agent can learn from past mistakes.',
         parameters: {
-          'x-action-required': { create: ['original_account_code', 'corrected_account_code'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list'] },

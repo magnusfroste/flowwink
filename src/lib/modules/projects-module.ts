@@ -45,7 +45,6 @@ const PROJECT_SKILLS: SkillSeed[] = [
         name: 'manage_project',
         description: 'CRUD for projects',
         parameters: {
-          'x-action-required': { create: ['name'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'update', 'search', 'list_active', 'close'] },
@@ -77,7 +76,6 @@ const PROJECT_SKILLS: SkillSeed[] = [
         name: 'manage_project_task',
         description: 'Task operations within projects',
         parameters: {
-          'x-action-required': { create: ['project_id', 'title'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete'] },

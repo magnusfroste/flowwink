@@ -34,7 +34,6 @@ const SKILLS: SkillSeed[] = [
         name: 'manage_carrier',
         description: 'Create, list, update, or deactivate carriers',
         parameters: {
-          'x-action-required': { create: ['code', 'name'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'update', 'delete'] },
@@ -64,7 +63,6 @@ const SKILLS: SkillSeed[] = [
         name: 'manage_shipment',
         description: 'CRUD for shipments (parcels) attached to orders',
         parameters: {
-          'x-action-required': { create: ['order_id'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'get', 'update', 'delete'] },

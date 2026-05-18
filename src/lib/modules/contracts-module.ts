@@ -58,7 +58,6 @@ const CONTRACT_SKILLS: SkillSeed[] = [
         name: 'manage_contract',
         description: 'CRUD for contracts and agreements. NOTE: action=create REQUIRES counterparty_name (NOT NULL in DB).',
         parameters: {
-          'x-action-required': { create: ['title', 'counterparty_name'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'update', 'search'] },

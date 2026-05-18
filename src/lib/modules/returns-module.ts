@@ -65,7 +65,6 @@ const SKILLS: SkillSeed[] = [
         name: 'manage_return_item',
         description: 'CRUD for return line items',
         parameters: {
-          'x-action-required': { create: ['return_id'] },
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'update', 'delete'] },
