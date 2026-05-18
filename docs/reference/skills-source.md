@@ -1,56 +1,37 @@
-# FlowPilot Skills — Source of Truth
+# Skills — Source of Truth
 
-## Where Skills Are Defined
+Skills are the callable surface that any operator (FlowPilot, OpenClaw, Claude Desktop, custom MCP client) uses to act on FlowWink.
 
-All **bundled skills** (shipped with every installation) are defined in:
+## Where they're defined
 
-```
-supabase/functions/setup-flowpilot/index.ts → DEFAULT_SKILLS[]
-```
-
-This is the **single source of truth** for the skill registry. When `setup-flowpilot` runs (first boot or "Sync Missing Skills"), it seeds these into the `agent_skills` database table.
-
-## How It Works
+Each module declares its skills in `skillSeeds` on its `defineModule()` manifest:
 
 ```
-setup-flowpilot/index.ts     →  agent_skills table     →  agent-execute (runtime)
-    (106 bundled skills)          (DB, hot-reloadable)       (handler routing)
+src/lib/modules/<module>-module.ts → skillSeeds: SkillSeed[]
 ```
 
-1. **Bootstrap**: `setup-flowpilot` inserts all `DEFAULT_SKILLS` into `agent_skills` (upsert)
-2. **Runtime**: FlowPilot can create additional skills via `skill_create` (stored in DB only)
-3. **Re-sync**: Admin → Skills → "Sync Missing Skills" re-seeds from source without overwriting runtime changes
+When a module is **enabled**, the bootstrap seeds those rows into `public.agent_skills` with `mcp_exposed=true` (unless the module marks them operator-internal). The database table is the runtime registry — hot-reloadable, RLS-protected, and the single thing `agent-execute` and the MCP server read.
 
-## Skill Anatomy
+## How an operator discovers them
 
-Each skill has:
-- **`name`** — unique identifier (e.g., `manage_page`)
-- **`handler`** — routing prefix: `edge:`, `module:`, `db:`, `webhook:`, `a2a:`
-- **`scope`** — `internal` (admin), `external` (visitor), `both`
-- **`category`** — content, crm, communication, automation, search, analytics, system, commerce, growth
-- **`description`** — includes `Use when:` and `NOT for:` routing markers (OpenClaw standard)
-- **`tool_definition`** — OpenAI function-calling JSON schema
-- **`instructions`** — rich knowledge for the skill (optional)
+| Surface | How |
+|---|---|
+| In-app admin | `/admin/developer` → **Skills** tab — full catalog with descriptions, schemas, gating |
+| MCP (external agents) | `GET /functions/v1/mcp-server/rest/tools[?groups=marketing|sales|…]` — module-filtered, group-filtered |
+| Per-module reference | Every page in [`../modules/`](../modules/) lists that module's skills with handler + scope |
+| Live count | `select count(*) from agent_skills where enabled and mcp_exposed` |
 
-## Current Counts (107 skills, 9 categories)
+## Adding a skill
 
-| Category | Count |
-|----------|-------|
-| Content | 27 |
-| CRM | 27 |
-| Communication | 11 |
-| Analytics | 10 |
-| Commerce | 8 |
-| System | 12 |
-| Growth | 5 |
-| Automation | 4 |
-| Search | 3 |
-| **+ Runtime** | **∞** |
+1. Add a `SkillSeed` to the module's `skillSeeds` array.
+2. Pass [`Agent Contract Integrity`](../architecture/agent-contract-integrity.md) — every NOT NULL DB column the action writes must be in the JSON schema (`bun run lint:skills`).
+3. Write `description` with explicit `Use when:` and `NOT for:` markers (Law 2 — skills are self-describing).
+4. Disable & re-enable the module, or run the "Sync Skills" action in `/admin/developer`.
 
-## Built-in Tools (32 tools)
+## Built-in tools
 
-In addition to the 106 DB-driven skills, `agent-reason.ts` provides 32 hardcoded built-in tools (memory, objectives, self-mod, reflect, soul, planning, workflows, delegation, skill-packs, automations). These are NOT in the `agent_skills` table.
+`agent-reason` provides a small set of hardcoded operator-internal tools (memory ops, objective planning, reflection, soul, skill-pack management, delegation). These are FlowPilot-only and are **not** stored in `agent_skills` — they are the operator's own brain primitives, not platform capabilities.
 
-## Full Skill Reference
+---
 
-See [`docs/FLOWPILOT.md` § 5](./FLOWPILOT.md#5-complete-skill-inventory) for the complete verified inventory.
+*See also: [Module API](./module-api.md) · [MCP as Platform](../architecture/mcp-as-platform.md) · [Agent Contract Integrity](../architecture/agent-contract-integrity.md)*
