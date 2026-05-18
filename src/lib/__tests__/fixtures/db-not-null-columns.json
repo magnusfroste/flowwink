@@ -152,6 +152,7 @@
       "po_number"
     ],
     "update_purchase_order": [
+      "vendor_id",
       "po_number"
     ],
     "send_purchase_order": [
@@ -194,6 +195,9 @@
     "flag_invoice_variance": [
       "invoice_number",
       "vendor_id"
+    ],
+    "create_return": [
+      "rma_number"
     ]
   }
 }

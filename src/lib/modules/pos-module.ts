@@ -180,7 +180,7 @@ const POS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'close_pos_session_v2',
-    description: 'Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting.',
+    description: 'Close shift and generate Z-report with payments-by-method aggregation. Emits pos.session.closed event for batch journal posting. Use when: cashier ends shift / day-end POS closing / "close pos session" / "stäng kassan". NOT for: voiding sales or opening a new session.',
     category: 'commerce',
     handler: 'rpc:close_pos_session_v2',
     scope: 'internal',

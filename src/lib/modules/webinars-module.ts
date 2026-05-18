@@ -87,7 +87,7 @@ Manages webinars and registrations.
   // ── Lifecycle skills (SECURITY DEFINER RPCs) ──
   {
     name: 'publish_webinar',
-    description: 'Publish a draft webinar so it becomes visible and registrable. Emits webinar.published event.',
+    description: 'Publish a draft webinar so it becomes visible and registrable. Emits webinar.published event. Use when: a draft webinar is ready to go live for registration / "publish webinar" / "publicera webinar". NOT for: starting the broadcast (use start_webinar) or creating the webinar (use manage_webinar).',
     category: 'communication',
     handler: 'rpc:publish_webinar',
     scope: 'internal',
@@ -103,7 +103,7 @@ Manages webinars and registrations.
   },
   {
     name: 'start_webinar',
-    description: 'Manually flip a webinar to live status. Normally automatic via cron when date passes.',
+    description: 'Manually flip a webinar to live status. Normally automatic via cron when date passes. Use when: host wants to start broadcast early / "start webinar now" / "kör igång webinariet". NOT for: publishing draft (use publish_webinar) or closing after run (use complete_webinar).',
     category: 'communication',
     handler: 'rpc:start_webinar',
     scope: 'internal',
@@ -119,7 +119,7 @@ Manages webinars and registrations.
   },
   {
     name: 'complete_webinar',
-    description: 'Close a webinar after it has run. Optionally attach the recording URL. Emits webinar.completed event.',
+    description: 'Close a webinar after it has run. Optionally attach the recording URL. Emits webinar.completed event. Use when: live session ended and we want to mark it done + share recording / "complete webinar" / "avsluta webinariet". NOT for: cancelling before run (use cancel_webinar).',
     category: 'communication',
     handler: 'rpc:complete_webinar',
     scope: 'internal',
@@ -142,7 +142,7 @@ Manages webinars and registrations.
   },
   {
     name: 'cancel_webinar',
-    description: 'Cancel a webinar. Emits webinar.cancelled event so automations can notify registrants.',
+    description: 'Cancel a webinar. Emits webinar.cancelled event so automations can notify registrants. Use when: webinar will not run and registrants must be informed / "cancel webinar" / "ställ in webinariet". NOT for: completing a webinar that did run (use complete_webinar).',
     category: 'communication',
     handler: 'rpc:cancel_webinar',
     scope: 'internal',
@@ -162,7 +162,7 @@ Manages webinars and registrations.
   },
   {
     name: 'mark_webinar_attendance',
-    description: 'Flag a registration as attended (or not). Boosts lead score +10 on attended=true. Emits webinar.attended event.',
+    description: 'Flag a registration as attended (or not). Boosts lead score +10 on attended=true. Emits webinar.attended event. Use when: post-webinar bookkeeping of who showed up / "mark attendance" / "registrera närvaro". NOT for: registering new attendees (use webinar registration flow).',
     category: 'communication',
     handler: 'rpc:mark_webinar_attendance',
     scope: 'internal',
