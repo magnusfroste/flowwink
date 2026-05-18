@@ -182,7 +182,7 @@ const INVENTORY_SKILLS: SkillSeed[] = [
   {
     name: 'reject_procurement_suggestion',
     description:
-      'Reject a pending procurement suggestion with an optional reason. Admin-only.',
+      'Reject a pending procurement suggestion with an optional reason. Admin-only. Use when: buyer declines an auto-generated reorder suggestion / "reject procurement" / "avvisa förslag". NOT for: approving (use approve_procurement_suggestion) or creating PO directly (use create_purchase_order).',
     category: 'commerce',
     handler: 'rpc:reject_procurement_suggestion',
     scope: 'internal',
