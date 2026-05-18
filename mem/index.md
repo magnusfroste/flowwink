@@ -5,7 +5,7 @@
 - Module bootstrap har circuit breaker: `bootstrap_runs`-tabell + `get_bootstrap_health()`. 3+ consecutive failures → degraded → kräver `force=true`. Se mem://architecture/bootstrap-circuit-breaker.
 - Coding Agent alters code. FlowPilot alters DB/content via skills. FlowPilot cannot create React components.
 - Tool Calls: Always use explicit `tool_calls`. Never simulate actions in text.
-- Unified Reasoning: FlowPilot is the sole reasoning engine. No shadow brains in edge functions.
+- Unified Reasoning: `chat-completion` is the sole reasoning loop. FlowChat (always-on chat surface) drives it reactively; FlowPilot (opt-in agent layer ON TOP of FlowChat) drives the same loop autonomously via heartbeat. No shadow brains in edge functions.
 - Content Models: `content_json` for Pages is blocks array. For Blogs is Tiptap doc (`type: 'doc'`).
 - Strict CRUD Limits: `DEDICATED_SKILL_TABLES` block generic CRUD. Use domain skills (e.g., `place_order`).
 - Module states are controlled by flags: `requiresFlowPilot`, `enhancedByFlowPilot`, `requiresAI`.

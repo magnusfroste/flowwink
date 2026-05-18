@@ -1,49 +1,45 @@
 # FlowChat vs FlowPilot
 
-A guiding principle for FlowWink. FlowChat (platform admin chat) and FlowPilot (autonomous operator module) **never compete** — they have strictly different roles. Both call the same skills, via the same MCP surface. The difference is *who thought the thought*.
+A guiding principle for FlowWink. **FlowChat is the chat surface. FlowPilot is the autonomous agent layer that runs on top of it.** They are not two competing brains — they are one stack with the operator layer being opt-in.
 
-## TL;DR
+## TL;DR (Tesla analogy)
 
-- **FlowChat = the hand.** Reactive. You ask, it does.
-- **FlowPilot = the brain.** Proactive. It runs while you sleep.
+- **Platform** = the car. Always on. Owns skills, MCP, automations, event bus.
+- **FlowChat** = the built-in chat with the car. Always on. Reactive — you ask, it picks a skill via `chat-completion` and replies.
+- **FlowPilot** = Autopilot. Opt-in. Adds soul, objectives, heartbeat, memory, reflection, trust gating, proactive UX **on top of** the same FlowChat reasoning loop.
 
-## Role matrix
+When FlowPilot is **off**, FlowChat still works — you can chat, it calls skills, you get answers. You just lose autonomy (no heartbeat, no Morning Briefing, no objective-driven action, no reflection).
 
-|                | FlowChat (platform)               | FlowPilot (operator)                                |
-|----------------|-----------------------------------|-----------------------------------------------------|
-| Role           | Hand — does what you say, now     | Brain — decides on its own, when needed             |
-| Trigger        | Your chat message                 | Heartbeat, events, objectives, scheduler            |
-| Time horizon   | Seconds (one conversation)        | Hours/days (loop with reflection)                   |
-| Memory         | The conversation                  | Soul, objectives, agent_memory, reflections        |
-| Initiative     | Reactive                          | Proactive (Morning Briefing, autonomous actions)    |
-| Reasoning      | Short ReAct: read → skill → reply | Long loop: observe → reason → act → reflect → learn |
-| Acts on its own | Never                            | Within trust limits (auto/notify/approve)           |
-| Module state   | Always on (admin feature)         | Opt-in operator module                              |
+When FlowPilot is **on**, FlowChat is the same chat surface — but now there is a colleague behind it that also acts when nobody is typing.
 
-## Shared foundation
+## Layering
 
-Both use the same building blocks:
+```
+┌─────────────────────────────────────────────┐
+│  FlowPilot (opt-in operator layer)          │  soul · objectives · heartbeat
+│   ↑ drives the same chat-completion loop    │  memory · reflection · trust gating
+├─────────────────────────────────────────────┤
+│  FlowChat (always on)                       │  /admin/flowchat · /chat
+│   reasoning entry point: chat-completion    │  ReAct: read → skill → reply
+├─────────────────────────────────────────────┤
+│  Platform                                   │  agent_skills · MCP · automations
+│   skills, modules, event bus, RLS           │  event bus · RLS · DB
+└─────────────────────────────────────────────┘
+```
 
-- The same `agent_skills` registry (platform layer)
-- The same MCP surface — every external claw, Claude Desktop, OpenClaw, FlowPilot, and FlowChat see the same tools
-- The same `chat-completion` reasoning endpoint
-- The same providers (OpenAI / Gemini / local)
-
-This means: **if a skill works for FlowPilot, it works for FlowChat (and vice versa).** No duplicated logic. No shadow brains.
+Same `agent_skills`. Same MCP surface. Same `chat-completion` endpoint. The difference is **who initiated the turn**: a human typing into FlowChat, or FlowPilot's heartbeat acting on an objective.
 
 ## Hard boundaries (must be guarded)
 
-These keep them from drifting into each other's territory:
-
-1. **FlowChat must not run heartbeats**, scheduled jobs, or background loops.
-2. **FlowChat must not store long-term memory**, objectives, or reflections beyond the conversation.
-3. **FlowChat must not act proactively** ("I noticed that…"). Only on prompt.
-4. **FlowPilot must not build its own content/AI pipelines** — it must call skills (Law 3).
+1. **FlowChat must not run heartbeats**, scheduled jobs, or background loops. Those belong to FlowPilot.
+2. **FlowChat must not store long-term agent state** (objectives, reflections, soul). Conversation history only.
+3. **FlowChat must not act proactively** ("I noticed that…"). Only on user prompt.
+4. **FlowPilot must not build its own content/AI pipelines** — it drives the same `chat-completion` reasoning loop FlowChat uses (Law 3).
 5. **Skills live on the platform layer.** Neither FlowChat nor FlowPilot owns them.
 
 ## What FlowPilot uniquely adds
 
-These are the capabilities you lose if you turn FlowPilot off (and that FlowChat must never try to replace):
+Capabilities you lose if you turn FlowPilot off (and that FlowChat must never try to replace):
 
 - **Soul & objectives** — drives decisions without a prompt
 - **Heartbeat** — runs when nobody is looking
@@ -52,25 +48,25 @@ These are the capabilities you lose if you turn FlowPilot off (and that FlowChat
 - **Cross-skill orchestration over time** — chains spanning hours/days
 - **Proactive UX** — Morning Briefing, HIL cards, peer delegation
 
-FlowChat gives none of this. It is a great **hand**. FlowPilot is **a colleague who works while you sleep**.
+FlowChat without FlowPilot is a great chat interface to your business skills. FlowPilot adds the colleague who works while you sleep.
 
 ## Concrete example
 
 A new law takes effect. The user wants a knowledge base article.
 
-- **FlowChat path:** User asks → reasoning loop drafts the article → calls `manage_kb_article` with `action=create`, `title`, `question`, `answer` → done.
-- **FlowPilot path:** Heartbeat notices the lead pipeline has GDPR/security questions + the law just took effect → drafts KB article + blog post + LinkedIn post → submits for approval per trust gating.
+- **FlowChat path (no FlowPilot needed):** User asks → `chat-completion` picks `manage_kb_article` → `action=create` → done.
+- **FlowPilot path:** Heartbeat notices the lead pipeline has GDPR/security questions + the law just took effect → drives the same `chat-completion` loop to draft a KB article + blog post + LinkedIn post → submits for approval per trust gating.
 
-Same `manage_kb_article` skill. Different brain behind it.
+Same chat reasoning loop. Same `manage_kb_article` skill. Different initiator.
 
 ## Why this matters
 
 Without this discipline, two things break:
 
-1. **Customers who turn FlowPilot off** lose nothing they need from FlowChat — and vice versa. Each is independently useful.
-2. **External operators** (OpenClaw, Claude Desktop, department claws) can replace FlowPilot entirely without losing FlowChat or vice versa. The platform stays intact.
+1. **Customers who turn FlowPilot off** still have a fully working FlowChat. The platform is independently useful.
+2. **External operators** (OpenClaw, Claude Desktop, department claws) can replace FlowPilot entirely — they drive the same MCP surface FlowChat uses. The platform stays intact.
 
-This is why the layering is explicit: **Platform → Modules → Operators**, with skills on the platform and operator behavior in operator modules. See [`platform-modules-operators-layering`](../../mem/architecture/platform-modules-operators-layering.md) and [`mcp-as-platform`](../architecture/mcp-as-platform.md).
+This is why the layering is explicit: **Platform → FlowChat (always on) → FlowPilot (opt-in operator on top)**, with skills on the platform. See [`platform-modules-operators-layering`](../../mem/architecture/platform-modules-operators-layering.md), [`flowpilot-as-optional-operator-layer`](../../mem/architecture/flowpilot-as-optional-operator-layer.md), and [`internal-flowchat-and-noise-separation`](../../mem/features/internal-flowchat-and-noise-separation.md).
 
 ## Related
 
