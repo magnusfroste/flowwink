@@ -12,6 +12,7 @@ import { useDocsPages, useDocsPage, type DocsPage } from '@/hooks/useDocs';
 import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsChat } from '@/components/docs/DocsChat';
 import { DocsTOC } from '@/components/docs/DocsTOC';
+import { useIsEmbed } from '@/hooks/useIsEmbed';
 
 function slugify(text: string): string {
   return text
@@ -35,6 +36,7 @@ export default function DocsArticlePage() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const { data: pages = [] } = useDocsPages();
   const { data: page, isLoading } = useDocsPage(category, slug);
+  const embed = useIsEmbed();
 
   const description =
     typeof page?.frontmatter?.description === 'string'
@@ -72,7 +74,7 @@ export default function DocsArticlePage() {
         <link rel="canonical" href={`https://flowwink.com/docs/${category}/${slug}`} />
       </Helmet>
 
-      <PublicNavigation />
+      {!embed && <PublicNavigation />}
 
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 lg:py-12 max-w-7xl">
@@ -197,8 +199,8 @@ export default function DocsArticlePage() {
         </div>
       </main>
 
-      <PublicFooter />
-      <DocsChat />
+      {!embed && <PublicFooter />}
+      {!embed && <DocsChat />}
     </>
   );
 }

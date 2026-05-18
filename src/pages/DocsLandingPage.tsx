@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useDocsPages } from '@/hooks/useDocs';
 import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsChat } from '@/components/docs/DocsChat';
+import { useIsEmbed } from '@/hooks/useIsEmbed';
 
 const HIGHLIGHTS = [
   {
@@ -38,6 +39,7 @@ const HIGHLIGHTS = [
 
 export default function DocsLandingPage() {
   const { data: pages = [], isLoading } = useDocsPages();
+  const embed = useIsEmbed();
 
   return (
     <>
@@ -50,7 +52,7 @@ export default function DocsLandingPage() {
         <link rel="canonical" href="https://flowwink.com/docs" />
       </Helmet>
 
-      <PublicNavigation />
+      {!embed && <PublicNavigation />}
 
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 lg:py-12 max-w-7xl">
@@ -145,8 +147,8 @@ export default function DocsLandingPage() {
         </div>
       </main>
 
-      <PublicFooter />
-      <DocsChat />
+      {!embed && <PublicFooter />}
+      {!embed && <DocsChat />}
     </>
   );
 }

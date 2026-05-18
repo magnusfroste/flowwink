@@ -11,6 +11,7 @@ export default function DocsAdminPage() {
   const { data: pages = [], isLoading } = useDocsPages();
   const sync = useSyncDocs();
   const [previewPath, setPreviewPath] = useState('/docs');
+  const embedSrc = `${previewPath}${previewPath.includes('?') ? '&' : '?'}embed=1`;
 
   const byCategory = pages.reduce<Record<string, number>>((acc, p) => {
     acc[p.category] = (acc[p.category] ?? 0) + 1;
@@ -73,8 +74,8 @@ export default function DocsAdminPage() {
             </div>
             <Card className="overflow-hidden p-0">
               <iframe
-                key={previewPath}
-                src={previewPath}
+                key={embedSrc}
+                src={embedSrc}
                 title="Docs preview"
                 className="w-full h-[calc(100vh-16rem)] border-0 bg-background"
                 onLoad={(e) => {

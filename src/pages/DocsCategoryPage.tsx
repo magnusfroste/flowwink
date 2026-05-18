@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { useDocsPages } from '@/hooks/useDocs';
 import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsChat } from '@/components/docs/DocsChat';
+import { useIsEmbed } from '@/hooks/useIsEmbed';
 
 const CATEGORY_LABELS: Record<string, string> = {
   concepts: 'Concepts',
@@ -27,6 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function DocsCategoryPage() {
   const { category } = useParams<{ category: string }>();
   const { data: pages = [], isLoading } = useDocsPages();
+  const embed = useIsEmbed();
 
   const filtered = useMemo(
     () => pages.filter((p) => p.category === category),
@@ -47,7 +49,7 @@ export default function DocsCategoryPage() {
         <link rel="canonical" href={`https://flowwink.com/docs/${category}`} />
       </Helmet>
 
-      <PublicNavigation />
+      {!embed && <PublicNavigation />}
 
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 lg:py-12 max-w-7xl">
@@ -89,8 +91,8 @@ export default function DocsCategoryPage() {
         </div>
       </main>
 
-      <PublicFooter />
-      <DocsChat />
+      {!embed && <PublicFooter />}
+      {!embed && <DocsChat />}
     </>
   );
 }
