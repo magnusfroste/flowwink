@@ -11,6 +11,7 @@ export default function DocsAdminPage() {
   const { data: pages = [], isLoading } = useDocsPages();
   const sync = useSyncDocs();
   const [previewPath, setPreviewPath] = useState('/docs');
+  const embedSrc = `${previewPath}${previewPath.includes('?') ? '&' : '?'}embed=1`;
 
   const byCategory = pages.reduce<Record<string, number>>((acc, p) => {
     acc[p.category] = (acc[p.category] ?? 0) + 1;
