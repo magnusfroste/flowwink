@@ -1,8 +1,9 @@
 # FlowWink — Product & System Reference
 
-> **The Business Operating System — powered by an autonomous AI agent.**
-> 
-> Version: 5.4 | Updated: April 2026 | Modules: 32 | Skills: 130 + ∞ runtime
+> **The Business Operating System — modular SaaS with an opt-in autonomous operator.**
+>
+> Updated: May 2026 | Modules: 65 (see [`../modules/`](../modules/)) | Skills: 200+ registered + ∞ runtime
+
 
 ---
 

@@ -1,116 +1,60 @@
 # FlowWink Documentation
 
-> **FlowWink — A modular Business Operating System with a pluggable operator layer.**
->
-> FlowWink is a self-hosted SaaS platform whose modules, skills, automations and MCP surface work without any agent. An operator (local **FlowPilot**, or external — OpenClaw, Claude Desktop, Salesforce/Microsoft/Oracle agents, custom MCP clients) is opt-in. See [`concepts/operator-strategy.md`](./concepts/operator-strategy.md) for the rationale.
->
-> Docs structure inspired by [OpenClaw](https://github.com/openclaw/openclaw).
+> A modular, self-hosted **Business Operating System**. Modules, skills, automations and MCP work standalone — the autonomous operator (**FlowPilot**, OpenClaw, Claude Desktop, or any MCP client) is opt-in.
+
+Structure inspired by [OpenClaw](https://github.com/openclaw/openclaw).
 
 ---
 
-## How This Is Organized
+## Two audiences, two paths
 
-| Folder | What's Inside | OpenClaw Equivalent |
-|--------|--------------|---------------------|
-| [`concepts/`](./concepts/) | Architecture, laws, vision, positioning | `docs/concepts/` |
-| [`pilot/`](./pilot/) | Agent engine internals (Pilot = our OpenClaw runtime) | Core gateway/agent code |
-| [`modules/`](./modules/) | FlowWink's "claws" — the CMS/ERP modules | `docs/channels/` + `docs/plugins/` |
-| [`guides/`](./guides/) | Setup, deployment, migration, operations | `docs/install/` + `docs/help/` |
-| [`reference/`](./reference/) | APIs, skill registry, commands | `docs/reference/` |
-| [`contributing/`](./contributing/) | How to contribute, test, author templates | Contributing guides |
+| You are… | Start here |
+|---|---|
+| **Operator** — running FlowWink for a business | [`operators/`](./operators/README.md) → install, configure modules, drive day-to-day work |
+| **Builder** — extending or contributing to FlowWink | [`builders/`](./builders/README.md) → add modules, blocks, skills, templates |
+
+Both paths share the **concepts** below. Everything else (guides, modules, reference, processes) is referenced from the two landing pages.
 
 ---
 
-## Concepts — Architecture & Vision
+## Concepts — read these first (both audiences)
 
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [prd.md](./concepts/prd.md) | Product requirements — 32 modules, 130+ skills | You need the full system scope |
-| [operator-strategy.md](./concepts/operator-strategy.md) | Why FlowPilot is a module; local vs external operators | Deciding which operator(s) to run |
-| [openclaw-law.md](./concepts/openclaw-law.md) | The 10 inviolable agentic architecture laws | Building or modifying FlowPilot |
-| [flowpilot.md](./concepts/flowpilot.md) | Local-operator reference — skills, heartbeat, memory | Understanding the local agent |
-| [elevator-pitch.md](./concepts/elevator-pitch.md) | BOS positioning and competitive landscape | Explaining FlowWink to others |
-| [a2a-communication-model.md](./concepts/a2a-communication-model.md) | Agent-to-Agent federation protocol | Implementing federation |
-| [feedback-loops.md](./concepts/feedback-loops.md) | Growth engine — automated business loops | Designing growth features |
-| [integrations-strategy.md](./concepts/integrations-strategy.md) | Go-to-market wedge and integration playbook | Planning integrations |
-| [agent-driven-development.md](./concepts/agent-driven-development.md) | How FlowPilot drives its own development | Understanding autonomy model |
-| [ai-dependencies.md](./concepts/ai-dependencies.md) | AI provider requirements per feature | Checking what needs API keys |
+| Doc | Why |
+|---|---|
+| [`concepts/elevator-pitch.md`](./concepts/elevator-pitch.md) | One-page positioning |
+| [`concepts/operator-strategy.md`](./concepts/operator-strategy.md) | Why FlowPilot is a module, not the core |
+| [`concepts/openclaw-law.md`](./concepts/openclaw-law.md) | The 10 inviolable agentic laws |
+| [`concepts/flowchat-vs-flowpilot.md`](./concepts/flowchat-vs-flowpilot.md) | Utility AI vs operator AI |
+| [`concepts/prd.md`](./concepts/prd.md) | Full system reference — modules, processes, scope |
 
 ---
 
-## Pilot — The Agent Engine
+## Folder map
 
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [README.md](./pilot/README.md) | Pilot engine overview — serverless OpenClaw | First time reading pilot code |
-| [architecture.md](./pilot/architecture.md) | Data flow: Surface → Core → Handlers | Understanding the reasoning loop |
-| [handlers-reference.md](./pilot/handlers-reference.md) | All 40+ built-in tool handlers | Implementing or debugging tools |
-
----
-
-## Modules — FlowWink's Claws
-
-> Each module adds a distinct capability to the platform. Modules are FlowWink's equivalent of OpenClaw's channels and plugins — they give the agent body and context.
-
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [overview.md](./modules/overview.md) | All 50+ modules, their skills, and relationships | Planning module work |
-
-**Per-module reference (auto-generated from `defineModule()` + skill seeds):**
-
-Browse [`docs/modules/`](./modules/) — every module has a dedicated page with its skill catalog, input/output contract, owned tables, webhook events, and the end-to-end processes it participates in. Re-generate with `bun run scripts/generate-module-docs.ts` after changing a module definition.
-
-Highlights to read first:
-- [`accounting.md`](./modules/accounting.md) — locale-pack architecture, BAS 2024 / IFRS / US GAAP, autonomous reconciliation
-- [`flowpilot.md`](./modules/flowpilot.md) — the local operator
-- [`federation.md`](./modules/federation.md) — A2A peer integration
-- [`leads.md`](./modules/leads.md) — CRM with 11 agent skills (sample of typical depth)
-- [`hr.md`](./modules/hr.md), [`expenses.md`](./modules/expenses.md), [`reconciliation.md`](./modules/reconciliation.md) — full procure-to-pay + record-to-report coverage
+| Folder | Contents | Audience |
+|---|---|---|
+| [`concepts/`](./concepts/) | Architecture, vision, laws | both |
+| [`operators/`](./operators/README.md) | Install, configure, run | operators |
+| [`builders/`](./builders/README.md) | Extend, contribute, test | builders |
+| [`guides/`](./guides/) | Docker, deploy, migrate, maintain | operators |
+| [`modules/`](./modules/) | One page per module — auto-generated from `defineModule()` | both |
+| [`processes/`](./processes/) | End-to-end flows (lead-to-customer, quote-to-cash, …) | both |
+| [`pilot/`](./pilot/) | FlowPilot internals — handlers, memory, heartbeat | builders |
+| [`architecture/`](./architecture/) | Platform layers (MCP, event bus, locale packs, tiers) | builders |
+| [`reference/`](./reference/) | Module API, headless REST/GraphQL, skill registry, commands | both |
+| [`mcp/`](./mcp/) | MCP resources for external agents | builders |
+| [`agents/`](./agents/) | Department-claw playbooks (sales / marketing / finance / ops / support / success) | operators |
+| [`contributing/`](./contributing/) | How to contribute, run tests | builders |
 
 ---
 
-## Guides — Setup & Operations
+## Quick links
 
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [docker-quickstart.md](./guides/docker-quickstart.md) | Deploy with Docker in 5 minutes | First deployment |
-| [setup.md](./guides/setup.md) | Backend setup and environment | Development setup |
-| [deployment.md](./guides/deployment.md) | Production deployment (Docker, Easypanel, Railway) | Going to production |
-| [upgrading.md](./guides/upgrading.md) | Update to new versions | Version upgrades |
-| [site-migration.md](./guides/site-migration.md) | Import content from existing websites | Migrating a site |
-| [maintenance.md](./guides/maintenance.md) | Backups, updates, troubleshooting | Ongoing operations |
-| [security.md](./guides/security.md) | Auth, RLS policies, security architecture | Security review |
+- **65 modules** registered in `src/lib/modules/` — every one has a page in [`modules/`](./modules/) (alias-aware via `scripts/check-doc-drift.ts`)
+- **8 business processes** documented in [`processes/`](./processes/)
+- **6 department-claw playbooks** in [`agents/`](./agents/) for external MCP operators
+- Public docs portal: [/docs](https://flowwink.com/docs) (auto-synced from this folder, with embedded AI chat)
 
 ---
 
-## Reference — APIs & Registry
-
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [module-api.md](./reference/module-api.md) | Module contract system, typed schemas | Building a module |
-| [headless-api.md](./reference/headless-api.md) | REST content API for headless use | Headless integrations |
-| [skills-source.md](./reference/skills-source.md) | Complete skill registry | Checking registered skills |
-| [commands.md](./reference/commands.md) | Slash commands for FlowPilot | Using FlowPilot commands |
-
----
-
-## Contributing
-
-| Document | Summary | Read When |
-|----------|---------|-----------|
-| [contributing.md](./contributing/contributing.md) | How to contribute | First contribution |
-| [developer-guide.md](./contributing/developer-guide.md) | Architecture, extending the platform | Deep development |
-| [template-authoring.md](./contributing/template-authoring.md) | Create site templates | Building templates |
-| [testing.md](./contributing/testing.md) | Autonomy test framework (L1–L8) | Writing tests |
-
----
-
-## Primary References (Single Source of Truth)
-
-1. **[concepts/prd.md](./concepts/prd.md)** — What the system does
-2. **[concepts/flowpilot.md](./concepts/flowpilot.md)** — How the operator works
-3. **[concepts/openclaw-law.md](./concepts/openclaw-law.md)** — The inviolable laws
-
----
-
-*Last updated: April 2026*
+*Edit any page on GitHub → push → an admin runs the sync from `/admin/docs` (or wait for the scheduled sync).*
