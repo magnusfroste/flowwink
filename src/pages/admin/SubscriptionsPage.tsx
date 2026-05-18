@@ -293,6 +293,7 @@ function NewManualSubscriptionButton() {
         _start_date: f.start_date,
         _billing_contact_email: f.billing_contact_email || null,
         _po_number: f.po_number || null,
+        _auto_finalize: f.auto_finalize,
       });
       if (error) throw error;
       toast.success('Manual subscription created');
