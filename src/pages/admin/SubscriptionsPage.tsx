@@ -130,7 +130,23 @@ export default function SubscriptionsPage() {
                       <SubscriptionRow
                         key={s.id}
                         sub={s}
-                        onCancel={() => action.mutate({ action: 'cancel', subscriptionId: s.id, atPeriodEnd: true })}
+                        onCancel={async () => {
+                          if (s.provider === 'manual') {
+                            const { error } = await supabase.rpc('cancel_manual_subscription', {
+                              _subscription_id: s.id,
+                              _reason: null,
+                              _effective_date: null,
+                            });
+                            if (error) { toast.error(error.message); return; }
+                            toast.success('Subscription canceled');
+                            await Promise.all([
+                              qc.invalidateQueries({ queryKey: ['subscriptions'] }),
+                              qc.invalidateQueries({ queryKey: ['subscription-metrics'] }),
+                            ]);
+                          } else {
+                            action.mutate({ action: 'cancel', subscriptionId: s.id, atPeriodEnd: true });
+                          }
+                        }}
                         onResume={() => action.mutate({ action: 'resume', subscriptionId: s.id })}
                         onPortal={() => openCustomerPortal(s.id)}
                       />
