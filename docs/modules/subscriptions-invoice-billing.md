@@ -205,7 +205,7 @@ Update `next_invoice_date` directly to the resume date. Or call `cancel_manual_s
 ## Related
 
 - Memory: `mem://subscriptions/invoice-driven-billing`
-- Sibling doc: `docs/modules/subscriptions-v2.md`
+- Sibling doc: `docs/modules/subscriptions.md`
 - Accounting: `mem://accounting/export-adapters-pluggable`
 - Event bus: `mem://architecture/event-bus-platform-layer`
 - MCP module gating: `mem://architecture/mcp-module-aware-filtering`
