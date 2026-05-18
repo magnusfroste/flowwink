@@ -10352,6 +10352,7 @@ export type Database = {
         Row: {
           at_risk: boolean
           at_risk_reason: string | null
+          auto_finalize: boolean
           billing_contact_email: string | null
           billing_interval: string | null
           billing_interval_count: number
@@ -10390,6 +10391,7 @@ export type Database = {
         Insert: {
           at_risk?: boolean
           at_risk_reason?: string | null
+          auto_finalize?: boolean
           billing_contact_email?: string | null
           billing_interval?: string | null
           billing_interval_count?: number
@@ -10428,6 +10430,7 @@ export type Database = {
         Update: {
           at_risk?: boolean
           at_risk_reason?: string | null
+          auto_finalize?: boolean
           billing_contact_email?: string | null
           billing_interval?: string | null
           billing_interval_count?: number
@@ -12246,6 +12249,7 @@ export type Database = {
       }
       create_manual_subscription: {
         Args: {
+          _auto_finalize?: boolean
           _billing_contact_email?: string
           _billing_interval?: string
           _billing_interval_count?: number

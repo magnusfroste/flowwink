@@ -247,6 +247,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -269,8 +270,9 @@ function NewManualSubscriptionButton() {
     start_date: new Date().toISOString().slice(0, 10),
     billing_contact_email: '',
     po_number: '',
+    auto_finalize: false,
   });
-  const set = (k: keyof typeof f, v: string) => setF((x) => ({ ...x, [k]: v }));
+  const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
 
   const submit = async () => {
     if (!f.customer_email || !f.product_name || !f.unit_amount) {
@@ -292,6 +294,7 @@ function NewManualSubscriptionButton() {
         _start_date: f.start_date,
         _billing_contact_email: f.billing_contact_email || null,
         _po_number: f.po_number || null,
+        _auto_finalize: f.auto_finalize,
       });
       if (error) throw error;
       toast.success('Manual subscription created');
@@ -393,6 +396,20 @@ function NewManualSubscriptionButton() {
           <div className="space-y-1">
             <Label>PO number (optional)</Label>
             <Input value={f.po_number} onChange={(e) => set('po_number', e.target.value)} placeholder="PO-2026-0042" />
+          </div>
+          <div className="md:col-span-2 flex items-start gap-3 rounded-lg border p-3 bg-muted/30">
+            <Switch
+              id="auto-finalize"
+              checked={f.auto_finalize}
+              onCheckedChange={(v) => set('auto_finalize', v)}
+            />
+            <div className="flex-1 space-y-0.5">
+              <Label htmlFor="auto-finalize" className="cursor-pointer">Auto-finalize invoices</Label>
+              <p className="text-xs text-muted-foreground">
+                When on, the daily billing cron issues invoices as <strong>sent</strong> immediately. When off,
+                invoices land as <strong>draft</strong> for manual review before sending.
+              </p>
+            </div>
           </div>
         </div>
         <DialogFooter>

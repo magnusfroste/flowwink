@@ -174,6 +174,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
             billing_contact_email: { type: 'string', description: 'B2B AP/AR contact, optional' },
             po_number: { type: 'string', description: 'Customer PO reference, optional' },
             product_id: { type: 'string', description: 'Existing products.id, optional' },
+            auto_finalize: { type: 'boolean', description: 'When true, generated invoices are issued as `sent` immediately by the daily billing cron. Default false (drafts for manual review).' },
           },
           required: ['customer_email','product_name','unit_amount_cents'],
         },
