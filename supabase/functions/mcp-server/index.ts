@@ -742,6 +742,7 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false): Pro
             threshold: {},
           },
         },
+        reported_by: { type: "string", description: "Peer attribution — agent name (e.g. 'hermes', 'claude-code'). Persisted for federation audit trail." },
       },
       required: ["title", "type", "severity"],
     },
@@ -755,8 +756,9 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false): Pro
           severity: args.severity as string,
           description: (args.description as string) || null,
           context: (args.context as Record<string, unknown>) || null,
+          reported_by: (args.reported_by as string) || null,
         })
-        .select("id, title, severity, created_at")
+        .select("id, title, severity, created_at, reported_by")
         .single();
 
       if (error) {

@@ -1285,7 +1285,7 @@ async function executeOpenClawAction(
     }
 
     case 'openclaw_report_finding': {
-      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true } = args as any;
+      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true, reported_by } = args as any;
       const normalizedType = typeof type === 'string'
         ? ({ observation: 'suggestion', seo: 'suggestion', seo_audit: 'suggestion' } as Record<string, string>)[type.trim()] ?? type.trim()
         : '';
@@ -1297,10 +1297,11 @@ async function executeOpenClawAction(
       }
 
       // Save finding (session_id now optional for MCP-driven reports)
+      // reported_by persists peer attribution (e.g. "hermes", "claude-code") — required for federation audit trail.
       const { data, error } = await supabase
         .from('beta_test_findings')
-        .insert({ session_id: session_id || null, type: normalizedType, severity, title, description, context, screenshot_url })
-        .select('id, type, severity, title')
+        .insert({ session_id: session_id || null, type: normalizedType, severity, title, description, context, screenshot_url, reported_by: reported_by || null })
+        .select('id, type, severity, title, reported_by')
         .single();
       if (error) throw new Error(`Finding report failed: ${error.message}`);
 
