@@ -142,7 +142,7 @@ Manages webinars and registrations.
   },
   {
     name: 'cancel_webinar',
-    description: 'Cancel a webinar. Emits webinar.cancelled event so automations can notify registrants.',
+    description: 'Cancel a webinar. Emits webinar.cancelled event so automations can notify registrants. Use when: webinar will not run and registrants must be informed / "cancel webinar" / "ställ in webinariet". NOT for: completing a webinar that did run (use complete_webinar).',
     category: 'communication',
     handler: 'rpc:cancel_webinar',
     scope: 'internal',
