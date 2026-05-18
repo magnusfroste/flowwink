@@ -12,6 +12,7 @@ import { useDocsPages, useDocsPage, type DocsPage } from '@/hooks/useDocs';
 import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsChat } from '@/components/docs/DocsChat';
 import { DocsTOC } from '@/components/docs/DocsTOC';
+import { useIsEmbed } from '@/hooks/useIsEmbed';
 
 function slugify(text: string): string {
   return text
