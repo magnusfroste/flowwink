@@ -66,6 +66,7 @@ On `subscriptions`:
 - `billing_contact_email` — B2B AP/AR contact (can differ from `customer_email`)
 - `po_number` — customer purchase order reference
 - `last_invoice_id` — link to most recent generated invoice
+- `auto_finalize` (default `false`) — when `true`, generated invoices are issued as `sent` immediately (auto-finalized) and emit `invoice.finalized`; when `false`, invoices land as `draft` for manual review
 
 ### RPCs (all SECURITY DEFINER, MCP-exposed)
 - `create_manual_subscription(...)` — admin creates a recurring subscription
