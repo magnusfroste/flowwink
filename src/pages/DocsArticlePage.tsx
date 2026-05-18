@@ -36,6 +36,7 @@ export default function DocsArticlePage() {
   const { category, slug } = useParams<{ category: string; slug: string }>();
   const { data: pages = [] } = useDocsPages();
   const { data: page, isLoading } = useDocsPage(category, slug);
+  const embed = useIsEmbed();
 
   const description =
     typeof page?.frontmatter?.description === 'string'
