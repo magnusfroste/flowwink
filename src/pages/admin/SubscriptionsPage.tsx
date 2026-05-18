@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { RenewalsPanel } from '@/components/admin/subscriptions/RenewalsPanel';
+import { BillingCronBanner } from '@/components/admin/subscriptions/BillingCronBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSubscriptions, useSubscriptionMetrics, useSubscriptionAction,
@@ -85,6 +86,8 @@ export default function SubscriptionsPage() {
           hint={metrics?.pastDue ? `${metrics.pastDue} past due` : 'Last 30 days'}
         />
       </div>
+
+      <BillingCronBanner />
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
@@ -189,6 +192,8 @@ function SubscriptionRow({
   onPortal: () => void;
 }) {
   const status = STATUS_LABEL[sub.status];
+  const isManual = sub.provider === 'manual';
+  const nextInvoice = (sub as any).next_invoice_date as string | null | undefined;
   const renews = sub.current_period_end
     ? format(new Date(sub.current_period_end), 'MMM d, yyyy')
     : '—';
@@ -205,6 +210,7 @@ function SubscriptionRow({
         <div className="text-xs text-muted-foreground">
           {sub.quantity > 1 ? `${sub.quantity} × ` : ''}
           {sub.billing_interval ? `per ${sub.billing_interval}` : ''}
+          {isManual ? ' · invoice-billed' : ' · Stripe'}
         </div>
       </TableCell>
       <TableCell>{formatMoney(sub.unit_amount_cents * sub.quantity, sub.currency)}</TableCell>
@@ -214,7 +220,16 @@ function SubscriptionRow({
           <Badge variant="outline" className="ml-2">Ends soon</Badge>
         )}
       </TableCell>
-      <TableCell>{renews}</TableCell>
+      <TableCell>
+        {isManual && nextInvoice ? (
+          <div>
+            <div>{format(new Date(nextInvoice), 'MMM d, yyyy')}</div>
+            <div className="text-xs text-muted-foreground">Auto-invoice at 06:00 UTC</div>
+          </div>
+        ) : (
+          renews
+        )}
+      </TableCell>
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -405,6 +420,7 @@ function NewManualSubscriptionButton() {
           <div className="space-y-1">
             <Label>Start date</Label>
             <Input type="date" value={f.start_date} onChange={(e) => set('start_date', e.target.value)} />
+            <p className="text-xs text-muted-foreground">First invoice is generated automatically by the daily 06:00 UTC billing job once this date is reached.</p>
           </div>
           <div className="space-y-1">
             <Label>Billing contact (optional)</Label>
