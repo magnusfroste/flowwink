@@ -6759,7 +6759,13 @@ async function executeDbAction(
         return { cancelled: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status };
       }
 
-      throw new Error(`Unknown invoices action: ${action}. Supported: list, get, create, update, send, mark_paid, cancel.`);
+      if (action === 'delete') {
+        return {
+          error: `Invoices are never deleted (audit/accounting trail). Use action='cancel' with a reason — it preserves the invoice number for reconciliation.`,
+        };
+      }
+
+      throw new Error(`Unknown invoices action: ${action}. Supported: list, get, create, update, send, mark_paid, cancel. To "delete" an invoice use cancel (audit-preserving).`);
     }
 
     default:
