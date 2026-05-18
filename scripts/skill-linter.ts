@@ -284,13 +284,22 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
       if (canWrite) {
         const params = td?.function?.parameters ?? td?.parameters;
         const allOf = params?.allOf ?? [];
+        const xActionRequired: Record<string, string[]> =
+          (params && (params as any)['x-action-required']) || {};
         const hasWriteAction = actionEnum.some((a) => WRITE_ACTIONS.includes(a));
         if (hasWriteAction) {
           const requiredForCreate = new Set<string>();
+          // Legacy allOf/if-then branches
           for (const branch of allOf) {
             const constVal = branch?.if?.properties?.action?.const;
             if (WRITE_ACTIONS.includes(constVal)) {
               for (const r of branch?.then?.required ?? []) requiredForCreate.add(r);
+            }
+          }
+          // OpenAI-safe x-action-required extension
+          for (const [act, cols] of Object.entries(xActionRequired)) {
+            if (WRITE_ACTIONS.includes(act) && Array.isArray(cols)) {
+              for (const c of cols) requiredForCreate.add(c);
             }
           }
           for (const r of params?.required ?? []) requiredForCreate.add(r);
@@ -302,12 +311,13 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
                 severity: 'warn',
                 rule: 'per-action-required',
                 message: `Column "${col}" is NOT NULL but not marked required for write actions.`,
-                fix: `Add "${col}" to allOf[if action=create].then.required.`,
+                fix: `Add "${col}" to params['x-action-required'].create (OpenAI-safe pattern).`,
               });
             }
           }
         }
       }
+
     }
   }
 
