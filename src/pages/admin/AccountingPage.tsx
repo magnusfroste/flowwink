@@ -14,6 +14,9 @@ import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 import { AnalyticAccountingTab } from '@/components/admin/accounting/AnalyticAccountingTab';
 import { AuditTrailTab } from '@/components/admin/accounting/AuditTrailTab';
 import { ExportTab } from '@/components/admin/accounting/ExportTab';
+import { VoucherIntegrityTab } from '@/components/admin/accounting/VoucherIntegrityTab';
+import { YearEndTab } from '@/components/admin/accounting/YearEndTab';
+import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
 
 export default function AccountingPage() {
   const [tab, setTab] = useState('journal');
@@ -38,6 +41,9 @@ export default function AccountingPage() {
             <TabsTrigger value="analytic">Analytic</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+            <TabsTrigger value="voucher">Voucher Integrity</TabsTrigger>
+            <TabsTrigger value="yearend">Year-End</TabsTrigger>
+            <TabsTrigger value="pending">Pending Ops</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -71,6 +77,15 @@ export default function AccountingPage() {
           </TabsContent>
           <TabsContent value="audit">
             <AuditTrailTab />
+          </TabsContent>
+          <TabsContent value="voucher">
+            <VoucherIntegrityTab />
+          </TabsContent>
+          <TabsContent value="yearend">
+            <YearEndTab />
+          </TabsContent>
+          <TabsContent value="pending">
+            <PendingOperationsList />
           </TabsContent>
           <TabsContent value="export">
             <ExportTab />
