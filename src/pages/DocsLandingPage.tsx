@@ -39,6 +39,7 @@ const HIGHLIGHTS = [
 
 export default function DocsLandingPage() {
   const { data: pages = [], isLoading } = useDocsPages();
+  const embed = useIsEmbed();
 
   return (
     <>
