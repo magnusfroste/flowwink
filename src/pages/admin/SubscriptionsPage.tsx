@@ -46,6 +46,7 @@ export default function SubscriptionsPage() {
   const { data: subs, isLoading } = useSubscriptions(filter === 'all' ? undefined : filter);
   const { data: metrics } = useSubscriptionMetrics();
   const action = useSubscriptionAction();
+  const qc = useQueryClient();
 
   return (
     <AdminLayout>
