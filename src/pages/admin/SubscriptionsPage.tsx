@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { RenewalsPanel } from '@/components/admin/subscriptions/RenewalsPanel';
+import { BillingCronBanner } from '@/components/admin/subscriptions/BillingCronBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSubscriptions, useSubscriptionMetrics, useSubscriptionAction,
