@@ -269,6 +269,7 @@ function NewManualSubscriptionButton() {
     start_date: new Date().toISOString().slice(0, 10),
     billing_contact_email: '',
     po_number: '',
+    auto_finalize: false,
   });
   const set = (k: keyof typeof f, v: string) => setF((x) => ({ ...x, [k]: v }));
 
