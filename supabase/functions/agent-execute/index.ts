@@ -3079,7 +3079,13 @@ async function executeDealsAction(
     return { deal_id: data.id, new_stage: data.stage };
   }
 
-  return { error: `Unknown deals action: ${action}` };
+  if (action === 'delete') {
+    return {
+      error: `Deals are never deleted (audit trail). Use action='move_stage' with stage='closed_lost' to drop the opportunity, or action='update' to amend it.`,
+    };
+  }
+
+  return { error: `Unknown deals action: ${action}. Supported: list, create, update, move_stage. To "delete" a deal use move_stage → closed_lost (audit-preserving).` };
 }
 
 // =============================================================================
