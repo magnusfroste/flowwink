@@ -1,73 +1,133 @@
+# Lyft accounting-modulen — Nivå 1 (neutral core)
 
-# FlowChat — module-aware honesty (no more silent wrong-skill picks)
+**Mål:** Höj accounting-kärnan till GnuBok-paritet **utan** att låsa något till Sverige. Allt som byggs här är neutralt och fungerar lika bra för `se-bas2024`, `ifrs-generic`, framtida `de-skr04` etc.
 
-## Problem (confirmed by live test)
+**Princip:** Land-specifikt = locale pack. Universella primitiver = core. Den här PR:en rör bara core.
 
-Admin sa: *"Add a new lead Acme Industries… create CRM follow-up task"*. FlowChat:
-1. Anropade `manage_consultant_profile` (skapade en konsultprofil)
-2. Anropade `manage_blog_posts` med `page_status: "lead"` (enum-fel)
-3. Skrev i texten: *"Lead added, follow-up task created"* — ren hallucination
+---
 
-Rotorsak: **CRM-modulen är av**. `add_lead`/`manage_leads`/`crm_task_create` finns inte i LLM:ens tool-array. Men agenten:
-- Vet inte att de saknas → väljer närmaste manage_*-skill från en aktiv modul
-- UI:t säger "257 skills" → admin tror allt är tillgängligt
-- Inget "module not enabled"-svar finns som arkitektonisk primitiv
+## Steg 1 — Staged-Operation Envelope för MCP-writes
 
-## Princip
+GnuBok returnerar på varje write-tool:
+```json
+{
+  "staged": true,
+  "risk_level": "high|medium|low",
+  "actor": "agent|user",
+  "preview": { ...payload som skulle skrivas... },
+  "period_status": "open|locked|closing",
+  "message": "Will post journal entry 2025-V123...",
+  "next": { "approve": "approve_pending_operation", "reject": "reject_pending_operation" }
+}
+```
 
-> **En agent som inte vet vad den inte kan får inte gissa. Den måste säga det.**
+**Vad vi gör:**
+- Ny tabell `pending_operations` (id, skill_name, args, preview, risk_level, status, created_by, expires_at)
+- Wrapper i `agent-execute` som — om en skill är markerad `requires_staging=true` — *inte* exekverar utan returnerar envelope + skriver `pending_operations`-rad
+- 2 nya MCP-skills: `approve_pending_operation(id)`, `reject_pending_operation(id, reason)`
+- Skill-flag `requires_staging` på `agent_skills`-tabellen (default false; sätts true för: `record_journal_entry`, `book_expense`, `mark_expense_paid`, `record_pos_sale_v2`, `close_pos_session_v2`, `close_accounting_period`, framtida `correct_entry`, `reverse_journal_entry`)
+- `period_status` injectas automatiskt på varje date-bound write via helper i agent-execute (läser `accounting_periods.is_closed` för datumet)
+- Approval-engine vi redan har återanvänds — staging är bara ett "preview-first" UX-lager ovanpå
 
-Tre lager arkitektur, inga hardcoded intents (Lag 1):
+**Neutralt:** Helt locale-agnostiskt. Bara MCP-protokoll-förbättring.
 
-### 1. Skill-katalog ≠ exponerade tools (ärlig UI)
+---
 
-`useAgentOperate.loadSkills` ska returnera `{ exposed, disabledByModule }`:
-- `exposed` = de skills som faktiskt går till LLM:en (efter `loadActiveModuleIds` + per-skill `requires`)
-- `disabledByModule` = skills som hör till AV-slagna moduler, grupperade per modul
+## Steg 2 — Voucher-Gap Detection
 
-Badge i `FlowChatPage.tsx`: `Operator · 86 skills · 171 disabled by 50 modules off` (klickbar → tooltip/dialog som listar disabled grupper). Slut på lögn.
+Svensk lag kräver obrutna verifikatnummer-serier, men **även** IFRS/GAAP/DATEV kräver kontinuitet — det är en universell god revisionspraxis.
 
-### 2. Intent-router som svarar "modul av" istället för fan-out
+**Vad vi gör:**
+- Ny SECURITY DEFINER RPC `list_voucher_gaps(p_year int, p_series text default null)` → returnerar `[{ series, expected_next, last_seen, gap_size, gap_after_date }]`
+- Ny RPC `explain_voucher_gap(p_series, p_voucher_number)` → letar i `audit_logs` efter delete/void-händelser kring numret, returnerar förklaring eller "unknown — investigate"
+- 2 MCP-skills: `list_voucher_gaps`, `explain_voucher_gap`
+- Ny tab i `/admin/accounting` "Voucher Integrity" som visar gaps + förklaringar
+- DB-trigger på `journal_entries` insert som validerar att `voucher_number = max(voucher_number) + 1` per serie (skippar om explicit `allow_gap=true` i context — för migrations)
 
-Ny edge-helper `resolveIntent({userMessage, exposedSkills, allSkillsCatalog})` som:
-- Kör SAMMA scoring som idag mot **hela katalogen** (inte bara exposed)
-- Om top-3 matchande skills är disabled → returnera `{kind:'module_disabled', module:'crm', skills:['add_lead','manage_leads']}`
-- Annars normal flow
+**Neutralt:** Verifikatserier finns i alla länders bokföring. SE använder "A", DE använder "SK", US ofta "JE" — alla får detta gratis.
 
-I `agent-operate/index.ts` precis innan tool-loopen: om `module_disabled` → svara direkt utan tool-call:
-> *"Det här kräver CRM-modulen, som är avstängd. Aktivera den i [Modules](/admin/modules) och be mig igen. Skills som skulle ha använts: `add_lead`, `crm_task_create`."*
+---
 
-Det är inte hardcoded intent (Lag 1 ok) — det är **negativ delegering** baserad på samma scoring-metadata.
+## Steg 3 — Year-End Orchestration Skills
 
-### 3. Anti-hallucinations-vakt i FLOWCHAT_OPERATOR_PROTOCOL
+GnuBok har `run_year_end`, `propose_dispositioner`, `propose_accruals`, `propose_annual_depreciation`, `year_end_readiness`. Detta är bokslutsmekanik som är **universell** — bara konton/regler skiljer sig per pack.
 
-Hård regel i system-prompten:
-- *"Påstå ALDRIG att en handling utfördes om motsvarande tool-call inte returnerade `success:true`. Om en tool returnerade fel, säg det rent ut. Om ingen lämplig tool finns, säg 'jag har ingen skill för detta'."*
+**Vad vi gör (core):**
+- Ny RPC + skill `year_end_readiness(p_year)` → checklista: alla perioder stängda? alla bankkonton avstämda? alla fakturor bokförda? alla expenses paid eller redovisade som payable? avskrivningar postade? VAT-period stängd?
+- Ny RPC + skill `propose_accruals(p_year)` → letar opaid invoices/expenses med leveransdatum före årsskiftet och föreslår periodiseringar
+- Ny RPC + skill `propose_annual_depreciation(p_year)` → körrutin på `fixed_assets`-tabellen (vi har modulen redan)
+- Ny RPC + skill `run_year_end(p_year, p_confirm)` → orkestrerar i ordning, returnerar staged envelope om något kräver godkännande
+- `propose_dispositioner` (SE-specifikt: periodiseringsfond, överavskrivningar) flyttas till **`se-bas2024`-pack** som `pack.year_end_proposals` callback — så core kan anropa pack-specifik logik utan att veta vad den gör
 
-Plus: i `OperateChat.tsx`, om sista assistant-meddelandet innehåller orden "added/created/sent/published" men sista tool_result var `error`/`failed` → visa varningschip *"⚠️ Hallucinationsrisk: senaste verktygsanropet misslyckades"*.
+**Neutralt:** Orchestration-skalen är generisk. Land-specifik logik (dispositioner) blir pack-callback.
 
-## Filändringar
+---
 
-| Fil | Ändring |
-|---|---|
-| `supabase/functions/_shared/pilot/reason.ts` | `loadSkillsRaw('internal')` returnerar `{exposed, disabledByModule, all}` istället för bara array |
-| `supabase/functions/agent-operate/index.ts` | Pre-loop intent-check: om top-matched-skill är disabled → tidigt svar med modul-aktiveringshint |
-| `supabase/functions/agent-operate/index.ts` | Skärpt `FLOWCHAT_OPERATOR_PROTOCOL` (anti-hallucination) |
-| `src/hooks/useAgentOperate.ts` | `loadSkills` exponerar `exposed/disabled` separat |
-| `src/pages/admin/FlowChatPage.tsx` | Badge visar `N skills · M disabled` med tooltip |
-| `src/components/admin/copilot/OperateChat.tsx` | Hallucinationsvarnings-chip när text säger "done" men tool-call failed |
+## Steg 4 — MCP-skill guardrail
 
-## Out of scope (med flit)
+- Utöka `scripts/verify-mcp-invariant.ts` (eller `lint:skills`) med:
+  - Alla `requires_staging=true` skills MÅSTE returnera staged envelope (test som mockar agent-execute)
+  - `tools/list`-payload < 50KB (förhindrar context-bloat)
+  - Alla nya skills har `Use when:` / `NOT for:` i description
+- Lägg till i `.github/workflows/mcp-regression.yml`
 
-- Ingen ny skill-scoring-algoritm — den fungerar mot aktiva skills
-- Inga regex-routes (Lag 1)
-- Ingen "auto-enable module" knapp — admin måste medvetet slå på
-- Cowork Chat tas i nästa steg (efter att FlowChat-mönstret är validerat)
+---
 
-## Verifiering
+## Vad som **INTE** ingår (medvetet)
 
-Efter deploy testar jag i browser samma två admin-prompts igen:
-1. *"Add a new lead Acme Industries…"* → förväntat: *"CRM-modulen är av. Aktivera den…"*
-2. Slå på CRM-modulen, samma prompt igen → förväntat: faktiskt `add_lead` + `crm_task_create` med `success:true`
+- `de-skr04`-pack (separat PR — gör den när core är stabil)
+- SKV 4700 / AGI / NE-bilaga (SE-specifikt → flyttas till `se-bas2024`-pack senare)
+- PSD2 live bank-feed (separat integration, inte core-fråga)
+- Inline HTML widgets i agent UI (UX-polish, Nivå 3)
+- Dynamic OAuth client registration (separat säkerhetsspår)
 
-Inga task-list behövs — ändringen är fokuserad och atomisk.
+---
+
+## Filer som skapas/ändras
+
+**Migrationer:**
+- `pending_operations`-tabell + RLS
+- `agent_skills.requires_staging` kolumn
+- `journal_entries` voucher-gap-validation trigger
+- 6 nya RPC:er: `list_voucher_gaps`, `explain_voucher_gap`, `year_end_readiness`, `propose_accruals`, `propose_annual_depreciation`, `run_year_end`
+- Seed 8 nya skills i `agent_skills`
+
+**Edge functions:**
+- `agent-execute/index.ts` — staging-wrapper + period_status-injection
+
+**Locale pack-kontrakt:**
+- `src/lib/locale-packs/types.ts` — ny optional `year_end_proposals?: (year: number) => Promise<AccrualProposal[]>` callback
+- `src/lib/locale-packs/se/index.ts` — implementera dispositioner-callback (stub OK i denna PR)
+
+**UI:**
+- `src/pages/admin/AccountingPage.tsx` — ny tab "Voucher Integrity"
+- `src/pages/admin/AccountingPage.tsx` — ny tab "Year-End" med readiness-checklista + körknapp
+- `src/pages/admin/PendingOperationsPage.tsx` — ny sida för pending staged ops (eller tab i `/admin/developer`)
+
+**Tester:**
+- `verify-mcp-invariant.ts` utökas
+- `src/lib/__tests__/staged-operations.test.ts`
+- `src/lib/__tests__/voucher-gaps.test.ts`
+
+**Memory:**
+- `mem/accounting/staged-operations-envelope.md`
+- `mem/accounting/voucher-gap-detection.md`
+- `mem/accounting/year-end-orchestration.md`
+- Index-uppdatering
+
+**Docs:**
+- `docs/modules/accounting.md` — sektion "Staging, Voucher Integrity, Year-End"
+- `docs/processes/record-to-report.md` — uppdatera flödet
+
+---
+
+## Förslag på ordning
+
+1. Migration: `pending_operations` + skill-kolumn + voucher-trigger
+2. agent-execute staging-wrapper + 2 approve/reject-skills
+3. Voucher-gap RPCs + skills + UI-tab
+4. Year-end RPCs + skills + UI-tab + pack-callback
+5. Guardrail-tester + CI
+6. Docs + memory
+
+Vill du att jag kör allt i en följd, eller delar upp i ~3 commits med stopp emellan så du hinner verifiera?

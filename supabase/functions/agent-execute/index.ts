@@ -102,6 +102,95 @@ serve(async (req) => {
       });
     }
 
+    // 3a. STAGING ENVELOPE — preview-first MCP protocol for high-impact writes.
+    //     Skills flagged requires_staging=true return a staged envelope on first call,
+    //     creating a pending_operations row. Caller must approve_pending_operation, then
+    //     re-invoke with _approved_operation_id=<uuid> to actually execute.
+    const requiresStaging = (skill as any).requires_staging === true;
+    const approvedOpId = (args as any)?._approved_operation_id as string | undefined;
+    if (approvedOpId) delete (args as any)._approved_operation_id;
+
+    if (requiresStaging && !approvedOpId) {
+      // Compute period_status if entry_date or date in args
+      let periodStatus: string | null = null;
+      const aa = args as any;
+      const dateStr = aa?.entry_date || aa?.date || aa?.posting_date;
+      if (dateStr) {
+        try {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            const { data: per } = await supabase
+              .from('accounting_periods')
+              .select('status')
+              .eq('fiscal_year', d.getFullYear())
+              .eq('period_month', d.getMonth() + 1)
+              .maybeSingle();
+            periodStatus = (per?.status as string) ?? 'open';
+          }
+        } catch { /* ignore */ }
+      }
+
+      const riskLevel: 'low'|'medium'|'high' =
+        ['close_accounting_period','close_pos_session_v2','record_accounting_correction'].includes(skill.name) ? 'high'
+        : 'medium';
+
+      const { data: opRow, error: opErr } = await supabase
+        .from('pending_operations')
+        .insert({
+          skill_id: skill.id,
+          skill_name: skill.name,
+          args: args as any,
+          preview: { intent: `Will execute skill "${skill.name}"`, args, computed_at: new Date().toISOString() },
+          risk_level: riskLevel,
+          period_status: periodStatus,
+          created_by_user_id: caller_user_id ?? null,
+          created_by_agent: agent_type,
+          conversation_id: conversation_id ?? null,
+        })
+        .select('id')
+        .single();
+
+      if (opErr) {
+        console.error('[agent-execute] staging insert failed:', opErr);
+      }
+
+      return new Response(JSON.stringify({
+        staged: true,
+        operation_id: opRow?.id,
+        skill: skill.name,
+        risk_level: riskLevel,
+        period_status: periodStatus,
+        actor: agent_type,
+        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with _approved_operation_id="${opRow?.id}".`,
+        preview: { args },
+        next: {
+          approve: { skill: 'approve_pending_operation', args: { p_id: opRow?.id } },
+          reject: { skill: 'reject_pending_operation', args: { p_id: opRow?.id, p_reason: '<reason>' } },
+        },
+      }), {
+        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (approvedOpId) {
+      // Verify approval before continuing
+      const { data: op } = await supabase
+        .from('pending_operations')
+        .select('status, skill_name')
+        .eq('id', approvedOpId)
+        .maybeSingle();
+      if (!op || op.status !== 'approved' || op.skill_name !== skill.name) {
+        return new Response(JSON.stringify({
+          error: 'pending operation not approved or skill mismatch',
+          operation_id: approvedOpId,
+        }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      // Mark executed (best-effort; result is updated post-execution if needed)
+      await supabase.from('pending_operations')
+        .update({ status: 'executed', executed_at: new Date().toISOString() })
+        .eq('id', approvedOpId);
+    }
+
     // 3. Check trust level (auto → execute, notify → execute + notify, approve → block)
     //    `_approved: true` is the bypass flag set when an admin approves a pending activity.
     const trustLevel = skill.trust_level || 'auto';

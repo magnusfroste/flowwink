@@ -942,6 +942,7 @@ export type Database = {
           name: string
           origin: Database["public"]["Enums"]["skill_origin"]
           requires: Json | null
+          requires_staging: boolean
           scope: Database["public"]["Enums"]["agent_scope"]
           tool_definition: Json
           trust_level: Database["public"]["Enums"]["skill_trust_level"]
@@ -959,6 +960,7 @@ export type Database = {
           name: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
+          requires_staging?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
           tool_definition?: Json
           trust_level?: Database["public"]["Enums"]["skill_trust_level"]
@@ -976,6 +978,7 @@ export type Database = {
           name?: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
+          requires_staging?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
           tool_definition?: Json
           trust_level?: Database["public"]["Enums"]["skill_trust_level"]
@@ -5366,6 +5369,9 @@ export type Database = {
           template_id: string | null
           updated_at: string
           vendor_id: string | null
+          voucher_number: number | null
+          voucher_series: string | null
+          voucher_year: number | null
         }
         Insert: {
           created_at?: string
@@ -5381,6 +5387,9 @@ export type Database = {
           template_id?: string | null
           updated_at?: string
           vendor_id?: string | null
+          voucher_number?: number | null
+          voucher_series?: string | null
+          voucher_year?: number | null
         }
         Update: {
           created_at?: string
@@ -5396,6 +5405,9 @@ export type Database = {
           template_id?: string | null
           updated_at?: string
           vendor_id?: string | null
+          voucher_number?: number | null
+          voucher_series?: string | null
+          voucher_year?: number | null
         }
         Relationships: [
           {
@@ -7138,6 +7150,80 @@ export type Database = {
             columns: ["inviter_peer_id"]
             isOneToOne: false
             referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_operations: {
+        Row: {
+          args: Json
+          conversation_id: string | null
+          created_at: string
+          created_by_agent: string | null
+          created_by_user_id: string | null
+          executed_at: string | null
+          execution_result: Json | null
+          expires_at: string
+          id: string
+          period_status: string | null
+          preview: Json
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: string
+          skill_id: string | null
+          skill_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          args?: Json
+          conversation_id?: string | null
+          created_at?: string
+          created_by_agent?: string | null
+          created_by_user_id?: string | null
+          executed_at?: string | null
+          execution_result?: Json | null
+          expires_at?: string
+          id?: string
+          period_status?: string | null
+          preview?: Json
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string
+          skill_id?: string | null
+          skill_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          args?: Json
+          conversation_id?: string | null
+          created_at?: string
+          created_by_agent?: string | null
+          created_by_user_id?: string | null
+          executed_at?: string | null
+          execution_result?: Json | null
+          expires_at?: string
+          id?: string
+          period_status?: string | null
+          preview?: Json
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string
+          skill_id?: string | null
+          skill_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_operations_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "agent_skills"
             referencedColumns: ["id"]
           },
         ]
@@ -11945,6 +12031,7 @@ export type Database = {
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
       approve_payroll_run: { Args: { p_run_id: string }; Returns: Json }
+      approve_pending_operation: { Args: { p_id: string }; Returns: Json }
       approve_procurement_suggestion: { Args: { p_id: string }; Returns: Json }
       approve_return: {
         Args: { p_notes?: string; p_return_id: string }
@@ -12305,6 +12392,10 @@ export type Database = {
           rule_name: string
         }[]
       }
+      explain_voucher_gap: {
+        Args: { p_series: string; p_voucher_number: number; p_year: number }
+        Returns: Json
+      }
       flag_at_risk_subscriptions: { Args: never; Returns: Json }
       generate_monthly_expense_report: {
         Args: { p_period?: string; p_user_id?: string }
@@ -12511,6 +12602,17 @@ export type Database = {
           unit_price_cents: number
           vendor_id: string
           vendor_name: string
+        }[]
+      }
+      list_voucher_gaps: {
+        Args: { p_series?: string; p_year?: number }
+        Returns: {
+          expected_number: number
+          fiscal_year: number
+          gap_size: number
+          last_seen_date: string
+          next_existing_number: number
+          series: string
         }[]
       }
       lock_accounting_period: {
@@ -12875,6 +12977,10 @@ export type Database = {
           p_phone?: string
           p_webinar_id: string
         }
+        Returns: Json
+      }
+      reject_pending_operation: {
+        Args: { p_id: string; p_reason?: string }
         Returns: Json
       }
       reject_procurement_suggestion: {
@@ -13260,6 +13366,7 @@ export type Database = {
       }
       webinar_reminder_tick: { Args: never; Returns: Json }
       webinar_tick: { Args: never; Returns: Json }
+      year_end_readiness: { Args: { p_year?: number }; Returns: Json }
     }
     Enums: {
       a2a_activity_status: "success" | "error" | "pending" | "dispatched"
