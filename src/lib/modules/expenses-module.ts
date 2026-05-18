@@ -129,7 +129,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
   },
   {
     name: 'submit_expense_report',
-    description: 'Submits a draft expense report for approval. Locks all included expenses to submitted state.',
+    description: 'Submits a draft expense report for approval. Locks all included expenses to submitted state. Use when: employee finishes their expense report and wants it sent to manager / "submit my expenses" / "skicka in utlägg". NOT for: creating expenses (use generate_expense_report) or approving (use approve_expense_report).',
     category: 'commerce',
     handler: 'rpc:submit_expense_report',
     scope: 'internal',
