@@ -51,6 +51,8 @@ export const customer360Module = defineModule<Input, Output>({
   id: 'customer360',
   name: 'Customer 360',
   version: '1.0.0',
+  processes: ['lead-to-customer', 'support-to-resolution'],
+  maturity: 'L3',
   description:
     'One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with a unified timeline and lifetime-value KPIs.',
   capabilities: ['data:read'],

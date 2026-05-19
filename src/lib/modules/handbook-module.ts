@@ -70,6 +70,8 @@ export const handbookModule = defineModule<HandbookInput, HandbookOutput>({
   id: 'handbook',
   name: 'Agentic Handbook',
   version: '1.0.0',
+  processes: ['hire-to-retire'],
+  maturity: 'L2',
   description: 'Agentic methodology handbook with search and reader capabilities',
   capabilities: ['data:read'],
   inputSchema: handbookInputSchema,

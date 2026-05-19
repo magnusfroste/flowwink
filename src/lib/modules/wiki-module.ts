@@ -149,6 +149,8 @@ export const wikiModule = defineModule<Input, Output>({
   id: 'wiki',
   name: 'Wiki',
   version: '1.0.0',
+  processes: ['hire-to-retire'],
+  maturity: 'L2',
   description:
     'Internal TEdit-style wiki / intranet. Authenticated users can read and edit; CamelCase / [[WikiWord]] auto-linking creates missing pages on click. Surfaces as a selectable knowledge source in Cowork Chat.',
   capabilities: ['data:read', 'data:write', 'content:receive'],

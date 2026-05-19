@@ -647,6 +647,8 @@ export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
   id: 'pages',
   name: 'Pages',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L4',
   description: 'Create and publish CMS pages',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: pageModuleInputSchema,

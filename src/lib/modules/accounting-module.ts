@@ -424,6 +424,8 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
   id: 'accounting',
   name: 'Accounting',
   version: '1.0.0',
+  processes: ['quote-to-cash', 'procure-to-pay', 'record-to-report'],
+  maturity: 'L3',
   description: 'Double-entry bookkeeping with pluggable locale packs (chart of accounts, VAT rules, payroll, bank import). Default: BAS 2024 (Sweden); also supports IFRS-generic. Add new market packs in src/lib/locale-packs/.',
   capabilities: ['data:write', 'data:read'],
   inputSchema: accountingInputSchema,

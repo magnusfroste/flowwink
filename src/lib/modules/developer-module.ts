@@ -61,6 +61,8 @@ export const developerModule = defineModule<Input, Output>({
   id: 'developer',
   name: 'Developer',
   version: '1.1.0',
+  processes: [],
+  maturity: 'L3',
   description:
     'API explorer, webhooks, and developer tools for integrating with external systems. Also hosts platform-level skills (e.g. global_search).',
   capabilities: ['webhook:trigger', 'data:read'],

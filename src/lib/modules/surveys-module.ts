@@ -129,6 +129,8 @@ export const surveysModule = defineModule<Input, Output>({
   id: 'surveys',
   name: 'Surveys & NPS',
   version: '1.0.0',
+  processes: ['support-to-resolution', 'lead-to-customer'],
+  maturity: 'L2',
   description:
     'Capture customer satisfaction with one-click NPS, CSAT, and custom surveys. Triggered manually or automatically after orders, tickets, contracts and bookings. Detractor responses auto-route to FlowPilot for recovery; promoter responses boost lead score and surface testimonial opportunities.',
   capabilities: ['data:read', 'data:write'],

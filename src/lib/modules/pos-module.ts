@@ -207,6 +207,8 @@ export const posModule = defineModule<Input, Output>({
   id: 'pos',
   name: 'Point of Sale',
   version: '2.0.0',
+  processes: ['order-to-delivery', 'record-to-report'],
+  maturity: 'L3',
   description: 'In-store register — sessions, receipts, split payments, stock-aware product catalog',
   capabilities: ['data:read', 'data:write'],
   inputSchema,

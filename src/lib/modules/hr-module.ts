@@ -143,6 +143,8 @@ export const hrModule = defineModule<HrInput, HrOutput>({
   id: 'hr',
   name: 'HR & Employees',
   version: '1.0.0',
+  processes: ['hire-to-retire'],
+  maturity: 'L3',
   description: 'Employee directory, leave management, and organizational structure',
   capabilities: ['data:write', 'data:read'],
   inputSchema: hrInputSchema,

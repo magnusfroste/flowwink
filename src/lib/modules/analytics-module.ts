@@ -189,6 +189,8 @@ export const analyticsModule = defineModule<Input, Output>({
   id: 'analytics',
   name: 'Analytics',
   version: '1.0.0',
+  processes: ['content-to-conversion', 'record-to-report', 'support-to-resolution'],
+  maturity: 'L3',
   description: 'Dashboard with insights on leads, deals, and newsletter performance',
   capabilities: ['data:read'],
   inputSchema,

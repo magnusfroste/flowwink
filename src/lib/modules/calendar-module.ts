@@ -64,6 +64,8 @@ export const calendarModule = defineModule<Input, Output>({
   id: 'calendar',
   name: 'Calendar',
   version: '1.0.0',
+  processes: ['hire-to-retire', 'lead-to-customer'],
+  maturity: 'L3',
   description: 'Unified calendar aggregating bookings, tasks, leave and renewals',
   capabilities: ['data:read'],
   inputSchema,

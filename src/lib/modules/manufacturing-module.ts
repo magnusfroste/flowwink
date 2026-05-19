@@ -269,6 +269,8 @@ export const manufacturingModule = defineModule<ManufacturingInput, Manufacturin
   id: 'manufacturing',
   name: 'Manufacturing',
   version: '1.0.0',
+  processes: ['procure-to-pay', 'order-to-delivery'],
+  maturity: 'L2',
   description:
     'MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.',
   capabilities: ['data:write', 'data:read'],

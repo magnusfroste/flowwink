@@ -172,6 +172,8 @@ export const documentsModule = defineModule<DocumentsInput, DocumentsOutput>({
   id: 'documents',
   name: 'Documents',
   version: '1.0.0',
+  processes: ['procure-to-pay', 'hire-to-retire', 'order-to-delivery'],
+  maturity: 'L3',
   description: 'Document management with categorization, entity linking, and version tracking',
   capabilities: ['data:write', 'data:read'],
   inputSchema: documentsInputSchema,

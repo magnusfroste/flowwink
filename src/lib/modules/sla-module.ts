@@ -134,6 +134,8 @@ export const slaModule = defineModule<SlaInput, SlaOutput>({
   id: 'sla' as any, // SLA is operations-layer; not in user-facing ModulesSettings yet
   name: 'SLA Monitor',
   version: '1.1.0',
+  processes: ['support-to-resolution', 'order-to-delivery'],
+  maturity: 'L3',
   description:
     'Service level agreement monitoring for order fulfillment, ticket response, lead handling, chat reply times, and booking confirmations. Auto-detects violations, auto-resolves when entities are handled.',
   capabilities: ['data:read', 'data:write'],

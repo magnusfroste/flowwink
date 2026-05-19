@@ -129,6 +129,8 @@ export const pricelistsModule = defineModule<Input, Output>({
   id: 'pricelists' as any,
   name: 'Pricelists',
   version: '1.0.0',
+  processes: ['quote-to-cash', 'order-to-delivery'],
+  maturity: 'L3',
   description:
     'Versioned pricing per customer, company, or period — Odoo-style price lists with fixed prices or discount %. Resolves the best applicable price for any product+customer+date.',
   capabilities: ['data:read', 'data:write'],

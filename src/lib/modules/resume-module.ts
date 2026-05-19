@@ -147,6 +147,8 @@ export const resumeModule = defineModule<ResumeMatchInput, ResumeMatchOutput>({
   id: 'resume',
   name: 'Consultants',
   version: '1.0.0',
+  processes: ['hire-to-retire'],
+  maturity: 'L2',
   description: 'Match consultant profiles against job descriptions with AI-powered scoring and cover letters',
   capabilities: ['data:read', 'content:produce'],
   inputSchema: resumeMatchInputSchema,

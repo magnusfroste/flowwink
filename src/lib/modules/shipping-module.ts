@@ -93,6 +93,8 @@ export const shippingModule = defineModule<Input, Output>({
   id: 'shipping' as any,
   name: 'Shipping',
   version: '1.0.0',
+  processes: ['order-to-delivery'],
+  maturity: 'L2',
   description:
     'Outbound shipping with multi-parcel support and carrier integrations. Built-in: PostNord, DHL, Bring. Tracking URLs are auto-rendered from per-carrier templates.',
   capabilities: ['data:read', 'data:write'],
