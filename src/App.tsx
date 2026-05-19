@@ -28,6 +28,7 @@ import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import WorkspaceChatPage from "./pages/admin/WorkspaceChatPage";
 import ContentApiPage from "./pages/admin/ContentApiPage";
 import DeveloperPage from "./pages/admin/DeveloperPage";
+import ProcessCoveragePage from "./pages/admin/ProcessCoveragePage";
 import AiUsagePage from "./pages/admin/AiUsagePage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
