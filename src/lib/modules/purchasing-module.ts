@@ -290,6 +290,8 @@ export const purchasingModule = defineModule<PurchasingInput, PurchasingOutput>(
   id: 'purchasing',
   name: 'Purchasing',
   version: '1.0.0',
+  processes: ['procure-to-pay'],
+  maturity: 'L3',
   description: 'Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt',
   capabilities: ['data:write', 'data:read'],
   inputSchema: purchasingInputSchema,

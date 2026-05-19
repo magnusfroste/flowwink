@@ -143,6 +143,8 @@ export const riverModule = defineModule<Input, Output>({
   id: 'river',
   name: 'River',
   version: '1.0.0',
+  processes: [],
+  maturity: 'L2',
   description:
     'Internal social feed (X / Instagram / Slack-inspired) for the team. Authenticated staff post short messages with images, reply in threads, and react with emoji. Realtime.',
   capabilities: ['data:read', 'data:write'],

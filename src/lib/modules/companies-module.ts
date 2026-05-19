@@ -90,6 +90,8 @@ export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOut
   id: 'companies',
   name: 'Companies',
   version: '1.0.0',
+  processes: ['lead-to-customer'],
+  maturity: 'L4',
   description: 'Create and manage company records with optional AI enrichment',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: companyModuleInputSchema,

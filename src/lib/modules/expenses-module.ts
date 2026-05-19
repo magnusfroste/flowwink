@@ -265,6 +265,8 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
   id: 'expenses',
   name: 'Expense Reporting',
   version: '1.0.0',
+  processes: ['procure-to-pay', 'hire-to-retire', 'record-to-report'],
+  maturity: 'L4',
   description: 'Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot',
   capabilities: ['data:write', 'data:read'],
   inputSchema: expensesInputSchema,

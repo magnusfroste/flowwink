@@ -101,6 +101,8 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   id: 'approvals',
   name: 'Approvals',
   version: '1.0.0',
+  processes: ['procure-to-pay'],
+  maturity: 'L3',
   description:
     'Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off. Used by Purchasing, Expenses, Invoicing and Quotes.',
   capabilities: ['data:read', 'data:write'],

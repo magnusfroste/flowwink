@@ -121,6 +121,8 @@ export const dealsModule = defineModule<DealModuleInput, DealModuleOutput>({
   id: 'deals',
   name: 'Deals',
   version: '1.0.0',
+  processes: ['lead-to-customer', 'quote-to-cash'],
+  maturity: 'L4',
   description: 'Create and manage sales deals/opportunities',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: dealModuleInputSchema,

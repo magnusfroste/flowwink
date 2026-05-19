@@ -31,6 +31,8 @@ export const workspaceChatModule = defineModule<Input, Output>({
   id: 'workspaceChat',
   name: 'Cowork Chat',
   version: '1.1.0',
+  processes: [],
+  maturity: 'L3',
   description:
     'Internal authenticated chat that blends your workspace data with the model\'s own knowledge and optional web search — with source citations. No mutations.',
   capabilities: ['data:read'],

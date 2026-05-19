@@ -213,6 +213,8 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
   id: 'webinars',
   name: 'Webinars',
   version: '1.2.0',
+  processes: ['lead-to-customer', 'content-to-conversion'],
+  maturity: 'L3',
   description: 'Plan, promote, run and follow up webinars — lifecycle, lead-loop, reminders and content-loop',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: webinarModuleInputSchema,

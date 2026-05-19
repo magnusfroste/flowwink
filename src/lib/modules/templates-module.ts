@@ -49,6 +49,8 @@ export const templatesModule = defineModule<TemplatesInput, TemplatesOutput>({
   id: 'templates',
   name: 'Templates',
   version: '1.0.0',
+  processes: [],
+  maturity: 'L3',
   description: 'Template gallery, export current site as reusable template, and import templates from file',
   capabilities: ['data:read', 'data:write'],
   inputSchema: templatesInputSchema,

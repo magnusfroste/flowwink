@@ -170,6 +170,8 @@ export const liveSupportModule = defineModule<Input, Output>({
   id: 'liveSupport',
   name: 'Live Support',
   version: '1.0.0',
+  processes: ['support-to-resolution'],
+  maturity: 'L3',
   description: 'Human agent takeover for escalated chat conversations',
   capabilities: ['data:read', 'data:write'],
   inputSchema,

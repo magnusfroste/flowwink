@@ -198,6 +198,8 @@ export const reconciliationModule = defineModule<Input, Output>({
   id: 'reconciliation' as any,
   name: 'Reconciliation',
   version: '1.1.0',
+  processes: ['record-to-report', 'procure-to-pay'],
+  maturity: 'L3',
   description:
     'Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches against invoices/expenses/orders.',
   requires: ['accounting'],

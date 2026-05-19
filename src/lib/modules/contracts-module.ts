@@ -239,6 +239,8 @@ export const contractsModule = defineModule<ContractsInput, ContractsOutput>({
   id: 'contracts',
   name: 'Contracts',
   version: '1.0.0',
+  processes: ['quote-to-cash', 'hire-to-retire'],
+  maturity: 'L3',
   description: 'Contract lifecycle management with renewal tracking and document storage',
   capabilities: ['data:write', 'data:read'],
   inputSchema: contractsInputSchema,

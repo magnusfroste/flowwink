@@ -24,6 +24,8 @@ export const clawableModule = defineModule<Input, Output>({
   id: 'clawable',
   name: 'Clawable',
   version: '1.0.0',
+  processes: [],
+  maturity: 'L3',
   description:
     'Internal admin chat for external operator peers (OpenClaw /v1/responses). UI-only — no MCP, no skills.',
   capabilities: ['data:read'],

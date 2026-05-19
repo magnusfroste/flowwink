@@ -102,6 +102,8 @@ export const projectsModule = defineModule<ProjectsInput, ProjectsOutput>({
   id: 'projects',
   name: 'Projects',
   version: '1.0.0',
+  processes: ['quote-to-cash'],
+  maturity: 'L3',
   description: 'Project and task management with Kanban boards, assignments, and time tracking integration',
   capabilities: ['data:write', 'data:read'],
   inputSchema: projectsInputSchema,

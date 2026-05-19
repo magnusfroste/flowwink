@@ -228,6 +228,8 @@ export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, Sale
   id: 'salesIntelligence',
   name: 'Sales Intelligence',
   version: '2.0.0',
+  processes: ['lead-to-customer'],
+  maturity: 'L4',
   description: 'Prospect research, fit analysis, profile management, and introduction letter generation',
   capabilities: ['data:read', 'data:write'],
   inputSchema: salesIntelligenceInputSchema,

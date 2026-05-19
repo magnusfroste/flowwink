@@ -290,6 +290,8 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
   id: 'recruitment',
   name: 'Recruitment',
   version: '1.0.0',
+  processes: ['hire-to-retire'],
+  maturity: 'L3',
   description:
     'Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review.',
   capabilities: ['data:write', 'data:read'],

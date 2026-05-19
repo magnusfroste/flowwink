@@ -17,6 +17,8 @@ export const chatModule = defineModule<Input, Output>({
   id: 'chat',
   name: 'Chat',
   version: '1.0.0',
+  processes: ['support-to-resolution', 'lead-to-customer'],
+  maturity: 'L3',
   description: 'Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors. For internal operator chat use FlowChat (/admin/flowchat); for workspace Q&A over your own data use Cowork (/admin/cowork).',
   capabilities: ['data:read'],
   inputSchema,

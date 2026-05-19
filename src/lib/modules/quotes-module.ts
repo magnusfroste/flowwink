@@ -103,6 +103,8 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
   id: 'quotes' as never, // 'quotes' may not yet be in ModulesSettings — treated as opt-in
   name: 'Quotes',
   version: '1.0.0',
+  processes: ['quote-to-cash'],
+  maturity: 'L3',
   description:
     'Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending high-value offers.',
   capabilities: ['data:read', 'data:write'],

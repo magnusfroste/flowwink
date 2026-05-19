@@ -82,6 +82,8 @@ export const emailModule = defineModule<Input, Output>({
   id: 'email' as any,
   name: 'Email',
   version: '1.0.0',
+  processes: [],
+  maturity: 'L3',
   description:
     'Provider-agnostic email sender. Routes system emails through SMTP or Resend.',
   capabilities: ['data:write'],

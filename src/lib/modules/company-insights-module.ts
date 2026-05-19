@@ -19,6 +19,8 @@ export const companyInsightsModule = defineModule<Input, Output>({
   id: 'companyInsights',
   name: 'Business Identity',
   version: '1.0.0',
+  processes: ['lead-to-customer'],
+  maturity: 'L3',
   description: 'Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.',
   capabilities: ['data:read', 'data:write'],
   inputSchema,

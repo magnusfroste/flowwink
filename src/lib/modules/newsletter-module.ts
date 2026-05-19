@@ -347,6 +347,8 @@ export const newsletterModule = defineModule<NewsletterModuleInput, NewsletterMo
   id: 'newsletter',
   name: 'Newsletter',
   version: '1.0.0',
+  processes: ['content-to-conversion', 'lead-to-customer'],
+  maturity: 'L4',
   description: 'Create newsletter drafts for sending',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: newsletterModuleInputSchema,

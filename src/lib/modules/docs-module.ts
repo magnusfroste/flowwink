@@ -59,6 +59,8 @@ export const docsModule = defineModule<DocsInput, DocsOutput>({
   id: 'docs',
   name: 'Docs',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L3',
   description:
     'Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators.',
   capabilities: ['data:read'],

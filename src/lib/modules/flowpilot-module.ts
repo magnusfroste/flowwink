@@ -33,6 +33,8 @@ const FLOWPILOT_IDENTITY = {
   name: 'FlowPilot',
   role: 'Autonomous Digital Operator',
   version: '2.0',
+  processes: [],
+  maturity: 'L4',
   capabilities: [
     'Content strategy & creation (blog posts, pages, KB articles)',
     'SEO audits & optimization',
