@@ -21,6 +21,7 @@ import type { ModulesSettings } from '@/hooks/useModules';
 import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import type { WebhookEventInfo } from '@/lib/module-webhook-events';
 import type { ModuleTier } from '@/lib/module-tiers';
+import type { ProcessId, MaturityLevel } from '@/lib/processes';
 
 // =============================================================================
 // Unified Module Definition
