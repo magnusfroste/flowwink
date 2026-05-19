@@ -192,6 +192,9 @@
       "title",
       "counterparty_name"
     ],
+    "manage_contract": [
+      "title"
+    ],
     "flag_invoice_variance": [
       "invoice_number",
       "vendor_id"
