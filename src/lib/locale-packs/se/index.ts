@@ -6,6 +6,7 @@
  */
 import type {
   AccountingLocalePack,
+  AccrualProposal,
   PayrollAdapter,
   BankImportAdapter,
   TaxReturnAdapter,
