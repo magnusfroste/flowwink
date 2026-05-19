@@ -100,6 +100,51 @@ Booking posts `Dr 5410 (or category) + Dr 2641 (input VAT) / Cr 2890 (employee l
 
 See `mem://accounting/export-adapters-pluggable`.
 
+### Neutral-core audit primitives
+
+These three primitives are locale-agnostic — every pack (SE/IFRS/DE/UK/US) gets them for free.
+
+#### Staged-Operation Envelope
+
+High-risk ledger-modifying skills (`manage_journal_entry`, `book_expense_report`, `mark_expense_report_paid`, `record_pos_sale_v2`, `close_pos_session_v2`, `close_accounting_period`, `reopen_accounting_period`) are flagged `requires_staging=true`. When called via MCP, `agent-execute` returns a **preview envelope** (HTTP 202) instead of writing, and persists the intent in `pending_operations`:
+
+```json
+{
+  "staged": true,
+  "risk_level": "high",
+  "preview": { "...payload that would be written...": true },
+  "period_status": "open|locked|closing",
+  "next": { "approve": "approve_pending_operation", "reject": "reject_pending_operation" }
+}
+```
+
+The operator (human or peer) reviews via `/admin/accounting → Pending Ops` and confirms with `approve_pending_operation(id)`, which re-invokes the skill with `_approved_operation_id` set. See `mem://accounting/staged-operations-envelope`.
+
+#### Voucher integrity
+
+`journal_entries.voucher_series/voucher_number/voucher_year` auto-assigned per `(series, year)` via the `assign_voucher_number` BEFORE INSERT trigger. Two RPCs surface integrity:
+- `list_voucher_gaps(year, series?)` → returns `[{ series, expected_next, last_seen, gap_size, gap_after_date }]`
+- `explain_voucher_gap(series, voucher_number)` → looks up `audit_logs` for delete/void events around the missing number
+
+UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skills with the same names. Universal audit requirement (SE/DE/IFRS/GAAP all need unbroken series). See `mem://accounting/voucher-integrity`.
+
+#### Year-end orchestration
+
+Four read-only skills compose a country-agnostic year-end flow:
+- `year_end_readiness(year)` — 6-point checklist (periods closed / no drafts / voucher integrity / reconciliations cleared / invoices settled / expenses settled)
+- `propose_accruals(year)` — scans unpaid invoices/expenses crossing the year boundary
+- `propose_annual_depreciation(year)` — runs over `fixed_assets`
+- `run_year_end(year, confirm)` — orchestrator returning consolidated readiness + proposals
+
+Country-specific bookings live in the locale pack as an optional callback:
+
+```ts
+// src/lib/locale-packs/types.ts
+year_end_proposals?: (year: number) => Promise<AccrualProposal[]>
+```
+
+SE implements `se-periodiseringsfond` and `se-overavskrivningar` (stubs with zero amounts — the real tax-result computation lands in a follow-up PR). DE/UK/US can add `de-rueckstellungen`, `us-deferred-tax`, etc. without core changes. UI: `/admin/accounting → Year-End`. See `mem://accounting/year-end-readiness`.
+
 ---
 
 ## Locale packs
