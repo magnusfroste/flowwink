@@ -17,6 +17,7 @@ const MAP: Record<string, Entry> = {
   approvals: { processes: ['procure-to-pay'], maturity: 'L3' },
   blog: { processes: ['content-to-conversion'], maturity: 'L4' },
   booking: { processes: ['lead-to-customer'], maturity: 'L3' },
+  bookings: { processes: ['lead-to-customer'], maturity: 'L3' },
   'browser-control': { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
   calendar: { processes: ['hire-to-retire', 'lead-to-customer'], maturity: 'L3' },
   chat: { processes: ['support-to-resolution', 'lead-to-customer'], maturity: 'L3' },
