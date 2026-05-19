@@ -57,13 +57,24 @@ describe('Accounting locale-pack contract', () => {
     expect(getPack(null).id).toBe(DEFAULT_LOCALE_ID);
   });
 
-  it('SE pack exposes PAXml, SIE bank import and SIE 4 export', () => {
+  it('SE pack exposes PAXml, SIE bank import, SIE 4 export and a year_end_proposals callback', async () => {
     const se = getPack('se-bas2024');
     expect(se.payroll_adapters.find((a) => a.id === 'paxml')).toBeDefined();
     expect(se.bank_import_adapters.find((a) => a.id === 'sie')).toBeDefined();
     expect(se.accounting_export_adapters.find((a) => a.id === 'sie4')).toBeDefined();
     expect(se.currency.code).toBe('SEK');
     expect(se.vat.default_rate).toBe(0.25);
+
+    // Year-end proposals — SE-specific dispositions (periodiseringsfond etc.)
+    expect(typeof se.year_end_proposals).toBe('function');
+    const proposals = await se.year_end_proposals!(new Date().getFullYear());
+    expect(Array.isArray(proposals)).toBe(true);
+    expect(proposals.length).toBeGreaterThan(0);
+    for (const p of proposals) {
+      expect(p.id).toBeTruthy();
+      expect(p.label).toBeTruthy();
+      expect(Array.isArray(p.lines) && p.lines.length > 0).toBe(true);
+    }
   });
 
   it('Generic IFRS pack does NOT assume Swedish-specific formats but offers OECD SAF-T', () => {
