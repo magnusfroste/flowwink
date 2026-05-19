@@ -13,6 +13,8 @@ export const globalBlocksModule = defineModule<GlobalBlockModuleInput, GlobalBlo
   id: 'globalElements',
   name: 'Global Blocks',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L3',
   description: 'Create reusable global content blocks (header, footer, etc.)',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: globalBlockModuleInputSchema,

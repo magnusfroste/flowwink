@@ -87,6 +87,8 @@ export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput
   id: 'knowledgeBase',
   name: 'Knowledge Base',
   version: '1.0.0',
+  processes: ['content-to-conversion', 'support-to-resolution'],
+  maturity: 'L3',
   description: 'Create knowledge base articles',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: kbArticleModuleInputSchema,

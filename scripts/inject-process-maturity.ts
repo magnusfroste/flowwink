@@ -76,6 +76,21 @@ const MAP: Record<string, Entry> = {
   webinars: { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
   wiki: { processes: ['hire-to-retire'], maturity: 'L2' },
   'workspace-chat': { processes: [], maturity: 'L3' },
+  browserControl: { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
+  companyInsights: { processes: ['lead-to-customer'], maturity: 'L3' },
+  leads: { processes: ['lead-to-customer'], maturity: 'L4' },
+  fieldService: { processes: ['order-to-delivery', 'support-to-resolution'], maturity: 'L2' },
+  fixedAssets: { processes: ['record-to-report'], maturity: 'L3' },
+  globalElements: { processes: ['content-to-conversion'], maturity: 'L3' },
+  paidGrowth: { processes: ['content-to-conversion'], maturity: 'L3' },
+  knowledgeBase: { processes: ['content-to-conversion', 'support-to-resolution'], maturity: 'L3' },
+  liveSupport: { processes: ['support-to-resolution'], maturity: 'L3' },
+  mediaLibrary: { processes: ['content-to-conversion'], maturity: 'L2' },
+  multiCurrency: { processes: ['quote-to-cash', 'record-to-report'], maturity: 'L2' },
+  ecommerce: { processes: ['order-to-delivery', 'content-to-conversion'], maturity: 'L3' },
+  salesIntelligence: { processes: ['lead-to-customer'], maturity: 'L4' },
+  siteMigration: { processes: ['content-to-conversion'], maturity: 'L3' },
+  workspaceChat: { processes: [], maturity: 'L3' },
 };
 
 const dir = path.join(process.cwd(), 'src/lib/modules');

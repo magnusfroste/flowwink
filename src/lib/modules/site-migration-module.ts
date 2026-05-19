@@ -103,6 +103,8 @@ export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigratio
   id: 'siteMigration',
   name: 'Site Migration',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L3',
   description: 'Clone and migrate external websites into FlowWink. Discovers pages, extracts branding, and creates blocks that match the source site\'s visual identity.',
   capabilities: ['data:read', 'data:write', 'content:receive'],
   inputSchema: siteMigrationInputSchema,

@@ -273,6 +273,8 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
   id: 'paidGrowth',
   name: 'Paid Growth',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L3',
   description: 'Manage ad campaigns and track paid growth performance',
   capabilities: ['data:read', 'data:write'],
   inputSchema: growthCampaignInputSchema,

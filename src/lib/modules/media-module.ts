@@ -75,6 +75,8 @@ export const mediaModule = defineModule<MediaModuleInput, MediaModuleOutput>({
   id: 'mediaLibrary',
   name: 'Media Library',
   version: '1.0.0',
+  processes: ['content-to-conversion'],
+  maturity: 'L2',
   description: 'Manage media assets and files',
   capabilities: ['data:read', 'data:write'],
   inputSchema: mediaModuleInputSchema,

@@ -124,6 +124,8 @@ const fieldServiceModule = defineModule<Input, Output>({
   id: 'fieldService',
   name: 'Field Service',
   version: '1.0.0',
+  processes: ['order-to-delivery', 'support-to-resolution'],
+  maturity: 'L2',
   description:
     'Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion.',
   capabilities: ['data:write', 'data:read'],

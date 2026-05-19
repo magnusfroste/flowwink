@@ -121,6 +121,8 @@ export const multiCurrencyModule = defineModule<Input, Output>({
   id: 'multiCurrency',
   name: 'Multi-Currency',
   version: '1.0.0',
+  processes: ['quote-to-cash', 'record-to-report'],
+  maturity: 'L2',
   description:
     'Sell and bill in multiple currencies with daily ECB rates and FX revaluation of open AR/AP.',
   capabilities: ['data:read', 'data:write'],
