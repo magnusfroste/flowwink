@@ -12,7 +12,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const describeIfDb = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
+// agent_skills has RLS that blocks anon — only run skill-table checks when
+// a service-role key is available.
+const itIfService = SUPABASE_URL && SERVICE_KEY ? it : it.skip;
 
 describeIfDb('Voucher integrity primitives', () => {
   it('list_voucher_gaps RPC is callable and returns an array', async () => {
@@ -23,8 +28,8 @@ describeIfDb('Voucher integrity primitives', () => {
     expect(Array.isArray(data)).toBe(true);
   });
 
-  it('voucher-related skills are enabled and MCP-exposed', async () => {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+  itIfService('voucher-related skills are enabled and MCP-exposed', async () => {
+    const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
     const names = ['list_voucher_gaps', 'explain_voucher_gap', 'year_end_readiness'];
     const { data, error } = await supabase
       .from('agent_skills')
