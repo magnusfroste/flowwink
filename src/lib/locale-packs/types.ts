@@ -244,4 +244,12 @@ export interface AccountingLocalePack {
     invoicing: string;
     purchasing: string;
   };
+
+  /**
+   * Optional callback invoked by core year-end orchestration so the pack can
+   * contribute country-specific accrual / disposition proposals. Core never
+   * inspects the contents — it just stages them for operator approval.
+   * Leave undefined when the market has no extra year-end mechanics.
+   */
+  year_end_proposals?: (year: number) => Promise<AccrualProposal[]>;
 }
