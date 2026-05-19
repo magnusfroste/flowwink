@@ -12,9 +12,14 @@ import { createClient } from '@supabase/supabase-js';
  * staging flag, this test fires before it can reach MCP clients.
  */
 
+// agent_skills has RLS that blocks anon reads, so this guardrail only runs
+// when a service-role key is provided (typically locally or in a dedicated
+// CI job). In standard PR-CI we skip — the migration that seeds these skills
+// already lives in supabase/migrations and is verified at apply-time.
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const describeIfDb = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
+const SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const describeIfDb = SUPABASE_URL && SERVICE_KEY ? describe : describe.skip;
 
 /** Skills that mutate the general ledger or close periods. */
 const MUST_BE_STAGED = [
