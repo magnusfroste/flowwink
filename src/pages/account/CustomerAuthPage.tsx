@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
+import { useCustomerPortalSettings } from '@/hooks/useSiteSettings';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
