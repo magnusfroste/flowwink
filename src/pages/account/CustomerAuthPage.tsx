@@ -198,7 +198,7 @@ export default function CustomerAuthPage() {
                       Create Account
                     </Button>
                   </form>
-                </TabsContent>
+                </TabsContent>}
               </Tabs>
             </CardContent>
           </Card>
