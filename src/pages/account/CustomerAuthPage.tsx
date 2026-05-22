@@ -144,7 +144,7 @@ export default function CustomerAuthPage() {
                   </form>
                 </TabsContent>
 
-                <TabsContent value="signup">
+                {signupAllowed && <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">Full Name</Label>
