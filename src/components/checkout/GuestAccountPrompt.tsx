@@ -17,6 +17,14 @@ export function GuestAccountPrompt({ email, name }: GuestAccountPromptProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [created, setCreated] = useState(false);
+  const { customerSignUp } = useCustomerAuth();
+  const { data: portal } = useCustomerPortalSettings();
+
+  // Respect the customer-portal policy — if self-signup is off, hide the card
+  // entirely. Guest checkout (no account) still works.
+  if (portal && (!portal.enabled || !portal.allowSelfSignup)) {
+    return null;
+  }
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,21 +35,15 @@ export function GuestAccountPrompt({ email, name }: GuestAccountPromptProps) {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name || email.split('@')[0],
-            signup_type: 'customer',
-          },
-        },
-      });
-
+      const { error } = await customerSignUp(email, password, name || email.split('@')[0]);
       if (error) throw error;
 
       setCreated(true);
-      toast.success('Account created! Check your email to verify.');
+      toast.success(
+        portal?.requireEmailVerification
+          ? 'Account created! Check your email to verify.'
+          : 'Account created! You can now sign in.',
+      );
     } catch (err: any) {
       toast.error(err.message || 'Could not create account');
     } finally {
