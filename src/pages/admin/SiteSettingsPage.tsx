@@ -45,6 +45,7 @@ import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, I
 import { SystemAiSettingsTab } from '@/components/admin/SystemAiSettingsTab';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
+import { CustomerPortalCard } from '@/components/admin/CustomerPortalCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
