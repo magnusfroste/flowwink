@@ -42,7 +42,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "FlowChat", href: "/admin/flowchat", icon: MessageSquare },
       { name: "FlowPilot", href: "/admin/flowpilot", icon: Zap, moduleId: "flowpilot" },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
-      { name: "Clawable", href: "/admin/clawable", icon: MessageSquare, moduleId: "clawable" },
+      
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Growth", href: "/admin/growth", icon: Megaphone, moduleId: "paidGrowth" },
     ],
