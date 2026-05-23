@@ -572,8 +572,6 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           await supabase.from('webhook_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('webhooks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('api_keys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('clawable_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('clawable_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('a2a_peers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
       });
