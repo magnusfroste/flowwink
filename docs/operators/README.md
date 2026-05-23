@@ -17,8 +17,9 @@ You're an operator if you want to **use** FlowWink for a business — not modify
 | Full backend setup & env | [`../guides/setup.md`](../guides/setup.md) |
 | Production deployment (Docker, Easypanel, Railway) | [`../guides/deployment.md`](../guides/deployment.md) |
 | Security & auth model | [`../guides/security.md`](../guides/security.md) |
+| **System Settings reference** (`/admin/settings`) | [`./system-settings.md`](./system-settings.md) |
 
-After install: log in, complete `/admin/onboarding`, pick a template, run the docs sync from `/admin/docs`.
+After install: log in, complete `/admin/onboarding`, pick a template, run the docs sync from `/admin/docs`, then walk through [`system-settings.md`](./system-settings.md) tab by tab.
 
 ---
 
