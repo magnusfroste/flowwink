@@ -4,143 +4,79 @@
 
 ## One-liner
 
-> **FlowWink gives every business an autonomous AI operator that runs their website, grows their pipeline, and learns their market — 24/7, without being told what to do.**
+> **FlowWink is a self-hosted Business Operating System — CMS, CRM and ERP in one — where every module is agent-operable out of the box. Run it as traditional SaaS, plug in an external AI operator over MCP, or turn on the built-in FlowPilot.**
 
 ---
 
-## The Thesis
+## What it is, in one paragraph
 
-SaaS solved distribution. It never solved the work.
-
-You pay for HubSpot, Webflow, Mailchimp, Notion — and then you still have to use them. Every tool hands the work back to a human. That's not software that scales. That's software that delegates the burden back to you.
-
-**The agent era changes this fundamentally.**
-
-The next generation of business software isn't a tool. It's an operating system with an autonomous operator built in.
+FlowWink is one codebase that replaces the usual stack of CMS + CRM + ERP + helpdesk + bookings + accounting. It's modular (toggle what you need), single-tenant (your data stays on your server), and every action a human can take in the admin UI is also exposed as a **skill** any agent can call over the **Model Context Protocol (MCP)**. That means you can keep operating the business by hand, hand it to Claude Desktop / OpenClaw / a custom agent, or enable the optional **FlowPilot** module and let it run autonomously.
 
 ---
 
-## Vision
-
-> Every business will have an AI operator that runs it. FlowWink is the operating system for that world.
-
----
-
-## Mission
-
-> FlowWink gives every business a self-hosted agentic operator — one that runs their website, qualifies their leads, creates their content, fulfills their orders, and grows their business around the clock, without being prompted.
-
----
-
-## What Makes FlowWink Different
-
-Most AI products bolt intelligence onto existing architecture. A "generate with AI" button here. A chatbot widget there. That's noise.
-
-FlowWink is **agent-operable from day one** — but agent-agnostic by design.
+## Three ways to run it
 
 ```
-Traditional SaaS:   Human → Tool → Result
-FlowWink:           Human sets direction → Operator executes → Result
-                    (operator = FlowPilot, OpenClaw, Copilot, or any MCP client)
+1. Pure SaaS         Humans → Admin UI → Modules           (no agent at all)
+2. Agent-operated    Humans + External agent → MCP → Modules (Claude, OpenClaw, custom)
+3. Autonomous        Humans set goals → FlowPilot → Modules (built-in operator)
 ```
 
-The platform exposes a unified skill catalogue, automations, workflows and an MCP surface that **any operator** can drive. Customers pick the operator that fits their stack:
-
-- **FlowPilot (built-in, opt-in module)** — local, vertically integrated, zero-config. Soul, memory, heartbeat, 70+ skills tuned to FlowWink's modules.
-- **External operators** — OpenClaw, Claude Desktop, Salesforce/Microsoft/Oracle agents, or any custom MCP client. Same skills, same automations, more cognitive horsepower.
-- **No operator at all** — modules still work as a traditional SaaS for human users.
-
-It's not a CMS with AI bolted on. It's **a Business Operating System with a pluggable operator layer.** See [`operator-strategy.md`](./operator-strategy.md) for the local-vs-external tradeoff (the same call Salesforce, Oracle and Microsoft are making with their internal agents).
+All three use the **same modules, same skills, same data**. Switching modes is a toggle, not a migration.
 
 ---
 
-## The Moat
+## Why it matters
 
-| | Traditional SaaS | AI Assistants | FlowWink |
+Most SaaS hands the work back to a human. Most "AI products" bolt a chatbot onto a fixed surface. FlowWink starts from the opposite end: the platform is the surface, the surface is callable, and the operator (human or agent) is pluggable.
+
+| | Traditional SaaS | "AI features" bolted on | FlowWink |
 |---|---|---|---|
-| Requires human input | Always | Always | Set goals, agent does the rest |
-| Business context | Partial | None | Full — CRM, content, revenue |
-| Customer-facing | Forms | Chatbot | Agent that qualifies and converts |
-| Self-hosted / data sovereign | Rarely | Never | Always |
-| Learns over time | Never | Session only | Persistent memory |
-
-**Open source + single-tenant** is not just a technical choice. It's a trust argument. Customer data never leaves their server. No multi-tenant SaaS can match that — especially in healthcare, finance, and regulated industries.
+| Modules work without AI | ✅ | ✅ | ✅ |
+| Every action callable by an agent | ❌ | Partial | ✅ (MCP) |
+| Bring-your-own agent | ❌ | ❌ | ✅ |
+| Built-in autonomous operator | ❌ | ❌ | ✅ (FlowPilot, opt-in) |
+| Self-hosted, single-tenant | Rarely | Never | Always |
 
 ---
 
-## The Competitive Landscape
+## The MCP bet
 
-The agentic assistant space is already validated — and the white space is clear.
+MCP is becoming the USB-C of agent tooling. Rather than building a closed assistant, FlowWink **exposes every module as MCP skills by default** — grouped (`?groups=marketing|sales|operations`) so external orchestrators can pull only the toolset they need without context bloat. Onboarding an external agent is minutes, not weeks.
 
-**OpenClaw** (323k GitHub stars, 5,400+ community skills) proved that developers want a personal AI that lives on their machine, talks on every channel, and evolves over time. It's the reference architecture for autonomous agents — and explicitly personal. One human, one agent.
-
-**Polsia** (VC-backed) targets businesses — but runs one nightly batch task per customer, uses a fixed pipeline of 4 sequential prompts (CEO → Engineer → Growth → Ops), and is multi-tenant SaaS. Your data leaves your server. It's a scheduled job with a pretty dashboard.
-
-**Clawith** ("OpenClaw for Teams") tried to push OpenClaw upmarket. Still team productivity. Not a business operator.
-
-Nobody has shipped a genuinely autonomous, self-hosted business operator.
-
-```
-OpenClaw:   Owner ←→ Agent                           personal, proven (323k ★)
-Polsia:     CEO → Engineer → Growth → Ops            business, shallow autonomy
-FlowWink:   Owner ←→ FlowPilot ←→ Customers          business, full autonomy
-                          ↕
-                  Business outcomes
-             (leads, content, revenue)
-```
-
-The category exists. The market is ready. The architecture advantage is real.
-
-| | OpenClaw | Polsia | FlowWink |
-|---|---|---|---|
-| Target | Personal (1 user) | Business (SaaS) | Business (self-hosted) |
-| Autonomy | On-demand | 1 task/night | 2× daily heartbeat + event-driven |
-| Agent architecture | Peer-to-peer sessions | Fixed 4-agent pipeline | Dynamic delegation |
-| Data sovereignty | Local | Multi-tenant | Always single-tenant |
-| Skill ecosystem | 5,400+ community skills | Closed | Open + composable |
+See [`../architecture/mcp-as-platform.md`](../architecture/mcp-as-platform.md) and [`../mcp/getting-started.md`](../mcp/getting-started.md).
 
 ---
 
-## What Makes This a Platform Play
+## FlowPilot — the optional built-in operator
 
-FlowWink's unique insight: the "user" is a **business**, not a person.
+If you don't want to wire up an external agent, enable FlowPilot:
 
-```
-OpenClaw (personal):    Owner ←→ Agent
+- Soul, memory, heartbeat, 70+ skills tuned to FlowWink's modules
+- Runs on OpenAI, Gemini or a local private model — no vendor lock-in
+- Same skill catalog any MCP client sees — nothing FlowPilot-only on the data side
+- Turn it off and the platform keeps working as plain SaaS
 
-FlowWink (business):    Owner ←→ FlowPilot ←→ Customers
-                                       ↕
-                               Business outcomes
-                          (leads, content, revenue)
-```
-
-FlowPilot serves three roles simultaneously:
-1. **The operator** — executing the owner's objectives
-2. **The consultant** — talking to and qualifying visitors
-3. **The learner** — improving from every business interaction
-
-No AI product today occupies this space. General-purpose assistants (ChatGPT, Claude) lack business context. CMS tools (WordPress, Webflow) lack agency. CRM platforms (HubSpot, Salesforce) bolt on AI as an afterthought.
-
-FlowWink owns the category: **Business Operating System (BOS)**.
+FlowPilot is a **module**, not the core. See [`operator-strategy.md`](./operator-strategy.md).
 
 ---
 
-## The Trajectory
+## Who it's for
 
-1. **Today** — Self-hosted Business Operating System for SMBs and agencies. One FlowPilot per deployment. Full autonomy out of the box.
-2. **Next** — FlowWink as a BOS platform. Skill marketplace. Federated agents across deployments.
-3. **Endgame** — The standard operating system for autonomous businesses. Every company runs on an agent. FlowWink is the default.
-
----
-
-## The Bet
-
-Most SaaS companies will eventually move in this direction. They'll rebuild their products around autonomous agents. The question is who gets there first and sets the architecture standard.
-
-We are already here.
+- **SMBs and agencies** who want a single system instead of 8 SaaS subscriptions
+- **Self-hosters** in regulated industries (healthcare, finance, legal) where data sovereignty is non-negotiable
+- **Agent builders** who want a real business backend their agent can actually operate
 
 ---
 
-*"We don't sell software. We sell an operator."*
+## The trajectory
 
-*Updated: 2026-03-19*
+1. **Today** — Self-hosted Business OS. MCP-native. FlowPilot ships with it.
+2. **Next** — Skill marketplace. Federated agents across deployments.
+3. **Endgame** — The default operating system for agent-operated businesses.
+
+---
+
+*"Bring your own operator — or use ours."*
+
+*Updated: 2026-05-23*
