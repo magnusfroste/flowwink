@@ -53,7 +53,7 @@ If a module spans multiple processes at different maturities, declare the
 
 `src/lib/__tests__/process-coverage.guardrails.test.ts` enforces:
 1. Every module has a valid `maturity`
-2. Every module has a literal `processes: [...]` (empty allowed for platform modules: `email`, `developer`, `federation`, `flowpilot`, `clawable`, `composio`, `templates`, `river`, `workspaceChat`)
+2. Every module has a literal `processes: [...]` (empty allowed for platform modules: `email`, `developer`, `federation`, `flowpilot`, `composio`, `templates`, `river`, `workspaceChat`)
 3. All declared process IDs are known
 4. Every `ProcessId` has ≥1 owner module
 
