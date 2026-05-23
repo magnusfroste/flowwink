@@ -750,66 +750,6 @@ Content-Type: application/json
         </Card>
       )}
 
-      {/* Next Steps — shown after a Clawable Operator invite is generated */}
-      {generatedPrompt && mission.id === 'clawable-operator' && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ArrowRight className="h-4 w-4 text-primary" />
-              Next Steps
-            </CardTitle>
-            <CardDescription>
-              Once your OpenClaw instance accepts the prompt above, finish wiring it up:
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ol className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                <span><strong>MCP key created</strong> — embedded in the prompt above (visible only once).</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                <span><strong>Peer auto-registered</strong> as <code className="bg-muted px-1 rounded text-xs">{agentName || 'Unnamed'}</code> in Federation.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <span>Open the peer in <strong>Federation</strong> and add its <strong>Base URL</strong> + <strong>gateway_token</strong> (Bearer the peer expects on incoming <code className="bg-muted px-1 rounded text-xs">/v1/responses</code> calls).</span>
-                  <div>
-                    <Button asChild size="sm" variant="outline" className="h-7 mt-1">
-                      <Link to="/admin/federation">
-                        <Network className="h-3 w-3 mr-1.5" />
-                        Open Federation
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <span>Add an <strong>outbound channel</strong> (transport: <code className="bg-muted px-1 rounded text-xs">openresponses</code>) on the peer card.</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <span>Open <strong>Clawable Chat</strong>, pick this peer, start a session and send your first mission.</span>
-                  <div>
-                    <Button asChild size="sm" variant="default" className="h-7 mt-1">
-                      <Link to="/admin/clawable">
-                        <MessageSquare className="h-3 w-3 mr-1.5" />
-                        Open Clawable Chat
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </li>
-            </ol>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
