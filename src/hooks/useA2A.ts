@@ -124,10 +124,11 @@ export function useUpdateA2APeer() {
   return useMutation({
     mutationFn: async (input: { id: string; status?: string; name?: string; url?: string; gateway_token?: string; outbound_token?: string }) => {
       const { id, ...updates } = input;
-      // If gateway_token is being set, also tag transport so Clawable picks it up
+      // If gateway_token is being set, tag transport as openresponses
       if (updates.gateway_token) {
         (updates as Record<string, unknown>).transport = 'openresponses';
       }
+
       if (updates.url) {
         updates.url = updates.url.replace(/\/$/, '');
       }
