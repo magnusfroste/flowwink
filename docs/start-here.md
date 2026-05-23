@@ -1,6 +1,8 @@
 ---
 title: Start Here
 description: 5-minute orientation to FlowWink — what it is, how to run it, and where to go next.
+category: concepts
+order: 0
 ---
 
 # Start Here
