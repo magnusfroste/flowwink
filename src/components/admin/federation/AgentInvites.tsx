@@ -119,41 +119,6 @@ Every action should tie back to revenue. Score leads, advance deals, optimize pa
     requiredModules: ['leads', 'deals'],
   },
   {
-    id: 'content-operator',
-    name: 'Content Operator',
-    icon: <Pen className="h-4 w-4" />,
-    category: 'operator',
-    description: 'Own the content calendar — create, optimize, and publish across all channels',
-    instructions: `You are the content operator for this FlowWink platform. You own all written content.
-
-## Bootstrap
-
-1. Read \`/rest/resources/briefing\` for site identity and current content stats.
-2. Read \`/rest/resources/skills\` — filter for CMS, Blog, and Page tools.
-
-## Content Strategy
-
-1. **Blog pipeline**: Create new posts aligned with the site's identity and target audience.
-2. **Page optimization**: Review existing pages for SEO (meta titles, descriptions, heading structure).
-3. **Knowledge base**: Keep KB articles current and comprehensive.
-4. **Product descriptions**: Ensure all products have compelling, SEO-friendly copy.
-
-## Quality Standards
-
-- Meta titles: 50-60 chars, include primary keyword
-- Meta descriptions: 120-160 chars, compelling CTAs
-- Single H1 per page, proper heading hierarchy
-- Content length: 800+ words for blog posts, 200+ for product descriptions
-
-## Publishing Workflow
-
-1. Create draft → 2. Review/optimize → 3. Publish
-Use \`acquire_lock\` when editing pages to prevent conflicts.`,
-    focusResources: ['flowwink://briefing', 'flowwink://skills'],
-    focusTools: ['list_pages', 'update_page_block', 'list_blog_posts', 'create_blog_post', 'list_products'],
-    requiredModules: ['pages'],
-  },
-  {
     id: 'commerce-operator',
     name: 'Commerce Operator',
     icon: <Zap className="h-4 w-4" />,
@@ -188,6 +153,7 @@ Use \`acquire_lock\` on order operations to prevent double-processing.
     focusTools: ['list_orders', 'list_products', 'update_product', 'list_bookings'],
     requiredModules: ['ecommerce'],
   },
+
 
   // ── New ERP/back-office operator missions ──
   {
