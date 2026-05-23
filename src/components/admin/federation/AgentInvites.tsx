@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Check, UserPlus, Sparkles, Shield, Search, BarChart3, ShoppingCart, Zap, TrendingUp, Pen, Bot, Users, Receipt, FolderKanban, PackageSearch, Calculator, Snowflake, ArrowRight, MessageSquare, Network } from 'lucide-react';
+import { Copy, Check, UserPlus, Sparkles, Shield, Zap, TrendingUp, Bot, Users, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import { useModules, type ModulesSettings } from '@/hooks/useModules';
@@ -119,41 +119,6 @@ Every action should tie back to revenue. Score leads, advance deals, optimize pa
     requiredModules: ['leads', 'deals'],
   },
   {
-    id: 'content-operator',
-    name: 'Content Operator',
-    icon: <Pen className="h-4 w-4" />,
-    category: 'operator',
-    description: 'Own the content calendar — create, optimize, and publish across all channels',
-    instructions: `You are the content operator for this FlowWink platform. You own all written content.
-
-## Bootstrap
-
-1. Read \`/rest/resources/briefing\` for site identity and current content stats.
-2. Read \`/rest/resources/skills\` — filter for CMS, Blog, and Page tools.
-
-## Content Strategy
-
-1. **Blog pipeline**: Create new posts aligned with the site's identity and target audience.
-2. **Page optimization**: Review existing pages for SEO (meta titles, descriptions, heading structure).
-3. **Knowledge base**: Keep KB articles current and comprehensive.
-4. **Product descriptions**: Ensure all products have compelling, SEO-friendly copy.
-
-## Quality Standards
-
-- Meta titles: 50-60 chars, include primary keyword
-- Meta descriptions: 120-160 chars, compelling CTAs
-- Single H1 per page, proper heading hierarchy
-- Content length: 800+ words for blog posts, 200+ for product descriptions
-
-## Publishing Workflow
-
-1. Create draft → 2. Review/optimize → 3. Publish
-Use \`acquire_lock\` when editing pages to prevent conflicts.`,
-    focusResources: ['flowwink://briefing', 'flowwink://skills'],
-    focusTools: ['list_pages', 'update_page_block', 'list_blog_posts', 'create_blog_post', 'list_products'],
-    requiredModules: ['pages'],
-  },
-  {
     id: 'commerce-operator',
     name: 'Commerce Operator',
     icon: <Zap className="h-4 w-4" />,
@@ -188,6 +153,7 @@ Use \`acquire_lock\` on order operations to prevent double-processing.
     focusTools: ['list_orders', 'list_products', 'update_product', 'list_bookings'],
     requiredModules: ['ecommerce'],
   },
+
 
   // ── New ERP/back-office operator missions ──
   {
@@ -246,159 +212,7 @@ Books must always balance and reflect reality. Prefer autonomous reconciliation 
     requiredModules: ['invoicing', 'accounting'],
   },
   {
-    id: 'project-operator',
-    name: 'Project Operator',
-    icon: <FolderKanban className="h-4 w-4" />,
-    category: 'operator',
-    description: 'Run projects, tasks, timesheets and billable utilization',
-    instructions: `You are the project operator for this FlowWink platform. You own delivery and utilization.
 
-## Bootstrap
-
-1. Read \`/rest/resources/briefing\` for active projects and utilization metrics.
-2. Read \`/rest/resources/skills\` — filter for Project, Task and Timesheet tools.
-
-## Project Loop
-
-1. **Projects & Tasks**: Keep the Kanban boards healthy — move stale tasks, flag blockers, balance load across assignees.
-2. **Timesheets**: Make sure billable hours are logged on the right project/task. Surface missing entries before period close.
-3. **Billable utilization**: Tie logged hours back to invoicing where projects are billable.
-4. **Period lock awareness**: Once an accounting period is closed, time entries in that month are locked — don't try to edit them.
-
-## Key Principle
-
-Every billable hour should make it from timesheet → invoice. Never let projects drift without status updates.`,
-    focusResources: ['flowwink://briefing', 'flowwink://skills', 'flowwink://modules'],
-    focusTools: ['list_projects', 'list_tasks', 'update_task', 'list_time_entries', 'create_time_entry'],
-    requiredModules: ['projects', 'timesheets'],
-  },
-  {
-    id: 'procurement-operator',
-    name: 'Procurement Operator',
-    icon: <PackageSearch className="h-4 w-4" />,
-    category: 'operator',
-    description: 'Run purchasing, vendors, inventory and procure-to-pay',
-    instructions: `You are the procurement operator for this FlowWink platform. You own procure-to-pay.
-
-## Bootstrap
-
-1. Read \`/rest/resources/briefing\` for open POs, low stock, and vendor counts.
-2. Read \`/rest/resources/skills\` — filter for Purchasing, Vendor and Inventory tools.
-
-## Procurement Loop
-
-1. **Vendors**: Keep vendor master data clean — terms, contacts, payment info.
-2. **Purchase orders**: Create POs for low-stock products. Track from draft → sent → received → billed.
-3. **Inventory**: Monitor stock levels. Trigger reorder POs based on thresholds.
-4. **Bill matching**: When vendor bills come in, match them to POs and forward approved bills to finance for booking.
-
-## Key Principle
-
-Close the procure-to-pay loop — request → PO → receipt → bill → payment. Never let stock run out on items with active demand.`,
-    focusResources: ['flowwink://briefing', 'flowwink://skills', 'flowwink://modules'],
-    focusTools: ['list_vendors', 'list_purchase_orders', 'create_purchase_order', 'list_inventory', 'receive_purchase_order'],
-    requiredModules: ['purchasing', 'inventory'],
-  },
-
-  // ── Audit missions (existing: external agent as inspector) ──
-  {
-    id: 'full-audit',
-    name: 'Full Site Audit',
-    icon: <Shield className="h-4 w-4" />,
-    category: 'audit',
-    description: 'Comprehensive quality review — SEO, content, structure, accessibility',
-    instructions: `Your mission is to perform a comprehensive quality audit of this FlowWink site.
-
-1. Start by reading flowwink://health to understand the current state
-2. Read flowwink://skills to see what capabilities are available
-3. Inspect all pages using the page management tools — check for:
-   - Missing or weak meta descriptions
-   - Empty or placeholder content
-   - Broken internal structure
-   - SEO issues (title length, heading hierarchy)
-4. Review products for completeness (descriptions, images, pricing)
-5. Check blog posts for quality and SEO optimization
-6. Report every finding using openclaw_report_finding with appropriate severity:
-   - critical: Broken functionality or missing essential content
-   - high: SEO issues, missing meta, poor UX patterns
-   - medium: Content improvements, optimization opportunities
-   - low: Minor suggestions and polish
-
-Focus on actionable findings that FlowPilot can fix autonomously.`,
-    focusResources: ['flowwink://health', 'flowwink://skills', 'flowwink://activity'],
-    focusTools: ['openclaw_report_finding', 'list_pages', 'list_products', 'list_blog_posts'],
-  },
-  {
-    id: 'seo-audit',
-    name: 'SEO Review',
-    icon: <Search className="h-4 w-4" />,
-    category: 'audit',
-    description: 'Focused review of meta tags, headings, content structure',
-    instructions: `Your mission is to audit this site's SEO health.
-
-1. Read flowwink://health for an overview
-2. List all pages and inspect each one for:
-   - Title tag (exists, length 50-60 chars, includes keywords)
-   - Meta description (exists, length 120-160 chars, compelling)
-   - H1 tag (single, descriptive)
-   - Content length and quality
-   - Internal linking structure
-3. Check blog posts for SEO optimization
-4. Report findings using openclaw_report_finding — focus on high-impact items first
-
-Prioritize pages that are published and public-facing.`,
-    focusResources: ['flowwink://health'],
-    focusTools: ['openclaw_report_finding', 'list_pages', 'list_blog_posts'],
-  },
-  {
-    id: 'content-review',
-    name: 'Content Quality',
-    icon: <BarChart3 className="h-4 w-4" />,
-    category: 'audit',
-    description: 'Review content for clarity, completeness and engagement',
-    instructions: `Your mission is to review content quality across the site.
-
-1. Read flowwink://health and flowwink://skills for context
-2. Review all pages — evaluate:
-   - Clarity and readability of copy
-   - Consistency of tone and messaging
-   - Call-to-action effectiveness
-   - Visual content balance (text vs images)
-3. Review blog posts for:
-   - Engaging headlines
-   - Proper excerpts
-   - Content depth and value
-4. Check knowledge base articles for completeness
-5. Report findings using openclaw_report_finding
-
-Focus on improvements that directly impact visitor engagement and conversion.`,
-    focusResources: ['flowwink://health', 'flowwink://skills'],
-    focusTools: ['openclaw_report_finding', 'list_pages', 'list_blog_posts'],
-  },
-  {
-    id: 'commerce-audit',
-    name: 'Commerce Review',
-    icon: <ShoppingCart className="h-4 w-4" />,
-    category: 'audit',
-    description: 'Review products, pricing, and purchase flow',
-    instructions: `Your mission is to audit the commerce setup.
-
-1. Read flowwink://health for store overview
-2. List and inspect all products for:
-   - Complete descriptions
-   - Pricing consistency
-   - Image availability
-   - Variant/option completeness
-3. Review order flow and checkout-related pages
-4. Check booking services if applicable
-5. Report findings using openclaw_report_finding
-
-Focus on issues that could prevent or discourage purchases.`,
-    focusResources: ['flowwink://health'],
-    focusTools: ['openclaw_report_finding', 'list_products', 'list_pages'],
-    requiredModules: ['ecommerce'],
-  },
-  {
     id: 'custom',
     name: 'Custom Mission',
     icon: <Sparkles className="h-4 w-4" />,
@@ -598,7 +412,7 @@ Content-Type: application/json
           </CardTitle>
           <CardDescription>
             Generate a structured prompt to onboard an external agent (e.g. OpenClaw) via MCP.
-            Choose an <strong>Operator</strong> mission to hand over operational control, or an <strong>Audit</strong> mission for read-only inspection. Only missions whose required modules are enabled are shown.
+            Generate a structured prompt to onboard an external agent (e.g. OpenClaw, Hermes) as an <strong>operator</strong> of this FlowWink platform. Only missions whose required modules are enabled are shown.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -622,17 +436,7 @@ Content-Type: application/json
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Operator (Scenario B)</div>
-                {availableMissions.filter(t => t.category === 'operator').map(t => (
-                  <SelectItem key={t.id} value={t.id}>
-                    <span className="flex items-center gap-2">
-                      {t.icon}
-                      {t.name}
-                    </span>
-                  </SelectItem>
-                ))}
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-1.5">Audit / Review</div>
-                {availableMissions.filter(t => t.category === 'audit').map(t => (
+                {availableMissions.map(t => (
                   <SelectItem key={t.id} value={t.id}>
                     <span className="flex items-center gap-2">
                       {t.icon}
@@ -641,6 +445,7 @@ Content-Type: application/json
                   </SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
             <p className="text-xs text-muted-foreground">{mission.description}</p>
           </div>
@@ -672,9 +477,10 @@ Content-Type: application/json
             <CardTitle className="text-sm flex items-center gap-2">
               {mission.icon}
               {mission.name}
-              <Badge variant={mission.category === 'operator' ? 'default' : 'secondary'} className="text-[10px] ml-auto">
-                {mission.category === 'operator' ? 'Operator' : 'Audit'}
+              <Badge variant="default" className="text-[10px] ml-auto">
+                Operator
               </Badge>
+
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
