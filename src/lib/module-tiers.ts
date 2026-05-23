@@ -147,7 +147,7 @@ export const MODULE_TIER_MAP: Readonly<Record<string, ModuleTier>> = {
   companyInsights: 'extended',
   composio: 'extended',
   browserControl: 'extended',
-  clawable: 'extended',
+  
   siteMigration: 'extended',
   globalBlocks: 'extended',
   globalElements: 'extended',
