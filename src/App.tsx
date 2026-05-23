@@ -302,7 +302,7 @@ const router = createBrowserRouter([
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
       { path: "/admin/resume", element: <ConsultantProfilesPage /> },
       { path: "/admin/federation", element: <FederationPage /> },
-      { path: "/admin/clawable", element: <ClawablePage /> },
+      
       { path: "/admin/wiki", element: <WikiPage /> },
       { path: "/admin/wiki/:slug", element: <WikiPage /> },
       { path: "/admin/river", element: <RiverPage /> },
