@@ -29,7 +29,7 @@ import {
   flowpilotModule, emailModule,
   quotesModule, approvalsModule, reconciliationModule, workspaceChatModule,
   customer360Module, posModule, docsModule, fieldServiceModule, surveysModule,
-  pricelistsModule, returnsModule, shippingModule, clawableModule,
+  pricelistsModule, returnsModule, shippingModule,
   fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
   // Legacy modules (manual registration)
   globalBlocksModule,
