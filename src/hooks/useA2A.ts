@@ -91,12 +91,12 @@ export function useCreateA2APeer() {
       if (input.outbound_token) {
         insertData.outbound_token = input.outbound_token;
       }
-      // Gateway token (Bearer for /v1/responses-style peers like Clawwink/OpenClaw)
+      // Gateway token (Bearer for /v1/responses-style peers like OpenClaw)
       if (input.gateway_token) {
         insertData.gateway_token = input.gateway_token;
-        // Auto-tag transport so Clawable picks it up
         insertData.transport = 'openresponses';
       }
+
 
       const { data, error } = await supabase
         .from('a2a_peers' as any)
