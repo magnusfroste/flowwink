@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrandingSettings } from '@/hooks/useSiteSettings';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User, PlayCircle } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -29,6 +30,22 @@ export default function AuthPage() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'demo_mode')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const v: any = data?.value;
+        setDemoMode(v === true || v?.enabled === true);
+      });
+    return () => { cancelled = true; };
+  }, []);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -136,6 +153,19 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {demoMode && (
+              <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <PlayCircle className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">Public demo instance</p>
+                    <p className="text-muted-foreground">
+                      Sign in with <code className="font-mono text-foreground">demo@flowwink.com</code> / <code className="font-mono text-foreground">demo1234</code>. All dynamic data resets every hour. Email sending is disabled.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
