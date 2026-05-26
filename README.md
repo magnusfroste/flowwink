@@ -365,26 +365,28 @@ supabase db push
 
 Supported platforms: **Easypanel**, **Railway**, **Fly.io**, **Hetzner**, **DigitalOcean**, or any VPS with Docker.
 
-See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full deployment guides.
+See **[docs/guides/deployment.md](docs/guides/deployment.md)** for full deployment guides.
 
 ---
 
 ## Documentation
 
+Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry point that routes to operators, builders, agents and reference material.
+
 | Document | What it covers |
 |----------|---------------|
-| **[docs/FLOWPILOT.md](docs/FLOWPILOT.md)** | Complete FlowPilot agent reference — skills, heartbeat, tools |
-| **[docs/SKILLS-SOURCE.md](docs/SKILLS-SOURCE.md)** | Skill registry — all registered skills |
-| **[docs/MODULE-API.md](docs/MODULE-API.md)** | Module contract system, typed schemas, plugin architecture |
-| **[docs/OPENCLAW-LAW.md](docs/OPENCLAW-LAW.md)** | Agentic architecture laws |
-| **[docs/PRD.md](docs/PRD.md)** | Product requirements — modules, capabilities |
-| **[docs/ELEVATOR-PITCH.md](docs/ELEVATOR-PITCH.md)** | BOS positioning, vision, competitive landscape |
-| **[docs/SETUP.md](docs/SETUP.md)** | Supabase setup, environment variables, migrations |
-| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Docker, Easypanel, Railway, Fly.io guides |
-| **[docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** | Architecture, extending the platform, writing skills |
-| **[docs/SECURITY.md](docs/SECURITY.md)** | RLS policies, auth patterns, security model |
-| **[docs/TESTING.md](docs/TESTING.md)** | Autonomous test framework (L1–L8) |
-| **[docs/A2A-COMMUNICATION-MODEL.md](docs/A2A-COMMUNICATION-MODEL.md)** | Agent-to-Agent federation protocol |
+| **[docs/modules/flowpilot.md](docs/modules/flowpilot.md)** | FlowPilot agent reference — skills, heartbeat, tools |
+| **[docs/reference/skills-source.md](docs/reference/skills-source.md)** | Skill registry — all registered skills |
+| **[docs/reference/module-api.md](docs/reference/module-api.md)** | Module contract system, typed schemas, plugin architecture |
+| **[docs/concepts/openclaw-law.md](docs/concepts/openclaw-law.md)** | Agentic architecture laws |
+| **[docs/concepts/prd.md](docs/concepts/prd.md)** | Product requirements — modules, capabilities |
+| **[docs/concepts/elevator-pitch.md](docs/concepts/elevator-pitch.md)** | BOS positioning, vision, competitive landscape |
+| **[docs/guides/setup.md](docs/guides/setup.md)** | Supabase setup, environment variables, migrations |
+| **[docs/guides/deployment.md](docs/guides/deployment.md)** | Docker, Easypanel, Railway, Fly.io guides |
+| **[docs/builders/README.md](docs/builders/README.md)** | Architecture, extending the platform, writing skills |
+| **[docs/guides/security.md](docs/guides/security.md)** | RLS policies, auth patterns, security model |
+| **[docs/contributing/test-suite.md](docs/contributing/test-suite.md)** | Autonomous test framework (L1–L8) |
+| **[docs/concepts/a2a-communication-model.md](docs/concepts/a2a-communication-model.md)** | Agent-to-Agent federation protocol |
 | **[docs/pilot/](docs/pilot/)** | Pilot engine internals — architecture, handlers, reasoning |
 
 ---
