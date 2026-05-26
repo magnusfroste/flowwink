@@ -4072,11 +4072,44 @@ async function executeOrdersAction(
     }
 
     if (action === 'update_status' && order_id && status) {
+      // Capture previous status for the audit timeline
+      const { data: prev } = await supabase.from('orders')
+        .select('status').eq('id', order_id).single();
       const { data, error } = await supabase.from('orders')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', order_id).select('id, status').single();
       if (error) throw new Error(`Update order failed: ${error.message}`);
+
+      // Mirror admin-UI audit trail so OrderEventHistory shows agent actions too.
+      const fulfillmentStatuses = new Set(['picked', 'packed', 'shipped', 'delivered']);
+      const auditAction = fulfillmentStatuses.has(status)
+        ? `order.fulfillment.${status}`
+        : `order.status.${status}`;
+      await supabase.from('audit_logs').insert({
+        entity_type: 'order',
+        entity_id: order_id,
+        action: auditAction,
+        metadata: {
+          from: prev?.status ?? null,
+          to: status,
+          source: 'agent',
+          skill: 'manage_orders',
+        },
+      });
+
       return { order_id: data.id, status: data.status };
+    }
+
+    if (action === 'timeline' && order_id) {
+      const { data: order } = await supabase.from('orders')
+        .select('id, status, created_at, picked_at, packed_at, shipped_at, delivered_at, tracking_number, tracking_url')
+        .eq('id', order_id).single();
+      const { data: logs, error } = await supabase.from('audit_logs')
+        .select('action, metadata, created_at, user_id')
+        .eq('entity_type', 'order').eq('entity_id', order_id)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(`Timeline failed: ${error.message}`);
+      return { order, events: logs || [] };
     }
 
     if (action === 'stats') {
