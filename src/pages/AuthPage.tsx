@@ -30,6 +30,22 @@ export default function AuthPage() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'demo_mode')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const v: any = data?.value;
+        setDemoMode(v === true || v?.enabled === true);
+      });
+    return () => { cancelled = true; };
+  }, []);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
