@@ -92,6 +92,7 @@ import NewsletterConfirmedPage from "./pages/NewsletterConfirmedPage";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
 import PricingPage from "./pages/PricingPage";
 import ShopPage from "./pages/ShopPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
