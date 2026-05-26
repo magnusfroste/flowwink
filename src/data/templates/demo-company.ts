@@ -27,7 +27,7 @@ export const demoCompanyTemplate: StarterTemplate = {
   icon: 'PlayCircle',
   tagline: 'A working business you can poke at — resets every hour.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
-  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms'],
+  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce'],
 
   pages: [
     {
@@ -64,8 +64,8 @@ export const demoCompanyTemplate: StarterTemplate = {
             backgroundType: 'color',
             heightMode: 'auto',
             contentAlignment: 'center',
-            primaryButton: { text: 'Open the admin', url: '/auth' },
-            secondaryButton: { text: 'Ask FlowPilot', url: '#chat-launcher' },
+            primaryButton: { text: 'Shop the demo', url: '/shop' },
+            secondaryButton: { text: 'Open the admin', url: '/auth' },
           },
         },
         {
@@ -99,7 +99,101 @@ export const demoCompanyTemplate: StarterTemplate = {
         },
       ],
     },
+    {
+      title: 'Shop',
+      slug: 'shop',
+      menu_order: 2,
+      showInMenu: true,
+      meta: {
+        seoTitle: 'Shop — FlowWink Demo',
+        description: 'Browse the demo catalog. Place a sandbox order and watch FlowPilot fulfill it.',
+        showTitle: false,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'shop-hero',
+          type: 'hero',
+          data: {
+            title: 'Demo Shop',
+            subtitle: 'Add anything to your cart. Checkout is in sandbox mode — no card needed. Your order will appear in /admin/orders and FlowPilot will fulfill it.',
+            backgroundType: 'color',
+            heightMode: 'compact',
+            contentAlignment: 'center',
+          },
+        },
+        {
+          id: 'shop-products',
+          type: 'products',
+          data: { title: 'Catalog', columns: 3, showPrice: true, showDescription: true, limit: 12 },
+        },
+      ],
+    },
   ],
+
+  products: [
+    {
+      name: 'FlowWink Pilot Tee',
+      description: 'Soft cotton tee with the FlowPilot logo. Limited demo run.',
+      price_cents: 29900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 50, reorder_point: 10 },
+    },
+    {
+      name: 'Operator Hoodie',
+      description: 'Heavyweight hoodie for the autonomous operator on duty.',
+      price_cents: 79900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 30, reorder_point: 5 },
+    },
+    {
+      name: 'Claw Mug',
+      description: 'Ceramic mug. Holds 350 ml of fuel for late-night agent runs.',
+      price_cents: 14900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 100, reorder_point: 20 },
+    },
+    {
+      name: 'Agent Notebook',
+      description: 'Dotted-grid notebook for sketching skill graphs and event flows.',
+      price_cents: 19900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 80, reorder_point: 15 },
+    },
+    {
+      name: 'Sticker Pack',
+      description: 'Six vinyl stickers — FlowPilot, Hermes, OpenClaw and friends.',
+      price_cents: 6900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1612548403247-aa2873e9422d?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 200, reorder_point: 30 },
+    },
+    {
+      name: 'Tote Bag',
+      description: 'Canvas tote with subtle FlowWink monogram. Holds a laptop and a mug.',
+      price_cents: 24900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 60, reorder_point: 10 },
+    },
+  ],
+
 
   branding: {
     organizationName: 'FlowWink Demo',
