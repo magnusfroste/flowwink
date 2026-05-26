@@ -207,6 +207,13 @@ export default function CheckoutSuccessPage() {
               name={order.customer_name}
             />
           )}
+          {order && (
+            <Button asChild variant="outline" className="w-full">
+              <a href={`/track/${order.id}?email=${encodeURIComponent(order.customer_email)}`}>
+                Track this order
+              </a>
+            </Button>
+          )}
           <Button onClick={() => navigate('/')} className="w-full">
             Back to Home
           </Button>
