@@ -39,7 +39,7 @@ You set the direction. The operator runs the business. You choose which operator
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  FlowWink SaaS Platform  (always on, agent-agnostic)         │
-│  • 50+ modules · 187 MCP-exposed skills                      │
+│  • 62 modules · 280 MCP-exposed skills                      │
 │  • Database + RLS · Automations · Event bus · Workflows      │
 │  • MCP server — the universal surface for any operator       │
 └──────────────────────────────────────────────────────────────┘
@@ -206,7 +206,7 @@ skill_pack_install("CRM Nurture Pack")       → lead_pipeline_review, deal_stal
 
 FlowWink speaks two open protocols so any operator can connect:
 
-- **MCP (Model Context Protocol)** — the primary surface. 187 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
+- **MCP (Model Context Protocol)** — the primary surface. 280 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
 - **A2A (Agent-to-Agent JSON-RPC 2.0)** — peer-to-peer delegation between agents.
 
 ```
@@ -214,7 +214,7 @@ FlowWink speaks two open protocols so any operator can connect:
 │  FlowWink   │◄──────────────▶│  Operator           │
 │  Platform   │   tools/call   │  • FlowPilot (local)│
 │ (modules +  │   resources    │  • OpenClaw         │
-│  187 skills)│   message/send │  • Claude Desktop   │
+│  280 skills)│   message/send │  • Claude Desktop   │
 └─────────────┘                │  • custom           │
                                 └────────────────────┘
 ```
@@ -246,7 +246,7 @@ FlowWink follows the **OpenClaw** agentic architecture — composable layers wit
        ┌──────▼─────┐  ┌───────▼───────┐  ┌────────▼──────┐
        │   Skills    │  │   Heartbeat   │  │   Workflows   │
        │             │  │               │  │               │
-       │ 40+ skills  │  │ 7-step loop   │  │ DAG chains    │
+       │ 60+ skills  │  │ 7-step loop   │  │ DAG chains    │
        │ Skill Packs │  │ Self-healing  │  │ Conditions    │
        │ A2A peers   │  │ Outcome eval  │  │ Template vars │
        └─────────────┘  └───────────────┘  └───────────────┘
