@@ -521,7 +521,17 @@ export default function OrdersPage() {
                     trackingNumber={(selectedOrder as any).tracking_number}
                     trackingUrl={(selectedOrder as any).tracking_url}
                     fulfillmentNotes={(selectedOrder as any).fulfillment_notes}
-                    onUpdated={() => setSelectedOrder(null)}
+                    onUpdated={() => {
+                      // Refresh selected order in-place so the user sees updated stepper + history
+                      supabase
+                        .from('orders')
+                        .select('*')
+                        .eq('id', selectedOrder.id)
+                        .single()
+                        .then(({ data }) => {
+                          if (data) setSelectedOrder(data as Order);
+                        });
+                    }}
                   />
                 </div>
               </div>
