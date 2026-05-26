@@ -511,6 +511,14 @@ export function useTemplateInstaller() {
                   quantity_on_hand: product.stock.quantity_on_hand,
                   reorder_point: product.stock.reorder_point ?? 0,
                 });
+                // Mirror to products.stock_quantity + enable tracking so the
+                // public storefront shows "In stock" badges and the
+                // order_item trigger keeps the mirror in sync on each sale.
+                await supabase.from('products').update({
+                  track_inventory: true,
+                  stock_quantity: product.stock.quantity_on_hand,
+                  low_stock_threshold: product.stock.reorder_point ?? 5,
+                }).eq('id', created.id);
               } catch { /* non-fatal — stock seeding is best-effort */ }
             }
           }
