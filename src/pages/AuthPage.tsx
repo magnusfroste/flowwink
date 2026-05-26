@@ -153,6 +153,19 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {demoMode && (
+              <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <PlayCircle className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">Public demo instance</p>
+                    <p className="text-muted-foreground">
+                      Sign in with <code className="font-mono text-foreground">demo@flowwink.com</code> / <code className="font-mono text-foreground">demo1234</code>. All dynamic data resets every hour. Email sending is disabled.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
