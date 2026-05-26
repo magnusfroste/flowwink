@@ -255,7 +255,7 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const [skillsResult, activeModules] = await Promise.all([
     sb
       .from("agent_skills")
-      .select("name, description, category, handler, tool_definition")
+      .select("name, description, category, handler, trust_level, requires_staging, tool_definition")
       .eq("enabled", true)
       .eq("mcp_exposed", true)
       .order("category"),
