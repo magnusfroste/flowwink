@@ -70,6 +70,7 @@ export const ALL_TEMPLATES: StarterTemplate[] = [
   digitalShopTemplate,
   flowwinkAgencyTemplate,
   consultAgencyTemplate,
+  demoCompanyTemplate,
 ];
 
 /** @deprecated Use ALL_TEMPLATES instead */
