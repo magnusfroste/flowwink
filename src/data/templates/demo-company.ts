@@ -27,7 +27,7 @@ export const demoCompanyTemplate: StarterTemplate = {
   icon: 'PlayCircle',
   tagline: 'A working business you can poke at — resets every hour.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
-  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce', 'orders', 'products'],
+  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce'],
 
   pages: [
     {
