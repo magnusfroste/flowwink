@@ -471,7 +471,7 @@ export default function OrdersPage() {
                   <Select
                     value={selectedOrder.status}
                     onValueChange={(status) => {
-                      updateStatusMutation.mutate({ orderId: selectedOrder.id, status });
+                      updateStatusMutation.mutate({ orderId: selectedOrder.id, status, prevStatus: selectedOrder.status });
                       setSelectedOrder({ ...selectedOrder, status });
                     }}
                   >
