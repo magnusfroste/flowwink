@@ -36,6 +36,7 @@ export { digitalShopTemplate } from './digital-shop';
 export { flowwinkAgencyTemplate } from './flowwink-agency';
 export { BLANK_TEMPLATE } from './blank';
 export { consultAgencyTemplate } from './consult-agency';
+export { demoCompanyTemplate } from './demo-company';
 
 // Import for aggregation
 import { launchpadTemplate } from './launchpad';
@@ -48,6 +49,7 @@ import { serviceProTemplate } from './service-pro';
 import { digitalShopTemplate } from './digital-shop';
 import { flowwinkAgencyTemplate } from './flowwink-agency';
 import { consultAgencyTemplate } from './consult-agency';
+import { demoCompanyTemplate } from './demo-company';
 
 import type { StarterTemplate } from './types';
 
