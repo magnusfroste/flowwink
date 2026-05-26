@@ -106,6 +106,17 @@ export default function OrdersPage() {
       const ids = Array.from(selectedIds);
       const { error } = await supabase.from('orders').update({ status }).in('id', ids);
       if (error) throw error;
+      // Best-effort audit logs per order
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from('audit_logs').insert(
+        ids.map((id) => ({
+          entity_type: 'order',
+          entity_id: id,
+          action: 'order.status_changed',
+          user_id: userData.user?.id ?? null,
+          metadata: { to: status, bulk: true },
+        }))
+      );
       return ids.length;
     },
     onSuccess: (count, status) => {
