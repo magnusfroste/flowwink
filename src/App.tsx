@@ -220,6 +220,8 @@ const router = createBrowserRouter([
       },
       { path: "/checkout", element: <CheckoutPage /> },
       { path: "/checkout/success", element: <CheckoutSuccessPage /> },
+      { path: "/track", element: <OrderTrackingPage /> },
+      { path: "/track/:id", element: <OrderTrackingPage /> },
       { path: "/blog", element: <BlogArchivePage /> },
       { path: "/blog/category/:slug", element: <BlogCategoryPage /> },
       { path: "/blog/tag/:slug", element: <BlogTagPage /> },
