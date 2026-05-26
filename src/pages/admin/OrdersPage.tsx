@@ -39,6 +39,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
 import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
 import { EntityActivityTimeline } from '@/components/admin/EntityActivityTimeline';
+import { OrderEventHistory } from '@/components/admin/orders/OrderEventHistory';
 import { EntityTags } from '@/components/admin/EntityTags';
 import { EntityFollowers } from '@/components/admin/EntityFollowers';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
