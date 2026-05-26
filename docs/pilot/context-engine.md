@@ -105,7 +105,7 @@ Only the 20 most recently used skills (by `agent_activity` in the last 14 days) 
 
 ## Lazy Instruction Loading (OpenClaw LAW 3)
 
-**Problem:** 73+ skills × ~2,000 chars instructions each = ~146,000 chars of instructions. This exceeds any reasonable context window.
+**Problem:** 280+ skills × ~2,000 chars instructions each = ~146,000 chars of instructions. This exceeds any reasonable context window.
 
 **Solution:** Instructions are loaded on-demand, not upfront.
 

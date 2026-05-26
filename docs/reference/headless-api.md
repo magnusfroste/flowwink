@@ -709,7 +709,7 @@ The agent receives only the tools from the requested groups. Without the paramet
 mcp_url: https://example.supabase.co/functions/v1/mcp-server?groups=crm,commerce,content,analytics,system
 ```
 
-This reduces ~70 tools down to ~25, keeping accuracy high while maintaining full operational coverage.
+This reduces ~280 tools down to ~25, keeping accuracy high while maintaining full operational coverage.
 
 ### Research References
 

@@ -37,7 +37,7 @@ All authenticated with `Authorization: Bearer fwk_...`.
 
 ## 3. Filter by group (avoid tool bloat)
 
-Most MCP clients have a tool-budget. Don't ship all 110+ skills — pull only the toolkit the agent needs:
+Most MCP clients have a tool-budget. Don't ship all 280+ skills — pull only the toolkit the agent needs:
 
 ```bash
 curl -H "Authorization: Bearer fwk_..." \
