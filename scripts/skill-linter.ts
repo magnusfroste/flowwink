@@ -60,9 +60,11 @@ const NOT_NULL_FIXTURE = path.join(
 );
 
 async function lintSkills(only?: string): Promise<LintResult> {
-  const client = new Client(
-    process.env.DATABASE_URL ? { connectionString: process.env.DATABASE_URL } : undefined,
-  );
+  if (!process.env.DATABASE_URL) {
+    console.warn('[skill-linter] DATABASE_URL not set — skipping (CI-safe no-op).');
+    process.exit(0);
+  }
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
   const { rows: skills } = await client.query<AgentSkillRow>(
