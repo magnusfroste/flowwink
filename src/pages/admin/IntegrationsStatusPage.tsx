@@ -71,19 +71,13 @@ const iconMap = {
   Megaphone,
 };
 
-// Returns true if a noSecretNeeded integration has its required config field set
+// Local alias for the page — pure delegate to the shared switch in useIntegrations.tsx.
+// Kept so existing call sites (badge rendering) read naturally.
 function hasRealCredential(
   key: keyof IntegrationsSettings,
   config: IntegrationProviderConfig | undefined,
 ): boolean {
-  switch (key) {
-    case 'local_llm': return !!config?.endpoint;
-    case 'n8n': return !!config?.webhookUrl;
-    case 'google_analytics': return !!config?.measurementId;
-    case 'meta_pixel': return !!config?.pixelId;
-    case 'slack': return !!config?.webhookUrl;
-    default: return false;
-  }
+  return configHasCredential(key, config);
 }
 
 function getCredentialBadge(hasCredential: boolean, requiresSecret: boolean) {
