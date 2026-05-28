@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import {
   FlaskConical, Play, CheckCircle2, XCircle, Clock, Loader2, Search,
   ExternalLink, Terminal, BookOpen, Layers, Boxes, Bot, Shield,
-  History, Info, RefreshCw,
+  History, Info, RefreshCw, ChevronDown, HeartPulse,
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -202,107 +203,97 @@ export default function PlatformTestsPage() {
     return { tested, failing, never };
   }, [filtered, latestRuns]);
 
+  // Split suites: guardrails go into the dev-only collapsed zone, the rest
+  // render as the main test list.
+  const runnableSuites = filtered.filter((s) => s.scope !== 'guardrail');
+  const guardrailSuites = allSuites.filter((s) => s.scope === 'guardrail');
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <AdminPageHeader
-            title="Platform Tests"
-            description="The single source of truth for every test in FlowWink — what we test, how to run it, and when it was last green."
-          />
-          <Button onClick={runAllPlatform} variant="default" size="sm" className="shrink-0 mt-1" disabled={!!bulkProgress}>
-            {bulkProgress ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {bulkProgress.current}/{bulkProgress.total}…</>
-            ) : (
-              <><Play className="h-4 w-4 mr-2" /> Run all platform suites</>
-            )}
-          </Button>
-          <Button onClick={reseedAllFailing} variant="outline" size="sm" className="shrink-0 mt-1" disabled={!!bulkProgress}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Re-seed failing modules
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="Platform Tests"
+          description="The single source of truth for every test in FlowWink — what we test, how to run it, and when it was last green."
+        />
 
-        {bulkProgress && (
-          <Alert className="border-primary/40 bg-primary/5">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <AlertDescription className="text-sm flex items-center justify-between gap-3">
-              <span>
-                Running suite <strong>{bulkProgress.current}</strong> of <strong>{bulkProgress.total}</strong>:{' '}
-                <span className="font-mono">{bulkProgress.label}</span>
-              </span>
-              <div className="w-40 h-1.5 bg-primary/15 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
-                />
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-xs space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
-              <div className="space-y-1">
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1">
-                  <Layers className="h-3 w-3" /> Platform
-                </Badge>
-                <p className="text-muted-foreground">Live health of the running DB + edge stack. Runnable here. Logs to history.</p>
-              </div>
-              <div className="space-y-1">
-                <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 gap-1">
-                  <Boxes className="h-3 w-3" /> Module
-                </Badge>
-                <p className="text-muted-foreground">Auto-generated per module. Verifies skill seeds exist. Re-seed fixes drift.</p>
-              </div>
-              <div className="space-y-1">
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1">
-                  <Bot className="h-3 w-3" /> Operator
-                </Badge>
-                <p className="text-muted-foreground">FlowPilot reasoning, skill selection, autonomy levels. Has its own page.</p>
-              </div>
-              <div className="space-y-1">
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
-                  <Shield className="h-3 w-3" /> CI Guardrail
-                </Badge>
-                <p className="text-muted-foreground">Code-level contracts (skill linter, RPC drift). Runs on every PR — not UI-triggerable.</p>
-              </div>
-            </div>
-            <div className="pt-2 border-t flex flex-wrap gap-4 text-muted-foreground">
-              <span><strong className="text-foreground">{aggregate.tested}</strong> suites with run history</span>
-              <span><strong className={aggregate.failing > 0 ? 'text-destructive' : 'text-foreground'}>{aggregate.failing}</strong> currently failing</span>
-              <span><strong className="text-foreground">{aggregate.never}</strong> never run</span>
-              <span className="ml-auto italic">Click <History className="h-3 w-3 inline" /> on a card to see last 10 runs.</span>
-            </div>
-          </AlertDescription>
-        </Alert>
-
-        <div className="flex flex-col md:flex-row gap-3 md:items-center">
-          <Tabs value={scopeFilter} onValueChange={(v) => setScopeFilter(v as 'all' | TestScope)}>
-            <TabsList>
-              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="platform">Platform ({counts.platform ?? 0})</TabsTrigger>
-              <TabsTrigger value="module">Modules ({counts.module ?? 0})</TabsTrigger>
-              <TabsTrigger value="operator">Operator ({counts.operator ?? 0})</TabsTrigger>
-              <TabsTrigger value="guardrail">CI ({counts.guardrail ?? 0})</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="relative flex-1 max-w-sm">
-            <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-            <Input
-              placeholder="Filter by name, module, category…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        {/* ── ZONE 1: Instance Health (always on top, the "is the site OK?" answer) ── */}
+        <div className="rounded-lg border bg-card">
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+            <HeartPulse className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Instance Health</h2>
+            <span className="text-xs text-muted-foreground ml-2">Quick diagnostic — run this first.</span>
+          </div>
+          <div className="px-4 pb-4">
+            <InstanceHealthCard />
           </div>
         </div>
 
-        <InstanceHealthCard />
-
+        {/* ── ZONE 2: Platform & Module test suites ── */}
         <div className="space-y-3">
-          {filtered.length === 0 && (
+          <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <FlaskConical className="h-4 w-4 text-primary" /> Test Suites
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <strong className="text-foreground">{aggregate.tested}</strong> with history ·{' '}
+                <strong className={aggregate.failing > 0 ? 'text-destructive' : 'text-foreground'}>{aggregate.failing}</strong> failing ·{' '}
+                <strong className="text-foreground">{aggregate.never}</strong> never run
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={runAllPlatform} variant="default" size="sm" disabled={!!bulkProgress}>
+                {bulkProgress ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {bulkProgress.current}/{bulkProgress.total}…</>
+                ) : (
+                  <><Play className="h-4 w-4 mr-2" /> Run all platform</>
+                )}
+              </Button>
+              <Button onClick={reseedAllFailing} variant="outline" size="sm" disabled={!!bulkProgress}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Re-seed failing
+              </Button>
+            </div>
+          </div>
+
+          {bulkProgress && (
+            <Alert className="border-primary/40 bg-primary/5">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <AlertDescription className="text-sm flex items-center justify-between gap-3">
+                <span>
+                  Running suite <strong>{bulkProgress.current}</strong> of <strong>{bulkProgress.total}</strong>:{' '}
+                  <span className="font-mono">{bulkProgress.label}</span>
+                </span>
+                <div className="w-40 h-1.5 bg-primary/15 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                  />
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
+            <Tabs value={scopeFilter} onValueChange={(v) => setScopeFilter(v as 'all' | TestScope)}>
+              <TabsList>
+                <TabsTrigger value="all">All ({(counts.platform ?? 0) + (counts.module ?? 0) + (counts.operator ?? 0)})</TabsTrigger>
+                <TabsTrigger value="platform">Platform ({counts.platform ?? 0})</TabsTrigger>
+                <TabsTrigger value="module">Modules ({counts.module ?? 0})</TabsTrigger>
+                <TabsTrigger value="operator">Operator ({counts.operator ?? 0})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+              <Input
+                placeholder="Filter by name, module, category…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {runnableSuites.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 No test suites match these filters.
@@ -310,7 +301,7 @@ export default function PlatformTestsPage() {
             </Card>
           )}
 
-          {filtered.map((suite) => (
+          {runnableSuites.map((suite) => (
             <SuiteCard
               key={suite.id}
               suite={suite}
@@ -323,6 +314,48 @@ export default function PlatformTestsPage() {
             />
           ))}
         </div>
+
+        {/* ── ZONE 3: Dev-only CI guardrails (collapsed by default — these don't run from the UI) ── */}
+        {guardrailSuites.length > 0 && (
+          <Collapsible>
+            <div className="rounded-lg border bg-muted/20">
+              <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/40 rounded-lg transition-colors">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-semibold">CI Guardrails ({guardrailSuites.length})</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    Code-level contracts that run on every PR — view-only here.
+                  </span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [&[data-state=open]]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-2 pt-2">
+                  {guardrailSuites.map((suite) => (
+                    <div key={suite.id} className="rounded-md border bg-background px-3 py-2 flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{suite.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{suite.description}</p>
+                        {suite.run.mode === 'manual' && (
+                          <code className="text-[11px] font-mono text-muted-foreground mt-1 block truncate">
+                            $ {suite.run.command}
+                          </code>
+                        )}
+                      </div>
+                      {suite.docs?.startsWith('/') && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={suite.docs}>
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Docs
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+        )}
 
         <HistoryDialog suite={historySuite} onClose={() => setHistorySuite(null)} />
       </div>
