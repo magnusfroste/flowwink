@@ -50,7 +50,7 @@ serve(async (req) => {
       });
     }
     const { data: roleData } = await supabase
-      .from("user_roles").select("role").eq("user_id", user.id).single();
+      .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").limit(1).maybeSingle();
     if (roleData?.role !== "admin") {
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
