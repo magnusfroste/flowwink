@@ -615,7 +615,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['openai', 'gemini', 'local_llm', 'firecrawl'],
   },
   customer360: {
-    enabled: true,
+    enabled: false,
     name: 'Customer 360',
     description:
       'Unified view of every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person — with timeline and lifetime-value KPIs.',
