@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- ============================================================================
 -- SURVEYS / NPS MODULE
 -- ============================================================================
@@ -32,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.survey_sends (
   campaign_id UUID NOT NULL REFERENCES public.survey_campaigns(id) ON DELETE CASCADE,
   recipient_email TEXT NOT NULL,
   recipient_name TEXT,
-  token TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(16), 'hex'),
+  token TEXT NOT NULL UNIQUE DEFAULT encode(extensions.gen_random_bytes(16), 'hex'),
   related_entity_type TEXT,
   related_entity_id UUID,
   lead_id UUID,

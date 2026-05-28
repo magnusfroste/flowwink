@@ -1,3 +1,6 @@
+-- Ensure pgcrypto is available (lives in extensions schema on fresh Supabase projects)
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- Add public access fields to invoices
 ALTER TABLE public.invoices
   ADD COLUMN IF NOT EXISTS public_token text UNIQUE,
@@ -6,12 +9,12 @@ ALTER TABLE public.invoices
 
 -- Backfill tokens for existing invoices that don't have one
 UPDATE public.invoices
-SET public_token = encode(gen_random_bytes(24), 'hex')
+SET public_token = encode(extensions.gen_random_bytes(24), 'hex')
 WHERE public_token IS NULL;
 
 -- Default for new rows
 ALTER TABLE public.invoices
-  ALTER COLUMN public_token SET DEFAULT encode(gen_random_bytes(24), 'hex');
+  ALTER COLUMN public_token SET DEFAULT encode(extensions.gen_random_bytes(24), 'hex');
 
 CREATE INDEX IF NOT EXISTS idx_invoices_public_token ON public.invoices(public_token);
 
