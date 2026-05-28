@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { useModules, type ModulesSettings } from '@/hooks/useModules';
 
 type Status = 'pending' | 'running' | 'pass' | 'fail' | 'skip';
 
@@ -53,6 +54,12 @@ interface Step {
   capture?: (output: any, ctx: Ctx) => void;
   optional?: boolean;
 }
+
+const GROUP_MODULE: Record<Step['group'], keyof ModulesSettings> = {
+  leads: 'leads',
+  blog: 'blog',
+  kb: 'knowledgeBase',
+};
 
 function buildSteps(runId: string): Step[] {
   const email = `smoke+${runId}@flowwink.test`;
@@ -229,6 +236,7 @@ const GROUP_LABEL: Record<Step['group'], string> = {
 };
 
 export default function AdminSmokeTestPage() {
+  const { data: modules } = useModules();
   const [running, setRunning] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [results, setResults] = useState<Record<string, StepResult>>({});
@@ -248,6 +256,14 @@ export default function AdminSmokeTestPage() {
     const auto: Record<string, boolean> = {};
 
     for (const step of plan) {
+      const modKey = GROUP_MODULE[step.group];
+      if (modules && modules[modKey]?.enabled === false) {
+        setResults((r) => ({
+          ...r,
+          [step.key]: { status: 'skip', error: `Module "${modKey}" is disabled` },
+        }));
+        continue;
+      }
       setResults((r) => ({ ...r, [step.key]: { status: 'running' } }));
       const args = step.args(ctx);
       if (!args) {
