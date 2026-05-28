@@ -31,26 +31,9 @@ interface IntegrationStatus {
   };
 }
 
-interface IntegrationsSettings {
-  stripe?: { enabled: boolean };
-  stripe_webhook?: { enabled: boolean };
-  resend?: { enabled: boolean };
-  openai?: { enabled: boolean; config?: { baseUrl?: string; model?: string } };
-  gemini?: { enabled: boolean; config?: { model?: string } };
-  anthropic?: { enabled: boolean; config?: { model?: string } };
-  unsplash?: { enabled: boolean };
-  firecrawl?: { enabled: boolean };
-  local_llm?: { enabled: boolean; config?: { endpoint?: string; model?: string } };
-  n8n?: { enabled: boolean; config?: { webhookUrl?: string; webhookType?: string; triggerMode?: string; triggerKeywords?: string[] } };
-  google_analytics?: { enabled: boolean; config?: { measurementId?: string } };
-  meta_pixel?: { enabled: boolean; config?: { pixelId?: string } };
-  slack?: { enabled: boolean; config?: { webhookUrl?: string; notifyOnNewLead?: boolean; notifyOnDealWon?: boolean; notifyOnFormSubmit?: boolean } };
-  composio?: { enabled: boolean };
-}
-
 export function useIntegrationStatus() {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['integration-status', user?.id],
     queryFn: async () => {
@@ -66,24 +49,6 @@ export function useIntegrationStatus() {
     retry: 1,
     refetchOnWindowFocus: false,
     enabled: !!user,
-  });
-}
-
-// Helper to get integration enabled status from site_settings
-function useIntegrationsEnabledSettings() {
-  return useQuery({
-    queryKey: ['integrations-enabled-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'integrations')
-        .maybeSingle();
-      
-      if (error) throw error;
-      return (data?.value as IntegrationsSettings) || {};
-    },
-    staleTime: 5 * 60 * 1000,
   });
 }
 
