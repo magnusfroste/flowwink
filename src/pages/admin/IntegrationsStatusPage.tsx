@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -39,6 +40,7 @@ import {
   MessageSquare,
   Search,
   Megaphone,
+  AlertTriangle,
 } from "lucide-react";
 import {
   useIntegrations,
@@ -93,6 +95,15 @@ function getCredentialBadge(hasCredential: boolean, requiresSecret: boolean) {
     <Badge variant="outline" className="gap-1 text-muted-foreground">
       <XCircle className="h-3 w-3" />
       {requiresSecret ? 'No API key' : 'Setup needed'}
+    </Badge>
+  );
+}
+
+function getUnavailableBadge() {
+  return (
+    <Badge variant="outline" className="gap-1 border-destructive/30 text-destructive">
+      <AlertTriangle className="h-3 w-3" />
+      Status unavailable
     </Badge>
   );
 }
@@ -616,12 +627,19 @@ export default function IntegrationsStatusPage() {
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 
-  const { data: secretsStatus, isLoading: secretsLoading, refetch: refetchSecrets } = useIntegrationStatus();
+  const {
+    data: secretsStatus,
+    isLoading: secretsLoading,
+    refetch: refetchSecrets,
+    error: secretsError,
+    isError: hasSecretsError,
+  } = useIntegrationStatus();
   const { data: integrationSettings, isLoading: settingsLoading } = useIntegrations();
   const updateIntegrations = useUpdateIntegrations();
   const integrationModuleMap = useIntegrationModuleMap();
 
   const isLoading = secretsLoading || settingsLoading;
+  const secretsErrorMessage = secretsError instanceof Error ? secretsError.message : 'Unknown backend error';
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -736,6 +754,16 @@ export default function IntegrationsStatusPage() {
           title="Integrations"
           description="Manage external service integrations"
         />
+        {hasSecretsError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Could not verify backend secrets</AlertTitle>
+            <AlertDescription>
+              The secret check failed, so "No API key" can be misleading here. This points more to an auth/admin-role/JWT problem than a missing provider key.
+              <span className="mt-2 block font-mono text-xs">{secretsErrorMessage}</span>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* System Status */}
         <Card>
           <CardHeader className="pb-3">
@@ -865,6 +893,7 @@ export default function IntegrationsStatusPage() {
                       integrationSettings,
                     );
                     const hasCredential = hasKey;
+                    const statusUnavailable = hasSecretsError && requiresSecret;
 
                     return (
                       <Card
@@ -892,7 +921,9 @@ export default function IntegrationsStatusPage() {
                                   {isLoading ? (
                                     <Skeleton className="h-5 w-20" />
                                   ) : (
-                                    getCredentialBadge(hasCredential, requiresSecret)
+                                    statusUnavailable
+                                      ? getUnavailableBadge()
+                                      : getCredentialBadge(hasCredential, requiresSecret)
                                   )}
                                 </CardTitle>
                                 <CardDescription>{integration.description}</CardDescription>
@@ -908,9 +939,9 @@ export default function IntegrationsStatusPage() {
                                   />
                                 </div>
                               </TooltipTrigger>
-                              {!hasKey && (
+                              {(!hasKey || statusUnavailable) && (
                                 <TooltipContent>
-                                  <p>API key must be configured first</p>
+                                  <p>{statusUnavailable ? 'Could not verify secret status' : 'API key must be configured first'}</p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -937,7 +968,7 @@ export default function IntegrationsStatusPage() {
                           </div>
 
                           {/* CLI Command — only if not yet configured */}
-                          {!hasKey && requiresSecret && (
+                          {!hasKey && requiresSecret && !statusUnavailable && (
                             <div className="flex items-center gap-2">
                               <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
                                 supabase secrets set {integration.secretName}=...
