@@ -37,12 +37,37 @@ export function useIntegrationStatus() {
   return useQuery({
     queryKey: ['integration-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('check-secrets');
-      if (error) {
-        logger.error('[useIntegrationStatus] Error:', error);
-        throw error;
+      // Use raw fetch so we can surface the actual error body from check-secrets
+      // (supabase.functions.invoke swallows the response body on non-2xx).
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-secrets`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        let detail = text;
+        try {
+          const parsed = JSON.parse(text);
+          detail = parsed.error || parsed.message || text;
+        } catch {
+          /* keep raw text */
+        }
+        const err = new Error(`check-secrets ${res.status}: ${detail || res.statusText}`);
+        logger.error('[useIntegrationStatus] Error:', err);
+        throw err;
       }
-      return data as IntegrationStatus;
+      try {
+        return JSON.parse(text) as IntegrationStatus;
+      } catch {
+        throw new Error(`check-secrets returned invalid JSON: ${text.slice(0, 200)}`);
+      }
     },
     staleTime: 30 * 1000,
     gcTime: 60 * 1000,
