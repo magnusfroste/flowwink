@@ -444,6 +444,9 @@ export default function SiteSettingsPage() {
             {/* Environment Info */}
             <EnvironmentInfoCard />
 
+            {/* Demo Mode (hourly reset on demo instance) */}
+            <DemoModeCard />
+
             {/* Danger Zone */}
             <Card className="border-destructive/50">
               <CardHeader>
