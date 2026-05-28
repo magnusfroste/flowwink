@@ -499,25 +499,47 @@ cmd_create_admin() {
         -H "Content-Type: application/json" \
         -d "{\"email\":\"${email}\",\"password\":\"${password}\",\"email_confirm\":true,\"user_metadata\":{\"full_name\":\"Admin\"}}" 2>&1)
 
+    local user_id=""
     if echo "$response" | grep -q '"id"'; then
-        local user_id
         user_id=$(echo "$response" | jq -r '.id' 2>/dev/null || echo "")
-        if [ -n "$user_id" ] && [ "$user_id" != "null" ]; then
-            # Use POST (insert) — PATCH would silently no-op when no row exists yet.
-            # merge-duplicates makes it idempotent if (user_id, role) already exists.
-            curl -s -X POST "${SUPABASE_URL}/rest/v1/user_roles" \
-                -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-                -H "apikey: ${SERVICE_ROLE_KEY}" \
-                -H "Content-Type: application/json" \
-                -H "Prefer: return=minimal,resolution=merge-duplicates" \
-                -d "{\"user_id\":\"${user_id}\",\"role\":\"admin\"}" >/dev/null 2>&1
-        fi
-        echo -e "  ${GREEN}✓ Admin created:${NC} ${email}"
+        echo -e "  ${GREEN}✓ User created:${NC} ${email}"
     elif echo "$response" | grep -q "already been registered"; then
-        echo -e "  ${YELLOW}⚠ User already exists:${NC} ${email}"
+        echo -e "  ${YELLOW}⚠ User already exists:${NC} ${email} — looking up id..."
+        local lookup
+        lookup=$(curl -s "${SUPABASE_URL}/auth/v1/admin/users?email=${email}" \
+            -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" 2>/dev/null || echo "")
+        user_id=$(echo "$lookup" | jq -r '.users[0].id // empty' 2>/dev/null || echo "")
     else
         echo -e "  ${YELLOW}⚠ Could not create user automatically.${NC}"
-        echo "  Use Supabase Dashboard → Authentication → Add user"
+        echo "  Response: $response"
+        echo ""
+        return 1
+    fi
+
+    if [ -z "$user_id" ] || [ "$user_id" = "null" ]; then
+        echo -e "  ${YELLOW}⚠ No user_id resolved — cannot assign admin role.${NC}"
+        echo ""
+        return 1
+    fi
+
+    # Assign admin role via PostgREST. Show response so failures are visible.
+    local role_resp http_code body
+    role_resp=$(curl -s -w "\n%{http_code}" -X POST "${SUPABASE_URL}/rest/v1/user_roles" \
+        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+        -H "apikey: ${SERVICE_ROLE_KEY}" \
+        -H "Content-Type: application/json" \
+        -H "Prefer: return=minimal,resolution=merge-duplicates" \
+        -d "{\"user_id\":\"${user_id}\",\"role\":\"admin\"}")
+    http_code=$(echo "$role_resp" | tail -n1)
+    body=$(echo "$role_resp" | sed '$d')
+
+    if [ "$http_code" = "201" ] || [ "$http_code" = "200" ] || [ "$http_code" = "204" ]; then
+        echo -e "  ${GREEN}✓ Admin role assigned${NC} (user_id: ${user_id})"
+    else
+        echo -e "  ${YELLOW}⚠ Failed to assign admin role (HTTP ${http_code})${NC}"
+        echo "  Response: ${body}"
+        echo "  Fix manually: INSERT INTO public.user_roles (user_id, role) VALUES ('${user_id}', 'admin');"
     fi
     echo ""
 }
