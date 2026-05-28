@@ -200,6 +200,45 @@ cmd_link() {
     echo ""
 }
 
+pre_bootstrap_sql() {
+    # Some historical migrations call `gen_random_bytes(...)` unqualified.
+    # On a fresh Supabase project `pgcrypto` lives in the `extensions`
+    # schema which is NOT on the default `search_path`, so those
+    # migrations crash with `function gen_random_bytes(integer) does not
+    # exist`. We pre-create the extension + a thin wrapper in `public`
+    # so every historical migration finds the function via search_path.
+    # Idempotent and safe to re-run.
+    local token
+    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    if [ -z "$token" ]; then
+        echo -e "  ${DIM}Skipping pre-bootstrap (no Supabase access token found)${NC}"
+        return 0
+    fi
+    local sql
+    sql=$(cat <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE OR REPLACE FUNCTION public.gen_random_bytes(integer)
+RETURNS bytea LANGUAGE sql VOLATILE AS $$
+  SELECT extensions.gen_random_bytes($1)
+$$;
+SQL
+)
+    local payload
+    payload=$(jq -n --arg q "$sql" '{query:$q}')
+    local http_code
+    http_code=$(curl -s -o /tmp/flowwink_bootstrap.out -w "%{http_code}" \
+        -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+        -H "Authorization: Bearer ${token}" \
+        -H "Content-Type: application/json" \
+        -d "$payload" || echo "000")
+    if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
+        echo -e "  ${GREEN}✓ Pre-bootstrap (gen_random_bytes shim)${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ Pre-bootstrap returned HTTP ${http_code} — continuing${NC}"
+        sed 's/^/    /' /tmp/flowwink_bootstrap.out 2>/dev/null || true
+    fi
+}
+
 cmd_update_db() {
     echo ""
     print_section "Push Database Migrations"
@@ -222,6 +261,9 @@ cmd_update_db() {
         echo ""
     fi
 
+    pre_bootstrap_sql
+    echo ""
+
     echo -e "  Pushing schema..."
     echo ""
     if supabase db push --yes 2>&1 | sed 's/^/  /'; then
@@ -234,6 +276,7 @@ cmd_update_db() {
     fi
     echo ""
 }
+
 
 cmd_update_funcs() {
     echo ""
