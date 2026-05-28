@@ -27,7 +27,7 @@ export const demoCompanyTemplate: StarterTemplate = {
   icon: 'PlayCircle',
   tagline: 'A working business you can poke at — resets every hour.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
-  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce'],
+  requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce', 'inventory', 'approvals'],
 
   pages: [
     {
@@ -82,13 +82,24 @@ export const demoCompanyTemplate: StarterTemplate = {
           },
         },
         {
+          id: 'chat-launcher-demo',
+          type: 'chat-launcher',
+          data: {
+            title: 'Talk to FlowPilot',
+            placeholder: 'Ask what the operator is doing right now…',
+            showQuickActions: true,
+            quickActionCount: 4,
+            variant: 'card',
+          },
+        },
+        {
           id: 'text-demo',
           type: 'text',
           data: {
             content: { type: 'doc', content: [
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'How this demo works' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Every hour a cron job calls reset_module_data to wipe the dynamic data this demo produced, then seed_module_demo re-stages a fresh scenario across CRM, quotes, invoices and expenses. Static content (pages, KB, products) is never touched.' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Email is disabled. Outbound communication skills are set to approve, so agents propose sends in the approval queue instead of firing real messages.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Email is disabled. Outbound communication skills are set to approve, so agents propose sends in the approval queue at /admin/approvals instead of firing real messages.' }] },
             ]},
           },
         },
