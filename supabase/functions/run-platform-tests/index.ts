@@ -341,8 +341,16 @@ const suite_ai_usage_logging: SuiteFn = async (admin) => {
         .gte("created_at", since);
       if (error) throw new Error(error.message);
       if ((count ?? 0) === 0) {
+        // Distinguish fresh install (no rows EVER) from stale deploy (rows exist but old)
+        const { count: totalCount } = await admin
+          .from("ai_usage_logs")
+          .select("*", { count: "exact", head: true })
+          .neq("source", "platform-test");
+        if ((totalCount ?? 0) === 0) {
+          throw new SkipTest("Fresh install: no AI traffic yet. This check will activate once any AI feature runs.");
+        }
         throw new Error(
-          "No AI usage logged in the last 7 days. Either no AI traffic, or edge functions (chat-completion / workspace-chat / flowpilot-heartbeat / mcp-server) are running an old build without logAiUsage().",
+          "No AI usage logged in the last 7 days, but historical rows exist. Edge functions (chat-completion / workspace-chat / flowpilot-heartbeat / mcp-server) may be running an old build without logAiUsage().",
         );
       }
       return { details: { rows_last_7d: count } };
