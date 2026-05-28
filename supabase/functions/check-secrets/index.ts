@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
@@ -46,10 +45,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify the user is an admin
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
     const supabase = getUserClient(authHeader)!;
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -61,14 +56,25 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin
-    const { data: roleData } = await supabase
+    // Check if user is admin. Users can have multiple roles, so never rely on
+    // maybeSingle() without filtering to the specific admin row.
+    const adminClient = getServiceClient();
+    const { data: adminRoles, error: roleError } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .eq('role', 'admin')
+      .limit(1);
 
-    if (roleData?.role !== 'admin') {
+    if (roleError) {
+      console.error('[check-secrets] Failed to verify admin role:', roleError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify admin role' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!adminRoles || adminRoles.length === 0) {
       console.error('[check-secrets] User is not admin:', user.id);
       return new Response(
         JSON.stringify({ error: 'Forbidden - Admin access required' }),
