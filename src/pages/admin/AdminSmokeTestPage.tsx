@@ -47,6 +47,7 @@ interface Ctx {
 interface Step {
   key: string;
   group: 'leads' | 'blog' | 'kb';
+  module: keyof ModulesSettings;
   title: string;
   description: string;
   skill: string;
@@ -54,6 +55,12 @@ interface Step {
   capture?: (output: any, ctx: Ctx) => void;
   optional?: boolean;
 }
+
+const GROUP_MODULE: Record<Step['group'], keyof ModulesSettings> = {
+  leads: 'leads',
+  blog: 'blog',
+  kb: 'knowledgeBase',
+};
 
 function buildSteps(runId: string): Step[] {
   const email = `smoke+${runId}@flowwink.test`;
