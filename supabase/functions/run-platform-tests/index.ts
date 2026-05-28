@@ -29,6 +29,13 @@ function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
   return fn().then((result) => ({ result, ms: Date.now() - start }));
 }
 
+class SkipTest extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = "SkipTest";
+  }
+}
+
 async function runCheck(
   suite: string,
   name: string,
@@ -45,10 +52,11 @@ async function runCheck(
       details: out?.details,
     };
   } catch (err) {
+    const isSkip = err instanceof SkipTest || (err as Error)?.name === "SkipTest";
     return {
       suite,
       name,
-      status: "fail",
+      status: isSkip ? "skip" : "fail",
       duration_ms: Date.now() - start,
       error: (err as Error).message,
     };
