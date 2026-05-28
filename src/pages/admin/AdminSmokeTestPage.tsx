@@ -47,7 +47,6 @@ interface Ctx {
 interface Step {
   key: string;
   group: 'leads' | 'blog' | 'kb';
-  module: keyof ModulesSettings;
   title: string;
   description: string;
   skill: string;
