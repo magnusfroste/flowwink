@@ -689,11 +689,16 @@ export default function IntegrationsStatusPage() {
 
   // Calculate active count
   const integrationKeys = Object.keys(defaultIntegrationsSettings) as (keyof IntegrationsSettings)[];
+  const noSecretNeededKeys = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
   let activeCount = 0;
   let configuredCount = 0;
 
   for (const key of integrationKeys) {
-    const hasKey = secretsStatus?.integrations?.[key] ?? false;
+    const requiresSecret = !noSecretNeededKeys.includes(key);
+    const cfg = integrationSettings?.[key]?.config ?? defaultIntegrationsSettings[key].config;
+    const hasKey = requiresSecret
+      ? (secretsStatus?.integrations?.[key] ?? false)
+      : hasRealCredential(key, cfg);
     const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
     if (hasKey) configuredCount++;
     if (hasKey && !explicitlyDisabled) activeCount++;
