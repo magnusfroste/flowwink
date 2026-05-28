@@ -432,7 +432,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   docs: {
-    enabled: true,
+    enabled: false,
     name: 'Docs',
     description: 'Public documentation portal at /docs — auto-syncs the GitHub docs/ folder so evaluators can browse modules, processes and architecture, with embedded AI chat scoped to the docs.',
     icon: 'BookOpen',
