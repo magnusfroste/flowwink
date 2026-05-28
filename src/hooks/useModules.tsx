@@ -558,7 +558,7 @@ export const defaultModulesSettings: ModulesSettings = {
     enhancedByFlowPilot: true,
   },
   reconciliation: {
-    enabled: true,
+    enabled: false,
     name: 'Reconciliation',
     description: 'Bank reconciliation — sync Stripe payouts, import CSV/CAMT.053/SIE bank files, auto-match against invoices, expenses and orders. Live bank connectivity (GoCardless/Tink/Plaid) coming in v0.5.',
     icon: 'RefreshCw',
