@@ -87,67 +87,34 @@ function useIntegrationsEnabledSettings() {
   });
 }
 
-// Auto-enabled when key exists, unless explicitly disabled by admin
+// Per-provider helpers — thin wrappers over the single resolver in
+// useIntegrations.tsx (resolveIntegrationStatus). DO NOT duplicate the
+// hasKey/enabled logic here; route everything through useIsIntegrationActive
+// so adding a new config-based integration only touches CONFIG_BASED_KEYS.
+import { useIsIntegrationActive } from './useIntegrations';
+
 export function useIsResendConfigured() {
-  const { data: secretsStatus } = useIntegrationStatus();
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const hasKey = secretsStatus?.integrations?.resend ?? false;
-  const explicitlyDisabled = enabledSettings?.resend?.enabled === false;
-  
-  return hasKey && !explicitlyDisabled;
+  return useIsIntegrationActive('resend').isActive;
 }
 
 export function useIsStripeConfigured() {
-  const { data: secretsStatus } = useIntegrationStatus();
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const hasKey = secretsStatus?.integrations?.stripe ?? false;
-  const explicitlyDisabled = enabledSettings?.stripe?.enabled === false;
-  
-  return hasKey && !explicitlyDisabled;
+  return useIsIntegrationActive('stripe').isActive;
 }
 
 export function useIsOpenAIConfigured() {
-  const { data: secretsStatus } = useIntegrationStatus();
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const hasKey = secretsStatus?.integrations?.openai ?? false;
-  const explicitlyDisabled = enabledSettings?.openai?.enabled === false;
-  
-  return hasKey && !explicitlyDisabled;
+  return useIsIntegrationActive('openai').isActive;
 }
 
 export function useIsGeminiConfigured() {
-  const { data: secretsStatus } = useIntegrationStatus();
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const hasKey = secretsStatus?.integrations?.gemini ?? false;
-  const explicitlyDisabled = enabledSettings?.gemini?.enabled === false;
-  
-  return hasKey && !explicitlyDisabled;
+  return useIsIntegrationActive('gemini').isActive;
 }
 
-// Local LLM: configured when an endpoint is set, unless explicitly disabled.
-// (No API key required — endpoint presence is the source of truth, matching IntegrationsStatusPage.)
-export function useIsLocalLLMConfigured() {
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-
-  const hasEndpoint = !!enabledSettings?.local_llm?.config?.endpoint;
-  const explicitlyDisabled = enabledSettings?.local_llm?.enabled === false;
-
-  return hasEndpoint && !explicitlyDisabled;
-}
-
-// Combined helper: true if ANY AI provider is configured and not disabled
 export function useIsAnthropicConfigured() {
-  const { data: secretsStatus } = useIntegrationStatus();
-  const { data: enabledSettings } = useIntegrationsEnabledSettings();
-  
-  const hasKey = secretsStatus?.integrations?.anthropic ?? false;
-  const explicitlyDisabled = enabledSettings?.anthropic?.enabled === false;
-  
-  return hasKey && !explicitlyDisabled;
+  return useIsIntegrationActive('anthropic').isActive;
+}
+
+export function useIsLocalLLMConfigured() {
+  return useIsIntegrationActive('local_llm').isActive;
 }
 
 export function useIsAIConfigured() {
