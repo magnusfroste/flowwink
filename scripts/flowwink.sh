@@ -497,7 +497,7 @@ cmd_create_admin() {
         -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
         -H "apikey: ${SERVICE_ROLE_KEY}" \
         -H "Content-Type: application/json" \
-        -d "{\"email\":\"${email}\",\"password\":\"${password}\",\"email_confirm\":true,\"user_metadata\":{\"full_name\":\"Admin\"}}" 2>&1)
+        -d "{\"email\":\"${email}\",\"password\":\"${password}\",\"email_confirm\":true,\"user_metadata\":{\"full_name\":\"Admin\",\"signup_type\":\"admin\"}}" 2>&1)
 
     local user_id=""
     if echo "$response" | grep -q '"id"'; then
