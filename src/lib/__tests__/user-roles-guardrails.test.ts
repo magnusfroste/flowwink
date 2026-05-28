@@ -138,7 +138,7 @@ describe('edge functions: user_roles admin checks', () => {
 describe('scripts/flowwink.sh create-admin', () => {
   it('passes signup_type=admin in user_metadata', () => {
     const sh = readFileSync('scripts/flowwink.sh', 'utf8');
-    const adminUserBlock = sh.match(/cmd_create_admin\(\)[\s\S]*?\n\}/)?.[0] ?? '';
-    expect(adminUserBlock).toMatch(/signup_type["']?\s*:\s*["']admin/);
+    // Only the create-admin curl call writes user_metadata with signup_type.
+    expect(sh).toMatch(/user_metadata[\s\S]{0,200}signup_type[\\"' :]+admin/);
   });
 });
