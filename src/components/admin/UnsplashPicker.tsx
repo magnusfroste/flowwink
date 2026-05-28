@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Search, ImageIcon, Check, ExternalLink, Crop } from 'lucide-react';
 import { ImageCropper } from './ImageCropper';
+import { UnsplashConfigHint } from './UnsplashConfigHint';
+
 import { useToast } from '@/hooks/use-toast';
 import { getWebPFileName } from '@/lib/image-utils';
 
