@@ -854,20 +854,17 @@ export default function IntegrationsStatusPage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {categoryIntegrations.map((integration) => {
                     const key = integration.key;
-                    // For these integrations, no vault secret required - just need config
-                    const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
-                    const requiresSecret = !noSecretNeeded.includes(key);
+                    const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
                     const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina'].includes(key);
-                    // Credential status: API key for secret-based; required config field for config-based
-                    const hasCredential = requiresSecret
-                      ? (secretsStatus?.integrations?.[key] ?? false)
-                      : hasRealCredential(key, currentConfig);
-                    // hasKey gates the toggle switch — must reflect real credential, not a hardcoded true
-                    const hasKey = hasCredential;
-                    const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
-                    const isEnabled = hasKey && !explicitlyDisabled;
+                    // Single source of truth — same resolver used by hooks + count loop
+                    const { hasKey, isActive: isEnabled } = resolveIntegrationStatus(
+                      key,
+                      secretsStatus?.integrations,
+                      integrationSettings,
+                    );
+                    const hasCredential = hasKey;
 
                     return (
                       <Card
