@@ -684,21 +684,19 @@ export default function IntegrationsStatusPage() {
     ? Object.values(secretsStatus.core).every(Boolean)
     : false;
 
-  // Calculate active count
+  // Calculate active count — use shared resolver so we never drift from the hook logic
   const integrationKeys = Object.keys(defaultIntegrationsSettings) as (keyof IntegrationsSettings)[];
-  const noSecretNeededKeys = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
   let activeCount = 0;
   let configuredCount = 0;
 
   for (const key of integrationKeys) {
-    const requiresSecret = !noSecretNeededKeys.includes(key);
-    const cfg = integrationSettings?.[key]?.config ?? defaultIntegrationsSettings[key].config;
-    const hasKey = requiresSecret
-      ? (secretsStatus?.integrations?.[key] ?? false)
-      : hasRealCredential(key, cfg);
-    const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
+    const { hasKey, isActive } = resolveIntegrationStatus(
+      key,
+      secretsStatus?.integrations,
+      integrationSettings,
+    );
     if (hasKey) configuredCount++;
-    if (hasKey && !explicitlyDisabled) activeCount++;
+    if (isActive) activeCount++;
   }
 
   const getDisplayConfig = (key: keyof IntegrationsSettings) => {
