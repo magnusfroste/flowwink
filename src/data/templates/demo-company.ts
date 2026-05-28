@@ -47,7 +47,7 @@ export const demoCompanyTemplate: StarterTemplate = {
           id: 'announcement-demo',
           type: 'announcement-bar',
           data: {
-            message: '⚡ Live demo — everything resets every hour. Login: demo / demo1234',
+            message: '⚡ Live demo — everything resets every hour. Login: demo@flowwink.com / demo1234',
             linkText: 'Open admin',
             linkUrl: '/auth',
             variant: 'gradient',
