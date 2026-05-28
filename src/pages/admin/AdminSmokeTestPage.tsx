@@ -236,6 +236,7 @@ const GROUP_LABEL: Record<Step['group'], string> = {
 };
 
 export default function AdminSmokeTestPage() {
+  const { data: modules } = useModules();
   const [running, setRunning] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [results, setResults] = useState<Record<string, StepResult>>({});
