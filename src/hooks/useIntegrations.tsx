@@ -455,10 +455,16 @@ export function useToggleIntegration() {
   };
 }
 
-// Config-based integrations: no vault secret needed, presence of required config field determines credential
-const CONFIG_BASED_KEYS: Array<keyof IntegrationsSettings> = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
+// Config-based integrations: no vault secret needed, presence of required
+// config field determines credential. EXPORTED so all callers share one list.
+export const CONFIG_BASED_KEYS: ReadonlyArray<keyof IntegrationsSettings> = [
+  'local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack',
+];
 
-function configHasCredential(key: keyof IntegrationsSettings, config: any): boolean {
+export function configHasCredential(
+  key: keyof IntegrationsSettings,
+  config: IntegrationProviderConfig | undefined,
+): boolean {
   switch (key) {
     case 'local_llm': return !!config?.endpoint;
     case 'n8n': return !!config?.webhookUrl;
@@ -469,24 +475,46 @@ function configHasCredential(key: keyof IntegrationsSettings, config: any): bool
   }
 }
 
+/**
+ * Single source of truth for "is this integration usable right now?".
+ * Pure function — call from hooks, components, or count loops.
+ *
+ * Rules (in order):
+ *   1. Config-based (local_llm/n8n/ga/pixel/slack) → presence of required field
+ *   2. Secret-based → presence of secret in Supabase vault
+ *   3. Explicit `enabled: false` always wins → status='disabled'
+ */
+export function resolveIntegrationStatus(
+  key: keyof IntegrationsSettings,
+  secretsPresent: Partial<Record<keyof IntegrationsSettings, boolean>> | undefined,
+  settings: Partial<IntegrationsSettings> | undefined,
+): { hasKey: boolean; isActive: boolean; status: 'not_configured' | 'disabled' | 'active' } {
+  const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
+  const cfg = settings?.[key]?.config ?? defaultIntegrationsSettings[key]?.config;
+  const hasKey = requiresSecret
+    ? (secretsPresent?.[key] ?? false)
+    : configHasCredential(key, cfg);
+  const explicitlyDisabled = settings?.[key]?.enabled === false;
+  const isActive = hasKey && !explicitlyDisabled;
+  return {
+    hasKey,
+    isActive,
+    status: !hasKey ? 'not_configured' : explicitlyDisabled ? 'disabled' : 'active',
+  };
+}
+
 // Check if an integration is active (has key/config + not explicitly disabled)
 export function useIsIntegrationActive(key: keyof IntegrationsSettings) {
   const { data: secretsStatus } = useIntegrationStatus();
   const { data: integrationSettings } = useIntegrations();
 
-  const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
-  const cfg = integrationSettings?.[key]?.config ?? defaultIntegrationsSettings[key]?.config;
-  const hasKey = requiresSecret
-    ? (secretsStatus?.integrations?.[key] ?? false)
-    : configHasCredential(key, cfg);
-  const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
+  const { hasKey, isActive, status } = resolveIntegrationStatus(
+    key,
+    secretsStatus?.integrations,
+    integrationSettings,
+  );
 
-  return {
-    hasKey,
-    isEnabled: hasKey && !explicitlyDisabled,
-    isActive: hasKey && !explicitlyDisabled,
-    status: !hasKey ? 'not_configured' : explicitlyDisabled ? 'disabled' : 'active',
-  } as const;
+  return { hasKey, isEnabled: isActive, isActive, status } as const;
 }
 
 // Get count of active integrations
