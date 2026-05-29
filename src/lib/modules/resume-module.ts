@@ -141,7 +141,49 @@ AI-powered matching of consultants to a job description.
 - Works best with enriched profiles (skills, experience, bio).
 - Returns ranked matches with match reasoning.`,
   },
+  {
+    name: 'consultant_checkin_update',
+    description: "Update a consultant's own profile during a check-in interview. Updates bio, summary, skills, availability, and experience. Use when: a consultant has completed a check-in conversation and you have gathered enough information to update their profile. NOT for: admin-driven profile edits (manage_consultant_profile).",
+    category: 'content',
+    handler: 'module:resume',
+    scope: 'external',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'consultant_checkin_update',
+        description: 'Save updated consultant profile information gathered during a check-in interview.',
+        parameters: {
+          type: 'object',
+          properties: {
+            profile_id: { type: 'string', description: 'The consultant UUID' },
+            bio: { type: 'string', description: 'Short personal bio' },
+            summary: { type: 'string', description: 'Professional summary including latest project and highlights' },
+            skills: { type: 'array', items: { type: 'string' }, description: 'List of skills and technologies' },
+            availability: { type: 'string', enum: ['available', 'unavailable', 'soon'], description: 'Current availability status' },
+            experience_years: { type: 'number', description: 'Total years of professional experience' },
+            experience_json: {
+              type: 'array',
+              description: 'Work experience entries',
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  company: { type: 'string' },
+                  start_date: { type: 'string' },
+                  end_date: { type: 'string' },
+                  description: { type: 'string' },
+                },
+              },
+            },
+          },
+          required: ['profile_id'],
+        },
+      },
+    },
+    instructions: `## consultant_checkin_update\n### What\nSaves updated consultant profile info gathered during a check-in interview.\n### When to use\n- After 3-5 exchanges with the consultant when you have concrete updates.\n- Only include fields you have information about.\n### Parameters\n- **profile_id**: Required UUID.\n- bio, summary, skills, availability, experience_years, experience_json: optional updates.`,
+  },
 ];
+
 
 export const resumeModule = defineModule<ResumeMatchInput, ResumeMatchOutput>({
   id: 'resume',
