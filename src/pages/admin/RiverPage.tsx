@@ -490,6 +490,7 @@ export default function RiverPage() {
   const { data: posts = [], isLoading } = useRiverFeed(50);
   const ids = posts.map((p) => p.id);
   const { data: reactions = [] } = useRiverReactions(ids);
+  const { data: authors = {} } = useRiverAuthors(posts.map((p) => p.author_id));
 
   if (!enabled) {
     return (
