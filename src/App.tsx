@@ -36,6 +36,7 @@ import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
 import NewsletterPage from "./pages/admin/NewsletterPage";
+import CommunicationsPage from "./pages/admin/CommunicationsPage";
 import BlogPage from "./pages/admin/BlogPage";
 import BlogPostEditorPage from "./pages/admin/BlogPostEditorPage";
 import ModulesPage from "./pages/admin/ModulesPage";
