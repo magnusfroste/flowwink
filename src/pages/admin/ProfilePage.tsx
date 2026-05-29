@@ -302,6 +302,60 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
+          {/* Email Identity (per-user sender override) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Email Identity</CardTitle>
+              <CardDescription>
+                Send outbound email from your own address. When set, this overrides the workspace
+                default for messages you trigger (e.g. leads, contacts, follow-ups). The workspace
+                transport (Resend / SMTP) is still used to deliver — only the From line changes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="emailFromAddress">From address</Label>
+                  <Input
+                    id="emailFromAddress"
+                    type="email"
+                    value={emailFromAddress}
+                    onChange={(e) => setEmailFromAddress(e.target.value)}
+                    placeholder="you@yourdomain.com"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Must be on a domain verified with the active email provider.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emailFromName">From name</Label>
+                  <Input
+                    id="emailFromName"
+                    value={emailFromName}
+                    onChange={(e) => setEmailFromName(e.target.value)}
+                    placeholder="Defaults to your full name"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emailReplyTo">Reply-To (optional)</Label>
+                <Input
+                  id="emailReplyTo"
+                  type="email"
+                  value={emailReplyTo}
+                  onChange={(e) => setEmailReplyTo(e.target.value)}
+                  placeholder="Defaults to your From address"
+                />
+              </div>
+              {!emailFromAddress && (
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use the workspace default sender set by the administrator.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+
           {/* Password Change */}
           <Card>
             <CardHeader>
