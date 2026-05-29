@@ -1063,7 +1063,12 @@ app.get("/rest/groups", async (c) => {
       available_modules: available,
       active_modules: active,
       tool_count: toolCount,
-      is_active: available.length === 0 ? true : active.length > 0,
+      // module_enabled = the gating module is on; is_active = there are tools an agent
+      // can actually call. A module can be enabled yet expose zero MCP tools (e.g.
+      // subscriptions/identity/agent have no exposed skills) — reporting is_active=true
+      // there misleads operators into scoping to an empty group.
+      module_enabled: available.length === 0 ? true : active.length > 0,
+      is_active: (available.length === 0 ? true : active.length > 0) && toolCount > 0,
     };
   });
 
