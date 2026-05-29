@@ -43,26 +43,34 @@ export async function runIntegrityChecks(supabase: any): Promise<{
   const enabledSkills = allSkills || [];
   const issues: string[] = [];
 
-  // Check: skills without instructions
+  // Info: skills without instructions (advisory — description is the required field)
   const noInstr = enabledSkills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
   if (noInstr.length > 0) {
-    issues.push(`${noInstr.length} skills missing instructions: ${noInstr.slice(0, 5).map((s: any) => s.name).join(', ')}${noInstr.length > 5 ? '...' : ''}`);
+    issues.push(`Info: ${noInstr.length} skills without optional instructions (description is what matters): ${noInstr.slice(0, 5).map((s: any) => s.name).join(', ')}${noInstr.length > 5 ? '...' : ''}`);
   }
 
-  // Check: skills without description
+  // Hard check: skills without description
   const noDesc = enabledSkills.filter((s: any) => !s.description || s.description.trim() === '');
   if (noDesc.length > 0) {
     issues.push(`${noDesc.length} skills missing descriptions`);
   }
 
-  // Check: invalid tool definitions
+  // Hard check: invalid tool definitions.
+  // Accept either OpenAI wrapper {type:'function', function:{name, parameters}}
+  // OR a raw JSON Schema object ({type:'object', properties:{...}}) — both are
+  // valid shapes used across the codebase.
   const badTd = enabledSkills.filter((s: any) => {
     if (!s.tool_definition) return true;
     const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
-    return !td?.function?.name || !td?.function?.parameters;
+    if (!td || typeof td !== 'object') return true;
+    // OpenAI wrapper
+    if (td.function && td.function.name && td.function.parameters) return false;
+    // Raw JSON Schema
+    if (td.type === 'object' && td.properties && typeof td.properties === 'object') return false;
+    return true;
   });
   if (badTd.length > 0) {
-    issues.push(`${badTd.length} skills with invalid tool definitions: ${badTd.map((s: any) => s.name).join(', ')}`);
+    issues.push(`${badTd.length} skills with invalid tool definitions: ${badTd.slice(0, 10).map((s: any) => s.name).join(', ')}${badTd.length > 10 ? '...' : ''}`);
   }
 
   // Check: critical memory keys
@@ -87,10 +95,12 @@ export async function runIntegrityChecks(supabase: any): Promise<{
     issues.push(`${brokenAutos.length} automations reference missing skills: ${brokenAutos.map((a: any) => `${a.name}→${a.skill_name}`).join(', ')}`);
   }
 
-  const totalChecks = 5;
-  const failedChecks = [noInstr, noDesc, badTd, missingKeys, brokenAutos].filter(arr => arr.length > 0).length;
+  // Score is based on 4 hard checks (noInstr is advisory only).
+  const totalChecks = 4;
+  const failedChecks = [noDesc, badTd, missingKeys, brokenAutos].filter(arr => arr.length > 0).length;
   const passedChecks = totalChecks - failedChecks;
   const score = Math.round((passedChecks / totalChecks) * 100);
+
 
   return { score, issues, totalChecks, passedChecks };
 }
