@@ -75,3 +75,7 @@ The `/admin/skills` route still resolves (back-compat) but is now titled
 deeplinks like `?tab=skills` redirect users to `/admin/developer?tab=mcp-skills`
 via the banner, but no automatic redirect is in place to avoid breaking
 bookmarks.
+
+## Related
+
+- [`architecture/flowwink-control-model.md`](./flowwink-control-model.md) — Full architecture diagram showing how the platform, modules, skills, and three operating modes (SaaS, FlowPilot, External Agent) interact. Includes file locations proving decoupling.

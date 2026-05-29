@@ -45,4 +45,4 @@ You can switch modes anytime. Same modules, same skills, same data.
 
 > Modules + MCP are the platform. FlowPilot is one operator among many. Disabling the operator never reduces what the platform can do.
 
-See [`architecture/mcp-as-platform.md`](./architecture/mcp-as-platform.md) for the law that enforces this.
+See [`architecture/mcp-as-platform.md`](./architecture/mcp-as-platform.md) for the law that enforces this, and [`architecture/flowwink-control-model.md`](./architecture/flowwink-control-model.md) for the complete architecture — how FlowChat, FlowPilot, and external agents all consume the same skill catalog via the same intent scorer.
