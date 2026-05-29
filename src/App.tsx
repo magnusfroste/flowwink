@@ -294,7 +294,7 @@ const router = createBrowserRouter([
       { path: "/admin/flowpilot", element: <CopilotPage /> },
       { path: "/admin/flowpilot/engine", element: <Navigate to="/admin/flowpilot" replace /> },
       { path: "/admin/flowchat", element: <FlowChatPage /> },
-      { path: "/admin/smoke-test", element: <AdminSmokeTestPage /> },
+      { path: "/admin/smoke-test", element: <Navigate to="/admin/platform-tests" replace /> },
       { path: "/admin/skills", element: <SkillsCatalogPage /> },
       { path: "/admin/skill-hub", element: <Navigate to="/admin/skills" replace /> },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
