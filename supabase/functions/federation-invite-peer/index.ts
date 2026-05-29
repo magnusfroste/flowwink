@@ -21,6 +21,12 @@ interface InvitePayload {
   toolset_groups?: string[];       // Override (defaults to inheriting inviter's)
   reason?: string;
   metadata?: Record<string, unknown>;
+  // Mission metadata (optional — only used when inviting with a specific mission)
+  mission_id?: string;             // Mission template ID (e.g., "growth-operator")
+  mission_name?: string;           // Human-readable mission name
+  instructions?: string;           // Mission instructions and responsibilities
+  focus_resources?: string[];      // Resource types to prioritize
+  focus_tools?: string[];          // Skill names to prioritize
 }
 
 async function sha256Hex(input: string): Promise<string> {
@@ -164,6 +170,18 @@ serve(async (req: Request) => {
       reason: body.reason ?? null,
       metadata: body.metadata ?? {},
     });
+
+    // Store mission metadata if provided (allows agents to query via /rest/resources/mission)
+    if (body.mission_id && body.instructions) {
+      await supabase.from("federation_peer_missions").insert({
+        peer_id: newPeer.id,
+        mission_id: body.mission_id,
+        mission_name: body.mission_name || body.mission_id,
+        instructions: body.instructions,
+        focus_resources: body.focus_resources || [],
+        focus_tools: body.focus_tools || [],
+      });
+    }
 
     const mcpEndpoint = `${supabaseUrl}/functions/v1/mcp-server`;
     const groupsQuery = grantedGroups.length > 0 ? `?groups=${grantedGroups.join(",")}` : "";

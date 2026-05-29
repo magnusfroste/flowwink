@@ -14,7 +14,7 @@ import { resolveAiConfig } from '../ai-config.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
-import { scoreSkillsByIntent, loadRecentUsageCounts } from './intent-scorer.ts';
+import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
 import {
   handleMemoryWrite,

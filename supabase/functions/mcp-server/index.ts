@@ -13,6 +13,10 @@ import {
   SKILL_CATEGORY_MODULES as SHARED_SKILL_CATEGORY_MODULES,
   loadActiveModuleIds,
 } from "../_shared/mcp/groups.ts";
+// Platform skill-relevance primitive — shared by FlowPilot (reason.ts) AND this
+// outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
+// it must work for external agents even when the FlowPilot module is disabled.
+import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/intent-scorer.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
 const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null }>();
@@ -632,6 +636,60 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       };
     }
 
+    case "mission": {
+      // Federation mission discovery — agents query their role and responsibilities
+      // The request context contains the authenticated API key ID
+      const ctx = requestContext.getStore();
+      if (!ctx?.callerApiKeyId) {
+        return {
+          error: "No authenticated peer context — mission resource is only available to federation peers",
+          uri: "flowwink://mission",
+        };
+      }
+
+      // Find the peer associated with this API key
+      const { data: peerData, error: peerError } = await sb
+        .from("a2a_peers")
+        .select("id, name")
+        .eq("api_key_id", ctx.callerApiKeyId)
+        .maybeSingle();
+
+      if (!peerData) {
+        return {
+          error: peerError?.message || "Authenticated peer not found",
+          uri: "flowwink://mission",
+        };
+      }
+
+      // Look up the mission for this peer
+      const { data: missionData, error: missionError } = await sb
+        .from("federation_peer_missions")
+        .select("mission_id, mission_name, instructions, focus_resources, focus_tools")
+        .eq("peer_id", peerData.id)
+        .maybeSingle();
+
+      if (!missionData) {
+        return {
+          error: missionError?.message || "No mission assigned to this peer",
+          uri: "flowwink://mission",
+          peer_id: peerData.id,
+          peer_name: peerData.name,
+        };
+      }
+
+      return {
+        uri: "flowwink://mission",
+        peer_id: peerData.id,
+        peer_name: peerData.name,
+        id: missionData.mission_id,
+        name: missionData.mission_name,
+        instructions: missionData.instructions,
+        focus_resources: missionData.focus_resources || [],
+        focus_tools: missionData.focus_tools || [],
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     default: {
       if (resourceKey.startsWith("template:")) {
         const templateId = resourceKey.replace("template:", "");
@@ -645,7 +703,99 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
 
 // ---------- MCP server factory ----------
 
-async function createMcpServer(filterGroups?: string[], openaiSafe = false): Promise<McpServer> {
+/**
+ * Dispatcher tools: a 2-tool surface that gives an agent broad access to all
+ * exposed skills without flooding its context with hundreds of tool schemas.
+ *   search_skills(query, groups?) → ranked catalog (reuses the intent scorer)
+ *   execute_skill(name, arguments) → runs the chosen skill
+ * `filterGroups` (if the client also passed ?groups=) scopes the catalog.
+ */
+function registerDispatcherTools(server: McpServer, filterGroups?: string[]): void {
+  server.tool("search_skills", {
+    description:
+      "Discover the most relevant FlowWink skills for a task. Use when: you need to find which tool to run for a given intent. Returns ranked skill definitions (name, description, input_schema); then call execute_skill with the chosen name. NOT for: running a skill — use execute_skill.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        query: { type: "string", description: "Natural-language description of what you want to accomplish" },
+        groups: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional toolset groups to scope the search, e.g. ['crm','commerce']. See /rest/groups for the catalog.",
+        },
+        limit: { type: "number", description: "Max results to return (default 15, max 40)" },
+      },
+      required: ["query"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const query = typeof args.query === "string" ? args.query : "";
+      const groups = Array.isArray(args.groups)
+        ? (args.groups as unknown[]).filter((g): g is string => typeof g === "string")
+        : undefined;
+      const limit = Math.min(typeof args.limit === "number" ? args.limit : 15, 40);
+
+      const scope = groups && groups.length ? groups : filterGroups;
+      const matchSkills = await loadExposedSkills(scope);
+      const defs = matchSkills
+        .map((s) => s.tool_definition)
+        .filter((d) => d?.function?.name);
+
+      let ranked = defs;
+      if (query) {
+        const usageBoost = await loadRecentUsageCounts(serviceClient()).catch(() => ({}));
+        ranked = scoreSkillsByIntent(defs, query, { maxSkills: limit, usageBoost });
+      }
+
+      const catalog = ranked.slice(0, limit).map((d: any) => ({
+        name: d.function.name,
+        description: d.function.description,
+        input_schema: d.function.parameters || { type: "object", properties: {} },
+      }));
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ count: catalog.length, skills: catalog }, null, 2) }],
+      };
+    },
+  });
+
+  server.tool("execute_skill", {
+    description:
+      "Run a FlowWink skill by name. Use when: you have chosen a skill (typically via search_skills) and want to execute it. NOT for: discovery — call search_skills first to find the right name.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string", description: "Exact skill name as returned by search_skills" },
+        arguments: { type: "object", description: "Arguments object for the skill", additionalProperties: true },
+      },
+      required: ["name"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const name = typeof args.name === "string" ? args.name : "";
+      const skillArgs =
+        args.arguments && typeof args.arguments === "object"
+          ? (args.arguments as Record<string, unknown>)
+          : {};
+      if (!name) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: "Missing 'name'. Call search_skills first to find a skill." }) }],
+        };
+      }
+      // Validate against exposed skills (respects active modules + any group filter)
+      const exposed = await loadExposedSkills(filterGroups);
+      const match = exposed.find((s) => s.tool_definition?.function?.name === name);
+      if (!match) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
+        };
+      }
+      const ctx = requestContext.getStore();
+      const result = await executeSkill(match.name, skillArgs, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  });
+}
+
+async function createMcpServer(filterGroups?: string[], openaiSafe = false, dispatchMode = false): Promise<McpServer> {
   const server = new McpServer({
     name: "flowwink",
     version: "1.0.0",
@@ -653,40 +803,48 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false): Pro
 
   const skills = await loadExposedSkills(filterGroups);
 
-  let flattenedCount = 0;
-  for (const skill of skills) {
-    const fn = skill.tool_definition?.function;
-    if (!fn?.name) continue;
+  if (dispatchMode) {
+    // ── Dispatcher mode ──────────────────────────────────────────────────────
+    // Broad access to all 200+ skills while carrying only 2 schemas in context.
+    // The agent searches the catalog by intent (reusing FlowPilot's relevance
+    // engine) then executes the chosen skill — instead of seeing every tool.
+    registerDispatcherTools(server, filterGroups);
+  } else {
+    let flattenedCount = 0;
+    for (const skill of skills) {
+      const fn = skill.tool_definition?.function;
+      if (!fn?.name) continue;
 
-    let inputSchema: any = (fn.parameters as any) || {
-      type: "object" as const,
-      properties: {},
-    };
-    if (openaiSafe && hasUnsafeTopLevelKeyword(inputSchema)) {
-      inputSchema = flattenSchemaForOpenAI(inputSchema);
-      flattenedCount++;
-    }
+      let inputSchema: any = (fn.parameters as any) || {
+        type: "object" as const,
+        properties: {},
+      };
+      if (openaiSafe && hasUnsafeTopLevelKeyword(inputSchema)) {
+        inputSchema = flattenSchemaForOpenAI(inputSchema);
+        flattenedCount++;
+      }
 
-    const toolDef: Record<string, unknown> = {
-      description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
-      inputSchema,
-      annotations: buildToolAnnotations(skill),
-      handler: async (args: Record<string, unknown>) => {
-        const ctx = requestContext.getStore();
-        const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
-        return {
-          content: [{ type: "text" as const, text: result }],
-        };
-      },
-    };
-    // Pass-through outputSchema if skill declared one in tool_definition.function.outputSchema
-    if (fn.outputSchema && typeof fn.outputSchema === "object") {
-      toolDef.outputSchema = fn.outputSchema;
+      const toolDef: Record<string, unknown> = {
+        description: `[${skill.category}] ${fn.description || skill.description || skill.name}`,
+        inputSchema,
+        annotations: buildToolAnnotations(skill),
+        handler: async (args: Record<string, unknown>) => {
+          const ctx = requestContext.getStore();
+          const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null);
+          return {
+            content: [{ type: "text" as const, text: result }],
+          };
+        },
+      };
+      // Pass-through outputSchema if skill declared one in tool_definition.function.outputSchema
+      if (fn.outputSchema && typeof fn.outputSchema === "object") {
+        toolDef.outputSchema = fn.outputSchema;
+      }
+      server.tool(fn.name, toolDef as any);
     }
-    server.tool(fn.name, toolDef as any);
-  }
-  if (openaiSafe && flattenedCount > 0) {
-    console.log(`MCP: flattened ${flattenedCount} schemas for OpenAI compatibility`);
+    if (openaiSafe && flattenedCount > 0) {
+      console.log(`MCP: flattened ${flattenedCount} schemas for OpenAI compatibility`);
+    }
   }
 
   // ── Lock tools for concurrency ──
@@ -812,6 +970,7 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false): Pro
   });
 
   const resourceDefs: Array<{ key: string; uri: string; name: string; description: string }> = [
+    { key: "mission",     uri: "flowwink://mission",     name: "Your Mission",         description: "[Federation] Your assigned mission: role, responsibilities, focus areas, and priority tools. READ THIS FIRST when bootstrapping." },
     { key: "modules",     uri: "flowwink://modules",     name: "FlowWink Modules",    description: "All available modules and their enabled/disabled status" },
     { key: "health",      uri: "flowwink://health",      name: "Site Health",          description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
     { key: "skills",      uri: "flowwink://skills",      name: "Skill Registry",       description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
@@ -972,6 +1131,7 @@ app.get("/rest/tools", async (c) => {
 
 app.get("/rest/resources", (c) => {
   const resources = [
+    { key: "mission",      description: "[Federation] Your mission definition: role, responsibilities, focus areas, and priority tools. Available only to federation peers with assigned missions." },
     { key: "health",       description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
     { key: "skills",       description: "Full skill registry with category, scope, trust level, enabled status" },
     { key: "modules",      description: "Module configuration (enabled/disabled)" },
@@ -1075,12 +1235,12 @@ app.post("/rest/execute", async (c) => {
 // Cache MCP handlers by group key
 const mcpHandlerCache = new Map<string, (req: Request) => Promise<Response>>();
 
-async function getMcpHandler(filterGroups?: string[], openaiSafe = false) {
+async function getMcpHandler(filterGroups?: string[], openaiSafe = false, dispatchMode = false) {
   const groupKey = filterGroups ? filterGroups.sort().join(",") : "__all__";
-  const cacheKey = openaiSafe ? `${groupKey}::safe` : groupKey;
+  const cacheKey = `${groupKey}${openaiSafe ? "::safe" : ""}${dispatchMode ? "::dispatch" : ""}`;
   let handler = mcpHandlerCache.get(cacheKey);
   if (!handler) {
-    const server = await createMcpServer(filterGroups, openaiSafe);
+    const server = await createMcpServer(filterGroups, openaiSafe, dispatchMode);
     const transport = new StreamableHttpTransport();
     handler = transport.bind(server);
     mcpHandlerCache.set(cacheKey, handler);
@@ -1099,8 +1259,11 @@ app.all("/*", async (c) => {
     : undefined;
   // ?openai_safe=true → flatten allOf/oneOf/anyOf/if-then schemas (gpt-4.1 / litellm compatibility)
   const openaiSafe = url.searchParams.get("openai_safe") === "true";
+  // ?mode=dispatch → expose a 2-tool surface (search_skills + execute_skill) so
+  // generalist operators get broad reach without 200+ schemas in their context.
+  const dispatchMode = url.searchParams.get("mode") === "dispatch";
 
-  const handler = await getMcpHandler(filterGroups, openaiSafe);
+  const handler = await getMcpHandler(filterGroups, openaiSafe, dispatchMode);
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;

@@ -96,6 +96,19 @@ All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-bas
 - `get-page` — serves pages with caching; called by PublicPage before DB fallback
 - `setup-flowpilot` — seeds FlowPilot soul + objectives from templates
 - `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions
+- `mcp-server` — outward-facing MCP gateway for external agents/federation peers (Streamable HTTP, JSON-RPC over POST + a `/rest/*` compatibility layer)
+
+### MCP Server (external agent access)
+
+`mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno.
+
+The system has 200+ skills. Exposing all of them as individual MCP tools floods a client's context. Three connection profiles control what a client sees (all via query params; default = unfiltered, kept for backward compat):
+
+- `?groups=crm,commerce` — specialist: only that category's tools (~8). See `_shared/mcp/groups.ts` and `/rest/groups`.
+- `?mode=dispatch` — generalist operator: a **2-tool surface** — `search_skills({query, groups?})` ranks skills by intent, `execute_skill({name, arguments})` runs one. Broad reach, ~2 schemas in context.
+- (no param) — all tools exposed.
+
+**Skill relevance is a platform primitive, not a FlowPilot-internal one.** `scoreSkillsByIntent` / `loadRecentUsageCounts` live in `_shared/skills/intent-scorer.ts` (NOT under `pilot/`) precisely because both FlowPilot's ReAct loop (`reason.ts`) AND the outward MCP gateway use it — and the gateway must work for external agents even when the FlowPilot module is disabled. When promoting capability-discovery logic, keep it in `_shared/skills/`. FlowPilot's actual intelligence (soul, objectives, ReAct decisions) stays in FlowPilot; only the "which skill is relevant" lookup is shared.
 
 ### Template System
 

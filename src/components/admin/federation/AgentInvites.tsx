@@ -265,115 +265,114 @@ export function AgentInvites() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Auto-create a scoped MCP API key
-      const keyName = `MCP Agent: ${agentName || 'Unnamed'} — ${mission.name}`;
-      const rawKey = await createApiKey.mutateAsync({
-        name: keyName,
-        scopes: ['mcp:read', 'mcp:write', 'mcp:report'],
-      });
+      const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+      const instructions = selectedMission === 'custom' ? customInstructions : mission.instructions;
+      const peerName = agentName || mission.name;
+
+      // Call federation-invite-peer edge function to create peer + mission record
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/federation-invite-peer`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            invitee_name: peerName,
+            invitee_description: `MCP Agent: ${mission.name || 'Custom Mission'}`,
+            invitee_url: `https://${peerName.toLowerCase().replace(/\s+/g, '-')}.local`,
+            toolset_groups: [],
+            // Mission metadata — will be stored in federation_peer_missions
+            mission_id: selectedMission === 'custom' ? 'custom' : mission.id,
+            mission_name: selectedMission === 'custom' ? peerName : mission.name,
+            instructions: instructions,
+            focus_resources: mission.focusResources,
+            focus_tools: mission.focusTools,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create peer invitation');
+      }
+
+      const inviteData = await response.json();
+      const rawKey = inviteData.credentials?.mcp_api_key;
+
+      if (!rawKey) {
+        throw new Error('No API key returned from invitation');
+      }
 
       setGeneratedKey(rawKey);
 
-      // Auto-create a2a_peers entry so the agent appears in Federation
-      const peerName = agentName || 'Unnamed';
-      const { error: peerError } = await supabase
-        .from('a2a_peers')
-        .upsert({
-          name: peerName,
-          url: `https://${peerName.toLowerCase().replace(/\s+/g, '-')}.local`,
-          status: 'active' as const,
-          mcp_api_key: rawKey.substring(0, 12),
-          capabilities: {},
-        }, { onConflict: 'name' });
-      
-      if (peerError) {
-        console.warn('Failed to auto-create peer:', peerError.message);
-      }
-
-      const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
-      const instructions = selectedMission === 'custom' ? customInstructions : mission.instructions;
-
       const isOperator = mission.category === 'operator';
+      // Operators get dispatch mode: broad reach to all skills via 2 tools
+      // (search_skills + execute_skill) instead of hundreds of tool schemas.
+      const connectUrl = isOperator ? `${mcpUrl}?mode=dispatch` : mcpUrl;
       const introLine = isOperator
         ? `You are being onboarded as the **primary operator** of a FlowWink business platform. There is no built-in agent — you have full operational control.`
         : `You have been invited to inspect and audit a FlowWink site.`;
+
+      const toolsSection = isOperator
+        ? `## Working with tools
+
+This platform has 200+ skills. To keep your context lean, your toolset is just **two tools**:
+
+- \`search_skills({ query, groups? })\` — describe what you want to do; returns the most relevant skills (name, description, input schema).
+- \`execute_skill({ name, arguments })\` — run a chosen skill by name.
+
+**Workflow**: read your mission → \`search_skills("score new leads")\` → \`execute_skill("score_lead", { ... })\`. You have full reach to every skill without loading hundreds of definitions. \`groups\` is optional — omit it to search everything, or pass e.g. \`["crm","commerce"]\` to narrow the search.`
+        : `## Discovering tools
+
+Call \`tools/list\` to see what you can execute, then \`tools/call\` to run a tool.`;
 
       const prompt = `${introLine}
 
 ## Connection
 
-- **Base URL**: ${mcpUrl}
-- **Authentication**: Bearer ${rawKey}
+- **Transport**: MCP over Streamable HTTP (JSON-RPC over POST)
+- **URL**: ${connectUrl}
+- **Authentication**: \`Authorization: Bearer ${rawKey}\`
 
-### Option A: REST API (recommended for agents with web_fetch/curl)
+Add the URL and Authorization header to your MCP client config. No onboarding or REST calls are required — connect and use the standard MCP surfaces: \`resources/list\`, \`resources/read\`, \`tools/list\`, \`tools/call\`.
 
-Use standard HTTP requests — no MCP client needed:
+## First steps
 
-\`\`\`
-# List all available tools
-GET ${mcpUrl}/rest/tools
-Authorization: Bearer ${rawKey}
+1. **Read your mission**: \`resources/read\` → \`flowwink://mission\` — your role, responsibilities, focus areas, and priority tools. Read this first.
+2. **Get context**: \`resources/read\` → \`flowwink://briefing\` — platform identity, health, active objectives, and modules.
 
-# List available resources
-GET ${mcpUrl}/rest/resources
-Authorization: Bearer ${rawKey}
-
-# Read a specific resource
-GET ${mcpUrl}/rest/resources/briefing
-Authorization: Bearer ${rawKey}
-
-# Execute a tool
-POST ${mcpUrl}/rest/execute
-Authorization: Bearer ${rawKey}
-Content-Type: application/json
-
-{"tool": "tool_name_here", "arguments": {"key": "value"}}
-\`\`\`
-
-### Option B: Native MCP (for MCP-compatible clients like Cursor, Claude Desktop)
-
-- **Protocol**: MCP over Streamable HTTP (POST with JSON-RPC)
-- Call \`tools/list\` and \`resources/list\` to discover capabilities
-
-## Quick Start
-
-1. ${isOperator ? 'Get full context' : 'Verify your connection'}: \`GET ${mcpUrl}/rest/resources/briefing\`
-2. Discover tools: \`GET ${mcpUrl}/rest/tools\`
-3. ${isOperator ? 'Understand capabilities' : 'Read site context'}: \`GET ${mcpUrl}/rest/resources/skills\`
+${toolsSection}
 
 ## Key Resources
 
 ${mission.focusResources.map(r => {
   const info = MCP_RESOURCES.find(mr => mr.uri === r);
   const key = r.replace('flowwink://', '');
-  return '- \`/rest/resources/' + key + '\` — ' + (info?.description || '');
+  return '- `flowwink://' + key + '` — ' + (info?.description || '');
 }).join('\n')}
 
 ## Key Tools
 
-These tools are most relevant for your mission:
-${mission.focusTools.map(t => '- \`' + t + '\`').join('\n')}
+These skills are most relevant for your mission${isOperator ? ' (find them via `search_skills`)' : ''}:
+${mission.focusTools.map(t => '- `' + t + '`').join('\n')}
 
 ## Your Mission: ${mission.name}
+
+**CRITICAL**: Your detailed mission instructions live at the \`flowwink://mission\` resource and MUST be read from there. The text below is for reference only.
 
 ${instructions}
 ${isOperator ? '' : `
 ## Reporting Protocol
 
-Use the \\\`openclaw_report_finding\\\` tool to report issues:
+Use the \\\`openclaw_report_finding\\\` tool (via \`tools/call\`) to report issues, with arguments:
 \\\`\\\`\\\`
-POST ${mcpUrl}/rest/execute
-Authorization: Bearer ${rawKey}
-Content-Type: application/json
-
 {
-  "tool": "openclaw_report_finding",
-  "arguments": {
-    "title": "Short description",
-    "description": "Detailed explanation",
-    "severity": "critical | high | medium | low",
-    "type": "bug | ux_issue | suggestion | missing_feature | performance | positive"
-  }
+  "title": "Short description",
+  "description": "Detailed explanation",
+  "severity": "critical | high | medium | low",
+  "type": "bug | ux_issue | suggestion | missing_feature | performance | positive"
 }
 \\\`\\\`\\\`
 
@@ -381,7 +380,7 @@ Content-Type: application/json
 `}
 ## Verify Connection
 
-\`GET ${mcpUrl}/rest/resources/briefing\` — should return identity, health metrics, active objectives, and module status.`;
+Read the \`flowwink://briefing\` resource — it should return identity, health metrics, active objectives, and module status.`;
 
 
       setGeneratedPrompt(prompt);
