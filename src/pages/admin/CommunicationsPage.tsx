@@ -13,11 +13,13 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
-import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "react-router-dom";
 
 type Comm = {
   id: string;
@@ -38,7 +40,7 @@ type Comm = {
 
 const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = {
   sent:      { label: "Sent",      variant: "default",     icon: CheckCircle2 },
-  simulated: { label: "Simulated", variant: "secondary",   icon: FlaskConical },
+  simulated: { label: "Simulated", variant: "warning",     icon: FlaskConical },
   failed:    { label: "Failed",    variant: "destructive", icon: AlertCircle },
   skipped:   { label: "Skipped",   variant: "outline",     icon: AlertCircle },
 };
@@ -71,6 +73,7 @@ export default function CommunicationsPage() {
     simulated: rows.filter((r) => r.simulated).length,
     failed: rows.filter((r) => r.status === "failed").length,
   };
+  const simModeActive = rows.length > 0 && stats.simulated === stats.total && stats.sent === 0;
 
   return (
     <AdminLayout>
@@ -82,10 +85,12 @@ export default function CommunicationsPage() {
       </AdminPageHeader>
       <AdminPageContainer>
         <div className="space-y-6">
+          {simModeActive && <SimModeBanner />}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Total" value={stats.total} />
             <StatCard label="Sent" value={stats.sent} tone="success" />
-            <StatCard label="Simulated" value={stats.simulated} tone="muted" />
+            <StatCard label="Simulated" value={stats.simulated} tone={simModeActive ? "warning" : "muted"} />
             <StatCard label="Failed" value={stats.failed} tone="danger" />
           </div>
 
@@ -212,10 +217,11 @@ export default function CommunicationsPage() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "danger" | "muted" }) {
+function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "danger" | "muted" | "warning" }) {
   const color =
     tone === "success" ? "text-emerald-600" :
     tone === "danger"  ? "text-destructive" :
+    tone === "warning" ? "text-amber-600" :
     tone === "muted"   ? "text-muted-foreground" :
     "text-foreground";
   return (
@@ -225,6 +231,23 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
         <div className={`text-2xl font-semibold mt-1 ${color}`}>{value}</div>
       </CardContent>
     </Card>
+  );
+}
+
+function SimModeBanner() {
+  return (
+    <Alert className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+      <FlaskConical className="h-4 w-4 text-amber-600" />
+      <AlertTitle className="text-amber-800 dark:text-amber-200">Simulation mode active</AlertTitle>
+      <AlertDescription className="text-amber-700 dark:text-amber-300">
+        No email provider is configured — all sends are simulated and never leave the platform.
+        Go to{" "}
+        <Link to="/admin/settings" className="underline font-medium">
+          Settings → Integrations
+        </Link>{" "}
+        to connect Resend, SMTP, or Composio.
+      </AlertDescription>
+    </Alert>
   );
 }
 
