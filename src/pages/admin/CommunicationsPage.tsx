@@ -76,25 +76,12 @@ export default function CommunicationsPage() {
     <AdminLayout>
       <AdminPageHeader
         title="Communications"
-        description="Central log of every outbound message — sent, simulated, or failed."
-        icon={Mail}
-      />
+        description="Central log of every outbound message — sent, simulated, or failed. Routed through the platform-level email router."
+      >
+        <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
+      </AdminPageHeader>
       <AdminPageContainer>
         <div className="space-y-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Mail className="h-7 w-7 text-primary" />
-                Communications
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Central log of every outbound message — sent, simulated, or failed.
-                Routed through the platform-level email router.
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
-          </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Total" value={stats.total} />
             <StatCard label="Sent" value={stats.sent} tone="success" />
