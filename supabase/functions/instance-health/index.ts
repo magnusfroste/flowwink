@@ -60,7 +60,15 @@ Deno.serve(async (req) => {
     checksTotal++;
     if (memoryStatus.soul && memoryStatus.identity) checksPassed++;
 
-    // ── 3. Heartbeat freshness ────────────────────────────────────────
+    // ── 3. Heartbeat freshness (only relevant when FlowPilot is enabled) ──
+    const { data: modulesRow } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'modules')
+      .maybeSingle();
+    const modulesValue = (modulesRow?.value ?? {}) as Record<string, { enabled?: boolean }>;
+    const flowpilotEnabled = modulesValue?.flowpilot?.enabled === true;
+
     const { data: lastHb } = await supabase
       .from('agent_memory')
       .select('updated_at')
@@ -69,15 +77,21 @@ Deno.serve(async (req) => {
 
     let heartbeatAgeHours: number | null = null;
     let heartbeatStale = false;
-    if (lastHb?.updated_at) {
+    let heartbeatSkipped = false;
+
+    if (!flowpilotEnabled) {
+      heartbeatSkipped = true;
+    } else if (lastHb?.updated_at) {
       heartbeatAgeHours = (Date.now() - new Date(lastHb.updated_at).getTime()) / 3_600_000;
       heartbeatStale = heartbeatAgeHours > 48;
     } else {
       heartbeatStale = true;
     }
 
-    checksTotal++;
-    if (!heartbeatStale) checksPassed++;
+    if (!heartbeatSkipped) {
+      checksTotal++;
+      if (!heartbeatStale) checksPassed++;
+    }
 
     // ── 4. Integrity checks ──────────────────────────────────────────
     const integrity = await runIntegrityChecks(supabase);
@@ -123,6 +137,8 @@ Deno.serve(async (req) => {
         last_run: lastHb?.updated_at ?? null,
         age_hours: heartbeatAgeHours ? Math.round(heartbeatAgeHours * 10) / 10 : null,
         stale: heartbeatStale,
+        skipped: heartbeatSkipped,
+        reason: heartbeatSkipped ? 'flowpilot_disabled' : undefined,
       },
       integrity: {
         score: integrity.score,

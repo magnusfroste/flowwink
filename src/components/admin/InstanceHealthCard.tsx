@@ -19,7 +19,7 @@ export interface HealthCheckResult {
     hash_match: boolean | null;
   };
   memory: { soul: boolean; identity: boolean; agents: boolean };
-  heartbeat: { last_run: string | null; age_hours: number | null; stale: boolean };
+  heartbeat: { last_run: string | null; age_hours: number | null; stale: boolean; skipped?: boolean; reason?: string };
   integrity: { score: number; issues: string[] };
   checks_passed: number;
   checks_total: number;
@@ -136,7 +136,7 @@ export function InstanceHealthCard({ variant = 'full' }: InstanceHealthCardProps
             </div>
           )}
 
-          {result.heartbeat.stale && (
+          {result.heartbeat.stale && !result.heartbeat.skipped && (
             <div className="rounded-md bg-warning/10 border border-warning/20 p-2 flex items-start gap-2">
               <Clock className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
               <div>
@@ -146,6 +146,16 @@ export function InstanceHealthCard({ variant = 'full' }: InstanceHealthCardProps
                     ? `Last heartbeat ${Math.round(result.heartbeat.age_hours)}h ago`
                     : 'No heartbeat recorded'}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {result.heartbeat.skipped && (
+            <div className="rounded-md bg-muted/40 border border-border p-2 flex items-start gap-2">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Heartbeat check skipped</p>
+                <p className="text-[10px] text-muted-foreground">FlowPilot module is disabled — heartbeat is only relevant when the autonomous operator is on.</p>
               </div>
             </div>
           )}
