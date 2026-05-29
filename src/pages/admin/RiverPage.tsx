@@ -46,8 +46,17 @@ import { cn } from '@/lib/utils';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🎉', '🚀', '🔥', '👀', '💡', '😂'];
 
-function initialsFor(id: string) {
+function initialsFor(author: RiverAuthor | undefined, id: string) {
+  const name = author?.full_name?.trim();
+  if (name) {
+    const parts = name.split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase();
+  }
   return id.slice(0, 2).toUpperCase();
+}
+
+function displayName(author: RiverAuthor | undefined, id: string) {
+  return author?.full_name?.trim() || id.slice(0, 8);
 }
 
 function autoLink(text: string) {
