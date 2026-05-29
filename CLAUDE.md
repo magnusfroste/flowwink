@@ -108,7 +108,14 @@ The system has 200+ skills. Exposing all of them as individual MCP tools floods 
 - `?mode=dispatch` — generalist operator: a **2-tool surface** — `search_skills({query, groups?})` ranks skills by intent, `execute_skill({name, arguments})` runs one. Broad reach, ~2 schemas in context.
 - (no param) — all tools exposed.
 
-**Skill relevance is a platform primitive, not a FlowPilot-internal one.** `scoreSkillsByIntent` / `loadRecentUsageCounts` live in `_shared/skills/intent-scorer.ts` (NOT under `pilot/`) precisely because both FlowPilot's ReAct loop (`reason.ts`) AND the outward MCP gateway use it — and the gateway must work for external agents even when the FlowPilot module is disabled. When promoting capability-discovery logic, keep it in `_shared/skills/`. FlowPilot's actual intelligence (soul, objectives, ReAct decisions) stays in FlowPilot; only the "which skill is relevant" lookup is shared.
+**Skill relevance is a platform primitive, not a FlowPilot-internal one.** The component is the **Skill Relevance Engine** (`scoreSkillsByIntent` / `loadRecentUsageCounts` in `_shared/skills/intent-scorer.ts`). Name it for what it does (ranks skills by intent), NOT for a transport — it is neither "MCP" nor "FlowPilot" specific. It has **two consumers**:
+
+1. **FlowPilot** (`reason.ts`) — internal, every ReAct turn: narrows 200+ skills → ~25 relevant ones. No MCP involved here; this is a direct in-process call over the DB-loaded skill set.
+2. **The outward MCP gateway** (`search_skills` in `?mode=dispatch`) — external operators, the same ranking exposed as a tool.
+
+It lives in `_shared/skills/` (NOT under `pilot/`) precisely because the gateway must work for external agents even when the FlowPilot module is disabled. When promoting capability-discovery logic, keep it here. FlowPilot's actual intelligence (soul, objectives, ReAct decisions) stays in FlowPilot; only the "which skill is relevant" lookup is shared. Avoid naming it "Router"/"Selector" — selection is by scoring on metadata, not hardcoded dispatch (Law 1).
+
+**FlowPilot does NOT call its own MCP gateway internally** — it shares the Engine and hits the DB / `executeSkill` directly. Deliberate, not an omission: MCP would add an HTTP hop, auth, and JSON-RPC serialization for zero gain when you're already inside the same Deno process with service-role DB access. MCP is a transport for *crossing a trust/process boundary*; FlowPilot is already on the inside of it.
 
 ### Template System
 
