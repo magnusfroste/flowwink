@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,12 +31,14 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import {
   type RiverPost,
+  type RiverAuthor,
   uploadRiverMedia,
   useCreateRiverPost,
   useDeleteRiverPost,
   useRiverFeed,
   useRiverReactions,
   useRiverReplies,
+  useRiverAuthors,
   useToggleReaction,
   useTogglePin,
 } from '@/hooks/useRiver';
@@ -44,8 +46,17 @@ import { cn } from '@/lib/utils';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🎉', '🚀', '🔥', '👀', '💡', '😂'];
 
-function initialsFor(id: string) {
+function initialsFor(author: RiverAuthor | undefined, id: string) {
+  const name = author?.full_name?.trim();
+  if (name) {
+    const parts = name.split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase();
+  }
   return id.slice(0, 2).toUpperCase();
+}
+
+function displayName(author: RiverAuthor | undefined, id: string) {
+  return author?.full_name?.trim() || id.slice(0, 8);
 }
 
 function autoLink(text: string) {
@@ -287,6 +298,7 @@ function RepliesThread({ parentId }: { parentId: string }) {
   const { data: replies = [] } = useRiverReplies(parentId);
   const ids = replies.map((r) => r.id);
   const { data: reactions = [] } = useRiverReactions(ids);
+  const { data: authors = {} } = useRiverAuthors(replies.map((r) => r.author_id));
   const { user } = useAuth();
   const del = useDeleteRiverPost();
 
@@ -294,17 +306,19 @@ function RepliesThread({ parentId }: { parentId: string }) {
     <div className="mt-3 ml-4 pl-4 border-l space-y-3">
       {replies.map((r) => {
         const reacts = reactions.filter((x) => x.post_id === r.id);
+        const author = authors[r.author_id];
         return (
           <div key={r.id} className="flex gap-3">
             <Avatar className="h-7 w-7 mt-0.5">
+              {author?.avatar_url && <AvatarImage src={author.avatar_url} alt="" />}
               <AvatarFallback className="text-[10px]">
-                {initialsFor(r.author_id)}
+                {initialsFor(author, r.author_id)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {r.author_id.slice(0, 8)}
+                  {displayName(author, r.author_id)}
                 </span>
                 <span>·</span>
                 <span>
@@ -354,10 +368,12 @@ function PostCard({
   post,
   reactions,
   isAdmin,
+  author,
 }: {
   post: RiverPost;
   reactions: { emoji: string; user_id: string; post_id: string }[];
   isAdmin: boolean;
+  author?: RiverAuthor;
 }) {
   const { user } = useAuth();
   const [showReplies, setShowReplies] = useState(false);
@@ -371,13 +387,14 @@ function PostCard({
       <CardContent className="p-4">
         <div className="flex gap-3">
           <Avatar className="h-9 w-9 mt-0.5">
+            {author?.avatar_url && <AvatarImage src={author.avatar_url} alt="" />}
             <AvatarFallback className="text-xs">
-              {initialsFor(post.author_id)}
+              {initialsFor(author, post.author_id)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold">{post.author_id.slice(0, 8)}</span>
+              <span className="font-semibold">{displayName(author, post.author_id)}</span>
               <span className="text-muted-foreground text-xs">
                 · {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </span>
@@ -473,6 +490,7 @@ export default function RiverPage() {
   const { data: posts = [], isLoading } = useRiverFeed(50);
   const ids = posts.map((p) => p.id);
   const { data: reactions = [] } = useRiverReactions(ids);
+  const { data: authors = {} } = useRiverAuthors(posts.map((p) => p.author_id));
 
   if (!enabled) {
     return (
@@ -535,6 +553,7 @@ export default function RiverPage() {
                         post={p}
                         reactions={reactions}
                         isAdmin={isAdmin}
+                        author={authors[p.author_id]}
                       />
                     </div>
                   ))}

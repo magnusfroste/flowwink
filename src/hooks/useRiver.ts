@@ -14,6 +14,30 @@ export type RiverPost = {
   created_at: string;
 };
 
+export type RiverAuthor = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
+export function useRiverAuthors(ids: string[]) {
+  const unique = Array.from(new Set(ids)).filter(Boolean).sort();
+  return useQuery({
+    queryKey: ['river', 'authors', unique.join(',')],
+    enabled: unique.length > 0,
+    queryFn: async (): Promise<Record<string, RiverAuthor>> => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', unique);
+      if (error) throw error;
+      const map: Record<string, RiverAuthor> = {};
+      for (const p of data || []) map[(p as RiverAuthor).id] = p as RiverAuthor;
+      return map;
+    },
+  });
+}
+
 export type RiverReaction = {
   id: string;
   post_id: string;
