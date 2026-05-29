@@ -131,7 +131,7 @@ export const fixedAssetsModule = defineModule<Input, Output>({
   capabilities: ['data:read', 'data:write'],
   inputSchema,
   outputSchema,
-  skills: ['register_fixed_asset', 'run_monthly_depreciation', 'dispose_fixed_asset'],
+  skills: ['register_fixed_asset', 'run_monthly_depreciation', 'dispose_fixed_asset', 'propose_annual_depreciation'],
   skillSeeds: SKILLS,
   automations: AUTOMATIONS,
   async publish(input: Input): Promise<Output> {
