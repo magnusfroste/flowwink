@@ -68,6 +68,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
       { name: "Webinars", href: "/admin/webinars", icon: Video, moduleId: "webinars" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
+      { name: "Communications", href: "/admin/communications", icon: Mail },
     ],
   },
   {
