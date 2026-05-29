@@ -298,6 +298,7 @@ function RepliesThread({ parentId }: { parentId: string }) {
   const { data: replies = [] } = useRiverReplies(parentId);
   const ids = replies.map((r) => r.id);
   const { data: reactions = [] } = useRiverReactions(ids);
+  const { data: authors = {} } = useRiverAuthors(replies.map((r) => r.author_id));
   const { user } = useAuth();
   const del = useDeleteRiverPost();
 
@@ -305,17 +306,19 @@ function RepliesThread({ parentId }: { parentId: string }) {
     <div className="mt-3 ml-4 pl-4 border-l space-y-3">
       {replies.map((r) => {
         const reacts = reactions.filter((x) => x.post_id === r.id);
+        const author = authors[r.author_id];
         return (
           <div key={r.id} className="flex gap-3">
             <Avatar className="h-7 w-7 mt-0.5">
+              {author?.avatar_url && <AvatarImage src={author.avatar_url} alt="" />}
               <AvatarFallback className="text-[10px]">
-                {initialsFor(r.author_id)}
+                {initialsFor(author, r.author_id)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {r.author_id.slice(0, 8)}
+                  {displayName(author, r.author_id)}
                 </span>
                 <span>·</span>
                 <span>
