@@ -219,11 +219,30 @@ serve(async (req: Request) => {
     }
 
     const activeCfg = provider === "resend" ? resendEmailCfg : smtpEmailCfg;
-    const fromName = activeCfg.fromName || "FlowWink";
-    const fromEmail =
+    let fromName: string = activeCfg.fromName || "FlowWink";
+    let fromEmail: string =
       activeCfg.fromEmail ||
       Deno.env.get("SMTP_FROM") ||
       "noreply@example.com";
+    let replyTo: string | undefined = body.replyTo;
+
+    // Per-user sender override: if sender_user_id is supplied, look up that
+    // user's personal email identity and use it as the From line. This is
+    // how individual sellers send from their own address while still using
+    // the workspace transport (Resend/SMTP).
+    if (body.sender_user_id) {
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("email_from_address, email_from_name, email_reply_to, full_name, email")
+        .eq("id", body.sender_user_id)
+        .maybeSingle();
+      if (senderProfile?.email_from_address) {
+        fromEmail = senderProfile.email_from_address;
+        fromName = senderProfile.email_from_name || senderProfile.full_name || fromName;
+        replyTo = replyTo || senderProfile.email_reply_to || senderProfile.email_from_address;
+      }
+    }
+
     const from = body.fromOverride || `${fromName} <${fromEmail}>`;
 
     let result: unknown;
