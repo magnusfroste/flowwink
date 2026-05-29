@@ -76,6 +76,96 @@ Scans connected Gmail inbox for business signals — new leads, partnership inqu
 - Only reads — does not send or modify emails.
 - Extracts signals: lead info, meeting requests, support needs.`,
   },
+  {
+    name: 'list_communications',
+    description: 'List entries from the outbound communications gateway log (email/sms/slack/signing). Use when: following up on whether a message actually went out, debugging silent failures, checking which provider handled a send, or auditing what an agent sent on behalf of the business. NOT for: sending new messages (use send_email/send_contract_for_signature etc); reading internal chat sessions (use chat module); reading newsletter campaign stats (use newsletter module).',
+    category: 'communication',
+    handler: 'internal:list_communications',
+    scope: 'both',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_communications',
+        description: 'List entries from the outbound communications gateway log (email/sms/slack/signing). Use when: following up on whether a message actually went out, debugging silent failures, checking which provider handled a send, or auditing what an agent sent on behalf of the business. NOT for: sending new messages (use send_email/send_contract_for_signature etc); reading internal chat sessions (use chat module); reading newsletter campaign stats (use newsletter module).',
+        parameters: {
+          type: 'object',
+          properties: {
+            channel: {
+              type: 'string',
+              enum: ['email', 'sms', 'slack', 'signing'],
+              description: 'Filter by channel.',
+            },
+            status: {
+              type: 'string',
+              enum: ['sent', 'simulated', 'failed', 'skipped', 'pending'],
+              description: 'Filter by delivery status. "simulated" = no provider configured, message logged but not actually sent.',
+            },
+            recipient: {
+              type: 'string',
+              description: 'Partial recipient match (case-insensitive).',
+            },
+            source: {
+              type: 'string',
+              description: 'Filter by originating module/skill (e.g. "newsletter", "send_contract_for_signature").',
+            },
+            since: {
+              type: 'string',
+              description: 'ISO 8601 timestamp — only entries created after this.',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max rows (default 50, hard cap 200).',
+            },
+          },
+        },
+      },
+    },
+    instructions: `## list_communications
+### What
+Read-only view of the outbound_communications gateway log — every email/sms/slack/signing attempt FlowWink has made, regardless of which module triggered it.
+### When to use
+- Verifying a message actually went out after running send_email / send_contract_for_signature.
+- Diagnosing "silent success" — a skill returned ok but no provider was configured.
+- Auditing recent outbound activity per recipient or source module.
+### Status semantics
+- **sent**: provider accepted and delivered.
+- **simulated**: no provider configured — message stored for inspection only (Stripe-style simulation).
+- **skipped**: explicitly bypassed (e.g. suppressed recipient).
+- **failed**: provider rejected — see error_message via get_communication.
+- **pending**: enqueued, not yet processed.
+### Returns
+Compact rows (no body). Call get_communication with an id to see the full HTML/text body and metadata.`,
+  },
+  {
+    name: 'get_communication',
+    description: 'Fetch the full body, error details and metadata for one outbound communication log entry. Use when: inspecting exactly what was sent (or would have been sent), reading provider error messages on a failed send, or showing a user the content of a previous message. NOT for: listing or filtering — use list_communications first.',
+    category: 'communication',
+    handler: 'internal:get_communication',
+    scope: 'both',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_communication',
+        description: 'Fetch the full body, error details and metadata for one outbound communication log entry. Use when: inspecting exactly what was sent (or would have been sent), reading provider error messages on a failed send, or showing a user the content of a previous message. NOT for: listing or filtering — use list_communications first.',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'outbound_communications.id (uuid).' },
+          },
+          required: ['id'],
+        },
+      },
+    },
+    instructions: `## get_communication
+### What
+Returns one outbound_communications row in full — body_html, body_text, error_message, metadata, related_entity_*.
+### When to use
+- After list_communications surfaces an interesting row.
+- When asked "what did we actually send to <recipient>?".
+- When diagnosing a failed send — error_message and metadata.provider_response often hold the root cause.`,
+  },
 ];
 
 export const emailModule = defineModule<Input, Output>({
