@@ -445,6 +445,11 @@ export const accountingModule = defineModule<AccountingInput, AccountingOutput>(
     'tag_journal_entry_analytics',
     'manage_vendor_defaults',
     'record_accounting_correction',
+    'year_end_readiness',
+    'run_year_end',
+    'list_voucher_gaps',
+    'explain_voucher_gap',
+    'propose_accruals',
   ],
 
   skillSeeds: ACCOUNTING_SKILLS,
