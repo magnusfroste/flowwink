@@ -41,15 +41,18 @@ export function useChat(options?: UseChatOptions) {
   const { data: settings } = useChatSettings();
   const { user } = useAuth();
 
-  // Sync conversationId from options prop
+  // Sync conversationId from options prop (one-way: parent → hook).
+  // Only react to parent-provided changes; don't fight our own internal
+  // createConversation() updates (which would wipe just-sent messages).
   useEffect(() => {
-    if (options?.conversationId !== conversationId) {
-      setConversationId(options?.conversationId);
-      // Clear messages when switching conversations
+    if (options?.conversationId === undefined) return;
+    setConversationId((prev) => {
+      if (prev === options.conversationId) return prev;
       setMessages([]);
       setError(null);
-    }
-  }, [options?.conversationId, conversationId]);
+      return options.conversationId;
+    });
+  }, [options?.conversationId]);
 
   const getSessionId = useCallback(() => {
     let sessionId = localStorage.getItem('chat-session-id');
