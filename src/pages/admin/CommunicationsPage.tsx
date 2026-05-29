@@ -73,110 +73,119 @@ export default function CommunicationsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Mail className="h-7 w-7 text-primary" />
-            Communications
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Central log of every outbound message — sent, simulated, or failed.
-            Routed through the platform-level email router.
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
-      </div>
+    <AdminLayout>
+      <AdminPageHeader
+        title="Communications"
+        description="Central log of every outbound message — sent, simulated, or failed."
+        icon={Mail}
+      />
+      <AdminPageContainer>
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Mail className="h-7 w-7 text-primary" />
+                Communications
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Central log of every outbound message — sent, simulated, or failed.
+                Routed through the platform-level email router.
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
+          </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total" value={stats.total} />
-        <StatCard label="Sent" value={stats.sent} tone="success" />
-        <StatCard label="Simulated" value={stats.simulated} tone="muted" />
-        <StatCard label="Failed" value={stats.failed} tone="danger" />
-      </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Total" value={stats.total} />
+            <StatCard label="Sent" value={stats.sent} tone="success" />
+            <StatCard label="Simulated" value={stats.simulated} tone="muted" />
+            <StatCard label="Failed" value={stats.failed} tone="danger" />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          <Select value={channel} onValueChange={setChannel}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Channel" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All channels</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="sms">SMS</SelectItem>
-              <SelectItem value="slack">Slack</SelectItem>
-              <SelectItem value="signing">E-signing</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="simulated">Simulated</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="skipped">Skipped</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Filters</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Select value={channel} onValueChange={setChannel}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="Channel" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All channels</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="slack">Slack</SelectItem>
+                  <SelectItem value="signing">E-signing</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="simulated">Simulated</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="skipped">Skipped</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>When</TableHead>
-                <TableHead>Channel</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Recipient</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
-              )}
-              {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  No outbound communications yet. Trigger an email-sending workflow to see it logged here.
-                </TableCell></TableRow>
-              )}
-              {rows.map((r) => {
-                const meta = STATUS_META[r.status] ?? STATUS_META.skipped;
-                const Icon = meta.icon;
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
-                    </TableCell>
-                    <TableCell><Badge variant="outline">{r.channel}</Badge></TableCell>
-                    <TableCell>
-                      <Badge variant={meta.variant} className="gap-1">
-                        <Icon className="h-3 w-3" />{meta.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{r.recipient}</TableCell>
-                    <TableCell className="max-w-xs truncate">{r.subject ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {r.simulated ? "—" : r.provider ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => setSelected(r)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>When</TableHead>
+                    <TableHead>Channel</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {isLoading && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                  )}
+                  {!isLoading && rows.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No outbound communications yet. Trigger an email-sending workflow to see it logged here.
+                    </TableCell></TableRow>
+                  )}
+                  {rows.map((r) => {
+                    const meta = STATUS_META[r.status] ?? STATUS_META.skipped;
+                    const Icon = meta.icon;
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell><Badge variant="outline">{r.channel}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={meta.variant} className="gap-1">
+                            <Icon className="h-3 w-3" />{meta.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{r.recipient}</TableCell>
+                        <TableCell className="max-w-xs truncate">{r.subject ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {r.simulated ? "—" : r.provider ?? "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => setSelected(r)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminPageContainer>
 
       <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -212,7 +221,7 @@ export default function CommunicationsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminLayout>
   );
 }
 
