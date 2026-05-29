@@ -153,7 +153,7 @@ serve(async (req: Request) => {
         related_entity_type: body?.tags?.entity_type ?? null,
         related_entity_id: body?.tags?.entity_id ?? null,
         error_message: row.error_message ?? null,
-        metadata: { tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null },
+        metadata: { tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null, sender_user_id: body?.sender_user_id ?? null },
         sent_at: row.sent_at ?? null,
       });
     } catch (e) {
