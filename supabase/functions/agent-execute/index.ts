@@ -8350,3 +8350,84 @@ function lintOne(
     findings,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// internal:list_communications / internal:get_communication
+// Read-only access to the outbound_communications gateway log so agents can
+// follow up on what was actually sent (or simulated/skipped/failed) over
+// email/sms/slack/signing channels. Platform primitive — does not depend on
+// any specific module being enabled.
+// ─────────────────────────────────────────────────────────────────────────────
+async function executeListCommunications(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const ALLOWED_CHANNELS = new Set(['email', 'sms', 'slack', 'signing']);
+  const ALLOWED_STATUS = new Set(['sent', 'simulated', 'failed', 'skipped', 'pending']);
+
+  const channel = typeof args.channel === 'string' ? args.channel.trim().toLowerCase() : '';
+  const status = typeof args.status === 'string' ? args.status.trim().toLowerCase() : '';
+  const recipient = typeof args.recipient === 'string' ? args.recipient.trim() : '';
+  const source = typeof args.source === 'string' ? args.source.trim() : '';
+  const since = typeof args.since === 'string' ? args.since.trim() : '';
+  const rawLimit = Number(args.limit);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 200) : 50;
+
+  let q = supabase
+    .from('outbound_communications')
+    .select('id,channel,status,provider,simulated,recipient,subject,source,error_message,created_at,sent_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (channel) {
+    if (!ALLOWED_CHANNELS.has(channel)) {
+      return { error: `Invalid channel "${channel}". Allowed: ${[...ALLOWED_CHANNELS].join(', ')}` };
+    }
+    q = q.eq('channel', channel);
+  }
+  if (status) {
+    if (!ALLOWED_STATUS.has(status)) {
+      return { error: `Invalid status "${status}". Allowed: ${[...ALLOWED_STATUS].join(', ')}` };
+    }
+    q = q.eq('status', status);
+  }
+  if (recipient) q = q.ilike('recipient', `%${recipient}%`);
+  if (source) q = q.ilike('source', `%${source}%`);
+  if (since) {
+    const d = new Date(since);
+    if (Number.isNaN(d.getTime())) {
+      return { error: `Invalid "since" value — must be ISO 8601 timestamp.` };
+    }
+    q = q.gte('created_at', d.toISOString());
+  }
+
+  const { data, error } = await q;
+  if (error) return { error: `Failed to list communications: ${error.message}` };
+
+  return {
+    success: true,
+    count: data?.length ?? 0,
+    limit,
+    filters: { channel: channel || null, status: status || null, recipient: recipient || null, source: source || null, since: since || null },
+    communications: data ?? [],
+  };
+}
+
+async function executeGetCommunication(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const id = typeof args.id === 'string' ? args.id.trim() : '';
+  if (!id) return { error: 'id is required' };
+
+  const { data, error } = await supabase
+    .from('outbound_communications')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) return { error: `Failed to fetch communication: ${error.message}` };
+  if (!data) return { error: `Communication "${id}" not found.` };
+
+  return { success: true, communication: data };
+}
