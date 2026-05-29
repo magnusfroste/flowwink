@@ -533,7 +533,18 @@ export default function LeadDetailPage() {
         onOpenChange={setShowEmailDialog}
         recipientEmail={lead.email}
         recipientName={lead.name || undefined}
+        leadContext={{
+          name: lead.name,
+          email: lead.email,
+          status: lead.status,
+          source: lead.source,
+          notes: (lead as any).notes,
+          company_name: lead.companies?.name,
+          industry: (lead.companies as any)?.industry,
+          role: (lead as any).title || (lead as any).role,
+        }}
       />
+
     </AdminLayout>
   );
 }
