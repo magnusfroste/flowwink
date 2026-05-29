@@ -6551,6 +6551,63 @@ export type Database = {
           },
         ]
       }
+      outbound_communications: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          provider: string | null
+          recipient: string
+          related_entity_id: string | null
+          related_entity_type: string | null
+          sent_at: string | null
+          simulated: boolean
+          source: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          recipient: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_at?: string | null
+          simulated?: boolean
+          source?: string | null
+          status: string
+          subject?: string | null
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          recipient?: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_at?: string | null
+          simulated?: boolean
+          source?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       page_versions: {
         Row: {
           content_json: Json

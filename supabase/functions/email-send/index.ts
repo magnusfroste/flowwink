@@ -127,17 +127,48 @@ serve(async (req: Request) => {
     });
   }
 
-  try {
-    const supabase = getServiceClient();
+  const supabase = getServiceClient();
+  let recipients: string[] = [];
+  let body: SendBody | null = null;
 
-    const body = (await req.json()) as SendBody;
+  async function logComm(row: {
+    status: string;
+    provider: string | null;
+    simulated: boolean;
+    error_message?: string | null;
+    sent_at?: string | null;
+  }) {
+    try {
+      await supabase.from("outbound_communications").insert({
+        channel: "email",
+        status: row.status,
+        provider: row.provider,
+        simulated: row.simulated,
+        recipient: recipients.join(", ") || "unknown",
+        subject: body?.subject ?? null,
+        body_html: body?.html ?? null,
+        body_text: body?.text ?? null,
+        source: body?.tags?.source ?? null,
+        related_entity_type: body?.tags?.entity_type ?? null,
+        related_entity_id: body?.tags?.entity_id ?? null,
+        error_message: row.error_message ?? null,
+        metadata: { tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null },
+        sent_at: row.sent_at ?? null,
+      });
+    } catch (e) {
+      console.error("[email-send] failed to log outbound_communications:", e);
+    }
+  }
+
+  try {
+    body = (await req.json()) as SendBody;
     if (!body?.to || !body?.subject || !body?.html) {
       return new Response(
         JSON.stringify({ error: "to, subject, html are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const recipients = Array.isArray(body.to) ? body.to : [body.to];
+    recipients = Array.isArray(body.to) ? body.to : [body.to];
 
     // Load email settings + integration toggles
     const { data: integ } = await supabase
@@ -147,15 +178,11 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     const integrations = (integ?.value as any) ?? {};
-    // Side panel (Admin → Integrations) is the source of truth.
-    // Resend config lives at integrations.resend.config.emailConfig.*
-    // SMTP config lives at integrations.smtp.config.*
     const resendCfg = integrations.resend ?? {};
     const smtpCfg = integrations.smtp ?? {};
     const resendEmailCfg = resendCfg.config?.emailConfig ?? {};
     const smtpEmailCfg = smtpCfg.config ?? {};
 
-    // Resolve provider — explicit > auto-detect from enabled toggles + secrets
     const explicit: Provider | undefined =
       resendEmailCfg.provider || smtpEmailCfg.provider;
     const resendEnabled = resendCfg.enabled !== false && !!Deno.env.get("RESEND_API_KEY");
@@ -167,17 +194,29 @@ serve(async (req: Request) => {
     else if (resendEnabled) provider = "resend";
     else if (smtpEnabled) provider = "smtp";
 
+    // SIMULATE MODE — no provider configured.
+    // Mirrors the Stripe pattern: if no integration is wired up, we still
+    // return success so workflows keep flowing. The send is logged with
+    // simulated=true so admins can inspect what *would* have gone out.
     if (!provider) {
+      await logComm({
+        status: "simulated",
+        provider: null,
+        simulated: true,
+        sent_at: new Date().toISOString(),
+      });
       return new Response(
         JSON.stringify({
-          error: "no_email_provider_configured",
-          hint: "Enable Resend or SMTP in Admin → Integrations.",
+          success: true,
+          simulated: true,
+          provider: null,
+          message: "No email provider configured — send logged as simulated.",
+          recipients,
         }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Resolve From — read from side panel
     const activeCfg = provider === "resend" ? resendEmailCfg : smtpEmailCfg;
     const fromName = activeCfg.fromName || "FlowWink";
     const fromEmail =
@@ -216,12 +255,25 @@ serve(async (req: Request) => {
       });
     }
 
+    await logComm({
+      status: "sent",
+      provider,
+      simulated: false,
+      sent_at: new Date().toISOString(),
+    });
+
     return new Response(
-      JSON.stringify({ success: true, provider, result }),
+      JSON.stringify({ success: true, provider, simulated: false, result }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
     console.error("[email-send] error:", e);
+    await logComm({
+      status: "failed",
+      provider: null,
+      simulated: false,
+      error_message: e?.message ?? String(e),
+    });
     return new Response(
       JSON.stringify({ success: false, error: e?.message ?? String(e) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
