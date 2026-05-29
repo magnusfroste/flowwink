@@ -81,7 +81,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
       )}
 
       {/* Contacts Found */}
-      {result.contacts.length > 0 && (
+      {(result.contacts?.length ?? 0) > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -92,7 +92,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {result.contacts.map((contact) => (
+              {result.contacts?.map((contact) => (
                 <div key={contact.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                   <div>
                     <p className="text-sm font-medium">{contact.name || "Unknown"}</p>
@@ -107,7 +107,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
       )}
 
       {/* Qualifying Questions */}
-      {result.questions_and_answers.length > 0 && (
+      {(result.questions_and_answers?.length ?? 0) > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -118,7 +118,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
           <CardContent>
             <ScrollArea className="max-h-[500px]">
               <div className="space-y-4">
-                {result.questions_and_answers.map((qa, i) => (
+                {result.questions_and_answers?.map((qa, i) => (
                   <div key={i} className="space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-medium">{qa.question}</p>
@@ -130,7 +130,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{qa.answer}</p>
-                    {i < result.questions_and_answers.length - 1 && <Separator />}
+                    {i < (result.questions_and_answers?.length ?? 0) - 1 && <Separator />}
                   </div>
                 ))}
               </div>
