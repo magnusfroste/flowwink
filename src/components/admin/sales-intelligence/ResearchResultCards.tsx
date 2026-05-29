@@ -92,7 +92,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {result.contacts.map((contact) => (
+              {result.contacts?.map((contact) => (
                 <div key={contact.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                   <div>
                     <p className="text-sm font-medium">{contact.name || "Unknown"}</p>
