@@ -19,7 +19,7 @@ export interface HealthCheckResult {
     hash_match: boolean | null;
   };
   memory: { soul: boolean; identity: boolean; agents: boolean };
-  heartbeat: { last_run: string | null; age_hours: number | null; stale: boolean };
+  heartbeat: { last_run: string | null; age_hours: number | null; stale: boolean; skipped?: boolean; reason?: string };
   integrity: { score: number; issues: string[] };
   checks_passed: number;
   checks_total: number;
