@@ -130,7 +130,7 @@ export function ResearchResultCards({ result }: ResearchResultCardsProps) {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{qa.answer}</p>
-                    {i < result.questions_and_answers.length - 1 && <Separator />}
+                    {i < (result.questions_and_answers?.length ?? 0) - 1 && <Separator />}
                   </div>
                 ))}
               </div>
