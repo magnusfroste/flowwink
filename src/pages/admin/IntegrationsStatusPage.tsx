@@ -528,6 +528,35 @@ function IntegrationConfigPanel({
     );
   }
 
+  if (integrationKey === 'hunter') {
+    const maxContacts = config?.maxContacts ?? 2;
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="hunter-max" className="text-xs">Decision-makers per prospect</Label>
+          <Select
+            value={String(maxContacts)}
+            onValueChange={(v) => handleChange({ maxContacts: parseInt(v, 10) })}
+          >
+            <SelectTrigger id="hunter-max" className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 — minimum spend</SelectItem>
+              <SelectItem value="2">2 — recommended (top decision-makers)</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10 — full domain dump</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Lower values save Hunter.io credits. Each contact returned counts as one search request.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (integrationKey === 'resend') {
     const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };
