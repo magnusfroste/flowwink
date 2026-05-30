@@ -144,7 +144,7 @@ export function FitAnalysisCard({ result, companyName }: FitAnalysisCardProps) {
 
           {leadId && (
             <Button size="sm" variant="outline" asChild className="gap-2">
-              <Link to={`/admin/crm/leads/${leadId}`}>
+              <Link to={`/admin/leads/${leadId}`}>
                 <ExternalLink className="h-4 w-4" />
                 Open lead in CRM
               </Link>
@@ -152,7 +152,7 @@ export function FitAnalysisCard({ result, companyName }: FitAnalysisCardProps) {
           )}
 
           <Button size="sm" variant="outline" asChild className="gap-2">
-            <Link to="/admin/crm">
+            <Link to="/admin/leads">
               <ExternalLink className="h-4 w-4" />
               View all leads
             </Link>
