@@ -415,6 +415,37 @@ function IntegrationConfigPanel({
             </SelectContent>
           </Select>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <Label htmlFor="openai-budget" className="text-xs">Monthly budget (USD)</Label>
+            <Input
+              id="openai-budget"
+              type="number"
+              min={0}
+              step={5}
+              value={config?.monthlyBudgetUsd ?? 50}
+              onChange={(e) => handleChange({ monthlyBudgetUsd: Number(e.target.value) || 0 })}
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="openai-warn" className="text-xs">Warn at (%)</Label>
+            <Input
+              id="openai-warn"
+              type="number"
+              min={1}
+              max={100}
+              step={5}
+              value={config?.warnAtPct ?? 80}
+              onChange={(e) => handleChange({ warnAtPct: Number(e.target.value) || 80 })}
+              className="h-8 text-sm"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Soft guardrail. Shows a warning on the integration card when month-to-date spend
+          passes the threshold. Does not block API calls.
+        </p>
       </div>
     );
   }
