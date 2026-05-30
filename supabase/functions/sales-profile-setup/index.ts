@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient, resolveCaller } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,7 +43,21 @@ serve(async (req) => {
       });
     }
 
-    const input: ProfileSetupInput = { type, data, user_id: raw.user_id as string | undefined };
+    const authHeader = req.headers.get('Authorization');
+    const caller = authHeader ? await resolveCaller(authHeader) : null;
+    if (type === 'user' && caller?.error) {
+      return new Response(JSON.stringify({ error: 'Authentication required for user profile' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const input: ProfileSetupInput = {
+      type,
+      data,
+      user_id: type === 'user'
+        ? caller?.user?.id
+        : (raw.user_id as string | undefined),
+    };
     const supabase = getServiceClient();
 
     const userId = input.type === 'user' ? (input.user_id || null) : null;
