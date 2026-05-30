@@ -278,6 +278,89 @@ function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
   );
 }
 
+// OpenAI live usage indicator — calls openai-account edge function.
+// OpenAI has no remaining-credits endpoint for sk- keys, so we surface
+// month-to-date estimated spend + optional admin-key org cost.
+function OpenAIUsageBadge({ hasKey, budgetUsd, warnAtPct }: { hasKey: boolean; budgetUsd?: number; warnAtPct?: number }) {
+  const [info, setInfo] = useState<{
+    valid: boolean;
+    keyType: string;
+    requests: number;
+    totalTokens: number;
+    estCostUsd: number;
+    orgCostUsd: number | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!hasKey) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('openai-account');
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to read usage');
+      setInfo({
+        valid: data.valid,
+        keyType: data.key_type,
+        requests: data.month_to_date?.requests ?? 0,
+        totalTokens: data.month_to_date?.total_tokens ?? 0,
+        estCostUsd: data.month_to_date?.estimated_cost_usd ?? 0,
+        orgCostUsd: data.month_to_date?.org_cost_usd ?? null,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [hasKey]);
+
+  if (!hasKey) return null;
+
+  const effectiveCost = info?.orgCostUsd ?? info?.estCostUsd ?? 0;
+  const budget = budgetUsd ?? 0;
+  const pct = budget > 0 ? (effectiveCost / budget) * 100 : 0;
+  const warnAt = warnAtPct ?? 80;
+  const overWarn = budget > 0 && pct >= warnAt;
+  const overBudget = budget > 0 && pct >= 100;
+
+  return (
+    <div className="space-y-1.5">
+      <div className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs ${overBudget ? 'border-destructive/40 bg-destructive/5' : overWarn ? 'border-orange-400/40 bg-orange-50 dark:bg-orange-950/20' : 'bg-muted/30'}`}>
+        <span className="text-muted-foreground">
+          OpenAI usage (this month)
+        </span>
+        {info ? (
+          <span className="font-medium tabular-nums">
+            ${effectiveCost.toFixed(2)}
+            {budget > 0 && <span className="text-muted-foreground"> / ${budget.toFixed(0)}</span>}
+            <span className="text-muted-foreground ml-1">· {info.totalTokens.toLocaleString()} tok</span>
+          </span>
+        ) : error ? (
+          <span className="text-destructive">{error}</span>
+        ) : (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled={loading} onClick={load}>
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Check'}
+          </Button>
+        )}
+      </div>
+      {info && budget > 0 && (
+        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={`h-full transition-all ${overBudget ? 'bg-destructive' : overWarn ? 'bg-orange-500' : 'bg-primary'}`}
+            style={{ width: `${Math.min(100, pct)}%` }}
+          />
+        </div>
+      )}
+      {info && info.keyType === 'project' && (
+        <p className="text-[10px] text-muted-foreground">
+          Estimate from local logs. Add an admin key (sk-admin-…) to read real org spend.
+        </p>
+      )}
+    </div>
+  );
+
 // Integration Configuration Component - no auto-save, uses parent callback directly
 function IntegrationConfigPanel({ 
   integrationKey,
