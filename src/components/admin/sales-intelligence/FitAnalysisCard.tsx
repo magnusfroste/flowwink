@@ -35,13 +35,13 @@ export function FitAnalysisCard({ result }: FitAnalysisCardProps) {
             <p className="text-sm text-muted-foreground flex-1">{result.fit_advice}</p>
           </div>
 
-          {result.problem_mapping.length > 0 && (
+          {(result.problem_mapping?.length ?? 0) > 0 && (
             <>
               <Separator />
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">Problem → Solution Mapping</p>
                 <div className="space-y-2">
-                  {result.problem_mapping.map((pm, i) => (
+                  {result.problem_mapping?.map((pm, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm">
                       <Badge variant="outline" className="text-xs shrink-0 mt-0.5">
                         {pm.prospect_problem}
