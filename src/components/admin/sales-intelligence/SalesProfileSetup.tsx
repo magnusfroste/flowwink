@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Loader2, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { User, Loader2, Check, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+
 
 interface UserProfileData {
   [key: string]: unknown;
@@ -94,29 +94,7 @@ export function SalesProfileSetup() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">Company Positioning</CardTitle>
-              <CardDescription>
-                ICP, value proposition and differentiators live in Business Identity — the single source agents use for prospecting and fit analysis.
-              </CardDescription>
-            </div>
-            <Badge variant="secondary">Team-wide</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="outline" size="sm" className="w-full gap-2">
-            <Link to="/admin/business-identity">
-              Edit Business Identity
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
+    <div className="grid gap-4">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
