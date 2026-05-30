@@ -201,8 +201,8 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   leads: {
     enabled: false,
-    name: 'Leads',
-    description: 'AI-driven lead management with automatic qualification',
+    name: 'Contacts',
+    description: 'AI-driven contact management with automatic qualification (formerly Leads)',
     icon: 'UserCheck',
     category: 'data',
     autonomy: 'view-required',
