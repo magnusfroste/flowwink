@@ -16,6 +16,55 @@ import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchH
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
 
+function normalizeFitAnalysisResult(payload: Record<string, any>): FitAnalysisResult {
+  if (typeof payload.fit_score === "number") {
+    return {
+      success: true,
+      fit_score: payload.fit_score,
+      fit_advice: payload.fit_advice ?? "Fit analysis completed.",
+      problem_mapping: Array.isArray(payload.problem_mapping) ? payload.problem_mapping : [],
+      introduction_letter: payload.introduction_letter ?? "",
+      email_subject: payload.email_subject ?? "",
+      decision_maker: payload.decision_maker ?? null,
+      leads_updated: typeof payload.leads_updated === "number" ? payload.leads_updated : 0,
+    };
+  }
+
+  const completeness = payload.data_completeness ?? {};
+  const signalCount = [
+    completeness.has_website,
+    completeness.has_domain,
+    completeness.has_industry,
+    completeness.has_size,
+    completeness.is_enriched,
+  ].filter(Boolean).length;
+  const fitScore = Math.round((signalCount / 5) * 100);
+  const missingSignals = [
+    !completeness.has_industry ? "industry" : null,
+    !completeness.has_size ? "company size" : null,
+    !completeness.has_website ? "website" : null,
+    !completeness.has_domain ? "domain" : null,
+  ].filter(Boolean);
+
+  const companyName = payload.company?.name ?? "this prospect";
+  const leadCount = Number(completeness.lead_count ?? 0);
+  const dealCount = Number(completeness.deal_count ?? 0);
+  const fitAdvice = missingSignals.length > 0
+    ? `Snapshot ready for ${companyName}. Data coverage is partial — add ${missingSignals.join(", ")} to sharpen the fit assessment.`
+    : `Snapshot ready for ${companyName}. Core company signals are present and the prospect is ready for manual qualification.`;
+
+  return {
+    success: true,
+    fit_score: fitScore,
+    fit_advice: `${fitAdvice} CRM context: ${leadCount} related lead${leadCount === 1 ? "" : "s"}, ${dealCount} related deal${dealCount === 1 ? "" : "s"}.`,
+    problem_mapping: [],
+    introduction_letter: "",
+    email_subject: "",
+    decision_maker: null,
+    leads_updated: 0,
+  };
+}
+
 export default function SalesIntelligencePage() {
   const [companyName, setCompanyName] = useState("");
   const [companyUrl, setCompanyUrl] = useState("");
@@ -76,8 +125,9 @@ export default function SalesIntelligencePage() {
         return;
       }
 
-      setFitResult(data as FitAnalysisResult);
-      toast.success(`Fit score: ${data.fit_score}/100`);
+      const normalized = normalizeFitAnalysisResult((data ?? {}) as Record<string, any>);
+      setFitResult(normalized);
+      toast.success(`Fit score: ${normalized.fit_score}/100`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fit analysis failed");
     } finally {
