@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Loader2, Check, AlertCircle } from "lucide-react";
+import { User, Loader2, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 interface UserProfileData {
   [key: string]: unknown;
@@ -17,16 +18,6 @@ interface UserProfileData {
   personal_pitch?: string;
   tone?: string;
   signature?: string;
-}
-
-interface CompanyProfileData {
-  [key: string]: unknown;
-  icp?: string;
-  value_proposition?: string;
-  differentiators?: string[] | string;
-  competitors?: string[] | string;
-  pricing_notes?: string;
-  industry?: string;
 }
 
 const USER_FIELDS = [
@@ -39,10 +30,8 @@ const USER_FIELDS = [
 ] as const;
 
 export function SalesProfileSetup() {
-  const [companyData, setCompanyData] = useState<CompanyProfileData>({});
   const [userData, setUserData] = useState<UserProfileData>({});
   const [loading, setLoading] = useState(true);
-  const [savingCompany, setSavingCompany] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
 
   const loadProfile = useCallback(async () => {
@@ -55,7 +44,6 @@ export function SalesProfileSetup() {
 
       if (data) {
         for (const row of data as any[]) {
-          if (row.type === 'company') setCompanyData(row.data || {});
           if (row.type === 'user') setUserData(row.data || {});
         }
       }
@@ -67,22 +55,6 @@ export function SalesProfileSetup() {
   }, []);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
-
-  const saveCompanyProfile = async () => {
-    setSavingCompany(true);
-    try {
-      const { error } = await supabase.functions.invoke('sales-profile-setup', {
-        body: { type: 'company', data: companyData },
-      });
-      if (error) throw error;
-      toast.success('Company sales profile saved');
-      await loadProfile();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Save failed');
-    } finally {
-      setSavingCompany(false);
-    }
-  };
 
   const saveProfile = async () => {
     setSavingUser(true);
@@ -127,85 +99,20 @@ export function SalesProfileSetup() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-base">Shared Company Profile</CardTitle>
+              <CardTitle className="text-base">Company Positioning</CardTitle>
               <CardDescription>
-                Shared positioning used across prospecting and fit analysis
+                ICP, value proposition and differentiators live in Business Identity — the single source agents use for prospecting and fit analysis.
               </CardDescription>
             </div>
             <Badge variant="secondary">Team-wide</Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">Ideal Customer Profile</Label>
-            <Textarea
-              value={String(companyData.icp || '')}
-              onChange={(e) => setCompanyData((prev) => ({ ...prev, icp: e.target.value }))}
-              placeholder="e.g. B2B companies in Sweden with 10–500 employees and clear process complexity"
-              rows={3}
-              className="text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">Value Proposition</Label>
-            <Textarea
-              value={String(companyData.value_proposition || '')}
-              onChange={(e) => setCompanyData((prev) => ({ ...prev, value_proposition: e.target.value }))}
-              placeholder="e.g. We help operations teams automate everyday workflows without adding enterprise complexity"
-              rows={3}
-              className="text-sm"
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Differentiators</Label>
-              <Textarea
-                value={Array.isArray(companyData.differentiators) ? companyData.differentiators.join('\n') : String(companyData.differentiators || '')}
-                onChange={(e) => setCompanyData((prev) => ({ ...prev, differentiators: e.target.value }))}
-                placeholder="One per line"
-                rows={4}
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Competitors</Label>
-              <Textarea
-                value={Array.isArray(companyData.competitors) ? companyData.competitors.join('\n') : String(companyData.competitors || '')}
-                onChange={(e) => setCompanyData((prev) => ({ ...prev, competitors: e.target.value }))}
-                placeholder="One per line"
-                rows={4}
-                className="text-sm"
-              />
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Industry</Label>
-              <Input
-                value={String(companyData.industry || '')}
-                onChange={(e) => setCompanyData((prev) => ({ ...prev, industry: e.target.value }))}
-                placeholder="e.g. Business software"
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-medium">Pricing Notes</Label>
-              <Input
-                value={String(companyData.pricing_notes || '')}
-                onChange={(e) => setCompanyData((prev) => ({ ...prev, pricing_notes: e.target.value }))}
-                placeholder="e.g. Mid-market annual contracts"
-                className="text-sm"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={saveCompanyProfile}
-            disabled={savingCompany}
-            size="sm"
-            className="w-full gap-2"
-          >
-            {savingCompany ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-            Save Company Profile
+        <CardContent>
+          <Button asChild variant="outline" size="sm" className="w-full gap-2">
+            <Link to="/admin/business-identity">
+              Edit Business Identity
+              <ArrowRight className="h-3 w-3" />
+            </Link>
           </Button>
         </CardContent>
       </Card>
@@ -220,7 +127,7 @@ export function SalesProfileSetup() {
             <CompletionBadge score={userScore} />
           </div>
           <CardDescription>
-            Personal context for personalized introduction letters and outreach
+            Personal sender context for outreach drafts (separate from company-wide positioning)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
