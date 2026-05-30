@@ -1024,6 +1024,11 @@ export default function IntegrationsStatusPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0 space-y-3">
+                          {key === 'hunter' && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <HunterCreditsBadge hasKey={hasKey} />
+                            </div>
+                          )}
                           {/* Actions */}
                           <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                             {(key === 'openai' || key === 'gemini' || key === 'anthropic') && (
