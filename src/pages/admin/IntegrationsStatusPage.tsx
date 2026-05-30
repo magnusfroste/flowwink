@@ -1146,6 +1146,15 @@ export default function IntegrationsStatusPage() {
                               <HunterCreditsBadge hasKey={hasKey} />
                             </div>
                           )}
+                          {key === 'openai' && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <OpenAIUsageBadge
+                                hasKey={hasKey}
+                                budgetUsd={currentConfig?.monthlyBudgetUsd}
+                                warnAtPct={currentConfig?.warnAtPct}
+                              />
+                            </div>
+                          )}
                           {/* Actions */}
                           <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                             {(key === 'openai' || key === 'gemini' || key === 'anthropic') && (
