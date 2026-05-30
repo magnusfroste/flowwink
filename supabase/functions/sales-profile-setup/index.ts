@@ -19,19 +19,32 @@ serve(async (req) => {
   }
 
   try {
-    const input = await req.json() as ProfileSetupInput;
-    
-    if (!input.type || !['company', 'user'].includes(input.type)) {
+    const raw = await req.json() as Record<string, unknown>;
+
+    const type = raw.type as 'company' | 'user' | undefined;
+    if (!type || !['company', 'user'].includes(type)) {
       return new Response(JSON.stringify({ error: 'type must be "company" or "user"' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (!input.data || typeof input.data !== 'object') {
-      return new Response(JSON.stringify({ error: 'data object is required' }), {
+    // Tolerant arg-mapping: accept either { type, data: {...} } or a flat
+    // { type, icp, value_proposition, ... } payload from MCP/FlowChat callers.
+    let data: Record<string, unknown>;
+    if (raw.data && typeof raw.data === 'object') {
+      data = raw.data as Record<string, unknown>;
+    } else {
+      const { type: _t, user_id: _u, data: _d, ...rest } = raw;
+      data = rest as Record<string, unknown>;
+    }
+
+    if (!data || Object.keys(data).length === 0) {
+      return new Response(JSON.stringify({ error: 'profile fields are required (either as `data` object or flat properties)' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const input: ProfileSetupInput = { type, data, user_id: raw.user_id as string | undefined };
 
             const supabase = getServiceClient();
 
