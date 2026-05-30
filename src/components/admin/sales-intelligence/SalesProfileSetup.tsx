@@ -19,6 +19,16 @@ interface UserProfileData {
   signature?: string;
 }
 
+interface CompanyProfileData {
+  [key: string]: unknown;
+  icp?: string;
+  value_proposition?: string;
+  differentiators?: string[] | string;
+  competitors?: string[] | string;
+  pricing_notes?: string;
+  industry?: string;
+}
+
 const USER_FIELDS = [
   { key: 'full_name', label: 'Your Name', type: 'input', placeholder: 'e.g. Anna Lindberg' },
   { key: 'title', label: 'Title / Role', type: 'input', placeholder: 'e.g. Head of Partnerships' },
@@ -29,8 +39,10 @@ const USER_FIELDS = [
 ] as const;
 
 export function SalesProfileSetup() {
+  const [companyData, setCompanyData] = useState<CompanyProfileData>({});
   const [userData, setUserData] = useState<UserProfileData>({});
   const [loading, setLoading] = useState(true);
+  const [savingCompany, setSavingCompany] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
 
   const loadProfile = useCallback(async () => {
@@ -43,6 +55,7 @@ export function SalesProfileSetup() {
 
       if (data) {
         for (const row of data as any[]) {
+          if (row.type === 'company') setCompanyData(row.data || {});
           if (row.type === 'user') setUserData(row.data || {});
         }
       }
@@ -55,6 +68,22 @@ export function SalesProfileSetup() {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
+  const saveCompanyProfile = async () => {
+    setSavingCompany(true);
+    try {
+      const { error } = await supabase.functions.invoke('sales-profile-setup', {
+        body: { type: 'company', data: companyData },
+      });
+      if (error) throw error;
+      toast.success('Company sales profile saved');
+      await loadProfile();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
   const saveProfile = async () => {
     setSavingUser(true);
     try {
@@ -63,6 +92,7 @@ export function SalesProfileSetup() {
       });
       if (error) throw error;
       toast.success('Sales profile saved');
+      await loadProfile();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
     } finally {
@@ -92,52 +122,141 @@ export function SalesProfileSetup() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Your Sales Profile
-          </CardTitle>
-          <CompletionBadge score={userScore} />
-        </div>
-        <CardDescription>
-          Personal context for personalized introduction letters and outreach
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {USER_FIELDS.map(field => (
-          <div key={field.key} className="space-y-1">
-            <Label className="text-xs font-medium">{field.label}</Label>
-            {field.type === 'textarea' ? (
-              <Textarea
-                value={String(userData[field.key] || '')}
-                onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                placeholder={field.placeholder}
-                rows={2}
-                className="text-sm"
-              />
-            ) : (
-              <Input
-                value={String(userData[field.key] || '')}
-                onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                placeholder={field.placeholder}
-                className="text-sm"
-              />
-            )}
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Shared Company Profile</CardTitle>
+              <CardDescription>
+                Shared positioning used across prospecting and fit analysis
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">Team-wide</Badge>
           </div>
-        ))}
-        <Button
-          onClick={saveProfile}
-          disabled={savingUser}
-          size="sm"
-          className="w-full gap-2"
-        >
-          {savingUser ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-          Save Sales Profile
-        </Button>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs font-medium">Ideal Customer Profile</Label>
+            <Textarea
+              value={String(companyData.icp || '')}
+              onChange={(e) => setCompanyData((prev) => ({ ...prev, icp: e.target.value }))}
+              placeholder="e.g. B2B companies in Sweden with 10–500 employees and clear process complexity"
+              rows={3}
+              className="text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-medium">Value Proposition</Label>
+            <Textarea
+              value={String(companyData.value_proposition || '')}
+              onChange={(e) => setCompanyData((prev) => ({ ...prev, value_proposition: e.target.value }))}
+              placeholder="e.g. We help operations teams automate everyday workflows without adding enterprise complexity"
+              rows={3}
+              className="text-sm"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Differentiators</Label>
+              <Textarea
+                value={Array.isArray(companyData.differentiators) ? companyData.differentiators.join('\n') : String(companyData.differentiators || '')}
+                onChange={(e) => setCompanyData((prev) => ({ ...prev, differentiators: e.target.value }))}
+                placeholder="One per line"
+                rows={4}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Competitors</Label>
+              <Textarea
+                value={Array.isArray(companyData.competitors) ? companyData.competitors.join('\n') : String(companyData.competitors || '')}
+                onChange={(e) => setCompanyData((prev) => ({ ...prev, competitors: e.target.value }))}
+                placeholder="One per line"
+                rows={4}
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Industry</Label>
+              <Input
+                value={String(companyData.industry || '')}
+                onChange={(e) => setCompanyData((prev) => ({ ...prev, industry: e.target.value }))}
+                placeholder="e.g. Business software"
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Pricing Notes</Label>
+              <Input
+                value={String(companyData.pricing_notes || '')}
+                onChange={(e) => setCompanyData((prev) => ({ ...prev, pricing_notes: e.target.value }))}
+                placeholder="e.g. Mid-market annual contracts"
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <Button
+            onClick={saveCompanyProfile}
+            disabled={savingCompany}
+            size="sm"
+            className="w-full gap-2"
+          >
+            {savingCompany ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+            Save Company Profile
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Your Sales Profile
+            </CardTitle>
+            <CompletionBadge score={userScore} />
+          </div>
+          <CardDescription>
+            Personal context for personalized introduction letters and outreach
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {USER_FIELDS.map(field => (
+            <div key={field.key} className="space-y-1">
+              <Label className="text-xs font-medium">{field.label}</Label>
+              {field.type === 'textarea' ? (
+                <Textarea
+                  value={String(userData[field.key] || '')}
+                  onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  rows={2}
+                  className="text-sm"
+                />
+              ) : (
+                <Input
+                  value={String(userData[field.key] || '')}
+                  onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  className="text-sm"
+                />
+              )}
+            </div>
+          ))}
+          <Button
+            onClick={saveProfile}
+            disabled={savingUser}
+            size="sm"
+            className="w-full gap-2"
+          >
+            {savingUser ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+            Save Sales Profile
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
