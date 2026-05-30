@@ -19,6 +19,13 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export function FitAnalysisCard({ result }: FitAnalysisCardProps) {
+  const decisionMakerName = [result.decision_maker?.first_name, result.decision_maker?.last_name]
+    .filter(Boolean)
+    .join(" ");
+  const decisionMakerMeta = [result.decision_maker?.email, result.decision_maker?.position || 'Unknown role']
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="space-y-4">
       {/* Fit Score */}
@@ -60,8 +67,8 @@ export function FitAnalysisCard({ result }: FitAnalysisCardProps) {
               <Separator />
               <div className="text-sm">
                 <p className="text-xs font-medium text-muted-foreground mb-1">Decision Maker Found</p>
-                <p className="font-medium">{result.decision_maker.first_name} {result.decision_maker.last_name}</p>
-                <p className="text-xs text-muted-foreground">{result.decision_maker.email} · {result.decision_maker.position || 'Unknown role'}</p>
+                <p className="font-medium">{decisionMakerName || 'Unnamed contact'}</p>
+                <p className="text-xs text-muted-foreground">{decisionMakerMeta}</p>
               </div>
             </>
           )}
