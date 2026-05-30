@@ -178,6 +178,8 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     config: {
       baseUrl: 'https://api.openai.com/v1',
       model: 'gpt-4.1-mini',
+      monthlyBudgetUsd: 50,
+      warnAtPct: 80,
     },
   },
   gemini: {
