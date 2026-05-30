@@ -74,10 +74,23 @@ serve(async (req) => {
       }
     }
     if (domain) {
+      // Read admin-configured contact cap (defaults to 2 to save Hunter credits)
+      let maxContacts = 2;
+      try {
+        const supa = getServiceClient();
+        const { data: cfg } = await supa
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'integrations')
+          .maybeSingle();
+        const n = (cfg?.value as any)?.hunter?.config?.maxContacts;
+        if (typeof n === 'number' && n > 0) maxContacts = Math.min(n, 25);
+      } catch (_) { /* fall through with default */ }
+
       const contactsRes = await callSkill('contact-finder', {
         action: 'domain_search',
         domain,
-        limit: 6,
+        limit: maxContacts,
       });
       contactsRaw = contactsRes?.contacts || [];
     }
