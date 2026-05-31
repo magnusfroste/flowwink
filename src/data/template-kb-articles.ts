@@ -761,7 +761,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'Private AI Setup',
         slug: 'private-ai-setup',
         question: 'How do I ensure my AI is completely private?',
-        answer_text: 'Deploy FlowWink with Docker on your infrastructure. Configure a Local LLM (Ollama, LM Studio, vLLM) instead of cloud AI providers. Your prompts, content, lead data, and customer conversations never leave your network. FlowPilot\'s persistent memory is stored in your own database.',
+        answer_text: 'For full data sovereignty, run FlowWink against a self-hosted Supabase instance and configure a Local LLM (Ollama, LM Studio, vLLM) instead of cloud AI providers. Your prompts, content, lead data, and customer conversations never leave your network. FlowPilot\'s persistent memory is stored in your own database.',
         is_featured: true,
         include_in_chat: true,
       },
