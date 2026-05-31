@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const KEY = 'demo_mode';
+const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/demo-cycle`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 /**
  * Demo Mode toggle. When enabled, the `demo-cycle` edge function (scheduled
