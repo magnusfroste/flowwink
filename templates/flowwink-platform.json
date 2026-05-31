@@ -1,10 +1,10 @@
 {
   "id": "flowwink-platform",
   "name": "FlowWink Platform",
-  "description": "The next-generation ERP with agentic intelligence built in. A process engine that acts — not reacts.",
+  "description": "The Business Operating System — CMS · CRM · ERP run by an autonomous operator. Built-in FlowPilot, or bring your own agent.",
   "category": "platform",
   "icon": "Bot",
-  "tagline": "Not an ERP you use. An ERP that operates.",
+  "tagline": "The Business Operating System. CMS · CRM · ERP — run by an operator.",
   "aiChatPosition": "Embedded autonomous agent for site operations",
   "blogPosts": [
     {
@@ -16,7 +16,7 @@
       "is_featured": true,
       "content": [
         {
-          "id": "text-xt9vqj6",
+          "id": "text-ynxrf07",
           "type": "text",
           "data": {
             "content": {
@@ -228,7 +228,7 @@
       "featured_image_alt": "Autonomous AI agent concept",
       "content": [
         {
-          "id": "text-pvojbye",
+          "id": "text-kdxylk4",
           "type": "text",
           "data": {
             "content": {
@@ -419,7 +419,7 @@
       "featured_image_alt": "Secure server infrastructure",
       "content": [
         {
-          "id": "text-9m1f57f",
+          "id": "text-78vxb1z",
           "type": "text",
           "data": {
             "content": {
@@ -608,7 +608,7 @@
       "featured_image_alt": "Continuous improvement cycle visualization",
       "content": [
         {
-          "id": "text-ud7kofy",
+          "id": "text-q46t9fg",
           "type": "text",
           "data": {
             "content": {
@@ -820,7 +820,7 @@
       "featured_image_alt": "Unified platform replacing multiple tools",
       "content": [
         {
-          "id": "text-gyxiz81",
+          "id": "text-hpqk6hj",
           "type": "text",
           "data": {
             "content": {
@@ -1121,7 +1121,7 @@
       "featured_image_alt": "Connected network representing skill engine",
       "content": [
         {
-          "id": "text-ag3clo1",
+          "id": "text-zg1jx8a",
           "type": "text",
           "data": {
             "content": {
@@ -1450,7 +1450,7 @@
       "featured_image_alt": "Strategic planning board with goals and recurring tasks",
       "content": [
         {
-          "id": "text-rjw5n57",
+          "id": "text-ndlqswv",
           "type": "text",
           "data": {
             "content": {
@@ -1744,7 +1744,7 @@
       "featured_image_alt": "Network of connected nodes representing agent-to-agent communication",
       "content": [
         {
-          "id": "text-7tfkq66",
+          "id": "text-5y5lkyn",
           "type": "text",
           "data": {
             "content": {
@@ -1987,7 +1987,7 @@
       "featured_image_alt": "Person analyzing content strategy on multiple screens",
       "content": [
         {
-          "id": "text-rvi6wd6",
+          "id": "text-pjv6bmj",
           "type": "text",
           "data": {
             "content": {
@@ -2211,7 +2211,7 @@
       "featured_image_alt": "Circular process diagram representing autonomous loop",
       "content": [
         {
-          "id": "text-t3ktcu1",
+          "id": "text-wx2vyug",
           "type": "text",
           "data": {
             "content": {
@@ -2411,7 +2411,7 @@
       "featured_image_alt": "Data flow architecture diagram",
       "content": [
         {
-          "id": "text-sr2r0ez",
+          "id": "text-23seejf",
           "type": "text",
           "data": {
             "content": {
@@ -2727,7 +2727,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-yj8hgze",
+          "id": "text-up38v43",
           "type": "text",
           "data": {
             "content": {
@@ -2926,7 +2926,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-c2y8gft",
+          "id": "text-fvije7k",
           "type": "text",
           "data": {
             "content": {
@@ -3245,7 +3245,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-ux4jo6p",
+          "id": "text-3gjcjq3",
           "type": "text",
           "data": {
             "content": {
@@ -3489,7 +3489,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-detllbl",
+          "id": "text-r5mnqgq",
           "type": "text",
           "data": {
             "content": {
@@ -4435,6 +4435,7 @@
   "requiredModules": [
     "blog",
     "knowledgeBase",
+    "docs",
     "chat",
     "liveSupport",
     "newsletter",
@@ -4461,8 +4462,8 @@
       "menu_order": 1,
       "showInMenu": true,
       "meta": {
-        "seoTitle": "FlowWink — Next-Gen ERP with Agentic Intelligence Built In",
-        "description": "FlowWink is the next-generation ERP with autonomous AI built in natively. A Business Operating System where the process engine acts on objectives — not waits for instructions.",
+        "seoTitle": "FlowWink — The Business Operating System (CMS · CRM · ERP)",
+        "description": "FlowWink is the Business Operating System: a self-hosted CMS, CRM and ERP run by an autonomous operator. Use the built-in FlowPilot, or plug in OpenClaw, Claude or Copilot via MCP.",
         "showTitle": false,
         "titleAlignment": "center"
       },
@@ -4471,7 +4472,7 @@
           "id": "announcement-flowpilot",
           "type": "announcement-bar",
           "data": {
-            "message": "🤖 The first agent-native ERP — every module exposed via MCP. Bring your own agent.",
+            "message": "🤖 The Business Operating System — CMS · CRM · ERP, every module exposed via MCP. Bring your own agent.",
             "linkText": "See how",
             "linkUrl": "#agent-prepared",
             "variant": "gradient",
@@ -4483,8 +4484,8 @@
           "id": "hero-main",
           "type": "hero",
           "data": {
-            "title": "The First Agent-Native ERP",
-            "subtitle": "A complete ERP for mid-sized businesses — Quote-to-Cash, HR & Payroll, Accounting, Procure-to-Pay, Projects. Every module exposed via MCP. Run it with our built-in FlowPilot, or plug in your own agent (Claude, GPT, OpenClaw) to operate FlowWink alongside your other SaaS.",
+            "title": "Your Business, Run by an Operator",
+            "subtitle": "FlowWink is the Business Operating System — a self-hosted CMS, CRM and ERP (Quote-to-Cash, HR & Payroll, Accounting, Procure-to-Pay, Projects) wired together and run by an autonomous operator. Use the built-in FlowPilot, or plug in your own agent (Claude, GPT, OpenClaw) via MCP.",
             "backgroundType": "video",
             "videoUrl": "https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4",
             "videoPosterUrl": "https://images.pexels.com/videos/3209828/free-video-3209828.jpg?auto=compress&w=1920",
@@ -4634,7 +4635,7 @@
           "type": "bento-grid",
           "data": {
             "title": "The Autonomous Loop",
-            "subtitle": "Traditional ERPs digitize processes. FlowWink runs them. FlowPilot is a native agentic operator with memory, goals, and 130+ skills — replacing your CMS, CRM, ERP, and marketing stack with a single process engine that acts, not reacts.",
+            "subtitle": "Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 130+ skills — a single process engine that acts, not reacts.",
             "eyebrow": "AGENTIC WEB",
             "columns": 3,
             "variant": "glass",
@@ -7690,7 +7691,15 @@
     "headerShadow": "sm",
     "showBorder": false,
     "headerHeight": "tall",
-    "linkColorScheme": "default"
+    "linkColorScheme": "default",
+    "customNavItems": [
+      {
+        "id": "docs",
+        "label": "Docs",
+        "url": "/docs",
+        "enabled": true
+      }
+    ]
   },
   "footerSettings": {
     "variant": "full",
@@ -7699,6 +7708,12 @@
     "showQuickLinks": true,
     "showContact": true,
     "legalLinks": [
+      {
+        "id": "docs",
+        "label": "Docs",
+        "url": "/docs",
+        "enabled": true
+      },
       {
         "id": "privacy",
         "label": "Privacy Policy",
@@ -7714,9 +7729,9 @@
     ]
   },
   "seoSettings": {
-    "siteTitle": "FlowWink",
+    "siteTitle": "FlowWink — The Business Operating System",
     "titleTemplate": "%s | FlowWink",
-    "defaultDescription": "The first autonomous Business Operating System. FlowPilot runs your content, leads, sales, and operations — and learns from every interaction.",
+    "defaultDescription": "FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 200+ MCP skills across CRM, finance, ERP, and content.",
     "robotsIndex": true,
     "robotsFollow": true,
     "developmentMode": false
@@ -7724,7 +7739,7 @@
   "aeoSettings": {
     "enabled": true,
     "organizationName": "FlowWink",
-    "shortDescription": "Open-source Business Operating System powered by FlowPilot — an autonomous agent with persistent memory, 40+ skills, and self-evolution.",
+    "shortDescription": "Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 130+ skills. Or bring your own agent via MCP.",
     "schemaOrgEnabled": true,
     "schemaOrgType": "Organization",
     "faqSchemaEnabled": true,

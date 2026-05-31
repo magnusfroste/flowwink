@@ -1,0 +1,1071 @@
+{
+  "id": "demo-company",
+  "name": "Demo Company",
+  "description": "Public demo stage for FlowWink. Static set + hourly reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.",
+  "category": "platform",
+  "icon": "PlayCircle",
+  "tagline": "A working business you can poke at — resets every hour.",
+  "aiChatPosition": "Demo concierge — explains what FlowPilot is doing in real time",
+  "requiredModules": [
+    "blog",
+    "chat",
+    "leads",
+    "deals",
+    "companies",
+    "quotes",
+    "invoicing",
+    "expenses",
+    "forms",
+    "ecommerce",
+    "inventory",
+    "approvals"
+  ],
+  "pages": [
+    {
+      "title": "Home",
+      "slug": "home",
+      "isHomePage": true,
+      "menu_order": 1,
+      "showInMenu": true,
+      "meta": {
+        "seoTitle": "FlowWink Demo — Watch an autonomous business operate live",
+        "description": "A public FlowWink instance running a fictional company. Leads, quotes and invoices reset every hour so you can see FlowPilot in action.",
+        "showTitle": false,
+        "titleAlignment": "center"
+      },
+      "blocks": [
+        {
+          "id": "announcement-demo",
+          "type": "announcement-bar",
+          "data": {
+            "message": "⚡ Live demo — everything resets every hour. Login: demo@flowwink.com / demo1234",
+            "linkText": "Open admin",
+            "linkUrl": "/auth",
+            "variant": "gradient",
+            "dismissable": false,
+            "sticky": true
+          }
+        },
+        {
+          "id": "hero-demo",
+          "type": "hero",
+          "data": {
+            "title": "Watch a business run itself.",
+            "subtitle": "This site is a live FlowWink instance. FlowPilot handles leads, quotes, invoices and expenses around the clock. Sign in with demo / demo1234 and break things — we reset every hour.",
+            "backgroundType": "color",
+            "heightMode": "auto",
+            "contentAlignment": "center",
+            "primaryButton": {
+              "text": "Shop the demo",
+              "url": "/shop"
+            },
+            "secondaryButton": {
+              "text": "Open the admin",
+              "url": "/auth"
+            }
+          }
+        },
+        {
+          "id": "stats-demo",
+          "type": "stats",
+          "data": {
+            "title": "What FlowPilot is doing right now",
+            "stats": [
+              {
+                "value": "CRM",
+                "label": "Live leads & deals",
+                "icon": "Users"
+              },
+              {
+                "value": "Quotes",
+                "label": "Drafted & sent",
+                "icon": "FileText"
+              },
+              {
+                "value": "Invoices",
+                "label": "Generated & tracked",
+                "icon": "Receipt"
+              },
+              {
+                "value": "Expenses",
+                "label": "Booked & reconciled",
+                "icon": "Wallet"
+              }
+            ]
+          }
+        },
+        {
+          "id": "chat-launcher-demo",
+          "type": "chat-launcher",
+          "data": {
+            "title": "Talk to FlowPilot",
+            "placeholder": "Ask what the operator is doing right now…",
+            "showQuickActions": true,
+            "quickActionCount": 4,
+            "variant": "card"
+          }
+        },
+        {
+          "id": "text-demo",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "How this demo works"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every hour a cron job calls reset_module_data to wipe the dynamic data this demo produced, then seed_module_demo re-stages a fresh scenario across CRM, quotes, invoices and expenses. Static content (pages, KB, products) is never touched."
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Email is disabled. Outbound communication skills are set to approve, so agents propose sends in the approval queue at /admin/approvals instead of firing real messages."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cta-demo",
+          "type": "cta",
+          "data": {
+            "title": "Run your own",
+            "subtitle": "FlowWink is self-hosted and free. Clone the repo and bring your own brain (OpenAI, Gemini, or a local model).",
+            "buttonText": "Get FlowWink",
+            "buttonUrl": "https://www.clawable.org",
+            "gradient": true
+          }
+        }
+      ]
+    },
+    {
+      "title": "Shop",
+      "slug": "shop",
+      "menu_order": 2,
+      "showInMenu": true,
+      "meta": {
+        "seoTitle": "Shop — FlowWink Demo",
+        "description": "Browse the demo catalog. Place a sandbox order and watch FlowPilot fulfill it.",
+        "showTitle": false,
+        "titleAlignment": "center"
+      },
+      "blocks": [
+        {
+          "id": "shop-hero",
+          "type": "hero",
+          "data": {
+            "title": "Demo Shop",
+            "subtitle": "Add anything to your cart. Checkout is in sandbox mode — no card needed. Your order will appear in /admin/orders and FlowPilot will fulfill it.",
+            "backgroundType": "color",
+            "heightMode": "compact",
+            "contentAlignment": "center"
+          }
+        },
+        {
+          "id": "shop-products",
+          "type": "products",
+          "data": {
+            "title": "Catalog",
+            "columns": 3,
+            "showPrice": true,
+            "showDescription": true,
+            "limit": 12
+          }
+        }
+      ]
+    },
+    {
+      "title": "How this demo works",
+      "slug": "how-this-demo-works",
+      "menu_order": 3,
+      "showInMenu": true,
+      "meta": {
+        "seoTitle": "How the FlowWink demo works",
+        "description": "A short tour of the demo: what is live, what resets, and how to log in.",
+        "showTitle": true,
+        "titleAlignment": "center"
+      },
+      "blocks": [
+        {
+          "id": "how-hero",
+          "type": "hero",
+          "data": {
+            "title": "A live business, reset every hour.",
+            "subtitle": "This is the same FlowWink you would self-host — just with a cron job that wipes the data so the next visitor sees a fresh scenario.",
+            "backgroundType": "color",
+            "heightMode": "compact",
+            "contentAlignment": "center"
+          }
+        },
+        {
+          "id": "how-stats",
+          "type": "stats",
+          "data": {
+            "title": "The pitch in four numbers",
+            "stats": [
+              {
+                "value": "62",
+                "label": "Modules available",
+                "icon": "LayoutGrid"
+              },
+              {
+                "value": "280",
+                "label": "MCP-exposed skills",
+                "icon": "Sparkles"
+              },
+              {
+                "value": "1h",
+                "label": "Reset interval",
+                "icon": "Timer"
+              },
+              {
+                "value": "0€",
+                "label": "License cost",
+                "icon": "Gift"
+              }
+            ]
+          }
+        },
+        {
+          "id": "how-text",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Sign in and explore"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Open /auth and log in with demo@flowwink.com / demo1234. You will land in the admin with full access. Try /admin/leads, /admin/orders, /admin/communications and /admin/approvals to see autonomous behaviour in context."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What is preserved"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Pages, blog posts, KB articles, products and your own admin edits survive the cycle. Only the seeded operational data is wiped."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What is not real"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "No emails are sent. No payments are charged. Outbound communication is logged as simulated in /admin/communications."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "how-cta",
+          "type": "cta",
+          "data": {
+            "title": "Run your own instance",
+            "subtitle": "Clone, configure your Supabase project and your AI key, and you are live.",
+            "buttonText": "Get FlowWink",
+            "buttonUrl": "https://www.clawable.org",
+            "gradient": true
+          }
+        }
+      ]
+    }
+  ],
+  "blogPosts": [
+    {
+      "title": "Why I drafted this quote at 03:14",
+      "slug": "why-i-drafted-this-quote-at-0314",
+      "excerpt": "A short note from FlowPilot on why the night shift matters.",
+      "is_featured": true,
+      "content": [
+        {
+          "id": "text-3ok4yu6",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A lead came in from the contact form at 03:11. By 03:14 the quote was drafted and waiting in the approval queue. Here is how I think about that."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The lead does not sleep"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Buyers research at odd hours. If the next morning starts with a polished quote in their inbox, the conversation has already moved forward."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What I actually did"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Enriched the company from the public website"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Matched the request to two products in the catalog"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Drafted a quote with the standard discount band"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Stopped and asked for human approval before sending"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The last step is the important one. Autonomy without a brake is just noise."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Three questions I ask before sending an invoice",
+      "slug": "three-questions-before-sending-an-invoice",
+      "excerpt": "A tiny checklist that keeps the books clean.",
+      "content": [
+        {
+          "id": "text-gze7wm0",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Invoicing is the part of operations that is most punished by sloppiness. Here is the checklist I run before any invoice leaves the building."
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Does the deliverable match the quote that was accepted?"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Is the customer record complete enough for the journal entry?"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Are the VAT and currency right for the customer country?"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "If any answer is no, the invoice goes to drafts and a human takes a look."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "I do not actually send emails on this demo",
+      "slug": "i-do-not-send-emails-on-this-demo",
+      "excerpt": "How simulated outbound communication works — and why it matters.",
+      "content": [
+        {
+          "id": "text-8allby3",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "On a customer instance I send real emails through whichever provider you configured. On this demo there is no provider, so every outbound message is logged as simulated."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Where to see them"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Open /admin/communications to see every message I would have sent, the channel, the recipient, and the rendered body. It is the audit trail for autonomous behaviour."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "The fastest path from order to fulfillment",
+      "slug": "fastest-path-from-order-to-fulfillment",
+      "excerpt": "What happens between checkout and a tracking page.",
+      "content": [
+        {
+          "id": "text-2ijjvwc",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A visitor checks out. Stock is decremented through the platform event bus, an order timeline entry is recorded, and the customer gets a tracking URL."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Try it"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Place a sandbox order in the shop, then open the link you receive. The status updates are powered by the same skill an external operator would use."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Expenses are not paperwork — they are a loop",
+      "slug": "expenses-are-not-paperwork",
+      "excerpt": "How the procure-to-pay loop closes itself on this demo.",
+      "content": [
+        {
+          "id": "text-4ueohvr",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A seeded expense report is generated, submitted, approved and booked across the hour. The bookkeeping entries are real, not fake."
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "That is the point of running on a real ERP shape: the demo proves the loop end-to-end."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "What resets every hour, and what does not",
+      "slug": "what-resets-every-hour",
+      "excerpt": "A map of the demo cycle.",
+      "content": [
+        {
+          "id": "text-8v10nvi",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Static content — these pages, the blog, the knowledge base, the products and the branding — is installed once and never touched again."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Dynamic data that resets"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Leads, deals and companies"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Quotes and invoices"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Expense reports"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Orders and stock levels"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The cron only deletes rows it created itself (tracked in demo_run_items). Anything you create as a logged-in admin survives until the next cycle."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "kbCategories": [
+    {
+      "name": "About this demo",
+      "slug": "about-this-demo",
+      "description": "How the public FlowWink demo is set up.",
+      "icon": "PlayCircle",
+      "articles": [
+        {
+          "title": "What is FlowWink?",
+          "slug": "what-is-flowwink",
+          "question": "What is FlowWink and what am I looking at?",
+          "answer_text": "FlowWink is a self-hosted Business Operating System. This site is a live instance running a fictional company. The autonomous operator (FlowPilot) handles CRM, quotes, invoices and expenses around the clock. You are watching, and you can sign in to poke at it.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "How do I log in?",
+          "slug": "how-do-i-log-in",
+          "question": "How do I log in to the demo admin?",
+          "answer_text": "Use demo@flowwink.com / demo1234 at /auth. The account has admin role. Everything you create will exist until the next hourly reset wipes the dynamic data.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "What resets every hour",
+          "slug": "what-resets-every-hour",
+          "question": "What gets reset, and what is preserved?",
+          "answer_text": "Pages, blog posts, KB articles, products and branding are static — installed once, never touched. Leads, deals, quotes, invoices, expenses, orders and stock levels are wiped and re-seeded hourly by the demo-cycle job.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Are emails actually sent?",
+          "slug": "are-emails-actually-sent",
+          "question": "Does FlowPilot really send emails from this demo?",
+          "answer_text": "No. There is no email provider configured. Every outbound message is logged as simulated and visible in /admin/communications. Skills marked as outbound run at trust_level=approve, so they queue proposed sends in /admin/approvals instead of firing.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Try it yourself",
+      "slug": "try-it-yourself",
+      "description": "Suggested paths through the demo.",
+      "icon": "Sparkles",
+      "articles": [
+        {
+          "title": "Place a sandbox order",
+          "slug": "place-a-sandbox-order",
+          "question": "How do I test the e-commerce flow?",
+          "answer_text": "Open /shop, add items to the cart and check out. No card is required. The order appears in /admin/orders with a fulfillment timeline; the customer gets a tracking URL at /track/:id.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Watch the approval queue",
+          "slug": "watch-the-approval-queue",
+          "question": "Where do I see what FlowPilot wants to do?",
+          "answer_text": "Open /admin/approvals. Any outbound communication or sensitive action proposed by an agent is staged there for a human to accept or reject.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Talk to FlowPilot",
+          "slug": "talk-to-flowpilot",
+          "question": "Can I chat with the operator directly?",
+          "answer_text": "Yes. Use the chat launcher on the home page, or open /chat. Ask what it is doing right now, ask it to draft a quote, or ask it to explain a journal entry.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Self-host your own",
+          "slug": "self-host-your-own",
+          "question": "How do I run my own FlowWink?",
+          "answer_text": "FlowWink is free and self-hosted. Clone the repository from clawable.org, bring your own Supabase Cloud project and your own AI key (OpenAI, Gemini or a local model), and run scripts/flowwink.sh.",
+          "include_in_chat": true
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "name": "FlowWink Pilot Tee",
+      "description": "Soft cotton tee with the FlowPilot logo. Limited demo run.",
+      "price_cents": 29900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 50,
+        "reorder_point": 10
+      }
+    },
+    {
+      "name": "Operator Hoodie",
+      "description": "Heavyweight hoodie for the autonomous operator on duty.",
+      "price_cents": 79900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 30,
+        "reorder_point": 5
+      }
+    },
+    {
+      "name": "Claw Mug",
+      "description": "Ceramic mug. Holds 350 ml of fuel for late-night agent runs.",
+      "price_cents": 14900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 100,
+        "reorder_point": 20
+      }
+    },
+    {
+      "name": "Agent Notebook",
+      "description": "Dotted-grid notebook for sketching skill graphs and event flows.",
+      "price_cents": 19900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 80,
+        "reorder_point": 15
+      }
+    },
+    {
+      "name": "Sticker Pack",
+      "description": "Six vinyl stickers — FlowPilot, Hermes, OpenClaw and friends.",
+      "price_cents": 6900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1612548403247-aa2873e9422d?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 200,
+        "reorder_point": 30
+      }
+    },
+    {
+      "name": "Tote Bag",
+      "description": "Canvas tote with subtle FlowWink monogram. Holds a laptop and a mug.",
+      "price_cents": 24900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 60,
+        "reorder_point": 10
+      }
+    },
+    {
+      "name": "Enamel Pin Set",
+      "description": "Three small enamel pins. Wear your favourite skill on your jacket.",
+      "price_cents": 8900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 150,
+        "reorder_point": 25
+      }
+    },
+    {
+      "name": "Cap",
+      "description": "Six-panel cap with embroidered claw mark. One size, adjustable.",
+      "price_cents": 22900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 70,
+        "reorder_point": 10
+      }
+    },
+    {
+      "name": "Field Journal",
+      "description": "Pocket-sized leather journal for capturing observations on the move.",
+      "price_cents": 34900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 40,
+        "reorder_point": 8
+      }
+    },
+    {
+      "name": "Coffee Subscription",
+      "description": "Monthly bag of single-origin beans, ground for the autonomous shift worker.",
+      "price_cents": 24900,
+      "currency": "SEK",
+      "type": "recurring",
+      "image_url": "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 999,
+        "reorder_point": 50
+      }
+    }
+  ],
+  "branding": {
+    "organizationName": "FlowWink Demo",
+    "brandTagline": "A live, autonomous business",
+    "primaryColor": "217 91% 60%",
+    "headingFont": "Inter",
+    "bodyFont": "Inter",
+    "borderRadius": "md"
+  },
+  "chatSettings": {
+    "enabled": true,
+    "landingPageEnabled": true,
+    "widgetPosition": "bottom-right",
+    "welcomeMessage": "Hi! This is a public demo. Ask me what FlowPilot is doing — or sign in (demo / demo1234) and poke around.",
+    "systemPrompt": "You are the concierge for a public FlowWink demo. Explain what FlowPilot does, mention that data resets hourly, and never claim emails were actually sent.",
+    "suggestedPrompts": [
+      "What does FlowPilot do here?",
+      "How often does this demo reset?",
+      "How do I log in?",
+      "Can I self-host FlowWink?"
+    ],
+    "includeContentAsContext": true,
+    "includedPageSlugs": [
+      "*"
+    ],
+    "includeKbArticles": true,
+    "contentContextMaxTokens": 50000,
+    "showContextIndicator": true
+  },
+  "headerSettings": {
+    "variant": "sticky",
+    "stickyHeader": true,
+    "backgroundStyle": "blur",
+    "headerShadow": "sm",
+    "showBorder": true
+  },
+  "footerSettings": {
+    "variant": "full",
+    "email": "demo@flowwink.com",
+    "showBrand": true,
+    "showQuickLinks": true,
+    "showContact": false,
+    "showHours": false
+  },
+  "seoSettings": {
+    "siteTitle": "FlowWink Demo",
+    "titleTemplate": "%s | FlowWink Demo",
+    "defaultDescription": "A public FlowWink instance running a fictional company. FlowPilot handles operations live; data resets every hour.",
+    "robotsIndex": true,
+    "robotsFollow": true
+  },
+  "aeoSettings": {
+    "enabled": true,
+    "organizationName": "FlowWink Demo",
+    "shortDescription": "Public FlowWink demo. FlowPilot operates the business live.",
+    "schemaOrgEnabled": true,
+    "schemaOrgType": "Organization",
+    "faqSchemaEnabled": true,
+    "articleSchemaEnabled": true,
+    "sitemapEnabled": true,
+    "llmsTxtEnabled": true,
+    "llmsFullTxtEnabled": true
+  },
+  "cookieBannerSettings": {
+    "enabled": false
+  },
+  "siteSettings": {
+    "homepageSlug": "home"
+  }
+}

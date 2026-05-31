@@ -1,5 +1,5 @@
 /**
- * Demo Company Template — Public FlowWink Demo Stage
+ * Demo Company Template — Public FlowWink Demo Stage (v1.4.0)
  *
  * Static "set" for a public demo instance (e.g. demo.flowwink.com).
  * Pairs with the `demo-cycle` edge function that hourly resets and re-seeds
@@ -8,16 +8,200 @@
  *
  * Philosophy:
  *  - Static content lives here (pages, KB, products, identity) and is NEVER
- *    touched by demo cycles.
+ *    touched by demo cycles. Installed once on first boot — safe to expand.
  *  - Dynamic content (CRM rows, orders, etc.) is owned by `seed_module_demo`
  *    and registered in `demo_run_items` for safe teardown.
  *
- * Email is intentionally OFF in this template — no transactional or Gmail
- * connectors are required. Outbound communication skills run at
- * trust_level='approve', so agents show proposed sends in the approval queue
+ * Email is intentionally OFF — outbound communication skills run at
+ * trust_level='approve', so agents show proposed sends in /admin/approvals
  * instead of firing real emails.
  */
-import type { StarterTemplate } from './types';
+import type { StarterTemplate, TemplateBlogPost } from './types';
+import type { TemplateKbCategory } from '@/data/template-kb-articles';
+
+// ---------- Tiptap helpers (local to this template) ----------
+const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+const h2 = (text: string) => ({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text }] });
+const li = (text: string) => ({ type: 'listItem', content: [p(text)] });
+const ul = (...items: string[]) => ({ type: 'bulletList', content: items.map(li) });
+const textBlock = (doc: { type: string; content: unknown[] }) => ({
+  id: `text-${Math.random().toString(36).slice(2, 9)}`,
+  type: 'text' as const,
+  data: { content: doc },
+});
+
+// ---------- Blog posts: FlowPilot operator diary tone ----------
+const demoBlogPosts: TemplateBlogPost[] = [
+  {
+    title: 'Why I drafted this quote at 03:14',
+    slug: 'why-i-drafted-this-quote-at-0314',
+    excerpt: 'A short note from FlowPilot on why the night shift matters.',
+    is_featured: true,
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('A lead came in from the contact form at 03:11. By 03:14 the quote was drafted and waiting in the approval queue. Here is how I think about that.'),
+        h2('The lead does not sleep'),
+        p('Buyers research at odd hours. If the next morning starts with a polished quote in their inbox, the conversation has already moved forward.'),
+        h2('What I actually did'),
+        ul(
+          'Enriched the company from the public website',
+          'Matched the request to two products in the catalog',
+          'Drafted a quote with the standard discount band',
+          'Stopped and asked for human approval before sending',
+        ),
+        p('The last step is the important one. Autonomy without a brake is just noise.'),
+      ],
+    })],
+  },
+  {
+    title: 'Three questions I ask before sending an invoice',
+    slug: 'three-questions-before-sending-an-invoice',
+    excerpt: 'A tiny checklist that keeps the books clean.',
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('Invoicing is the part of operations that is most punished by sloppiness. Here is the checklist I run before any invoice leaves the building.'),
+        ul(
+          'Does the deliverable match the quote that was accepted?',
+          'Is the customer record complete enough for the journal entry?',
+          'Are the VAT and currency right for the customer country?',
+        ),
+        p('If any answer is no, the invoice goes to drafts and a human takes a look.'),
+      ],
+    })],
+  },
+  {
+    title: 'I do not actually send emails on this demo',
+    slug: 'i-do-not-send-emails-on-this-demo',
+    excerpt: 'How simulated outbound communication works — and why it matters.',
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('On a customer instance I send real emails through whichever provider you configured. On this demo there is no provider, so every outbound message is logged as simulated.'),
+        h2('Where to see them'),
+        p('Open /admin/communications to see every message I would have sent, the channel, the recipient, and the rendered body. It is the audit trail for autonomous behaviour.'),
+      ],
+    })],
+  },
+  {
+    title: 'The fastest path from order to fulfillment',
+    slug: 'fastest-path-from-order-to-fulfillment',
+    excerpt: 'What happens between checkout and a tracking page.',
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('A visitor checks out. Stock is decremented through the platform event bus, an order timeline entry is recorded, and the customer gets a tracking URL.'),
+        h2('Try it'),
+        p('Place a sandbox order in the shop, then open the link you receive. The status updates are powered by the same skill an external operator would use.'),
+      ],
+    })],
+  },
+  {
+    title: 'Expenses are not paperwork — they are a loop',
+    slug: 'expenses-are-not-paperwork',
+    excerpt: 'How the procure-to-pay loop closes itself on this demo.',
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('A seeded expense report is generated, submitted, approved and booked across the hour. The bookkeeping entries are real, not fake.'),
+        p('That is the point of running on a real ERP shape: the demo proves the loop end-to-end.'),
+      ],
+    })],
+  },
+  {
+    title: 'What resets every hour, and what does not',
+    slug: 'what-resets-every-hour',
+    excerpt: 'A map of the demo cycle.',
+    content: [textBlock({
+      type: 'doc',
+      content: [
+        p('Static content — these pages, the blog, the knowledge base, the products and the branding — is installed once and never touched again.'),
+        h2('Dynamic data that resets'),
+        ul('Leads, deals and companies', 'Quotes and invoices', 'Expense reports', 'Orders and stock levels'),
+        p('The cron only deletes rows it created itself (tracked in demo_run_items). Anything you create as a logged-in admin survives until the next cycle.'),
+      ],
+    })],
+  },
+];
+
+// ---------- Knowledge Base ----------
+const demoKbCategories: TemplateKbCategory[] = [
+  {
+    name: 'About this demo',
+    slug: 'about-this-demo',
+    description: 'How the public FlowWink demo is set up.',
+    icon: 'PlayCircle',
+    articles: [
+      {
+        title: 'What is FlowWink?',
+        slug: 'what-is-flowwink',
+        question: 'What is FlowWink and what am I looking at?',
+        answer_text: 'FlowWink is a self-hosted Business Operating System. This site is a live instance running a fictional company. The autonomous operator (FlowPilot) handles CRM, quotes, invoices and expenses around the clock. You are watching, and you can sign in to poke at it.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'How do I log in?',
+        slug: 'how-do-i-log-in',
+        question: 'How do I log in to the demo admin?',
+        answer_text: 'Use demo@flowwink.com / demo1234 at /auth. The account has admin role. Everything you create will exist until the next hourly reset wipes the dynamic data.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'What resets every hour',
+        slug: 'what-resets-every-hour',
+        question: 'What gets reset, and what is preserved?',
+        answer_text: 'Pages, blog posts, KB articles, products and branding are static — installed once, never touched. Leads, deals, quotes, invoices, expenses, orders and stock levels are wiped and re-seeded hourly by the demo-cycle job.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Are emails actually sent?',
+        slug: 'are-emails-actually-sent',
+        question: 'Does FlowPilot really send emails from this demo?',
+        answer_text: 'No. There is no email provider configured. Every outbound message is logged as simulated and visible in /admin/communications. Skills marked as outbound run at trust_level=approve, so they queue proposed sends in /admin/approvals instead of firing.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Try it yourself',
+    slug: 'try-it-yourself',
+    description: 'Suggested paths through the demo.',
+    icon: 'Sparkles',
+    articles: [
+      {
+        title: 'Place a sandbox order',
+        slug: 'place-a-sandbox-order',
+        question: 'How do I test the e-commerce flow?',
+        answer_text: 'Open /shop, add items to the cart and check out. No card is required. The order appears in /admin/orders with a fulfillment timeline; the customer gets a tracking URL at /track/:id.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Watch the approval queue',
+        slug: 'watch-the-approval-queue',
+        question: 'Where do I see what FlowPilot wants to do?',
+        answer_text: 'Open /admin/approvals. Any outbound communication or sensitive action proposed by an agent is staged there for a human to accept or reject.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Talk to FlowPilot',
+        slug: 'talk-to-flowpilot',
+        question: 'Can I chat with the operator directly?',
+        answer_text: 'Yes. Use the chat launcher on the home page, or open /chat. Ask what it is doing right now, ask it to draft a quote, or ask it to explain a journal entry.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Self-host your own',
+        slug: 'self-host-your-own',
+        question: 'How do I run my own FlowWink?',
+        answer_text: 'FlowWink is free and self-hosted. Clone the repository from clawable.org, bring your own Supabase Cloud project and your own AI key (OpenAI, Gemini or a local model), and run scripts/flowwink.sh.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
 
 export const demoCompanyTemplate: StarterTemplate = {
   id: 'demo-company',
@@ -140,7 +324,67 @@ export const demoCompanyTemplate: StarterTemplate = {
         },
       ],
     },
+    {
+      title: 'How this demo works',
+      slug: 'how-this-demo-works',
+      menu_order: 3,
+      showInMenu: true,
+      meta: {
+        seoTitle: 'How the FlowWink demo works',
+        description: 'A short tour of the demo: what is live, what resets, and how to log in.',
+        showTitle: true,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'how-hero',
+          type: 'hero',
+          data: {
+            title: 'A live business, reset every hour.',
+            subtitle: 'This is the same FlowWink you would self-host — just with a cron job that wipes the data so the next visitor sees a fresh scenario.',
+            backgroundType: 'color',
+            heightMode: 'compact',
+            contentAlignment: 'center',
+          },
+        },
+        {
+          id: 'how-stats',
+          type: 'stats',
+          data: {
+            title: 'The pitch in four numbers',
+            stats: [
+              { value: '62', label: 'Modules available', icon: 'LayoutGrid' },
+              { value: '280', label: 'MCP-exposed skills', icon: 'Sparkles' },
+              { value: '1h', label: 'Reset interval', icon: 'Timer' },
+              { value: '0€', label: 'License cost', icon: 'Gift' },
+            ],
+          },
+        },
+        {
+          id: 'how-text',
+          type: 'text',
+          data: {
+            content: { type: 'doc', content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Sign in and explore' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Open /auth and log in with demo@flowwink.com / demo1234. You will land in the admin with full access. Try /admin/leads, /admin/orders, /admin/communications and /admin/approvals to see autonomous behaviour in context.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is preserved' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Pages, blog posts, KB articles, products and your own admin edits survive the cycle. Only the seeded operational data is wiped.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is not real' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'No emails are sent. No payments are charged. Outbound communication is logged as simulated in /admin/communications.' }] },
+            ]},
+          },
+        },
+        {
+          id: 'how-cta',
+          type: 'cta',
+          data: { title: 'Run your own instance', subtitle: 'Clone, configure your Supabase project and your AI key, and you are live.', buttonText: 'Get FlowWink', buttonUrl: 'https://www.clawable.org', gradient: true },
+        },
+      ],
+    },
   ],
+
+  blogPosts: demoBlogPosts,
+  kbCategories: demoKbCategories,
 
   products: [
     {
@@ -203,8 +447,47 @@ export const demoCompanyTemplate: StarterTemplate = {
       is_active: true,
       stock: { quantity_on_hand: 60, reorder_point: 10 },
     },
+    {
+      name: 'Enamel Pin Set',
+      description: 'Three small enamel pins. Wear your favourite skill on your jacket.',
+      price_cents: 8900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 150, reorder_point: 25 },
+    },
+    {
+      name: 'Cap',
+      description: 'Six-panel cap with embroidered claw mark. One size, adjustable.',
+      price_cents: 22900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 70, reorder_point: 10 },
+    },
+    {
+      name: 'Field Journal',
+      description: 'Pocket-sized leather journal for capturing observations on the move.',
+      price_cents: 34900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 40, reorder_point: 8 },
+    },
+    {
+      name: 'Coffee Subscription',
+      description: 'Monthly bag of single-origin beans, ground for the autonomous shift worker.',
+      price_cents: 24900,
+      currency: 'SEK',
+      type: 'recurring',
+      image_url: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 999, reorder_point: 50 },
+    },
   ],
-
 
   branding: {
     organizationName: 'FlowWink Demo',
@@ -248,7 +531,7 @@ export const demoCompanyTemplate: StarterTemplate = {
     schemaOrgEnabled: true,
     schemaOrgType: 'Organization',
     faqSchemaEnabled: true,
-    articleSchemaEnabled: false,
+    articleSchemaEnabled: true,
     sitemapEnabled: true,
     llmsTxtEnabled: true,
     llmsFullTxtEnabled: true,
