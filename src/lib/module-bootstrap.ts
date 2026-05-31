@@ -232,6 +232,12 @@ export async function bootstrapModule(
   }
   if (automations.length && flowpilotEnabled) {
     for (const auto of automations) {
+      if (!auto || typeof auto !== 'object' || !auto.name) {
+        const msg = `Skipped invalid automation seed in ${moduleId} (missing name)`;
+        result.errors.push(msg);
+        logger.warn(`[module-bootstrap] ${msg}`, auto);
+        continue;
+      }
       try {
         const { data: existing } = await supabase
           .from('agent_automations')
@@ -255,12 +261,14 @@ export async function bootstrapModule(
           result.seededAutomations++;
         }
       } catch (err) {
-        const msg = `Automation ${auto.name}: ${err instanceof Error ? err.message : 'Unknown'}`;
+        const autoName = auto?.name ?? '<unknown>';
+        const msg = `Automation ${autoName}: ${err instanceof Error ? err.message : 'Unknown'}`;
         result.errors.push(msg);
         logger.error(`[module-bootstrap] ${msg}`);
       }
     }
   }
+
 
   logger.log(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations`);
 
