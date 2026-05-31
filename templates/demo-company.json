@@ -120,7 +120,7 @@
                   "content": [
                     {
                       "type": "text",
-                      "text": "How this demo works"
+                      "text": "What the hourly cron actually does"
                     }
                   ]
                 },
@@ -129,7 +129,153 @@
                   "content": [
                     {
                       "type": "text",
-                      "text": "Every hour a cron job calls reset_module_data to wipe the dynamic data this demo produced, then seed_module_demo re-stages a fresh scenario across CRM, quotes, invoices and expenses. Static content (pages, KB, products) is never touched."
+                      "text": "Every hour on the hour, the demo-cycle job runs reset_module_data → seed_module_demo across the pilot modules, then restocks the shop. It only deletes rows it created itself (tracked in demo_run_items) — your admin edits and the static content set are safe."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Wiped & re-seeded every hour"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "CRM — leads, contacts, deals"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Quotes — drafts and sent quotes"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Invoices — generated, tracked, paid"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Expenses — submitted, approved, booked"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Ecommerce — orders, fulfillment, stock levels"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Survives the reset"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Pages, blog posts, KB articles, products, branding"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "FlowPilot soul, objectives, skills, agent memory"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Anything you create as a logged-in admin (until next cycle for dynamic modules)"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
@@ -138,7 +284,7 @@
                   "content": [
                     {
                       "type": "text",
-                      "text": "Email is disabled. Outbound communication skills are set to approve, so agents propose sends in the approval queue at /admin/approvals instead of firing real messages."
+                      "text": "Email is disabled on this instance. Outbound skills are set to approve, so agents queue proposed sends in /admin/approvals instead of firing real messages."
                     }
                   ]
                 }
@@ -343,7 +489,7 @@
       "is_featured": true,
       "content": [
         {
-          "id": "text-3ok4yu6",
+          "id": "text-7ewk8ae",
           "type": "text",
           "data": {
             "content": {
@@ -473,7 +619,7 @@
       "excerpt": "A tiny checklist that keeps the books clean.",
       "content": [
         {
-          "id": "text-gze7wm0",
+          "id": "text-jlq64tn",
           "type": "text",
           "data": {
             "content": {
@@ -556,7 +702,7 @@
       "excerpt": "How simulated outbound communication works — and why it matters.",
       "content": [
         {
-          "id": "text-8allby3",
+          "id": "text-2bef1io",
           "type": "text",
           "data": {
             "content": {
@@ -604,7 +750,7 @@
       "excerpt": "What happens between checkout and a tracking page.",
       "content": [
         {
-          "id": "text-2ijjvwc",
+          "id": "text-r4lv8ux",
           "type": "text",
           "data": {
             "content": {
@@ -652,7 +798,7 @@
       "excerpt": "How the procure-to-pay loop closes itself on this demo.",
       "content": [
         {
-          "id": "text-4ueohvr",
+          "id": "text-zqpn5aq",
           "type": "text",
           "data": {
             "content": {
@@ -688,7 +834,7 @@
       "excerpt": "A map of the demo cycle.",
       "content": [
         {
-          "id": "text-8v10nvi",
+          "id": "text-6c9zj6g",
           "type": "text",
           "data": {
             "content": {
