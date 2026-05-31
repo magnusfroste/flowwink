@@ -1544,10 +1544,10 @@ export const agencyKbCategories: TemplateKbCategory[] = [
     icon: 'Rocket',
     articles: [
       {
-        title: '5-Minute Docker Setup',
-        slug: 'docker-setup',
-        question: 'How do I install FlowWink with Docker?',
-        answer_text: 'FlowWink runs anywhere Docker runs. Quick setup: 1) Clone the repository, 2) Copy .env.example to .env and configure your database URL, 3) Run docker-compose up -d, 4) Access your instance at localhost:3000. The entire process takes under 5 minutes on a fresh server.',
+        title: '10-Minute Cloud Setup',
+        slug: 'cloud-setup',
+        question: 'How do I install FlowWink?',
+        answer_text: 'FlowWink runs on Supabase Cloud + Vercel. Quick setup: 1) Create a Supabase Cloud project, 2) Fork the repo on GitHub, 3) Run supabase db push + supabase functions deploy from a local clone, 4) Import the repo into Vercel and set VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PROJECT_ID, 5) Deploy. ~10 minutes end to end.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -1555,7 +1555,7 @@ export const agencyKbCategories: TemplateKbCategory[] = [
         title: 'Your First Client Site',
         slug: 'first-client-site',
         question: 'How do I create a site for my first client?',
-        answer_text: 'After installation: 1) Log into admin at /admin, 2) Navigate to Settings → Site Settings, 3) Configure the organization name and branding for your client, 4) Create pages using the visual block editor, 5) Set up a custom domain. You can duplicate this setup for each new client using Docker containers or database separation.',
+        answer_text: 'After installation: 1) Log into admin at /admin, 2) Navigate to Settings → Site Settings, 3) Configure the organization name and branding for your client, 4) Create pages using the visual block editor, 5) Set up a custom domain in Vercel. For each new client, spin up a fresh Supabase project + Vercel project from the same repo.',
         is_featured: true,
         include_in_chat: true,
       },
