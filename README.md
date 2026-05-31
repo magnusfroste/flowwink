@@ -384,7 +384,7 @@ Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry poin
 | **[docs/concepts/prd.md](docs/concepts/prd.md)** | Product requirements — modules, capabilities |
 | **[docs/concepts/elevator-pitch.md](docs/concepts/elevator-pitch.md)** | BOS positioning, vision, competitive landscape |
 | **[docs/guides/setup.md](docs/guides/setup.md)** | Supabase setup, environment variables, migrations |
-| **[docs/guides/deployment.md](docs/guides/deployment.md)** | Docker, Easypanel, Railway, Fly.io guides |
+| **[docs/guides/deployment.md](docs/guides/deployment.md)** | Supabase Cloud + Vercel deployment walkthrough |
 | **[docs/builders/README.md](docs/builders/README.md)** | Architecture, extending the platform, writing skills |
 | **[docs/guides/security.md](docs/guides/security.md)** | RLS policies, auth patterns, security model |
 | **[docs/contributing/test-suite.md](docs/contributing/test-suite.md)** | Autonomous test framework (L1–L8) |
