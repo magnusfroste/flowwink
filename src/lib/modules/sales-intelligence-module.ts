@@ -243,6 +243,7 @@ export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, Sale
     'contact_finder',
     'sales_profile_setup',
     'competitor_monitor',
+    'competitor_watch',
   ],
   skillSeeds: SALESINTELLIGENCE_SKILLS,
 
