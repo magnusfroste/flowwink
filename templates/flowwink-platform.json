@@ -16,7 +16,7 @@
       "is_featured": true,
       "content": [
         {
-          "id": "text-1xzybxt",
+          "id": "text-qhjrsq3",
           "type": "text",
           "data": {
             "content": {
@@ -228,7 +228,7 @@
       "featured_image_alt": "Autonomous AI agent concept",
       "content": [
         {
-          "id": "text-irkis4d",
+          "id": "text-eahdz7i",
           "type": "text",
           "data": {
             "content": {
@@ -419,7 +419,7 @@
       "featured_image_alt": "Secure server infrastructure",
       "content": [
         {
-          "id": "text-iybwyj1",
+          "id": "text-homa8hf",
           "type": "text",
           "data": {
             "content": {
@@ -608,7 +608,7 @@
       "featured_image_alt": "Continuous improvement cycle visualization",
       "content": [
         {
-          "id": "text-nuv7dpt",
+          "id": "text-apoikkl",
           "type": "text",
           "data": {
             "content": {
@@ -820,7 +820,7 @@
       "featured_image_alt": "Unified platform replacing multiple tools",
       "content": [
         {
-          "id": "text-zirdh46",
+          "id": "text-8r0qbbu",
           "type": "text",
           "data": {
             "content": {
@@ -1121,7 +1121,7 @@
       "featured_image_alt": "Connected network representing skill engine",
       "content": [
         {
-          "id": "text-kh6hkc7",
+          "id": "text-omn1mdh",
           "type": "text",
           "data": {
             "content": {
@@ -1450,7 +1450,7 @@
       "featured_image_alt": "Strategic planning board with goals and recurring tasks",
       "content": [
         {
-          "id": "text-3wyc7pi",
+          "id": "text-9uvm8hr",
           "type": "text",
           "data": {
             "content": {
@@ -1744,7 +1744,7 @@
       "featured_image_alt": "Network of connected nodes representing agent-to-agent communication",
       "content": [
         {
-          "id": "text-lnbrwh0",
+          "id": "text-7oyf3sx",
           "type": "text",
           "data": {
             "content": {
@@ -1987,7 +1987,7 @@
       "featured_image_alt": "Person analyzing content strategy on multiple screens",
       "content": [
         {
-          "id": "text-co2madf",
+          "id": "text-fx78g6u",
           "type": "text",
           "data": {
             "content": {
@@ -2211,7 +2211,7 @@
       "featured_image_alt": "Circular process diagram representing autonomous loop",
       "content": [
         {
-          "id": "text-l7rkfkk",
+          "id": "text-mlnzqgm",
           "type": "text",
           "data": {
             "content": {
@@ -2411,7 +2411,7 @@
       "featured_image_alt": "Data flow architecture diagram",
       "content": [
         {
-          "id": "text-ks33uhw",
+          "id": "text-t56v3hs",
           "type": "text",
           "data": {
             "content": {
@@ -2727,7 +2727,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-2rhcwtb",
+          "id": "text-q981q7w",
           "type": "text",
           "data": {
             "content": {
@@ -2926,7 +2926,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-9pzyrqb",
+          "id": "text-sdpi046",
           "type": "text",
           "data": {
             "content": {
@@ -3245,7 +3245,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-b4w8e9p",
+          "id": "text-ycq618i",
           "type": "text",
           "data": {
             "content": {
@@ -3489,7 +3489,7 @@
       "is_featured": false,
       "content": [
         {
-          "id": "text-r87b77u",
+          "id": "text-f63gngc",
           "type": "text",
           "data": {
             "content": {
@@ -4074,22 +4074,22 @@
     {
       "name": "Self-Hosting & Deployment",
       "slug": "self-hosting",
-      "description": "Run FlowWink and FlowPilot on your own infrastructure with Docker.",
+      "description": "Run FlowWink on Supabase Cloud + Vercel — your data, your infrastructure.",
       "icon": "Server",
       "articles": [
         {
           "title": "Self-Hosting Overview",
           "slug": "self-hosting-overview",
           "question": "Can I self-host FlowWink?",
-          "answer_text": "Yes. FlowWink is fully self-hostable using Docker. Your autonomous agent, your data, your AI — all on infrastructure you control. Benefits: complete data sovereignty, private LLM support, custom domain, no per-seat licensing, and no vendor lock-in. FlowPilot operates identically whether self-hosted or cloud-deployed.",
+          "answer_text": "Yes. The recommended stack is Supabase Cloud for the backend (database, auth, edge functions, storage) and Vercel for the frontend. Both have generous free tiers. You own the Supabase project and the GitHub repo — your data, your code, no vendor lock-in. FlowPilot operates identically on any deployment.",
           "is_featured": true,
           "include_in_chat": true
         },
         {
-          "title": "Docker Quick Start",
-          "slug": "docker-quickstart",
-          "question": "How do I deploy FlowWink with Docker?",
-          "answer_text": "Quick start: 1) Create docker-compose.yml with the FlowWink image, 2) Set environment variables for Supabase connection, 3) Run docker-compose up -d, 4) Access at localhost:8080, 5) Configure your AI provider, 6) Set your first FlowPilot objective. See docs/DOCKER-QUICKSTART.md for complete instructions.",
+          "title": "Quick Start",
+          "slug": "quick-start",
+          "question": "How do I deploy FlowWink?",
+          "answer_text": "Five steps: 1) Create a Supabase Cloud project, 2) Fork this repo on GitHub, 3) Run supabase db push and supabase functions deploy from your local clone, 4) Connect the repo to Vercel and set VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PROJECT_ID, 5) Deploy. Total time: ~10 minutes. See docs/guides/deployment.md for the full walkthrough.",
           "is_featured": true,
           "include_in_chat": true
         },
@@ -4097,21 +4097,21 @@
           "title": "Environment Variables",
           "slug": "environment-variables",
           "question": "What environment variables do I need?",
-          "answer_text": "Required: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY. Optional: API keys for OpenAI, Gemini, Resend (email), Unsplash, Firecrawl. For private LLM: configure endpoint URL in integrations. All secrets are stored securely. FlowPilot works with any configured AI provider.",
+          "answer_text": "Frontend (Vercel): VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID. Backend secrets (Supabase Edge Function secrets): OPENAI_API_KEY or GEMINI_API_KEY, plus optional RESEND_API_KEY, UNSPLASH_ACCESS_KEY, FIRECRAWL_API_KEY, HUNTER_API_KEY. Configure integrations under /admin/integrations.",
           "include_in_chat": true
         },
         {
           "title": "Connecting Your Domain",
           "slug": "connecting-domain",
           "question": "How do I connect my custom domain?",
-          "answer_text": "Configure your reverse proxy (nginx, Caddy, Traefik) to point to the FlowWink container. Add SSL with Let's Encrypt. Update your branding settings with the production domain for correct canonical URLs and sitemap generation.",
+          "answer_text": "In Vercel → Project → Domains, add your domain and follow the DNS instructions. Then update Supabase → Auth → URL Configuration with the production URL so login redirects work. Finally update site branding under /admin/settings so canonical URLs and sitemaps use the right domain.",
           "include_in_chat": true
         },
         {
           "title": "Upgrading FlowWink",
           "slug": "upgrading",
           "question": "How do I upgrade to a new version?",
-          "answer_text": "Pull the latest Docker image and restart your container. Database migrations run automatically on startup. FlowPilot's persistent memory and skills are preserved across upgrades. Always backup your database before major upgrades. Check CHANGELOG.md for breaking changes.",
+          "answer_text": "Pull the latest from upstream (git pull), then push new migrations and edge functions: supabase db push && supabase functions deploy. Vercel auto-rebuilds the frontend on git push. FlowPilot memory, skills and your data are preserved across upgrades. Always backup the Supabase database before major upgrades — check CHANGELOG.md for breaking changes.",
           "include_in_chat": true
         }
       ]
@@ -4149,7 +4149,7 @@
           "title": "Private AI Setup",
           "slug": "private-ai-setup",
           "question": "How do I ensure my AI is completely private?",
-          "answer_text": "Deploy FlowWink with Docker on your infrastructure. Configure a Local LLM (Ollama, LM Studio, vLLM) instead of cloud AI providers. Your prompts, content, lead data, and customer conversations never leave your network. FlowPilot's persistent memory is stored in your own database.",
+          "answer_text": "For full data sovereignty, run FlowWink against a self-hosted Supabase instance and configure a Local LLM (Ollama, LM Studio, vLLM) instead of cloud AI providers. Your prompts, content, lead data, and customer conversations never leave your network. FlowPilot's persistent memory is stored in your own database.",
           "is_featured": true,
           "include_in_chat": true
         }
