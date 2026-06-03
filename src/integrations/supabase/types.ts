@@ -2991,6 +2991,10 @@ export type Database = {
           currency: string
           education: Json | null
           email: string | null
+          embedded_at: string | null
+          embedding: string | null
+          embedding_model: string | null
+          embedding_status: string
           experience_json: Json | null
           experience_years: number | null
           hourly_rate_cents: number | null
@@ -3001,6 +3005,7 @@ export type Database = {
           name: string
           phone: string | null
           portfolio_url: string | null
+          search_tsv: unknown
           skills: string[]
           summary: string | null
           title: string | null
@@ -3016,6 +3021,10 @@ export type Database = {
           currency?: string
           education?: Json | null
           email?: string | null
+          embedded_at?: string | null
+          embedding?: string | null
+          embedding_model?: string | null
+          embedding_status?: string
           experience_json?: Json | null
           experience_years?: number | null
           hourly_rate_cents?: number | null
@@ -3026,6 +3035,7 @@ export type Database = {
           name: string
           phone?: string | null
           portfolio_url?: string | null
+          search_tsv?: unknown
           skills?: string[]
           summary?: string | null
           title?: string | null
@@ -3041,6 +3051,10 @@ export type Database = {
           currency?: string
           education?: Json | null
           email?: string | null
+          embedded_at?: string | null
+          embedding?: string | null
+          embedding_model?: string | null
+          embedding_status?: string
           experience_json?: Json | null
           experience_years?: number | null
           hourly_rate_cents?: number | null
@@ -3051,6 +3065,7 @@ export type Database = {
           name?: string
           phone?: string | null
           portfolio_url?: string | null
+          search_tsv?: unknown
           skills?: string[]
           summary?: string | null
           title?: string | null
@@ -12805,6 +12820,27 @@ export type Database = {
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
         Returns: Json
+      }
+      match_consultants: {
+        Args: {
+          match_count?: number
+          only_active?: boolean
+          query_embedding: string
+          query_text?: string
+          semantic_weight?: number
+        }
+        Returns: {
+          availability: string
+          experience_years: number
+          hybrid_score: number
+          id: string
+          name: string
+          semantic_score: number
+          skills: string[]
+          summary: string
+          text_score: number
+          title: string
+        }[]
       }
       match_invoice_to_receipt: {
         Args: { p_invoice_id: string; p_tolerance_pct?: number }

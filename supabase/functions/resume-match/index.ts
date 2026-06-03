@@ -1,105 +1,198 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { resolveEmbeddingProvider, embedText } from '../_shared/ai-providers.ts';
 
 /**
- * Resume Match — Keyword-Based Matching (No AI)
- * 
- * Matches consultants to a job description using skill overlap scoring.
- * AI-powered reasoning is now FlowPilot's job via the match_consultant skill.
- * 
- * OpenClaw alignment: "hand" (data query + deterministic scoring).
+ * Resume Match — Hybrid semantic (pgvector) + BM25 (tsvector) matching.
+ *
+ * Actions (POST body or ?action=...):
+ *   - (default) search consultants for a job description
+ *   - reindex_stale   → embed all consultant_profiles with embedding_status='stale'
+ *   - reindex_one     → embed a single profile (body.id)
+ *
+ * Embeddings flow through the same site-settings provider chain as chat,
+ * but hit `/embeddings` (OpenAI / Gemini / Local). NO Lovable AI Gateway.
  */
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+async function loadProviderSettings(supabase: any) {
+  const [{ data: sys }, { data: integ }] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'system_ai').maybeSingle(),
+    supabase.from('site_settings').select('value').eq('key', 'integrations').maybeSingle(),
+  ]);
+  const cfg = (sys?.value || {}) as Record<string, any>;
+  return {
+    settings: {
+      openaiApiKey: cfg.openaiApiKey,
+      openaiBaseUrl: cfg.openaiBaseUrl,
+      geminiApiKey: cfg.geminiApiKey,
+      localEndpoint: cfg.localEndpoint,
+      localApiKey: cfg.localApiKey,
+    },
+    integrations: integ?.value || {},
+    preferred: cfg.provider as 'openai' | 'gemini' | 'local' | undefined,
+  };
+}
+
+function buildProfileText(p: any): string {
+  const parts = [
+    p.name,
+    p.title,
+    p.summary,
+    p.bio,
+    p.skills?.length ? `Skills: ${p.skills.join(', ')}` : '',
+    p.certifications?.length ? `Certifications: ${p.certifications.join(', ')}` : '',
+    p.languages?.length ? `Languages: ${p.languages.join(', ')}` : '',
+    p.experience_years ? `${p.experience_years} years experience` : '',
+  ].filter(Boolean);
+  return parts.join('\n');
+}
+
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { job_description, max_results = 5 } = await req.json();
-
-    if (!job_description || job_description.length < 10) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Job description is required (min 10 chars)' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabase = getServiceClient();
+    const url = new URL(req.url);
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    const action = url.searchParams.get('action') || body.action || 'search';
 
-    // Fetch active consultants
-    const { data: consultants, error } = await supabase
-      .from('consultant_profiles')
-      .select('id, name, title, skills, experience_years, summary, languages, certifications, availability')
-      .eq('is_active', true);
+    // -------------------------------------------------------------------
+    // Reindex: stale batch
+    // -------------------------------------------------------------------
+    if (action === 'reindex_stale') {
+      const limit = Math.min(Number(body.limit) || 25, 100);
+      const { data: stale, error } = await supabase
+        .from('consultant_profiles')
+        .select('id, name, title, summary, bio, skills, certifications, languages, experience_years')
+        .eq('embedding_status', 'stale')
+        .limit(limit);
+      if (error) throw error;
+      if (!stale?.length) return json({ success: true, processed: 0, message: 'No stale profiles' });
 
-    if (error) throw error;
-    if (!consultants?.length) {
-      return new Response(
-        JSON.stringify({ success: true, matches: [], message: 'No active consultants found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      const { settings, integrations, preferred } = await loadProviderSettings(supabase);
+      const provider = resolveEmbeddingProvider(settings, integrations, preferred);
 
-    // Tokenize job description
-    const jobTokens = tokenize(job_description);
-
-    // Score each consultant by skill overlap
-    const scored = consultants.map(c => {
-      const skillTokens = (c.skills || []).flatMap((s: string) => tokenize(s));
-      const titleTokens = tokenize(c.title || '');
-      const summaryTokens = tokenize(c.summary || '');
-      const allTokens = new Set([...skillTokens, ...titleTokens, ...summaryTokens]);
-
-      let overlap = 0;
-      for (const token of jobTokens) {
-        if (allTokens.has(token)) overlap++;
+      let processed = 0;
+      const errors: Array<{ id: string; error: string }> = [];
+      for (const p of stale) {
+        try {
+          const text = buildProfileText(p);
+          if (!text.trim()) {
+            await supabase
+              .from('consultant_profiles')
+              .update({ embedding_status: 'empty', embedded_at: new Date().toISOString() })
+              .eq('id', p.id);
+            continue;
+          }
+          const { embedding, model } = await embedText(text, provider);
+          // Use RPC-free direct update — bypass the stale trigger by NOT touching text columns
+          const { error: upErr } = await supabase
+            .from('consultant_profiles')
+            .update({
+              embedding: embedding as any,
+              embedding_model: `${provider.provider}:${model}`,
+              embedding_status: 'fresh',
+              embedded_at: new Date().toISOString(),
+            })
+            .eq('id', p.id);
+          if (upErr) throw upErr;
+          processed++;
+        } catch (e: any) {
+          errors.push({ id: p.id, error: e?.message || String(e) });
+        }
       }
 
-      const score = jobTokens.length > 0 ? Math.round((overlap / jobTokens.length) * 100) : 0;
+      return json({ success: true, processed, errors, provider: provider.provider, model: provider.model });
+    }
 
-      return {
-        id: c.id,
-        name: c.name,
-        title: c.title,
-        skills: c.skills,
-        experience_years: c.experience_years,
-        availability: c.availability,
-        match_score: score,
-        matched_keywords: [...new Set(jobTokens.filter(t => allTokens.has(t)))],
-      };
+    // -------------------------------------------------------------------
+    // Reindex: single
+    // -------------------------------------------------------------------
+    if (action === 'reindex_one') {
+      const id = body.id || url.searchParams.get('id');
+      if (!id) return json({ success: false, error: 'id is required' }, 400);
+      const { data: p, error } = await supabase
+        .from('consultant_profiles')
+        .select('id, name, title, summary, bio, skills, certifications, languages, experience_years')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!p) return json({ success: false, error: 'Profile not found' }, 404);
+
+      const { settings, integrations, preferred } = await loadProviderSettings(supabase);
+      const provider = resolveEmbeddingProvider(settings, integrations, preferred);
+      const text = buildProfileText(p);
+      const { embedding, model } = await embedText(text, provider);
+      const { error: upErr } = await supabase
+        .from('consultant_profiles')
+        .update({
+          embedding: embedding as any,
+          embedding_model: `${provider.provider}:${model}`,
+          embedding_status: 'fresh',
+          embedded_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (upErr) throw upErr;
+      return json({ success: true, id, provider: provider.provider, model });
+    }
+
+    // -------------------------------------------------------------------
+    // Search: hybrid semantic + BM25
+    // -------------------------------------------------------------------
+    const jobDescription: string = body.job_description || body.query || '';
+    const maxResults: number = Math.min(Number(body.max_results) || 5, 25);
+    const semanticWeight: number =
+      typeof body.semantic_weight === 'number' ? body.semantic_weight : 0.6;
+
+    if (!jobDescription || jobDescription.length < 10) {
+      return json({ success: false, error: 'Job description is required (min 10 chars)' }, 400);
+    }
+
+    // Try to get a query embedding. If no provider, gracefully fall back to text-only search.
+    let queryEmbedding: number[] | null = null;
+    let usedProvider: string | null = null;
+    try {
+      const { settings, integrations, preferred } = await loadProviderSettings(supabase);
+      const provider = resolveEmbeddingProvider(settings, integrations, preferred);
+      const r = await embedText(jobDescription, provider);
+      queryEmbedding = r.embedding;
+      usedProvider = `${provider.provider}:${provider.model}`;
+    } catch (e) {
+      console.warn('[resume-match] embedding unavailable, falling back to text-only:', e);
+    }
+
+    const { data: matches, error: rpcErr } = await supabase.rpc('match_consultants', {
+      query_embedding: queryEmbedding as any,
+      query_text: jobDescription,
+      match_count: maxResults,
+      semantic_weight: queryEmbedding ? semanticWeight : 0,
+      only_active: true,
     });
+    if (rpcErr) throw rpcErr;
 
-    // Sort by score, return top N
-    scored.sort((a, b) => b.match_score - a.match_score);
-    const matches = scored.slice(0, max_results).filter(m => m.match_score > 0);
-
-    return new Response(
-      JSON.stringify({ success: true, matches, total_consultants: consultants.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return json({
+      success: true,
+      matches: matches || [],
+      mode: queryEmbedding ? 'hybrid' : 'text_only',
+      provider: usedProvider,
+    });
   } catch (error) {
     console.error('Resume match error:', error);
-    return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return json(
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      500,
     );
   }
 });
-
-/** Tokenize text into lowercase keywords, filtering common stop words */
-function tokenize(text: string): string[] {
-  const stops = new Set(['and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'is', 'are', 'was', 'be', 'we', 'you', 'our', 'their', 'that', 'this', 'from', 'by', 'as', 'it', 'will', 'can', 'has', 'have', 'not', 'but', 'all', 'been', 'more', 'than', 'other', 'into', 'its', 'also', 'very', 'just', 'about', 'over', 'such', 'only', 'some', 'any', 'each', 'which', 'do', 'does', 'did', 'may', 'would', 'could', 'should', 'shall', 'must', 'need', 'och', 'i', 'att', 'en', 'ett', 'av', 'med', 'som', 'det', 'den', 'de', 'vi', 'du', 'eller', 'vara', 'har', 'till', 'om', 'kan', 'ska']);
-  return text
-    .toLowerCase()
-    .replace(/[^a-zåäö0-9#+.]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 1 && !stops.has(w));
-}

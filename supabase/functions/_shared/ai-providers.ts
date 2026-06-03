@@ -151,6 +151,119 @@ export function resolveProviderWithFallback(
   );
 }
 
+// ---------------------------------------------------------------------------
+// Embeddings
+// ---------------------------------------------------------------------------
+
+export interface EmbeddingResult {
+  embedding: number[];
+  model: string;
+  provider: string;
+}
+
+/**
+ * Resolve provider for embeddings. Falls back OpenAI → Gemini → Local.
+ * (n8n is skipped — it's a chat webhook, not an embedding endpoint.)
+ *
+ * Returns a config tailored for the `/embeddings` endpoint, not chat.
+ */
+export interface EmbeddingProviderConfig {
+  provider: 'openai' | 'gemini' | 'local';
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  dimensions: number;
+}
+
+export function resolveEmbeddingProvider(
+  settings: ChatSettingsLike | undefined,
+  integrations: any,
+  preferred?: 'openai' | 'gemini' | 'local',
+): EmbeddingProviderConfig {
+  const order: Array<'openai' | 'gemini' | 'local'> = preferred
+    ? [preferred, ...(['openai', 'gemini', 'local'] as const).filter(p => p !== preferred)]
+    : ['openai', 'gemini', 'local'];
+
+  for (const p of order) {
+    if (p === 'openai') {
+      const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
+      if (!apiKey) continue;
+      const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
+      return {
+        provider: 'openai',
+        apiKey,
+        apiUrl: `${baseUrl}/embeddings`,
+        model: 'text-embedding-3-small',
+        dimensions: 1536,
+      };
+    }
+    if (p === 'gemini') {
+      const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
+      if (!apiKey) continue;
+      // Use OpenAI-compatible endpoint for Gemini embeddings
+      return {
+        provider: 'gemini',
+        apiKey,
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/embeddings',
+        model: 'text-embedding-004',
+        dimensions: 1536, // we truncate via `dimensions` param
+      };
+    }
+    if (p === 'local') {
+      const localConfig = integrations?.local_llm?.config || {};
+      const endpoint = localConfig?.endpoint || settings?.localEndpoint;
+      if (!endpoint || endpoint.includes('placeholder')) continue;
+      const apiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig?.apiKey || settings?.localApiKey || '';
+      const base = endpoint.replace(/\/+$/, '');
+      const path = base.endsWith('/v1') ? '/embeddings' : '/v1/embeddings';
+      return {
+        provider: 'local',
+        apiKey,
+        apiUrl: `${base}${path}`,
+        model: localConfig?.embeddingModel || 'text-embedding-3-small',
+        dimensions: 1536,
+      };
+    }
+  }
+
+  throw new Error('No embedding provider available. Configure OpenAI, Gemini or Local LLM API keys in Settings → System AI.');
+}
+
+/** Embed a single piece of text. Returns the vector + model used. */
+export async function embedText(
+  text: string,
+  cfg: EmbeddingProviderConfig,
+): Promise<EmbeddingResult> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+
+  const body: Record<string, any> = {
+    model: cfg.model,
+    input: text.slice(0, 8000), // safety cap
+  };
+  // OpenAI v3 supports `dimensions` truncation; harmless if ignored.
+  if (cfg.provider === 'openai' || cfg.provider === 'gemini') {
+    body.dimensions = cfg.dimensions;
+  }
+
+  const resp = await fetch(cfg.apiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`Embedding provider ${cfg.provider} error ${resp.status}: ${t}`);
+  }
+
+  const data = await resp.json();
+  const vec = data?.data?.[0]?.embedding;
+  if (!Array.isArray(vec)) throw new Error(`Embedding provider ${cfg.provider} returned no vector`);
+  return { embedding: vec, model: cfg.model, provider: cfg.provider };
+}
+
+
 /**
  * N8N webhook passthrough. Returns an SSE Response that mimics the
  * OpenAI streaming-completion format so client code is provider-agnostic.
