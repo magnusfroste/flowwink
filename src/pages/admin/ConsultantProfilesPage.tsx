@@ -318,6 +318,45 @@ export default function ConsultantProfilesPage() {
     },
   });
 
+  // ---- Embedding status + manual re-index --------------------------------
+  const staleQuery = useQuery({
+    queryKey: ["consultant-embedding-stale"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("consultant_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("embedding_status", "stale");
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 30_000,
+  });
+
+  const reindexMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("resume-match", {
+        body: { action: "reindex_stale", limit: 50 },
+      });
+      if (error) throw error;
+      return data as { processed: number; provider?: string; errors?: unknown[] };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Re-index complete",
+        description: `${data.processed} profile(s) embedded${data.provider ? ` via ${data.provider}` : ""}.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["consultant-embedding-stale"] });
+    },
+    onError: (e: unknown) => {
+      toast({
+        title: "Re-index failed",
+        description: e instanceof Error ? e.message : "Check that an embedding provider is configured.",
+        variant: "destructive",
+      });
+    },
+  });
+
+
   const handlePdfImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
