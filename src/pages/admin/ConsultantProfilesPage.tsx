@@ -57,6 +57,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CheckinHistoryButton, useLastCheckin } from "@/components/admin/CheckinHistoryButton";
+import { formatDistanceToNow } from "date-fns";
 
 /**
  * Extract text from a PDF ArrayBuffer using pdf.js CDN.
