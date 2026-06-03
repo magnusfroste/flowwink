@@ -102,7 +102,7 @@ export function ChatConversation({
         visitorSettings={{
           title: checkinId ? 'Profile Check-in' : settings?.title,
           welcomeMessage: checkinId
-            ? 'Hi! I\'m FlowPilot. Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
+            ? 'Hi! Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
             : settings?.welcomeMessage,
           suggestedPrompts: checkinId
             ? ['Tell me about my latest project', 'I want to update my availability', 'What information do you need?']
