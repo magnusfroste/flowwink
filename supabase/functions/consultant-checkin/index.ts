@@ -229,7 +229,17 @@ YOUR JOB:
                   console.error("Profile update failed:", upErr);
                   controller.enqueue(encoder.encode(sseChunk(`\n\n_(Could not save: ${upErr.message})_`)));
                 } else {
-                  const fields = Object.keys(patch).filter((k) => k !== "updated_at").join(", ");
+                  const savedFields = Object.fromEntries(
+                    Object.entries(patch).filter(([k]) => k !== "updated_at"),
+                  );
+                  const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content ?? null;
+                  await supabase.from("consultant_checkin_log").insert({
+                    profile_id: checkinId,
+                    fields_updated: savedFields,
+                    last_user_message: lastUserMsg,
+                    source: "chat",
+                  });
+                  const fields = Object.keys(savedFields).join(", ");
                   controller.enqueue(encoder.encode(sseChunk(`\n\n✅ Saved: ${fields}`)));
                 }
               }

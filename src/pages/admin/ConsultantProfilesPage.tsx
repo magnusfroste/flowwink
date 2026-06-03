@@ -57,6 +57,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CheckinHistoryButton, useLastCheckin } from "@/components/admin/CheckinHistoryButton";
+import { formatDistanceToNow } from "date-fns";
 
 /**
  * Extract text from a PDF ArrayBuffer using pdf.js CDN.
@@ -239,6 +241,24 @@ function CopyCheckinLinkButton({ profileId, profileName }: { profileId: string; 
     >
       {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <LinkIcon className="h-3.5 w-3.5" />}
     </Button>
+  );
+}
+
+function LastCheckinCell({ profileId }: { profileId: string }) {
+  const { data, isLoading } = useLastCheckin(profileId);
+  if (isLoading) {
+    return <span className="text-xs text-muted-foreground">…</span>;
+  }
+  if (!data?.created_at) {
+    return <span className="text-xs text-muted-foreground">Never</span>;
+  }
+  return (
+    <span
+      className="text-xs text-muted-foreground"
+      title={new Date(data.created_at).toLocaleString()}
+    >
+      {formatDistanceToNow(new Date(data.created_at), { addSuffix: true })}
+    </span>
   );
 }
 
@@ -511,8 +531,9 @@ export default function ConsultantProfilesPage() {
                   <TableHead className="hidden md:table-cell">Skills</TableHead>
                   <TableHead className="hidden sm:table-cell">Experience</TableHead>
                   <TableHead className="hidden lg:table-cell">Availability</TableHead>
+                  <TableHead className="hidden lg:table-cell">Last check-in</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead className="w-[130px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -559,6 +580,9 @@ export default function ConsultantProfilesPage() {
                         {profile.availability || "unknown"}
                       </Badge>
                     </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <LastCheckinCell profileId={profile.id} />
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={profile.is_active ? "default" : "outline"}
@@ -570,6 +594,7 @@ export default function ConsultantProfilesPage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <CopyCheckinLinkButton profileId={profile.id} profileName={profile.name} />
+                        <CheckinHistoryButton profileId={profile.id} profileName={profile.name} />
                         <Button
                           variant="ghost"
                           size="icon"

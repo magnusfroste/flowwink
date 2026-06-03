@@ -2945,6 +2945,41 @@ export type Database = {
         }
         Relationships: []
       }
+      consultant_checkin_log: {
+        Row: {
+          created_at: string
+          fields_updated: Json
+          id: string
+          last_user_message: string | null
+          profile_id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          fields_updated?: Json
+          id?: string
+          last_user_message?: string | null
+          profile_id: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          fields_updated?: Json
+          id?: string
+          last_user_message?: string | null
+          profile_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_checkin_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_profiles: {
         Row: {
           availability: string | null

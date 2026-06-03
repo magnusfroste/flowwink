@@ -378,20 +378,20 @@ export function useChat(options?: UseChatOptions) {
 
     setMessages(prev => [...prev, userMessage]);
 
-    // Ensure we have a conversation
+    // Ensure we have a conversation (skip for check-in flows — ephemeral by design)
     let convId = conversationId;
     const isFirstMessage = messages.length === 0;
-    if (!convId && settings?.saveConversations) {
+    if (!options?.checkinId && !convId && settings?.saveConversations) {
       convId = await createConversation();
     }
 
     // Update conversation title on first message
-    if (isFirstMessage && convId) {
+    if (!options?.checkinId && isFirstMessage && convId) {
       await updateConversationTitle(convId, content.trim());
     }
 
     // Save user message
-    if (convId) {
+    if (!options?.checkinId && convId) {
       await saveMessage(convId, 'user', content.trim());
     }
 
