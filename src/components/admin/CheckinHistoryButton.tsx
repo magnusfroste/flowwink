@@ -140,10 +140,7 @@ export function CheckinHistoryButton({
                           <p className="text-xs font-medium">Fields updated</p>
                           <dl className="text-xs grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
                             {fields.map(([k, v]) => (
-                              <>
-                                <dt key={k + "-k"} className="text-muted-foreground">{k}</dt>
-                                <dd key={k + "-v"} className="break-words">{describeValue(v)}</dd>
-                              </>
+                              <FieldRow key={k} fieldKey={k} value={v} />
                             ))}
                           </dl>
                         </div>
