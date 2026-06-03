@@ -133,6 +133,9 @@ verify_jwt = false
 [functions.send-order-confirmation]
 verify_jwt = false
 
+[functions.resume-match]
+verify_jwt = false
+
 [functions.send-quote-email]
 verify_jwt = false
 
