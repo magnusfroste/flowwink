@@ -50,11 +50,29 @@
           "id": "hero-demo",
           "type": "hero",
           "data": {
+            "eyebrow": "LIVE DEMO · RESETS EVERY HOUR",
+            "eyebrowColor": "primary",
             "title": "Watch a business run itself.",
             "subtitle": "This site is a live FlowWink instance. FlowPilot handles leads, quotes, invoices and expenses around the clock. Sign in with demo / demo1234 and break things — we reset every hour.",
-            "backgroundType": "color",
-            "heightMode": "auto",
+            "backgroundType": "video",
+            "videoType": "direct",
+            "videoUrl": "/videos/hero-demo-ambient.mp4",
+            "videoAutoplay": true,
+            "videoLoop": true,
+            "videoMuted": true,
+            "showVideoControls": false,
+            "overlayColor": "dark",
+            "overlayOpacity": 0.55,
+            "textTheme": "light",
+            "heightMode": "80vh",
             "contentAlignment": "center",
+            "textAlignment": "center",
+            "titleSize": "display",
+            "gradientTitle": true,
+            "titleAnimation": "slide-up",
+            "subtitleAnimation": "fade-in",
+            "buttonAnimation": "fade-in",
+            "showScrollIndicator": true,
             "primaryButton": {
               "text": "Shop the demo",
               "url": "/shop"
@@ -489,7 +507,7 @@
       "is_featured": true,
       "content": [
         {
-          "id": "text-vjw5o91",
+          "id": "text-7enuylx",
           "type": "text",
           "data": {
             "content": {
@@ -619,7 +637,7 @@
       "excerpt": "A tiny checklist that keeps the books clean.",
       "content": [
         {
-          "id": "text-gvzue27",
+          "id": "text-jmc8o91",
           "type": "text",
           "data": {
             "content": {
@@ -702,7 +720,7 @@
       "excerpt": "How simulated outbound communication works — and why it matters.",
       "content": [
         {
-          "id": "text-2qi1myx",
+          "id": "text-t68hgz2",
           "type": "text",
           "data": {
             "content": {
@@ -750,7 +768,7 @@
       "excerpt": "What happens between checkout and a tracking page.",
       "content": [
         {
-          "id": "text-20wg56a",
+          "id": "text-95tcqrf",
           "type": "text",
           "data": {
             "content": {
@@ -798,7 +816,7 @@
       "excerpt": "How the procure-to-pay loop closes itself on this demo.",
       "content": [
         {
-          "id": "text-pc0zuat",
+          "id": "text-idemylv",
           "type": "text",
           "data": {
             "content": {
@@ -834,7 +852,7 @@
       "excerpt": "A map of the demo cycle.",
       "content": [
         {
-          "id": "text-hjldjps",
+          "id": "text-h93mrk8",
           "type": "text",
           "data": {
             "content": {
