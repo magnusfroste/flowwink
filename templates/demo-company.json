@@ -571,7 +571,7 @@
       "is_featured": true,
       "content": [
         {
-          "id": "text-c4aaox8",
+          "id": "text-lfh5j1a",
           "type": "text",
           "data": {
             "content": {
@@ -701,7 +701,7 @@
       "excerpt": "A tiny checklist that keeps the books clean.",
       "content": [
         {
-          "id": "text-qgwewtn",
+          "id": "text-ttsf1qh",
           "type": "text",
           "data": {
             "content": {
@@ -784,7 +784,7 @@
       "excerpt": "How simulated outbound communication works — and why it matters.",
       "content": [
         {
-          "id": "text-myb8zon",
+          "id": "text-0gvvpzb",
           "type": "text",
           "data": {
             "content": {
@@ -832,7 +832,7 @@
       "excerpt": "What happens between checkout and a tracking page.",
       "content": [
         {
-          "id": "text-1b30554",
+          "id": "text-30ojuts",
           "type": "text",
           "data": {
             "content": {
@@ -880,7 +880,7 @@
       "excerpt": "How the procure-to-pay loop closes itself on this demo.",
       "content": [
         {
-          "id": "text-4kn90im",
+          "id": "text-46xiah5",
           "type": "text",
           "data": {
             "content": {
@@ -916,7 +916,7 @@
       "excerpt": "A map of the demo cycle.",
       "content": [
         {
-          "id": "text-pvq5i4g",
+          "id": "text-95kkens",
           "type": "text",
           "data": {
             "content": {
@@ -1225,6 +1225,32 @@
       "stock": {
         "quantity_on_hand": 999,
         "reorder_point": 50
+      }
+    },
+    {
+      "name": "Claw Backpack",
+      "description": "Compact daypack with laptop sleeve and claw-mark zip pulls.",
+      "price_cents": 59900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 35,
+        "reorder_point": 5
+      }
+    },
+    {
+      "name": "Thermos Flask",
+      "description": "Double-walled steel flask. Keeps coffee hot through the longest agent runs.",
+      "price_cents": 34900,
+      "currency": "SEK",
+      "type": "one_time",
+      "image_url": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
+      "is_active": true,
+      "stock": {
+        "quantity_on_hand": 45,
+        "reorder_point": 8
       }
     }
   ],
