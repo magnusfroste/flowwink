@@ -152,6 +152,27 @@ export function ModuleCard({
     }
   };
 
+  const handleReset = async () => {
+    if (!seederName) return;
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.rpc("reset_module_data", {
+        p_module: seederName,
+        p_dry_run: false,
+        p_run_id: null,
+      });
+      if (error) throw error;
+      const deleted =
+        (data as { deleted_total?: number } | null)?.deleted_total ?? 0;
+      toast.success(`Reset complete — removed ${deleted} demo row(s)`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Reset failed";
+      toast.error(msg);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <>
       <Card
