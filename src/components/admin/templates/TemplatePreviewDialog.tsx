@@ -186,68 +186,49 @@ export function TemplatePreviewDialog({
     footerSettings: true,
     seoSettings: true,
     cookieBannerSettings: true,
-    blogPosts: !!template.blogPosts?.length,
-    kbContent: !!template.kbCategories?.length,
-    products: !!template.products?.length,
-    consultants: !!template.consultants?.length,
+    // Module data (blog/kb/products/consultants) is no longer seeded by
+    // templates — each module owns its own demo data via /admin/modules.
+    blogPosts: false,
+    kbContent: false,
+    products: false,
+    consultants: false,
     modules: !!template.requiredModules?.length,
-    // Additional options
     resetObjectives: false,
     clearMedia: false,
     downloadImages: templateImageCount > 0,
     publishPages: true,
-    publishBlogPosts: true,
-    publishKbArticles: true,
+    publishBlogPosts: false,
+    publishKbArticles: false,
   });
 
   const updateOption = (key: keyof TemplateOverwriteOptions, value: boolean) => {
     setOptions(prev => ({ ...prev, [key]: value }));
   };
 
-  // Count what will be overwritten
   const stats = useMemo(() => {
     let overwriteCount = 0;
     let newCount = 0;
-    
     if (options.pages) {
-      if (existingContent.pagesCount > 0) overwriteCount++;
-      else newCount++;
+      if (existingContent.pagesCount > 0) overwriteCount++; else newCount++;
     }
     if (options.branding) {
-      if (existingContent.hasBranding) overwriteCount++;
-      else newCount++;
+      if (existingContent.hasBranding) overwriteCount++; else newCount++;
     }
     if (options.chatSettings) {
-      if (existingContent.hasChatSettings) overwriteCount++;
-      else newCount++;
+      if (existingContent.hasChatSettings) overwriteCount++; else newCount++;
     }
     if (options.footerSettings) {
-      if (existingContent.hasFooter) overwriteCount++;
-      else newCount++;
+      if (existingContent.hasFooter) overwriteCount++; else newCount++;
     }
     if (options.seoSettings) {
-      if (existingContent.hasSeo) overwriteCount++;
-      else newCount++;
+      if (existingContent.hasSeo) overwriteCount++; else newCount++;
     }
     if (options.cookieBannerSettings) {
-      if (existingContent.hasCookieBanner) overwriteCount++;
-      else newCount++;
+      if (existingContent.hasCookieBanner) overwriteCount++; else newCount++;
     }
-    if (options.blogPosts && template.blogPosts?.length) {
-      if (existingContent.blogPostsCount > 0) overwriteCount++;
-      else newCount++;
-    }
-    if (options.kbContent && template.kbCategories?.length) {
-      if (existingContent.kbCategoriesCount > 0) overwriteCount++;
-      else newCount++;
-    }
-    if (options.products && template.products?.length) {
-      if (existingContent.productsCount > 0) overwriteCount++;
-      else newCount++;
-    }
-    
     return { overwriteCount, newCount };
-  }, [options, existingContent, template]);
+  }, [options, existingContent]);
+
 
   // Count items being cleared
   const clearCount = useMemo(() => {
