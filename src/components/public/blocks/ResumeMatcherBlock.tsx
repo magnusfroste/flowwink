@@ -16,6 +16,8 @@ interface ConsultantMatch {
   summary?: string;
   semantic_score: number;
   text_score: number;
+  semantic_rank: number | null;
+  text_rank: number | null;
   hybrid_score: number;
 }
 
@@ -30,12 +32,36 @@ interface ResumeMatcherBlockProps {
   data: ResumeMatcherBlockData;
 }
 
-const pct = (v: number) => Math.round(Math.max(0, Math.min(1, v || 0)) * 100);
+type Strength = 'strong' | 'good' | 'fair';
 
-const getScoreColor = (score: number) => {
-  if (score >= 70) return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800';
-  if (score >= 40) return 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800';
-  return 'text-muted-foreground bg-muted border-border';
+/**
+ * Match strength comes from retrieval signals, not from raw RRF scores
+ * (RRF values are tiny absolute numbers — only meaningful relative to
+ * each other inside the same result set).
+ *
+ * - strong: retrieved by BOTH semantic and keyword search
+ * - good:   one signal but ranked #1-2 in that signal
+ * - fair:   one signal, lower rank
+ */
+function strengthOf(m: ConsultantMatch): Strength {
+  const inSem = m.semantic_rank != null;
+  const inText = m.text_rank != null;
+  if (inSem && inText) return 'strong';
+  const bestRank = Math.min(m.semantic_rank ?? 99, m.text_rank ?? 99);
+  return bestRank <= 2 ? 'good' : 'fair';
+}
+
+const strengthLabel: Record<Strength, string> = {
+  strong: 'Strong match',
+  good: 'Good match',
+  fair: 'Possible match',
+};
+
+const strengthClass: Record<Strength, string> = {
+  strong:
+    'text-green-700 bg-green-50 border-green-200 dark:text-green-300 dark:bg-green-950/40 dark:border-green-900',
+  good: 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-900',
+  fair: 'text-muted-foreground bg-muted border-border',
 };
 
 /** Extract keywords from query to highlight matching skills in results. */
