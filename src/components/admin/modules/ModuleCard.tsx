@@ -365,21 +365,53 @@ export function ModuleCard({
 
           {/* Demo data seeder — only for modules with a seeder registered */}
           {isEnabled && seederName && (
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border/50 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-7 text-xs"
+                className="flex-1 h-7 text-xs"
                 onClick={handleSeed}
-                disabled={seeding}
+                disabled={seeding || resetting}
               >
                 {seeding ? (
                   <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
                 ) : (
                   <Sparkles className="h-3 w-3 mr-1.5" />
                 )}
-                Seed demo data
+                Seed
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    disabled={seeding || resetting}
+                  >
+                    {resetting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset demo data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes only rows seeded by previous demo runs for
+                      <strong> {config.name}</strong>. Your real data,
+                      manually-added rows and admin edits are never touched.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset}>
+                      Remove demo rows
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </CardContent>
