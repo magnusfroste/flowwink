@@ -393,16 +393,42 @@ export const demoCompanyTemplate: StarterTemplate = {
           },
         },
         {
+          id: 'how-two-layers',
+          type: 'features',
+          data: {
+            title: 'Think of it as two layers',
+            subtitle: 'One layer is the website and shop you set up once. The other is the day-to-day business activity that FlowPilot runs — and that we reset every hour so the next visitor gets a fresh stage.',
+            features: [
+              {
+                id: 'layer-static',
+                icon: 'Layers',
+                title: 'Stays put — your work',
+                description: 'Pages, blog posts, KB articles, products, branding and any admin edits you make. These are installed once and never touched by the reset. Edit freely, they will still be here next time.',
+              },
+              {
+                id: 'layer-dynamic',
+                icon: 'RefreshCw',
+                title: 'Resets hourly — the business',
+                description: 'Leads, deals, quotes, invoices, expenses, orders and stock levels. This is the data FlowPilot generated while operating the company. The hourly cron wipes it and re-seeds a new scenario.',
+              },
+            ],
+            columns: 2,
+            layout: 'grid',
+            variant: 'centered',
+            iconStyle: 'circle',
+          },
+        },
+        {
           id: 'how-text',
           type: 'text',
           data: {
             content: { type: 'doc', content: [
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Sign in and explore' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Open /auth and log in with demo@flowwink.com / demo1234. You will land in the admin with full access. Try /admin/leads, /admin/orders, /admin/communications and /admin/approvals to see autonomous behaviour in context.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is preserved' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Pages, blog posts, KB articles, products and your own admin edits survive the cycle. Only the seeded operational data is wiped.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Open /auth and log in with demo@flowwink.com / demo1234. You land in the admin with full access. Start with /admin/leads, /admin/orders, /admin/communications and /admin/approvals — that is where you see autonomous behaviour in context.' }] },
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is not real' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'No emails are sent. No payments are charged. Outbound communication is logged as simulated in /admin/communications.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'No emails leave the building. No card is ever charged. Anything FlowPilot would have sent shows up as simulated in /admin/communications, and outbound skills queue proposals in /admin/approvals instead of firing.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Tip' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Break things on purpose. Place a sandbox order, reject an approval, edit a quote, ask FlowPilot something odd. Whatever you do to the operational data, the next reset gives you a clean slate.' }] },
             ]},
           },
         },
