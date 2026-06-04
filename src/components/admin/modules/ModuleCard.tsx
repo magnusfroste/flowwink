@@ -24,7 +24,19 @@ import {
   Plug,
   Sparkles,
   Loader2,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModulesSettings, ModuleConfig, ModuleAutonomy } from "@/hooks/useModules";
@@ -91,6 +103,7 @@ export function ModuleCard({
 }: ModuleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const navigate = useNavigate();
   
   // Check if this module has a registry entry (has API)
@@ -136,6 +149,27 @@ export function ModuleCard({
       toast.error(msg);
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!seederName) return;
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.rpc("reset_module_data", {
+        p_module: seederName,
+        p_dry_run: false,
+        p_run_id: null,
+      });
+      if (error) throw error;
+      const deleted =
+        (data as { deleted_total?: number } | null)?.deleted_total ?? 0;
+      toast.success(`Reset complete — removed ${deleted} demo row(s)`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Reset failed";
+      toast.error(msg);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -331,21 +365,53 @@ export function ModuleCard({
 
           {/* Demo data seeder — only for modules with a seeder registered */}
           {isEnabled && seederName && (
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border/50 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-7 text-xs"
+                className="flex-1 h-7 text-xs"
                 onClick={handleSeed}
-                disabled={seeding}
+                disabled={seeding || resetting}
               >
                 {seeding ? (
                   <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
                 ) : (
                   <Sparkles className="h-3 w-3 mr-1.5" />
                 )}
-                Seed demo data
+                Seed
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    disabled={seeding || resetting}
+                  >
+                    {resetting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset demo data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes only rows seeded by previous demo runs for
+                      <strong> {config.name}</strong>. Your real data,
+                      manually-added rows and admin edits are never touched.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset}>
+                      Remove demo rows
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </CardContent>
