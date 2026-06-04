@@ -3602,32 +3602,22 @@ async function executeBlogAction(
   }
 
   // --- Optional auto-fetch featured image (sensor: just looks up an image, no reasoning) ---
-  let featuredImage: string | null = providedImage || null;
+  // 'auto' is treated the same as not provided — explicit opt-in to auto-fetch.
+  let featuredImage: string | null = providedImage && providedImage !== 'auto' ? providedImage : null;
   let featuredImageAlt: string | null = providedImageAlt || null;
-  const imageQuery = topic || resolvedTitle;
+  let imageStatus: 'provided' | 'unsplash' | 'none' | 'no_key' | 'error' = featuredImage ? 'provided' : 'none';
 
-  // Strategy 1: Unsplash (free, fast, high quality photos)
-  const unsplashKey = Deno.env.get('UNSPLASH_ACCESS_KEY');
-  if (!featuredImage && unsplashKey) {
-    try {
-      const searchUrl = new URL('https://api.unsplash.com/search/photos');
-      searchUrl.searchParams.set('query', imageQuery);
-      searchUrl.searchParams.set('per_page', '1');
-      searchUrl.searchParams.set('orientation', 'landscape');
-      const uResp = await fetch(searchUrl.toString(), {
-        headers: { 'Authorization': `Client-ID ${unsplashKey}`, 'Accept-Version': 'v1' },
-      });
-      if (uResp.ok) {
-        const uData = await uResp.json();
-        const photo = uData.results?.[0];
-        if (photo) {
-          featuredImage = photo.urls?.regular;
-          featuredImageAlt = photo.alt_description || photo.description || `Photo by ${photo.user?.name} on Unsplash`;
-          console.log(`[write_blog_post] Unsplash image found: ${featuredImage}`);
-        }
-      }
-    } catch (e) {
-      console.error('[write_blog_post] Unsplash fetch failed:', e);
+  if (!featuredImage) {
+    const photo = await findUnsplashPhoto(topic || resolvedTitle, content);
+    if (photo === 'no_key') {
+      imageStatus = 'no_key';
+    } else if (photo === null) {
+      imageStatus = 'error';
+    } else if (photo) {
+      featuredImage = photo.url;
+      featuredImageAlt = featuredImageAlt || photo.alt;
+      imageStatus = 'unsplash';
+      console.log(`[write_blog_post] Unsplash image found via "${photo.matchedQuery}": ${featuredImage}`);
     }
   }
 
