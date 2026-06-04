@@ -12172,6 +12172,7 @@ export type Database = {
         }
         Returns: Json
       }
+      build_or_tsquery: { Args: { query_text: string }; Returns: unknown }
       bulk_invoice_from_timesheets: {
         Args: {
           p_due_days?: number
@@ -12827,6 +12828,7 @@ export type Database = {
           only_active?: boolean
           query_embedding: string
           query_text?: string
+          rrf_k?: number
           semantic_weight?: number
         }
         Returns: {
@@ -12835,9 +12837,11 @@ export type Database = {
           hybrid_score: number
           id: string
           name: string
+          semantic_rank: number
           semantic_score: number
           skills: string[]
           summary: string
+          text_rank: number
           text_score: number
           title: string
         }[]

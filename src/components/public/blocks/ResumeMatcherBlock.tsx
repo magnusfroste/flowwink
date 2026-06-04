@@ -16,6 +16,8 @@ interface ConsultantMatch {
   summary?: string;
   semantic_score: number;
   text_score: number;
+  semantic_rank: number | null;
+  text_rank: number | null;
   hybrid_score: number;
 }
 
@@ -30,12 +32,36 @@ interface ResumeMatcherBlockProps {
   data: ResumeMatcherBlockData;
 }
 
-const pct = (v: number) => Math.round(Math.max(0, Math.min(1, v || 0)) * 100);
+type Strength = 'strong' | 'good' | 'fair';
 
-const getScoreColor = (score: number) => {
-  if (score >= 70) return 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800';
-  if (score >= 40) return 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800';
-  return 'text-muted-foreground bg-muted border-border';
+/**
+ * Match strength comes from retrieval signals, not from raw RRF scores
+ * (RRF values are tiny absolute numbers — only meaningful relative to
+ * each other inside the same result set).
+ *
+ * - strong: retrieved by BOTH semantic and keyword search
+ * - good:   one signal but ranked #1-2 in that signal
+ * - fair:   one signal, lower rank
+ */
+function strengthOf(m: ConsultantMatch): Strength {
+  const inSem = m.semantic_rank != null;
+  const inText = m.text_rank != null;
+  if (inSem && inText) return 'strong';
+  const bestRank = Math.min(m.semantic_rank ?? 99, m.text_rank ?? 99);
+  return bestRank <= 2 ? 'good' : 'fair';
+}
+
+const strengthLabel: Record<Strength, string> = {
+  strong: 'Strong match',
+  good: 'Good match',
+  fair: 'Possible match',
+};
+
+const strengthClass: Record<Strength, string> = {
+  strong:
+    'text-green-700 bg-green-50 border-green-200 dark:text-green-300 dark:bg-green-950/40 dark:border-green-900',
+  good: 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-900',
+  fair: 'text-muted-foreground bg-muted border-border',
 };
 
 /** Extract keywords from query to highlight matching skills in results. */
@@ -64,7 +90,7 @@ const MatchCard = memo(function MatchCard({
   onSelect: () => void;
   queryKeywords: string[];
 }) {
-  const score = pct(match.hybrid_score);
+  const strength = strengthOf(match);
   const skills = match.skills || [];
   const matchingSkills = skills.filter((s) =>
     queryKeywords.some((k) => s.toLowerCase().includes(k)),
@@ -83,14 +109,18 @@ const MatchCard = memo(function MatchCard({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               {index === 0 && <Star className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />}
+              <span className="text-xs text-muted-foreground">#{index + 1}</span>
               <span className="font-semibold text-foreground truncate">{match.name}</span>
             </div>
             {match.title && (
               <p className="text-sm text-muted-foreground truncate">{match.title}</p>
             )}
           </div>
-          <Badge variant="outline" className={`text-sm font-bold shrink-0 ${getScoreColor(score)}`}>
-            {score}%
+          <Badge
+            variant="outline"
+            className={`text-xs font-semibold shrink-0 ${strengthClass[strength]}`}
+          >
+            {strengthLabel[strength]}
           </Badge>
         </div>
         <div className="flex flex-wrap gap-1 mt-2">
@@ -117,9 +147,7 @@ const MatchDetail = memo(function MatchDetail({
   match: ConsultantMatch;
   queryKeywords: string[];
 }) {
-  const score = pct(match.hybrid_score);
-  const semantic = pct(match.semantic_score);
-  const text = pct(match.text_score);
+  const strength = strengthOf(match);
   const skills = match.skills || [];
   const matchingSkills = skills.filter((s) =>
     queryKeywords.some((k) => s.toLowerCase().includes(k)),
@@ -140,8 +168,8 @@ const MatchDetail = memo(function MatchDetail({
               {match.availability && <span>Availability: {match.availability}</span>}
             </div>
           </div>
-          <Badge className={`text-lg px-3 py-1 shrink-0 ${getScoreColor(score)}`}>
-            {score}% Match
+          <Badge className={`text-sm px-3 py-1 shrink-0 ${strengthClass[strength]}`}>
+            {strengthLabel[strength]}
           </Badge>
         </div>
       </CardHeader>
@@ -151,15 +179,27 @@ const MatchDetail = memo(function MatchDetail({
             <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground mb-1">
               <Sparkles className="w-3.5 h-3.5" /> Semantic
             </div>
-            <div className="text-2xl font-semibold text-foreground">{semantic}%</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Meaning-based (embeddings)</p>
+            <div className="text-2xl font-semibold text-foreground">
+              {match.semantic_rank != null ? `#${match.semantic_rank}` : '—'}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {match.semantic_rank != null
+                ? `cosine ${match.semantic_score.toFixed(3)}`
+                : 'Not in top semantic results'}
+            </p>
           </div>
           <div className="rounded-lg border bg-muted/30 p-3">
             <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground mb-1">
               <Type className="w-3.5 h-3.5" /> Keyword
             </div>
-            <div className="text-2xl font-semibold text-foreground">{text}%</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Lexical (BM25)</p>
+            <div className="text-2xl font-semibold text-foreground">
+              {match.text_rank != null ? `#${match.text_rank}` : '—'}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {match.text_rank != null
+                ? `BM25 ${match.text_score.toFixed(2)}`
+                : 'No keyword overlap'}
+            </p>
           </div>
         </div>
 
