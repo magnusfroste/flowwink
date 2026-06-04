@@ -153,7 +153,7 @@ const demoKbCategories: TemplateKbCategory[] = [
         title: 'What resets every hour',
         slug: 'what-resets-every-hour',
         question: 'What gets reset, and what is preserved?',
-        answer_text: 'Pages, blog posts, KB articles, products and branding are static — installed once, never touched. Leads, deals, quotes, invoices, expenses, orders and stock levels are wiped and re-seeded hourly by the demo-cycle job.',
+        answer_text: 'Think of the demo as two layers. The first layer is your work — pages, blog posts, KB articles, products, branding and any admin edits you make. That layer is installed once and never touched, so anything you change sticks around. The second layer is the business activity FlowPilot generates — leads, deals, quotes, invoices, expenses, orders and stock levels. That layer is wiped and re-seeded every hour by the demo-cycle job, so the next visitor gets a fresh scenario.',
         include_in_chat: true,
       },
       {
@@ -354,6 +354,24 @@ export const demoCompanyTemplate: StarterTemplate = {
           type: 'products',
           data: { title: 'Catalog', columns: 3, showPrice: true, showDescription: true, limit: 12 },
         },
+        {
+          id: 'shop-how-it-works',
+          type: 'features',
+          data: {
+            title: 'How shopping works here',
+            subtitle: 'Nothing is charged. The point is to watch what happens after you click buy.',
+            features: [
+              { id: 's1', icon: 'ShoppingCart', title: '1. Add to cart', description: 'Pick anything from the catalog. No login required to shop.' },
+              { id: 's2', icon: 'CreditCard', title: '2. Sandbox checkout', description: 'Stripe is in test mode — use card 4242 4242 4242 4242 with any future date and CVC.' },
+              { id: 's3', icon: 'Inbox', title: '3. Order lands in admin', description: 'Sign in and open /admin/orders. Your order is there, ready for fulfillment.' },
+              { id: 's4', icon: 'Bot', title: '4. FlowPilot fulfills', description: 'The autonomous operator picks it up, allocates stock and moves it through the lifecycle.' },
+            ],
+            columns: 4,
+            layout: 'grid',
+            variant: 'centered',
+            iconStyle: 'circle',
+          },
+        },
       ],
     },
     {
@@ -393,16 +411,42 @@ export const demoCompanyTemplate: StarterTemplate = {
           },
         },
         {
+          id: 'how-two-layers',
+          type: 'features',
+          data: {
+            title: 'Think of it as two layers',
+            subtitle: 'One layer is the website and shop you set up once. The other is the day-to-day business activity that FlowPilot runs — and that we reset every hour so the next visitor gets a fresh stage.',
+            features: [
+              {
+                id: 'layer-static',
+                icon: 'Layers',
+                title: 'Stays put — your work',
+                description: 'Pages, blog posts, KB articles, products, branding and any admin edits you make. These are installed once and never touched by the reset. Edit freely, they will still be here next time.',
+              },
+              {
+                id: 'layer-dynamic',
+                icon: 'RefreshCw',
+                title: 'Resets hourly — the business',
+                description: 'Leads, deals, quotes, invoices, expenses, orders and stock levels. This is the data FlowPilot generated while operating the company. The hourly cron wipes it and re-seeds a new scenario.',
+              },
+            ],
+            columns: 2,
+            layout: 'grid',
+            variant: 'centered',
+            iconStyle: 'circle',
+          },
+        },
+        {
           id: 'how-text',
           type: 'text',
           data: {
             content: { type: 'doc', content: [
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Sign in and explore' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Open /auth and log in with demo@flowwink.com / demo1234. You will land in the admin with full access. Try /admin/leads, /admin/orders, /admin/communications and /admin/approvals to see autonomous behaviour in context.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is preserved' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Pages, blog posts, KB articles, products and your own admin edits survive the cycle. Only the seeded operational data is wiped.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Open /auth and log in with demo@flowwink.com / demo1234. You land in the admin with full access. Start with /admin/leads, /admin/orders, /admin/communications and /admin/approvals — that is where you see autonomous behaviour in context.' }] },
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What is not real' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'No emails are sent. No payments are charged. Outbound communication is logged as simulated in /admin/communications.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'No emails leave the building. No card is ever charged. Anything FlowPilot would have sent shows up as simulated in /admin/communications, and outbound skills queue proposals in /admin/approvals instead of firing.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Tip' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Break things on purpose. Place a sandbox order, reject an approval, edit a quote, ask FlowPilot something odd. Whatever you do to the operational data, the next reset gives you a clean slate.' }] },
             ]},
           },
         },
