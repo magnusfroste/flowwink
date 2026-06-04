@@ -90,6 +90,7 @@ export function ModuleCard({
   IconComponent,
 }: ModuleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const navigate = useNavigate();
   
   // Check if this module has a registry entry (has API)
@@ -110,6 +111,33 @@ export function ModuleCard({
   const AutonomyIcon = autonomyInfo.icon;
   const canToggleUI = autonomy === 'agent-capable';
   const adminUI = config.adminUI !== false; // default true
+
+  // Demo seeder available?
+  const seederName = getSeederForModule(moduleId);
+
+  const handleSeed = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!seederName) return;
+    setSeeding(true);
+    try {
+      const { data, error } = await supabase.rpc("seed_module_demo", {
+        p_module: seederName,
+        p_scenario: "default",
+      });
+      if (error) throw error;
+      const inserted =
+        (data as { detail?: { inserted?: number } } | null)?.detail?.inserted ??
+        0;
+      toast.success(`Seeded ${inserted} demo ${seederName} row(s)`, {
+        description: "Use Reset to remove only the demo data.",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Seeding failed";
+      toast.error(msg);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <>
