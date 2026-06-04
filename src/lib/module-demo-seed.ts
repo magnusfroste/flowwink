@@ -11,7 +11,7 @@
 import type { ModulesSettings } from "@/hooks/useModules";
 
 export const MODULE_DEMO_SEEDERS: Partial<Record<keyof ModulesSettings, string>> = {
-  crm: "crm",
+  leads: "crm",
   quotes: "quotes",
   invoicing: "invoices",
   expenses: "expenses",
