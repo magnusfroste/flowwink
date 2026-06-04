@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { getSeederForModule } from "@/lib/module-demo-seed";
 import { 
   Check, 
   Lock, 
@@ -19,6 +22,8 @@ import {
   Eye,
   AlertTriangle,
   Plug,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleStats } from "@/hooks/useModuleStats";
@@ -85,6 +90,7 @@ export function ModuleCard({
   IconComponent,
 }: ModuleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const navigate = useNavigate();
   
   // Check if this module has a registry entry (has API)
@@ -105,6 +111,33 @@ export function ModuleCard({
   const AutonomyIcon = autonomyInfo.icon;
   const canToggleUI = autonomy === 'agent-capable';
   const adminUI = config.adminUI !== false; // default true
+
+  // Demo seeder available?
+  const seederName = getSeederForModule(moduleId);
+
+  const handleSeed = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!seederName) return;
+    setSeeding(true);
+    try {
+      const { data, error } = await supabase.rpc("seed_module_demo", {
+        p_module: seederName,
+        p_scenario: "default",
+      });
+      if (error) throw error;
+      const inserted =
+        (data as { detail?: { inserted?: number } } | null)?.detail?.inserted ??
+        0;
+      toast.success(`Seeded ${inserted} demo ${seederName} row(s)`, {
+        description: "Use Reset to remove only the demo data.",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Seeding failed";
+      toast.error(msg);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <>
@@ -293,6 +326,26 @@ export function ModuleCard({
             <div className="flex items-center gap-1.5 text-xs text-primary">
               <Check className="h-3.5 w-3.5" />
               <span>Active</span>
+            </div>
+          )}
+
+          {/* Demo data seeder — only for modules with a seeder registered */}
+          {isEnabled && seederName && (
+            <div className="pt-2 border-t border-border/50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-7 text-xs"
+                onClick={handleSeed}
+                disabled={seeding}
+              >
+                {seeding ? (
+                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3 mr-1.5" />
+                )}
+                Seed demo data
+              </Button>
             </div>
           )}
         </CardContent>
