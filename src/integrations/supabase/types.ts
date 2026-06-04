@@ -13305,6 +13305,10 @@ export type Database = {
           value: Json
         }[]
       }
+      seed_demo_blog: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
       seed_demo_consultants: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
@@ -13322,6 +13326,10 @@ export type Database = {
         Returns: Json
       }
       seed_demo_invoices: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_kb: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
