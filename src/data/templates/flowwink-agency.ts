@@ -5,8 +5,7 @@
  * Features ROI calculator, competitor comparisons, and white-label positioning.
  */
 import type { StarterTemplate, TemplatePage } from './types';
-import { agencyBlogPosts } from '@/data/template-blog-posts';
-import { agencyKbCategories } from '@/data/template-kb-articles';
+
 
 const flowwinkAgencyPages: TemplatePage[] = [
   {
