@@ -3611,9 +3611,9 @@ async function executeBlogAction(
     const photo = await findUnsplashPhoto(topic || resolvedTitle, content);
     if (photo === 'no_key') {
       imageStatus = 'no_key';
-    } else if (photo === null) {
-      imageStatus = 'error';
-    } else if (photo) {
+    } else if (!photo) {
+      imageStatus = 'none';
+    } else {
       featuredImage = photo.url;
       featuredImageAlt = featuredImageAlt || photo.alt;
       imageStatus = 'unsplash';
