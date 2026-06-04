@@ -17,8 +17,6 @@
  *   For Healthcare    → Vertical elevator pitch (securehealth best-of)
  */
 import type { StarterTemplate } from './types';
-import { flowwinkBlogPosts } from '../template-blog-posts';
-import { flowwinkKbCategories } from '../template-kb-articles';
 
 export const flowwinkPlatformTemplate: StarterTemplate = {
   id: 'flowwink-platform',
@@ -28,8 +26,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   icon: 'Bot',
   tagline: 'The Business Operating System. CMS · CRM · ERP — run by an operator.',
   aiChatPosition: 'Embedded autonomous agent for site operations',
-  blogPosts: flowwinkBlogPosts,
-  kbCategories: flowwinkKbCategories,
   requiredModules: ['blog', 'knowledgeBase', 'docs', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'developer', 'webinars', 'resume', 'tickets', 'federation', 'salesIntelligence', 'paidGrowth'],
   pages: [
     // ═══════════════════════════════════════════════════════════
