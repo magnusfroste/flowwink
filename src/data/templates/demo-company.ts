@@ -563,6 +563,26 @@ export const demoCompanyTemplate: StarterTemplate = {
       is_active: true,
       stock: { quantity_on_hand: 999, reorder_point: 50 },
     },
+    {
+      name: 'Claw Backpack',
+      description: 'Compact daypack with laptop sleeve and claw-mark zip pulls.',
+      price_cents: 59900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 35, reorder_point: 5 },
+    },
+    {
+      name: 'Thermos Flask',
+      description: 'Double-walled steel flask. Keeps coffee hot through the longest agent runs.',
+      price_cents: 34900,
+      currency: 'SEK',
+      type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80',
+      is_active: true,
+      stock: { quantity_on_hand: 45, reorder_point: 8 },
+    },
   ],
 
   branding: {
