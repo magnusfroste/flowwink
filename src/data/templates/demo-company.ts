@@ -354,8 +354,24 @@ export const demoCompanyTemplate: StarterTemplate = {
           type: 'products',
           data: { title: 'Catalog', columns: 3, showPrice: true, showDescription: true, limit: 12 },
         },
-      ],
-    },
+        {
+          id: 'shop-how-it-works',
+          type: 'features',
+          data: {
+            title: 'How shopping works here',
+            subtitle: 'Nothing is charged. The point is to watch what happens after you click buy.',
+            features: [
+              { id: 's1', icon: 'ShoppingCart', title: '1. Add to cart', description: 'Pick anything from the catalog. No login required to shop.' },
+              { id: 's2', icon: 'CreditCard', title: '2. Sandbox checkout', description: 'Stripe is in test mode — use card 4242 4242 4242 4242 with any future date and CVC.' },
+              { id: 's3', icon: 'Inbox', title: '3. Order lands in admin', description: 'Sign in and open /admin/orders. Your order is there, ready for fulfillment.' },
+              { id: 's4', icon: 'Bot', title: '4. FlowPilot fulfills', description: 'The autonomous operator picks it up, allocates stock and moves it through the lifecycle.' },
+            ],
+            columns: 4,
+            layout: 'grid',
+            variant: 'centered',
+            iconStyle: 'circle',
+          },
+        },
     {
       title: 'How this demo works',
       slug: 'how-this-demo-works',
