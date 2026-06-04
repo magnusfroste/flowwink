@@ -1,7 +1,7 @@
 import { StarterTemplate } from "@/data/templates";
 import { cn } from "@/lib/utils";
 import { getTemplateThumbnail, getTemplateHero } from "@/lib/template-helpers";
-import { Eye, Sparkles, BookOpen, Rss, MessageSquare } from "lucide-react";
+import { Eye, Sparkles, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -18,14 +18,14 @@ export function TemplateVisualCard({ template, onPreview, onSelect }: TemplateVi
   const heroData = getTemplateHero(template);
   const primaryColor = template.branding?.primaryColor || '#6366f1';
   
-  // Feature indicators
-  const hasKb = (template.kbCategories?.length || 0) > 0;
-  const hasBlog = (template.blogPosts?.length || 0) > 0;
+  // Feature indicators — module data (blog/KB) is no longer carried by
+  // templates; only chat-settings reflect a real template-level toggle.
   const hasChat = template.chatSettings?.enabled !== false;
   
   // Get hero content for display
   const heroTitle = heroData?.title || template.name;
   const heroSubtitle = heroData?.subtitle || template.tagline;
+
 
   return (
     <div
@@ -71,23 +71,8 @@ export function TemplateVisualCard({ template, onPreview, onSelect }: TemplateVi
               <MessageSquare className="h-3.5 w-3.5 text-cyan-600" />
             </div>
           )}
-          {hasKb && (
-            <div 
-              className="h-7 w-7 rounded-full flex items-center justify-center bg-white/90 backdrop-blur-sm shadow-sm"
-              title="Knowledge Base"
-            >
-              <BookOpen className="h-3.5 w-3.5 text-indigo-600" />
-            </div>
-          )}
-          {hasBlog && (
-            <div 
-              className="h-7 w-7 rounded-full flex items-center justify-center bg-white/90 backdrop-blur-sm shadow-sm"
-              title="Blog"
-            >
-              <Rss className="h-3.5 w-3.5 text-orange-500" />
-            </div>
-          )}
         </div>
+
         
         {/* Live preview content - hero simulation */}
         <div className="absolute inset-0 flex flex-col justify-end p-6">
@@ -161,9 +146,8 @@ export function TemplateVisualCard({ template, onPreview, onSelect }: TemplateVi
             isHovered ? "opacity-100" : "opacity-0"
           )}>
             <span>{template.pages?.length || 0} pages</span>
-            {hasKb && <span>• KB</span>}
-            {hasBlog && <span>• Blog</span>}
             {hasChat && <span>• AI</span>}
+
           </div>
         </div>
       </div>

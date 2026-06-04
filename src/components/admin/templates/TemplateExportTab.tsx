@@ -281,7 +281,7 @@ export function TemplateExportTab() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 rounded bg-muted/50">
                     <div className="text-2xl font-bold">{exportResult.template.pages.length}</div>
                     <div className="text-xs text-muted-foreground">Pages</div>
@@ -292,13 +292,8 @@ export function TemplateExportTab() {
                     </div>
                     <div className="text-xs text-muted-foreground">Blocks</div>
                   </div>
-                  <div className="p-2 rounded bg-muted/50">
-                    <div className="text-2xl font-bold">
-                      {exportResult.template.blogPosts?.length || 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Blog Posts</div>
-                  </div>
                 </div>
+
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">

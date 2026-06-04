@@ -6,19 +6,17 @@ import { cn } from "@/lib/utils";
 import { getTemplateThumbnail } from "@/lib/template-helpers";
 import { 
   Eye,
-  ArrowRight,
   FileText,
   LayoutGrid,
-  MessageSquare,
   BookOpen,
   Rocket,
   Building2,
   ShieldCheck,
   Layers,
   Sparkles,
-  Play,
   Zap
 } from "lucide-react";
+
 
 interface TemplateCardProps {
   template: StarterTemplate;
@@ -49,8 +47,7 @@ export function TemplateCard({ template, onPreview, onSelect }: TemplateCardProp
   const pageCount = template.pages?.length || 0;
   const blockCount = template.pages?.reduce((acc, page) => acc + (page.blocks?.length || 0), 0) || 0;
   const hasChat = template.chatSettings?.enabled !== false;
-  const hasBlog = (template.blogPosts?.length || 0) > 0;
-  const hasKb = (template.kbCategories?.length || 0) > 0;
+
 
   // Get thumbnail for visual preview
   const thumbnail = getTemplateThumbnail(template);
@@ -112,13 +109,8 @@ export function TemplateCard({ template, onPreview, onSelect }: TemplateCardProp
               AI
             </Badge>
           )}
-          {hasKb && (
-            <Badge className="bg-indigo-500/90 text-white border-0 text-[10px] h-5 backdrop-blur-sm">
-              <BookOpen className="h-2.5 w-2.5 mr-1" />
-              KB
-            </Badge>
-          )}
         </div>
+
       </div>
       
       <CardContent className="p-4">
