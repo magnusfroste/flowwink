@@ -13315,10 +13315,6 @@ export type Database = {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
-      seed_demo_wiki: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
       seed_module_demo: {
         Args: { p_module: string; p_scenario?: string }
         Returns: Json
