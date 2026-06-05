@@ -6,40 +6,49 @@
  *
  *   bun run scripts/templates-to-json.ts
  *
- * The JSON files are the portable distribution format used by the
- * import/export engine and community contributions.
+ * ## What templates contain
  *
- * ## Curated set
- *
- * We intentionally keep this list short. Operational demo data (consultants,
- * leads, deals, orders, expenses, …) is no longer baked into templates —
- * each module ships its own `seed_module_demo` seeder, available per-card
- * in /admin/modules. Templates should focus on visual identity:
- * pages, blocks, blog, KB, branding and FlowPilot soul.
+ * Templates seed **pages + blocks + branding + module-enables** only.
+ * Operational module data (blog posts, KB articles, products, consultants,
+ * leads, deals, orders, …) is NOT baked into templates — each module ships
+ * its own `seed_module_demo` seeder available per-card in /admin/modules.
  *
  * ## Adding a New Template
  *
- * 1. Create a new `.ts` file in this directory (e.g. `my-template.ts`)
- * 2. Export a `StarterTemplate` object from it
- * 3. Import and add it to `ALL_TEMPLATES` below
- * 4. Run `bun run scripts/templates-to-json.ts` to generate JSON
- * 5. Run `bun run test` to validate
+ * 1. Create `my-template.ts` in this directory
+ * 2. Export a `StarterTemplate` object
+ * 3. Add it to `ALL_TEMPLATES` below
+ * 4. Run `bun run scripts/templates-to-json.ts`
+ * 5. Run `bun run test`
  */
 
-// Re-export types for convenience
 export type { StarterTemplate, TemplatePage, TemplateBlogPost, TemplateProduct, TemplateConsultant, HelpStyle } from './types';
 
-// Individual template re-exports
 export { BLANK_TEMPLATE } from './blank';
 export { demoCompanyTemplate } from './demo-company';
 export { flowwinkPlatformTemplate } from './flowwink-platform';
 export { flowwinkAgencyTemplate } from './flowwink-agency';
+export { consultAgencyTemplate } from './consult-agency';
+export { digitalShopTemplate } from './digital-shop';
+export { helpCenterTemplate } from './helpcenter';
+export { launchpadTemplate } from './launchpad';
+export { momentumTemplate } from './momentum';
+export { securehealthTemplate } from './securehealth';
+export { serviceProTemplate } from './service-pro';
+export { trustcorpTemplate } from './trustcorp';
 
-// Import for aggregation
 import { BLANK_TEMPLATE } from './blank';
 import { demoCompanyTemplate } from './demo-company';
 import { flowwinkPlatformTemplate } from './flowwink-platform';
 import { flowwinkAgencyTemplate } from './flowwink-agency';
+import { consultAgencyTemplate } from './consult-agency';
+import { digitalShopTemplate } from './digital-shop';
+import { helpCenterTemplate } from './helpcenter';
+import { launchpadTemplate } from './launchpad';
+import { momentumTemplate } from './momentum';
+import { securehealthTemplate } from './securehealth';
+import { serviceProTemplate } from './service-pro';
+import { trustcorpTemplate } from './trustcorp';
 
 import type { StarterTemplate } from './types';
 
@@ -51,12 +60,19 @@ export const ALL_TEMPLATES: StarterTemplate[] = [
   demoCompanyTemplate,
   flowwinkPlatformTemplate,
   flowwinkAgencyTemplate,
+  consultAgencyTemplate,
+  digitalShopTemplate,
+  helpCenterTemplate,
+  launchpadTemplate,
+  momentumTemplate,
+  securehealthTemplate,
+  serviceProTemplate,
+  trustcorpTemplate,
 ];
 
 /** @deprecated Use ALL_TEMPLATES instead */
 export const STARTER_TEMPLATES = ALL_TEMPLATES;
 
-// Helper functions
 export function getTemplateById(id: string): StarterTemplate | undefined {
   return ALL_TEMPLATES.find(t => t.id === id);
 }
