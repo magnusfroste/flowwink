@@ -13042,6 +13042,10 @@ export type Database = {
         Returns: string
       }
       reset_all_role_module_access: { Args: never; Returns: undefined }
+      reset_module_data: {
+        Args: { p_dry_run?: boolean; p_module: string; p_run_id?: string }
+        Returns: Json
+      }
       reset_role_module_access: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
@@ -13167,6 +13171,18 @@ export type Database = {
           similarity: number
           value: Json
         }[]
+      }
+      seed_demo_blog: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_ecommerce: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_kb: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
       }
       send_dunning_reminders: {
         Args: { p_dry_run?: boolean }
