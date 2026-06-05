@@ -3728,6 +3728,7 @@ async function findUnsplashPhoto(
   }
   console.log(`[unsplash] no match across ${seen.size} queries (tried: ${[...seen].join(' | ')})`);
   return null;
+}
 
 // =============================================================================
 // Booking module — full handler with availability checking
