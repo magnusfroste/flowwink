@@ -186,16 +186,13 @@ export function InstallTemplateDialog({ template, open, onOpenChange }: InstallT
                 <Button variant="outline" size="sm" onClick={() => navigate('/admin/pages')}>
                   View Pages
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowOnboardingWizard(true)} className="gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Set Goals
-                </Button>
                 {installer.createdPageIds[0] && (
                   <Button size="sm" onClick={() => navigate(`/admin/pages/${installer.createdPageIds[0]}`)}>
                     Edit Homepage
                   </Button>
                 )}
               </div>
+
             </div>
           )}
         </DialogContent>
