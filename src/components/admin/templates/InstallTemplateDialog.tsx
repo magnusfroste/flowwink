@@ -90,24 +90,9 @@ export function InstallTemplateDialog({ template, open, onOpenChange }: InstallT
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span>{template.pages.length} pages</span>
                   </div>
-                  {template.products && template.products.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.products.length} products</span>
-                    </div>
-                  )}
-                  {template.blogPosts && template.blogPosts.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Newspaper className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.blogPosts.length} blog posts</span>
-                    </div>
-                  )}
-                  {template.kbCategories && template.kbCategories.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} KB articles</span>
-                    </div>
-                  )}
+                  {/* Module data (products, blog posts, KB articles) is seeded
+                      per-module via /admin/modules → "Seed demo data", not by templates. */}
+
                   {template.requiredModules && template.requiredModules.length > 0 && (
                     <div className="flex items-center gap-1.5">
                       <Puzzle className="h-4 w-4 text-muted-foreground" />
