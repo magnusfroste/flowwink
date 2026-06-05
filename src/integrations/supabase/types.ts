@@ -3766,26 +3766,38 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          error: string | null
+          finished_at: string | null
           id: string
           module: string
           notes: string | null
+          result: Json | null
           scenario: string
+          status: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
           id?: string
           module: string
           notes?: string | null
+          result?: Json | null
           scenario?: string
+          status?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
           id?: string
           module?: string
           notes?: string | null
+          result?: Json | null
           scenario?: string
+          status?: string
         }
         Relationships: []
       }
