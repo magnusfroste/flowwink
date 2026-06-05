@@ -3766,26 +3766,38 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          error: string | null
+          finished_at: string | null
           id: string
           module: string
           notes: string | null
+          result: Json | null
           scenario: string
+          status: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
           id?: string
           module: string
           notes?: string | null
+          result?: Json | null
           scenario?: string
+          status?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
+          finished_at?: string | null
           id?: string
           module?: string
           notes?: string | null
+          result?: Json | null
           scenario?: string
+          status?: string
         }
         Relationships: []
       }
@@ -13276,6 +13288,10 @@ export type Database = {
         Returns: Json
       }
       seed_demo_hr: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_inventory: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
