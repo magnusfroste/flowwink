@@ -26,7 +26,7 @@ export function InstallTemplateDialog({ template, open, onOpenChange }: InstallT
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
+  
 
   const templateImageInfo = useMemo(() => {
     if (!template) return null;
