@@ -90,6 +90,24 @@ export default function VendorsPage() {
     onError: (e) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('vendors').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendors'] });
+      setDeleteId(null);
+      setDeleteName('');
+      toast({ title: 'Vendor deleted' });
+    },
+    onError: (e: Error) => {
+      toast({ title: 'Could not delete vendor', description: e.message, variant: 'destructive' });
+      setDeleteId(null);
+      setDeleteName('');
+    },
+  });
+
   const openEdit = (v: Vendor) => {
     setEditingId(v.id);
     setForm({
