@@ -258,15 +258,12 @@ export default function ProjectsPage() {
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="space-y-2">
               {projects.map(p => (
-                <Card key={p.id} className={`cursor-pointer transition-colors ${selectedId === p.id ? "ring-2 ring-primary" : "hover:bg-muted/50"}`} onClick={() => setSelectedId(p.id)}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{p.name}</h3>
-                      <Badge variant="outline" className={p.is_active ? PROJECT_STATUS_COLORS.active : PROJECT_STATUS_COLORS.completed}>{p.is_active ? "Active" : "Completed"}</Badge>
-                    </div>
-                    {p.client_name && <p className="text-sm text-muted-foreground mt-1">{p.client_name}</p>}
-                  </CardContent>
-                </Card>
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  selected={selectedId === p.id}
+                  onSelect={() => setSelectedId(p.id)}
+                />
               ))}
             </div>
             <div className="lg:col-span-2">
