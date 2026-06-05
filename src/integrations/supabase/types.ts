@@ -13247,6 +13247,14 @@ export type Database = {
           value: Json
         }[]
       }
+      seed_demo_accounting: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_approvals: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
       seed_demo_blog: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
@@ -13307,6 +13315,10 @@ export type Database = {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
+      seed_demo_pos: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
       seed_demo_pricelists: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
@@ -13319,7 +13331,19 @@ export type Database = {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
+      seed_demo_reconciliation: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
       seed_demo_recruitment: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_sla: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_subscriptions: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
@@ -13328,6 +13352,10 @@ export type Database = {
         Returns: Json
       }
       seed_demo_tickets: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_demo_timesheets: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
