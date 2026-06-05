@@ -30,7 +30,7 @@ export { flowwinkPlatformTemplate } from './flowwink-platform';
 export { flowwinkAgencyTemplate } from './flowwink-agency';
 export { consultAgencyTemplate } from './consult-agency';
 export { digitalShopTemplate } from './digital-shop';
-export { helpcenterTemplate } from './helpcenter';
+export { helpCenterTemplate } from './helpcenter';
 export { launchpadTemplate } from './launchpad';
 export { momentumTemplate } from './momentum';
 export { securehealthTemplate } from './securehealth';
@@ -43,7 +43,7 @@ import { flowwinkPlatformTemplate } from './flowwink-platform';
 import { flowwinkAgencyTemplate } from './flowwink-agency';
 import { consultAgencyTemplate } from './consult-agency';
 import { digitalShopTemplate } from './digital-shop';
-import { helpcenterTemplate } from './helpcenter';
+import { helpCenterTemplate } from './helpcenter';
 import { launchpadTemplate } from './launchpad';
 import { momentumTemplate } from './momentum';
 import { securehealthTemplate } from './securehealth';
@@ -62,7 +62,7 @@ export const ALL_TEMPLATES: StarterTemplate[] = [
   flowwinkAgencyTemplate,
   consultAgencyTemplate,
   digitalShopTemplate,
-  helpcenterTemplate,
+  helpCenterTemplate,
   launchpadTemplate,
   momentumTemplate,
   securehealthTemplate,
