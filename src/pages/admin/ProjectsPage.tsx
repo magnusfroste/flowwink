@@ -61,6 +61,55 @@ function NewProjectDialog() {
   );
 }
 
+function EditProjectDialog({ project, open, onOpenChange }: { project: Project; open: boolean; onOpenChange: (o: boolean) => void }) {
+  const update = useUpdateProject();
+  const [form, setForm] = useState({
+    name: project.name,
+    description: project.description ?? "",
+    client_name: project.client_name ?? "",
+    deadline: project.deadline ?? "",
+    is_active: project.is_active ?? true,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    update.mutate(
+      {
+        id: project.id,
+        name: form.name,
+        description: form.description || null,
+        client_name: form.client_name || null,
+        deadline: form.deadline || null,
+        is_active: form.is_active,
+      },
+      { onSuccess: () => onOpenChange(false) }
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
+          <div><Label>Client</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
+          <div><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} /></div>
+          <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div><Label>Active</Label><p className="text-xs text-muted-foreground">Inactive projects are marked as completed</p></div>
+            <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={update.isPending}>{update.isPending ? "Saving…" : "Save"}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TaskBoard({ projectId }: { projectId: string }) {
   const { data: tasks, isLoading } = useProjectTasks(projectId);
   const updateTask = useUpdateProjectTask();
