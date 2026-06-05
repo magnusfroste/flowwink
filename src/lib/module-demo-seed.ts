@@ -19,6 +19,7 @@ export const MODULE_DEMO_SEEDERS: Partial<Record<keyof ModulesSettings, string>>
   resume: "consultants",
   blog: "blog",
   knowledgeBase: "kb",
+  projects: "projects",
 };
 
 export function getSeederForModule(

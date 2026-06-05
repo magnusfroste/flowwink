@@ -13184,6 +13184,14 @@ export type Database = {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
+      seed_demo_projects: {
+        Args: { p_run_id: string; p_scenario?: string }
+        Returns: Json
+      }
+      seed_module_demo: {
+        Args: { p_module: string; p_scenario?: string }
+        Returns: Json
+      }
       send_dunning_reminders: {
         Args: { p_dry_run?: boolean }
         Returns: {
