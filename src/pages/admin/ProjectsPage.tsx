@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useProjects, useCreateProject, useProjectTasks, useCreateProjectTask, useUpdateProjectTask } from "@/hooks/useProjects";
-import { Plus, FolderKanban, CheckCircle2, Clock, Circle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useProjects, useCreateProject, useProjectTasks, useCreateProjectTask, useUpdateProjectTask, useUpdateProject, useDeleteProject, useDeleteProjectTask, type Project } from "@/hooks/useProjects";
+import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
