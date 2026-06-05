@@ -174,6 +174,7 @@ export function ModuleCard({
       });
       if (error) throw error;
       const deleted =
+        (data as { total_rows?: number; deleted_total?: number } | null)?.total_rows ??
         (data as { deleted_total?: number } | null)?.deleted_total ?? 0;
       toast.success(`Reset complete — removed ${deleted} demo row(s)`);
     } catch (err) {
