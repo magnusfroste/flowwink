@@ -138,12 +138,23 @@ export function ModuleCard({
         p_scenario: "default",
       });
       if (error) throw error;
-      const inserted =
-        (data as { detail?: { inserted?: number } } | null)?.detail?.inserted ??
-        0;
-      toast.success(`Seeded ${inserted} demo ${seederName} row(s)`, {
-        description: "Use Reset to remove only the demo data.",
-      });
+      // Seeders return varied shapes in `detail` (e.g. {blog_posts_created: 3},
+      // {kb_articles_created: 3, kb_category_created: 1}, {products_created: 6, orders_created: 5}).
+      // Sum all numeric fields so the toast reflects the total rows created.
+      const detail = (data as { detail?: Record<string, unknown> } | null)?.detail ?? {};
+      const parts = Object.entries(detail)
+        .filter(([, v]) => typeof v === "number" && (v as number) > 0)
+        .map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`);
+      const inserted = Object.values(detail).reduce(
+        (sum: number, v) => (typeof v === "number" ? sum + v : sum),
+        0,
+      );
+      toast.success(
+        parts.length > 0
+          ? `Seeded ${seederName}: ${parts.join(", ")}`
+          : `Seeded ${inserted} demo ${seederName} row(s)`,
+        { description: "Use Reset to remove only the demo data." },
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Seeding failed";
       toast.error(msg);
@@ -163,6 +174,7 @@ export function ModuleCard({
       });
       if (error) throw error;
       const deleted =
+        (data as { total_rows?: number; deleted_total?: number } | null)?.total_rows ??
         (data as { deleted_total?: number } | null)?.deleted_total ?? 0;
       toast.success(`Reset complete — removed ${deleted} demo row(s)`);
     } catch (err) {
