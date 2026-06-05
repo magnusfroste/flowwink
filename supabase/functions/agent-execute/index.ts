@@ -8503,3 +8503,4 @@ async function executeGetCommunication(
 
   return { success: true, communication: data };
 }
+}
