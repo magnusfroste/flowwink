@@ -2891,6 +2891,88 @@ export type Database = {
           },
         ]
       }
+      clawable_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          response_id: string | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          response_id?: string | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          response_id?: string | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clawable_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "clawable_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clawable_sessions: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_response_id: string | null
+          model: string
+          peer_id: string | null
+          thread_key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_response_id?: string | null
+          model?: string
+          peer_id?: string | null
+          thread_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_response_id?: string | null
+          model?: string
+          peer_id?: string | null
+          thread_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clawable_sessions_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -2945,41 +3027,6 @@ export type Database = {
         }
         Relationships: []
       }
-      consultant_checkin_log: {
-        Row: {
-          created_at: string
-          fields_updated: Json
-          id: string
-          last_user_message: string | null
-          profile_id: string
-          source: string
-        }
-        Insert: {
-          created_at?: string
-          fields_updated?: Json
-          id?: string
-          last_user_message?: string | null
-          profile_id: string
-          source?: string
-        }
-        Update: {
-          created_at?: string
-          fields_updated?: Json
-          id?: string
-          last_user_message?: string | null
-          profile_id?: string
-          source?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consultant_checkin_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "consultant_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       consultant_profiles: {
         Row: {
           availability: string | null
@@ -2991,10 +3038,6 @@ export type Database = {
           currency: string
           education: Json | null
           email: string | null
-          embedded_at: string | null
-          embedding: string | null
-          embedding_model: string | null
-          embedding_status: string
           experience_json: Json | null
           experience_years: number | null
           hourly_rate_cents: number | null
@@ -3005,7 +3048,6 @@ export type Database = {
           name: string
           phone: string | null
           portfolio_url: string | null
-          search_tsv: unknown
           skills: string[]
           summary: string | null
           title: string | null
@@ -3021,10 +3063,6 @@ export type Database = {
           currency?: string
           education?: Json | null
           email?: string | null
-          embedded_at?: string | null
-          embedding?: string | null
-          embedding_model?: string | null
-          embedding_status?: string
           experience_json?: Json | null
           experience_years?: number | null
           hourly_rate_cents?: number | null
@@ -3035,7 +3073,6 @@ export type Database = {
           name: string
           phone?: string | null
           portfolio_url?: string | null
-          search_tsv?: unknown
           skills?: string[]
           summary?: string | null
           title?: string | null
@@ -3051,10 +3088,6 @@ export type Database = {
           currency?: string
           education?: Json | null
           email?: string | null
-          embedded_at?: string | null
-          embedding?: string | null
-          embedding_model?: string | null
-          embedding_status?: string
           experience_json?: Json | null
           experience_years?: number | null
           hourly_rate_cents?: number | null
@@ -3065,7 +3098,6 @@ export type Database = {
           name?: string
           phone?: string | null
           portfolio_url?: string | null
-          search_tsv?: unknown
           skills?: string[]
           summary?: string | null
           title?: string | null
@@ -3697,65 +3729,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      demo_run_items: {
-        Row: {
-          created_at: string
-          id: number
-          row_id: string
-          run_id: string
-          table_name: string
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-          row_id: string
-          run_id: string
-          table_name: string
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          row_id?: string
-          run_id?: string
-          table_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demo_run_items_run_id_fkey"
-            columns: ["run_id"]
-            isOneToOne: false
-            referencedRelation: "demo_runs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      demo_runs: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          module: string
-          notes: string | null
-          scenario: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          module: string
-          notes?: string | null
-          scenario?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          module?: string
-          notes?: string | null
-          scenario?: string
-        }
-        Relationships: []
       }
       depreciation_entries: {
         Row: {
@@ -6601,63 +6574,6 @@ export type Database = {
           },
         ]
       }
-      outbound_communications: {
-        Row: {
-          body_html: string | null
-          body_text: string | null
-          channel: string
-          created_at: string
-          error_message: string | null
-          id: string
-          metadata: Json
-          provider: string | null
-          recipient: string
-          related_entity_id: string | null
-          related_entity_type: string | null
-          sent_at: string | null
-          simulated: boolean
-          source: string | null
-          status: string
-          subject: string | null
-        }
-        Insert: {
-          body_html?: string | null
-          body_text?: string | null
-          channel: string
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          metadata?: Json
-          provider?: string | null
-          recipient: string
-          related_entity_id?: string | null
-          related_entity_type?: string | null
-          sent_at?: string | null
-          simulated?: boolean
-          source?: string | null
-          status: string
-          subject?: string | null
-        }
-        Update: {
-          body_html?: string | null
-          body_text?: string | null
-          channel?: string
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          metadata?: Json
-          provider?: string | null
-          recipient?: string
-          related_entity_id?: string | null
-          related_entity_type?: string | null
-          sent_at?: string | null
-          simulated?: boolean
-          source?: string | null
-          status?: string
-          subject?: string | null
-        }
-        Relationships: []
-      }
       page_versions: {
         Row: {
           content_json: Json
@@ -8290,9 +8206,6 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string
-          email_from_address: string | null
-          email_from_name: string | null
-          email_reply_to: string | null
           full_name: string | null
           id: string
           show_as_author: boolean | null
@@ -8304,9 +8217,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email: string
-          email_from_address?: string | null
-          email_from_name?: string | null
-          email_reply_to?: string | null
           full_name?: string | null
           id: string
           show_as_author?: boolean | null
@@ -8318,9 +8228,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string
-          email_from_address?: string | null
-          email_from_name?: string | null
-          email_reply_to?: string | null
           full_name?: string | null
           id?: string
           show_as_author?: boolean | null
@@ -12059,10 +11966,6 @@ export type Database = {
       }
     }
     Functions: {
-      _demo_register_row: {
-        Args: { p_row_id: string; p_run_id: string; p_table_name: string }
-        Returns: undefined
-      }
       _ensure_manual_journal: { Args: never; Returns: string }
       _flatten_skill_schema: { Args: { td: Json }; Returns: Json }
       _global_search_internal: {
@@ -12172,7 +12075,6 @@ export type Database = {
         }
         Returns: Json
       }
-      build_or_tsquery: { Args: { query_text: string }; Returns: unknown }
       bulk_invoice_from_timesheets: {
         Args: {
           p_due_days?: number
@@ -12453,8 +12355,6 @@ export type Database = {
       }
       create_payroll_run: { Args: { p_period_date: string }; Returns: Json }
       current_employee_id: { Args: never; Returns: string }
-      demo_cycle_cron_status: { Args: never; Returns: Json }
-      disable_demo_cycle_cron: { Args: never; Returns: Json }
       dispatch_automation_event: {
         Args: {
           entity_id?: string
@@ -12479,10 +12379,6 @@ export type Database = {
       emit_platform_event: {
         Args: { _event_name: string; _payload?: Json; _source?: string }
         Returns: string
-      }
-      enable_demo_cycle_cron: {
-        Args: { p_anon_key: string; p_function_url: string }
-        Returns: Json
       }
       evaluate_approval_required: {
         Args: {
@@ -12794,10 +12690,6 @@ export type Database = {
         Args: { p_all?: boolean; p_slug?: string }
         Returns: Json
       }
-      lookup_order_tracking: {
-        Args: { p_email: string; p_order_id: string }
-        Returns: Json
-      }
       mark_expense_report_paid: {
         Args: {
           p_bank_account?: string
@@ -12821,30 +12713,6 @@ export type Database = {
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
         Returns: Json
-      }
-      match_consultants: {
-        Args: {
-          match_count?: number
-          only_active?: boolean
-          query_embedding: string
-          query_text?: string
-          rrf_k?: number
-          semantic_weight?: number
-        }
-        Returns: {
-          availability: string
-          experience_years: number
-          hybrid_score: number
-          id: string
-          name: string
-          semantic_rank: number
-          semantic_score: number
-          skills: string[]
-          summary: string
-          text_rank: number
-          text_score: number
-          title: string
-        }[]
       }
       match_invoice_to_receipt: {
         Args: { p_invoice_id: string; p_tolerance_pct?: number }
@@ -13228,7 +13096,6 @@ export type Database = {
           source: string
         }[]
       }
-      restock_demo_products: { Args: never; Returns: Json }
       revalue_open_balances: {
         Args: {
           p_ap_account?: string
@@ -13309,36 +13176,12 @@ export type Database = {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
-      seed_demo_consultants: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
-      seed_demo_crm: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
       seed_demo_ecommerce: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
-      seed_demo_expenses: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
-      seed_demo_invoices: {
         Args: { p_run_id: string; p_scenario?: string }
         Returns: Json
       }
       seed_demo_kb: {
         Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
-      seed_demo_quotes: {
-        Args: { p_run_id: string; p_scenario?: string }
-        Returns: Json
-      }
-      seed_module_demo: {
-        Args: { p_module: string; p_scenario?: string }
         Returns: Json
       }
       send_dunning_reminders: {

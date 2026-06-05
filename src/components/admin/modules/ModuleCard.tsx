@@ -133,7 +133,7 @@ export function ModuleCard({
     if (!seederName) return;
     setSeeding(true);
     try {
-      const { data, error } = await supabase.rpc("seed_module_demo", {
+      const { data, error } = await supabase.rpc("seed_module_demo" as any, {
         p_module: seederName,
         p_scenario: "default",
       });

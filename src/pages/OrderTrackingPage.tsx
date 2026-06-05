@@ -97,7 +97,7 @@ export default function OrderTrackingPage() {
     setOrder(null);
     setItems([]);
     try {
-      const { data, error: rpcErr } = await supabase.rpc('lookup_order_tracking', {
+      const { data, error: rpcErr } = await supabase.rpc('lookup_order_tracking' as any, {
         p_order_id: oid.trim(),
         p_email: em.trim(),
       });

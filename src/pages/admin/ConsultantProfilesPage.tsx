@@ -322,7 +322,7 @@ export default function ConsultantProfilesPage() {
   const staleQuery = useQuery({
     queryKey: ["consultant-embedding-stale"],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from("consultant_profiles")
         .select("id", { count: "exact", head: true })
         .eq("embedding_status", "stale");

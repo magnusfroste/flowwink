@@ -27,7 +27,7 @@ export function useLastCheckin(profileId: string) {
   return useQuery({
     queryKey: ["consultant-checkin-log", profileId, "last"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("consultant_checkin_log")
         .select("created_at")
         .eq("profile_id", profileId)
@@ -35,7 +35,7 @@ export function useLastCheckin(profileId: string) {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data as { created_at: string } | null;
+      return (data ?? null) as { created_at: string } | null;
     },
   });
 }
@@ -75,7 +75,7 @@ export function CheckinHistoryButton({
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["consultant-checkin-log", profileId, "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("consultant_checkin_log")
         .select("*")
         .eq("profile_id", profileId)
