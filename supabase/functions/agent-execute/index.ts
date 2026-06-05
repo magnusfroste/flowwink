@@ -406,7 +406,11 @@ serve(async (req) => {
 
     // 6. Auto-track objective progress
     if (activityId) {
-      await trackObjectiveProgress(supabase, skill.name, activityId);
+      try {
+        await trackObjectiveProgress(supabase, skill.name, activityId);
+      } catch (trackErr) {
+        console.error(`[agent-execute] Objective tracking failed after '${skill.name}':`, trackErr);
+      }
     }
 
     // 7. 'notify' trust level: activity is already recorded in agent_activities
