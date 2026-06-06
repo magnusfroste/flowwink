@@ -29,7 +29,7 @@ export const demoCompanyTemplate: StarterTemplate = {
   description: 'Public demo stage for FlowWink. Static set + daily reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.',
   category: 'platform',
   icon: 'PlayCircle',
-  tagline: 'A working business you can poke at — resets every day.',
+  tagline: 'A live business you can poke at — or download and run your own with 250+ MCP skills.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
   requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce', 'inventory', 'approvals'],
 
