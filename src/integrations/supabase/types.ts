@@ -12395,7 +12395,6 @@ export type Database = {
         Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
         Returns: Json
       }
-      consultant_reindex_cron_status: { Args: never; Returns: Json }
       consume_reservation: {
         Args: { p_reservation_id: string; p_to_location_code?: string }
         Returns: string
@@ -12500,10 +12499,6 @@ export type Database = {
       emit_platform_event: {
         Args: { _event_name: string; _payload?: Json; _source?: string }
         Returns: string
-      }
-      ensure_consultant_reindex_cron: {
-        Args: { p_schedule?: string; p_service_key?: string; p_url: string }
-        Returns: Json
       }
       evaluate_approval_required: {
         Args: {
