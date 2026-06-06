@@ -42,7 +42,7 @@ export const demoCompanyTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         seoTitle: 'FlowWink Demo — Watch an autonomous business operate live',
-        description: 'A public FlowWink instance running a fictional company. Leads, quotes and invoices reset every day so you can see FlowPilot in action.',
+        description: 'A public FlowWink instance running a fictional company. 40+ modules and 250+ MCP-exposed skills. Bring your own OpenClaw or Hermes agent and start running your business.',
         showTitle: false,
         titleAlignment: 'center',
       },
