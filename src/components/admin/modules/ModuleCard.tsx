@@ -131,6 +131,8 @@ export function ModuleCard({
 
   // Demo seeder available?
   const seederName = getSeederForModule(moduleId);
+  const seededCount = seederName ? (seedCounts?.[seederName] ?? 0) : 0;
+  const hasSeededData = seededCount > 0;
 
   const handleSeed = async (e: React.MouseEvent) => {
     e.stopPropagation();
