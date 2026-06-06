@@ -227,6 +227,7 @@
     "register_fixed_asset",
     "register_vendor_invoice",
     "register_webinar",
+    "reindex_consultants",
     "reject_pending_operation",
     "reject_procurement_suggestion",
     "reopen_accounting_period",
