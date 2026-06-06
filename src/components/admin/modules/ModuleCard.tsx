@@ -107,6 +107,8 @@ export function ModuleCard({
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: seedCounts } = useModuleSeedCounts();
   
   // Check if this module has a registry entry (has API)
   const registryModule = moduleRegistry.list().find(m => m.id === moduleId);
