@@ -143,8 +143,12 @@ export default function UsersPage() {
           title="Users"
           description="Assign one or more functional roles per user. Admins see everything regardless of other roles."
         >
+          <Button variant="outline" size="sm" asChild>
+            <a href="/admin/users/login-activity">Login activity</a>
+          </Button>
           <CreateUserDialog />
         </AdminPageHeader>
+
 
         <Card>
           <CardHeader>
