@@ -186,6 +186,7 @@ export function ModuleCard({
         (data as { total_rows?: number; deleted_total?: number } | null)?.total_rows ??
         (data as { deleted_total?: number } | null)?.deleted_total ?? 0;
       toast.success(`Reset complete — removed ${deleted} demo row(s)`);
+      queryClient.invalidateQueries({ queryKey: ["module-seed-counts"] });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Reset failed";
       toast.error(msg);
