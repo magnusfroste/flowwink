@@ -59,6 +59,46 @@ function buildProfileText(p: any): string {
   return parts.join('\n');
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// Public anonymization (GDPR)
+// Reads modules.resume.publicAnonymization from site_settings.
+// 'full' (default) → "Anna L."   'initials' → "AL"   'off' → real name
+// Always strips email, phone, linkedin_url for public callers.
+// ────────────────────────────────────────────────────────────────────────
+type AnonMode = 'full' | 'initials' | 'off';
+
+async function loadAnonymizationMode(supabase: any): Promise<AnonMode> {
+  try {
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'modules')
+      .maybeSingle();
+    const mode = (data?.value as any)?.resume?.publicAnonymization;
+    if (mode === 'initials' || mode === 'off' || mode === 'full') return mode;
+  } catch (_) { /* fall through */ }
+  return 'full';
+}
+
+function anonymizeName(name: string | null | undefined, mode: AnonMode): string {
+  if (!name) return '';
+  if (mode === 'off') return name;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const first = parts[0];
+  const last = parts.length > 1 ? parts[parts.length - 1] : '';
+  if (mode === 'initials') {
+    return (first[0] || '').toUpperCase() + (last ? last[0].toUpperCase() : '');
+  }
+  // 'full' — first name + last initial (industry default)
+  return last ? `${first} ${last[0].toUpperCase()}.` : first;
+}
+
+function anonymizeMatch(m: any, mode: AnonMode) {
+  const { email, phone, linkedin_url, contact_email, contact_phone, ...safe } = m;
+  return { ...safe, name: anonymizeName(m.name, mode) };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -182,11 +222,18 @@ serve(async (req) => {
     });
     if (rpcErr) throw rpcErr;
 
+    // Anonymize for public callers. Internal callers (admin tooling, FlowPilot,
+    // MCP skills) can pass `internal: true` to bypass and get real names.
+    const isInternal = body.internal === true;
+    const anonMode: AnonMode = isInternal ? 'off' : await loadAnonymizationMode(supabase);
+    const safeMatches = (matches || []).map((m: any) => anonymizeMatch(m, anonMode));
+
     return json({
       success: true,
-      matches: matches || [],
+      matches: safeMatches,
       mode: queryEmbedding ? 'hybrid' : 'text_only',
       provider: usedProvider,
+      anonymization: anonMode,
     });
   } catch (error) {
     console.error('Resume match error:', error);

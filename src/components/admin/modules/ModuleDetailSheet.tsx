@@ -37,7 +37,7 @@ import { moduleRegistry } from "@/lib/module-registry";
 import { getModuleWebhookEvents } from "@/lib/module-webhook-events";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
-import type { ModuleAutonomy, ModuleConfig, ModulesSettings, BookingEmailProvider } from "@/hooks/useModules";
+import type { ModuleAutonomy, ModuleConfig, ModulesSettings, BookingEmailProvider, ConsultantAnonymization } from "@/hooks/useModules";
 import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
@@ -622,6 +622,64 @@ export function ModuleDetailSheet({
                         </div>
                       </>
                     )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Consultants — Public anonymization (GDPR) */}
+            {moduleId === 'resume' && moduleConfig && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold">Public Anonymization (GDPR)</h4>
+                  </div>
+                  <div className="rounded-lg border p-4 bg-muted/20 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Controls how consultant names appear in the public Resume Matcher block.
+                      Email, phone and LinkedIn are never exposed publicly regardless of this setting.
+                    </p>
+                    <Select
+                      value={moduleConfig.publicAnonymization ?? 'full'}
+                      onValueChange={(value: ConsultantAnonymization) => {
+                        if (!modules) return;
+                        updateModules.mutate({
+                          ...modules,
+                          resume: {
+                            ...modules.resume,
+                            publicAnonymization: value,
+                          },
+                        });
+                      }}
+                    >
+                      <SelectTrigger id="resume-anonymization">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">
+                          <span className="flex items-center gap-2">
+                            First name + last initial
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Recommended</Badge>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="initials">Initials only (AL)</SelectItem>
+                        <SelectItem value="off">
+                          <span className="flex items-center gap-2">
+                            Full name (no anonymization)
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Internal</Badge>
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {(moduleConfig.publicAnonymization ?? 'full') === 'full'
+                        ? 'Shows "Anna L." — industry standard for consultancy marketplaces (Cinode, Brainville, Keyman).'
+                        : (moduleConfig.publicAnonymization ?? 'full') === 'initials'
+                          ? 'Shows "AL" only — maximum privacy until a client signs an NDA.'
+                          : 'Shows the full name publicly. Use only for internal or whitelabel instances.'}
+                    </p>
                   </div>
                 </div>
               </>
