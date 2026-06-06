@@ -400,20 +400,24 @@ export function ModuleCard({
                 ) : (
                   <Sparkles className="h-3 w-3 mr-1.5" />
                 )}
-                Seed
+                {hasSeededData ? "Re-seed" : "Seed"}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs px-2"
-                    disabled={seeding || resetting}
+                    className="h-7 text-xs px-2 gap-1"
+                    disabled={seeding || resetting || !hasSeededData}
+                    title={hasSeededData ? `${seededCount} demo row(s) seeded` : "No demo data to reset"}
                   >
                     {resetting ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <Trash2 className="h-3 w-3" />
+                    )}
+                    {hasSeededData && (
+                      <span className="font-mono text-[10px]">{seededCount}</span>
                     )}
                   </Button>
                 </AlertDialogTrigger>
