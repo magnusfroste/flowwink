@@ -529,6 +529,10 @@ export function ModuleDetailSheet({
             <Separator />
             <ModuleSkillsSection moduleId={moduleId} variant="inline" defaultOpen={false} />
 
+            {/* Automations seeded by this module */}
+            <Separator />
+            <ModuleAutomationsSection moduleId={moduleId} />
+
             {/* Browser Control Setup */}
             {moduleId === 'browserControl' && (
               <>
