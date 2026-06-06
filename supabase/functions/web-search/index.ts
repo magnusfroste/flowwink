@@ -130,8 +130,10 @@ serve(async (req) => {
 
     const integrationConfig = await getIntegrationConfig();
     const firecrawlAvailable = firecrawlKey && integrationConfig.firecrawlEnabled;
+    const searxngAvailable = integrationConfig.searxngEnabled && integrationConfig.searxngUrl;
 
     const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlAvailable);
+    const useSearxng = preferred_provider === 'searxng' || (preferred_provider === 'auto' && searxngAvailable);
     const useJina = preferred_provider === 'jina' || preferred_provider === 'auto';
 
     // --- Strategy 1: Firecrawl Search (paid, higher quality) ---
@@ -168,6 +170,17 @@ serve(async (req) => {
         console.warn('[web-search] Firecrawl error:', e);
       }
     }
+
+    // --- Strategy 2: SearXNG (self-hosted, free) ---
+    if (results.length === 0 && useSearxng && integrationConfig.searxngUrl) {
+      console.log('[web-search] Using SearXNG for:', query);
+      const sx = await searxngSearch(integrationConfig.searxngUrl, query, limit, lang);
+      if (sx.ok && sx.results.length > 0) {
+        results = sx.results;
+        provider = 'searxng';
+      }
+    }
+
 
     // --- Strategy 2: Jina Search (free first → API key → keyless fallback) ---
     if (results.length === 0 && useJina) {
