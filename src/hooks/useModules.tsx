@@ -14,6 +14,16 @@ export type ModuleAutonomy = 'view-required' | 'config-required' | 'agent-capabl
 
 export type BookingEmailProvider = 'resend' | 'composio_gmail';
 
+/**
+ * Public anonymization mode for consultant profiles.
+ * - 'full'     → "Anna L." + initialer (GDPR-säker default, branschstandard)
+ * - 'initials' → "AL" + roll, maximalt skydd
+ * - 'off'      → fullt namn (internt/whitelabel)
+ *
+ * Email/phone/linkedin_url är ALDRIG publika, oavsett läge.
+ */
+export type ConsultantAnonymization = 'full' | 'initials' | 'off';
+
 export interface ModuleConfig {
   enabled: boolean;
   name: string;
@@ -36,6 +46,8 @@ export interface ModuleConfig {
   // Booking-specific settings
   confirmationEmailEnabled?: boolean; // Send confirmation email on new booking
   bookingEmailProvider?: BookingEmailProvider; // Which provider to use for booking emails
+  // Consultants (resume) module — GDPR setting for public-facing match results
+  publicAnonymization?: ConsultantAnonymization;
 }
 
 export interface ModulesSettings {
