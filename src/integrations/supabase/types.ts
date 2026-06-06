@@ -1638,6 +1638,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_events: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          email: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          email?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          email?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       autonomy_test_runs: {
         Row: {
           created_at: string
