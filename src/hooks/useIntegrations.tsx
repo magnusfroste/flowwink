@@ -99,6 +99,7 @@ export interface IntegrationsSettings {
   jina: IntegrationConfig;
   meta_ads: IntegrationConfig;
   composio: IntegrationConfig;
+  searxng: IntegrationConfig;
 }
 
 // Default settings - auto-enabled when API key exists, admin can explicitly disable
