@@ -278,6 +278,54 @@ function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
   );
 }
 
+// Firecrawl live credit indicator — calls firecrawl-account edge function
+function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
+  const [info, setInfo] = useState<{ remaining: number; plan: number | null } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!hasKey) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('firecrawl-account');
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to read credits');
+      setInfo({
+        remaining: data.remaining_credits ?? 0,
+        plan: data.plan_credits ?? null,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [hasKey]);
+
+  if (!hasKey) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs">
+      <span className="text-muted-foreground">Firecrawl credits</span>
+      {info ? (
+        <span className="font-medium tabular-nums">
+          {info.remaining.toLocaleString()}
+          {info.plan != null && (
+            <span className="text-muted-foreground"> / {info.plan.toLocaleString()}</span>
+          )}
+        </span>
+      ) : error ? (
+        <span className="text-destructive">{error}</span>
+      ) : (
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled={loading} onClick={load}>
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Check'}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // OpenAI live usage indicator — calls openai-account edge function.
 // OpenAI has no remaining-credits endpoint for sk- keys, so we surface
 // month-to-date estimated spend + optional admin-key org cost.
