@@ -362,6 +362,18 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://docs.composio.dev',
     docsLabel: 'Get API key',
   },
+  searxng: {
+    name: 'SearXNG',
+    description: 'Self-hosted, privacy-respecting metasearch',
+    icon: 'Globe',
+    category: 'sales',
+    features: ['Web search', 'Self-hosted', 'Free', 'Fallback for Firecrawl/Jina'],
+    docsUrl: 'https://docs.searxng.org/',
+    docsLabel: 'SearXNG docs',
+    config: {
+      url: '',
+    },
+  },
 };
 
 // Category definitions
