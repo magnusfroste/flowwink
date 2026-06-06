@@ -1,4 +1,4 @@
-// demo-cycle — hourly reset + reseed for the public FlowWink demo instance.
+// demo-cycle — daily reset + reseed for the public FlowWink demo instance.
 // Wipes only data registered in `demo_run_items` (PROTECTED_TABLES are never
 // touched) then re-stages a fresh scenario across the pilot modules.
 //
