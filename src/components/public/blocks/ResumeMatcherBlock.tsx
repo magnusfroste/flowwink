@@ -298,7 +298,29 @@ export function ResumeMatcherBlock({ data }: ResumeMatcherBlockProps) {
         throw new Error(result?.error || 'Search failed');
       }
 
-      const list: ConsultantMatch[] = result.matches || [];
+      const raw: ConsultantMatch[] = result.matches || [];
+
+      // RPC returns scores but not ranks — derive ranks client-side so the
+      // Semantic / Keyword detail panels show #1, #2, … instead of "—".
+      const semOrder = [...raw]
+        .filter((m) => (m.semantic_score ?? 0) > 0)
+        .sort((a, b) => (b.semantic_score ?? 0) - (a.semantic_score ?? 0))
+        .map((m) => m.id);
+      const txtOrder = [...raw]
+        .filter((m) => (m.text_score ?? 0) > 0)
+        .sort((a, b) => (b.text_score ?? 0) - (a.text_score ?? 0))
+        .map((m) => m.id);
+
+      const list: ConsultantMatch[] = raw.map((m) => {
+        const sIdx = semOrder.indexOf(m.id);
+        const tIdx = txtOrder.indexOf(m.id);
+        return {
+          ...m,
+          semantic_rank: sIdx >= 0 ? sIdx + 1 : null,
+          text_rank: tIdx >= 0 ? tIdx + 1 : null,
+        };
+      });
+
       setMatches(list);
       setMode(result.mode || null);
 
