@@ -61,6 +61,8 @@ export interface IntegrationProviderConfig {
   // estimated spend reaches `warnAtPct` of this value. Does not block requests.
   monthlyBudgetUsd?: number;
   warnAtPct?: number; // 0-100, default 80
+  // SearXNG — self-hosted search base URL (e.g. https://searx.example.com)
+  url?: string;
 }
 
 // Integration configuration type
@@ -71,7 +73,7 @@ export interface IntegrationConfig {
   icon: string;
   category: 'payments' | 'communication' | 'ai' | 'media' | 'automation' | 'analytics' | 'notifications' | 'sales' | 'advertising';
   features: string[];
-  secretName: string;
+  secretName?: string;
   docsUrl: string;
   docsLabel?: string;
   settingsUrl?: string;
@@ -99,6 +101,7 @@ export interface IntegrationsSettings {
   jina: IntegrationConfig;
   meta_ads: IntegrationConfig;
   composio: IntegrationConfig;
+  searxng: IntegrationConfig;
 }
 
 // Default settings - auto-enabled when API key exists, admin can explicitly disable
@@ -361,6 +364,18 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://docs.composio.dev',
     docsLabel: 'Get API key',
   },
+  searxng: {
+    name: 'SearXNG',
+    description: 'Self-hosted, privacy-respecting metasearch',
+    icon: 'Globe',
+    category: 'sales',
+    features: ['Web search', 'Self-hosted', 'Free', 'Fallback for Firecrawl/Jina'],
+    docsUrl: 'https://docs.searxng.org/',
+    docsLabel: 'SearXNG docs',
+    config: {
+      url: '',
+    },
+  },
 };
 
 // Category definitions
@@ -469,7 +484,7 @@ export function useToggleIntegration() {
 // Config-based integrations: no vault secret needed, presence of required
 // config field determines credential. EXPORTED so all callers share one list.
 export const CONFIG_BASED_KEYS: ReadonlyArray<keyof IntegrationsSettings> = [
-  'local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack',
+  'local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack', 'searxng',
 ];
 
 export function configHasCredential(
@@ -482,6 +497,7 @@ export function configHasCredential(
     case 'google_analytics': return !!config?.measurementId;
     case 'meta_pixel': return !!config?.pixelId;
     case 'slack': return !!config?.webhookUrl;
+    case 'searxng': return !!config?.url;
     default: return false;
   }
 }

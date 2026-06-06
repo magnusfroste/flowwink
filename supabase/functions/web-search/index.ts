@@ -22,7 +22,7 @@ interface WebSearchInput {
   limit?: number;
   lang?: string;
   country?: string;
-  preferred_provider?: 'firecrawl' | 'jina' | 'auto';
+  preferred_provider?: 'firecrawl' | 'jina' | 'searxng' | 'auto';
 }
 
 interface SearchResult {
@@ -32,7 +32,12 @@ interface SearchResult {
   content?: string;
 }
 
-async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecrawlEnabled: boolean }> {
+async function getIntegrationConfig(): Promise<{
+  preferFreeTier: boolean;
+  firecrawlEnabled: boolean;
+  searxngEnabled: boolean;
+  searxngUrl: string | null;
+}> {
   try {
             const sb = getServiceClient();
     const { data } = await sb
@@ -42,12 +47,40 @@ async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecr
       .maybeSingle();
     const jina = data?.value?.jina;
     const firecrawl = data?.value?.firecrawl;
+    const searxng = data?.value?.searxng;
+    const rawUrl = (searxng?.config?.url as string | undefined)?.trim() || null;
     return {
       preferFreeTier: jina?.config?.preferFreeTier ?? true,
       firecrawlEnabled: firecrawl?.enabled !== false,
+      searxngEnabled: searxng?.enabled !== false && !!rawUrl,
+      searxngUrl: rawUrl ? rawUrl.replace(/\/+$/, '') : null,
     };
   } catch {
-    return { preferFreeTier: true, firecrawlEnabled: true };
+    return { preferFreeTier: true, firecrawlEnabled: true, searxngEnabled: false, searxngUrl: null };
+  }
+}
+
+async function searxngSearch(baseUrl: string, query: string, limit: number, lang?: string): Promise<{ results: SearchResult[]; ok: boolean }> {
+  try {
+    const params = new URLSearchParams({ q: query, format: 'json' });
+    if (lang) params.set('language', lang);
+    const res = await fetch(`${baseUrl}/search?${params.toString()}`, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'FlowWink-WebSearch/1.0' },
+    });
+    if (!res.ok) {
+      console.warn('[web-search] SearXNG failed:', res.status);
+      return { results: [], ok: false };
+    }
+    const data = await res.json();
+    const results: SearchResult[] = (data.results || []).slice(0, limit).map((r: any) => ({
+      title: r.title || '',
+      url: r.url || '',
+      description: r.content || r.snippet || '',
+    }));
+    return { results, ok: true };
+  } catch (e) {
+    console.warn('[web-search] SearXNG error:', e);
+    return { results: [], ok: false };
   }
 }
 
@@ -97,8 +130,10 @@ serve(async (req) => {
 
     const integrationConfig = await getIntegrationConfig();
     const firecrawlAvailable = firecrawlKey && integrationConfig.firecrawlEnabled;
+    const searxngAvailable = integrationConfig.searxngEnabled && integrationConfig.searxngUrl;
 
     const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlAvailable);
+    const useSearxng = preferred_provider === 'searxng' || (preferred_provider === 'auto' && searxngAvailable);
     const useJina = preferred_provider === 'jina' || preferred_provider === 'auto';
 
     // --- Strategy 1: Firecrawl Search (paid, higher quality) ---
@@ -135,6 +170,17 @@ serve(async (req) => {
         console.warn('[web-search] Firecrawl error:', e);
       }
     }
+
+    // --- Strategy 2: SearXNG (self-hosted, free) ---
+    if (results.length === 0 && useSearxng && integrationConfig.searxngUrl) {
+      console.log('[web-search] Using SearXNG for:', query);
+      const sx = await searxngSearch(integrationConfig.searxngUrl, query, limit, lang);
+      if (sx.ok && sx.results.length > 0) {
+        results = sx.results;
+        provider = 'searxng';
+      }
+    }
+
 
     // --- Strategy 2: Jina Search (free first → API key → keyless fallback) ---
     if (results.length === 0 && useJina) {
