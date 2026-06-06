@@ -61,6 +61,8 @@ export interface IntegrationProviderConfig {
   // estimated spend reaches `warnAtPct` of this value. Does not block requests.
   monthlyBudgetUsd?: number;
   warnAtPct?: number; // 0-100, default 80
+  // SearXNG — self-hosted search base URL (e.g. https://searx.example.com)
+  url?: string;
 }
 
 // Integration configuration type
