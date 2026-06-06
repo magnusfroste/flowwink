@@ -1194,6 +1194,11 @@ export default function IntegrationsStatusPage() {
                               <HunterCreditsBadge hasKey={hasKey} />
                             </div>
                           )}
+                          {key === 'firecrawl' && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <FirecrawlCreditsBadge hasKey={hasKey} />
+                            </div>
+                          )}
                           {key === 'openai' && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <OpenAIUsageBadge
