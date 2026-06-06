@@ -44,20 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Fire-and-forget auth event tracking (admin login monitor)
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-          const map: Record<string, string> = {
-            SIGNED_IN: 'sign_in',
-            SIGNED_OUT: 'sign_out',
-            TOKEN_REFRESHED: 'token_refreshed',
-            PASSWORD_RECOVERY: 'password_reset',
-          };
-          // Skip noisy token_refreshed for now (keeps table tidy)
-          if (event !== 'TOKEN_REFRESHED') {
-            trackAuthEvent(map[event], session?.user?.id ?? null, session?.user?.email ?? null);
-          }
-        }
-
         // Defer profile fetch with setTimeout to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
@@ -86,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
 
   const trackAuthEvent = (
     event_type: string,
@@ -144,9 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       trackAuthEvent('failed_login', null, email, { reason: error.message });
+    } else {
+      trackAuthEvent('sign_in', data.user?.id ?? null, data.user?.email ?? email);
     }
     return { error: error as Error | null };
   };
@@ -154,8 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -165,17 +154,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
+    if (!error) {
+      trackAuthEvent('sign_up', data.user?.id ?? null, data.user?.email ?? email);
+    }
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
+    const currentUserId = user?.id ?? null;
+    const currentEmail = user?.email ?? null;
     await supabase.auth.signOut();
+    trackAuthEvent('sign_out', currentUserId, currentEmail);
     setUser(null);
     setSession(null);
     setProfile(null);
     setRole(null);
     setRoles([]);
   };
+
 
   const refreshProfile = async () => {
     if (user) {
