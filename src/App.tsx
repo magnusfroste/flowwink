@@ -248,7 +248,10 @@ const router = createBrowserRouter([
       { path: "/admin/blog/:id", element: <BlogPostEditorPage /> },
       { path: "/admin/media", element: <MediaLibraryPage /> },
       { path: "/admin/users", element: <UsersPage /> },
+      { path: "/admin/users/login-activity", element: <LoginActivityPage /> },
+      { path: "/admin/security/logins", element: <Navigate to="/admin/users/login-activity" replace /> },
       { path: "/admin/roles", element: <RolePermissionsPage /> },
+
       { path: "/admin/settings", element: <SiteSettingsPage /> },
       { path: "/admin/profile", element: <ProfilePage /> },
       { path: "/admin/branding", element: <BrandingSettingsPage /> },
