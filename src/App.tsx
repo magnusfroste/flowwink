@@ -19,6 +19,8 @@ import PagesListPage from "./pages/admin/PagesListPage";
 import NewPagePage from "./pages/admin/NewPagePage";
 import PageEditorPage from "./pages/admin/PageEditorPage";
 import UsersPage from "./pages/admin/UsersPage";
+import LoginActivityPage from "./pages/admin/LoginActivityPage";
+
 import RolePermissionsPage from "./pages/admin/RolePermissionsPage";
 import MediaLibraryPage from "./pages/admin/MediaLibraryPage";
 import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
@@ -246,7 +248,10 @@ const router = createBrowserRouter([
       { path: "/admin/blog/:id", element: <BlogPostEditorPage /> },
       { path: "/admin/media", element: <MediaLibraryPage /> },
       { path: "/admin/users", element: <UsersPage /> },
+      { path: "/admin/users/login-activity", element: <LoginActivityPage /> },
+      { path: "/admin/security/logins", element: <Navigate to="/admin/users/login-activity" replace /> },
       { path: "/admin/roles", element: <RolePermissionsPage /> },
+
       { path: "/admin/settings", element: <SiteSettingsPage /> },
       { path: "/admin/profile", element: <ProfilePage /> },
       { path: "/admin/branding", element: <BrandingSettingsPage /> },

@@ -28,6 +28,10 @@ verify_jwt = false
 [functions.send-webhook]
 verify_jwt = false
 
+[functions.track-auth-event]
+verify_jwt = false
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Public API endpoints — anon visitors call these with custom auth.
 # verify_jwt=false allows Supabase JWT check to be bypassed; each
