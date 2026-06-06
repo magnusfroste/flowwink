@@ -2,7 +2,7 @@
  * Demo Company Template — Public FlowWink Demo Stage (v1.4.0)
  *
  * Static "set" for a public demo instance (e.g. demo.flowwink.com).
- * Pairs with the `demo-cycle` edge function that hourly resets and re-seeds
+ * Pairs with the `demo-cycle` edge function that daily resets and re-seeds
  * dynamic data (leads, quotes, invoices, expenses) via `reset_module_data`
  * + `seed_module_demo`.
  *
@@ -26,10 +26,10 @@ import type { StarterTemplate } from './types';
 export const demoCompanyTemplate: StarterTemplate = {
   id: 'demo-company',
   name: 'Demo Company',
-  description: 'Public demo stage for FlowWink. Static set + hourly reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.',
+  description: 'Public demo stage for FlowWink. Static set + daily reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.',
   category: 'platform',
   icon: 'PlayCircle',
-  tagline: 'A working business you can poke at — resets every hour.',
+  tagline: 'A working business you can poke at — resets every day.',
   aiChatPosition: 'Demo concierge — explains what FlowPilot is doing in real time',
   requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'quotes', 'invoicing', 'expenses', 'forms', 'ecommerce', 'inventory', 'approvals'],
 
@@ -42,7 +42,7 @@ export const demoCompanyTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         seoTitle: 'FlowWink Demo — Watch an autonomous business operate live',
-        description: 'A public FlowWink instance running a fictional company. Leads, quotes and invoices reset every hour so you can see FlowPilot in action.',
+        description: 'A public FlowWink instance running a fictional company. Leads, quotes and invoices reset every day so you can see FlowPilot in action.',
         showTitle: false,
         titleAlignment: 'center',
       },
@@ -51,7 +51,7 @@ export const demoCompanyTemplate: StarterTemplate = {
           id: 'announcement-demo',
           type: 'announcement-bar',
           data: {
-            message: '⚡ Live demo — everything resets every hour. Login: demo@flowwink.com / demo1234',
+            message: '⚡ Live demo — everything resets every day. Login: demo@flowwink.com / demo1234',
             linkText: 'Open admin',
             linkUrl: '/auth',
             variant: 'gradient',
@@ -63,10 +63,10 @@ export const demoCompanyTemplate: StarterTemplate = {
           id: 'hero-demo',
           type: 'hero',
           data: {
-            eyebrow: 'LIVE DEMO · RESETS EVERY HOUR',
+            eyebrow: 'LIVE DEMO · RESETS EVERY DAY',
             eyebrowColor: 'primary',
             title: 'Watch a business run itself.',
-            subtitle: 'This site is a live FlowWink instance. FlowPilot handles leads, quotes, invoices and expenses around the clock. Sign in with demo / demo1234 and break things — we reset every hour.',
+            subtitle: 'This site is a live FlowWink instance. FlowPilot handles leads, quotes, invoices and expenses around the clock. Sign in with demo / demo1234 and break things — we reset every day.',
             backgroundType: 'video',
             videoType: 'direct',
             videoUrl: '/videos/hero-demo-ambient.mp4',
@@ -119,9 +119,9 @@ export const demoCompanyTemplate: StarterTemplate = {
           type: 'text',
           data: {
             content: { type: 'doc', content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What the hourly cron actually does' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Every hour on the hour, the demo-cycle job runs reset_module_data → seed_module_demo across the pilot modules, then restocks the shop. It only deletes rows it created itself (tracked in demo_run_items) — your admin edits and the static content set are safe.' }] },
-              { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Wiped & re-seeded every hour' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What the daily cron actually does' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Every day at 03:00 UTC, the demo-cycle job runs reset_module_data → seed_module_demo across the pilot modules, then restocks the shop. It only deletes rows it created itself (tracked in demo_run_items) — your admin edits and the static content set are safe.' }] },
+              { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Wiped & re-seeded every day' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'CRM — leads, contacts, deals' }] }] },
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Quotes — drafts and sent quotes' }] }] },
@@ -210,7 +210,7 @@ export const demoCompanyTemplate: StarterTemplate = {
           id: 'how-hero',
           type: 'hero',
           data: {
-            title: 'A live business, reset every hour.',
+            title: 'A live business, reset every day.',
             subtitle: 'This is the same FlowWink you would self-host — just with a cron job that wipes the data so the next visitor sees a fresh scenario.',
             backgroundType: 'color',
             heightMode: 'compact',
@@ -225,7 +225,7 @@ export const demoCompanyTemplate: StarterTemplate = {
             stats: [
               { value: '62', label: 'Modules available', icon: 'LayoutGrid' },
               { value: '280', label: 'MCP-exposed skills', icon: 'Sparkles' },
-              { value: '1h', label: 'Reset interval', icon: 'Timer' },
+              { value: '24h', label: 'Reset interval', icon: 'Timer' },
               { value: '0€', label: 'License cost', icon: 'Gift' },
             ],
           },
@@ -235,7 +235,7 @@ export const demoCompanyTemplate: StarterTemplate = {
           type: 'features',
           data: {
             title: 'Think of it as two layers',
-            subtitle: 'One layer is the website and shop you set up once. The other is the day-to-day business activity that FlowPilot runs — and that we reset every hour so the next visitor gets a fresh stage.',
+            subtitle: 'One layer is the website and shop you set up once. The other is the day-to-day business activity that FlowPilot runs — and that we reset every day so the next visitor gets a fresh stage.',
             features: [
               {
                 id: 'layer-static',
@@ -246,8 +246,8 @@ export const demoCompanyTemplate: StarterTemplate = {
               {
                 id: 'layer-dynamic',
                 icon: 'RefreshCw',
-                title: 'Resets hourly — the business',
-                description: 'Leads, deals, quotes, invoices, expenses, orders and stock levels. This is the data FlowPilot generated while operating the company. The hourly cron wipes it and re-seeds a new scenario.',
+                title: 'Resets daily — the business',
+                description: 'Leads, deals, quotes, invoices, expenses, orders and stock levels. This is the data FlowPilot generated while operating the company. The daily cron wipes it and re-seeds a new scenario.',
               },
             ],
             columns: 2,
@@ -297,7 +297,7 @@ export const demoCompanyTemplate: StarterTemplate = {
     landingPageEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! This is a public demo. Ask me what FlowPilot is doing — or sign in (demo / demo1234) and poke around.',
-    systemPrompt: 'You are the concierge for a public FlowWink demo. Explain what FlowPilot does, mention that data resets hourly, and never claim emails were actually sent.',
+    systemPrompt: 'You are the concierge for a public FlowWink demo. Explain what FlowPilot does, mention that data resets daily, and never claim emails were actually sent.',
     suggestedPrompts: [
       'What does FlowPilot do here?',
       'How often does this demo reset?',
@@ -315,7 +315,7 @@ export const demoCompanyTemplate: StarterTemplate = {
   seoSettings: {
     siteTitle: 'FlowWink Demo',
     titleTemplate: '%s | FlowWink Demo',
-    defaultDescription: 'A public FlowWink instance running a fictional company. FlowPilot handles operations live; data resets every hour.',
+    defaultDescription: 'A public FlowWink instance running a fictional company. FlowPilot handles operations live; data resets every day.',
     robotsIndex: true,
     robotsFollow: true,
   },

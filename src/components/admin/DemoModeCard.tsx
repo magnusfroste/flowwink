@@ -16,7 +16,7 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 /**
  * Demo Mode toggle. When enabled, schedules the `demo-cycle` edge function
- * hourly via pg_cron on THIS instance (each self-hosted FlowWink site owns
+ * daily via pg_cron on THIS instance (each self-hosted FlowWink site owns
  * its own cron job). Intended for the public demo instance only.
  */
 export function DemoModeCard() {
@@ -84,7 +84,7 @@ export function DemoModeCard() {
       toast({
         title: next ? 'Demo mode enabled' : 'Demo mode disabled',
         description: next
-          ? 'demo-cycle scheduled hourly on this instance.'
+          ? 'demo-cycle scheduled daily on this instance.'
           : 'demo-cycle unscheduled on this instance.',
       });
     },

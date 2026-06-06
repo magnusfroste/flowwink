@@ -1856,7 +1856,6 @@
     "backgroundStyle": "blur",
     "headerShadow": "sm",
     "showBorder": false,
-    "showThemeToggle": true,
     "customNavItems": [
       {
         "id": "demo",
