@@ -12,7 +12,6 @@ export const defaultHeaderData: HeaderBlockData = {
   showNameWithLogo: false,
   logoSize: 'md',
   stickyHeader: true,
-  showThemeToggle: true,
   backgroundStyle: 'solid',
   headerShadow: 'sm',
   linkColorScheme: 'default',

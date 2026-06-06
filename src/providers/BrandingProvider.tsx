@@ -188,9 +188,20 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       applyBrandingToDocument(branding);
       themeSetRef.current = false;
       
-      // Force theme when toggle is disabled
+      // Apply the configured default theme ONLY for visitors who have not made
+      // an explicit choice yet. Re-applying it on every load would clobber the
+      // visitor's toggle selection on refresh (dark -> light flip-flop bug).
+      // next-themes persists the active theme under localStorage key "theme".
       if (branding.allowThemeToggle === false && branding.defaultTheme) {
-        setTheme(branding.defaultTheme);
+        let hasExplicitChoice = false;
+        try {
+          hasExplicitChoice = !!localStorage.getItem('theme');
+        } catch {
+          // localStorage unavailable (private mode / SSR) — fall through to apply default
+        }
+        if (!hasExplicitChoice) {
+          setTheme(branding.defaultTheme);
+        }
       }
     }
     

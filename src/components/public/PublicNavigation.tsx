@@ -413,14 +413,14 @@ export function PublicNavigation() {
             )}
             {/* Custom nav items - with mega menu support */}
             {customNavItems.map((item) => renderNavItem(item))}
-            {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            {branding?.allowThemeToggle !== false && <ThemeToggle />}
             {ecommerceEnabled && <AccountIndicator />}
             {ecommerceEnabled && <CartIndicator />}
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            {branding?.allowThemeToggle !== false && <ThemeToggle />}
             {ecommerceEnabled && <AccountIndicator />}
             {ecommerceEnabled && <CartIndicator />}
             <button

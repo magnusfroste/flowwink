@@ -211,7 +211,7 @@ export interface HeaderBlockData {
   showNameWithLogo?: boolean;
   logoSize?: 'sm' | 'md' | 'lg';
   stickyHeader?: boolean;
-  showThemeToggle?: boolean;
+  // Theme toggle visibility is controlled by branding.allowThemeToggle (single source of truth)
   // Background styling
   backgroundStyle?: 'solid' | 'transparent' | 'blur';
   headerShadow?: 'none' | 'sm' | 'md' | 'lg';

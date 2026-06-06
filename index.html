@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Apply theme before first paint to prevent FOUC / light-flash on refresh.
+         Mirrors next-themes config in App.tsx: attribute="class", defaultTheme="system",
+         enableSystem, storageKey="theme". Must stay in sync with that ThemeProvider. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme = stored || 'system';
+          if (theme === 'system') {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          var root = document.documentElement;
+          root.classList.remove('light', 'dark');
+          root.classList.add(theme);
+          root.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Default meta tags - will be overridden by React Helmet and SSR for social crawlers -->
     <title>FlowWink — The Business Operating System</title>
     <meta name="description" content="FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 200+ MCP skills across CRM, finance, ERP, and content." />

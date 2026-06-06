@@ -824,7 +824,6 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
     backgroundStyle: 'blur',
     headerShadow: 'sm',
     showBorder: false,
-    showThemeToggle: true,
     customNavItems: [
       { id: 'demo', label: 'Product Demo', url: 'https://demo.flowwink.com', openInNewTab: true, enabled: true },
       { id: 'github', label: 'GitHub', url: 'https://github.com/magnusfroste/flowwink', openInNewTab: true, enabled: true },

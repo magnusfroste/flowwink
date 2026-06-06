@@ -596,17 +596,6 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                 onCheckedChange={(checked) => onChange({ ...data, stickyHeader: checked })}
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Show theme toggle</Label>
-                <p className="text-sm text-muted-foreground">Let visitors switch between dark/light mode</p>
-              </div>
-              <Switch
-                checked={data.showThemeToggle !== false}
-                onCheckedChange={(checked) => onChange({ ...data, showThemeToggle: checked })}
-              />
-            </div>
           </CardContent>
         </Card>
       </TabsContent>
