@@ -67,7 +67,7 @@ const WIKI_SKILLS: SkillSeed[] = [
             content_md: {
               type: 'string',
               description:
-                'Markdown body. Use [[WikiWord]] or CamelCase to auto-link to other pages.',
+                'REQUIRED for create and for any update that touches the body. Full markdown body of the page — write the actual content, not just a stub or a title placeholder. Use [[WikiWord]] or CamelCase to auto-link to other pages. The server rejects empty strings with an explicit error.',
             },
             limit: {
               type: 'number',
