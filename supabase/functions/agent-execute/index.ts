@@ -2747,10 +2747,19 @@ async function executeKbAction(
   }
 
   if (action === 'update') {
-    const { article_id: _aid, slug: _slug, ...updateData } = args as any;
+    const { article_id: _aid, slug: _slug, answer, ...rest } = args as any;
     const article_id = await resolveArticleId(args);
     if (!article_id) throw new Error('article_id or slug is required');
-    delete updateData.action;
+    delete rest.action;
+    const updateData: Record<string, unknown> = { ...rest };
+    if (answer !== undefined) {
+      if (!answer || (typeof answer === 'string' && !answer.trim())) {
+        throw new Error('answer must contain the full article body — empty values are rejected to prevent blank articles.');
+      }
+      const { answer_text, answer_json } = normalizeKbAnswer(answer);
+      updateData.answer_text = answer_text;
+      updateData.answer_json = answer_json;
+    }
     const { data, error } = await supabase.from('kb_articles')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title, is_published').single();
