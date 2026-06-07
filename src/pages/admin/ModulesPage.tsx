@@ -480,6 +480,7 @@ export default function ModulesPage() {
                         onAdminUIToggle={module.autonomy === 'agent-capable' ? (adminUI) => handleAdminUIToggle(module.id, adminUI) : undefined}
                         isUpdating={updateModules.isPending}
                         IconComponent={IconComponent}
+                        autoOpen={deepLinkModule === module.id}
                       />
                     );
                   })}
