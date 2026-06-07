@@ -16,6 +16,19 @@ function normalizeToken(value: unknown): string {
     .replace(/^_+|_+$/g, '');
 }
 
+function sanitizeSecret(value: string | undefined | null): string {
+  return String(value || '').trim().replace(/^['\"]|['\"]$/g, '');
+}
+
+function getSecretFingerprint(value: string): { prefix: string; suffix: string; length: number } | null {
+  if (!value) return null;
+  return {
+    prefix: value.slice(0, 8),
+    suffix: value.slice(-4),
+    length: value.length,
+  };
+}
+
 function extractErrorMessage(data: any, fallback = 'Unknown Composio error'): string {
   if (!data) return fallback;
   if (typeof data?.error === 'string') return data.error;
@@ -89,7 +102,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const composioKey = Deno.env.get('COMPOSIO_API_KEY');
+    const composioKey = sanitizeSecret(Deno.env.get('COMPOSIO_API_KEY'));
     if (!composioKey) {
       return new Response(JSON.stringify({ error: 'Composio API key not configured' }), {
         status: 503,
@@ -104,6 +117,7 @@ Deno.serve(async (req) => {
     const composioHeaders = {
       'Content-Type': 'application/json',
       'x-api-key': composioKey,
+      'Authorization': `Bearer ${composioKey}`,
     };
 
     const json = (data: unknown, status = 200) =>
@@ -271,6 +285,7 @@ Deno.serve(async (req) => {
       return json({
         result: {
           api_key_configured: true,
+          api_key_fingerprint: getSecretFingerprint(composioKey),
           api_key_valid: authConfigsRes.ok || connectedAppsRes.ok,
           auth_configs_ok: authConfigsRes.ok,
           auth_configs_count: authConfigs.length,
