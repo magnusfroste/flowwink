@@ -33,10 +33,20 @@ const FUNCTIONS_DIR = path.join(ROOT, 'supabase/functions');
 
 // Identifiers commonly used to hold the raw, agent-supplied argument bag.
 // Spreading any of these into a PostgREST write leaks _-prefixed fields.
-const RISKY_IDENTS = new Set([
-  'args', 'rest', 'body', 'payload', 'input', 'params', 'data', 'fields',
-  'patch', 'updates', 'record', 'row',
+// Identifiers that are almost always the RAW agent-supplied arg bag.
+// `.update(args)` is a bug ~100% of the time when args came from a tool call.
+const RAW_ARG_IDENTS = new Set([
+  'args', 'rest', 'body', 'payload', 'input', 'params',
 ]);
+
+// Identifiers used both for raw args AND for safe locally-built objects.
+// Only flag these if their declaration is actually tainted (spreads RAW idents).
+const BUILDER_IDENTS = new Set([
+  'data', 'fields', 'patch', 'updates', 'record', 'row',
+]);
+
+// Union — used when scanning spread expressions (we want to catch any leak).
+const RISKY_IDENTS = new Set([...RAW_ARG_IDENTS, ...BUILDER_IDENTS]);
 
 // Files / directories to skip entirely.
 const SKIP_PATTERNS = [
