@@ -25,6 +25,27 @@ npx vitest
 
 # Generate template JSON (after editing templates)
 bun run scripts/templates-to-json.ts
+
+# Sync block schema definitions
+bun run scripts/sync-block-schema.ts
+
+# Lint skill metadata
+bun run scripts/skill-linter.ts
+
+# Scaffold a new module
+bun run scripts/new-module.ts
+
+# Verify HR module integrity
+npm run verify:hr-modules
+
+# Run MCP regression tests
+npm run test:mcp-regression
+
+# Run timesheet regression tests
+npm run test:timesheet-regression
+
+# Check doc drift
+bun run scripts/check-doc-drift.ts
 ```
 
 ## Architecture
@@ -89,14 +110,62 @@ Admin editors use the `isEditing` prop:
 
 Block layout in `BlockRenderer`: full-bleed blocks (hero, parallax-section, marquee, etc.) skip the container wrapper. All others get `container mx-auto max-w-6xl px-4` and `py-12 md:py-16 lg:py-20` section padding. Backgrounds auto-alternate between `muted/40` and transparent for non-self-styled blocks.
 
+**Block metadata** lives in `src/lib/block-reference.ts` — the canonical registry mapping block types to their schema, preview, and capabilities.
+
+### Module System
+
+FlowWink has 62+ business modules in `src/lib/modules/`. Each module is a TypeScript file defining:
+- Module metadata (id, name, category, dependencies)
+- Feature set and capabilities
+- Skill registrations pointing to `agent_skills` rows
+
+**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, resume, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
+
+To scaffold a new module: `bun run scripts/new-module.ts`
+
+**Module API contracts** (`src/types/module-contracts.ts`): formal Zod schemas for all cross-module communication. All cross-module data exchange MUST use these contracts.
+
 ### Edge Functions
 
-All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-based. Key functions:
+All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-based.
+
+**Core API:**
 - `chat-completion` — FlowPilot AI endpoint; supports OpenAI, Gemini, local, n8n providers
 - `get-page` — serves pages with caching; called by PublicPage before DB fallback
-- `setup-flowpilot` — seeds FlowPilot soul + objectives from templates
+- `content-api` — programmatic content access
+
+**Agent / FlowPilot:**
 - `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions
-- `mcp-server` — outward-facing MCP gateway for external agents/federation peers (Streamable HTTP, JSON-RPC over POST + a `/rest/*` compatibility layer)
+- `flowpilot-heartbeat`, `flowpilot-briefing`, `flowpilot-distill`, `flowpilot-learn` — autonomous operator lifecycle
+- `mcp-server` — outward-facing MCP gateway for external agents/federation peers
+
+**Automations:**
+- `automation-dispatcher`, `event-dispatcher`, `signal-dispatcher`, `signal-ingest` — workflow automation pipeline
+
+**Commerce / Finance:**
+- `create-checkout`, `create-invoice-payment`, `send-order-confirmation`, `subscribe` — e-commerce
+- `generate-invoice-pdf`, `reconciliation`, `dunning-processor`, `fetch-fx-rates` — finance
+
+**AI Enrichment:**
+- `prospect-research`, `contact-finder`, `enrich-company`, `parse-resume`, `extract-pdf-text`, `extract-receipt` — data enrichment
+- `web-search`, `web-scrape`, `browser-fetch`, `firecrawl-account` — web intelligence
+
+**Integrations:**
+- `stripe-webhook`, `gmail-inbox-scan`, `gmail-oauth-callback`, `composio-proxy`, `hunter-account` — third-party
+
+**Communication:**
+- `email-send`, `newsletter-send`, `send-contact-email`, `send-booking-confirmation`, `send-invoice-email` — outbound comms
+
+**System / Admin:**
+- `setup-database`, `system-integrity-check`, `test-ai-connection`, `instance-health` — operations
+- `run-autonomy-tests`, `run-platform-tests` — autonomous testing
+
+**Shared utilities** live in `supabase/functions/_shared/`:
+- `pilot/` — FlowPilot ReAct engine (reason.ts, prompt-compiler.ts, built-in-tools.ts, handlers.ts)
+- `skills/intent-scorer.ts` — Skill Relevance Engine (shared between FlowPilot and MCP gateway)
+- `mcp/` — MCP schema definitions and connection group config
+- `ai-call.ts`, `ai-config.ts`, `ai-providers.ts` — AI provider abstraction
+- `token-tracking.ts`, `trace.ts`, `agent-audit.ts` — observability
 
 ### MCP Server (external agent access)
 
@@ -147,6 +216,20 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 Templates live in `src/data/templates/` as TypeScript, registered in `index.ts → ALL_TEMPLATES`.
 
+**Available templates:**
+- `flowwink-platform` — complete platform demo with all modules (94KB)
+- `consult-agency` — consulting agency
+- `securehealth` — healthcare compliance
+- `launchpad` — startup/SaaS landing page
+- `flowwink-agency` — marketing agency
+- `digital-shop` — e-commerce
+- `service-pro` — service provider
+- `trustcorp` — financial services
+- `demo-company` — general company demo
+- `momentum` — minimal startup
+- `helpcenter` — support/KB-focused
+- `blank` — empty template
+
 When a template is installed (`NewSitePage`), it seeds:
 - Pages, blog posts, KB articles, products, consultant profiles
 - FlowPilot soul + objectives → `agent_objectives` table via `setup-flowpilot` edge function
@@ -164,10 +247,55 @@ To add a new template:
 - **State**: TanStack Query for server state; React state for local UI state.
 - **Forms**: react-hook-form + zod validation.
 - **UI components**: shadcn/ui in `src/components/ui/` — prefer these over custom implementations.
+- **Module contracts**: All cross-module data exchange uses the Zod schemas in `src/types/module-contracts.ts`.
+- **Tiptap editors**: Always use the shared `<AITiptapToolbar>` component — never build per-block AI toolbar variants.
+
+## Source Layout
+
+```
+src/
+  components/
+    public/blocks/    # 65 public-facing block renderers
+    admin/blocks/     # 70+ admin block editors
+    admin/            # Domain admin components (crm/, blog/, hr/, invoices/, accounting/, ...)
+    account/          # Customer portal components
+    ui/               # shadcn/ui primitives
+  pages/
+    admin/            # 100+ admin pages
+    (public)          # ~28 public pages
+    account/          # ~15 customer portal pages
+  hooks/              # 151 custom React hooks (TanStack Query)
+  lib/
+    modules/          # 62 module definitions
+    module-def.ts     # Module definition type system
+    module-bootstrap.ts
+    module-registry.ts
+    block-reference.ts  # 48KB — canonical block metadata registry
+    logger.ts
+  types/
+    agent.ts          # Agent / FlowPilot types
+    cms.ts            # CMS / block types
+    module-contracts.ts  # Zod contracts for cross-module communication
+  data/templates/     # 12 site seed templates
+  integrations/       # Supabase client + generated types
+
+supabase/
+  functions/          # 100+ Deno edge functions
+    _shared/          # Shared utilities
+      pilot/          # FlowPilot ReAct engine
+      skills/         # Skill Relevance Engine
+      mcp/            # MCP schema + groups
+  migrations/         # Idempotent SQL migrations
+
+scripts/              # Developer tooling (bun/node/tsx)
+docs/                 # Contributing guides, architecture notes
+```
 
 ## Database Migrations
 
 All migrations MUST be idempotent (safe to run multiple times). Use `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DROP ... IF EXISTS` patterns. See `docs/contributing/contributing.md` for detailed SQL patterns.
+
+Migrations are timestamped UUID filenames: `YYYYMMDDHHMMSS_<uuid>.sql`.
 
 ```bash
 # Push migrations to a Supabase project
@@ -216,11 +344,13 @@ These are inviolable architectural laws for FlowPilot agent development:
 
 Every skill MUST contain sufficient metadata (`description`, `Use when:`, `NOT for:`) for the general scoring algorithm to select it correctly. If a skill isn't being picked up, the fix is ALWAYS better metadata — never a routing hack.
 
+Use `bun run scripts/skill-linter.ts` to validate skill metadata quality.
+
 ### Law 3: Blocks Are Interfaces, Not Pipelines
 
 Blocks capture intent and render responses. They NEVER build their own AI pipelines. All intelligence flows through FlowPilot's reasoning engine. See "Core Architecture Principle" above.
 
-**Refinement — Utility vs Skill:** Pure text transforms (improve / translate / summarize / expand / continue) on a text selection are **utilities**, not pipelines. They call `chat-completion` directly via `useAITextGeneration` and require no platform context. Use the shared `<AITiptapToolbar>` component in every Tiptap editor for consistency. Anything that needs business context (KB, identity, past records, policy) is a **skill** — register it in `agent_skills` and execute via FlowPilot or `agent-execute`. See `mem://architecture/ai-utility-vs-skill-classification`.
+**Refinement — Utility vs Skill:** Pure text transforms (improve / translate / summarize / expand / continue) on a text selection are **utilities**, not pipelines. They call `chat-completion` directly via `useAITextGeneration` and require no platform context. Use the shared `<AITiptapToolbar>` component in every Tiptap editor for consistency. Anything that needs business context (KB, identity, past records, policy) is a **skill** — register it in `agent_skills` and execute via FlowPilot or `agent-execute`.
 
 ### Law 4: Fail Forward, Don't Gate
 
