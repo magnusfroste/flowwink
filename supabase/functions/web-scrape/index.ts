@@ -24,9 +24,15 @@ interface WebScrapeInput {
   preferred_provider?: 'firecrawl' | 'jina' | 'auto';
 }
 
-async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecrawlEnabled: boolean }> {
+async function getIntegrationConfig(): Promise<{
+  preferFreeTier: boolean;
+  firecrawlEnabled: boolean;
+  /** Provider order from admin priority (firecrawl + jina only — searxng is search-only). */
+  providerOrder: Array<'firecrawl' | 'jina'>;
+}> {
+  const DEFAULT_PRIORITY = { firecrawl: 2, jina: 3 };
   try {
-            const sb = getServiceClient();
+    const sb = getServiceClient();
     const { data } = await sb
       .from('site_settings')
       .select('value')
@@ -34,12 +40,19 @@ async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecr
       .maybeSingle();
     const jina = data?.value?.jina;
     const firecrawl = data?.value?.firecrawl;
+    const priorities = {
+      firecrawl: Number(firecrawl?.config?.priority) || DEFAULT_PRIORITY.firecrawl,
+      jina: Number(jina?.config?.priority) || DEFAULT_PRIORITY.jina,
+    };
+    const providerOrder = (Object.keys(priorities) as Array<'firecrawl' | 'jina'>)
+      .sort((a, b) => priorities[a] - priorities[b]);
     return {
       preferFreeTier: jina?.config?.preferFreeTier ?? true,
-      firecrawlEnabled: firecrawl?.enabled !== false, // default true if not explicitly disabled
+      firecrawlEnabled: firecrawl?.enabled !== false,
+      providerOrder,
     };
   } catch {
-    return { preferFreeTier: true, firecrawlEnabled: true };
+    return { preferFreeTier: true, firecrawlEnabled: true, providerOrder: ['firecrawl', 'jina'] };
   }
 }
 
