@@ -2895,7 +2895,10 @@ async function executeWikiAction(
     if (!title) throw new Error('title is required');
     const slug = String((args as any).slug || '').trim() || toWikiSlug(title);
     if (!slug) throw new Error('could not derive slug');
-    const content_md = String((args as any).content_md || '');
+    const content_md = String((args as any).content_md || '').trim();
+    if (!content_md) {
+      throw new Error('content_md is required and must contain the full markdown body. Empty pages are rejected — pass the actual content, not just a title placeholder.');
+    }
     const { data, error } = await supabase
       .from('wiki_pages')
       .insert({ slug, title, content_md })
@@ -2910,7 +2913,11 @@ async function executeWikiAction(
     if (!slug) throw new Error('slug is required');
     const patch: Record<string, unknown> = {};
     if (typeof (args as any).title === 'string') patch.title = (args as any).title;
-    if (typeof (args as any).content_md === 'string') patch.content_md = (args as any).content_md;
+    if (typeof (args as any).content_md === 'string') {
+      const md = (args as any).content_md.trim();
+      if (!md) throw new Error('content_md cannot be empty — pass the full markdown body or omit the field to keep existing content.');
+      patch.content_md = (args as any).content_md;
+    }
     if (Object.keys(patch).length === 0) throw new Error('nothing to update');
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)
