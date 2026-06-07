@@ -4426,6 +4426,26 @@ function parseAiEmailJson(raw: string): { subject?: string; body_html?: string }
   return out;
 }
 
+// Resolve the Resend "From" line from the integration config saved in
+// /admin/integrations (site_settings.integrations.resend.config.emailConfig).
+// Falls back to a safe default only if nothing is configured. This is what
+// makes the Resend side panel actually take effect for agent-sent emails.
+async function resolveResendFrom(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+    const cfg = (data?.value as any)?.resend?.config?.emailConfig ?? {};
+    const name = (cfg.fromName || '').toString().trim();
+    const email = (cfg.fromEmail || '').toString().trim();
+    if (email) return name ? `${name} <${email}>` : email;
+  } catch (_) { /* fall through */ }
+  return 'FlowPilot <flowpilot@news.flowwink.com>';
+}
+
+
 async function executeSendEmailToLead(
   supabase: any,
   args: Record<string, unknown>,
@@ -4569,13 +4589,13 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
     };
   }
 
-  // 5. Send via Resend
+  // 5. Send via Resend — read sender from Resend integration config (set in /admin/integrations)
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   if (!RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY is not configured');
   }
 
-  const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+  const fromEmail = await resolveResendFrom(supabase);
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -4758,7 +4778,7 @@ async function executeSendInvoiceForOrder(
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
   if (RESEND_API_KEY) {
-    const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+    const fromEmail = await resolveResendFrom(supabase);
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const pdfUrl = `${supabaseUrl}/functions/v1/generate-invoice-pdf?invoice_id=${invoice.id}`;
     const fmt = (cents: number) =>
