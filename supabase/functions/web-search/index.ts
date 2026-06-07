@@ -37,9 +37,12 @@ async function getIntegrationConfig(): Promise<{
   firecrawlEnabled: boolean;
   searxngEnabled: boolean;
   searxngUrl: string | null;
+  /** Provider keys ordered by admin-configured priority (1 = first). */
+  providerOrder: Array<'firecrawl' | 'searxng' | 'jina'>;
 }> {
+  const DEFAULT_PRIORITY = { searxng: 1, firecrawl: 2, jina: 3 } as const;
   try {
-            const sb = getServiceClient();
+    const sb = getServiceClient();
     const { data } = await sb
       .from('site_settings')
       .select('value')
@@ -49,14 +52,28 @@ async function getIntegrationConfig(): Promise<{
     const firecrawl = data?.value?.firecrawl;
     const searxng = data?.value?.searxng;
     const rawUrl = (searxng?.config?.url as string | undefined)?.trim() || null;
+    const priorities: Record<'firecrawl' | 'searxng' | 'jina', number> = {
+      firecrawl: Number(firecrawl?.config?.priority) || DEFAULT_PRIORITY.firecrawl,
+      searxng: Number(searxng?.config?.priority) || DEFAULT_PRIORITY.searxng,
+      jina: Number(jina?.config?.priority) || DEFAULT_PRIORITY.jina,
+    };
+    const providerOrder = (Object.keys(priorities) as Array<'firecrawl' | 'searxng' | 'jina'>)
+      .sort((a, b) => priorities[a] - priorities[b]);
     return {
       preferFreeTier: jina?.config?.preferFreeTier ?? true,
       firecrawlEnabled: firecrawl?.enabled !== false,
       searxngEnabled: searxng?.enabled !== false && !!rawUrl,
       searxngUrl: rawUrl ? rawUrl.replace(/\/+$/, '') : null,
+      providerOrder,
     };
   } catch {
-    return { preferFreeTier: true, firecrawlEnabled: true, searxngEnabled: false, searxngUrl: null };
+    return {
+      preferFreeTier: true,
+      firecrawlEnabled: true,
+      searxngEnabled: false,
+      searxngUrl: null,
+      providerOrder: ['searxng', 'firecrawl', 'jina'],
+    };
   }
 }
 
