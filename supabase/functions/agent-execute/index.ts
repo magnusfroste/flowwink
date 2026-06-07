@@ -4569,13 +4569,13 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
     };
   }
 
-  // 5. Send via Resend
+  // 5. Send via Resend — read sender from Resend integration config (set in /admin/integrations)
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   if (!RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY is not configured');
   }
 
-  const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+  const fromEmail = await resolveResendFrom(supabase);
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
