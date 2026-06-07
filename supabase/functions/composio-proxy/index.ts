@@ -269,6 +269,26 @@ Deno.serve(async (req) => {
 
       const data = await executeToolV3('GMAIL_SEND_EMAIL', input, accountId);
       console.log('[composio-proxy] Gmail send response:', JSON.stringify(data).slice(0, 500));
+
+      const success = data?.successful === true || data?.success === true || data?.data?.response_data?.labelIds?.includes?.('SENT');
+      await logComposioOutbound({
+        channel: 'email',
+        recipient: to,
+        subject,
+        body_text: emailBody,
+        status: success ? 'sent' : 'failed',
+        error_message: success ? null : extractErrorMessage(data, 'Gmail send failed'),
+        metadata: {
+          tool: 'GMAIL_SEND_EMAIL',
+          entity_id: effectiveUserId,
+          cc: cc ?? null,
+          bcc: bcc ?? null,
+          gmail_message_id: data?.data?.response_data?.id ?? null,
+          thread_id: data?.data?.response_data?.threadId ?? null,
+          log_id: data?.log_id ?? null,
+        },
+      });
+
       return json({ result: data });
     }
 
