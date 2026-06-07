@@ -1,4 +1,34 @@
-import { getUserClient } from '../_shared/supabase-clients.ts';
+import { getUserClient, getServiceClient } from '../_shared/supabase-clients.ts';
+
+async function logComposioOutbound(row: {
+  channel: string;
+  recipient: string;
+  subject?: string | null;
+  body_text?: string | null;
+  status: string;
+  error_message?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    const supabase = getServiceClient();
+    await supabase.from('outbound_communications').insert({
+      channel: row.channel,
+      status: row.status,
+      provider: 'composio',
+      simulated: false,
+      recipient: row.recipient,
+      subject: row.subject ?? null,
+      body_text: row.body_text ?? null,
+      body_html: null,
+      source: 'composio-proxy',
+      error_message: row.error_message ?? null,
+      metadata: row.metadata ?? {},
+      sent_at: row.status === 'sent' ? new Date().toISOString() : null,
+    });
+  } catch (e) {
+    console.error('[composio-proxy] failed to log outbound_communications:', e);
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
