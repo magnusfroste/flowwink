@@ -33,6 +33,21 @@ interface ComposioApp {
   toolkit?: { slug?: string };
 }
 
+interface ComposioDiagnostic {
+  api_key_configured: boolean;
+  api_key_valid: boolean;
+  auth_configs_ok: boolean;
+  auth_configs_count: number;
+  gmail_auth_config_found: boolean;
+  gmail_auth_config?: {
+    id?: string;
+    name?: string;
+  } | null;
+  connected_accounts_ok: boolean;
+  connected_accounts_count: number;
+  errors?: string[];
+}
+
 interface ComposioTool {
   name?: string;
   display_name?: string;
@@ -44,6 +59,19 @@ export function ComposioPanel() {
   const [searchIntent, setSearchIntent] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ComposioTool[]>([]);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [diagnostic, setDiagnostic] = useState<ComposioDiagnostic | null>(null);
+
+  const getFunctionErrorMessage = async (error: unknown) => {
+    const maybeError = error as any;
+    try {
+      const ctx = await maybeError?.context;
+      const text = await ctx?.json?.();
+      return text?.error || text?.message || maybeError?.message || 'Request failed';
+    } catch {
+      return maybeError?.message || 'Request failed';
+    }
+  };
 
   // Test Gmail state
   const [testTo, setTestTo] = useState("");
@@ -102,7 +130,7 @@ export function ComposioPanel() {
           entity_id: 'default',
         },
       });
-      if (error) throw error;
+      if (error) throw new Error(await getFunctionErrorMessage(error));
       
       const result = data?.result;
       const oauthUrl = result?.redirect_url || result?.redirect_uri || result?.redirectUrl 
@@ -120,7 +148,24 @@ export function ComposioPanel() {
       }
     } catch (err) {
       logger.error('[ComposioPanel] Connect failed:', err);
-      toast.error('Failed to connect app');
+      toast.error(err instanceof Error ? err.message : 'Failed to connect app');
+    }
+  };
+
+  const handleDiagnose = async () => {
+    setIsDiagnosing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('composio-proxy', {
+        body: { action: 'diagnose', entity_id: 'default' },
+      });
+      if (error) throw new Error(await getFunctionErrorMessage(error));
+      setDiagnostic((data?.result || null) as ComposioDiagnostic | null);
+      toast.success('Composio diagnostic complete');
+    } catch (err) {
+      logger.error('[ComposioPanel] Diagnose failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to run diagnostic');
+    } finally {
+      setIsDiagnosing(false);
     }
   };
 
@@ -170,7 +215,48 @@ export function ComposioPanel() {
             Connect external apps for FlowPilot automation
           </p>
         </div>
+        <div className="ml-auto">
+          <Button variant="outline" size="sm" onClick={handleDiagnose} disabled={isDiagnosing} className="text-xs">
+            {isDiagnosing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <AlertCircle className="h-3.5 w-3.5 mr-1" />}
+            Run diagnostic
+          </Button>
+        </div>
       </div>
+
+      {diagnostic && (
+        <Card className="border-muted">
+          <CardContent className="py-4 px-4 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-sm font-medium">Connection diagnostic</p>
+              <div className="flex gap-2 flex-wrap">
+                <Badge variant={diagnostic.api_key_valid ? 'default' : 'destructive'}>
+                  API key {diagnostic.api_key_valid ? 'valid' : 'failing'}
+                </Badge>
+                <Badge variant={diagnostic.gmail_auth_config_found ? 'default' : 'secondary'}>
+                  Gmail auth config {diagnostic.gmail_auth_config_found ? 'found' : 'missing'}
+                </Badge>
+                <Badge variant={diagnostic.connected_accounts_ok ? 'default' : 'secondary'}>
+                  Connections {diagnostic.connected_accounts_ok ? 'reachable' : 'unreachable'}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
+              <div>Auth configs: <span className="text-foreground font-medium">{diagnostic.auth_configs_count}</span></div>
+              <div>Connected accounts: <span className="text-foreground font-medium">{diagnostic.connected_accounts_count}</span></div>
+              <div>Matched Gmail config: <span className="text-foreground font-medium">{diagnostic.gmail_auth_config?.name || '—'}</span></div>
+            </div>
+
+            {diagnostic.errors && diagnostic.errors.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/40 p-3 space-y-1">
+                {diagnostic.errors.map((item, index) => (
+                  <p key={`${item}-${index}`} className="text-xs text-destructive">{item}</p>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="gmail" className="w-full">
         <TabsList className="w-full grid grid-cols-3">
