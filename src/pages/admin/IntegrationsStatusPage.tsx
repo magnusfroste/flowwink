@@ -1317,7 +1317,7 @@ export default function IntegrationsStatusPage() {
               <div className="flex-1 py-4">
                 <IntegrationConfigPanel
                   integrationKey={openDrawerKey}
-                  config={drawerConfig}
+                  config={effectiveConfig}
                   onConfigChange={setDrawerConfig}
                   hasKey={hasKey}
                   isEnabled={isEnabled}
