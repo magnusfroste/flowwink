@@ -429,7 +429,7 @@ export default function SiteSettingsPage() {
               <CardContent>
                 <Input
                   type="url"
-                  placeholder="https://www.autoversio.ai"
+                  placeholder="https://www.yourcompany.com"
                   value={generalData.siteUrl ?? ''}
                   onChange={(e) => setGeneralData(prev => ({ ...prev, siteUrl: e.target.value.trim() }))}
                 />
