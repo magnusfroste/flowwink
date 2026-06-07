@@ -157,37 +157,44 @@ function lintFile(file: string): Finding[] {
       const arg = argText.trim();
       if (!arg) continue;
 
-      // Pattern 1: bare risky identifier, e.g. `.update(rest)` or `.update(args)`
+      // Pattern 1: bare identifier — flag if risky raw OR tainted variable.
       const bareMatch = arg.match(/^([A-Za-z_$][\w$]*)$/);
-      if (bareMatch && RISKY_IDENTS.has(bareMatch[1])) {
-        if (!hasNearbyStrip(lines, i)) {
+      if (bareMatch) {
+        const ident = bareMatch[1];
+        const isRiskyRaw = RISKY_IDENTS.has(ident);
+        const isTainted = tainted.has(ident);
+        if ((isRiskyRaw || isTainted) && !hasNearbyStrip(lines, i)) {
           findings.push({
             file: relFile,
             line: i + 1,
             snippet: line.trim(),
-            rule: 'no-bare-args-spread',
-            message: `.${method}(${bareMatch[1]}) passes the raw agent-supplied object straight to PostgREST. Strip _-prefixed fields first.`,
+            rule: isTainted ? 'tainted-var-into-write' : 'no-bare-args-spread',
+            message: isTainted
+              ? `.${method}(${ident}) — '${ident}' was built by spreading raw agent args; it carries _-prefixed fields straight to PostgREST.`
+              : `.${method}(${ident}) passes the raw agent-supplied object straight to PostgREST. Strip _-prefixed fields first.`,
           });
         }
         continue;
       }
 
-      // Pattern 2: object literal with `...<risky>` spread
-      // e.g. `{ ...rest }`, `{ ...args, updated_at: ... }`
+      // Pattern 2: object literal spreading a risky/tainted identifier
       const spreadRe = /\.\.\.\s*([A-Za-z_$][\w$]*)/g;
       let sm: RegExpExecArray | null;
       while ((sm = spreadRe.exec(arg)) !== null) {
         const ident = sm[1];
-        if (!RISKY_IDENTS.has(ident)) continue;
+        const isRiskyRaw = RISKY_IDENTS.has(ident);
+        const isTainted = tainted.has(ident);
+        if (!isRiskyRaw && !isTainted) continue;
         if (hasNearbyStrip(lines, i)) continue;
         findings.push({
           file: relFile,
           line: i + 1,
           snippet: line.trim(),
           rule: 'no-args-spread-into-write',
-          message: `.${method}({ ...${ident} }) leaks _-prefixed agent fields (_caller_api_key_id, _caller_user_id, _approved_operation_id) to PostgREST. Build a whitelisted update object instead.`,
+          message: `.${method}({ ...${ident} }) leaks _-prefixed agent fields to PostgREST.`,
         });
-        break; // one finding per write call is enough
+        break;
+      }
       }
     }
   }
