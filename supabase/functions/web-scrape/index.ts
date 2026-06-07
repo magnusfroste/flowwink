@@ -98,85 +98,69 @@ serve(async (req) => {
     let metadata: Record<string, unknown> = {};
     let provider = 'none';
 
-    // Check integration config (respects admin disable toggle)
     const integrationConfig = await getIntegrationConfig();
-    const firecrawlAvailable = firecrawlKey && integrationConfig.firecrawlEnabled;
+    const firecrawlAvailable = !!firecrawlKey && integrationConfig.firecrawlEnabled;
 
-    const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlAvailable);
-    const useJina = preferred_provider === 'jina' || preferred_provider === 'auto';
-
-    // --- Strategy 1: Firecrawl Scrape (paid, higher quality, JS rendering) ---
-    if (useFirecrawl && firecrawlKey) {
-      console.log('[web-scrape] Using Firecrawl for:', url);
-      try {
-        const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${firecrawlKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url,
-            formats,
-            onlyMainContent: true,
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          content = (data.data?.markdown || data.markdown || '').substring(0, max_length);
-          metadata = data.data?.metadata || data.metadata || {};
-          provider = 'firecrawl';
-        } else {
-          console.warn('[web-scrape] Firecrawl failed:', res.status);
-        }
-      } catch (e) {
-        console.warn('[web-scrape] Firecrawl error:', e);
-      }
+    // Resolve provider chain: explicit preferred_provider wins; otherwise sort by
+    // admin-configured priority and skip providers that aren't available.
+    let chain: Array<'firecrawl' | 'jina'>;
+    if (preferred_provider !== 'auto') {
+      chain = [preferred_provider as 'firecrawl' | 'jina'];
+    } else {
+      chain = integrationConfig.providerOrder.filter((p) => {
+        if (p === 'firecrawl') return firecrawlAvailable;
+        return true; // jina has keyless fallback, always reachable
+      });
     }
 
-    // --- Strategy 2: Jina Reader (free first → API key → keyless fallback) ---
-    if (!content && useJina) {
-      const { preferFreeTier } = integrationConfig;
+    for (const candidate of chain) {
+      if (content) break;
 
-      if (preferFreeTier) {
-        // Try keyless first
-        console.log('[web-scrape] Trying Jina Reader (keyless) for:', url);
-        const keyless = await jinaReader(url, max_length);
-        if (keyless.ok && keyless.content) {
-          content = keyless.content;
-          metadata = keyless.metadata;
-          provider = 'jina-free';
-        } else if (jinaKey) {
-          // Keyless failed, fall back to API key
-          console.log('[web-scrape] Keyless failed, using Jina API key');
-          const authed = await jinaReader(url, max_length, jinaKey);
-          if (authed.ok) {
-            content = authed.content;
-            metadata = authed.metadata;
-            provider = 'jina-api';
+      if (candidate === 'firecrawl' && firecrawlKey) {
+        console.log('[web-scrape] Trying Firecrawl for:', url);
+        try {
+          const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${firecrawlKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, formats, onlyMainContent: true }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            content = (data.data?.markdown || data.markdown || '').substring(0, max_length);
+            metadata = data.data?.metadata || data.metadata || {};
+            if (content) provider = 'firecrawl';
+          } else {
+            console.warn('[web-scrape] Firecrawl failed:', res.status);
           }
+        } catch (e) {
+          console.warn('[web-scrape] Firecrawl error:', e);
         }
-      } else if (jinaKey) {
-        // preferFreeTier disabled — go straight to API key
-        console.log('[web-scrape] Using Jina Reader (API key) for:', url);
-        const authed = await jinaReader(url, max_length, jinaKey);
-        if (authed.ok) {
-          content = authed.content;
-          metadata = authed.metadata;
-          provider = 'jina-api';
-        }
-      } else {
-        // No API key configured, try keyless anyway
-        console.log('[web-scrape] Using Jina Reader (keyless fallback) for:', url);
-        const keyless = await jinaReader(url, max_length);
-        if (keyless.ok) {
-          content = keyless.content;
-          metadata = keyless.metadata;
-          provider = 'jina-free';
+      }
+
+      if (candidate === 'jina') {
+        const { preferFreeTier } = integrationConfig;
+        if (preferFreeTier) {
+          console.log('[web-scrape] Trying Jina Reader (keyless) for:', url);
+          const keyless = await jinaReader(url, max_length);
+          if (keyless.ok && keyless.content) {
+            content = keyless.content; metadata = keyless.metadata; provider = 'jina-free';
+          } else if (jinaKey) {
+            console.log('[web-scrape] Keyless failed, using Jina API key');
+            const authed = await jinaReader(url, max_length, jinaKey);
+            if (authed.ok) { content = authed.content; metadata = authed.metadata; provider = 'jina-api'; }
+          }
+        } else if (jinaKey) {
+          console.log('[web-scrape] Trying Jina Reader (API key) for:', url);
+          const authed = await jinaReader(url, max_length, jinaKey);
+          if (authed.ok) { content = authed.content; metadata = authed.metadata; provider = 'jina-api'; }
+        } else {
+          console.log('[web-scrape] Trying Jina Reader (keyless fallback) for:', url);
+          const keyless = await jinaReader(url, max_length);
+          if (keyless.ok) { content = keyless.content; metadata = keyless.metadata; provider = 'jina-free'; }
         }
       }
     }
+
 
     console.log(`[web-scrape] Scraped ${content.length} chars via ${provider}`);
 
