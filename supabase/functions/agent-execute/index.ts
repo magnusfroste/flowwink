@@ -4426,6 +4426,26 @@ function parseAiEmailJson(raw: string): { subject?: string; body_html?: string }
   return out;
 }
 
+// Resolve the Resend "From" line from the integration config saved in
+// /admin/integrations (site_settings.integrations.resend.config.emailConfig).
+// Falls back to a safe default only if nothing is configured. This is what
+// makes the Resend side panel actually take effect for agent-sent emails.
+async function resolveResendFrom(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+    const cfg = (data?.value as any)?.resend?.config?.emailConfig ?? {};
+    const name = (cfg.fromName || '').toString().trim();
+    const email = (cfg.fromEmail || '').toString().trim();
+    if (email) return name ? `${name} <${email}>` : email;
+  } catch (_) { /* fall through */ }
+  return 'FlowPilot <flowpilot@news.flowwink.com>';
+}
+
+
 async function executeSendEmailToLead(
   supabase: any,
   args: Record<string, unknown>,
