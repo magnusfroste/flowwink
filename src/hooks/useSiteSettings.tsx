@@ -9,12 +9,20 @@ export interface GeneralSettings {
   homepageSlug: string;
   selectedTemplate?: string;
   contentReviewEnabled?: boolean;
+  /**
+   * Public site URL (e.g. https://www.autoversio.ai). Used by backend skills
+   * to build absolute links (contract signing, invoice PDFs, briefings, etc).
+   * Falls back to PUBLIC_SITE_URL env or the lovable preview when empty.
+   */
+  siteUrl?: string;
 }
 
 const defaultGeneralSettings: GeneralSettings = {
   homepageSlug: 'home',
   contentReviewEnabled: false,
+  siteUrl: '',
 };
+
 
 export interface SeoSettings {
   siteTitle: string;
