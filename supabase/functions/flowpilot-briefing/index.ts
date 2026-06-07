@@ -609,12 +609,15 @@ function buildBriefingEmail(data: {
   actionItems: any[];
   metrics: any;
   productName?: string;
+  dashboardUrl?: string;
 }) {
   const { title, summary, healthScore, healthEmoji, sections, actionItems, metrics } = data;
   const productName = data.productName ?? "FlowPilot";
+  const dashboardUrl = data.dashboardUrl ?? "https://flowwink.lovable.app/admin";
   const footerLine = productName === "FlowPilot"
     ? "Sent by FlowPilot · Your autonomous business co-pilot"
     : "Sent by FlowWink · Your business operating system";
+
 
   const priorityColors: Record<string, string> = {
     high: "#ef4444",
