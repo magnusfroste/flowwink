@@ -4665,6 +4665,18 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       metadata: { subject, error: resendData?.message || 'Unknown error', purpose },
       points: 0,
     });
+    await logOutboundEmail(supabase, {
+      status: 'failed',
+      recipient: lead.email,
+      subject,
+      body_html: bodyHtml,
+      from: fromEmail,
+      error_message: resendData?.message || resendRes.statusText,
+      source: 'send_email_to_lead',
+      related_entity_type: 'lead',
+      related_entity_id: lead_id,
+      extra_metadata: { purpose },
+    });
     throw new Error(`Resend API error: ${resendData?.message || resendRes.statusText}`);
   }
 
@@ -4680,6 +4692,19 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       from: fromEmail,
     },
     points: 5,
+  });
+
+  await logOutboundEmail(supabase, {
+    status: 'sent',
+    recipient: lead.email,
+    subject,
+    body_html: bodyHtml,
+    from: fromEmail,
+    provider_message_id: resendData?.id,
+    source: 'send_email_to_lead',
+    related_entity_type: 'lead',
+    related_entity_id: lead_id,
+    extra_metadata: { purpose },
   });
 
   return {
