@@ -4758,7 +4758,7 @@ async function executeSendInvoiceForOrder(
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
   if (RESEND_API_KEY) {
-    const fromEmail = 'FlowPilot <flowpilot@news.flowwink.com>';
+    const fromEmail = await resolveResendFrom(supabase);
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const pdfUrl = `${supabaseUrl}/functions/v1/generate-invoice-pdf?invoice_id=${invoice.id}`;
     const fmt = (cents: number) =>
