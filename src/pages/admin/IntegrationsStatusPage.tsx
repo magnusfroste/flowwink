@@ -1269,7 +1269,7 @@ export default function IntegrationsStatusPage() {
                             </a>
                           </div>
 
-                          {/* CLI Command — only if not yet configured */}
+                          {/* CLI Command — only if not yet configured (secret-based) */}
                           {!hasKey && requiresSecret && !statusUnavailable && (
                             <div className="flex items-center gap-2">
                               <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
@@ -1280,6 +1280,19 @@ export default function IntegrationsStatusPage() {
                               </Button>
                             </div>
                           )}
+
+                          {/* Configure CTA for config-based integrations not yet set up */}
+                          {!hasKey && !requiresSecret && hasConfigSection && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={(e) => { e.stopPropagation(); openDrawer(key, currentConfig); }}
+                            >
+                              Configure
+                            </Button>
+                          )}
+
                         </CardContent>
                       </Card>
                     );
