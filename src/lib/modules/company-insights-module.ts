@@ -47,7 +47,28 @@ const COMPANY_INSIGHTS_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            data: { type: 'object', description: 'Object of fields to set/merge. Common keys: legal_name, display_name, website, headquarters, founded_year, mission, description.' },
+            data: {
+              type: 'object',
+              description: 'Object of fields to set/merge. Common keys: company_name, legal_name, about_us, value_proposition, icp, industry, target_industries (string[]), differentiators (string[]), services (array of {name, description}), delivered_value, clients, competitors, pricing_notes, contact_email, contact_phone, address, domain, org_number, founded_year, employees, revenue.',
+              properties: {
+                services: {
+                  type: 'array',
+                  description: 'Services & offerings. Each item MUST be an object with name (required, non-empty) and description (optional). Plain strings will be coerced to {name: str, description: ""}; entries without a name are dropped.',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string', description: 'Service name (required, e.g. "Local AI Deployment")' },
+                      description: { type: 'string', description: 'Short description of the service' },
+                    },
+                    required: ['name'],
+                  },
+                },
+                target_industries: { type: 'array', items: { type: 'string' } },
+                differentiators: { type: 'array', items: { type: 'string' } },
+                board_members: { type: 'array', items: { type: 'string' } },
+              },
+              additionalProperties: true,
+            },
             merge: { type: 'boolean', description: 'If true (default), merge with existing profile. If false, replace entire profile.' },
           },
           required: ['data'],
@@ -55,7 +76,7 @@ const COMPANY_INSIGHTS_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Update business identity fields. Performs shallow merge by default unless merge=false. Returns updated profile.',
+    instructions: 'Update business identity. Shallow merge by default. CRITICAL: services must be an array of {name, description} objects — never raw strings, never {description} without name (UI renders empty placeholders). Strings get coerced; nameless entries are dropped.',
   },
 ];
 
