@@ -73,35 +73,26 @@ serve(async (req) => {
       );
     }
 
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    if (!firecrawlApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Normalize domain to URL
     const url = enrichDomain.startsWith('http') ? enrichDomain : `https://${enrichDomain}`;
-    console.log(`Scraping website: ${url}`);
+    console.log(`Scraping website via web-scrape (priority-aware): ${url}`);
 
-    // Scrape with Firecrawl
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    // Delegate to web-scrape edge function so admin-configured provider priority
+    // (SearXNG / Firecrawl / Jina order) is respected automatically.
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const scrapeResponse = await fetch(`${supabaseUrl}/functions/v1/web-scrape`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Authorization': `Bearer ${serviceKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        url,
-        formats: ['markdown'],
-        onlyMainContent: true,
-      }),
+      body: JSON.stringify({ url, max_length: 8000 }),
     });
 
     if (!scrapeResponse.ok) {
       const errorText = await scrapeResponse.text();
-      console.error('Firecrawl error:', errorText);
+      console.error('web-scrape error:', errorText);
       return new Response(
         JSON.stringify({ error: 'Failed to scrape website', details: errorText }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -109,8 +100,9 @@ serve(async (req) => {
     }
 
     const scrapeData = await scrapeResponse.json();
-    const pageContent = scrapeData.data?.markdown || '';
-    const metadata = scrapeData.data?.metadata || {};
+    const pageContent: string = scrapeData.content || '';
+    const metadata: Record<string, any> = scrapeData.metadata || {};
+    console.log(`Scraped via provider: ${scrapeData.provider}`);
 
     // Extract data from metadata (deterministic — no AI)
     const enrichment = {
