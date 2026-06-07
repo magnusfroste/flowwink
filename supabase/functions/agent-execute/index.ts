@@ -2785,8 +2785,15 @@ async function executeKbAction(
     const { article_id: _aid, slug: _slug, answer, ...rest } = args as any;
     const article_id = await resolveArticleId(args);
     if (!article_id) throw new Error('article_id or slug is required');
-    delete rest.action;
-    const updateData: Record<string, unknown> = { ...rest };
+    // Strip agent-internal underscore-prefixed fields (_caller_user_id,
+    // _caller_api_key_id, etc.) and the routing 'action' field — they are
+    // not real kb_articles columns and PostgREST rejects them.
+    const updateData: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rest)) {
+      if (k === 'action') continue;
+      if (k.startsWith('_')) continue;
+      updateData[k] = v;
+    }
     if (answer !== undefined) {
       if (!answer || (typeof answer === 'string' && !answer.trim())) {
         throw new Error('answer must contain the full article body — empty values are rejected to prevent blank articles.');
