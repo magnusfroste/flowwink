@@ -357,11 +357,22 @@ Deno.serve(async (req) => {
 
       console.log('[composio-proxy] Initiating v3 connection:', JSON.stringify(connectBody));
 
-      const res = await callComposio(`${COMPOSIO_V3}/connected_accounts`, {
+      // Composio deprecated POST /connected_accounts for Composio-managed OAuth.
+      // New endpoint is POST /connected_accounts/link.
+      let res = await callComposio(`${COMPOSIO_V3}/connected_accounts/link`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify(connectBody),
       });
+
+      // Fallback to legacy endpoint for self-managed auth configs that still accept it.
+      if (!res.ok && res.status === 404) {
+        res = await callComposio(`${COMPOSIO_V3}/connected_accounts`, {
+          method: 'POST',
+          headers: composioHeaders,
+          body: JSON.stringify(connectBody),
+        });
+      }
 
       console.log('[composio-proxy] Connection response:', JSON.stringify(res.data).slice(0, 500));
 
