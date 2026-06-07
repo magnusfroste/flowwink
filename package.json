@@ -21,6 +21,8 @@
     "test:timesheet-regression": "npx -y tsx scripts/timesheet-regression.ts",
     "lint:skill": "bun run scripts/skill-linter.ts",
     "lint:skills": "bun run scripts/skill-linter.ts",
+    "lint:handler-args": "bun run scripts/handler-args-lint.ts",
+    "lint:agent-contract": "bun run scripts/handler-args-lint.ts && bun run scripts/skill-linter.ts",
     "new:module": "bun run scripts/new-module.ts",
     "check:doc-drift": "bun run scripts/check-doc-drift.ts"
   },
