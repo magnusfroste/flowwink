@@ -781,6 +781,7 @@ function IntegrationConfigPanel({
             onCheckedChange={(checked) => handleChange({ preferFreeTier: checked })}
           />
         </div>
+        {PriorityField}
       </div>
     );
   }
