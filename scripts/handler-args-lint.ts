@@ -36,8 +36,11 @@ const FUNCTIONS_DIR = path.join(ROOT, 'supabase/functions');
 // Identifiers that are almost always the RAW agent-supplied arg bag.
 // `.update(args)` is a bug ~100% of the time when args came from a tool call.
 const RAW_ARG_IDENTS = new Set([
-  'args', 'rest', 'body', 'payload', 'input', 'params',
+  'args', 'rest',
 ]);
+
+// Builder names that are commonly safe locally-built objects.
+// Only flag these if their declaration is tainted.
 
 // Identifiers used both for raw args AND for safe locally-built objects.
 // Only flag these if their declaration is actually tainted (spreads RAW idents).
