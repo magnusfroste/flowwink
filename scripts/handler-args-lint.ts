@@ -87,6 +87,9 @@ function hasNearbyStrip(lines: string[], violationIdx: number): boolean {
   //   - whitelist build: const updates: ... = {}; for (const [k,v] ...) { ... updates[k]=v }
   if (/startsWith\(\s*['"]_['"]\s*\)/.test(window)) return true;
   if (/_caller_api_key_id|_caller_user_id|_approved_operation_id|_seeded_session_id/.test(window)) return true;
+  // Inline opt-out: `// args-lint-ignore` on the violation line or up to 3 lines above
+  const optOutWindow = lines.slice(Math.max(0, violationIdx - 3), violationIdx + 2).join('\n');
+  if (/args-lint-ignore/.test(optOutWindow)) return true;
   // Common whitelist builder pattern
   if (/for\s*\(\s*const\s*\[\s*k\s*,/.test(window) && /Object\.entries/.test(window)) return true;
   return false;
