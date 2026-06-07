@@ -1,5 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { getServiceClient, getAnonClient, getUserClient } from '../_shared/supabase-clients.ts';
+import { getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +7,57 @@ const corsHeaders = {
 
 const COMPOSIO_V3 = 'https://backend.composio.dev/api/v3';
 const COMPOSIO_V2 = 'https://backend.composio.dev/api/v2';
-const COMPOSIO_V1 = 'https://backend.composio.dev/api/v1';
+
+function normalizeToken(value: unknown): string {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function extractErrorMessage(data: any, fallback = 'Unknown Composio error'): string {
+  if (!data) return fallback;
+  if (typeof data?.error === 'string') return data.error;
+  if (typeof data?.message === 'string') return data.message;
+  if (typeof data?.error?.message === 'string') return data.error.message;
+  if (typeof data?.error?.suggested_fix === 'string') return data.error.suggested_fix;
+  if (typeof data?.details?.message === 'string') return data.details.message;
+  return fallback;
+}
+
+function getRedirectUrl(data: any): string | null {
+  return data?.redirect_url
+    || data?.redirect_uri
+    || data?.redirectUrl
+    || data?.url
+    || data?.data?.redirect_url
+    || data?.data?.redirect_uri
+    || data?.connectionData?.val?.redirectUrl
+    || data?.connection_data?.redirect_url
+    || null;
+}
+
+function getAuthConfigLabels(config: any): string[] {
+  const values = [
+    config?.name,
+    config?.slug,
+    config?.toolkit?.slug,
+    config?.toolkit_slug,
+    config?.appName,
+    config?.app_name,
+    config?.app?.name,
+    config?.service,
+    config?.integration?.name,
+    config?.integration?.appName,
+    config?.deprecated?.appName,
+  ];
+
+  return values
+    .flatMap((value) => Array.isArray(value) ? value : [value])
+    .map(normalizeToken)
+    .filter(Boolean);
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,16 +73,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if this is a service-role call (from agent-execute)
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const token = authHeader.replace('Bearer ', '');
     const isServiceRole = serviceKey && token === serviceKey;
 
     if (!isServiceRole) {
-      // Regular user auth
       const supabaseClient = getUserClient(authHeader)!;
-
       const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
@@ -52,6 +99,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { action, intent, app, params, entity_id } = body;
+    const effectiveUserId = entity_id || 'default';
 
     const composioHeaders = {
       'Content-Type': 'application/json',
@@ -64,21 +112,73 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
-    // Route: search tools by intent
+    const readResponse = async (res: Response) => {
+      const text = await res.text();
+      if (!text) return null;
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { raw: text };
+      }
+    };
+
+    const callComposio = async (url: string, init?: RequestInit) => {
+      const res = await fetch(url, init);
+      const data = await readResponse(res);
+      return { ok: res.ok, status: res.status, statusText: res.statusText, data };
+    };
+
+    async function getConnectedAccountId(toolkit: string): Promise<string | null> {
+      const res = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE&toolkit=${encodeURIComponent(toolkit)}`, {
+        headers: composioHeaders,
+      });
+
+      if (!res.ok) {
+        console.log('[composio-proxy] connected_accounts lookup failed:', JSON.stringify(res.data).slice(0, 500));
+        return null;
+      }
+
+      const account = (res.data?.items || [])[0];
+      return account?.id || null;
+    }
+
+    async function executeToolV3(toolSlug: string, args: Record<string, unknown>, connectedAccountId: string, userId = effectiveUserId) {
+      const res = await callComposio(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({
+          connected_account_id: connectedAccountId,
+          user_id: userId,
+          arguments: args,
+        }),
+      });
+
+      if (!res.ok || res.data?.error) {
+        const msg = extractErrorMessage(res.data, `Composio tool execution failed (${res.status})`);
+        return { success: false, error: msg, details: res.data };
+      }
+
+      return res.data;
+    }
+
     if (action === 'search_tools') {
       const searchParams = new URLSearchParams();
       if (intent) searchParams.set('useCase', intent);
       if (app) searchParams.set('apps', app);
       searchParams.set('limit', '5');
 
-      const res = await fetch(`${COMPOSIO_V2}/actions?${searchParams}`, {
+      const res = await callComposio(`${COMPOSIO_V2}/actions?${searchParams}`, {
         headers: composioHeaders,
       });
-      const data = await res.json();
-      return json({ result: data });
+
+      if (!res.ok) {
+        return json({ error: extractErrorMessage(res.data, `Failed to search Composio tools (${res.status})`), details: res.data }, res.status);
+      }
+
+      return json({ result: res.data });
     }
 
-    // Route: execute action (v3)
     if (action === 'execute') {
       const actionName = params?.action_name;
       if (!actionName) {
@@ -91,46 +191,19 @@ Deno.serve(async (req) => {
       const execBody: Record<string, unknown> = { input: params?.input || {} };
       if (accountId) execBody.connected_account_id = accountId;
 
-      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${actionName}`, {
+      const res = await callComposio(`${COMPOSIO_V3}/tools/execute/${actionName}`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify(execBody),
       });
-      const data = await res.json();
-      return json({ result: data });
-    }
 
-    // Helper: find active connected account for a toolkit
-    async function getConnectedAccountId(toolkit: string): Promise<string | null> {
-      const res = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE&toolkit=${toolkit}`, {
-        headers: composioHeaders,
-      });
-      const data = await res.json();
-      const account = (data?.items || [])[0];
-      return account?.id || null;
-    }
-
-    // Helper: execute a tool via v3
-    async function executeToolV3(toolSlug: string, args: Record<string, unknown>, connectedAccountId: string, userId = 'default') {
-      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({
-          connected_account_id: connectedAccountId,
-          user_id: userId,
-          arguments: args,
-        }),
-      });
-      const data = await res.json();
-      // Normalise: if Composio returns an error object, surface it cleanly
-      if (data?.error) {
-        const msg = data.error?.message || data.error?.suggested_fix || JSON.stringify(data.error);
-        return { success: false, error: msg };
+      if (!res.ok) {
+        return json({ error: extractErrorMessage(res.data, `Failed to execute ${actionName}`), details: res.data }, res.status);
       }
-      return data;
+
+      return json({ result: res.data });
     }
 
-    // Route: Gmail send
     if (action === 'gmail_send') {
       const { to, subject, body: emailBody, cc, bcc } = params || {};
       if (!to || !subject || !emailBody) {
@@ -141,8 +214,6 @@ Deno.serve(async (req) => {
       if (!accountId) {
         return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
       }
-
-      console.log(`[composio-proxy] Gmail send via v3, account: ${accountId}`);
 
       const input: Record<string, string> = {
         recipient_email: to,
@@ -157,7 +228,6 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
-    // Route: Gmail read
     if (action === 'gmail_read') {
       const accountId = await getConnectedAccountId('gmail');
       if (!accountId) {
@@ -172,91 +242,127 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
-    // Route: list connected apps (v3)
     if (action === 'list_apps') {
-      const res = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE`, {
+      const res = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE`, {
         headers: composioHeaders,
       });
-      const data = await res.json();
-      console.log('[composio-proxy] list_apps response:', JSON.stringify(data).slice(0, 500));
-      // v3 returns { items: [...] }
-      return json({ result: data?.items || data });
+      console.log('[composio-proxy] list_apps response:', JSON.stringify(res.data).slice(0, 500));
+
+      if (!res.ok) {
+        return json({ error: extractErrorMessage(res.data, `Failed to list connected apps (${res.status})`), details: res.data }, res.status);
+      }
+
+      return json({ result: res.data?.items || res.data });
     }
 
-    // Route: initiate connection (get OAuth URL)
+    if (action === 'diagnose') {
+      const authConfigsRes = await callComposio(`${COMPOSIO_V3}/auth_configs`, {
+        headers: composioHeaders,
+      });
+      const connectedAppsRes = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE`, {
+        headers: composioHeaders,
+      });
+
+      const authConfigs = Array.isArray(authConfigsRes.data?.items) ? authConfigsRes.data.items : [];
+      const gmailConfig = authConfigs.find((config: any) =>
+        getAuthConfigLabels(config).some((label) => label.includes('gmail') || label.includes('google_mail'))
+      );
+
+      return json({
+        result: {
+          api_key_configured: true,
+          api_key_valid: authConfigsRes.ok || connectedAppsRes.ok,
+          auth_configs_ok: authConfigsRes.ok,
+          auth_configs_count: authConfigs.length,
+          gmail_auth_config_found: Boolean(gmailConfig),
+          gmail_auth_config: gmailConfig ? {
+            id: gmailConfig.id,
+            name: gmailConfig.name || gmailConfig.appName || gmailConfig.slug || 'Unnamed config',
+          } : null,
+          connected_accounts_ok: connectedAppsRes.ok,
+          connected_accounts_count: Array.isArray(connectedAppsRes.data?.items) ? connectedAppsRes.data.items.length : 0,
+          errors: [
+            !authConfigsRes.ok ? extractErrorMessage(authConfigsRes.data, `auth_configs failed (${authConfigsRes.status})`) : null,
+            !connectedAppsRes.ok ? extractErrorMessage(connectedAppsRes.data, `connected_accounts failed (${connectedAppsRes.status})`) : null,
+          ].filter(Boolean),
+        },
+      });
+    }
+
     if (action === 'connect_app') {
       const appName = params?.app_name;
       if (!appName) {
         return json({ error: 'app_name required' }, 400);
       }
 
-      // Step 1: Find integration via v1 (reliable app name filtering)
-      console.log(`[composio-proxy] Looking up v1 integration for: ${appName}`);
-      const intRes = await fetch(`${COMPOSIO_V1}/integrations?appName=${appName.toUpperCase()}`, {
+      const normalizedAppName = normalizeToken(appName);
+      const authConfigRes = await callComposio(`${COMPOSIO_V3}/auth_configs`, {
         headers: composioHeaders,
       });
-      const intData = await intRes.json();
-      console.log('[composio-proxy] v1 integrations:', JSON.stringify(intData).slice(0, 500));
 
-      const integrations = intData?.items || intData || [];
-      const integration = Array.isArray(integrations) ? integrations[0] : null;
+      console.log('[composio-proxy] auth_configs response:', JSON.stringify(authConfigRes.data).slice(0, 500));
 
-      if (!integration?.id) {
+      if (!authConfigRes.ok) {
         return json({
-          error: `No integration found for "${appName}". Set it up in Composio dashboard.`,
-          raw: intData,
-        }, 404);
+          error: extractErrorMessage(authConfigRes.data, `Failed to load auth configs (${authConfigRes.status})`),
+          details: authConfigRes.data,
+        }, authConfigRes.status);
       }
 
-      // Step 2: Find matching v3 auth_config by the v1 integration UUID
-      // The v1 integration.id maps to v3 auth_config.uuid (deprecated field)
-      console.log(`[composio-proxy] Looking up v3 auth_config for integration UUID: ${integration.id}`);
-      const acRes = await fetch(`${COMPOSIO_V3}/auth_configs`, {
-        headers: composioHeaders,
+      const authConfigs = Array.isArray(authConfigRes.data?.items) ? authConfigRes.data.items : [];
+      const matchedConfig = authConfigs.find((config: any) => {
+        const labels = getAuthConfigLabels(config);
+        return labels.some((label) =>
+          label === normalizedAppName ||
+          label.includes(normalizedAppName) ||
+          normalizedAppName.includes(label)
+        );
       });
-      const acData = await acRes.json();
-      const authConfigs = acData?.items || [];
-      
-      // Match by deprecated.uuid or by name containing the app name
-      const matchedConfig = Array.isArray(authConfigs) 
-        ? authConfigs.find((ac: any) => 
-            ac.uuid === integration.id || 
-            ac.deprecated?.uuid === integration.id ||
-            (ac.name || '').toLowerCase().includes(appName.toLowerCase())
-          )
-        : null;
 
       if (!matchedConfig?.id) {
-        console.error('[composio-proxy] No matching v3 auth_config. Available:', 
-          JSON.stringify(authConfigs.map((a: any) => ({ id: a.id, name: a.name, uuid: a.uuid })))
-        );
         return json({
           error: `No auth config found for "${appName}".`,
-          available: authConfigs.map((a: any) => ({ id: a.id, name: a.name })),
+          available_auth_configs: authConfigs.slice(0, 20).map((config: any) => ({
+            id: config.id,
+            name: config.name || config.appName || config.slug || 'Unnamed config',
+          })),
         }, 404);
       }
 
-      console.log(`[composio-proxy] Matched auth_config: ${matchedConfig.id} (${matchedConfig.name})`);
-
-      // Step 3: Initiate connection via v3
       const connectBody: Record<string, unknown> = {
+        auth_config_id: matchedConfig.id,
         auth_config: { id: matchedConfig.id },
-        connection: { user_id: entity_id || 'default' },
+        user_id: effectiveUserId,
+        connection: { user_id: effectiveUserId },
       };
+
       if (params?.redirect_uri) {
         connectBody.redirect_uri = params.redirect_uri;
       }
 
       console.log('[composio-proxy] Initiating v3 connection:', JSON.stringify(connectBody));
-      const res = await fetch(`${COMPOSIO_V3}/connected_accounts`, {
+
+      const res = await callComposio(`${COMPOSIO_V3}/connected_accounts`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify(connectBody),
       });
-      const data = await res.json();
-      console.log('[composio-proxy] Connection response:', JSON.stringify(data).slice(0, 500));
 
-      return json({ result: data });
+      console.log('[composio-proxy] Connection response:', JSON.stringify(res.data).slice(0, 500));
+
+      if (!res.ok) {
+        return json({
+          error: extractErrorMessage(res.data, `Failed to initiate ${appName} connection (${res.status})`),
+          details: res.data,
+        }, res.status);
+      }
+
+      return json({
+        result: {
+          ...res.data,
+          redirect_url: getRedirectUrl(res.data),
+        },
+      });
     }
 
     return json({ error: `Unknown action: ${action}` }, 400);
