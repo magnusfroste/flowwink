@@ -4445,6 +4445,52 @@ async function resolveResendFrom(supabase: any): Promise<string> {
   return 'FlowPilot <flowpilot@news.flowwink.com>';
 }
 
+// Log an outbound email to the gateway log so it appears in /admin/communications.
+// Fire-and-forget — never let a logging error fail the email send itself.
+async function logOutboundEmail(
+  supabase: any,
+  row: {
+    status: 'sent' | 'failed' | 'simulated';
+    recipient: string | string[];
+    subject: string | null;
+    body_html?: string | null;
+    body_text?: string | null;
+    from?: string | null;
+    provider_message_id?: string | null;
+    error_message?: string | null;
+    source?: string | null;
+    related_entity_type?: string | null;
+    related_entity_id?: string | null;
+    extra_metadata?: Record<string, unknown>;
+  },
+): Promise<void> {
+  try {
+    const recipient = Array.isArray(row.recipient) ? row.recipient.join(', ') : row.recipient;
+    await supabase.from('outbound_communications').insert({
+      channel: 'email',
+      status: row.status,
+      provider: 'resend',
+      simulated: row.status === 'simulated',
+      recipient,
+      subject: row.subject,
+      body_html: row.body_html ?? null,
+      body_text: row.body_text ?? null,
+      source: row.source ?? 'agent-execute',
+      related_entity_type: row.related_entity_type ?? null,
+      related_entity_id: row.related_entity_id ?? null,
+      error_message: row.error_message ?? null,
+      metadata: {
+        from: row.from ?? null,
+        provider_message_id: row.provider_message_id ?? null,
+        ...(row.extra_metadata ?? {}),
+      },
+      sent_at: row.status === 'sent' ? new Date().toISOString() : null,
+    });
+  } catch (e) {
+    console.error('[agent-execute] failed to log outbound_communications:', e);
+  }
+}
+
 
 async function executeSendEmailToLead(
   supabase: any,
@@ -4619,6 +4665,18 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       metadata: { subject, error: resendData?.message || 'Unknown error', purpose },
       points: 0,
     });
+    await logOutboundEmail(supabase, {
+      status: 'failed',
+      recipient: lead.email,
+      subject,
+      body_html: bodyHtml,
+      from: fromEmail,
+      error_message: resendData?.message || resendRes.statusText,
+      source: 'send_email_to_lead',
+      related_entity_type: 'lead',
+      related_entity_id: lead_id,
+      extra_metadata: { purpose },
+    });
     throw new Error(`Resend API error: ${resendData?.message || resendRes.statusText}`);
   }
 
@@ -4634,6 +4692,19 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       from: fromEmail,
     },
     points: 5,
+  });
+
+  await logOutboundEmail(supabase, {
+    status: 'sent',
+    recipient: lead.email,
+    subject,
+    body_html: bodyHtml,
+    from: fromEmail,
+    provider_message_id: resendData?.id,
+    source: 'send_email_to_lead',
+    related_entity_type: 'lead',
+    related_entity_id: lead_id,
+    extra_metadata: { purpose },
   });
 
   return {
@@ -4807,6 +4878,19 @@ async function executeSendInvoiceForOrder(
     emailResult = resendRes.ok
       ? { sent: true, message_id: resendData?.id }
       : { sent: false, error: resendData?.message || resendRes.statusText };
+    await logOutboundEmail(supabase, {
+      status: resendRes.ok ? 'sent' : 'failed',
+      recipient: order.customer_email,
+      subject: `Invoice ${invoice.invoice_number} from FlowPilot`,
+      body_html: html,
+      from: fromEmail,
+      provider_message_id: resendData?.id ?? null,
+      error_message: resendRes.ok ? null : (resendData?.message || resendRes.statusText),
+      source: 'send_invoice',
+      related_entity_type: 'invoice',
+      related_entity_id: invoice.id,
+      extra_metadata: { order_id, invoice_number: invoice.invoice_number },
+    });
   }
 
   // 7. Audit trail
