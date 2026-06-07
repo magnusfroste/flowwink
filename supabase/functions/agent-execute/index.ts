@@ -2655,6 +2655,41 @@ Output ONLY the alt text, nothing else.`;
 // Knowledge Base module handlers
 // =============================================================================
 
+/**
+ * Normalize an `answer` value into both plain text (for search/chat context)
+ * and a minimal Tiptap doc (for the public renderer which reads answer_json).
+ *
+ * Accepts:
+ *   - string (plain text or markdown — split on blank lines into paragraphs)
+ *   - Tiptap doc ({ type: 'doc', content: [...] }) — passed through
+ *   - anything else → coerced to string
+ */
+function normalizeKbAnswer(answer: unknown): { answer_text: string; answer_json: unknown } {
+  if (answer && typeof answer === 'object' && (answer as any).type === 'doc' && Array.isArray((answer as any).content)) {
+    // Extract plain text from Tiptap doc
+    const extractText = (node: any): string => {
+      if (!node) return '';
+      if (node.type === 'text') return String(node.text || '');
+      if (Array.isArray(node.content)) return node.content.map(extractText).join('');
+      return '';
+    };
+    const text = (answer as any).content.map(extractText).join('\n\n').trim();
+    return { answer_text: text, answer_json: answer };
+  }
+  const text = String(answer ?? '').trim();
+  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const doc = {
+    type: 'doc',
+    content: paragraphs.length > 0
+      ? paragraphs.map((p) => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text: p }],
+        }))
+      : [{ type: 'paragraph' }],
+  };
+  return { answer_text: text, answer_json: doc };
+}
+
 async function executeKbAction(
   supabase: SupabaseClient,
   skillName: string,
@@ -2693,6 +2728,9 @@ async function executeKbAction(
   if (action === 'create') {
     const { title, question, answer, category = 'general', include_in_chat = true, is_featured = false } = args as any;
     if (!title || !question) throw new Error('title and question are required');
+    if (!answer || (typeof answer === 'string' && !answer.trim())) {
+      throw new Error('answer is required and must contain the full article body (plain text, markdown, or a Tiptap doc). Empty answers render as blank articles.');
+    }
     const articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
 
     // Resolve category string → category_id UUID
@@ -2719,9 +2757,11 @@ async function executeKbAction(
       categoryId = newCat.id;
     }
 
+    const { answer_text, answer_json } = normalizeKbAnswer(answer);
     const { data, error } = await supabase.from('kb_articles').insert({
       title, question,
-      answer_text: answer || '',
+      answer_text,
+      answer_json,
       slug: articleSlug,
       category_id: categoryId,
       include_in_chat, is_featured,
@@ -2742,10 +2782,19 @@ async function executeKbAction(
   }
 
   if (action === 'update') {
-    const { article_id: _aid, slug: _slug, ...updateData } = args as any;
+    const { article_id: _aid, slug: _slug, answer, ...rest } = args as any;
     const article_id = await resolveArticleId(args);
     if (!article_id) throw new Error('article_id or slug is required');
-    delete updateData.action;
+    delete rest.action;
+    const updateData: Record<string, unknown> = { ...rest };
+    if (answer !== undefined) {
+      if (!answer || (typeof answer === 'string' && !answer.trim())) {
+        throw new Error('answer must contain the full article body — empty values are rejected to prevent blank articles.');
+      }
+      const { answer_text, answer_json } = normalizeKbAnswer(answer);
+      updateData.answer_text = answer_text;
+      updateData.answer_json = answer_json;
+    }
     const { data, error } = await supabase.from('kb_articles')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', article_id).select('id, title, is_published').single();
@@ -2846,7 +2895,10 @@ async function executeWikiAction(
     if (!title) throw new Error('title is required');
     const slug = String((args as any).slug || '').trim() || toWikiSlug(title);
     if (!slug) throw new Error('could not derive slug');
-    const content_md = String((args as any).content_md || '');
+    const content_md = String((args as any).content_md || '').trim();
+    if (!content_md) {
+      throw new Error('content_md is required and must contain the full markdown body. Empty pages are rejected — pass the actual content, not just a title placeholder.');
+    }
     const { data, error } = await supabase
       .from('wiki_pages')
       .insert({ slug, title, content_md })
@@ -2861,7 +2913,11 @@ async function executeWikiAction(
     if (!slug) throw new Error('slug is required');
     const patch: Record<string, unknown> = {};
     if (typeof (args as any).title === 'string') patch.title = (args as any).title;
-    if (typeof (args as any).content_md === 'string') patch.content_md = (args as any).content_md;
+    if (typeof (args as any).content_md === 'string') {
+      const md = (args as any).content_md.trim();
+      if (!md) throw new Error('content_md cannot be empty — pass the full markdown body or omit the field to keep existing content.');
+      patch.content_md = (args as any).content_md;
+    }
     if (Object.keys(patch).length === 0) throw new Error('nothing to update');
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)

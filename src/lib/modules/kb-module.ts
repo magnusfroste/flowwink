@@ -52,6 +52,7 @@ const KB_SKILLS: SkillSeed[] = [
             },
             answer: {
               type: 'string',
+              description: 'REQUIRED for create and for any update that changes the body. Full article body — plain text or markdown. The server mirrors this into both answer_text (search/chat) and answer_json (Tiptap doc used by the public renderer), so passing only the title leaves the public page blank. Empty strings are rejected.',
             },
             category: {
               type: 'string',
@@ -75,7 +76,10 @@ Manages knowledge base articles: list, get, create, update, publish, unpublish.
 - Chat finds questions it can't answer → create KB article
 ### Parameters
 - **action**: Required. list, get, create, update, publish, unpublish.
-- **title**, **question**, **answer**: For create/update.
+- **title**, **question**: required for create.
+- **answer**: **REQUIRED for create and for any update that changes the body.**
+  Plain text or markdown. Server auto-builds the Tiptap doc the public
+  page needs — empty strings are rejected to prevent blank articles.
 - **include_in_chat**: Boolean — whether the article is used by chat AI.
 ### Edge cases
 - Articles with include_in_chat=true are embedded into chat context.

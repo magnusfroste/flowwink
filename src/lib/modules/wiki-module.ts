@@ -67,7 +67,7 @@ const WIKI_SKILLS: SkillSeed[] = [
             content_md: {
               type: 'string',
               description:
-                'Markdown body. Use [[WikiWord]] or CamelCase to auto-link to other pages.',
+                'REQUIRED for create and for any update that touches the body. Full markdown body of the page — write the actual content, not just a stub or a title placeholder. Use [[WikiWord]] or CamelCase to auto-link to other pages. The server rejects empty strings with an explicit error.',
             },
             limit: {
               type: 'number',
@@ -97,7 +97,9 @@ in the UI auto-creates the page.
 - **slug**: required for get/update/delete; for create it's derived from
   title if omitted.
 - **title**: required for create.
-- **content_md**: markdown body; use \`[[Slug]]\` or \`CamelCase\` to link.
+- **content_md**: **REQUIRED for create and for any update that changes the body.**
+  Pass the full markdown — the server rejects empty strings to prevent
+  blank-page artifacts. Use \`[[Slug]]\` or \`CamelCase\` to link.
 
 ### Edge cases
 - Delete is admin-only (RLS enforced).
