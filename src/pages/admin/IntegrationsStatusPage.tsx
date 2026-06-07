@@ -1235,6 +1235,11 @@ export default function IntegrationsStatusPage() {
                               <div>
                                 <CardTitle className="text-base flex items-center gap-2">
                                   {integration.name}
+                                  {webProviderPriority && isEnabled && (
+                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-mono">
+                                      #{webProviderPriority}
+                                    </Badge>
+                                  )}
                                   {isLoading ? (
                                     <Skeleton className="h-5 w-20" />
                                   ) : (
