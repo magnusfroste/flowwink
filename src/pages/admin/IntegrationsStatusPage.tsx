@@ -1301,10 +1301,10 @@ export default function IntegrationsStatusPage() {
         const integration = integrationSettings?.[openDrawerKey] || defaultIntegrationsSettings[openDrawerKey];
         const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
         const requiresSecret = !noSecretNeeded.includes(openDrawerKey);
-        const drawerConfig = getDisplayConfig(openDrawerKey) || integration.config;
+        const effectiveConfig = drawerConfig ?? getDisplayConfig(openDrawerKey) ?? integration.config;
         const hasKey = requiresSecret
           ? (secretsStatus?.integrations?.[openDrawerKey] ?? false)
-          : hasRealCredential(openDrawerKey, drawerConfig);
+          : hasRealCredential(openDrawerKey, effectiveConfig);
         const explicitlyDisabled = integrationSettings?.[openDrawerKey]?.enabled === false;
         const isEnabled = hasKey && !explicitlyDisabled;
         return (
