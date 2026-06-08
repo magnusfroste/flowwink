@@ -618,12 +618,16 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.growth) {
       tasks.push({
         key: 'growth',
-        label: 'Clearing ad campaigns & webinars',
+        label: 'Clearing ad campaigns, webinars & surveys',
         fn: async () => {
-          await supabase.from('ad_creatives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('ad_campaigns').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webinars').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('ad_creatives');
+          await wipe('ad_campaigns');
+          await wipe('webinar_registrations');
+          await wipe('webinars');
+          await wipe('survey_sends');
+          await wipe('survey_responses');
+          await wipe('survey_campaigns');
+          await wipe('survey_templates');
         }
       });
     }
@@ -634,11 +638,15 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'federation',
         label: 'Clearing federation peers, webhooks & API keys',
         fn: async () => {
-          await supabase.from('federation_connections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webhook_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webhooks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('api_keys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('a2a_peers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('federation_connections');
+          await wipe('webhook_logs');
+          await wipe('webhooks');
+          await wipe('api_keys');
+          await wipe('peer_invitations');
+          await wipe('clawable_messages');
+          await wipe('clawable_sessions');
+          await wipe('a2a_activity');
+          await wipe('a2a_peers');
         }
       });
     }
