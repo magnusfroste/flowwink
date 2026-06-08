@@ -50,6 +50,9 @@ exactly: for every **enabled** module it upserts that module's `skillSeeds` into
 `agent_skills` (refreshing description, tool_definition, handler, scope,
 instructions; inserting any missing skill).
 
+A guardrail test (`skills-artifact-fresh.guardrails.test.ts`) fails CI if the
+committed artifact drifts from the code seeds, so a stale artifact can't ship.
+
 ```bash
 # 1. Regenerate the versioned artifact whenever skillSeeds change in code.
 #    Decouples the DB sync from the frontend graph (no React/browser imports).
