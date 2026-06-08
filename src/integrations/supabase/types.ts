@@ -11402,6 +11402,33 @@ export type Database = {
           },
         ]
       }
+      timesheet_period_locks: {
+        Row: {
+          fiscal_year: number
+          id: string
+          locked_at: string
+          locked_by: string | null
+          notes: string | null
+          period_month: number
+        }
+        Insert: {
+          fiscal_year: number
+          id?: string
+          locked_at?: string
+          locked_by?: string | null
+          notes?: string | null
+          period_month: number
+        }
+        Update: {
+          fiscal_year?: number
+          id?: string
+          locked_at?: string
+          locked_by?: string | null
+          notes?: string | null
+          period_month?: number
+        }
+        Relationships: []
+      }
       tolerance_policies: {
         Row: {
           created_at: string
@@ -12802,6 +12829,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      lock_timesheet_period: {
+        Args: {
+          p_fiscal_year: number
+          p_notes?: string
+          p_period_month: number
+        }
+        Returns: Json
       }
       log_ai_usage: {
         Args: {
