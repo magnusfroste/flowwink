@@ -468,9 +468,13 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           await supabase.from('project_members').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('expense_attachments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('expense_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('expense_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           await supabase.from('handbook_chapters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('wiki_pages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('river_reactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('river_posts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('timesheet_period_locks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         }
       });
     }
