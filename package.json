@@ -27,7 +27,8 @@
     "check:doc-drift": "bun run scripts/check-doc-drift.ts",
     "skills:json": "bun run scripts/skills-to-json.ts",
     "sync:skills": "bun run scripts/sync-skills.ts",
-    "fleet:status": "bun run scripts/fleet-status.ts"
+    "fleet:status": "bun run scripts/fleet-status.ts",
+    "local:smoke": "bun run scripts/local-smoke.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",

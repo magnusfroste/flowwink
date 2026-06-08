@@ -83,11 +83,11 @@ serve(async (req: Request) => {
       bookingId,
     }: CheckoutRequest = await req.json();
 
-    logStep("Starting checkout", { customerEmail, itemCount: items.length });
-
     if (!items || items.length === 0) {
       throw new Error("No items in cart");
     }
+    logStep("Starting checkout", { customerEmail, itemCount: items.length });
+
     if (!customerEmail) {
       throw new Error("Customer email is required");
     }

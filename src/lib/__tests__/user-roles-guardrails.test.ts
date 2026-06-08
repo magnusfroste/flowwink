@@ -18,13 +18,22 @@ import { join } from 'node:path';
 // ─────────────────────────────────────────────────────────────
 
 function loadLatestHandleNewUser(): string {
-  const dir = 'supabase/migrations';
-  const files = readdirSync(dir)
-    .filter((f) => f.endsWith('.sql'))
-    .sort(); // chronological
+  // Scan both the active migrations and the pre-baseline archive. The archive
+  // holds the original migration-authored definition (plain identifiers, the
+  // format the body assertions below expect); after the baseline-squash that is
+  // where the authored CREATE OR REPLACE lives.
+  const dirs = ['supabase/_migrations_archive', 'supabase/migrations'];
+  const files: string[] = [];
+  for (const dir of dirs) {
+    try {
+      for (const f of readdirSync(dir)) if (f.endsWith('.sql')) files.push(join(dir, f));
+    } catch { /* dir may not exist */ }
+  }
+  const base = (p: string) => p.split('/').pop() ?? p;
+  files.sort((a, b) => base(a).localeCompare(base(b))); // chronological by filename (timestamp prefix)
   for (let i = files.length - 1; i >= 0; i--) {
-    const sql = readFileSync(join(dir, files[i]), 'utf8');
-    if (/FUNCTION\s+public\.handle_new_user/i.test(sql)) return sql;
+    const sql = readFileSync(files[i], 'utf8');
+    if (/FUNCTION\s+"?public"?\."?handle_new_user"?/i.test(sql)) return sql;
   }
   throw new Error('No migration found defining public.handle_new_user');
 }

@@ -3591,11 +3591,16 @@ async function executeWebinarsAction(
   const { action = 'list' } = args as any;
 
   if (action === 'list' || action === 'list_upcoming') {
+    // The webinars table's datetime column is `date` (not scheduled_at).
     let query = supabase.from('webinars')
-      .select('id, title, description, scheduled_at, platform, meeting_url, status, max_attendees, created_at')
-      .order('scheduled_at', { ascending: false }).limit(50);
+      .select('id, title, description, date, platform, meeting_url, status, max_attendees, created_at')
+      .order('date', { ascending: false }).limit(50);
     if (action === 'list_upcoming') {
-      query = query.eq('status', 'upcoming').gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true });
+      // "Upcoming" = future date, not yet completed/cancelled (valid statuses
+      // are draft/published/live/completed/cancelled — there is no 'upcoming').
+      query = query.gte('date', new Date().toISOString())
+        .not('status', 'in', '("completed","cancelled")')
+        .order('date', { ascending: true });
     }
     const { data, error } = await query;
     if (error) throw new Error(`List webinars failed: ${error.message}`);
@@ -3613,14 +3618,16 @@ async function executeWebinarsAction(
   }
 
   if (action === 'create') {
-    const { title, description, scheduled_at, platform = 'google_meet', meeting_url, max_attendees } = args as any;
-    if (!title || !scheduled_at) throw new Error('title and scheduled_at required');
+    const { title, description, platform = 'google_meet', meeting_url, max_attendees } = args as any;
+    // Accept `date` or the legacy `scheduled_at` arg name; the column is `date`.
+    const date = (args as any).date ?? (args as any).scheduled_at;
+    if (!title || !date) throw new Error('title and date required');
     const { data, error } = await supabase.from('webinars').insert({
-      title, description, scheduled_at, platform, meeting_url,
-      max_attendees, status: 'upcoming',
-    }).select('id, title, scheduled_at, status').single();
+      title, description, date, platform, meeting_url,
+      max_attendees, status: 'published',
+    }).select('id, title, date, status').single();
     if (error) throw new Error(`Create webinar failed: ${error.message}`);
-    return { webinar_id: data.id, title: data.title, scheduled_at: data.scheduled_at };
+    return { webinar_id: data.id, title: data.title, date: data.date };
   }
 
   if (action === 'update') {
@@ -7304,7 +7311,7 @@ const GENERIC_CRUD_TABLES = new Set([
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',
   // Recruitment / ATS module
-  'job_postings', 'candidates', 'job_applications', 'application_stages', 'interviews',
+  'job_postings', 'candidates', 'applications', 'application_stages', 'interviews',
   // Smart-bookkeeping learning loop
   'accounting_corrections',
   // HR onboarding (templates + per-employee checklists)
@@ -7342,13 +7349,13 @@ const GENERIC_CRUD_TABLES = new Set([
 ]);
 
 /**
- * Friendly table aliases — external agents often use shorter / natural names
- * (e.g. "applications" instead of "job_applications"). Map them to the real
- * physical table before whitelist + CRUD lookup.
+ * Friendly table aliases — external agents often use shorter / natural names.
+ * Map them to the real physical table before whitelist + CRUD lookup.
+ * NB: the recruitment table is `applications` (not `job_applications`).
  */
 const TABLE_ALIASES: Record<string, string> = {
-  applications: 'job_applications',
-  application: 'job_applications',
+  application: 'applications',
+  job_applications: 'applications',
   candidate: 'candidates',
   job_posting: 'job_postings',
 };

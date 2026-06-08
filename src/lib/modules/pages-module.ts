@@ -306,7 +306,7 @@ Granular block-level operations on pages: add, update, remove, reorder blocks.
     name: 'landing_page_compose',
     description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
     category: 'automation',
-    handler: 'db:pages',
+    handler: 'module:pages',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -534,7 +534,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
     name: 'generate_site_from_identity',
     description: 'Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says "build my website", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url).',
     category: 'content',
-    handler: 'db:pages',
+    handler: 'module:pages',
     scope: 'both',
     tool_definition: {
       type: 'function',
