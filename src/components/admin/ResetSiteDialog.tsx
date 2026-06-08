@@ -154,9 +154,21 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
 
     // Helper: bulk-delete all rows from a table by name. Untyped on purpose —
     // chaining many supabase.from('x').delete() inside one fn blows TS depth.
+    // Tables without an `id` column (e.g. wiki_pages uses `slug` as PK) need a
+    // different predicate — try `id` first, fall back to a column-agnostic
+    // "always true" filter using `created_at`.
     const wipe = async (table: string, throwOnError = false) => {
-      const { error } = await (supabase as any).from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (error && throwOnError) throw error;
+      const client = supabase as any;
+      let { error } = await client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error && /column .*id.* does not exist/i.test(error.message ?? '')) {
+        // Fallback for tables without an `id` column
+        const res = await client.from(table).delete().not('created_at', 'is', null);
+        error = res.error;
+      }
+      if (error) {
+        logger.warn(`[reset] wipe(${table}) failed:`, error.message);
+        if (throwOnError) throw error;
+      }
     };
 
     const tasks: { key: keyof ResetOptions; label: string; fn: () => Promise<void> }[] = [];
