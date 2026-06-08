@@ -492,13 +492,42 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'procurement',
         label: 'Clearing vendors, purchase orders & goods receipts',
         fn: async () => {
-          await supabase.from('goods_receipt_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('goods_receipts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('purchase_order_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('purchase_orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendor_invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendor_products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('rfq_bids');
+          await wipe('rfq_lines');
+          await wipe('rfqs');
+          await wipe('goods_receipt_lines');
+          await wipe('goods_receipts');
+          await wipe('purchase_order_lines');
+          await wipe('purchase_orders');
+          await wipe('procurement_suggestions');
+          await wipe('reorder_rules');
+          await wipe('tolerance_policies');
+          await wipe('vendor_invoices');
+          await wipe('vendor_products');
+          await wipe('vendors');
+          // Manufacturing
+          await wipe('mo_components');
+          await wipe('manufacturing_orders');
+          await wipe('bom_lines');
+          await wipe('bom_headers');
+          // Warehouse / fulfilment
+          await wipe('shipments');
+          await wipe('picking_lines');
+          await wipe('picking_orders');
+          await wipe('carriers');
+          await wipe('stock_reservations');
+          await wipe('stock_lots');
+          await wipe('stock_quants');
+          await wipe('stock_locations');
+          // POS
+          await wipe('pos_payments');
+          await wipe('pos_sale_lines');
+          await wipe('pos_sales');
+          await wipe('pos_sessions');
+          await wipe('pos_registers');
+          // Returns
+          await wipe('return_items');
+          await wipe('returns');
         }
       });
     }
