@@ -363,9 +363,21 @@ The recommended FlowWink stack:
 supabase link --project-ref <your-ref>
 supabase db push
 supabase functions deploy --project-ref <your-ref>
+
+# Sync skill metadata from code into agent_skills (the step that prevents drift).
+DATABASE_URL='postgresql://postgres:<pw>@db.<your-ref>.supabase.co:5432/postgres' \
+  npm run sync:skills -- --apply
 ```
 
 Then point your Vercel project at this repo and set the three env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`). That's it.
+
+> **Running more than one site?** A "site" is four layers — schema (migrations),
+> skills (bootstrap), edge functions (deploy), frontend (Vercel) — each shipped
+> separately. Keeping them in sync is the whole game. Read
+> **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**
+> for the provision/update runbook, the `sync:skills` tool, and fork vs.
+> auto-deploy topology. A `git push` only auto-deploys the *frontend* of
+> non-forked sites — migrations, functions and skills go out per instance.
 
 See **[docs/guides/deployment.md](docs/guides/deployment.md)** for the full walkthrough.
 
@@ -385,6 +397,7 @@ Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry poin
 | **[docs/concepts/elevator-pitch.md](docs/concepts/elevator-pitch.md)** | BOS positioning, vision, competitive landscape |
 | **[docs/guides/setup.md](docs/guides/setup.md)** | Supabase setup, environment variables, migrations |
 | **[docs/guides/deployment.md](docs/guides/deployment.md)** | Supabase Cloud + Vercel deployment walkthrough |
+| **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)** | Multi-site provisioning, the update runbook, skill-sync & drift prevention |
 | **[docs/builders/README.md](docs/builders/README.md)** | Architecture, extending the platform, writing skills |
 | **[docs/guides/security.md](docs/guides/security.md)** | RLS policies, auth patterns, security model |
 | **[docs/contributing/test-suite.md](docs/contributing/test-suite.md)** | Autonomous test framework (L1–L8) |

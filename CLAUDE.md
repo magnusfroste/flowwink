@@ -182,10 +182,22 @@ Manual steps per Supabase project after migrations or new edge functions:
 ```bash
 supabase db push --project-ref <ref>
 supabase functions deploy <function-name> --no-verify-jwt --project-ref <ref>
+# Sync skill metadata from code → agent_skills (prevents drift; see below)
+DATABASE_URL='postgresql://postgres:<pw>@db.<ref>.supabase.co:5432/postgres' npm run sync:skills -- --apply
 ```
 
 Public-facing edge functions must be deployed with `--no-verify-jwt`.
 Admin-only functions can use default JWT verification.
+
+**A "site" is four layers** (schema via migrations, **skills via bootstrap**,
+edge functions via deploy, frontend via Vercel) and they drift if not synced
+together. `agent_skills` rows come from `skillSeeds` in `src/lib/modules/*` via
+bootstrap — **not** migrations — so running migrations never refreshes skills.
+Regenerate the artifact (`npm run skills:json`) and sync each instance
+(`npm run sync:skills` dry-run, `-- --apply` to write). Full runbook, the live
+fleet's refs, and fork vs. auto-deploy topology:
+**[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**.
+NB: forks (e.g. autoversio.ai) do NOT auto-deploy from a `main` push — notify the owner.
 
 ## FlowPilot Development Laws
 
