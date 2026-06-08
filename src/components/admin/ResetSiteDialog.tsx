@@ -151,7 +151,14 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
   const executeReset = async () => {
     setIsResetting(true);
     setStep('progress');
-    
+
+    // Helper: bulk-delete all rows from a table by name. Untyped on purpose —
+    // chaining many supabase.from('x').delete() inside one fn blows TS depth.
+    const wipe = async (table: string, throwOnError = false) => {
+      const { error } = await (supabase as any).from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error && throwOnError) throw error;
+    };
+
     const tasks: { key: keyof ResetOptions; label: string; fn: () => Promise<void> }[] = [];
     
     if (options.formSubmissions) {
@@ -238,10 +245,16 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'leads',
         label: 'Clearing leads & CRM tasks',
         fn: async () => {
+          // FK references that do NOT cascade or set-null must be cleared first
+          // (webinar_registrations.lead_id is NO ACTION → blocks DELETE on leads)
+          const { error: wrErr } = await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (wrErr) throw wrErr;
           const { error: actErr } = await supabase.from('lead_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (actErr) throw actErr;
           const { error: taskErr } = await supabase.from('crm_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (taskErr) throw taskErr;
+          // CASCADE handles deals/lead_activities/crm_tasks/pricelists;
+          // SET NULL handles tickets/invoices/quotes — no pre-clear needed.
           const { error } = await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
@@ -364,58 +377,35 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'engineRoom',
         label: 'Resetting FlowPilot brain (objectives, memory, activity)',
         fn: async () => {
-          // Clear objective activities junction first
-          const { error: oaErr } = await supabase.from('agent_objective_activities').delete().neq('objective_id', '00000000-0000-0000-0000-000000000000');
-          if (oaErr) throw oaErr;
-          // Clear objectives
-          const { error: objErr } = await supabase.from('agent_objectives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (objErr) throw objErr;
-          // Clear activity log
-          const { error: actErr } = await supabase.from('agent_activity').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (actErr) throw actErr;
-          // Clear memory (except soul/identity which get re-seeded)
-          const { error: memErr } = await supabase.from('agent_memory').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (memErr) throw memErr;
-          // Clear automations
-          const { error: autoErr } = await supabase.from('agent_automations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (autoErr) throw autoErr;
-          // Clear chat conversations & messages
-          const { error: feedbackErr } = await supabase.from('chat_feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (feedbackErr) throw feedbackErr;
-          const { error: msgErr } = await supabase.from('chat_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (msgErr) throw msgErr;
-          const { error: convErr } = await supabase.from('chat_conversations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (convErr) throw convErr;
-          // Clear workflows
-          const { error: wfErr } = await supabase.from('agent_workflows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (wfErr) throw wfErr;
-          // Clear briefings
-          const { error: brErr } = await supabase.from('flowpilot_briefings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (brErr) throw brErr;
-          // Clear content proposals & research
-          const { error: cpErr } = await supabase.from('content_proposals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (cpErr) throw cpErr;
-          const { error: crErr } = await supabase.from('content_research').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (crErr) throw crErr;
-          // Clear installed template marker
-          const { error: tmplErr } = await supabase.from('installed_template').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (tmplErr) throw tmplErr;
-          // Clear audit logs
-          const { error: auditErr } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (auditErr) throw auditErr;
-          // Clear A2A activity logs
-          const { error: a2aActErr } = await supabase.from('a2a_activity').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (a2aActErr) throw a2aActErr;
-          // Clear beta test data (exchanges/findings first due to FK)
-          const { error: bteErr } = await supabase.from('beta_test_exchanges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (bteErr) throw bteErr;
-          const { error: btfErr } = await supabase.from('beta_test_findings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (btfErr) throw btfErr;
-          const { error: btsErr } = await supabase.from('beta_test_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (btsErr) throw btsErr;
-          // Clear page view analytics
-          const { error: pvErr } = await supabase.from('page_views').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (pvErr) throw pvErr;
+          await wipe('agent_objective_activities');
+          await wipe('agent_objectives');
+          await wipe('agent_activity');
+          await wipe('agent_memory');
+          await wipe('agent_automations');
+          await wipe('agent_workflows');
+          await wipe('agent_audit_trail');
+          await wipe('agent_events');
+          await wipe('agent_locks');
+          await wipe('ai_usage_logs');
+          await wipe('pending_operations');
+          await wipe('chat_feedback');
+          await wipe('chat_messages');
+          await wipe('chat_conversations');
+          await wipe('flowpilot_briefings');
+          await wipe('content_proposals');
+          await wipe('content_research');
+          await wipe('installed_template');
+          await wipe('audit_logs');
+          await wipe('auth_events');
+          await wipe('autonomy_test_runs');
+          await wipe('platform_test_runs');
+          await wipe('bootstrap_runs');
+          await wipe('beta_test_exchanges');
+          await wipe('beta_test_findings');
+          await wipe('beta_test_sessions');
+          await wipe('demo_run_items');
+          await wipe('demo_runs');
+          await wipe('page_views');
         }
       });
     }
@@ -457,14 +447,18 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'operations',
         label: 'Clearing projects, tasks, time entries & expenses',
         fn: async () => {
-          await supabase.from('time_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('project_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('project_members').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('expense_attachments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('expenses').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('expense_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('handbook_chapters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('time_entries');
+          await wipe('project_tasks');
+          await wipe('project_members');
+          await wipe('projects');
+          await wipe('expense_attachments');
+          await wipe('expense_payments');
+          await wipe('expenses');
+          await wipe('handbook_chapters');
+          await wipe('wiki_pages');
+          await wipe('river_reactions');
+          await wipe('river_posts');
+          await wipe('timesheet_period_locks');
         }
       });
     }
@@ -475,13 +469,42 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'procurement',
         label: 'Clearing vendors, purchase orders & goods receipts',
         fn: async () => {
-          await supabase.from('goods_receipt_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('goods_receipts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('purchase_order_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('purchase_orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendor_invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendor_products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('vendors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('rfq_bids');
+          await wipe('rfq_lines');
+          await wipe('rfqs');
+          await wipe('goods_receipt_lines');
+          await wipe('goods_receipts');
+          await wipe('purchase_order_lines');
+          await wipe('purchase_orders');
+          await wipe('procurement_suggestions');
+          await wipe('reorder_rules');
+          await wipe('tolerance_policies');
+          await wipe('vendor_invoices');
+          await wipe('vendor_products');
+          await wipe('vendors');
+          // Manufacturing
+          await wipe('mo_components');
+          await wipe('manufacturing_orders');
+          await wipe('bom_lines');
+          await wipe('bom_headers');
+          // Warehouse / fulfilment
+          await wipe('shipments');
+          await wipe('picking_lines');
+          await wipe('picking_orders');
+          await wipe('carriers');
+          await wipe('stock_reservations');
+          await wipe('stock_lots');
+          await wipe('stock_quants');
+          await wipe('stock_locations');
+          // POS
+          await wipe('pos_payments');
+          await wipe('pos_sale_lines');
+          await wipe('pos_sales');
+          await wipe('pos_sessions');
+          await wipe('pos_registers');
+          // Returns
+          await wipe('return_items');
+          await wipe('returns');
         }
       });
     }
@@ -492,31 +515,44 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'finance',
         label: 'Clearing quotes, invoices, accounting & payroll',
         fn: async () => {
-          await supabase.from('quote_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('quote_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('quote_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('quotes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('quote_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('payment_reconciliations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('dunning_actions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('dunning_sequences').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('reconciliation_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('bank_transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('bank_import_batches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('payroll_export_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('payroll_exports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('journal_entry_line_taxes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('journal_entry_lines').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('journal_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('journals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('opening_balances').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('accounting_periods').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('accounting_templates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('chart_of_accounts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('tax_code_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('tax_grids').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('tax_codes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('quote_signatures');
+          await wipe('quote_versions');
+          await wipe('quote_items');
+          await wipe('quotes');
+          await wipe('quote_templates');
+          await wipe('payment_reconciliations');
+          await wipe('dunning_actions');
+          await wipe('dunning_sequences');
+          await wipe('invoices');
+          await wipe('reconciliation_matches');
+          await wipe('bank_transactions');
+          await wipe('bank_import_batches');
+          await wipe('bank_accounts');
+          await wipe('payroll_export_lines');
+          await wipe('payroll_exports');
+          await wipe('payroll_lines');
+          await wipe('payroll_runs');
+          await wipe('payroll_components');
+          // expense_reports + depreciation_entries hold journal_entry_id FKs — must clear before journal_entries
+          await wipe('expense_reports');
+          await wipe('depreciation_entries');
+          await wipe('fixed_assets');
+          await wipe('analytic_lines');
+          await wipe('analytic_accounts');
+          await wipe('accounting_corrections');
+          await wipe('journal_entry_line_taxes');
+          await wipe('journal_entry_lines');
+          await wipe('journal_entries');
+          await wipe('journals');
+          await wipe('opening_balances');
+          await wipe('accounting_periods');
+          await wipe('accounting_templates');
+          await wipe('chart_of_accounts');
+          await wipe('tax_code_grids');
+          await wipe('tax_grids');
+          await wipe('tax_codes');
+          await wipe('exchange_rates');
+          await wipe('currencies');
         }
       });
     }
@@ -527,23 +563,30 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'service',
         label: 'Clearing tickets, SLA, contracts, documents & subscriptions',
         fn: async () => {
-          await supabase.from('ticket_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('support_escalations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('tickets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('support_agents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('sla_violations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('sla_policies').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('contract_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('contract_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('contract_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('contracts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('subscription_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('subscriptions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('approval_decisions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('approval_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('approval_rules').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('ticket_comments');
+          await wipe('support_escalations');
+          await wipe('tickets');
+          await wipe('support_agents');
+          await wipe('sla_violations');
+          await wipe('sla_policies');
+          await wipe('feedback');
+          await wipe('contract_signatures');
+          await wipe('contract_versions');
+          await wipe('contract_documents');
+          await wipe('contracts');
+          await wipe('contract_templates');
+          await wipe('documents');
+          await wipe('subscription_winback_sends');
+          await wipe('subscription_winback_campaigns');
+          await wipe('subscription_churn_reasons');
+          await wipe('subscription_events');
+          await wipe('subscriptions');
+          await wipe('service_order_lines');
+          await wipe('service_visits');
+          await wipe('service_orders');
+          await wipe('approval_decisions');
+          await wipe('approval_requests');
+          await wipe('approval_rules');
         }
       });
     }
@@ -552,12 +595,16 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.growth) {
       tasks.push({
         key: 'growth',
-        label: 'Clearing ad campaigns & webinars',
+        label: 'Clearing ad campaigns, webinars & surveys',
         fn: async () => {
-          await supabase.from('ad_creatives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('ad_campaigns').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webinars').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('ad_creatives');
+          await wipe('ad_campaigns');
+          await wipe('webinar_registrations');
+          await wipe('webinars');
+          await wipe('survey_sends');
+          await wipe('survey_responses');
+          await wipe('survey_campaigns');
+          await wipe('survey_templates');
         }
       });
     }
@@ -568,11 +615,15 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'federation',
         label: 'Clearing federation peers, webhooks & API keys',
         fn: async () => {
-          await supabase.from('federation_connections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webhook_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('webhooks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('api_keys').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          await supabase.from('a2a_peers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await wipe('federation_connections');
+          await wipe('webhook_logs');
+          await wipe('webhooks');
+          await wipe('api_keys');
+          await wipe('peer_invitations');
+          await wipe('clawable_messages');
+          await wipe('clawable_sessions');
+          await wipe('a2a_activity');
+          await wipe('a2a_peers');
         }
       });
     }
