@@ -223,10 +223,17 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
       // whole argument object under `args`, so individual skill properties are
       // never mapped one-to-one — there is no per-prop drift to check here.
     } else {
+      // A handful of RPCs keep `_`-prefixed params (called directly by the
+      // frontend/cron too); agent-execute maps skill args to `_<name>` for them.
+      // Mirror UNDERSCORE_PARAM_RPCS in supabase/functions/agent-execute/index.ts.
+      const UNDERSCORE_PARAM_RPCS = new Set([
+        'create_manual_subscription', 'cancel_manual_subscription', 'generate_subscription_invoice',
+      ]);
+      const prefix = UNDERSCORE_PARAM_RPCS.has(rpcName) ? '_' : 'p_';
       // Apply mapRpcArgs transform
       const mapped = propNames
         .filter((k) => !k.startsWith('_') && k !== 'trace_id' && k !== 'objective_context')
-        .map((k) => ({ original: k, mapped: k.startsWith('p_') ? k : `p_${k}` }));
+        .map((k) => ({ original: k, mapped: k.startsWith(prefix) ? k : `${prefix}${k}` }));
 
       for (const { original, mapped: arg } of mapped) {
         if (!validArgs.has(arg)) {

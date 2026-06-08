@@ -396,6 +396,13 @@ serve(async (req) => {
           // `p_name`, `p_cost_cents`, … which never match the lone `args` param,
           // so every call silently failed. Forward the cleaned args object whole.
           rpcArgs = { args: cleanedArgs };
+        } else if (UNDERSCORE_PARAM_RPCS.has(fnName)) {
+          // These RPCs keep `_`-prefixed params (also called by the frontend/cron
+          // with `_` names). Map skill args to `_<name>` instead of `p_<name>`.
+          rpcArgs = {};
+          for (const [k, v] of Object.entries(cleanedArgs)) {
+            rpcArgs[k.startsWith('_') ? k : `_${k}`] = v;
+          }
         } else {
           // Map skill arg names → RPC param names by prefixing p_.
           rpcArgs = {};
