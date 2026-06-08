@@ -30,3 +30,7 @@ dist-ssr
 
 # Supabase CLI temp state
 supabase/.temp/
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/
