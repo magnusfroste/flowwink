@@ -238,10 +238,16 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'leads',
         label: 'Clearing leads & CRM tasks',
         fn: async () => {
+          // FK references that do NOT cascade or set-null must be cleared first
+          // (webinar_registrations.lead_id is NO ACTION → blocks DELETE on leads)
+          const { error: wrErr } = await supabase.from('webinar_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (wrErr) throw wrErr;
           const { error: actErr } = await supabase.from('lead_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (actErr) throw actErr;
           const { error: taskErr } = await supabase.from('crm_tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (taskErr) throw taskErr;
+          // CASCADE handles deals/lead_activities/crm_tasks/pricelists;
+          // SET NULL handles tickets/invoices/quotes — no pre-clear needed.
           const { error } = await supabase.from('leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
         }
