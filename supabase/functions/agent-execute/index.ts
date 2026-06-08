@@ -789,6 +789,10 @@ async function executeModuleAction(
       return { error: `Unknown media action: ${action}` };
     }
 
+    case 'approvals': {
+      return await executeApprovalsAction(supabase, skillName, args);
+    }
+
     case 'resume': {
       return await executeResumeAction(supabase, skillName, args);
     }
@@ -1851,9 +1855,117 @@ async function executeResumeAction(
       return await response.json();
     }
 
+    case 'consultant_checkin_update': {
+      // A consultant updates their own profile during a check-in interview.
+      const { profile_id } = args as any;
+      if (!profile_id) throw new Error('profile_id is required');
+      const patch: Record<string, unknown> = {};
+      for (const f of ['bio', 'summary', 'skills', 'availability', 'experience_years', 'experience_json'] as const) {
+        if ((args as any)[f] !== undefined) patch[f] = (args as any)[f];
+      }
+      if (Object.keys(patch).length === 0) {
+        throw new Error('nothing to update — provide at least one of: bio, summary, skills, availability, experience_years, experience_json');
+      }
+      const { data, error } = await supabase.from('consultant_profiles')
+        .update(patch).eq('id', profile_id).select('id, name').maybeSingle();
+      if (error) throw new Error(`Check-in update failed: ${error.message}`);
+      if (!data) return { error: `No consultant profile found for id ${profile_id}`, status: 'failed' };
+      return { profile_id: data.id, name: data.name, status: 'updated', updated_fields: Object.keys(patch) };
+    }
+
     default:
       return { error: `Unknown resume skill: ${skillName}` };
   }
+}
+
+// =============================================================================
+// Approvals module — generic approval workflow engine over approval_requests
+// + approval_rules. Handler for manage_approvals (module:approvals).
+// =============================================================================
+
+async function executeApprovalsAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const a = args as any;
+  const action = String(a.action || 'list_pending');
+
+  if (action === 'evaluate_rule') {
+    if (!a.entity_type) throw new Error('entity_type is required');
+    const amt = Number(a.amount_cents ?? 0);
+    const { data: rules, error } = await supabase.from('approval_rules')
+      .select('*').eq('entity_type', a.entity_type).eq('is_active', true)
+      .order('priority', { ascending: false });
+    if (error) throw new Error(`evaluate_rule failed: ${error.message}`);
+    const match = (rules || []).find((r: any) => r.amount_threshold_cents == null || amt >= Number(r.amount_threshold_cents));
+    return match
+      ? { needs_approval: true, rule_id: match.id, rule_name: match.name, required_role: match.required_role, threshold_cents: match.amount_threshold_cents }
+      : { needs_approval: false };
+  }
+
+  if (action === 'request') {
+    const { entity_type, entity_id, amount_cents, currency = 'SEK', reason, required_role = 'admin', context, rule_id } = a;
+    if (!entity_type || !entity_id) throw new Error('entity_type and entity_id are required');
+    const { data, error } = await supabase.from('approval_requests').insert({
+      entity_type, entity_id,
+      amount_cents: amount_cents != null ? Number(amount_cents) : null,
+      currency, reason: reason ?? null, required_role, context: context ?? {}, rule_id: rule_id ?? null,
+      status: 'pending',
+    }).select('id, entity_type, entity_id, status, required_role').single();
+    if (error) throw new Error(`request failed: ${error.message}`);
+    return { request_id: data.id, status: data.status, required_role: data.required_role };
+  }
+
+  if (action === 'list_pending') {
+    const { data, error } = await supabase.from('approval_requests')
+      .select('id, entity_type, entity_id, amount_cents, currency, reason, required_role, created_at')
+      .eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
+    if (error) throw new Error(`list_pending failed: ${error.message}`);
+    return { pending: data || [] };
+  }
+
+  if (action === 'list_for_entity') {
+    if (!a.entity_type || !a.entity_id) throw new Error('entity_type and entity_id are required');
+    const { data, error } = await supabase.from('approval_requests')
+      .select('*').eq('entity_type', a.entity_type).eq('entity_id', a.entity_id)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(`list_for_entity failed: ${error.message}`);
+    return { requests: data || [] };
+  }
+
+  if (action === 'approve' || action === 'reject' || action === 'cancel') {
+    if (!a.request_id) throw new Error('request_id is required');
+    const status = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'cancelled';
+    const { data, error } = await supabase.from('approval_requests')
+      .update({ status, resolved_at: new Date().toISOString() })
+      .eq('id', a.request_id).eq('status', 'pending')
+      .select('id, status').maybeSingle();
+    if (error) throw new Error(`${action} failed: ${error.message}`);
+    if (!data) return { error: `Request ${a.request_id} not found or no longer pending`, status: 'failed' };
+    return { request_id: data.id, status: data.status };
+  }
+
+  if (action === 'create_rule') {
+    const { name, description, entity_type, amount_threshold_cents, currency = 'SEK', required_role = 'admin', priority = 0 } = a;
+    if (!name || !entity_type) throw new Error('name and entity_type are required');
+    const { data, error } = await supabase.from('approval_rules').insert({
+      name, description: description ?? null, entity_type,
+      amount_threshold_cents: amount_threshold_cents != null ? Number(amount_threshold_cents) : null,
+      currency, required_role, priority: Number(priority) || 0, is_active: true,
+    }).select('id, name').single();
+    if (error) throw new Error(`create_rule failed: ${error.message}`);
+    return { rule_id: data.id, name: data.name, status: 'created' };
+  }
+
+  if (action === 'list_rules') {
+    const { data, error } = await supabase.from('approval_rules')
+      .select('*').eq('is_active', true).order('priority', { ascending: false });
+    if (error) throw new Error(`list_rules failed: ${error.message}`);
+    return { rules: data || [] };
+  }
+
+  return { error: `Unknown approvals action: ${action}` };
 }
 
 // =============================================================================
