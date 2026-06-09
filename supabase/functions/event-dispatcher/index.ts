@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { isModuleEnabled } from '../_shared/modules.ts';
 
 /**
  * Event Dispatcher (Phase 3 — Platform Event Bus)
@@ -65,12 +66,9 @@ serve(async (req) => {
     let flowpilotEnabled: boolean | null = null;
     async function isFlowpilotOn(): Promise<boolean> {
       if (flowpilotEnabled !== null) return flowpilotEnabled;
-      const { data: settings } = await supabase
-        .from("site_settings")
-        .select("modules")
-        .maybeSingle();
-      flowpilotEnabled =
-        (settings?.modules as any)?.flowpilot?.enabled === true;
+      // Centralised lookup (key/value row, not a 'modules' column — the trap that
+      // previously skipped every executor='flowpilot' automation). Cached per call.
+      flowpilotEnabled = await isModuleEnabled(supabase, "flowpilot");
       return flowpilotEnabled;
     }
 

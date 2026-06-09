@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { isModuleEnabled } from '../_shared/modules.ts';
 
 /**
  * Automation Dispatcher
@@ -75,13 +76,11 @@ serve(async (req) => {
         continue;
       }
 
-      // For executor='flowpilot' verify the module is enabled — otherwise skip cleanly
+      // executor='flowpilot' work runs only while the FlowPilot module is on.
+      // (Module-enabled lookup centralised in isModuleEnabled — a column-vs-row
+      // mistake here previously skipped every flowpilot automation forever.)
       if (executor === "flowpilot") {
-        const { data: settings } = await supabase
-          .from("site_settings")
-          .select("modules")
-          .maybeSingle();
-        const flowpilotOn = (settings?.modules as any)?.flowpilot?.enabled === true;
+        const flowpilotOn = await isModuleEnabled(supabase, "flowpilot");
         if (!flowpilotOn) {
           results.push({ id: auto.id, name: auto.name, status: "skipped_module_off", type: "automation" });
           // Still advance the schedule so it doesn't fire continuously when re-enabled
