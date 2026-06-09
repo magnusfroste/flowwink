@@ -17,6 +17,7 @@ import {
 // outward-facing MCP gateway. Lives under skills/ (not pilot/) precisely because
 // it must work for external agents even when the FlowPilot module is disabled.
 import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/intent-scorer.ts";
+import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
 const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null }>();
@@ -801,24 +802,17 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
 
       const scope = groups && groups.length ? groups : filterGroups;
       const matchSkills = await loadExposedSkills(scope);
-      const defs = matchSkills
-        .map((s) => s.tool_definition)
-        .filter((d) => d?.function?.name);
+      const defs = matchSkills.map((s) => s.tool_definition);
 
-      let ranked = defs;
-      if (query) {
-        const usageBoost = await loadRecentUsageCounts(serviceClient()).catch(() => ({}));
-        ranked = scoreSkillsByIntent(defs, query, { maxSkills: limit, usageBoost });
-      }
-
-      const catalog = ranked.slice(0, limit).map((d: any) => ({
-        name: d.function.name,
-        description: d.function.description,
-        input_schema: d.function.parameters || { type: "object", properties: {} },
-      }));
+      const usageBoost = query
+        ? await loadRecentUsageCounts(serviceClient()).catch(() => ({}))
+        : {};
+      // Same catalog builder FlowPilot uses in-process (one dispatch surface,
+      // two transports). Ranks by intent and returns FULL contracts.
+      const catalog = buildSkillCatalog(defs, query, usageBoost, limit);
 
       return {
-        content: [{ type: "text" as const, text: JSON.stringify({ count: catalog.length, skills: catalog }, null, 2) }],
+        content: [{ type: "text" as const, text: JSON.stringify(catalog, null, 2) }],
       };
     },
   });
