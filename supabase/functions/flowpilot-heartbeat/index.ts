@@ -232,14 +232,22 @@ serve(async (req) => {
     const { data: hbOv } = await supabase
       .from('site_settings').select('value').eq('key', 'heartbeat_overrides').maybeSingle();
     const ov = (hbOv?.value || null) as
-      { tokenBudget?: number; maxIterations?: number; skillCategories?: string[]; lightContext?: boolean } | null;
+      { tokenBudget?: number; maxIterations?: number; skillCategories?: string[]; lightContext?: boolean; dispatchMode?: boolean } | null;
+    // Dispatch surface ON by default — the 200+ business skills reach the
+    // operator via search_skills/execute_skill (2 tools) instead of a pre-narrowed
+    // set baked into the tool array. Set heartbeat_overrides.dispatchMode=false to
+    // A/B the legacy pre-narrow path.
+    const dispatchMode = ov?.dispatchMode !== false;
     const light = !!ov?.lightContext;
 
     // 0. Integrity gate + context gathering in parallel. In lightContext mode the
     // analytical loaders (integrity gate, self-healing, CMS schema, cross-module
-    // insights, maturity scan) are stubbed — they dominate CPU and blow the local
-    // `functions serve` per-request limit — while the operator keeps its soul,
-    // memories, objectives, activity, stats and automations.
+    // insights, maturity scan) are stubbed to cut DB round-trips, tokens and cost
+    // for local fast-simulation — the operator keeps its soul, memories,
+    // objectives, activity, stats and automations. (These loaders are I/O-bound,
+    // not CPU-bound: full context-gathering runs locally in a few seconds. The
+    // thing that actually broke local full runs was reason()'s tool-array
+    // exceeding the provider's 128 cap on a tier reload — fixed in reason.ts.)
     const [integrityContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       light ? Promise.resolve('') : runIntegrityGate(supabase),
       loadWorkspaceFiles(supabase),
@@ -288,13 +296,14 @@ serve(async (req) => {
       maxIterations: maxIter,
       siteMaturity,
       customHeartbeatProtocol: customProtocol ?? undefined,
+      dispatchMode,
     });
 
     // 3. Delegate to the shared reason() loop — NO duplicated tool loop
     //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
     const reasonPromise = reason(supabase, [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, advance objectives, execute due automations.` },
+      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, then WORK your active objectives to a concrete result THIS cycle: for each active objective, check whether its expected output for this period already exists (a real artifact, not just a logged attempt). If it does NOT, produce it now — search_skills → generate the output yourself → execute_skill — before you reflect. Do not end on review/admin only; a heartbeat that touched no objective output is a wasted cycle.` },
     ], {
       scope: 'internal',
       maxIterations: maxIter,
@@ -302,9 +311,11 @@ serve(async (req) => {
       traceId,
       builtInToolGroups: ['memory', 'objectives', 'reflect', 'planning', 'automations-exec'],
       tokenBudget: TOKEN_BUDGET,
-      // Essential categories for autonomous work (~42 skills instead of 91)
-      // CRM + communication skills are available via chain_skills if needed
-      skillCategories,
+      dispatchMode,
+      // In dispatch mode ALL modules are reachable via search_skills (no pre-narrow,
+      // no provider tool-cap), so don't restrict the catalog. The legacy pre-narrow
+      // path still scopes to these categories to stay under the cap.
+      skillCategories: dispatchMode ? undefined : skillCategories,
       // Feed the relevance scorer the operator's actual goals — not just the
       // generic trigger phrase — so objective-fulfilling skills (write_blog_post,
       // newsletter, …) surface instead of only meta tools. (Fix for the

@@ -121,11 +121,12 @@ REPLY DIRECTIVES (use these exact strings when applicable):
 
 export const DEFAULT_HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 1. EVALUATE — Call evaluate_outcomes for unevaluated past actions. Score each with record_outcome.
-2. PLAN — For active objectives WITHOUT a plan, branch on cadence:
-   • RECURRING goal (says daily / weekly / monthly / "every day" / "varje dag" / etc.): set it up ONCE as a scheduled automation — automation_create with a cron trigger_config and the skill that produces the result, enabled=true. A one-shot plan runs once and never repeats; recurring goals are fulfilled by AUTOMATIONS, not plans. Call automation_list first to avoid duplicates; on later heartbeats just confirm it exists + is enabled, then move on. You ARE authorized to create/enable automations for your OWN recurring objectives — that is a standing instruction, not a user one-off.
-   • ONE-TIME goal: call decompose_objective and work the plan.
+2. WORK ACTIVE OBJECTIVES — branch by cadence AND whether the work needs your own reasoning:
+   • RECURRING + GENERATIVE (you must think/create — a daily blog, an analysis): the heartbeat IS your recurring wake, so DO IT HERE, inline, now — do NOT make an automation for it and do NOT bury it in a one-shot plan. First confirm it isn't already done this period (scan recent activity / today's outputs); if done, move on. If not: gather inputs (e.g. research_content, seo_content_brief), GENERATE the actual content yourself in your reasoning, then call the sink skill with the finished result — write_blog_post needs a real {title, content} and will NOT generate from a topic (skill_read it if unsure).
+   • RECURRING + DETERMINISTIC, or a cadence finer than the heartbeat (a self-contained skill on a schedule — weekly digest, reconciliation): set it up ONCE via automation_create (cron trigger + skill, enabled=true). automation_list first to avoid duplicates; later heartbeats just confirm it exists. You ARE authorized to create automations for your OWN recurring objectives.
+   • ONE-TIME goal without a plan: call decompose_objective, then advance_plan.
 3. ADVANCE — Execute one-time objective steps IN PRIORITY ORDER (highest score first). Use advance_plan with chain=true.
-4. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation; create any missing automation a recurring objective needs (step 2).
+4. AUTOMATIONS — Execute DUE (⏰) automations via execute_automation.
 5. PROPOSE — If data warrants it, propose max 1 new objective via propose_objective.
 6. REFLECT — Call reflect to analyze the past 7 days. Save learnings to memory.
 
@@ -180,6 +181,17 @@ RULES:
 - USE tools immediately when asked. Call multiple in parallel when independent.
 - After tool results, call MORE tools if task isn't done.
 - Summarize concisely after actions complete.`);
+  }
+
+  // Tool-access model for dispatch mode: only meta-tools are loaded directly;
+  // every business skill is reached via search_skills → execute_skill. Without
+  // this, the operator tries to call skill names (write_blog_post, …) that aren't
+  // in its tool list and stalls. (Same 2-tool surface external agents use.)
+  if (input.dispatchMode) {
+    parts.push(`SKILL ACCESS (IMPORTANT): Only meta-tools (memory, objectives, planning, automations, outcomes) are loaded directly. EVERY other capability — writing/researching content, CRM, commerce, communication, analytics, etc. — is reached in TWO steps:
+1. search_skills({query}) — describe the task in natural language; it returns the most relevant skills WITH their full input_schema (required args included).
+2. execute_skill({name, arguments}) — run the chosen skill, passing arguments that match that schema.
+Do NOT call a business skill name directly (it is not in your tool list). When an objective needs real work done (e.g. "write today's blog"), search for the skill, then execute it with fully-formed arguments — including any content you must generate yourself first.`);
   }
 
   // Layer 4: Domain Context (injected by domain pack — e.g. CMS schema)

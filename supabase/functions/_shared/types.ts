@@ -21,6 +21,10 @@ export interface PromptCompilerInput {
   siteMaturity?: SiteMaturity;
   customHeartbeatProtocol?: string;
   chatSystemPrompt?: string;
+  /** Dispatch mode: business skills are reached via search_skills/execute_skill,
+   *  not loaded as direct tools. Injects the tool-access instruction so the
+   *  operator discovers skills by intent instead of calling unloaded tool names. */
+  dispatchMode?: boolean;
   /** Domain-specific playbook for fresh/new sites (injected by domain pack) */
   freshSitePlaybook?: string;
 }
@@ -52,6 +56,15 @@ export interface ReasonConfig {
    * not hardcoded routing.)
    */
   scoringIntent?: string;
+  /**
+   * Dispatch mode: expose the 200+ business skills behind a 2-tool surface
+   * (search_skills + execute_skill) instead of pre-baking a pre-narrowed set
+   * into the tool array. Meta/built-in tools stay direct. This is the same
+   * pattern the external MCP gateway uses (?mode=dispatch) — sharing the
+   * relevance engine AND the dispatch loop. Eliminates the provider tool-array
+   * cap and per-tier contract truncation regardless of how many skills exist.
+   */
+  dispatchMode?: boolean;
 }
 
 export interface ReasonResult {

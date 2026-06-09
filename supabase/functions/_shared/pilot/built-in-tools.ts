@@ -55,8 +55,8 @@ const SOUL_TOOL = [
 ];
 
 const PLANNING_TOOLS = [
-  { type: 'function', function: { name: 'decompose_objective', description: 'Break an objective into 3-7 ordered steps using AI planning.', parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID to decompose' } }, required: ['objective_id'] } } },
-  { type: 'function', function: { name: 'advance_plan', description: "Execute the next pending step(s) in an objective's plan with automatic chaining (up to 4 steps).", parameters: { type: 'object', properties: { objective_id: { type: 'string' }, chain: { type: 'boolean', description: 'Auto-chain consecutive steps (default: true)' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'decompose_objective', description: "Break a ONE-TIME objective into 3-7 ordered steps using AI planning. Use when: a goal is a finite project with a clear end state. NOT for: recurring/cadence goals (daily/weekly/'every day'/'varje dag'/etc.) — those are NOT plans and a plan completes once then never repeats; fulfil recurring work by DOING it each heartbeat (search_skills → generate the output yourself → execute_skill) or, for self-contained skills, via a cron automation. NOT for: work you can finish right now in this turn.", parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID to decompose' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'advance_plan', description: "Execute the next pending step(s) of an existing one-time plan, auto-chaining up to 4 steps. NOT for recurring objectives. NOTE: advance_plan does NOT generate content — a step that runs a generative skill (e.g. write_blog_post) FAILS unless real content was pre-supplied in its skill_args. Generative work must be produced inline (search_skills → generate → execute_skill), not delegated to a plan step.", parameters: { type: 'object', properties: { objective_id: { type: 'string' }, chain: { type: 'boolean', description: 'Auto-chain consecutive steps (default: true)' } }, required: ['objective_id'] } } },
   { type: 'function', function: { name: 'propose_objective', description: 'Proactively create a new objective based on signal patterns or strategic gaps.', parameters: { type: 'object', properties: { goal: { type: 'string' }, reason: { type: 'string' }, constraints: { type: 'object' }, success_criteria: { type: 'object' } }, required: ['goal', 'reason'] } } },
 ];
 
@@ -209,7 +209,48 @@ const OUTCOME_TOOLS = [
   },
 ];
 
+// Dispatch surface — the 2-tool window onto ALL business skills. Mirrors the
+// external MCP gateway's ?mode=dispatch tools so the internal operator discovers
+// and runs skills the same way external agents do (search by intent → execute by
+// name), without ever loading 200+ schemas into the model's tool array.
+const DISPATCH_TOOLS = [
+  {
+    type: 'function', function: {
+      name: 'search_skills',
+      description: 'Discover the most relevant skills for what you want to do. Returns ranked skills with their FULL contract (name, description, input_schema incl. required args). Use when: you need a capability beyond the built-in meta-tools (write/research content, CRM, commerce, comms, analytics, …). Then call execute_skill with the chosen name. NOT for: running a skill — use execute_skill.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Natural-language description of the task you want to accomplish.' },
+          limit: { type: 'number', description: 'Max results (default 20, max 40).' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function', function: {
+      name: 'execute_skill',
+      description: 'Run a skill by exact name (typically one returned by search_skills). Pass its arguments in `arguments`, matching the input_schema search_skills gave you — including all required fields. Use when: you have chosen a skill and have its arguments ready. NOT for: discovery — call search_skills first.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Exact skill name as returned by search_skills.' },
+          arguments: { type: 'object', description: 'Arguments object for the skill, per its input_schema.', additionalProperties: true },
+        },
+        required: ['name'],
+      },
+    },
+  },
+];
+
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+// The dispatch tools are not part of a named group — reason() appends them
+// whenever dispatchMode is on, regardless of which meta-groups are loaded.
+export function getDispatchTools(): any[] {
+  return [...DISPATCH_TOOLS];
+}
 
 export function getBuiltInTools(groups: BuiltInToolGroup[]): any[] {
   const tools: any[] = [];
@@ -250,6 +291,7 @@ export const BUILT_IN_TOOL_NAMES = new Set([
   'skill_pack_list', 'skill_pack_install',
   'chain_skills',
   'evaluate_outcomes', 'record_outcome',
+  'search_skills', 'execute_skill',
 ]);
 
 export function isBuiltInTool(name: string): boolean {

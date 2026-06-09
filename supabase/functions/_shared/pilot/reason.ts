@@ -15,6 +15,7 @@ import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
+import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
 import {
   handleMemoryWrite,
@@ -55,7 +56,7 @@ import {
   handleAutomationUpdate,
   handleAutomationDelete,
 } from './handlers.ts';
-import { getBuiltInTools } from './built-in-tools.ts';
+import { getBuiltInTools, getDispatchTools } from './built-in-tools.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,11 @@ export function resolveSkillBudgetTier(tokenBudget: number, tokensUsed: number):
   if (pct < 0.75) return 'compact';
   return 'drop';
 }
+
+// Providers cap the tool array per request — OpenAI rejects >128 with a 400
+// (`array_above_max_length`). Keep headroom below that so built-in + skill tools
+// always fit, even on a tier reload that repacks the full skill set.
+const MAX_TOOLS = 120;
 
 function compactToolDefinition(td: any): any {
   const clone = JSON.parse(JSON.stringify(td));
@@ -811,26 +817,50 @@ export async function reason(
     const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
 
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
+    const dispatchMode = !!config.dispatchMode;
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
+    if (dispatchMode) builtInTools.push(...getDispatchTools());
     let currentSkillTier: SkillBudgetTier = initialTier;
-    // Session cache: load raw skills once, reuse on tier changes
-    const skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
-    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
-    
-    // Intent-based adaptive tool window (OpenClaw alignment: no hardcoded routing, just smart filtering)
-    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
+
     // Score against what the operator is actually trying to do, not just the
     // trigger phrase. config.scoringIntent (e.g. the active objectives) is folded
     // in so the shared relevance engine surfaces objective-fulfilling skills a
-    // generic meta trigger would otherwise rank out. Same scorer external agents
-    // use via search_skills — now fed a real intent on the internal path too.
+    // generic meta trigger would otherwise rank out.
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
     const scoringIntent = [config.scoringIntent, lastUserMsg].filter(Boolean).join('\n');
-    if (scoringIntent && skillTools.length > 25) {
-      const usageBoost = await loadRecentUsageCounts(supabase);
-      skillTools = scoreSkillsByIntent(skillTools, scoringIntent, { maxSkills: 25, usageBoost });
+    const usageBoost = (scoringIntent || dispatchMode) ? await loadRecentUsageCounts(supabase).catch(() => ({})) : {};
+
+    // Two ways the 200+ business skills reach the model:
+    //  • dispatchMode — behind search_skills / execute_skill (2 tools). We load
+    //    the raw catalog ONCE for search ranking; nothing is baked into the tool
+    //    array, so the provider tool-cap can never be hit and no contract is ever
+    //    truncated, regardless of how many skills exist. Same loop the external
+    //    MCP gateway uses (?mode=dispatch).
+    //  • pre-narrow (legacy) — bake the top-N relevant skills straight into the
+    //    tool array, capped to fit the provider limit (capSkillTools), and
+    //    re-applied on every tier reload (else the compact tier repacks the FULL
+    //    set and OpenAI 400s with array_above_max_length).
+    const capSkillTools = (tools: any[]): any[] => {
+      let t = tools;
+      if (scoringIntent && t.length > 25) {
+        t = scoreSkillsByIntent(t, scoringIntent, { maxSkills: 25, usageBoost });
+      }
+      const room = MAX_TOOLS - builtInTools.length - (config.additionalTools || []).length;
+      return t.length > room ? t.slice(0, Math.max(0, room)) : t;
+    };
+
+    let skillTools: any[] = [];
+    let dispatchDefs: any[] = [];   // full tool_definitions, searched on demand
+    let skillCache: any;            // raw-skill cache reused across tier reloads (pre-narrow only)
+    if (dispatchMode) {
+      const raw = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
+      dispatchDefs = (raw?.skills || []).map((s: any) => s.tool_definition).filter((d: any) => d?.function?.name);
+      console.log(`[reason] trace=${traceId} Dispatch mode: ${dispatchDefs.length} skills reachable via search_skills/execute_skill, ${builtInTools.length} built-in tools in context${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
+    } else {
+      skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
+      skillTools = capSkillTools(await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache));
+      console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     }
-    
-    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
     let conversationMessages = await pruneConversationHistory(messages, supabase);
@@ -881,12 +911,13 @@ export async function reason(
         }
       }
 
-      // Dynamic skill tier degradation
+      // Dynamic skill tier degradation (pre-narrow only — dispatch keeps no
+      // skills in the tool array, so there is nothing to reload or re-compact).
       const newTier = resolveSkillBudgetTier(tokenBudget, totalTokenUsage.total_tokens);
-      if (newTier !== currentSkillTier) {
+      if (!dispatchMode && newTier !== currentSkillTier) {
         console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
         currentSkillTier = newTier;
-        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
+        skillTools = capSkillTools(await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache));
         allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
         console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
@@ -959,9 +990,19 @@ export async function reason(
       let turnErrors = 0;
 
       for (const tc of msg.tool_calls) {
-        const fnName = tc.function.name;
+        let fnName = tc.function.name;
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
+
+        // Dispatch sugar: execute_skill({name, arguments}) unwraps to a direct
+        // call on the named skill, so every guard below (circuit breaker, same-
+        // action detection, self-repair, skill/objective tracking) keys on the
+        // REAL skill name — not the "execute_skill" wrapper.
+        if (fnName === 'execute_skill' && typeof fnArgs?.name === 'string' && fnArgs.name) {
+          const inner = fnArgs.name;
+          fnArgs = (fnArgs.arguments && typeof fnArgs.arguments === 'object') ? fnArgs.arguments : {};
+          fnName = inner;
+        }
 
         // Circuit breaker — skip skills that have tripped
         if (circuitBrokenSkills.has(fnName)) {
@@ -1002,7 +1043,12 @@ export async function reason(
         while (retryCount <= MAX_SELF_REPAIR_RETRIES) {
           try {
             const argsToUse = retryCount === 0 ? fnArgs : { ...fnArgs, _retry: retryCount, _prev_error: lastError };
-            result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId);
+            // search_skills is served in-process from the raw catalog loaded for
+            // dispatch mode — it ranks via the shared engine and returns FULL
+            // contracts, so the model never calls a skill with the wrong args.
+            result = fnName === 'search_skills'
+              ? buildSkillCatalog(dispatchDefs, String(argsToUse?.query || ''), usageBoost, Math.min(Number(argsToUse?.limit) || DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT))
+              : await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId);
           } catch (err: any) {
             result = { error: err.message };
           }
