@@ -15,9 +15,20 @@ Deno.serve(async (req) => {
   try {
             const supabase = getServiceClient();
 
-    // Determine base URL from request or fallback
+    // Determine base URL — NEVER hardcode a domain. Each self-hosted instance
+    // must advertise its OWN domain so SEO/AEO is 100% the customer's brand.
+    // Precedence: explicit ?base_url= (the Vercel proxy passes the request host)
+    // → the site's configured siteUrl (site_settings key='general') → the
+    // request origin as a last resort.
     const url = new URL(req.url);
-    const baseUrl = url.searchParams.get('base_url') || 'https://demo.flowwink.com';
+    let baseUrl = url.searchParams.get('base_url') || '';
+    if (!baseUrl) {
+      const { data: general } = await supabase
+        .from('site_settings').select('value').eq('key', 'general').maybeSingle();
+      baseUrl = ((general?.value as Record<string, unknown> | null)?.siteUrl as string) || '';
+    }
+    if (!baseUrl) baseUrl = url.origin;
+    baseUrl = baseUrl.replace(/\/+$/, '');
 
     // Fetch published pages
     const { data: pages } = await supabase

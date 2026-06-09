@@ -3,6 +3,19 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Pinterest|redditbot|vkShare|Embedly|Iframely|SkypeUriPreview).*"
+        }
+      ],
+      "destination": "/api/og?path=/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
