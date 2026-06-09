@@ -6187,6 +6187,19 @@ async function executeDbAction(
         return out;
       };
 
+      // quotes.quote_number is NOT NULL with no default — the admin UI generates
+      // QUO-NNNN client-side, so the skill path must too or create always fails.
+      const generateQuoteNumber = async (): Promise<string> => {
+        const { data } = await supabase.from('quotes')
+          .select('quote_number').order('created_at', { ascending: false }).limit(50);
+        let max = 0;
+        for (const row of (data || []) as Array<{ quote_number: string | null }>) {
+          const m = /(\d+)\s*$/.exec(row.quote_number || '');
+          if (m) max = Math.max(max, parseInt(m[1], 10));
+        }
+        return `QUO-${String(max + 1).padStart(4, '0')}`;
+      };
+
       const insertQuoteItems = async (quote_id: string, rawItems: unknown): Promise<number> => {
         if (!Array.isArray(rawItems) || rawItems.length === 0) return 0;
         const rows = rawItems.map((it: any, idx: number) => ({
@@ -6237,10 +6250,18 @@ async function executeDbAction(
                     : Array.isArray(a.line_items) ? a.line_items
                     : null;
         const insertData = stripQuoteInternal(a);
+        // The table stores valid_until (a date) — accept the friendlier
+        // valid_days and convert, instead of crashing on an unknown column.
+        if (insertData.valid_days !== undefined) {
+          const days = Number(insertData.valid_days) || 30;
+          delete insertData.valid_days;
+          insertData.valid_until = new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
+        }
         if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
           throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
         }
         if (a._caller_user_id && !insertData.created_by) insertData.created_by = a._caller_user_id;
+        if (!insertData.quote_number) insertData.quote_number = await generateQuoteNumber();
         const { data, error } = await supabase.from('quotes')
           .insert(insertData).select('id, quote_number').single();
         if (error) throw new Error(`Create quote failed: ${error.message}`);
@@ -6292,7 +6313,122 @@ async function executeDbAction(
         return { deleted: true, quote_id: qid };
       }
 
-      throw new Error(`Unknown quotes action: ${action}. Supported: list, get, create, update, add_item, delete.`);
+      // ── Lifecycle actions (the skill schema advertised these but the handler
+      //    never implemented them — quote-to-cash was broken in the middle).
+      //    Modeled on Odoo's quotation flow (draft → sent → accepted → invoice),
+      //    kept simpler: status transitions + a direct conversion.
+      if (action === 'send') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const { data, error } = await supabase.from('quotes')
+          .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq('id', qid).select('id, quote_number, status').single();
+        if (error) throw new Error(`Send quote failed: ${error.message}`);
+        return { sent: true, quote_id: data.id, quote_number: data.quote_number, status: data.status, note: 'Status set to sent. Email delivery is a separate concern (requires an email integration).' };
+      }
+
+      if (action === 'request_approval') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const { data, error } = await supabase.from('quotes')
+          .update({ status: 'pending_approval', updated_at: new Date().toISOString() })
+          .eq('id', qid).select('id, quote_number, status').single();
+        if (error) throw new Error(`Request approval failed: ${error.message}`);
+        return { requested: true, quote_id: data.id, status: data.status };
+      }
+
+      if (action === 'list_templates') {
+        const { data, error } = await supabase.from('quote_templates')
+          .select('id, name, description, currency, default_valid_days, is_active')
+          .eq('is_active', true).order('name');
+        if (error) throw new Error(`List templates failed: ${error.message}`);
+        return { templates: data || [], count: (data || []).length };
+      }
+
+      if (action === 'use_template') {
+        const a = args as any;
+        const tid = a.template_id;
+        if (!tid) throw new Error('template_id is required (see list_templates)');
+        const { data: tpl, error: tplErr } = await supabase.from('quote_templates')
+          .select('*').eq('id', tid).maybeSingle();
+        if (tplErr || !tpl) throw new Error(`Template not found: ${tid}`);
+        const insertData: Record<string, any> = {
+          customer_name: a.customer_name || null,
+          customer_email: a.customer_email || null,
+          lead_id: a.lead_id || null,
+          deal_id: a.deal_id || null,
+          currency: tpl.currency || 'SEK',
+          intro_text: tpl.intro_text || null,
+          terms_text: tpl.terms_text || null,
+          valid_until: new Date(Date.now() + (tpl.default_valid_days || 30) * 86400000).toISOString().split('T')[0],
+        };
+        if (!insertData.lead_id && !insertData.deal_id && !insertData.customer_email) {
+          throw new Error('Quote needs at least one of: lead_id, deal_id, customer_email');
+        }
+        insertData.quote_number = await generateQuoteNumber();
+        const { data, error } = await supabase.from('quotes')
+          .insert(insertData).select('id, quote_number').single();
+        if (error) throw new Error(`Create quote from template failed: ${error.message}`);
+        const itemsInserted = await insertQuoteItems(data.id, Array.isArray(tpl.items) ? tpl.items : []);
+        return { created: true, quote_id: data.id, quote_number: data.quote_number, from_template: tpl.name, items_inserted: itemsInserted };
+      }
+
+      if (action === 'convert_to_invoice') {
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const [quoteRes, itemsRes] = await Promise.all([
+          supabase.from('quotes').select('*').eq('id', qid).maybeSingle(),
+          supabase.from('quote_items').select('*').eq('quote_id', qid).order('position'),
+        ]);
+        if (quoteRes.error || !quoteRes.data) throw new Error(`Quote not found: ${qid}`);
+        const quote = quoteRes.data;
+        if (quote.invoice_id) return { converted: false, invoice_id: quote.invoice_id, note: 'Quote already has an invoice' };
+        const qItems = itemsRes.data || [];
+        if (qItems.length === 0) throw new Error('Quote has no line items to invoice');
+        // Map quote_items → the invoices line_items jsonb shape.
+        const lineItems = qItems.map((it: any) => ({
+          description: it.description, qty: Number(it.quantity) || 1,
+          unit_price_cents: Number(it.unit_price_cents) || 0,
+        }));
+        const subtotal = lineItems.reduce((s: number, it: any) => s + it.qty * it.unit_price_cents, 0);
+        const taxRate = Number(quote.tax_rate ?? 0.25);
+        const taxCents = Math.round(subtotal * taxRate);
+        // Same INV-YYYY-NNNNN series the invoices handler uses (it's scoped to
+        // that case block, so regenerate here).
+        const yr = new Date().getFullYear();
+        const { data: lastInv } = await supabase.from('invoices')
+          .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
+          .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
+        let nextNum = 1;
+        const m = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
+        if (m) nextNum = parseInt(m[1], 10) + 1;
+        const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
+        const { data: inv, error: invErr } = await supabase.from('invoices').insert({
+          invoice_number: invoiceNumber,
+          customer_name: quote.customer_name || '',
+          customer_email: quote.customer_email || null,
+          lead_id: quote.lead_id || null,
+          deal_id: quote.deal_id || null,
+          line_items: lineItems,
+          subtotal_cents: subtotal,
+          tax_rate: taxRate,
+          tax_cents: taxCents,
+          total_cents: subtotal + taxCents,
+          currency: quote.currency || 'SEK',
+          issue_date: new Date().toISOString().split('T')[0],
+          status: 'draft',
+        }).select('id, invoice_number, total_cents').single();
+        if (invErr) throw new Error(`Create invoice from quote failed: ${invErr.message}`);
+        await supabase.from('quotes')
+          .update({ invoice_id: inv.id, status: 'accepted', accepted_at: quote.accepted_at || new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq('id', qid);
+        return { converted: true, quote_id: qid, invoice_id: inv.id, invoice_number: inv.invoice_number, total_cents: inv.total_cents };
+      }
+
+      throw new Error(`Unknown quotes action: ${action}. Supported: list, get, create, update, add_item, delete, send, request_approval, list_templates, use_template, convert_to_invoice.`);
     }
 
     case 'expenses': {
