@@ -51,10 +51,28 @@ interface ReasonConfig {
   traceId?: string;                     // Correlation ID for observability
   tokenBudget?: number;                 // Token limit for entire run
   skillCategories?: string[];           // Filter DB skills by category
+  scoringIntent?: string;               // Extra intent fed to scoreSkillsByIntent (see below)
 }
 ```
 
 **Note:** `reason()` receives a `supabase` client, `conversationId`, and `messages` array as separate parameters alongside this config. The config controls behavior, not data.
+
+---
+
+## Skill Relevance Scoring (Adaptive Tool Window)
+
+When more than 25 skill tools are loaded, `reason()` narrows them to the 25 most relevant using the shared **Skill Relevance Engine** (`scoreSkillsByIntent` in `_shared/skills/intent-scorer.ts`) — the same scorer external agents invoke via `search_skills` in `?mode=dispatch`.
+
+The intent string fed to the scorer is composed as:
+
+```ts
+const scoringIntent = [config.scoringIntent, lastUserMsg].filter(Boolean).join('\n');
+```
+
+- **`config.scoringIntent`** — caller-supplied context describing what the operator is actually trying to accomplish (e.g. the active objectives passed in by `flowpilot-heartbeat`). Without this, a generic trigger phrase like `"heartbeat"` would only surface meta-tools and miss content or domain skills.
+- **`lastUserMsg`** — the most recent user-role message in the conversation, providing conversational grounding.
+
+This means FlowPilot internally and external agents via MCP now use the same scorer with equivalent intent quality. **Callers that supply a meaningful `scoringIntent` get objective-relevant skills; callers that omit it fall back to last-message scoring** (fine for interactive chat, weak for autonomous loops).
 
 ---
 

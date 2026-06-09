@@ -179,7 +179,7 @@ The system has 200+ skills. Exposing all of them as individual MCP tools floods 
 
 **Skill relevance is a platform primitive, not a FlowPilot-internal one.** The component is the **Skill Relevance Engine** (`scoreSkillsByIntent` / `loadRecentUsageCounts` in `_shared/skills/intent-scorer.ts`). Name it for what it does (ranks skills by intent), NOT for a transport — it is neither "MCP" nor "FlowPilot" specific. It has **two consumers**:
 
-1. **FlowPilot** (`reason.ts`) — internal, every ReAct turn: narrows 200+ skills → ~25 relevant ones. No MCP involved here; this is a direct in-process call over the DB-loaded skill set.
+1. **FlowPilot** (`reason.ts`) — internal, every ReAct turn: narrows 200+ skills → ~25 relevant ones. No MCP involved here; this is a direct in-process call over the DB-loaded skill set. The scorer receives `config.scoringIntent` (e.g. active objectives) concatenated with the last user message — so autonomous loops surface objective-relevant skills, not just meta-tools.
 2. **The outward MCP gateway** (`search_skills` in `?mode=dispatch`) — external operators, the same ranking exposed as a tool.
 
 It lives in `_shared/skills/` (NOT under `pilot/`) precisely because the gateway must work for external agents even when the FlowPilot module is disabled. When promoting capability-discovery logic, keep it here. FlowPilot's actual intelligence (soul, objectives, ReAct decisions) stays in FlowPilot; only the "which skill is relevant" lookup is shared. Avoid naming it "Router"/"Selector" — selection is by scoring on metadata, not hardcoded dispatch (Law 1).
