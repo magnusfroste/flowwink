@@ -1,0 +1,21 @@
+{
+  "module": "pricelists",
+  "odoo_app": "Sales pricelists (product.pricelist)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "versioned", "name": "Versioned pricelists", "odoo": true, "status": "done", "weight": 1, "verify": "versioned pricelist records" },
+    { "id": "per_customer_period", "name": "Per customer/period", "odoo": true, "status": "done", "weight": 1, "verify": "pricelist scoped per customer/period" },
+    { "id": "priority_validity", "name": "Priority + validity dates", "odoo": true, "status": "done", "weight": 1, "verify": "priority and validity date fields" },
+    { "id": "fixed_or_discount", "name": "Fixed price or discount %", "odoo": true, "status": "done", "weight": 1, "verify": "fixed price or discount % rule type" },
+    { "id": "price_resolution", "name": "Best-price resolution RPC", "odoo": true, "status": "done", "weight": 1, "verify": "best-price resolution RPC" },
+
+    { "id": "tiered_quantity", "name": "Tiered quantity discounts", "odoo": true, "status": "missing", "weight": 2, "verify": "quantity-tier discount rules" },
+    { "id": "dynamic_pricing", "name": "Time-based dynamic pricing", "odoo": true, "status": "missing", "weight": 1, "verify": "time-based dynamic pricing rules" },
+    { "id": "segment_pricing", "name": "Customer-segment/country pricing", "odoo": true, "status": "missing", "weight": 1, "verify": "segment/country-based pricing rules" },
+    { "id": "supplier_pricelists", "name": "Supplier/vendor pricelists", "odoo": true, "status": "missing", "weight": 1, "verify": "supplier/vendor pricelist records" },
+    { "id": "formula_pricing", "name": "Formula (cost+margin) pricing", "odoo": true, "status": "missing", "weight": 1, "verify": "cost+margin formula pricing rule" },
+    { "id": "pos_subscription_application", "name": "Apply to POS/subscriptions", "odoo": true, "status": "missing", "weight": 1, "verify": "pricelist applied to POS and subscriptions" },
+    { "id": "version_history", "name": "Pricelist version history", "odoo": true, "status": "missing", "weight": 1, "verify": "pricelist version history records" }
+  ]
+}

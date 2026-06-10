@@ -1,0 +1,22 @@
+{
+  "module": "returns",
+  "odoo_app": "Inventory returns / RMA",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "rma_lifecycle", "name": "RMA lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "RMA status lifecycle" },
+    { "id": "line_items", "name": "Return line items", "odoo": true, "status": "done", "weight": 1, "verify": "return line items" },
+    { "id": "restock_event", "name": "Restock stock-movement event", "odoo": true, "status": "done", "weight": 1, "verify": "restock stock-movement event" },
+    { "id": "refund_methods", "name": "Refund methods (Stripe/manual/credit)", "odoo": true, "status": "done", "weight": 1, "verify": "refund methods: Stripe/manual/credit" },
+
+    { "id": "inspection_qc", "name": "Return inspection/QC state", "odoo": true, "status": "missing", "weight": 2, "verify": "return inspection/QC state" },
+    { "id": "return_to_vendor", "name": "Return-to-vendor flow", "odoo": true, "status": "missing", "weight": 2, "verify": "return-to-vendor flow" },
+    { "id": "partial_refund", "name": "Partial refunds", "odoo": true, "status": "missing", "weight": 2, "verify": "partial refund support" },
+    { "id": "reason_codes", "name": "Return reason codes", "odoo": true, "status": "missing", "weight": 1, "verify": "return reason codes" },
+    { "id": "restocking_fee", "name": "Restocking fee logic", "odoo": true, "status": "missing", "weight": 1, "verify": "restocking fee logic" },
+    { "id": "reason_analytics", "name": "Return reason analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "return reason analytics" },
+    { "id": "return_email", "name": "Automated return email/label", "odoo": true, "status": "missing", "weight": 1, "verify": "automated return email/label" },
+    { "id": "reverse_logistics", "name": "Reverse logistics pickup", "odoo": true, "status": "missing", "weight": 1, "verify": "reverse logistics pickup" },
+    { "id": "condition_actions", "name": "Condition-based actions", "odoo": true, "status": "missing", "weight": 1, "verify": "condition-based actions on returns" }
+  ]
+}

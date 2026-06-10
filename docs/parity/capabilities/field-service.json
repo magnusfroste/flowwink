@@ -1,0 +1,23 @@
+{
+  "module": "field-service",
+  "odoo_app": "Field Service (industry_fsm)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "order_lifecycle", "name": "Service-order lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "Service-order status lifecycle supported" },
+    { "id": "visit_scheduling", "name": "Visit scheduling", "odoo": true, "status": "done", "weight": 1, "verify": "Visit scheduling with dates" },
+    { "id": "line_items", "name": "Labor/material/expense lines", "odoo": true, "status": "done", "weight": 1, "verify": "Labor/material/expense line items on order" },
+    { "id": "order_number", "name": "Auto order number", "odoo": true, "status": "done", "weight": 1, "verify": "Auto-generated order number" },
+    { "id": "completion_event", "name": "Completion→invoice event", "odoo": true, "status": "done", "weight": 1, "verify": "Completion fires invoice event" },
+
+    { "id": "technician_availability", "name": "Technician availability check", "odoo": true, "status": "missing", "weight": 2, "verify": "Technician availability check before scheduling" },
+    { "id": "signature_proof", "name": "Signature/photo proof", "odoo": true, "status": "partial", "weight": 2, "verify": "Signature/photo capture as proof of service", "notes": "service_visits has signature_url + signed_at columns, but no skill/handler/UI writes them — schema only, no capture flow." },
+    { "id": "parts_inventory_deduction", "name": "Material stock deduction", "odoo": true, "status": "missing", "weight": 2, "verify": "Material lines deduct from stock" },
+    { "id": "visit_time_tracking", "name": "Actual visit time tracking", "odoo": true, "status": "partial", "weight": 1, "verify": "Actual on-site visit time tracked", "notes": "service_visits has actual_start + actual_end columns, but no skill/handler/UI writes them — schema only, no clock-in/out flow." },
+    { "id": "sla_targets", "name": "Service SLA targets", "odoo": true, "status": "missing", "weight": 1, "verify": "Service SLA targets on orders" },
+    { "id": "service_packages", "name": "Service package templates", "odoo": true, "status": "missing", "weight": 1, "verify": "Reusable service package templates" },
+    { "id": "recurring_orders", "name": "Recurring service orders", "odoo": true, "status": "missing", "weight": 1, "verify": "Recurring service order generation" },
+    { "id": "territory_routing", "name": "Territory/route optimization", "odoo": true, "status": "missing", "weight": 1, "verify": "Territory/route optimization for visits" },
+    { "id": "contract_linking", "name": "Service contract linking", "odoo": true, "status": "missing", "weight": 1, "verify": "Orders link to service contracts" }
+  ]
+}

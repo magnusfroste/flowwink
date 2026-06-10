@@ -1,0 +1,25 @@
+{
+  "module": "pos",
+  "odoo_app": "Point of Sale (pos.order)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "registers", "name": "Registers", "odoo": true, "status": "done", "weight": 1, "verify": "pos register records" },
+    { "id": "sessions", "name": "Sessions w/ cash variance", "odoo": true, "status": "done", "weight": 1, "verify": "pos sessions with cash variance" },
+    { "id": "sales", "name": "Sales w/ receipt no.", "odoo": true, "status": "done", "weight": 1, "verify": "pos sales with receipt number" },
+    { "id": "split_payments", "name": "Split payments", "odoo": true, "status": "done", "weight": 1, "verify": "split payment support" },
+    { "id": "sale_lines", "name": "Sale lines", "odoo": true, "status": "done", "weight": 1, "verify": "pos sale line items" },
+    { "id": "z_reports", "name": "Z-report totals", "odoo": true, "status": "done", "weight": 1, "verify": "Z-report totals" },
+    { "id": "stock_movement_events", "name": "Stock-movement events", "odoo": true, "status": "done", "weight": 1, "verify": "stock-movement events emitted on sale" },
+
+    { "id": "loyalty", "name": "Loyalty/points", "odoo": true, "status": "missing", "weight": 2, "verify": "loyalty/points program" },
+    { "id": "offline_sync", "name": "Offline sync", "odoo": true, "status": "missing", "weight": 2, "verify": "offline sale sync" },
+    { "id": "tipping", "name": "Tipping", "odoo": true, "status": "missing", "weight": 1, "verify": "tipping support on sales" },
+    { "id": "receipt_templates", "name": "Branded receipt templates", "odoo": true, "status": "missing", "weight": 1, "verify": "branded receipt templates" },
+    { "id": "invoice_linking", "name": "Receipt→invoice linking", "odoo": true, "status": "missing", "weight": 1, "verify": "receipt→invoice linking" },
+    { "id": "refund_workflow", "name": "Refund/return workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "pos refund/return workflow" },
+    { "id": "barcode_scanning", "name": "Barcode scanning UI", "odoo": true, "status": "missing", "weight": 1, "verify": "barcode scanning UI" },
+    { "id": "gift_card_balance", "name": "Gift-card balance", "odoo": true, "status": "missing", "weight": 1, "verify": "gift-card balance support" },
+    { "id": "table_management", "name": "Table/seat management (F&B)", "odoo": true, "status": "missing", "weight": 1, "verify": "table/seat management" }
+  ]
+}

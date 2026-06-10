@@ -1,0 +1,24 @@
+{
+  "module": "products",
+  "odoo_app": "Sales / Inventory (product.template, product.product, sale.order.line)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "crud", "name": "Product CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "manage_product skill list/create/update/delete" },
+    { "id": "base_price", "name": "Base price per product", "odoo": true, "status": "done", "weight": 1, "verify": "price_cents on products" },
+    { "id": "stock_tracking", "name": "Stock tracking flag + low-stock threshold", "odoo": true, "status": "done", "weight": 1, "verify": "track_inventory, low_stock_threshold" },
+    { "id": "pos_flag", "name": "POS availability flag + POS category", "odoo": true, "status": "done", "weight": 1, "verify": "available_in_pos, pos_category_id" },
+    { "id": "barcode", "name": "Barcode field", "odoo": true, "status": "done", "weight": 1, "verify": "barcode column" },
+    { "id": "category_single", "name": "Single product category", "odoo": true, "status": "partial", "weight": 1, "notes": "Only one category_id; Odoo has a category tree + multiple e-commerce categories", "verify": "category_id" },
+
+    { "id": "variants", "name": "Product variants (attributes → SKUs)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-01", "verify": "product_variants table + manage_variant skill", "notes": "Foundational. Blocks e-commerce, POS, inventory at once." },
+    { "id": "attribute_templates", "name": "Attribute templates (color/size/material)", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-01", "verify": "product_attributes + attribute_values tables" },
+    { "id": "order_lines_normalized", "name": "Normalized order lines (not JSONB)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-01", "verify": "order_items table replaces orders.metadata JSONB; FK to product_variant", "notes": "Audit-trail + reporting + inventory all depend on this." },
+    { "id": "uom", "name": "Multiple units of measure", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-01", "verify": "uom + uom_category tables, price-per-uom resolution" },
+    { "id": "partial_shipments", "name": "Partial shipment / partial fulfillment", "odoo": true, "status": "missing", "weight": 2, "verify": "fulfillment per order line, not binary order.fulfillment_status" },
+    { "id": "backorder", "name": "Backorder auto-creation on stockout", "odoo": true, "status": "missing", "weight": 1, "verify": "backorder records created when reserved > on-hand" },
+    { "id": "supplier_links", "name": "Supplier(s) + supplier price at product level", "odoo": true, "status": "missing", "weight": 1, "verify": "product_suppliers linking products to vendors" },
+    { "id": "product_media", "name": "Product image gallery + attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "product_media table; today only single image_url" },
+    { "id": "dropship", "name": "Drop-ship / consignment routes", "odoo": true, "status": "missing", "weight": 1, "verify": "route config on product" }
+  ]
+}

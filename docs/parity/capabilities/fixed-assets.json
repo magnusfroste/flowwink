@@ -1,0 +1,23 @@
+{
+  "module": "fixed-assets",
+  "odoo_app": "Accounting → Assets",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "registration", "name": "Asset registration + acquisition JE", "odoo": true, "status": "done", "weight": 1, "verify": "asset registration with acquisition journal entry" },
+    { "id": "straight_line", "name": "Straight-line depreciation", "odoo": true, "status": "done", "weight": 1, "verify": "straight-line depreciation" },
+    { "id": "declining", "name": "Declining-balance depreciation", "odoo": true, "status": "done", "weight": 1, "verify": "declining-balance depreciation" },
+    { "id": "monthly_posting", "name": "Monthly depreciation posting", "odoo": true, "status": "done", "weight": 1, "verify": "monthly depreciation posting" },
+    { "id": "accumulated", "name": "Accumulated depreciation tracking", "odoo": true, "status": "done", "weight": 1, "verify": "accumulated depreciation tracking" },
+    { "id": "disposal", "name": "Disposal w/ gain/loss JE", "odoo": true, "status": "done", "weight": 1, "verify": "asset disposal with gain/loss journal entry" },
+    { "id": "year_end_proposals", "name": "Year-end depreciation proposals", "odoo": true, "status": "done", "weight": 1, "verify": "year-end depreciation proposals" },
+
+    { "id": "impairment", "name": "Impairment/revaluation", "odoo": true, "status": "missing", "weight": 2, "verify": "asset impairment/revaluation" },
+    { "id": "lease_accounting", "name": "Lease accounting (IFRS16/ASC842)", "odoo": true, "status": "missing", "weight": 2, "verify": "lease accounting" },
+    { "id": "component_tracking", "name": "Asset component breakdown", "odoo": true, "status": "missing", "weight": 1, "verify": "asset component breakdown" },
+    { "id": "depreciation_methods_extra", "name": "Sum-of-years/unit-of-production", "odoo": true, "status": "missing", "weight": 1, "verify": "sum-of-years and unit-of-production depreciation" },
+    { "id": "asset_locations", "name": "Asset location/maintenance tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "asset location/maintenance tracking" },
+    { "id": "depreciation_override", "name": "Manual depreciation adjustment", "odoo": true, "status": "missing", "weight": 1, "verify": "manual depreciation adjustment" },
+    { "id": "schedule_report", "name": "Depreciation schedule report", "odoo": true, "status": "missing", "weight": 1, "verify": "depreciation schedule report" }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "module": "crm",
+  "odoo_app": "CRM (crm.lead, crm.stage)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "lead_crud", "name": "Lead CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "add_lead, manage_leads" },
+    { "id": "activities", "name": "Activities & tasks", "odoo": true, "status": "done", "weight": 1, "verify": "crm_task_* skills, manage_activities" },
+    { "id": "email_1to1", "name": "1:1 email to lead", "odoo": true, "status": "done", "weight": 1, "verify": "send_email_to_lead with Resend" },
+    { "id": "tags", "name": "Tags / saved views", "odoo": true, "status": "done", "weight": 1, "verify": "manage_tags, manage_saved_views" },
+    { "id": "scoring_basic", "name": "Lead scoring", "odoo": true, "status": "partial", "weight": 1, "notes": "Activity+recency only; Odoo has predictive scoring", "verify": "qualify_lead, score column" },
+
+    { "id": "custom_stages", "name": "Configurable pipeline stages (not status enum)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-03", "verify": "pipeline_stages table; CRM reads stages from config not enum", "notes": "Today only 4 hardcoded statuses. Shared engine with deals/tickets." },
+    { "id": "forecast", "name": "Forecasting (expected revenue × probability)", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-03", "verify": "probability per stage; weighted pipeline report" },
+    { "id": "bulk_email", "name": "Bulk email with unsubscribe lists", "odoo": true, "status": "missing", "weight": 2, "verify": "mass-mail with list management (overlaps newsletter)" },
+    { "id": "lost_reasons", "name": "Lost reasons + win-rate analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "lost_reason codes; win-rate report" },
+    { "id": "sms_channels", "name": "SMS / WhatsApp outreach", "odoo": true, "status": "missing", "weight": 1, "verify": "channel adapters (breadth track)" },
+    { "id": "consent_center", "name": "GDPR consent / preference center", "odoo": true, "status": "missing", "weight": 1, "verify": "consent tracking per contact" },
+
+    { "id": "ai_enrich", "name": "AI company enrichment", "odoo": false, "status": "done", "weight": 2, "verify": "enrich_company skill" },
+    { "id": "ai_prospect", "name": "Contact/prospect finder (Hunter)", "odoo": false, "status": "done", "weight": 1, "verify": "contact_finder skill" }
+  ]
+}

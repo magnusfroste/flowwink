@@ -1,0 +1,21 @@
+{
+  "module": "deals",
+  "odoo_app": "CRM/Sales (crm.lead opportunities)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "deal_crud", "name": "Deal CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "manage_deal skill list/create/update/delete" },
+    { "id": "stale_check", "name": "Stale-deal check", "odoo": true, "status": "done", "weight": 1, "verify": "stale-deal detection logic in deals module" },
+    { "id": "deal_to_quote", "name": "Deal→quote linkage", "odoo": true, "status": "done", "weight": 1, "verify": "deal links to quote record" },
+
+    { "id": "stages_basic", "name": "Stage flow (4 hardcoded)", "odoo": true, "status": "partial", "weight": 1, "notes": "Hardcoded enum; superseded by custom_stages", "verify": "stage enum on deals" },
+
+    { "id": "custom_stages", "name": "Configurable pipeline stages", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-03", "verify": "configurable deal_stages table" },
+    { "id": "probability_weighting", "name": "Stage probability weighting", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-03", "verify": "probability per stage; weighted pipeline value" },
+    { "id": "deal_templates", "name": "Deal/quote templates", "odoo": true, "status": "missing", "weight": 1, "verify": "deal/quote template records" },
+    { "id": "deal_teams", "name": "Deal team assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "team assignment on deals" },
+    { "id": "lost_reasons", "name": "Lost-reason codes", "odoo": true, "status": "missing", "weight": 1, "verify": "lost_reason codes on closed deals" },
+    { "id": "deal_history", "name": "Deal change history", "odoo": true, "status": "missing", "weight": 1, "verify": "deal change audit/history records" },
+    { "id": "multicurrency_conversion", "name": "Multi-currency auto-conversion", "odoo": true, "status": "missing", "weight": 1, "verify": "auto FX conversion on deal amounts" }
+  ]
+}

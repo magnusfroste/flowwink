@@ -1,0 +1,23 @@
+{
+  "module": "companies",
+  "odoo_app": "Contacts (res.partner companies)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "company_crud", "name": "Company CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "company CRUD" },
+    { "id": "lifecycle_stage", "name": "Lifecycle stage", "odoo": true, "status": "done", "weight": 1, "verify": "company lifecycle stage" },
+    { "id": "address_mgmt", "name": "Address management", "odoo": true, "status": "done", "weight": 1, "verify": "address management on companies" },
+
+    { "id": "ai_enrichment", "name": "AI domain enrichment", "odoo": false, "status": "done", "weight": 2, "verify": "AI domain enrichment of company data" },
+
+    { "id": "vat_tax_id", "name": "VAT/org/tax ID", "odoo": true, "status": "missing", "weight": 2, "verify": "VAT/org/tax ID fields" },
+    { "id": "credit_limit", "name": "Credit limit/AR scoring", "odoo": true, "status": "missing", "weight": 2, "verify": "credit limit/AR scoring" },
+    { "id": "company_hierarchy", "name": "Parent/subsidiary hierarchy", "odoo": true, "status": "missing", "weight": 1, "verify": "parent/subsidiary hierarchy" },
+    { "id": "employee_count", "name": "Numeric employee count", "odoo": true, "status": "missing", "weight": 1, "verify": "numeric employee count field" },
+    { "id": "revenue_tracking", "name": "Company revenue/ARR", "odoo": true, "status": "missing", "weight": 1, "verify": "company revenue/ARR tracking" },
+    { "id": "preferred_contact", "name": "Sales-rep assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "sales-rep assignment on company" },
+    { "id": "dup_detection", "name": "Duplicate detection/merge", "odoo": true, "status": "missing", "weight": 1, "verify": "duplicate detection/merge" },
+    { "id": "contact_roles", "name": "Contact roles (billing/shipping)", "odoo": true, "status": "missing", "weight": 1, "verify": "contact roles (billing/shipping)" },
+    { "id": "company_tags", "name": "Company tags", "odoo": true, "status": "missing", "weight": 1, "verify": "company tags" }
+  ]
+}

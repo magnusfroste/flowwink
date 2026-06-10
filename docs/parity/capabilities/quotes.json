@@ -1,0 +1,25 @@
+{
+  "module": "quotes",
+  "odoo_app": "Sales (sale.order quotation)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "lifecycle", "name": "Quote lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "quote status lifecycle (draft/sent/accepted/etc.)" },
+    { "id": "versioning", "name": "Quote versioning", "odoo": true, "status": "done", "weight": 1, "verify": "quote version records" },
+    { "id": "public_accept_token", "name": "Public accept link", "odoo": true, "status": "done", "weight": 1, "verify": "public accept token on quotes" },
+    { "id": "approval_threshold", "name": "Threshold approval", "odoo": true, "status": "done", "weight": 1, "verify": "threshold-based approval workflow" },
+    { "id": "templates", "name": "Quote templates", "odoo": true, "status": "done", "weight": 1, "verify": "quote template records" },
+    { "id": "tax", "name": "Tax", "odoo": true, "status": "done", "weight": 1, "verify": "tax calculation on quotes" },
+    { "id": "line_items", "name": "Line items", "odoo": true, "status": "done", "weight": 1, "verify": "quote line items" },
+    { "id": "convert_to_invoice", "name": "Convert to invoice", "odoo": true, "status": "done", "weight": 1, "verify": "quote→invoice conversion" },
+
+    { "id": "esignature", "name": "True e-signature integration", "odoo": true, "status": "missing", "weight": 2, "verify": "e-signature provider integration" },
+    { "id": "einvoice_formats", "name": "E-invoice formats (UBL/Peppol)", "odoo": true, "status": "missing", "weight": 2, "verify": "UBL/Peppol e-invoice export" },
+    { "id": "expiry_reminders", "name": "Expiry reminder automation", "odoo": true, "status": "missing", "weight": 1, "verify": "automated quote expiry reminders" },
+    { "id": "recurring_quotes", "name": "Recurring quotes/retainers", "odoo": true, "status": "missing", "weight": 1, "verify": "recurring quote/retainer support" },
+    { "id": "attachments", "name": "Quote attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "file attachments on quotes" },
+    { "id": "customer_portal", "name": "Customer portal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "customer portal quote tracking" },
+    { "id": "line_discounts", "name": "Line-level discounts", "odoo": true, "status": "missing", "weight": 1, "verify": "per-line discount on quote items" },
+    { "id": "amendment_workflow", "name": "Quote amendment workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "quote amendment workflow" }
+  ]
+}
