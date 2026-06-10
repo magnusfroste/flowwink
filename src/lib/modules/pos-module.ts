@@ -145,13 +145,14 @@ const POS_SKILLS: SkillSeed[] = [
               type: 'array',
               items: {
                 type: 'object',
-                required: ['product_name', 'quantity', 'unit_price_cents'],
+                required: ['product_name', 'quantity'],
                 properties: {
                   product_id: { type: 'string', format: 'uuid' },
+                  variant_id: { type: 'string', format: 'uuid', description: 'Variant being sold (validated against product_id); SKU + price auto-resolve from it' },
                   product_name: { type: 'string' },
                   sku: { type: 'string' },
                   quantity: { type: 'number' },
-                  unit_price_cents: { type: 'number' },
+                  unit_price_cents: { type: 'number', description: 'Optional when product_id/variant_id is given — resolves to product price + variant delta' },
                   discount_cents: { type: 'number' },
                   tax_rate: { type: 'number' },
                 },
