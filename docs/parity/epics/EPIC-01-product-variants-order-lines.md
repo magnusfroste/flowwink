@@ -62,10 +62,16 @@ community later, so it is done in-house.
   - **Pending:** legacy backfill of any metadata-only orders; reconcile check;
     Stage-3 runtime verification. → `products.json#order_lines_normalized` = partial.
 
-- [ ] **01.4 — Wire POS, checkout, invoicing to order_items + variants**
-  - **Edge fns:** `create-checkout`, `place_order` handler, `send-order-confirmation`,
-    `record_pos_sale_v2` write/read `order_items` with `variant_id`.
-  - **Verify:** a POS sale and a web checkout of a variant both create normalized lines.
+- [~] **01.4 — Wire POS, checkout, invoicing to order_items + variants**
+  - **Checkout (01.3):** `create-checkout` sets `order_items.variant_id`.
+  - **POS (this):** migration `20260610160000` adds `pos_sale_lines.variant_id`
+    (FK→product_variants, ON DELETE SET NULL) and upgrades `record_pos_sale_v2`
+    (same signature — no skill drift) to accept `variant_id`, validate it belongs to
+    the product + is active, resolve price = product.price_cents + variant.price_delta
+    when omitted, default SKU from the variant, and emit `variant_id` in stock.movement.
+    Verified on scratch Postgres: variant price resolved (12000), legacy explicit-price
+    line unchanged, wrong-product variant rejected, idempotent.
+  - **Pending:** invoicing line→variant, Stage-3 runtime verification.
 
 - [ ] **01.5 — Units of measure (foundation)**
   - **Migration:** `uom_categories`, `uoms` (factor to reference unit). Product gets
