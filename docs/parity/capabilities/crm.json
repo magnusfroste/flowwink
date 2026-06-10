@@ -10,7 +10,7 @@
     { "id": "tags", "name": "Tags / saved views", "odoo": true, "status": "done", "weight": 1, "verify": "manage_tags, manage_saved_views" },
     { "id": "scoring_basic", "name": "Lead scoring", "odoo": true, "status": "partial", "weight": 1, "notes": "Activity+recency only; Odoo has predictive scoring", "verify": "qualify_lead, score column" },
 
-    { "id": "custom_stages", "name": "Configurable pipeline stages (not status enum)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-03", "verify": "pipeline_stages table; CRM reads stages from config not enum", "notes": "Today only 4 hardcoded statuses. Shared engine with deals/tickets." },
+    { "id": "custom_stages", "name": "Configurable pipeline stages (not status enum)", "odoo": true, "status": "partial", "weight": 3, "epic": "EPIC-03", "verify": "pipeline_stages table + manage_pipeline_stage skill + leads.stage_id (backfilled) (migration 20260610190000)", "notes": "Shared engine + stage_id link + skill shipped & verified. Pending: CRM reads from stage_id not enum (03.3) + kanban UI (03.6) before done." },
     { "id": "forecast", "name": "Forecasting (expected revenue × probability)", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-03", "verify": "probability per stage; weighted pipeline report" },
     { "id": "bulk_email", "name": "Bulk email with unsubscribe lists", "odoo": true, "status": "missing", "weight": 2, "verify": "mass-mail with list management (overlaps newsletter)" },
     { "id": "lost_reasons", "name": "Lost reasons + win-rate analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "lost_reason codes; win-rate report" },

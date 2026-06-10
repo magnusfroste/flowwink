@@ -21,13 +21,10 @@ category: reference
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `██░░░░░░░░` 21% | 3/0/9 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██░░░░░░░░` 23% | 3/0/6 | EPIC-04 |
-| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `███░░░░░░░` 25% | 3/1/7 | EPIC-03 |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███░░░░░░░` 25% | 4/0/9 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███░░░░░░░` 30% | 4/1/6 | EPIC-03 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███░░░░░░░` 32% | 6/0/8 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `███░░░░░░░` 33% | 7/0/10 | EPIC-03 |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████░░░░░░` 35% | 8/0/10 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `████░░░░░░` 36% | 7/1/8 | EPIC-02 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `████░░░░░░` 36% | 5/0/5 | — |
@@ -38,10 +35,13 @@ category: reference
 | **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████░░░░░░` 39% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 39% | 7/0/9 | — |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `████░░░░░░` 40% | 4/2/5 | EPIC-03 |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `████░░░░░░` 40% | 7/1/9 | EPIC-03 |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
+| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `████░░░░░░` 43% | 3/3/5 | EPIC-03 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
@@ -88,8 +88,8 @@ category: reference
 | Module | Capability | Status | Epic |
 |---|---|---|---|
 | approvals | Sequential approval chains (manager→director→CFO) | missing | EPIC-04 |
-| crm | Configurable pipeline stages (not status enum) | missing | EPIC-03 |
-| deals | Configurable pipeline stages | missing | EPIC-03 |
+| crm | Configurable pipeline stages (not status enum) | partial | EPIC-03 |
+| deals | Configurable pipeline stages | partial | EPIC-03 |
 | inventory | Stock valuation (FIFO / weighted-average) | missing | EPIC-02 |
 | invoicing | Recurring/subscription invoices | missing | — |
 | manufacturing | Work centers + routing operations | missing | — |
@@ -98,5 +98,5 @@ category: reference
 | products | Normalized order lines (not JSONB) | partial | EPIC-01 |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
 | subscriptions | Proration on mid-cycle change | missing | — |
-| tickets | Configurable stage pipeline | missing | EPIC-03 |
+| tickets | Configurable stage pipeline | partial | EPIC-03 |
 

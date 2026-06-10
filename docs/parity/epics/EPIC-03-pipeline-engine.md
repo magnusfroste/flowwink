@@ -31,15 +31,17 @@ stages per module. Independent of EPIC-01/02 — can run fully in parallel.
 
 ## Issues
 
-- [ ] **03.1 — Generic stage model**
-  - **Migration:** `pipeline_stages` (id, entity_type, name, sort_order, probability,
-    is_won, is_lost, fold). Seed defaults matching today's enums for `lead`, `deal`,
-    `ticket`. Idempotent.
-  - **Types:** `src/types/module-contracts.ts` — `PipelineStage` Zod schema.
+- [x] **03.1 — Generic stage model** *(migration `20260610190000`)*
+  - `pipeline_stages` (entity_type, key, name, sort_order, probability, is_won,
+    is_lost, fold) seeded to match `lead_status` / `deal_stage` / `ticket_status`;
+    nullable `stage_id` FK added to leads/deals/tickets and **backfilled** from the enum.
+  - Verified on scratch Postgres: 4 lead + 7 deal + 6 ticket stages seeded, backfill
+    matches every enum value, idempotent re-run. (PipelineStage Zod contract: follow-up.)
 
-- [ ] **03.2 — `manage_pipeline_stage` skill**
-  - **Module:** new shared skill (decide host module: `crm` or a small `pipelines`
-    module) — CRUD stages per entity_type. Passes `skill-linter.ts`.
+- [x] **03.2 — `manage_pipeline_stage` skill** *(crm-module)*
+  - Shared skill `rpc:manage_pipeline_stage` — list/create/update/delete per
+    entity_type, writer-gated. Verified: create→list(8)→delete→list(7) round-trip;
+    auto-derives `key` from name.
 
 - [ ] **03.3 — Migrate CRM to stage rows**
   - Replace `leads.status` enum reads with `stage_id` FK; keep a compatibility view.

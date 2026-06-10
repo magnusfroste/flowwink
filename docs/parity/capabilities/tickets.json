@@ -13,7 +13,7 @@
     { "id": "source_tracking", "name": "Source tracking", "odoo": true, "status": "done", "weight": 1, "verify": "Ticket source channel tracked" },
     { "id": "search", "name": "Full-text search", "odoo": true, "status": "missing", "weight": 1, "verify": "Full-text search across tickets", "notes": "No text/tsvector search anywhere — useTickets.ts only filters by status; TicketsPage has no search input; no tsvector in migrations." },
 
-    { "id": "stage_pipeline", "name": "Configurable stage pipeline", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-03", "verify": "Configurable ticket stage pipeline" },
+    { "id": "stage_pipeline", "name": "Configurable stage pipeline", "odoo": true, "status": "partial", "weight": 3, "epic": "EPIC-03", "verify": "shared pipeline_stages (entity_type='ticket') + tickets.stage_id backfilled (migration 20260610190000)", "notes": "Engine + stage_id link shipped; tickets reads still use the status enum (03.5) + kanban UI pending before done." },
     { "id": "escalation_rules", "name": "Escalation rules", "odoo": true, "status": "missing", "weight": 2, "verify": "Escalation rules on ticket aging/breach" },
     { "id": "customer_portal", "name": "Customer self-service portal", "odoo": true, "status": "missing", "weight": 2, "verify": "Customer self-service ticket portal" },
     { "id": "templates_canned", "name": "Canned responses", "odoo": true, "status": "missing", "weight": 1, "verify": "Canned response templates" },

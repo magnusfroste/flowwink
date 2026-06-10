@@ -616,6 +616,37 @@ Use this to find email addresses and contact information for people at a company
     },
     instructions: 'Audit the lead pipeline. Use prospect_research to enrich hot leads. Suggest follow-up actions.',
   },
+  {
+    name: 'manage_pipeline_stage',
+    description: 'Manage configurable pipeline stages for leads, deals, or tickets (the shared stage engine). Use when: customizing a sales/support pipeline, adding/renaming stages, setting win probability. NOT for: moving a record into a stage (use manage_leads/manage_deal/ticket tools).',
+    category: 'crm',
+    handler: 'rpc:manage_pipeline_stage',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_pipeline_stage',
+        description: 'List/create/update/delete pipeline stages per entity_type (lead|deal|ticket). Stages carry sort_order, win probability, and is_won/is_lost/fold flags.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'update', 'delete'] },
+            p_entity_type: { type: 'string', enum: ['lead', 'deal', 'ticket'] },
+            p_stage_id: { type: 'string', format: 'uuid', description: 'Target stage (update/delete)' },
+            p_key: { type: 'string', description: 'Stable slug; auto-derived from name if omitted' },
+            p_name: { type: 'string' },
+            p_sort_order: { type: 'number' },
+            p_probability: { type: 'number', description: 'Win probability 0-100 (deals/leads forecast)' },
+            p_is_won: { type: 'boolean' },
+            p_is_lost: { type: 'boolean' },
+            p_fold: { type: 'boolean', description: 'Collapse this column in the kanban by default' },
+          },
+        },
+      },
+    },
+    instructions: 'The shared stage engine for lead/deal/ticket pipelines. list returns stages ordered by sort_order. create auto-derives p_key from p_name when omitted. probability feeds weighted forecasting. Admin/service-role only for create/update/delete.',
+  },
 ];
 
 export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
@@ -644,6 +675,7 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
     'tag_entity',
     'follow_entity',
     'manage_saved_views',
+    'manage_pipeline_stage',
   ],
   skillSeeds: CRM_SKILLS,
 
