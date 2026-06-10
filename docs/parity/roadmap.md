@@ -44,7 +44,7 @@ Breadth track (community)  ──────────────►  contin
 S0 is the smallest sprint and the highest leverage: it makes every later sprint
 *self-measuring*. Issues:
 
-- [ ] **S0.1** — Add `bun run scripts/parity-report.ts --check` to CI (`.github/workflows`)
+- [x] **S0.1** — Add `bun run scripts/parity-report.ts --check` to CI (`.github/workflows`)
       and to `package.json` as `parity:check`. Fail the build on a stale matrix.
 - [ ] **S0.2** — Author a capability file for **every** scored core module (the 30
       in the audit). Use the audit findings; start each unknown at `missing`.

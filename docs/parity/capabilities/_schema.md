@@ -64,3 +64,7 @@ parity denominator — we do not penalise ourselves for features Odoo lacks.
    Ship only one surface → cap at `partial`.
 4. Adding a brand-new gap you discovered? Append a capability with `status: missing`.
    Breadth grows by never leaving a known gap unrecorded.
+5. **`done` is reserved for Stage 3 of the pipeline** ([`../pipeline.md`](../pipeline.md)):
+   only an agent that ran the capability through the real runtime (per
+   [`../verification-loop.md`](../verification-loop.md)) may set `done`. Agents
+   without runtime access (cloud/CI) may flip `missing` → `partial` at most.

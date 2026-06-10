@@ -105,6 +105,7 @@ centers) are opened to the community as parallel breadth work.
 
 ## Index
 
+- [`pipeline.md`](./pipeline.md) — the 3-stage pipeline: spec → build (CI gates) → verify & release
 - [`roadmap.md`](./roadmap.md) — sprints, epic sequencing, exit criteria
 - [`parity-matrix.md`](./parity-matrix.md) — live scorecard (generated)
 - [`process-gaps.md`](./process-gaps.md) — end-to-end processes we should add

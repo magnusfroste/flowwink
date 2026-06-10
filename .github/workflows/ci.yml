@@ -54,6 +54,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # Stage-2 gate of the parity pipeline (docs/parity/pipeline.md):
+      # the generated parity matrix must match capabilities/*.json — no
+      # hand-edited or stale scores. Pure-fs script, no deps, safe to block on.
+      - name: Parity matrix freshness (Stage 2 gate — BLOCKING)
+        run: npx -y bun run scripts/parity-report.ts --check
+
       # MCP live regression runs in dedicated workflow (.github/workflows/mcp-regression.yml)
       # — triggered on module changes + daily cron. Kept out of PR CI to avoid
       # gating PRs on live edge-function availability.

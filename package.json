@@ -25,6 +25,8 @@
     "lint:agent-contract": "bun run scripts/handler-args-lint.ts && bun run scripts/skill-linter.ts",
     "new:module": "bun run scripts/new-module.ts",
     "check:doc-drift": "bun run scripts/check-doc-drift.ts",
+    "parity:report": "bun run scripts/parity-report.ts",
+    "parity:check": "bun run scripts/parity-report.ts --check",
     "skills:json": "bun run scripts/skills-to-json.ts",
     "sync:skills": "bun run scripts/sync-skills.ts",
     "fleet:status": "bun run scripts/fleet-status.ts",
