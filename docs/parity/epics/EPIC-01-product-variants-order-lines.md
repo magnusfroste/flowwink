@@ -82,10 +82,14 @@ community later, so it is done in-house.
   - **Pending:** price-per-uom on sales lines, purchase UoM, manage_uom skill + UI.
     → `products.json#uom` = partial.
 
-- [ ] **01.6 — Per-line fulfillment (partial shipments)**
-  - **Migration:** `order_items.qty_fulfilled`; derive order fulfillment_status from lines.
-  - **Admin UI:** fulfillment panel shows per-line progress.
-  - Flips `products.json#partial_shipments` → partial.
+- [~] **01.6 — Per-line fulfillment (partial shipments)** *(migration `20260610180000`)*
+  - `order_items.qty_fulfilled` (>=0) + `fulfill_order_line(line, qty)` RPC/skill:
+    accumulates fulfilled qty (clamped to line quantity), marks the order `shipped`
+    (sets `shipped_at`) only when no line has remaining quantity.
+  - Verified on scratch Postgres: partial fulfill leaves order open, completing all
+    lines flips it to shipped, overfill clamped, idempotent.
+  - **Pending:** fulfillment admin UI panel; Stage-3 runtime verification.
+    → `products.json#partial_shipments` = partial.
 
 - [ ] **01.7 — Admin UI: variant editor**
   - `src/components/admin/` product editor gains attribute picker + generated
