@@ -1,0 +1,17 @@
+{
+  "module": "blog",
+  "odoo_app": "Blog (blog.post)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "post_crud", "name": "Post CRUD + publish", "odoo": true, "status": "done", "weight": 2, "verify": "write_blog_post (create) + manage_blog_posts (list/get/update/publish/unpublish/delete); BlogPostsPage.tsx + BlogPostEditorPage.tsx" },
+    { "id": "categories_tags", "name": "Categories/tags", "odoo": true, "status": "done", "weight": 1, "verify": "manage_blog_categories skill; BlogCategoriesTab.tsx + BlogTagsTab.tsx", "notes": "Tags are admin-UI only (no tag skill); categories have both surfaces." },
+    { "id": "scheduling", "name": "Scheduled publishing", "odoo": true, "status": "done", "weight": 1, "verify": "publish_scheduled_content skill (rpc:publish_scheduled_pages); SchedulePublishDialog.tsx + Scheduled badge in BlogPostsTab.tsx" },
+    { "id": "seo", "name": "SEO meta", "odoo": true, "status": "partial", "weight": 1, "verify": "seoTitle/meta fields in BlogPostEditorPage.tsx", "notes": "Skill surface missing — manage_blog_posts exposes no SEO meta params; seo_content_brief only generates briefs." },
+    { "id": "comments", "name": "Comments", "odoo": true, "status": "missing", "weight": 1, "verify": "no comment table, skill, or UI for blog posts" },
+    { "id": "rss", "name": "RSS feed", "odoo": true, "status": "partial", "weight": 1, "verify": "blog-rss edge function + RSS toggle in BlogSettingsTab.tsx", "notes": "Skill surface missing — no RSS skill in blog-module skillSeeds." },
+    { "id": "author_pages", "name": "Author pages", "odoo": true, "status": "missing", "weight": 1, "verify": "no author archive route or skill", "notes": "AuthorCard.tsx shows a bio on posts, but no dedicated author pages." },
+    { "id": "ai_writing", "name": "AI-written posts via operator", "odoo": false, "status": "done", "weight": 1, "verify": "write_blog_post skill in blog-module skillSeeds (plus research_content, generate_content_proposal)" },
+    { "id": "social_repurposing", "name": "Social post generation from content", "odoo": false, "status": "done", "weight": 1, "verify": "generate_social_post + social_post_batch skills in blog-module skillSeeds", "notes": "Added: FlowWink differentiator." }
+  ]
+}

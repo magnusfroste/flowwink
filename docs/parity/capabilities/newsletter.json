@@ -1,0 +1,17 @@
+{
+  "module": "newsletter",
+  "odoo_app": "Email Marketing (mailing.mailing)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "campaigns", "name": "Campaign create/send", "odoo": true, "status": "done", "weight": 2, "verify": "manage_newsletters + send_newsletter + execute_newsletter_send skills; NewsletterPage.tsx" },
+    { "id": "lists_segments", "name": "Lists & segmentation", "odoo": true, "status": "partial", "weight": 2, "verify": "manage_newsletter_subscribers skill; subscriber tab in NewsletterPage", "notes": "Single subscriber list only — no segmentation anywhere (no segment skill, table, or UI)." },
+    { "id": "templates", "name": "Newsletter templates", "odoo": true, "status": "missing", "weight": 1, "verify": "no reusable template skill or UI; block-based editor (newsletter/blocks extensions) is content, not templates" },
+    { "id": "scheduling", "name": "Scheduled sends", "odoo": true, "status": "partial", "weight": 1, "verify": "schedule_at param on send_newsletter/manage_newsletters; scheduled_at column", "notes": "Admin UI surface missing — NewsletterPage/NewsletterEditor have no scheduling control." },
+    { "id": "stats", "name": "Open/click stats", "odoo": true, "status": "partial", "weight": 1, "verify": "open_count tracked in newsletter-send edge fn and shown in NewsletterPage", "notes": "Open tracking only — no click tracking on either surface." },
+    { "id": "unsubscribe", "name": "Unsubscribe management", "odoo": true, "status": "done", "weight": 1, "verify": "manage_newsletter_subscribers remove action; NewsletterManagePage.tsx + newsletter-gdpr edge fn" },
+    { "id": "ab_testing", "name": "A/B testing", "odoo": true, "status": "missing", "weight": 1, "verify": "no A/B test skill, schema or UI (NewsletterPage 'variant' hits are Badge props)" },
+    { "id": "automation_flows", "name": "Drip/automation flows", "odoo": true, "status": "partial", "weight": 1, "verify": "lead_nurture_sequence skill (welcome/re-engage/upsell)", "notes": "Admin UI surface missing — no flow builder or sequence management page." },
+    { "id": "public_signup", "name": "Public subscribe (widget + skill)", "odoo": true, "status": "done", "weight": 1, "verify": "newsletter_subscribe skill (scope external) + newsletter-subscribe edge fn; signup rendered via public blocks", "notes": "Added: visitor-facing opt-in surface." }
+  ]
+}

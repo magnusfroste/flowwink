@@ -1,0 +1,14 @@
+{
+  "module": "calendar",
+  "odoo_app": "Calendar (calendar.event)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "event_crud", "name": "Event CRUD", "odoo": true, "status": "partial", "weight": 2, "verify": "list_events skill + CalendarPage.tsx (read path only)", "notes": "Read-only by design — module is a view-only aggregator that owns no data; no create/update/delete skill or UI." },
+    { "id": "sharing", "name": "Shared calendars", "odoo": true, "status": "missing", "weight": 1, "verify": "no sharing skill or UI" },
+    { "id": "external_sync", "name": "Google/Outlook sync", "odoo": true, "status": "missing", "weight": 1, "verify": "no ICS/Google/Outlook sync code in calendar module or CalendarPage" },
+    { "id": "reminders", "name": "Reminders", "odoo": true, "status": "missing", "weight": 1, "verify": "no calendar reminder skill or UI" },
+    { "id": "invitees", "name": "Invitees/attendees", "odoo": true, "status": "missing", "weight": 1, "verify": "no invitee model — events are projections from other modules" },
+    { "id": "unified_aggregation", "name": "Unified cross-module event aggregation", "odoo": false, "status": "done", "weight": 2, "verify": "list_events skill aggregates bookings/tasks/leave/renewals/SLA via calendar-sources registry; CalendarPage.tsx", "notes": "Added: differentiator — normalized events from all enabled domain modules in one view." }
+  ]
+}

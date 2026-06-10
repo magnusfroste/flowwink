@@ -1,0 +1,19 @@
+{
+  "module": "pages",
+  "odoo_app": "Website (website.page)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "page_crud", "name": "Page CRUD + publish", "odoo": true, "status": "done", "weight": 2, "verify": "manage_page skill (list/get/create/update/publish/archive/delete/rollback); PagesListPage.tsx + PageEditorPage.tsx" },
+    { "id": "block_editor", "name": "Visual block editor", "odoo": true, "status": "done", "weight": 2, "verify": "manage_page_blocks + create_page_block skills; BlockEditor dispatch in PageEditorPage.tsx" },
+    { "id": "seo_meta", "name": "SEO meta per page", "odoo": true, "status": "done", "weight": 1, "verify": "generate_meta_description skill + seo_title/seo_description in pages-module publish; PageSettingsDialog.tsx SEO fields" },
+    { "id": "navigation_menus", "name": "Navigation/menu management", "odoo": true, "status": "done", "weight": 1, "verify": "show_in_menu/menu_order in pages-module options (settable via manage_page); MenuOrderSection.tsx + PagesListPage.tsx" },
+    { "id": "drafts_publishing", "name": "Draft/publish workflow", "odoo": true, "status": "done", "weight": 1, "verify": "manage_page publish/archive actions; SchedulePublishDialog.tsx + status handling in PagesListPage.tsx" },
+    { "id": "redirects", "name": "URL redirects", "odoo": true, "status": "missing", "weight": 1, "verify": "no redirects table, skill, or admin UI found (grep 'redirect' across src + migrations)" },
+    { "id": "multilanguage", "name": "Multi-language pages", "odoo": true, "status": "missing", "weight": 1, "verify": "no locale/translation fields on pages; LocalePacksPage is accounting locale packs, not page translations" },
+    { "id": "ab_testing", "name": "A/B testing", "odoo": true, "status": "missing", "weight": 1, "verify": "no experiment/ab_test code in pages module or admin" },
+    { "id": "headless_api", "name": "Headless content API", "odoo": false, "status": "partial", "weight": 1, "verify": "content-api edge function + ContentApiPage.tsx admin", "notes": "Skill surface missing — no content-API skill in pages-module skillSeeds." },
+    { "id": "page_versioning", "name": "Page version history + rollback", "odoo": false, "status": "done", "weight": 1, "verify": "manage_page rollback action; VersionHistoryPanel.tsx used by PageEditorPage.tsx", "notes": "Added: clearly present in module file (rollback) + admin UI." },
+    { "id": "ai_site_generation", "name": "AI full-site generation from identity", "odoo": false, "status": "done", "weight": 1, "verify": "generate_site_from_identity + build_site_step + landing_page_compose skills in pages-module skillSeeds", "notes": "Added: FlowWink differentiator." }
+  ]
+}

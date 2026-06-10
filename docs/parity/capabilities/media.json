@@ -1,0 +1,14 @@
+{
+  "module": "media",
+  "odoo_app": "Website media library",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "upload", "name": "Upload assets", "odoo": true, "status": "partial", "weight": 2, "verify": "handleUpload in MediaLibraryPage.tsx + ImageUploader.tsx", "notes": "Skill surface missing — media_browse explicitly says 'NOT for: uploading new files (N/A)'." },
+    { "id": "folders", "name": "Folder organisation", "odoo": true, "status": "done", "weight": 1, "verify": "media_browse folder param (pages/imports/templates/uploads/blog); folderFilter in MediaLibraryPage.tsx" },
+    { "id": "search", "name": "Search/filter", "odoo": true, "status": "done", "weight": 1, "verify": "media_browse search param; searchQuery filename filter in MediaLibraryPage.tsx" },
+    { "id": "image_optimization", "name": "Image optimization/resize", "odoo": true, "status": "partial", "weight": 1, "verify": "client-side compression in ImageUploader.tsx + ImageCropper.tsx", "notes": "Skill surface missing — no optimization skill in media-module skillSeeds." },
+    { "id": "alt_text", "name": "Alt text management", "odoo": true, "status": "partial", "weight": 1, "verify": "generate_alt_text skill exists (in pages-module skillSeeds); alt fields live in block editors", "notes": "Skill lives in pages-module, not media-module; MediaLibraryPage has no alt text management UI." },
+    { "id": "usage_tracking", "name": "Where-used tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "no usage/where-used tracking in media module or MediaLibraryPage.tsx" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "module": "handbook",
+  "odoo_app": "Knowledge (internal handbook)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "section_crud", "name": "Section/page CRUD", "odoo": true, "status": "missing", "weight": 2, "verify": "handbook_search is read-only; admin HandbookPage.tsx only syncs chapters from GitHub (useSyncHandbook)", "notes": "Chapters authored in upstream repo; no CRUD skill or editor." },
+    { "id": "publishing", "name": "Publish workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "no publish/draft state on handbook chapters; everything synced is live" },
+    { "id": "search", "name": "Search", "odoo": true, "status": "partial", "weight": 1, "verify": "handbook_search skill in handbook-module skillSeeds (scope both)", "notes": "Admin UI surface missing — HandbookPage.tsx has sync config inputs but no chapter search box." },
+    { "id": "acknowledgement", "name": "Employee read-acknowledgement", "odoo": false, "status": "missing", "weight": 1, "verify": "no acknowledgement skill, table, or UI" }
+  ]
+}

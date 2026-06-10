@@ -1,0 +1,13 @@
+{
+  "module": "docs",
+  "odoo_app": "Knowledge (documentation)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "doc_crud", "name": "Doc page CRUD", "odoo": true, "status": "missing", "weight": 2, "verify": "docs_search is read-only; DocsAdminPage.tsx only syncs from GitHub (useSyncDocs)", "notes": "Content is authored in the GitHub repo, not in-app; no CRUD skill or editor." },
+    { "id": "structure_nav", "name": "Structured navigation/TOC", "odoo": true, "status": "done", "weight": 1, "verify": "docs_search category browse param; DocsSidebar.tsx category tree on DocsLandingPage.tsx" },
+    { "id": "search", "name": "Search", "odoo": true, "status": "done", "weight": 1, "verify": "docs_search skill (scope both); search input in DocsSidebar.tsx" },
+    { "id": "public_private", "name": "Public/private visibility", "odoo": true, "status": "missing", "weight": 1, "verify": "no visibility/is_published flag for docs pages; all synced docs are public" },
+    { "id": "versioning", "name": "Versioning", "odoo": true, "status": "missing", "weight": 1, "verify": "no in-app version history; history lives only in upstream git" }
+  ]
+}

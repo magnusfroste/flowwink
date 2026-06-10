@@ -1,0 +1,16 @@
+{
+  "module": "webinars",
+  "odoo_app": "Events (event.event)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "event_crud", "name": "Webinar/event CRUD", "odoo": true, "status": "done", "weight": 2, "verify": "manage_webinar + publish/start/complete/cancel lifecycle skills; WebinarsPage.tsx" },
+    { "id": "registration", "name": "Registration", "odoo": true, "status": "done", "weight": 2, "verify": "register_webinar skill (rpc:register_for_webinar, scope external); registrations view in WebinarsPage" },
+    { "id": "reminders", "name": "Reminder emails", "odoo": true, "status": "partial", "weight": 1, "verify": "reminder_confirm/t24/t1/post_sent_at columns + webinar.reminder.* event emission in baseline migration", "notes": "Runtime DB/automation pipeline only — no reminder skill in skillSeeds and no admin UI control." },
+    { "id": "attendance", "name": "Attendance tracking", "odoo": true, "status": "done", "weight": 1, "verify": "mark_webinar_attendance skill; attendance handling in WebinarsPage" },
+    { "id": "recordings", "name": "Recording links", "odoo": true, "status": "done", "weight": 1, "verify": "complete_webinar skill accepts p_recording_url; recording shown in WebinarsPage" },
+    { "id": "followup", "name": "Follow-up emails", "odoo": true, "status": "partial", "weight": 1, "verify": "follow_up_sent flag rendered as badge in WebinarsPage (line 583)", "notes": "Skill surface missing — no follow-up send skill in skillSeeds." },
+    { "id": "paid_tickets", "name": "Paid tickets", "odoo": true, "status": "missing", "weight": 1, "verify": "no price/ticket fields in webinars schema or WebinarsPage" },
+    { "id": "content_repurposing", "name": "Blog draft from completed webinar", "odoo": false, "status": "done", "weight": 1, "verify": "generate_blog_from_webinar skill (edge:ai-task)", "notes": "Added: AI content-loop differentiator." }
+  ]
+}

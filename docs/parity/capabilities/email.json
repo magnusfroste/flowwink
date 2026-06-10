@@ -1,0 +1,15 @@
+{
+  "module": "email",
+  "odoo_app": "Mail / Discuss (outbound email)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "send_email", "name": "Send email", "odoo": true, "status": "partial", "weight": 2, "verify": "SendEmailDialog in src/components/admin/crm/ (used by LeadDetailPage); email-send edge gateway", "notes": "Skill surface missing — send_email SkillSeed was removed from email-module.ts (manifest comment); only admin UI + gateway exist." },
+    { "id": "templates", "name": "Email templates", "odoo": true, "status": "missing", "weight": 1, "verify": "no email template skill or admin UI; only dunning-specific templates (DunningPage)" },
+    { "id": "inbox_scan", "name": "Inbox scan/ingest (Gmail)", "odoo": true, "status": "done", "weight": 1, "verify": "scan_gmail_inbox skill + GmailIntegrationCard.tsx" },
+    { "id": "threading", "name": "Conversation threading", "odoo": true, "status": "missing", "weight": 1, "verify": "no threading skill or UI found" },
+    { "id": "signatures", "name": "Signatures", "odoo": true, "status": "missing", "weight": 1, "verify": "no email signature skill or UI (signature matches are contract e-signing)" },
+    { "id": "bounce_handling", "name": "Bounce/complaint handling", "odoo": true, "status": "missing", "weight": 1, "verify": "no bounce/suppression handling found" },
+    { "id": "comms_log", "name": "Outbound communications audit log", "odoo": true, "status": "done", "weight": 1, "verify": "list_communications + get_communication skills; CommunicationsPage.tsx", "notes": "Added: cross-channel (email/sms/slack/signing) gateway log with sent/simulated/failed status." }
+  ]
+}

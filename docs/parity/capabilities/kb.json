@@ -1,0 +1,16 @@
+{
+  "module": "kb",
+  "odoo_app": "Knowledge / Helpdesk KB",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "article_crud", "name": "Article CRUD", "odoo": true, "status": "done", "weight": 2, "verify": "manage_kb_article skill (list/get/create/update/publish/unpublish); admin KnowledgeBasePage.tsx + KbArticleEditorPage.tsx" },
+    { "id": "categories", "name": "Categories", "odoo": true, "status": "done", "weight": 1, "verify": "category param on manage_kb_article (auto-creates); KbCategoryDialog.tsx" },
+    { "id": "search", "name": "Search", "odoo": true, "status": "partial", "weight": 1, "verify": "public search in src/pages/KnowledgeBasePage.tsx", "notes": "Skill surface missing — kb-module skillSeeds has no KB search skill (manage_kb_article only lists)." },
+    { "id": "public_portal", "name": "Public help center", "odoo": true, "status": "done", "weight": 1, "verify": "publish/unpublish actions on manage_kb_article; public /kb portal (src/pages/KnowledgeBasePage.tsx) + admin publish controls" },
+    { "id": "article_feedback", "name": "Article feedback/rating", "odoo": true, "status": "partial", "weight": 1, "verify": "'Was this helpful?' ThumbsUp/ThumbsDown in src/pages/KnowledgeBasePage.tsx", "notes": "Skill/admin surface missing — no feedback skill or admin feedback analytics." },
+    { "id": "versioning", "name": "Article versioning", "odoo": true, "status": "missing", "weight": 1, "verify": "no version history table, skill, or UI for kb_articles" },
+    { "id": "ai_autoresolve", "name": "KB-powered ticket auto-resolve", "odoo": false, "status": "missing", "weight": 1, "verify": "no auto-resolve skill in kb or tickets module", "notes": "include_in_chat grounds chat answers in KB, but no ticket auto-resolve flow exists." },
+    { "id": "chat_grounding", "name": "KB articles embedded in FlowPilot chat context", "odoo": false, "status": "done", "weight": 1, "verify": "include_in_chat param on manage_kb_article; toggle in admin KB editor", "notes": "Added: clearly shown in kb-module skill instructions." }
+  ]
+}

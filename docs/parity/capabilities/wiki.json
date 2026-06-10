@@ -1,0 +1,14 @@
+{
+  "module": "wiki",
+  "odoo_app": "Knowledge (knowledge.article)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "page_crud", "name": "Wiki page CRUD", "odoo": true, "status": "done", "weight": 2, "verify": "manage_wiki_page skill (list/get/create/update/delete); admin WikiPage.tsx at /admin/wiki/:slug" },
+    { "id": "hierarchy", "name": "Page hierarchy/tree", "odoo": true, "status": "missing", "weight": 1, "verify": "wiki_pages is flat (slug PK); no parent/tree fields in wiki-module" },
+    { "id": "search", "name": "Search", "odoo": true, "status": "done", "weight": 1, "verify": "search_wiki skill (ILIKE over title + content_md); search box in admin WikiPage.tsx" },
+    { "id": "internal_links", "name": "Internal linking", "odoo": true, "status": "done", "weight": 1, "verify": "[[WikiWord]]/CamelCase auto-linking documented in manage_wiki_page content_md param; WikiMarkdown.tsx renders links and auto-creates missing pages" },
+    { "id": "history", "name": "Version history", "odoo": true, "status": "missing", "weight": 1, "verify": "no revision table, skill, or UI for wiki_pages" },
+    { "id": "permissions", "name": "Access permissions", "odoo": true, "status": "missing", "weight": 1, "verify": "no permission management skill or UI", "notes": "Only fixed RLS (authenticated read+write, admin delete); no per-page permissions surface." }
+  ]
+}
