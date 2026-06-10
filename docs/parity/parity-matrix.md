@@ -9,12 +9,13 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 31  ·  **Mean parity:** 38%  ·  **Differentiators (no Odoo benchmark):** 7  ·  **Unscored:** 24
+**Benchmarked modules:** 37  ·  **Mean parity:** 43%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 17
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
+| **workspace-chat** | Discuss (mail.channel) | L3 → L4 | `█░░░░░░░░░` 7% | 0/1/5 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `██░░░░░░░░` 21% | 3/0/9 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██░░░░░░░░` 23% | 3/0/6 | EPIC-04 |
@@ -45,13 +46,19 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
+| **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
+| **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
+| **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
+| **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
+| **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 
 ## Differentiators (no Odoo counterpart — excluded from the mean)
 
 | Module | Description | Capabilities |
 |---|---|---|
 | **browser-control** | none (FlowWink differentiator) | 4 |
+| **company-insights** | none (FlowWink differentiator) | 4 |
 | **composio** | none (FlowWink differentiator) | 4 |
 | **developer** | none (FlowWink differentiator) | 4 |
 | **federation** | none (FlowWink differentiator) | 8 |
@@ -63,7 +70,7 @@ category: reference
 
 > Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
 
-`analytics` · `blog` · `calendar` · `chat` · `company-insights` · `customer360` · `docs` · `documents` · `email` · `forms` · `global-blocks` · `growth` · `handbook` · `kb` · `live-support` · `media` · `newsletter` · `pages` · `sales-intelligence` · `surveys` · `templates` · `webinars` · `wiki` · `workspace-chat`
+`blog` · `calendar` · `chat` · `docs` · `email` · `forms` · `global-blocks` · `growth` · `handbook` · `kb` · `media` · `newsletter` · `pages` · `surveys` · `templates` · `webinars` · `wiki`
 
 ## Foundational gaps (weight 3, still open)
 

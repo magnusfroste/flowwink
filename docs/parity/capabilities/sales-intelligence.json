@@ -1,0 +1,13 @@
+{
+  "module": "sales-intelligence",
+  "odoo_app": "CRM lead scoring (partial counterpart)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "lead_scoring", "name": "Predictive/lead scoring", "odoo": true, "status": "done", "weight": 2, "verify": "prospect_fit_analysis skillSeed returns fit_score; qualify_lead in module skills; FitAnalysisCard.tsx ScoreRing UI" },
+    { "id": "prospect_research", "name": "AI prospect research", "odoo": false, "status": "done", "weight": 1, "verify": "prospect_research skillSeed (edge:prospect-research); SalesIntelligencePage + ResearchResultCards/ResearchHistory" },
+    { "id": "competitor_monitor", "name": "Competitor monitoring", "odoo": false, "status": "done", "weight": 1, "verify": "competitor_monitor skill (seed in crm-module.ts, listed in salesIntelligence skills array)" },
+    { "id": "signals", "name": "Buying-signal processing", "odoo": false, "status": "done", "weight": 1, "verify": "process_signal skillSeed (edge:signal-ingest); SalesIntelligencePage signal handling" },
+    { "id": "sales_profile", "name": "Sales profile setup (company + user)", "odoo": false, "status": "done", "weight": 1, "verify": "sales_profile_setup skillSeed; SalesProfileSetup.tsx admin component", "notes": "Added capability." }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "module": "customer360",
+  "odoo_app": "Contacts 360 view (partner timeline)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "unified_timeline", "name": "Unified customer timeline", "odoo": true, "status": "done", "weight": 2, "verify": "get_customer_360 skillSeed returns merged timeline; Customer360Page.tsx renders timeline (Customer360TimelineEvent)" },
+    { "id": "cross_module", "name": "Aggregates orders/tickets/invoices/chats", "odoo": true, "status": "done", "weight": 2, "verify": "get_customer_360 aggregates deals/orders/invoices/quotes/tickets/bookings/subscriptions/chats/webinars (edge:customer-360); Customer360Page KPIs show LTV/open invoices/open tickets" },
+    { "id": "health_score", "name": "Customer health scoring", "odoo": false, "status": "missing", "weight": 1, "verify": "no health-score logic in customer-360 edge fn or Customer360Page (grep 'health' empty)" }
+  ]
+}

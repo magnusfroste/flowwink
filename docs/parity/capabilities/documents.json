@@ -1,0 +1,15 @@
+{
+  "module": "documents",
+  "odoo_app": "Documents (documents.document)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "upload", "name": "Upload documents", "odoo": true, "status": "done", "weight": 2, "verify": "manage_document + upload_document skillSeeds; DocumentsPage.tsx + AddDocumentDialog.tsx upload flow" },
+    { "id": "folders_tags", "name": "Folders/tags", "odoo": true, "status": "partial", "weight": 1, "verify": "manage_document skill accepts folder + tags; AddDocumentDialog folder input, DocumentsPage Folder column", "notes": "Tags have no admin UI — only folder is editable/visible; tags exist on the skill surface only" },
+    { "id": "link_to_records", "name": "Link to business records", "odoo": true, "status": "done", "weight": 2, "verify": "related_entity_type/related_entity_id in manage_document skill; DocumentsPanel.tsx embeds per-entity docs, DocumentsPage shows 'Linked to' badge" },
+    { "id": "versions", "name": "Version history", "odoo": true, "status": "missing", "weight": 1, "verify": "no version table/skill/UI for documents (module description claims version tracking but no implementation found)" },
+    { "id": "share_links", "name": "Share links", "odoo": true, "status": "missing", "weight": 1, "verify": "only 120s signed URLs for in-admin viewing (getDocumentSignedUrl); no shareable-link feature or skill" },
+    { "id": "esign_request", "name": "E-sign request", "odoo": true, "status": "missing", "weight": 1, "verify": "no e-sign skill or UI in documents module (signing lives in contracts module, not surfaced for documents)" },
+    { "id": "ai_extraction", "name": "AI text extraction (PDF)", "odoo": false, "status": "done", "weight": 1, "verify": "extract_pdf_text skillSeed (edge:extract-pdf-text) in documents-module.ts" }
+  ]
+}

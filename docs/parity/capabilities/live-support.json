@@ -1,0 +1,14 @@
+{
+  "module": "live-support",
+  "odoo_app": "Livechat (im_livechat)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "agent_console", "name": "Agent console", "odoo": true, "status": "done", "weight": 2, "verify": "support_list_conversations + support_assign_conversation skillSeeds; LiveSupportPage.tsx full agent console" },
+    { "id": "visitor_queue", "name": "Visitor queue", "odoo": true, "status": "done", "weight": 1, "verify": "support_list_conversations status=waiting_agent; LiveSupportPage Waiting list via useSupportConversations" },
+    { "id": "canned_responses", "name": "Canned responses", "odoo": true, "status": "missing", "weight": 1, "verify": "no canned-response skill or admin UI found (grep 'canned' hits nothing in live support)" },
+    { "id": "transfer", "name": "Transfer between agents", "odoo": true, "status": "partial", "weight": 1, "verify": "support_assign_conversation skill accepts agent_id for reassign", "notes": "Admin UI missing: LiveSupportPage only supports take-to-self and close, no reassign-to-another-agent control" },
+    { "id": "history", "name": "Conversation history", "odoo": true, "status": "done", "weight": 1, "verify": "support_list_conversations status=closed; VisitorSessionsTab.tsx browses past visitor sessions and messages" },
+    { "id": "availability", "name": "Agent availability/presence", "odoo": true, "status": "partial", "weight": 1, "verify": "useSupportPresence.tsx realtime presence + status dropdown in LiveSupportPage", "notes": "Skill surface missing: no presence/availability skill in live-support-module skillSeeds" }
+  ]
+}

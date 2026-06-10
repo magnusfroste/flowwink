@@ -1,0 +1,12 @@
+{
+  "module": "company-insights",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "enrichment", "name": "Company enrichment", "odoo": false, "status": "done", "weight": 1, "verify": "enrich_company skill (seed in crm-module.ts, listed in companyInsights skills); CompanyInsightsPage enrichment tab (enrichFromWebsite/enrichFromPublicSources)" },
+    { "id": "news_monitoring", "name": "News/signal monitoring", "odoo": false, "status": "missing", "weight": 1, "verify": "no news-monitoring skill or UI in company-insights-module.ts or CompanyInsightsPage (grep 'news' empty)" },
+    { "id": "insights_ui", "name": "Insights dashboard", "odoo": false, "status": "done", "weight": 1, "verify": "get_company_profile/update_company_profile skillSeeds; CompanyInsightsPage.tsx + CompanyProfileCard" },
+    { "id": "site_from_identity", "name": "Generate site from business identity", "odoo": false, "status": "done", "weight": 1, "verify": "generate_site_from_identity listed in companyInsights module skills", "notes": "Added capability." }
+  ]
+}

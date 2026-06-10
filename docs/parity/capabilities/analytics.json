@@ -1,0 +1,17 @@
+{
+  "module": "analytics",
+  "odoo_app": "Website analytics / Dashboards",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "page_views", "name": "Page view tracking", "odoo": true, "status": "done", "weight": 2, "verify": "analyze_analytics skillSeed (db:page_views); usePageViewTracker → track-page-view edge fn; AnalyticsDashboardPage" },
+    { "id": "traffic_reports", "name": "Traffic reports", "odoo": true, "status": "done", "weight": 1, "verify": "analyze_analytics period param; AnalyticsDashboardPage daily traffic/unique visitors/geo charts" },
+    { "id": "conversion_tracking", "name": "Conversion/goal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "no goal/conversion tracking in useAnalytics or AnalyticsDashboardPage; no skill" },
+    { "id": "dashboards", "name": "Dashboards", "odoo": true, "status": "partial", "weight": 1, "verify": "AnalyticsDashboardPage + dashboard widgets (ChatAnalyticsDashboardWidget etc.)", "notes": "Skill surface missing: no dashboard skill; analyze_analytics covers raw data only" },
+    { "id": "custom_reports", "name": "Custom report builder", "odoo": true, "status": "missing", "weight": 1, "verify": "no report-builder UI or skill found" },
+    { "id": "ai_digest", "name": "AI business digest", "odoo": false, "status": "done", "weight": 1, "verify": "weekly_business_digest skill (seed in flowpilot-module.ts, listed in analytics module skills)" },
+    { "id": "seo_audit", "name": "AI SEO audit of pages/posts", "odoo": false, "status": "done", "weight": 1, "verify": "seo_audit_page skillSeed in analytics-module.ts; AeoAnalyzer admin component", "notes": "Added capability." },
+    { "id": "kb_gap_analysis", "name": "KB content gap analysis from chat data", "odoo": false, "status": "done", "weight": 1, "verify": "kb_gap_analysis skillSeed in analytics-module.ts", "notes": "Added capability." },
+    { "id": "chat_feedback_analysis", "name": "Chat feedback analysis", "odoo": false, "status": "done", "weight": 1, "verify": "analyze_chat_feedback skillSeed; ChatFeedbackDashboardWidget.tsx", "notes": "Added capability." }
+  ]
+}
