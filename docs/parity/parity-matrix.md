@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 46%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 47%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -20,7 +20,6 @@ category: reference
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `██░░░░░░░░` 17% | 0/1/4 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `██░░░░░░░░` 21% | 3/0/9 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
-| **approvals** | Approvals + studio approval rules | L3 → L4 | `██░░░░░░░░` 23% | 3/0/6 | EPIC-04 |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███░░░░░░░` 25% | 4/0/9 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███░░░░░░░` 32% | 6/0/8 | — |
@@ -39,6 +38,7 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `████░░░░░░` 40% | 7/1/9 | EPIC-03 |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
+| **approvals** | Approvals + studio approval rules | L3 → L4 | `████░░░░░░` 42% | 3/2/4 | EPIC-04 |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `████░░░░░░` 43% | 3/3/5 | EPIC-03 |
@@ -87,7 +87,7 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| approvals | Sequential approval chains (manager→director→CFO) | missing | EPIC-04 |
+| approvals | Sequential approval chains (manager→director→CFO) | partial | EPIC-04 |
 | crm | Configurable pipeline stages (not status enum) | partial | EPIC-03 |
 | deals | Configurable pipeline stages | partial | EPIC-03 |
 | inventory | Stock valuation (FIFO / weighted-average) | missing | EPIC-02 |

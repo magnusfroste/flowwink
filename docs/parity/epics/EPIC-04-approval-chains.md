@@ -32,20 +32,19 @@ primitive, lifting it once back-fills `purchasing`, `quotes`, `expenses` and
 
 ## Issues
 
-- [ ] **04.1 — Chain & step data model**
-  - **Migration:** `approval_chains` (id, entity_type, name), `approval_steps`
-    (id, chain_id, sort_order, required_role | group_id, min_approvals). Extend
-    `approval_requests` with `current_step`. Idempotent.
+- [x] **04.1 — Chain & step data model** *(migration `20260610200000`)*
+  - `approval_chains` + `approval_steps` (sort_order, role XOR group, min_approvals);
+    `approval_requests.chain_id`/`current_step`; `approval_decisions.step_sort_order`.
 
-- [ ] **04.2 — Step advancement engine**
-  - **Handler:** approving the current step advances `current_step`; request is
-    `approved` only when the last step clears. Any rejection stops the chain.
-  - Flips `approvals.json#approval_chains` → done.
+- [x] **04.2 — Step advancement engine** *(`advance_approval_step`)*
+  - Approving the current step advances `current_step`; `approved` only when the last
+    step clears; any rejection stops the chain. Verified on scratch Postgres
+    (step1→step2→approved, reject→rejected). → `approval_chains` = partial (routing/UI pending).
 
-- [ ] **04.3 — Approval groups (any-of-N)**
-  - **Migration:** `approval_groups` + membership. A step satisfied when
-    `min_approvals` members of the group sign.
-  - Flips `approvals.json#approval_groups` → done.
+- [x] **04.3 — Approval groups (any-of-N)** *(`approval_groups` + members)*
+  - A group step is satisfied when `min_approvals` **distinct** members sign (duplicate
+    approvals from one user count once — verified 1/2→2/2). + `manage_approval_chain`
+    skill (chains, steps, groups). → `approval_groups` = partial (admin UI pending).
 
 - [ ] **04.4 — Delegation**
   - **Migration/handler:** `approval_delegations` (from_user, to_user, start, end).
