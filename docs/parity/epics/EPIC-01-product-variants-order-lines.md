@@ -73,11 +73,14 @@ community later, so it is done in-house.
     line unchanged, wrong-product variant rejected, idempotent.
   - **Pending:** invoicing line→variant, Stage-3 runtime verification.
 
-- [ ] **01.5 — Units of measure (foundation)**
-  - **Migration:** `uom_categories`, `uoms` (factor to reference unit). Product gets
-    `sales_uom_id`. Price resolution converts. Scope: data model + resolution only;
-    purchase UoM is out.
-  - Flips `products.json#uom` → partial.
+- [~] **01.5 — Units of measure (foundation)** *(migration `20260610170000`)*
+  - `uom_categories` + `uoms` (factor-to-reference, one reference per category),
+    `products.sales_uom_id`, `convert_uom(qty, from, to)` (same-category guard), and a
+    seeded default "Units" category so existing products are unchanged.
+  - Verified on scratch Postgres: g→kg=2.5, t→kg=3000, same-unit + null passthrough,
+    cross-category rejected; idempotent re-run. Scope per spec: data model + conversion.
+  - **Pending:** price-per-uom on sales lines, purchase UoM, manage_uom skill + UI.
+    → `products.json#uom` = partial.
 
 - [ ] **01.6 — Per-line fulfillment (partial shipments)**
   - **Migration:** `order_items.qty_fulfilled`; derive order fulfillment_status from lines.

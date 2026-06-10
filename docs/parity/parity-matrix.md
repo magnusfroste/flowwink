@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 45%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 46%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -42,13 +42,13 @@ category: reference
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
-| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████░░░░░░` 43% | 5/4/6 | EPIC-01 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 45% | 8/1/7 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 47% | 8/0/7 | — |
+| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `█████░░░░░` 48% | 5/5/5 | EPIC-01 |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
