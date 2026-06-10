@@ -329,6 +329,16 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
             )}
           </div>
 
+          {/* Sales unit */}
+          <div className="space-y-3 rounded-lg border p-4">
+            <SalesUomSelect value={salesUomId} onChange={setSalesUomId} />
+            {product && (
+              <Button type="button" size="sm" variant="outline" onClick={() => saveSalesUom(product.id)}>
+                Save sales unit
+              </Button>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -338,6 +348,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
             </Button>
           </div>
         </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
