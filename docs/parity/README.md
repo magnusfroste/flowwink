@@ -41,6 +41,14 @@ MCP client run FlowWink as SaaS — without it the module is invisible to the ag
 ecosystem. Keep the *intelligence* in the operator (Law 1–3); the skill is the
 **interface**, not a private AI pipeline.
 
+## Verify locally, then deploy
+
+The third leg: a capability is `done` only when its skill has been **run green
+through the real runtime** with its DB effect confirmed — not when the code merely
+exists. This is what caught `payroll` being marked `done` while broken over MCP. See
+[`verification-loop.md`](./verification-loop.md). The full bar for `done` is:
+**admin UI + MCP skill + ran green locally**.
+
 It builds *on top of* the existing **L1–L5 maturity scale**
 ([`docs/processes/README.md`](../processes/README.md)) — it does not replace it.
 Maturity answers "can a customer run this process?"; parity answers "how deep is
@@ -100,6 +108,7 @@ centers) are opened to the community as parallel breadth work.
 ## Index
 
 - [`roadmap.md`](./roadmap.md) — sprints, epic sequencing, exit criteria
+- [`verification-loop.md`](./verification-loop.md) — verify locally before deploy; the real bar for `done`
 - [`parity-matrix.md`](./parity-matrix.md) — live scorecard (generated)
 - [`process-gaps.md`](./process-gaps.md) — end-to-end processes we should add
 - [`capabilities/_schema.md`](./capabilities/_schema.md) — capability file format

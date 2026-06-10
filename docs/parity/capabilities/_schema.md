@@ -62,5 +62,9 @@ parity denominator — we do not penalise ourselves for features Odoo lacks.
    Per the **dual-surface law**, `done` also means the capability exists as **both**
    an MCP skill (in `skillSeeds`, `mcp_exposed=true`) **and** a human admin UI.
    Ship only one surface → cap at `partial`.
+   Per the **verification loop** ([`../verification-loop.md`](../verification-loop.md)),
+   `done` further means the skill has been **run green through the real runtime** with
+   its DB effect confirmed (balanced posting, correct rows) — not merely that the code
+   exists. The `verify` field should say what was run and observed.
 4. Adding a brand-new gap you discovered? Append a capability with `status: missing`.
    Breadth grows by never leaving a known gap unrecorded.
