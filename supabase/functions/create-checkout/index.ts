@@ -132,6 +132,7 @@ serve(async (req: Request) => {
       const orderItems = items.map((item) => ({
         order_id: order.id,
         product_id: item.productId,
+        variant_id: item.variantId ?? null,
         product_name: item.productName,
         price_cents: item.priceCents,
         quantity: item.quantity,
@@ -322,6 +323,7 @@ serve(async (req: Request) => {
     const orderItems = items.map((item) => ({
       order_id: order.id,
       product_id: item.productId,
+      variant_id: item.variantId ?? null,
       product_name: item.productName,
       price_cents: item.priceCents,
       quantity: item.quantity,

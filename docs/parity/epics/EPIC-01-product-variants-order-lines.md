@@ -52,13 +52,15 @@ community later, so it is done in-house.
   - **Handler:** variant-aware price = base + price_delta, pricelist resolution by variant.
   - Flips `products.json#variants` → done.
 
-- [ ] **01.3 — Normalized `order_items` table + backfill**
-  - **Migration:** `order_items` (id, order_id, product_id, variant_id, description,
-    qty, unit_price_cents, tax_rate_pct, uom_id). Backfill from `orders.metadata`
-    JSONB; keep JSONB readable for one release as fallback.
-  - **Verify:** every existing order has matching rows; totals reconcile to
-    `orders.total_cents`.
-  - Flips `products.json#order_lines_normalized` → done.
+- [~] **01.3 — Normalized `order_items` + variant link**
+  - **Reality check (verify-first):** `order_items` ALREADY exists and is populated
+    by `create-checkout` (sandbox + Stripe paths) — the audit's "lines are JSONB" was
+    outdated. So this issue became: link lines to variants, not create the table.
+  - **Done:** migration `20260610150000` adds `variant_id` (FK→product_variants,
+    ON DELETE SET NULL) + `tax_rate_pct` to `order_items`; `create-checkout` now sets
+    `variant_id`. Verified on scratch Postgres (idempotent; FK SET NULL keeps the line).
+  - **Pending:** legacy backfill of any metadata-only orders; reconcile check;
+    Stage-3 runtime verification. → `products.json#order_lines_normalized` = partial.
 
 - [ ] **01.4 — Wire POS, checkout, invoicing to order_items + variants**
   - **Edge fns:** `create-checkout`, `place_order` handler, `send-order-confirmation`,
