@@ -48,11 +48,11 @@ category: reference
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 45% | 8/1/7 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 47% | 8/0/7 | — |
-| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `█████░░░░░` 48% | 5/5/5 | EPIC-01 |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
+| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `█████░░░░░` 52% | 5/6/4 | EPIC-01 |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |

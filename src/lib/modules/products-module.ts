@@ -553,6 +553,29 @@ Checks the current status of an order via the order-status edge function.
     },
     instructions: 'Builds an invoice from order_items (qty × price_cents), applies tax_rate (default 0.25), marks status=sent, and emails the customer a link to /functions/v1/generate-invoice-pdf. Idempotent via notes "order:<id>". Use dry_run=true to preview totals before sending. Logs invoice_sent to audit_logs.',
   },
+  {
+    name: 'fulfill_order_line',
+    description: 'Record fulfillment of an order line (full or partial). Use when: shipping part of an order; marking a line picked/shipped. The order flips to shipped only once every line is fully fulfilled. NOT for: refunds/returns (use create_return); whole-order status edits (use manage_orders).',
+    category: 'commerce',
+    handler: 'rpc:fulfill_order_line',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'fulfill_order_line',
+        description: 'Add fulfilled quantity to one order line (clamped to the ordered quantity). Supports partial shipments; marks the order shipped when all lines are complete.',
+        parameters: {
+          type: 'object',
+          required: ['p_line_id'],
+          properties: {
+            p_line_id: { type: 'string', format: 'uuid', description: 'order_items.id' },
+            p_qty: { type: 'number', description: 'Quantity to fulfill now; omit to fulfill the remaining quantity' },
+          },
+        },
+      },
+    },
+    instructions: 'Accumulates order_items.qty_fulfilled (clamped to quantity). Omitting p_qty fulfills the line\'s remaining quantity. When no line has remaining quantity, the order is set to fulfillment_status=shipped with shipped_at. Admin/service-role only.',
+  },
 ];
 
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
@@ -578,6 +601,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     'place_order',
     'cart_recovery_check',
     'inventory_report',
+    'fulfill_order_line',
   ],
   skillSeeds: PRODUCTS_SKILLS,
 
