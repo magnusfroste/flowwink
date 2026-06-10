@@ -38,6 +38,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Tables } from '@/integrations/supabase/types';
 import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
 import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
+import { OrderLineFulfillment } from '@/components/admin/orders/OrderLineFulfillment';
 import { EntityActivityTimeline } from '@/components/admin/EntityActivityTimeline';
 import { OrderEventHistory } from '@/components/admin/orders/OrderEventHistory';
 import { EntityTags } from '@/components/admin/EntityTags';
@@ -557,6 +558,22 @@ export default function OrdersPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Per-line fulfillment */}
+              {orderItems && orderItems.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3">Line fulfillment</h3>
+                  <OrderLineFulfillment
+                    orderId={selectedOrder.id}
+                    lines={orderItems.map((i) => ({
+                      id: i.id,
+                      product_name: i.product_name,
+                      quantity: Number(i.quantity),
+                      qty_fulfilled: (i as any).qty_fulfilled ?? 0,
+                    }))}
+                  />
+                </div>
+              )}
 
               <Separator />
 
