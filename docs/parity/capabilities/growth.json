@@ -1,0 +1,14 @@
+{
+  "module": "growth",
+  "odoo_app": "Marketing Automation + Social Marketing",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "ad_campaigns", "name": "Ad campaign management", "odoo": true, "status": "done", "weight": 2, "verify": "ad_campaign_create + ad_performance_check skills; GrowthDashboardPage.tsx" },
+    { "id": "budget_approval", "name": "Budget approval gate", "odoo": true, "status": "done", "weight": 1, "verify": "trust_level 'approve' on ad_optimize; ad_campaign_create approval-gated (draft until approved); PendingOperationsList.tsx" },
+    { "id": "optimization", "name": "Campaign optimization", "odoo": true, "status": "partial", "weight": 1, "verify": "ad_optimize skill (analyze/pause_underperformers/scale_winners/rebalance_budget)", "notes": "Admin UI surface missing — GrowthDashboardPage has no optimization controls." },
+    { "id": "attribution", "name": "UTM/attribution tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "no UTM/attribution skill or UI in growth module" },
+    { "id": "social_posting", "name": "Organic social posting", "odoo": true, "status": "partial", "weight": 2, "verify": "generate_social_post + social_post_batch skills exist in blog-module.ts; ContentCampaignsPage.tsx", "notes": "Skills live in blog-module.ts, not growth-module.ts skillSeeds; no publish-to-platform integration in growth." },
+    { "id": "ai_creatives", "name": "AI ad creative generation", "odoo": false, "status": "done", "weight": 1, "verify": "ad_creative_generate skill (headline/body/CTA, A/B variants)" }
+  ]
+}

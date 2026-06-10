@@ -1,0 +1,15 @@
+{
+  "module": "forms",
+  "odoo_app": "Website forms",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "builder", "name": "Form builder", "odoo": true, "status": "partial", "weight": 2, "verify": "FormBlockEditor.tsx (admin block editor) + FormBlock.tsx (public)", "notes": "Skill surface missing — no form-definition skill; only manage_form_submissions exists in skillSeeds." },
+    { "id": "submissions_to_leads", "name": "Submissions → leads", "odoo": true, "status": "partial", "weight": 2, "verify": "createLeadFromForm in FormBlock.tsx (src/lib/lead-utils); leads visible in LeadsPage", "notes": "Automatic runtime pipeline + UI; no skill surface for the conversion itself." },
+    { "id": "spam_protection", "name": "Spam protection", "odoo": true, "status": "missing", "weight": 1, "verify": "no honeypot/captcha in FormBlock or FormBlockEditor" },
+    { "id": "notifications", "name": "Submission notifications", "odoo": true, "status": "missing", "weight": 1, "verify": "no notification skill or UI; only the form.submitted webhook event for automations" },
+    { "id": "custom_fields", "name": "Custom field types", "odoo": true, "status": "partial", "weight": 1, "verify": "text/email/phone/textarea/checkbox types in FormBlockEditor.tsx", "notes": "UI surface only; no skill surface and no select/radio/date/number types." },
+    { "id": "file_uploads", "name": "File upload fields", "odoo": true, "status": "missing", "weight": 1, "verify": "no file field type in FormBlockEditor" },
+    { "id": "submissions_admin", "name": "Submission management (list/get/stats/delete)", "odoo": true, "status": "done", "weight": 1, "verify": "manage_form_submissions skill; FormSubmissionsPage.tsx", "notes": "Added: full submission admin on both surfaces." }
+  ]
+}

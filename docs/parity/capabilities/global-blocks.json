@@ -1,0 +1,12 @@
+{
+  "module": "global-blocks",
+  "odoo_app": "Website building blocks/snippets",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "block_crud", "name": "Global block CRUD", "odoo": true, "status": "partial", "weight": 2, "verify": "GlobalBlocksPage.tsx (HeaderBlockEditor/FooterBlockEditor); module declares skills: ['manage_global_blocks']", "notes": "Skill not in global-blocks-module skillSeeds — seeded via supabase/seed/module-skills.json / archived migration, so the in-module skill surface is absent per the dual-surface check." },
+    { "id": "reuse", "name": "Reuse across pages", "odoo": true, "status": "partial", "weight": 2, "verify": "useGlobalBlocks.ts; PublicNavigation.tsx + PublicFooter.tsx render global blocks on every public page", "notes": "Skill surface missing in module skillSeeds (see block_crud)." },
+    { "id": "sync_updates", "name": "Edit once, update everywhere", "odoo": true, "status": "partial", "weight": 1, "verify": "single global_blocks row per slot; edits in GlobalBlocksPage.tsx propagate to all pages via useGlobalBlocks", "notes": "Skill surface missing in module skillSeeds (see block_crud)." },
+    { "id": "categories", "name": "Block categories", "odoo": true, "status": "missing", "weight": 1, "verify": "global_blocks only has fixed slots (header/footer) + type; no category field, skill, or UI" }
+  ]
+}

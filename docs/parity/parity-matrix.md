@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 49  ·  **Mean parity:** 44%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 5
+**Benchmarked modules:** 54  ·  **Mean parity:** 45%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -36,11 +36,13 @@ category: reference
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 38% | 5/2/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `████░░░░░░` 38% | 5/0/7 | — |
+| **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████░░░░░░` 39% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 39% | 7/0/9 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
+| **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
@@ -50,6 +52,7 @@ category: reference
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
+| **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
@@ -57,6 +60,8 @@ category: reference
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
+| **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
+| **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
 | **pages** | Website (website.page) | L4 → L4 | `███████░░░` 70% | 5/0/3 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
@@ -77,12 +82,6 @@ category: reference
 | **flowpilot** | none (FlowWink differentiator) | 7 |
 | **river** | none (FlowWink differentiator) | 5 |
 | **site-migration** | none (FlowWink differentiator) | 4 |
-
-## Unscored modules (breadth backlog)
-
-> Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
-
-`forms` · `global-blocks` · `growth` · `surveys` · `templates`
 
 ## Foundational gaps (weight 3, still open)
 

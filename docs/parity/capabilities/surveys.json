@@ -1,0 +1,15 @@
+{
+  "module": "surveys",
+  "odoo_app": "Surveys (survey.survey)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "builder", "name": "Survey builder", "odoo": true, "status": "partial", "weight": 2, "verify": "survey_templates table (questions jsonb) + template UI in SurveysPage.tsx", "notes": "Skill surface missing — no template CRUD skill; create_survey_campaign only references an existing template_id." },
+    { "id": "question_types", "name": "Multiple question types", "odoo": true, "status": "partial", "weight": 1, "verify": "survey_templates.kind check: nps/csat/ces/custom; PublicSurveyPage renders nps/csat", "notes": "Limited type set and no skill surface; custom question rendering is thin." },
+    { "id": "public_links", "name": "Public survey links", "odoo": true, "status": "done", "weight": 1, "verify": "send_survey skill issues unique one-click token links; PublicSurveyPage.tsx renders them" },
+    { "id": "responses", "name": "Response collection", "odoo": true, "status": "done", "weight": 1, "verify": "list_survey_responses skill; responses in SurveysPage.tsx" },
+    { "id": "scoring", "name": "Scoring", "odoo": true, "status": "partial", "weight": 1, "verify": "min_score/max_score/category (detractor/passive/promoter) filters on list_survey_responses; scores in SurveysPage", "notes": "NPS/CSAT category scoring only — no quiz/point scoring like Odoo's." },
+    { "id": "analytics", "name": "Response analytics", "odoo": true, "status": "partial", "weight": 1, "verify": "NPS score display in SurveysPage.tsx", "notes": "Skill surface missing — get_nps_score is in the module inputSchema but has no SkillSeed." },
+    { "id": "event_triggers", "name": "Event-triggered sends (order.delivered, ticket.closed, ...)", "odoo": false, "status": "done", "weight": 1, "verify": "create_survey_campaign trigger enum + delay_hours; Trigger UI in SurveysPage.tsx", "notes": "Added: platform-event-driven survey dispatch with detractor auto-routing to FlowPilot." }
+  ]
+}

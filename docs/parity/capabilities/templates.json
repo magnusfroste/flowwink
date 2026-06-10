@@ -1,0 +1,14 @@
+{
+  "module": "templates",
+  "odoo_app": "Website themes",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "install", "name": "Install template/theme", "odoo": true, "status": "partial", "weight": 2, "verify": "InstallTemplateDialog.tsx + useTemplateInstaller.ts; TemplateGalleryPage.tsx", "notes": "Skill surface missing — list_templates explicitly says 'NOT for: actually installing a template (use the admin UI)'." },
+    { "id": "preview", "name": "Preview before install", "odoo": true, "status": "partial", "weight": 1, "verify": "TemplatePreviewDialog.tsx + TemplateLivePreviewPage.tsx", "notes": "Skill surface missing — list_templates returns catalog metadata only, no preview skill." },
+    { "id": "seed_content", "name": "Seeds pages/posts/products", "odoo": true, "status": "partial", "weight": 1, "verify": "useTemplateInstaller.ts creates pages, blog posts, products from template data", "notes": "Skill surface missing — seeding only runs through the admin install flow." },
+    { "id": "theme_settings", "name": "Theme/brand settings", "odoo": true, "status": "partial", "weight": 1, "verify": "BrandingSettingsPage.tsx; site_branding_get/site_branding_update skills", "notes": "Branding skills live in pages-module skillSeeds, not templates-module." },
+    { "id": "operator_seed", "name": "Seeds FlowPilot soul+objectives", "odoo": false, "status": "missing", "weight": 1, "verify": "useTemplateInstaller.ts:622 — 'Templates no longer seed FlowPilot objectives, automations, or workflows'", "notes": "Moved to useFlowPilotBootstrap on module enable; no template-side skill or seeding remains." },
+    { "id": "template_export", "name": "Export current site as reusable template", "odoo": false, "status": "partial", "weight": 1, "verify": "TemplateExportPage.tsx + TemplateExportTab.tsx; module description: 'export current site as reusable template'", "notes": "Added. Skill surface missing — admin UI only." }
+  ]
+}
