@@ -18,6 +18,7 @@ primitive, lifting it once back-fills `purchasing`, `quotes`, `expenses` and
 - [ ] Capabilities → `done` in `approvals.json`: `approval_chains`, `approval_groups`,
       `delegation`, `expiration`
 - [ ] `approvals` parity ≥ 60%
+- [ ] Chain management + approve/reject are dual-surface (skills + admin UI)
 - [ ] At least two consumer modules (`purchasing`, `expenses`) routed through chains
 - [ ] `npx vitest run` + `npm run lint` green
 

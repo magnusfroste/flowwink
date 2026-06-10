@@ -59,5 +59,8 @@ parity denominator — we do not penalise ourselves for features Odoo lacks.
 2. **`status: partial`** requires a one-line `notes` saying what is still missing.
 3. **`status: done`** requires the `verify` field to be true *right now* — a reviewer
    (human or agent) must be able to confirm it from the code, not from intent.
+   Per the **dual-surface law**, `done` also means the capability exists as **both**
+   an MCP skill (in `skillSeeds`, `mcp_exposed=true`) **and** a human admin UI.
+   Ship only one surface → cap at `partial`.
 4. Adding a brand-new gap you discovered? Append a capability with `status: missing`.
    Breadth grows by never leaving a known gap unrecorded.

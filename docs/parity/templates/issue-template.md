@@ -26,8 +26,14 @@ agent needs no other reading.>
 ## Acceptance criteria
 - [ ] <Concrete, verifiable behaviour 1>
 - [ ] <Concrete, verifiable behaviour 2>
-- [ ] Skill metadata passes `bun run scripts/skill-linter.ts` (if a skill is added)
+- [ ] **MCP surface:** operation is callable as a skill — registered in
+      `skillSeeds`, `mcp_exposed=true`, metadata passes `bun run scripts/skill-linter.ts`
+- [ ] **UI surface:** operation is usable by a human in the admin (and account
+      portal if customer-facing)
 - [ ] Migration is idempotent (re-runnable; uses IF NOT EXISTS / CREATE OR REPLACE)
+
+> **Dual-surface law:** a capability is only `done` when **both** the MCP skill and
+> the human UI exist. Shipping one without the other = `partial` at best.
 
 ## Test command
 ```bash

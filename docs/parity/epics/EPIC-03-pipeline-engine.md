@@ -16,6 +16,7 @@ stages per module. Independent of EPIC-01/02 — can run fully in parallel.
 
 ## Outcome (Definition of Done for the whole epic)
 - [ ] Shared `pipeline_stages` engine shipped and consumed by ≥ 3 modules
+- [ ] Stage management is dual-surface: `manage_pipeline_stage` skill + admin kanban UI
 - [ ] Capabilities → `done`: `crm.json#custom_stages`, `crm.json#forecast`
 - [ ] `crm` parity ≥ 55%; `deals` and `tickets` capability files updated
 - [ ] No data loss migrating existing enum values into stage rows

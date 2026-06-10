@@ -22,6 +22,7 @@ community later, so it is done in-house.
 - [ ] Capabilities → `done` in `products.json`: `variants`, `attribute_templates`,
       `order_lines_normalized`, `uom`, `partial_shipments`
 - [ ] `products` parity ≥ 60% (from 25%)
+- [ ] Every shipped capability is dual-surface (MCP skill + admin UI)
 - [ ] Existing orders backfilled from JSONB into normalized lines (zero data loss)
 - [ ] `npx vitest run` + `npm run lint` green; `npm run test:mcp-regression` green
 

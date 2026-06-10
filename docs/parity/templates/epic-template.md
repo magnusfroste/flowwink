@@ -14,6 +14,7 @@ reason it ranks where it does.>
 ## Outcome (Definition of Done for the whole epic)
 - [ ] All issues below merged
 - [ ] Capabilities flipped to `done` in `capabilities/*.json`: `<ids>`
+- [ ] Every shipped capability is **dual-surface** (MCP skill + admin UI)
 - [ ] Mean parity of affected modules ≥ `<target>%`
 - [ ] No regression in `npx vitest run` and `npm run lint`
 

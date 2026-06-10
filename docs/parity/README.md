@@ -21,6 +21,26 @@ capability entry (what + why) and, for anything non-trivial, an issue spec (how 
 how we verify). The spec is the contract; the PR satisfies it. If it isn't written
 down here first, it doesn't get built.
 
+## Dual-surface law: every capability is UI **and** MCP
+
+FlowWink is an **agent-operable Business OS**: every module must be operable by a
+human in the admin UI **and** by an external agent over MCP. A capability that
+only ships an admin screen — or only a skill — is **not done**. This is not new
+(it's the platform's core promise: "operable by any agent, ships with one"), but
+the parity program makes it a hard gate so growth doesn't quietly break it.
+
+Therefore a capability counts as `done` only when **both** surfaces exist:
+
+| Surface | What it means | Where |
+|---|---|---|
+| 🤖 **MCP / skill** | Registered in `agent_skills`, `mcp_exposed=true`, self-describing metadata (`Use when:` / `NOT for:`), flat OpenAI-strict schema | `skillSeeds` in `src/lib/modules/<module>-module.ts` |
+| 👤 **Human / UI** | Admin (and where relevant account-portal) screen for the same operation | `src/components/admin/<area>/…` |
+
+The skill is the AI-native entry point that lets OpenClaw, Claude Desktop, or any
+MCP client run FlowWink as SaaS — without it the module is invisible to the agent
+ecosystem. Keep the *intelligence* in the operator (Law 1–3); the skill is the
+**interface**, not a private AI pipeline.
+
 It builds *on top of* the existing **L1–L5 maturity scale**
 ([`docs/processes/README.md`](../processes/README.md)) — it does not replace it.
 Maturity answers "can a customer run this process?"; parity answers "how deep is

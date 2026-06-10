@@ -17,6 +17,7 @@ COGS is computed per variant and posted per normalized order line.
 ## Outcome (Definition of Done for the whole epic)
 - [ ] Capabilities → `done` in `inventory.json`: `valuation`, `landed_costs`
 - [ ] `inventory` parity ≥ 60%
+- [ ] Every shipped capability is dual-surface (MCP skill + admin UI)
 - [ ] Inventory balance-sheet account ties out to Σ valuation layers (test query)
 - [ ] `npx vitest run` + `npm run lint` green
 
