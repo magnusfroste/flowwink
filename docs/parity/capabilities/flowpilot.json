@@ -1,0 +1,15 @@
+{
+  "module": "flowpilot",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L4",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "objective_management", "name": "Autonomous objective creation & tracking", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: create_objective in src/lib/modules/flowpilot-module.ts" },
+    { "id": "automation_management", "name": "Automation lifecycle (cron / event / signal triggers)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: manage_automations in src/lib/modules/flowpilot-module.ts" },
+    { "id": "web_research", "name": "Web search & URL scraping (Firecrawl / Jina)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: search_web, scrape_url in src/lib/modules/flowpilot-module.ts" },
+    { "id": "business_digest", "name": "Cross-module weekly business digest", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: weekly_business_digest; module automation 'Weekly Business Digest' in src/lib/modules/flowpilot-module.ts" },
+    { "id": "autonomous_learning", "name": "Learn from operational data into persistent memory", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: learn_from_data in src/lib/modules/flowpilot-module.ts" },
+    { "id": "site_settings_management", "name": "Site settings read/update (modules, theme, AI config)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: manage_site_settings in src/lib/modules/flowpilot-module.ts" },
+    { "id": "user_directory", "name": "Platform user & role listing", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: users_list in src/lib/modules/flowpilot-module.ts" }
+  ]
+}

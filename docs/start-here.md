@@ -38,6 +38,7 @@ You can switch modes anytime. Same modules, same skills, same data.
 | Extending the codebase | [`builders/README.md`](./builders/README.md) |
 | Connecting an MCP client | [`mcp/getting-started.md`](./mcp/getting-started.md) |
 | Curious about the architecture | [`concepts/elevator-pitch.md`](./concepts/elevator-pitch.md) → [`architecture/mcp-as-platform.md`](./architecture/mcp-as-platform.md) |
+| Working on Odoo parity (the depth roadmap) | [`parity/README.md`](./parity/README.md) → [`parity/pipeline.md`](./parity/pipeline.md) |
 
 ---
 

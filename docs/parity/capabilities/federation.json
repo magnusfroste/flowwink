@@ -1,0 +1,16 @@
+{
+  "module": "federation",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "a2a_messaging", "name": "Agent-to-Agent chat & peer requests (A2A protocol)", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: a2a_chat, a2a_request in src/lib/modules/federation-module.ts" },
+    { "id": "claw_mission_dispatch", "name": "One-shot mission dispatch to external Claw agents", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: dispatch_claw_mission in src/lib/modules/federation-module.ts" },
+    { "id": "peer_invitation", "name": "Autonomous sub-agent recruitment with MCP credential issuance", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: invite_peer_agent in src/lib/modules/federation-module.ts" },
+    { "id": "beta_test_sessions", "name": "Beta test session lifecycle (start / end / status)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: openclaw_start_session, openclaw_end_session, openclaw_get_status in src/lib/modules/federation-module.ts" },
+    { "id": "beta_findings", "name": "Finding reporting, scanning & resolution", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: openclaw_report_finding, scan_beta_findings, resolve_finding in src/lib/modules/federation-module.ts" },
+    { "id": "agent_exchange", "name": "Structured OpenClaw ↔ FlowPilot message exchange", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: openclaw_exchange in src/lib/modules/federation-module.ts" },
+    { "id": "test_queueing", "name": "Asynchronous beta test queueing for peer poll", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: queue_beta_test in src/lib/modules/federation-module.ts" },
+    { "id": "fulfillment_confirmation", "name": "Supplier-agent order/PO fulfillment confirmation", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: confirm_fulfillment in src/lib/modules/federation-module.ts" }
+  ]
+}

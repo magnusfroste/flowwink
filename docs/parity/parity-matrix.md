@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Scored modules:** 31  ·  **Mean parity:** 38%  ·  **Unscored modules:** 31
+**Benchmarked modules:** 31  ·  **Mean parity:** 38%  ·  **Differentiators (no Odoo benchmark):** 7  ·  **Unscored:** 24
 
 ## Scored modules
 
@@ -47,11 +47,23 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
 
+## Differentiators (no Odoo counterpart — excluded from the mean)
+
+| Module | Description | Capabilities |
+|---|---|---|
+| **browser-control** | none (FlowWink differentiator) | 4 |
+| **composio** | none (FlowWink differentiator) | 4 |
+| **developer** | none (FlowWink differentiator) | 4 |
+| **federation** | none (FlowWink differentiator) | 8 |
+| **flowpilot** | none (FlowWink differentiator) | 7 |
+| **river** | none (FlowWink differentiator) | 5 |
+| **site-migration** | none (FlowWink differentiator) | 4 |
+
 ## Unscored modules (breadth backlog)
 
 > Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
 
-`analytics` · `blog` · `browser-control` · `calendar` · `chat` · `company-insights` · `composio` · `customer360` · `developer` · `docs` · `documents` · `email` · `federation` · `flowpilot` · `forms` · `global-blocks` · `growth` · `handbook` · `kb` · `live-support` · `media` · `newsletter` · `pages` · `river` · `sales-intelligence` · `site-migration` · `surveys` · `templates` · `webinars` · `wiki` · `workspace-chat`
+`analytics` · `blog` · `calendar` · `chat` · `company-insights` · `customer360` · `docs` · `documents` · `email` · `forms` · `global-blocks` · `growth` · `handbook` · `kb` · `live-support` · `media` · `newsletter` · `pages` · `sales-intelligence` · `surveys` · `templates` · `webinars` · `wiki` · `workspace-chat`
 
 ## Foundational gaps (weight 3, still open)
 

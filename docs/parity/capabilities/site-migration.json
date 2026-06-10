@@ -1,0 +1,12 @@
+{
+  "module": "site-migration",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "page_migration", "name": "Migrate external webpage into FlowWink-ready blocks", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: migrate_url in src/lib/modules/site-migration-module.ts" },
+    { "id": "page_discovery", "name": "Sitemap discovery & URL mapping of source site", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: migrate_url (page discovery / otherPages); module 'discover' action via firecrawl-map in src/lib/modules/site-migration-module.ts" },
+    { "id": "brand_extraction", "name": "Branding extraction & design token mapping", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: migrate_url (brand extraction); module 'analyze_brand' action in src/lib/modules/site-migration-module.ts" },
+    { "id": "ai_block_generation", "name": "AI-powered block generation with brand fidelity", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: migrate_url returns FlowWink blocks via edge:migrate-page in src/lib/modules/site-migration-module.ts" }
+  ]
+}

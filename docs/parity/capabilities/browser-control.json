@@ -1,0 +1,12 @@
+{
+  "module": "browser-control",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "authenticated_fetch", "name": "Login-walled page fetch via Chrome Extension relay (LinkedIn, X)", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: browser_fetch (relay path) in src/lib/modules/browser-control-module.ts" },
+    { "id": "public_fetch", "name": "Public URL fetch via Firecrawl server-side scraping", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: browser_fetch (Firecrawl path) in src/lib/modules/browser-control-module.ts" },
+    { "id": "auto_strategy_routing", "name": "Automatic relay-vs-scrape strategy selection per URL", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: browser_fetch (auto-picks strategy) in src/lib/modules/browser-control-module.ts" },
+    { "id": "forced_relay", "name": "Forced relay mode for any URL (force_relay flag)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: browser_fetch force_relay parameter in src/lib/modules/browser-control-module.ts" }
+  ]
+}

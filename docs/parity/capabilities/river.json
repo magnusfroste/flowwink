@@ -1,0 +1,13 @@
+{
+  "module": "river",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "feed_posting", "name": "Post short messages to internal team feed", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: post_to_river (action=create) in src/lib/modules/river-module.ts" },
+    { "id": "thread_replies", "name": "Threaded replies via parent_id", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: post_to_river (action=reply) in src/lib/modules/river-module.ts" },
+    { "id": "post_moderation", "name": "Pin / unpin / delete posts (RLS-enforced roles)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: post_to_river (actions pin/unpin/delete) in src/lib/modules/river-module.ts" },
+    { "id": "media_attachments", "name": "Image attachments via river-media storage bucket", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: post_to_river media_urls parameter in src/lib/modules/river-module.ts" },
+    { "id": "feed_search", "name": "Free-text search over recent feed posts", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: search_river in src/lib/modules/river-module.ts" }
+  ]
+}

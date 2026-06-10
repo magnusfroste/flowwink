@@ -1,0 +1,12 @@
+{
+  "module": "composio",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "action_execution", "name": "Execute actions in 1000+ connected external apps", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: composio_execute in src/lib/modules/composio-module.ts" },
+    { "id": "tool_discovery", "name": "Intent-based tool/action search across connected apps", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: composio_search_tools in src/lib/modules/composio-module.ts" },
+    { "id": "gmail_read", "name": "Read Gmail via managed OAuth (Gmail search syntax)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: composio_gmail_read in src/lib/modules/composio-module.ts" },
+    { "id": "gmail_send", "name": "Send individual emails via Gmail OAuth", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: composio_gmail_send in src/lib/modules/composio-module.ts" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "module": "developer",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "global_search", "name": "Unified full-text search across 16 business entity types", "odoo": false, "status": "done", "weight": 2, "verify": "skillSeeds: global_search in src/lib/modules/developer-module.ts" },
+    { "id": "skill_linting", "name": "Agent Contract Integrity checks on agent skills", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: lint_skill in src/lib/modules/developer-module.ts" },
+    { "id": "demo_seeding", "name": "Tagged demo/simulation data seeding per module", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: seed_module_demo in src/lib/modules/developer-module.ts" },
+    { "id": "demo_reset", "name": "Clean removal of seeded demo data (dry-run default)", "odoo": false, "status": "done", "weight": 1, "verify": "skillSeeds: reset_module_data in src/lib/modules/developer-module.ts" }
+  ]
+}

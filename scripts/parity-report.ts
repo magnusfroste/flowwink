@@ -65,7 +65,12 @@ function bar(pct: number): string {
 }
 
 function render(files: CapFile[]): string {
-  const scored = files.map((c) => ({ c, s: parityPct(c) }));
+  // Modules with zero Odoo-relevant capabilities are FlowWink differentiators:
+  // documented for completeness but excluded from the parity mean (no benchmark).
+  const isDiff = (c: CapFile) => c.capabilities.every((x) => !x.odoo);
+  const benchmarked = files.filter((c) => !isDiff(c));
+  const differentiators = files.filter(isDiff);
+  const scored = benchmarked.map((c) => ({ c, s: parityPct(c) }));
   const overall = scored.length
     ? Math.round(scored.reduce((s, x) => s + x.s.pct, 0) / scored.length)
     : 0;
@@ -85,7 +90,7 @@ function render(files: CapFile[]): string {
   lines.push('> **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.');
   lines.push('> Edit `docs/parity/capabilities/<module>.json` to change scores.');
   lines.push('');
-  lines.push(`**Scored modules:** ${files.length}  ·  **Mean parity:** ${overall}%  ·  **Unscored modules:** ${unscored.length}`);
+  lines.push(`**Benchmarked modules:** ${benchmarked.length}  ·  **Mean parity:** ${overall}%  ·  **Differentiators (no Odoo benchmark):** ${differentiators.length}  ·  **Unscored:** ${unscored.length}`);
   lines.push('');
   lines.push('## Scored modules');
   lines.push('');
@@ -96,6 +101,16 @@ function render(files: CapFile[]): string {
     lines.push(`| **${c.module}** | ${c.odoo_app} | ${c.current_maturity} → ${c.target_maturity} | \`${bar(s.pct)}\` ${s.pct}% | ${s.done}/${s.partial}/${s.missing} | ${epics} |`);
   }
   lines.push('');
+  if (differentiators.length) {
+    lines.push('## Differentiators (no Odoo counterpart — excluded from the mean)');
+    lines.push('');
+    lines.push('| Module | Description | Capabilities |');
+    lines.push('|---|---|---|');
+    for (const c of differentiators.sort((a, b) => a.module.localeCompare(b.module))) {
+      lines.push(`| **${c.module}** | ${c.odoo_app} | ${c.capabilities.length} |`);
+    }
+    lines.push('');
+  }
   if (unscored.length) {
     lines.push('## Unscored modules (breadth backlog)');
     lines.push('');
@@ -132,10 +147,11 @@ if (check) {
   console.log('✓ parity-matrix.md is up to date');
 } else {
   fs.writeFileSync(MATRIX, out + '\n');
-  const scored = files.map((c) => ({ m: c.module, ...parityPct(c) }));
+  const benchmarked = files.filter((c) => c.capabilities.some((x) => x.odoo));
+  const scored = benchmarked.map((c) => ({ m: c.module, ...parityPct(c) }));
   const mean = scored.length ? Math.round(scored.reduce((s, x) => s + x.pct, 0) / scored.length) : 0;
   console.log(`Wrote ${path.relative(ROOT, MATRIX)}`);
-  console.log(`Scored ${files.length} modules · mean parity ${mean}%`);
+  console.log(`Benchmarked ${benchmarked.length}/${files.length} scored modules · mean parity ${mean}% · differentiators ${files.length - benchmarked.length}`);
   for (const s of scored.sort((a, b) => a.pct - b.pct)) {
     console.log(`  ${String(s.pct).padStart(3)}%  ${s.m}  (${s.done}/${s.partial}/${s.missing})`);
   }
