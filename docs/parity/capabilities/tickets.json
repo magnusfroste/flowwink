@@ -1,0 +1,26 @@
+{
+  "module": "tickets",
+  "odoo_app": "Helpdesk (helpdesk.ticket)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "ticket_crud", "name": "Ticket CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "Ticket create/read/update/delete supported" },
+    { "id": "ai_triage", "name": "AI triage", "odoo": true, "status": "done", "weight": 1, "verify": "AI triage of incoming tickets" },
+    { "id": "kb_suggestions", "name": "KB article suggestions", "odoo": true, "status": "done", "weight": 1, "verify": "KB article suggestions on ticket" },
+    { "id": "sla_deadline_field", "name": "SLA deadline field", "odoo": true, "status": "done", "weight": 1, "verify": "SLA deadline field on ticket" },
+    { "id": "comments", "name": "Threaded comments", "odoo": true, "status": "done", "weight": 1, "verify": "Threaded comments on ticket" },
+    { "id": "csat", "name": "CSAT survey", "odoo": true, "status": "done", "weight": 1, "verify": "CSAT survey after resolution" },
+    { "id": "source_tracking", "name": "Source tracking", "odoo": true, "status": "done", "weight": 1, "verify": "Ticket source channel tracked" },
+    { "id": "search", "name": "Full-text search", "odoo": true, "status": "missing", "weight": 1, "verify": "Full-text search across tickets", "notes": "No text/tsvector search anywhere — useTickets.ts only filters by status; TicketsPage has no search input; no tsvector in migrations." },
+
+    { "id": "stage_pipeline", "name": "Configurable stage pipeline", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-03", "verify": "Configurable ticket stage pipeline" },
+    { "id": "escalation_rules", "name": "Escalation rules", "odoo": true, "status": "missing", "weight": 2, "verify": "Escalation rules on ticket aging/breach" },
+    { "id": "customer_portal", "name": "Customer self-service portal", "odoo": true, "status": "missing", "weight": 2, "verify": "Customer self-service ticket portal" },
+    { "id": "templates_canned", "name": "Canned responses", "odoo": true, "status": "missing", "weight": 1, "verify": "Canned response templates" },
+    { "id": "time_tracking", "name": "Time tracking per ticket", "odoo": true, "status": "missing", "weight": 1, "verify": "Time tracking logged per ticket" },
+    { "id": "split_merge", "name": "Ticket split/merge", "odoo": true, "status": "missing", "weight": 1, "verify": "Ticket split and merge operations" },
+    { "id": "tags", "name": "Custom tags", "odoo": true, "status": "missing", "weight": 1, "verify": "Custom tags on tickets" },
+    { "id": "automation_triggers", "name": "Rule-based automation", "odoo": true, "status": "missing", "weight": 1, "verify": "Rule-based ticket automation triggers" },
+    { "id": "multilevel_assignment", "name": "Queue/team assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "Queue/team-based ticket assignment" }
+  ]
+}

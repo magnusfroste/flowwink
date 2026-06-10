@@ -1,0 +1,29 @@
+{
+  "module": "hr",
+  "odoo_app": "Employees + Time Off + Attendances + Appraisals (hr.employee)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "employee_directory", "name": "Employee directory", "odoo": true, "status": "done", "weight": 1, "verify": "employee directory CRUD exists" },
+    { "id": "leave_management", "name": "Leave request workflow", "odoo": true, "status": "done", "weight": 1, "verify": "leave request workflow exists" },
+    { "id": "leave_allocations", "name": "Leave allocations w/ carry-over", "odoo": true, "status": "done", "weight": 1, "verify": "leave allocations with carry-over exist" },
+    { "id": "leave_balance", "name": "Leave balance calc", "odoo": true, "status": "done", "weight": 1, "verify": "leave balance calculation exists" },
+    { "id": "onboarding", "name": "Onboarding checklists", "odoo": true, "status": "done", "weight": 1, "verify": "onboarding checklists exist" },
+    { "id": "org_structure", "name": "Manager hierarchy/org chart", "odoo": true, "status": "done", "weight": 1, "verify": "manager hierarchy / org chart exists" },
+    { "id": "skills_certs", "name": "Skills + certifications", "odoo": true, "status": "done", "weight": 1, "verify": "skills and certifications tracking exists" },
+    { "id": "attendance_basic", "name": "Basic attendance clock in/out", "odoo": true, "status": "done", "weight": 1, "verify": "basic attendance clock in/out exists" },
+    { "id": "performance_goals", "name": "Performance goals", "odoo": true, "status": "done", "weight": 1, "verify": "performance goals exist" },
+    { "id": "one_on_ones", "name": "1:1 meetings", "odoo": true, "status": "done", "weight": 1, "verify": "1:1 meetings exist" },
+    { "id": "feedback_360", "name": "360 feedback", "odoo": true, "status": "done", "weight": 1, "verify": "360 feedback exists" },
+    { "id": "performance_reviews", "name": "Performance reviews", "odoo": true, "status": "done", "weight": 1, "verify": "performance reviews exist" },
+    { "id": "audit_log", "name": "HR audit log", "odoo": true, "status": "done", "weight": 1, "verify": "HR audit log exists" },
+
+    { "id": "self_service_portal", "name": "Employee self-service portal", "odoo": true, "status": "done", "weight": 2, "verify": "employee self-service portal exists", "notes": "Account portal exposes employee self-service: src/pages/account/{LeavePage,AttendancePage,MySkillsPage,PerformancePage,MyContractsPage}.tsx gated by useEmployeeSelf." },
+    { "id": "employee_metadata", "name": "Bank/tax/emergency contact data", "odoo": true, "status": "partial", "weight": 1, "verify": "bank/tax/emergency contact data fields exist", "notes": "employees table has emergency_contact (jsonb), tax_rate_pct, personal_number (baseline.sql:14044-14053); no employee bank/disbursement account field." },
+    { "id": "salary_grades", "name": "Salary grades/scales", "odoo": true, "status": "missing", "weight": 1, "verify": "salary grades/scales exist" },
+    { "id": "benefits_mgmt", "name": "Benefits/allowances", "odoo": true, "status": "missing", "weight": 1, "verify": "benefits/allowances management exists" },
+    { "id": "training_catalog", "name": "Training/course catalog", "odoo": true, "status": "missing", "weight": 1, "verify": "training/course catalog exists" },
+    { "id": "disciplinary", "name": "Disciplinary/warnings", "odoo": true, "status": "missing", "weight": 1, "verify": "disciplinary/warnings tracking exists" },
+    { "id": "shift_scheduling", "name": "Shift scheduling/roster", "odoo": true, "status": "missing", "weight": 1, "verify": "shift scheduling/roster exists" }
+  ]
+}

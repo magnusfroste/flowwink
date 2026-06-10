@@ -1,0 +1,25 @@
+{
+  "module": "recruitment",
+  "odoo_app": "Recruitment (hr.applicant)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "job_postings", "name": "Job postings", "odoo": true, "status": "done", "weight": 1, "verify": "job postings exist" },
+    { "id": "applications", "name": "Applications w/ stages", "odoo": true, "status": "done", "weight": 1, "verify": "applications with stages exist" },
+    { "id": "stage_history", "name": "Stage history log", "odoo": true, "status": "done", "weight": 1, "verify": "stage history log exists" },
+    { "id": "candidate_notes", "name": "Candidate notes/rating", "odoo": true, "status": "done", "weight": 1, "verify": "candidate notes/rating exist" },
+    { "id": "ai_resume_parse", "name": "AI resume parsing", "odoo": true, "status": "done", "weight": 1, "verify": "AI resume parsing exists" },
+    { "id": "ai_scoring", "name": "AI candidate scoring", "odoo": true, "status": "done", "weight": 1, "verify": "AI candidate scoring exists" },
+    { "id": "ai_outreach", "name": "AI outreach drafting", "odoo": true, "status": "done", "weight": 1, "verify": "AI outreach drafting exists" },
+    { "id": "hiring_workflow", "name": "Hire→employee+contract+onboarding", "odoo": true, "status": "done", "weight": 1, "verify": "hire to employee+contract+onboarding workflow exists" },
+    { "id": "pipeline_dashboard", "name": "Pipeline dashboard", "odoo": true, "status": "done", "weight": 1, "verify": "pipeline dashboard exists" },
+    { "id": "internal_mobility_match", "name": "Internal mobility matching", "odoo": true, "status": "missing", "weight": 1, "verify": "internal mobility matching exists", "notes": "No skill, table, or code implements internal mobility matching anywhere in the repo (term only appears in this capability file). recruitment-module.ts has no such skill." },
+
+    { "id": "interview_scheduling", "name": "Interview scheduling/calendar", "odoo": true, "status": "missing", "weight": 2, "verify": "interview scheduling/calendar exists" },
+    { "id": "assessment_tests", "name": "Assessment/test integration", "odoo": true, "status": "missing", "weight": 1, "verify": "assessment/test integration exists" },
+    { "id": "offer_letter_generation", "name": "Offer letter from template", "odoo": true, "status": "missing", "weight": 1, "verify": "offer letter generation from template exists" },
+    { "id": "reference_checks", "name": "Reference/background checks", "odoo": true, "status": "missing", "weight": 1, "verify": "reference/background checks exist" },
+    { "id": "recruitment_analytics", "name": "Time-to-hire/source ROI", "odoo": true, "status": "missing", "weight": 1, "verify": "time-to-hire / source ROI analytics exist" },
+    { "id": "job_board_multipost", "name": "Job-board multiposting", "odoo": true, "status": "missing", "weight": 1, "verify": "job-board multiposting exists" }
+  ]
+}

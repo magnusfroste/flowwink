@@ -1,0 +1,27 @@
+{
+  "module": "manufacturing",
+  "odoo_app": "Manufacturing (mrp.production)",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "bom_versioning", "name": "BOM versioning", "odoo": true, "status": "done", "weight": 1, "verify": "Bill of materials versioning supported" },
+    { "id": "mo_lifecycle", "name": "MO lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "Manufacturing order status lifecycle" },
+    { "id": "component_tracking", "name": "Component consumption tracking", "odoo": true, "status": "done", "weight": 1, "verify": "Component consumption tracked on MO" },
+    { "id": "availability_check", "name": "Material availability check", "odoo": true, "status": "done", "weight": 1, "verify": "Material availability check before MO" },
+    { "id": "procurement_trigger", "name": "Procurement trigger for shortages", "odoo": true, "status": "done", "weight": 1, "verify": "Procurement triggered on component shortage" },
+    { "id": "stock_movement", "name": "Stock moves on completion", "odoo": true, "status": "done", "weight": 1, "verify": "Stock moves created on MO completion" },
+    { "id": "status_gating", "name": "Status progression gating", "odoo": true, "status": "done", "weight": 1, "verify": "MO status progression gating rules" },
+    { "id": "completion_event", "name": "Completion event", "odoo": true, "status": "done", "weight": 1, "verify": "MO completion event fired" },
+
+    { "id": "work_centers_routing", "name": "Work centers + routing operations", "odoo": true, "status": "missing", "weight": 3, "verify": "Work centers and routing operations defined" },
+    { "id": "work_orders", "name": "Work-order generation", "odoo": true, "status": "missing", "weight": 2, "verify": "Work orders generated from routing" },
+    { "id": "capacity_scheduling", "name": "Finite capacity scheduling", "odoo": true, "status": "missing", "weight": 2, "verify": "Finite-capacity scheduling of work centers" },
+    { "id": "mrp_reorder", "name": "Auto-MO on reorder point", "odoo": true, "status": "missing", "weight": 2, "verify": "Auto-create MO when reorder point hit" },
+    { "id": "alternative_boms_eco", "name": "Alternative BOMs/ECO", "odoo": true, "status": "missing", "weight": 1, "verify": "Alternative BOMs and engineering change orders" },
+    { "id": "byproducts", "name": "By-/co-products", "odoo": true, "status": "missing", "weight": 1, "verify": "By-products/co-products on MO output" },
+    { "id": "kit_picking", "name": "Kit/staged picking", "odoo": true, "status": "missing", "weight": 1, "verify": "Kit/staged component picking" },
+    { "id": "scrap_per_operation", "name": "Scrap per operation", "odoo": true, "status": "missing", "weight": 1, "verify": "Scrap recorded per operation" },
+    { "id": "labor_cost", "name": "Labor/overhead cost", "odoo": true, "status": "missing", "weight": 1, "verify": "Labor/overhead cost in MO costing" },
+    { "id": "quality_inspection", "name": "QC inspection steps", "odoo": true, "status": "missing", "weight": 1, "verify": "Quality inspection steps in MO flow" }
+  ]
+}

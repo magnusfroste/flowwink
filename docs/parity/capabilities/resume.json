@@ -1,0 +1,19 @@
+{
+  "module": "resume",
+  "odoo_app": "Employees → Skills / niche consultant pool",
+  "current_maturity": "L2",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "profile_crud", "name": "Consultant profile CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "consultant profile CRUD exists" },
+    { "id": "checkin_update", "name": "Check-in profile update", "odoo": true, "status": "done", "weight": 1, "verify": "check-in profile update exists" },
+    { "id": "dedup", "name": "Duplicate detection", "odoo": true, "status": "done", "weight": 1, "verify": "duplicate detection exists" },
+
+    { "id": "semantic_search", "name": "Semantic search (pgvector)", "odoo": false, "status": "done", "weight": 1, "verify": "semantic search via pgvector exists" },
+    { "id": "ai_matching", "name": "AI job matching", "odoo": false, "status": "done", "weight": 2, "verify": "AI job matching exists" },
+    { "id": "gdpr_anonymization", "name": "GDPR anonymization", "odoo": false, "status": "done", "weight": 1, "verify": "GDPR anonymization exists" },
+
+    { "id": "consultant_contracts", "name": "Consultant contract/SOW tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "consultant contract/SOW tracking exists" },
+    { "id": "utilization_tracking", "name": "Utilization/assignment tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "utilization/assignment tracking exists" },
+    { "id": "rate_matrix", "name": "Skill/hourly-rate matrix", "odoo": true, "status": "missing", "weight": 1, "verify": "skill/hourly-rate matrix exists" }
+  ]
+}

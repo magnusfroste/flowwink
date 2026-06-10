@@ -1,0 +1,21 @@
+{
+  "module": "contracts",
+  "odoo_app": "Sign + contract management",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "contract_crud", "name": "Contract CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "contract CRUD exists" },
+    { "id": "templates_tokens", "name": "Templates w/ token substitution", "odoo": true, "status": "done", "weight": 1, "verify": "templates with token substitution exist" },
+    { "id": "renewal_check", "name": "Renewal bevakning", "odoo": true, "status": "done", "weight": 1, "verify": "renewal bevakning (monitoring) exists" },
+    { "id": "public_signing", "name": "Public signing link", "odoo": true, "status": "done", "weight": 1, "verify": "public signing link exists" },
+    { "id": "versioning", "name": "Contract versioning", "odoo": true, "status": "done", "weight": 1, "verify": "contract versioning exists" },
+    { "id": "search", "name": "Full-text search", "odoo": true, "status": "done", "weight": 1, "verify": "full-text search exists" },
+    { "id": "document_storage", "name": "Document storage", "odoo": true, "status": "done", "weight": 1, "verify": "document storage exists" },
+
+    { "id": "esignature_integration", "name": "True e-signature (Scrive/DocuSign)", "odoo": true, "status": "missing", "weight": 2, "verify": "true e-signature integration (Scrive/DocuSign) exists" },
+    { "id": "auto_invoicing", "name": "Auto-invoicing from contract", "odoo": true, "status": "missing", "weight": 2, "verify": "auto-invoicing from contract exists" },
+    { "id": "milestone_tracking", "name": "Milestone/obligation tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "milestone/obligation tracking exists" },
+    { "id": "payment_reminders", "name": "Payment reminders", "odoo": true, "status": "missing", "weight": 1, "verify": "payment reminders exist" },
+    { "id": "obligation_tracking", "name": "Obligation tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "obligation tracking exists" }
+  ]
+}

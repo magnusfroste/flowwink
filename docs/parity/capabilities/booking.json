@@ -1,0 +1,28 @@
+{
+  "module": "booking",
+  "odoo_app": "Appointments (calendar.appointment)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "appointment_booking", "name": "Appointment booking", "odoo": true, "status": "done", "weight": 1, "verify": "Appointment booking supported" },
+    { "id": "availability_check", "name": "Availability check", "odoo": true, "status": "done", "weight": 1, "verify": "Availability checked before booking" },
+    { "id": "blocked_dates", "name": "Blocked dates", "odoo": true, "status": "done", "weight": 1, "verify": "Blocked dates excluded from booking" },
+    { "id": "service_browsing", "name": "Service browsing", "odoo": true, "status": "done", "weight": 1, "verify": "Bookable services browsable" },
+    { "id": "availability_mgmt", "name": "Availability management", "odoo": true, "status": "done", "weight": 1, "verify": "Availability windows managed" },
+    { "id": "status_lifecycle", "name": "Booking status lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "Booking status lifecycle supported" },
+    { "id": "confirmation_email", "name": "Confirmation email", "odoo": true, "status": "done", "weight": 1, "verify": "Confirmation email sent on booking" },
+    { "id": "webhooks", "name": "Booking webhooks", "odoo": true, "status": "done", "weight": 1, "verify": "Booking webhooks fired" },
+    { "id": "cancellation", "name": "Cancellation", "odoo": true, "status": "done", "weight": 1, "verify": "Booking cancellation supported" },
+
+    { "id": "resource_calendars", "name": "Per-resource/staff calendars", "odoo": true, "status": "missing", "weight": 2, "verify": "Per-resource/staff calendars" },
+    { "id": "duration_rules", "name": "Service duration rules", "odoo": true, "status": "missing", "weight": 2, "verify": "Service duration rules applied" },
+    { "id": "staff_assignment", "name": "Staff assignment", "odoo": true, "status": "missing", "weight": 2, "verify": "Staff assigned to bookings" },
+    { "id": "capacity_overbooking", "name": "Multi-resource capacity", "odoo": true, "status": "missing", "weight": 1, "verify": "Multi-resource capacity/overbooking control" },
+    { "id": "waiting_list", "name": "Waiting list", "odoo": true, "status": "missing", "weight": 1, "verify": "Waiting list for full slots" },
+    { "id": "buffer_time", "name": "Buffer time", "odoo": true, "status": "missing", "weight": 1, "verify": "Buffer time between appointments" },
+    { "id": "reminders", "name": "Appointment reminders", "odoo": true, "status": "missing", "weight": 1, "verify": "Appointment reminder notifications" },
+    { "id": "no_show", "name": "No-show tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "No-show tracking on bookings" },
+    { "id": "video_integration", "name": "Video-link generation", "odoo": true, "status": "missing", "weight": 1, "verify": "Video-link generation for bookings" },
+    { "id": "intake_forms", "name": "Pre-booking intake forms", "odoo": true, "status": "missing", "weight": 1, "verify": "Pre-booking intake forms" }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "module": "timesheets",
+  "odoo_app": "Timesheets (account.analytic.line)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "time_entry", "name": "Time entry", "odoo": true, "status": "done", "weight": 1, "verify": "Time entry create/edit supported" },
+    { "id": "period_lock", "name": "Period lock", "odoo": true, "status": "done", "weight": 1, "verify": "Locked periods prevent edits" },
+    { "id": "billable", "name": "Billable flag", "odoo": true, "status": "done", "weight": 1, "verify": "Billable flag on time entry" },
+    { "id": "hourly_rate", "name": "Per-project rate", "odoo": true, "status": "done", "weight": 1, "verify": "Per-project hourly rate applied" },
+    { "id": "invoice_linkage", "name": "Invoice linkage", "odoo": true, "status": "done", "weight": 1, "verify": "Time entries link to invoices" },
+    { "id": "summary", "name": "Timesheet summary", "odoo": true, "status": "done", "weight": 1, "verify": "Timesheet summary/rollup view" },
+    { "id": "owner_validation", "name": "Owner-only edit", "odoo": true, "status": "done", "weight": 1, "verify": "Owner-only edit validation on entries" },
+
+    { "id": "approval_workflow", "name": "Manager approval workflow", "odoo": true, "status": "missing", "weight": 2, "verify": "Manager approval workflow for timesheets" },
+    { "id": "split_allocation", "name": "Multi-project day split", "odoo": true, "status": "missing", "weight": 2, "verify": "Split a day across multiple projects" },
+    { "id": "indirect_time", "name": "Indirect time (PTO/training)", "odoo": true, "status": "missing", "weight": 1, "verify": "Indirect time categories (PTO/training)" },
+    { "id": "overtime_shift", "name": "Overtime/shift rules", "odoo": true, "status": "missing", "weight": 1, "verify": "Overtime/shift rule calculations" },
+    { "id": "payroll_integration", "name": "Feed payroll", "odoo": true, "status": "missing", "weight": 1, "verify": "Timesheet hours feed payroll" },
+    { "id": "productivity_analytics", "name": "Utilization analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "Utilization/productivity analytics report" },
+    { "id": "employee_cost", "name": "Employee labor cost", "odoo": true, "status": "missing", "weight": 1, "verify": "Employee labor cost per timesheet entry" }
+  ]
+}

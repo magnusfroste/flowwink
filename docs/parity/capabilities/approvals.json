@@ -1,0 +1,18 @@
+{
+  "module": "approvals",
+  "odoo_app": "Approvals + studio approval rules",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "request_flow", "name": "Request → approve/reject/cancel with audit", "odoo": true, "status": "done", "weight": 1, "verify": "manage_approvals, approval_decisions" },
+    { "id": "rule_routing", "name": "Threshold rule routing by amount/entity", "odoo": true, "status": "done", "weight": 1, "verify": "approval_rules, evaluate_rule" },
+    { "id": "staged_ops", "name": "Staged operations awaiting approval", "odoo": true, "status": "done", "weight": 1, "verify": "pending_operations + approve/reject_pending_operation" },
+
+    { "id": "approval_chains", "name": "Sequential approval chains (manager→director→CFO)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-04", "verify": "approval_steps with order; advances on each sign-off", "notes": "Shared primitive consumed by purchasing/quotes/expenses/payroll." },
+    { "id": "approval_groups", "name": "Approval groups (any-of N approvers)", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-04", "verify": "group membership; any member can approve a step" },
+    { "id": "delegation", "name": "Delegation when approver unavailable", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-04", "verify": "delegate_to with date range" },
+    { "id": "expiration", "name": "Auto-escalate/expire after N days", "odoo": true, "status": "missing", "weight": 1, "epic": "EPIC-04", "verify": "deadline + escalation action" },
+    { "id": "bulk", "name": "Bulk approve/reject", "odoo": true, "status": "missing", "weight": 1, "verify": "batch action over request ids" },
+    { "id": "notifications", "name": "Approver notification on assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "email/event emitted to current approver" }
+  ]
+}
