@@ -37,7 +37,7 @@ community later, so it is done in-house.
 
 ## Issues
 
-- [ ] **01.1 — Attribute & variant data model**
+- [x] **01.1 — Attribute & variant data model** *(migration `20260610140000`; verified on scratch Postgres — tables, idempotent re-run, generate=cartesian, dedup)*
   - **Migration:** `product_attributes` (id, name, display_type), `product_attribute_values`
     (id, attribute_id, value), `product_variants` (id, product_id, sku, barcode,
     price_delta_cents, active) + join `product_variant_values`. Idempotent.
@@ -45,7 +45,7 @@ community later, so it is done in-house.
     cartesian variant set.
   - Flips `products.json#attribute_templates` → done.
 
-- [ ] **01.2 — `manage_variant` skill + variant resolution**
+- [~] **01.2 — `manage_variant` skill + variant resolution** *(skill seed shipped, `rpc:manage_product_variant` list/get/create/update/deactivate/generate; Stage-3: run via agent-execute + pricelist-by-variant resolution pending)*
   - **Module:** `src/lib/modules/products-module.ts` — add `manage_variant`
     (create/list/update/deactivate) and extend `browse_products`/`manage_product`
     to return variants. Metadata must pass `skill-linter.ts`.

@@ -115,6 +115,69 @@ Manages products in the catalog: create, update, delete, manage variants.
 - Use manage_inventory for stock levels.`,
   },
   {
+    name: 'manage_variant',
+    description:
+      'Manage product variants (attribute combinations like size/color with their own SKU, price delta and stock). Use when: a product comes in multiple options; generating the variant set from attributes; updating a variant SKU or price. NOT for: product-level details (manage_product); stock adjustments (manage_inventory).',
+    category: 'commerce',
+    handler: 'rpc:manage_product_variant',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_variant',
+        description:
+          'Manage product variants: list, get, create, update, deactivate, or generate the cartesian variant set from attributes (e.g. Color × Size).',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_action: {
+              type: 'string',
+              enum: ['list', 'get', 'create', 'update', 'deactivate', 'generate'],
+            },
+            p_product_id: { type: 'string', description: 'Product UUID (list/create/generate)' },
+            p_variant_id: { type: 'string', description: 'Variant UUID (get/update/deactivate)' },
+            p_sku: { type: 'string' },
+            p_barcode: { type: 'string' },
+            p_price_delta_cents: { type: 'number', description: 'Price difference vs the product base price, in cents' },
+            p_stock_quantity: { type: 'number' },
+            p_is_active: { type: 'boolean' },
+            p_attribute_value_ids: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Attribute value UUIDs defining the variant (create)',
+            },
+            p_attributes: {
+              type: 'array',
+              description: 'For generate: [{"name":"Color","values":["Red","Blue"]}, ...]',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  values: { type: 'array', items: { type: 'string' } },
+                },
+                required: ['name', 'values'],
+              },
+            },
+          },
+          required: ['p_action'],
+        },
+      },
+    },
+    instructions: `## manage_variant
+### What
+Manages product variants — attribute combinations (size, color, material) with their own SKU, price delta and stock.
+### When to use
+- A product comes in multiple options
+- Generating all combinations: action=generate with p_attributes [{"name":"Color","values":["Red","Blue"]},{"name":"Size","values":["S","M","L"]}] creates the cartesian set with auto SKUs
+### Parameters
+- **p_action**: Required. list, get, create, update, deactivate, generate.
+- **p_price_delta_cents**: difference vs product base price (0 = same price).
+### Edge cases
+- generate is idempotent: existing identical value-combinations are skipped.
+- Variant price = product price_cents + price_delta_cents.
+- Deactivate instead of delete to preserve order history.`,
+  },
+  {
     name: 'manage_inventory',
     description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
     category: 'commerce',
@@ -507,6 +570,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
   skills: [
     'browse_products',
     'manage_product',
+    'manage_variant',
     'manage_inventory',
     'manage_orders',
     'lookup_order',

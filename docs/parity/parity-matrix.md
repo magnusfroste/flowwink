@@ -22,7 +22,6 @@ category: reference
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██░░░░░░░░` 23% | 3/0/6 | EPIC-04 |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `███░░░░░░░` 25% | 3/1/7 | EPIC-03 |
-| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `███░░░░░░░` 25% | 5/1/9 | EPIC-01 |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███░░░░░░░` 25% | 4/0/9 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███░░░░░░░` 30% | 4/1/6 | EPIC-03 |
@@ -33,6 +32,7 @@ category: reference
 | **inventory** | Inventory (stock) | L3 → L4 | `████░░░░░░` 36% | 7/1/8 | EPIC-02 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `████░░░░░░` 36% | 5/0/5 | — |
 | **payroll** | Payroll (hr.payslip) | L2 → L4 | `████░░░░░░` 36% | 8/0/9 | — |
+| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████░░░░░░` 36% | 5/3/7 | EPIC-01 |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 38% | 5/2/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `████░░░░░░` 38% | 5/0/7 | — |
@@ -94,7 +94,7 @@ category: reference
 | invoicing | Recurring/subscription invoices | missing | — |
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |
-| products | Product variants (attributes → SKUs) | missing | EPIC-01 |
+| products | Product variants (attributes → SKUs) | partial | EPIC-01 |
 | products | Normalized order lines (not JSONB) | missing | EPIC-01 |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
 | subscriptions | Proration on mid-cycle change | missing | — |
