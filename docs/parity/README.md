@@ -107,6 +107,7 @@ centers) are opened to the community as parallel breadth work.
 
 - [`pipeline.md`](./pipeline.md) — the 3-stage pipeline: spec → build (CI gates) → verify & release
 - [`roadmap.md`](./roadmap.md) — sprints, epic sequencing, exit criteria
+- [`ui-backlog.md`](./ui-backlog.md) — admin UI per capability + deploy/Stage-3 steps to reach done
 - [`parity-matrix.md`](./parity-matrix.md) — live scorecard (generated)
 - [`process-gaps.md`](./process-gaps.md) — end-to-end processes we should add
 - [`capabilities/_schema.md`](./capabilities/_schema.md) — capability file format
