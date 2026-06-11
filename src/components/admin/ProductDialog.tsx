@@ -37,6 +37,7 @@ interface FormData {
   description: string;
   type: ProductType;
   price_cents: number;
+  cost_cents: number;
   currency: string;
   image_url: string;
   track_inventory: boolean;
@@ -57,6 +58,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       description: '',
       type: 'one_time',
       price_cents: 0,
+      cost_cents: 0,
       currency: 'USD',
       image_url: '',
       track_inventory: false,
@@ -72,6 +74,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const trackInventory = watch('track_inventory');
   const availableInPos = watch('available_in_pos');
   const priceCents = watch('price_cents');
+  const costCents = watch('cost_cents');
 
   useEffect(() => {
     if (product) {
@@ -80,6 +83,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         description: product.description || '',
         type: product.type,
         price_cents: product.price_cents,
+        cost_cents: product.cost_cents ?? 0,
         currency: product.currency,
         image_url: product.image_url || '',
         track_inventory: product.track_inventory,
@@ -95,6 +99,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         description: '',
         type: 'one_time',
         price_cents: 0,
+        cost_cents: 0,
         currency: 'USD',
         image_url: '',
         track_inventory: false,
@@ -113,6 +118,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       description: data.description || null,
       type: data.type,
       price_cents: data.price_cents,
+      cost_cents: data.cost_cents,
       currency: data.currency,
       is_active: true,
       sort_order: 0,
@@ -220,7 +226,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">Price *</Label>
               <MoneyInput
@@ -233,6 +239,18 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
               {priceCents <= 0 && (
                 <p className="text-xs text-muted-foreground">Set a price greater than 0</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cost">Cost price</Label>
+              <MoneyInput
+                id="cost"
+                value={costCents}
+                onChange={(c) => setValue('cost_cents', c)}
+                currency={watch('currency')}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">Used for inventory valuation.</p>
             </div>
 
             <div className="space-y-2">

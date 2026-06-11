@@ -20,7 +20,9 @@ import {
   useUpdateProductCategory,
   useDeleteProductCategory,
   type ProductCategory,
+  type CostingMethod,
 } from '@/hooks/useProductCategories';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CategoryForm {
   name: string;
@@ -29,10 +31,11 @@ interface CategoryForm {
   image_url: string;
   is_active: boolean;
   sort_order: number;
+  costing_method: CostingMethod;
 }
 
 const emptyForm: CategoryForm = {
-  name: '', slug: '', description: '', image_url: '', is_active: true, sort_order: 0,
+  name: '', slug: '', description: '', image_url: '', is_active: true, sort_order: 0, costing_method: 'average',
 };
 
 function slugify(s: string) {
@@ -65,6 +68,7 @@ export function ProductCategoryManager() {
       image_url: cat.image_url || '',
       is_active: cat.is_active,
       sort_order: cat.sort_order,
+      costing_method: cat.costing_method ?? 'average',
     });
     setDialogOpen(true);
   };
@@ -77,6 +81,7 @@ export function ProductCategoryManager() {
       image_url: form.image_url || null,
       is_active: form.is_active,
       sort_order: form.sort_order,
+      costing_method: form.costing_method,
     };
 
     if (editing) {
@@ -225,6 +230,20 @@ export function ProductCategoryManager() {
                   onCheckedChange={(checked) => setForm(f => ({ ...f, is_active: checked }))}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Costing method</Label>
+              <Select
+                value={form.costing_method}
+                onValueChange={(v) => setForm(f => ({ ...f, costing_method: v as CostingMethod }))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="average">Average cost</SelectItem>
+                  <SelectItem value="fifo">FIFO</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Used by inventory valuation for products in this category.</p>
             </div>
           </div>
           <DialogFooter>
