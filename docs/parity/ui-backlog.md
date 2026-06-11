@@ -43,9 +43,39 @@ already-shipped RPCs/tables. This tracks the UI surface per capability and the
 
 ## Follow-up UI/back-end (not yet built)
 
-- 03.3 / 03.5 — migrate CRM/deals/tickets **reads** to `stage_id` so `PipelineSummary`
-  and the kanban share one source (removes the dual-view).
-- 03.4 — weighted forecast surfaced in `lead_pipeline_review`.
-- 04.4 / 04.5 / 04.6 — approval delegation, expiry/escalation sweep, and routing
-  `send_purchase_order` / `submit_expense_report` through chains.
+- ~~03.3 / 03.5 / 03.4 / 04.4–04.6~~ — shipped 2026-06-11 (stage-engine boards,
+  forecast, delegation/escalation/DB gates).
 - 01.7 — richer variant editor polish (bulk price/stock per variant).
+- Approvals polish: bulk-select in `ApprovalInboxPage` (skill `bulk_advance_approvals`
+  exists), listener wiring for the `approval.assigned` event (email/automation).
+- EPIC-02 polish: valuation reconciliation check (GL 1460 vs Σ layers), landed-cost
+  entry UI (skill `allocate_landed_cost` exists).
+- `manage_kb_article` get: auto-resolve `title` → slug (wiki already does this) —
+  found by the Hermes operator 2026-06-11.
+
+## Scroll-reveal & block loading (landing pages) — make it a setting
+
+**Observed (2026-06-11):** blocks fade in as you scroll (deliberate `AnimatedBlock`
+default `fade-up`), but two sharp edges make fast scrolling feel like the page
+"isn't ready":
+1. `useScrollAnimation` uses `rootMargin: '0px 0px -50px 0px'` — the reveal triggers
+   only once a block is 50px *inside* the viewport, so fast scrolling outruns it.
+2. 40 block types are `lazy()`-loaded with `Suspense fallback={null}` — un-fetched
+   chunks render *nothing* until loaded, then the fade starts on top (double delay).
+   The site-settings cache only covers `get-page` JSON, not JS chunks.
+
+**Backlog item — site-wide setting** (`site_settings` → appearance):
+`scroll_animations: 'on' | 'eager' | 'off'`
+
+- `on` — today's behavior (per-block `animation.type` still wins)
+- `eager` — flip rootMargin to `'0px 0px 200px 0px'` so reveals pre-trigger and the
+  fade is already done when the block enters view (recommended default)
+- `off` — render everything immediately (forces `animation: none` globally); also
+  always honor `prefers-reduced-motion`
+
+Admin UI: a select in Site Settings → Appearance. Per-block `animation.type` in the
+editor remains the fine-grained override.
+
+**Companion (no setting needed):** idle-time chunk prefetch — after LCP,
+`requestIdleCallback` imports the block types the current page actually contains,
+eliminating the `fallback={null}` gap on fast scroll.
