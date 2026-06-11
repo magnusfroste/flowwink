@@ -139,8 +139,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   useEffectAlias(() => {
     if (!product) { setSalesUomId(null); return; }
     supabase.from('products').select('sales_uom_id').eq('id', product.id).maybeSingle()
-      .then(({ data }: any) => setSalesUomId(data?.sales_uom_id ?? null))
-      .catch(() => setSalesUomId(null));
+      .then(({ data }: any) => setSalesUomId(data?.sales_uom_id ?? null),
+            () => setSalesUomId(null));
   }, [product]);
 
   const saveSalesUom = async (id: string) => {
