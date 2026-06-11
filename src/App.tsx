@@ -163,8 +163,6 @@ import ShippingPage from "./pages/admin/ShippingPage";
 
 import PipelineStagesPage from "./pages/admin/PipelineStagesPage";
 import UnitsOfMeasurePage from "./pages/admin/UnitsOfMeasurePage";
-import ApprovalChainsPage from "./pages/admin/ApprovalChainsPage";
-import ApprovalInboxPage from "./pages/admin/ApprovalInboxPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
