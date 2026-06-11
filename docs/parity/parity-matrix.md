@@ -46,10 +46,10 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████░░░░░` 50% | 5/1/5 | EPIC-03 |
-| **inventory** | Inventory (stock) | L3 → L4 | `█████░░░░░` 50% | 8/1/7 | EPIC-02 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
+| **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 55% | 8/2/6 | EPIC-02 |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
@@ -66,7 +66,7 @@ category: reference
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
 | **webinars** | Events (event.event) | L3 → L4 | `████████░░` 78% | 4/2/1 | — |
-| **approvals** | Approvals + studio approval rules | L3 → L4 | `█████████░` 85% | 7/0/2 | — |
+| **approvals** | Approvals + studio approval rules | L3 → L4 | `█████████░` 92% | 7/2/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 

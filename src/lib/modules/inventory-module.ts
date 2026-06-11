@@ -316,6 +316,32 @@ const INVENTORY_SKILLS: SkillSeed[] = [
     },
     instructions: 'Reads stock_valuation_layers (remaining_qty > 0). Valuation starts from when EPIC-02 landed — products received before that have no layers until their next receipt. total_value_cents should tie out to GL account 1460 for activity after that point.',
   },
+  {
+    name: 'allocate_landed_cost',
+    description: 'Allocate freight/duty/customs onto a receipt: distributes the amount across the valuation layers of a purchase receipt (by value or quantity), raising unit costs, and posts Dt 1460 / Cr 5710. Use when: a freight or customs invoice arrives for a received PO. NOT for: the goods cost itself (receive_purchase_order) or expense booking (book_expense_report).',
+    category: 'commerce',
+    handler: 'rpc:allocate_landed_cost',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'allocate_landed_cost',
+        description: 'Distribute a landed cost amount over the valuation layers created by a receipt reference.',
+        parameters: {
+          type: 'object',
+          required: ['p_reference_type', 'p_reference_id', 'p_amount_cents'],
+          properties: {
+            p_reference_type: { type: 'string', description: "Receipt reference type, e.g. 'purchase_order'" },
+            p_reference_id: { type: 'string', description: 'The PO/receipt id the stock moves reference' },
+            p_amount_cents: { type: 'number' },
+            p_method: { type: 'string', enum: ['by_value', 'by_qty'], description: 'Allocation basis (default by_value)' },
+            p_description: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Raises layer unit costs so subsequent COGS includes the landed cost. Already-consumed quantities are not restated (v1). Records an audit row in landed_costs and posts Dt 1460 (inventory) / Cr 5710 (freight reclass). Admin/service-role only.',
+  },
 ];
 
 const INVENTORY_AUTOMATIONS: AutomationSeed[] = [
@@ -366,6 +392,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
     'ship_picking',
     'cancel_picking',
     'inventory_valuation_report',
+    'allocate_landed_cost',
   ],
   skillSeeds: INVENTORY_SKILLS,
   automations: INVENTORY_AUTOMATIONS,
