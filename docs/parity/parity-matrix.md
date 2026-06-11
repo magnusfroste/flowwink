@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 48%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 49%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -47,7 +47,6 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████░░░░░` 50% | 5/1/5 | EPIC-03 |
-| **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
@@ -56,8 +55,8 @@ category: reference
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
+| **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████░░░░` 61% | 5/1/5 | — |
-| **approvals** | Approvals + studio approval rules | L3 → L4 | `██████░░░░` 62% | 5/0/4 | EPIC-04 |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
@@ -67,6 +66,7 @@ category: reference
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
 | **webinars** | Events (event.event) | L3 → L4 | `████████░░` 78% | 4/2/1 | — |
+| **approvals** | Approvals + studio approval rules | L3 → L4 | `█████████░` 85% | 7/0/2 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 

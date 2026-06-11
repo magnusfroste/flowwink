@@ -4,15 +4,85 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "request_flow", "name": "Request → approve/reject/cancel with audit", "odoo": true, "status": "done", "weight": 1, "verify": "manage_approvals, approval_decisions" },
-    { "id": "rule_routing", "name": "Threshold rule routing by amount/entity", "odoo": true, "status": "done", "weight": 1, "verify": "approval_rules, evaluate_rule" },
-    { "id": "staged_ops", "name": "Staged operations awaiting approval", "odoo": true, "status": "done", "weight": 1, "verify": "pending_operations + approve/reject_pending_operation" },
-
-    { "id": "approval_chains", "name": "Sequential approval chains (manager→director→CFO)", "odoo": true, "status": "done", "weight": 3, "epic": "EPIC-04", "verify": "approval_chains/approval_steps + approval_requests.chain_id/current_step + advance_approval_step engine (migration 20260610200000)", "notes": "Stage-3 verified 2026-06-11 via agent-execute: step1(role)→step2(group), fin2→approved, reject stops; UI = ApprovalChainsPage + ApprovalInboxPage. Consumer routing (04.6) tracked under purchasing.multistep_approval." },
-    { "id": "approval_groups", "name": "Approval groups (any-of N approvers)", "odoo": true, "status": "done", "weight": 2, "epic": "EPIC-04", "verify": "approval_groups + members; step with group_id + min_approvals; distinct-approver counting verified (1/2→2/2)", "notes": "Stage-3 verified 2026-06-11: any-N-of-group enforced (fin1→1/2, duplicate counts once, fin2→approved); UI = ApprovalChainsPage group editor." },
-    { "id": "delegation", "name": "Delegation when approver unavailable", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-04", "verify": "delegate_to with date range" },
-    { "id": "expiration", "name": "Auto-escalate/expire after N days", "odoo": true, "status": "missing", "weight": 1, "epic": "EPIC-04", "verify": "deadline + escalation action" },
-    { "id": "bulk", "name": "Bulk approve/reject", "odoo": true, "status": "missing", "weight": 1, "verify": "batch action over request ids" },
-    { "id": "notifications", "name": "Approver notification on assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "email/event emitted to current approver" }
+    {
+      "id": "request_flow",
+      "name": "Request → approve/reject/cancel with audit",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manage_approvals, approval_decisions"
+    },
+    {
+      "id": "rule_routing",
+      "name": "Threshold rule routing by amount/entity",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "approval_rules, evaluate_rule"
+    },
+    {
+      "id": "staged_ops",
+      "name": "Staged operations awaiting approval",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "pending_operations + approve/reject_pending_operation"
+    },
+    {
+      "id": "approval_chains",
+      "name": "Sequential approval chains (manager→director→CFO)",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "epic": "EPIC-04",
+      "verify": "approval_chains/approval_steps + approval_requests.chain_id/current_step + advance_approval_step engine (migration 20260610200000)",
+      "notes": "Stage-3 verified 2026-06-11 via agent-execute: step1(role)→step2(group), fin2→approved, reject stops; UI = ApprovalChainsPage + ApprovalInboxPage. Consumer routing (04.6) tracked under purchasing.multistep_approval."
+    },
+    {
+      "id": "approval_groups",
+      "name": "Approval groups (any-of N approvers)",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-04",
+      "verify": "approval_groups + members; step with group_id + min_approvals; distinct-approver counting verified (1/2→2/2)",
+      "notes": "Stage-3 verified 2026-06-11: any-N-of-group enforced (fin1→1/2, duplicate counts once, fin2→approved); UI = ApprovalChainsPage group editor."
+    },
+    {
+      "id": "delegation",
+      "name": "Delegation when approver unavailable",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-04",
+      "verify": "approval_delegations + manage_approval_delegation skill; advance_approval_step honors active delegations for role- and group-steps (migration 20260611210000)",
+      "notes": "Stage-3 verified 2026-06-11: delegate without role approved via delegation → request approved; revoke works; skill green via agent-execute."
+    },
+    {
+      "id": "expiration",
+      "name": "Auto-escalate/expire after N days",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "epic": "EPIC-04",
+      "verify": "approval_steps.escalate_after_hours + step_entered_at + check_approval_escalations() sweep skill",
+      "notes": "Stage-3 verified 2026-06-11: overdue step escalated 10→20 with audit log; final-step breach logged, never auto-approved. Escalate-to-next only (by design)."
+    },
+    {
+      "id": "bulk",
+      "name": "Bulk approve/reject",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "batch action over request ids"
+    },
+    {
+      "id": "notifications",
+      "name": "Approver notification on assignment",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "email/event emitted to current approver"
+    }
   ]
 }

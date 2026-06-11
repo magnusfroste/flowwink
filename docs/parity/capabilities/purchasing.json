@@ -4,24 +4,151 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "vendor_crud", "name": "Vendor CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "vendor create/read/update/delete" },
-    { "id": "po_lifecycle", "name": "PO lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "purchase order lifecycle" },
-    { "id": "goods_receipt", "name": "Goods receipt (GRN)", "odoo": true, "status": "done", "weight": 1, "verify": "goods receipt note" },
-    { "id": "lot_serial", "name": "Lot/serial on receipt", "odoo": true, "status": "done", "weight": 1, "verify": "lot/serial capture on receipt" },
-    { "id": "three_way_match", "name": "3-way matching", "odoo": true, "status": "done", "weight": 1, "verify": "PO/receipt/invoice 3-way matching" },
-    { "id": "reorder_automation", "name": "Reorder automation", "odoo": true, "status": "done", "weight": 1, "verify": "reorder automation" },
-    { "id": "variance_tolerance", "name": "Variance tolerance", "odoo": true, "status": "done", "weight": 1, "verify": "variance tolerance thresholds" },
-    { "id": "vendor_payment_terms", "name": "Vendor payment terms", "odoo": true, "status": "done", "weight": 1, "verify": "vendor payment terms" },
-    { "id": "stock_movement", "name": "Stock movement on receipt", "odoo": true, "status": "done", "weight": 1, "verify": "stock movement posted on receipt" },
-    { "id": "variance_flags", "name": "Invoice variance flags", "odoo": true, "status": "done", "weight": 1, "verify": "invoice variance flags" },
-
-    { "id": "multistep_approval", "name": "Multi-step PO approval", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-04", "verify": "multi-step PO approval workflow" },
-    { "id": "blanket_po", "name": "Blanket POs/call-offs", "odoo": true, "status": "missing", "weight": 2, "verify": "blanket POs and call-offs" },
-    { "id": "freight_terms", "name": "Inbound freight cost allocation", "odoo": true, "status": "missing", "weight": 1, "verify": "inbound freight cost allocation" },
-    { "id": "vendor_sla", "name": "Vendor rating/SLA", "odoo": true, "status": "missing", "weight": 1, "verify": "vendor rating/SLA tracking" },
-    { "id": "drop_ship", "name": "Drop-ship", "odoo": true, "status": "missing", "weight": 1, "verify": "drop-ship routing" },
-    { "id": "consignment", "name": "Consignment inventory", "odoo": true, "status": "missing", "weight": 1, "verify": "consignment inventory" },
-    { "id": "po_amendments", "name": "PO change orders", "odoo": true, "status": "missing", "weight": 1, "verify": "PO change orders/amendments" },
-    { "id": "dispute_resolution", "name": "Invoice dispute/credit memo", "odoo": true, "status": "missing", "weight": 1, "verify": "invoice dispute/credit memo" }
+    {
+      "id": "vendor_crud",
+      "name": "Vendor CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "vendor create/read/update/delete"
+    },
+    {
+      "id": "po_lifecycle",
+      "name": "PO lifecycle",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "purchase order lifecycle"
+    },
+    {
+      "id": "goods_receipt",
+      "name": "Goods receipt (GRN)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "goods receipt note"
+    },
+    {
+      "id": "lot_serial",
+      "name": "Lot/serial on receipt",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "lot/serial capture on receipt"
+    },
+    {
+      "id": "three_way_match",
+      "name": "3-way matching",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "PO/receipt/invoice 3-way matching"
+    },
+    {
+      "id": "reorder_automation",
+      "name": "Reorder automation",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "reorder automation"
+    },
+    {
+      "id": "variance_tolerance",
+      "name": "Variance tolerance",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "variance tolerance thresholds"
+    },
+    {
+      "id": "vendor_payment_terms",
+      "name": "Vendor payment terms",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "vendor payment terms"
+    },
+    {
+      "id": "stock_movement",
+      "name": "Stock movement on receipt",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock movement posted on receipt"
+    },
+    {
+      "id": "variance_flags",
+      "name": "Invoice variance flags",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "invoice variance flags"
+    },
+    {
+      "id": "multistep_approval",
+      "name": "Multi-step PO approval",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-04",
+      "verify": "DB gate guard_po_chain_approval (draft→sent blocked until chain approved) + request_entity_approval skill (migration 20260611210000)",
+      "notes": "Stage-3 verified 2026-06-11: send blocked with guiding error, request→delegate-approve→send succeeded. Expense gate (submitted→approved) shipped too. UI = ApprovalInboxPage."
+    },
+    {
+      "id": "blanket_po",
+      "name": "Blanket POs/call-offs",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "blanket POs and call-offs"
+    },
+    {
+      "id": "freight_terms",
+      "name": "Inbound freight cost allocation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "inbound freight cost allocation"
+    },
+    {
+      "id": "vendor_sla",
+      "name": "Vendor rating/SLA",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "vendor rating/SLA tracking"
+    },
+    {
+      "id": "drop_ship",
+      "name": "Drop-ship",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "drop-ship routing"
+    },
+    {
+      "id": "consignment",
+      "name": "Consignment inventory",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "consignment inventory"
+    },
+    {
+      "id": "po_amendments",
+      "name": "PO change orders",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "PO change orders/amendments"
+    },
+    {
+      "id": "dispute_resolution",
+      "name": "Invoice dispute/credit memo",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "invoice dispute/credit memo"
+    }
   ]
 }

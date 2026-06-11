@@ -46,17 +46,17 @@ primitive, lifting it once back-fills `purchasing`, `quotes`, `expenses` and
     approvals from one user count once — verified 1/2→2/2). + `manage_approval_chain`
     skill (chains, steps, groups). → `approval_groups` = partial (admin UI pending).
 
-- [ ] **04.4 — Delegation**
+- [x] **04.4 — Delegation** *(migration `20260611210000`; verified: delegate-without-role approved via delegation; revoke)*
   - **Migration/handler:** `approval_delegations` (from_user, to_user, start, end).
     Current approver resolution honours active delegations.
   - Flips `approvals.json#delegation` → done.
 
-- [ ] **04.5 — Expiry & escalation**
+- [x] **04.5 — Expiry & escalation** *(escalate_after_hours + check_approval_escalations sweep; verified 10→20 + final-step logged)*
   - Step `deadline`; a sweep escalates to the next step or notifies on breach
     (reuse the `sla-check` sweep pattern). Scope: escalate-to-next only.
   - Flips `approvals.json#expiration` → partial.
 
-- [ ] **04.6 — Route purchasing + expenses through chains**
+- [x] **04.6 — Route purchasing + expenses through chains** *(DB gates: PO draft→sent + expense submitted→approved blocked until chain approved; request_entity_approval; verified end-to-end)*
   - `send_purchase_order` and `submit_expense_report` create chain-based requests
     when a matching `approval_chain` exists; fall back to single-rule routing otherwise.
   - **Verify:** a PO over threshold requires two sign-offs before `sent`.

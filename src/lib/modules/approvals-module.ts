@@ -174,7 +174,74 @@ const APPROVAL_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Acts on approval_requests that have a chain_id. The actor must hold the step\'s required_role or be a member of the step\'s group (service-role bypasses). Duplicate approvals from the same user on a step count once. Returns the new status (pending/approved/rejected) and which step.',
+    instructions: 'Acts on approval_requests that have a chain_id. The actor must hold the step\'s required_role or be a member of the step\'s group — or hold an active delegation from someone who is (manage_approval_delegation). Service-role bypasses. Duplicate approvals from the same user on a step count once. Returns the new status (pending/approved/rejected) and which step.',
+  },
+  {
+    name: 'request_entity_approval',
+    description: 'Start the chain approval for a business entity (purchase order, expense report). Use when: sending a PO or approving an expense fails with "requires chain approval"; proactively before sending high-value POs. NOT for: deciding on a request (advance_approval_step) or configuring chains (manage_approval_chain).',
+    category: 'system',
+    handler: 'rpc:request_entity_approval',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'request_entity_approval',
+        description: 'Create (or return the existing) chain-based approval request for an entity. Returns chain_required=false when no active chain covers the entity_type.',
+        parameters: {
+          type: 'object',
+          required: ['p_entity_type', 'p_entity_id'],
+          properties: {
+            p_entity_type: { type: 'string', description: 'e.g. purchase_order, expense_report' },
+            p_entity_id: { type: 'string', description: 'The entity UUID as text' },
+            p_amount_cents: { type: 'number' },
+            p_reason: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'DB gates block PO draft→sent and expense submitted→approved while an active chain lacks an approved request. Call this first, get the request approved via advance_approval_step, then retry the original action. Idempotent: returns the existing pending/approved request if one exists.',
+  },
+  {
+    name: 'manage_approval_delegation',
+    description: 'Delegate approval authority while someone is away: list, create, or revoke delegations. The delegate may act on any step the delegator is authorized for. Use when: an approver is on vacation; covering for a colleague. NOT for: chain/step config (manage_approval_chain).',
+    category: 'system',
+    handler: 'rpc:manage_approval_delegation',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_approval_delegation',
+        description: 'List active delegations, create one (from_user → to_user, optional end time), or revoke by id.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'revoke'] },
+            p_from_user: { type: 'string', format: 'uuid', description: 'Delegating user (create)' },
+            p_to_user: { type: 'string', format: 'uuid', description: 'Delegate (create)' },
+            p_ends_at: { type: 'string', description: 'ISO timestamp when the delegation expires (optional)' },
+            p_delegation_id: { type: 'string', format: 'uuid', description: 'Delegation to revoke' },
+          },
+        },
+      },
+    },
+    instructions: 'Users may create delegations from themselves; admins/service-role may manage any. Revoke sets ends_at=now(). advance_approval_step automatically honors active delegations for both role-steps and group-steps.',
+  },
+  {
+    name: 'check_approval_escalations',
+    description: 'Sweep pending chain approvals whose current step exceeded its escalate_after_hours and advance them to the next step (final-step breaches are logged, never auto-approved). Use when: heartbeat/cron hygiene run; an approval seems stuck. NOT for: deciding requests (advance_approval_step).',
+    category: 'system',
+    handler: 'rpc:check_approval_escalations',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'check_approval_escalations',
+        description: 'Escalate overdue approval steps to the next step. Returns counts. Idempotent and cheap — safe to run frequently.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Only steps with escalate_after_hours set are considered, measured from step_entered_at. Escalation moves current_step forward and records audit_logs (approval_escalated / approval_escalation_overdue) plus context.escalated_from_step on the request.',
   },
 ];
 
@@ -190,7 +257,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   tier: 'standard',
   inputSchema: approvalsInputSchema,
   outputSchema: approvalsOutputSchema,
-  skills: ['manage_approvals', 'approve_pending_operation', 'list_pending_operations', 'reject_pending_operation', 'manage_approval_chain', 'advance_approval_step'],
+  skills: ['manage_approvals', 'approve_pending_operation', 'list_pending_operations', 'reject_pending_operation', 'manage_approval_chain', 'advance_approval_step', 'request_entity_approval', 'manage_approval_delegation', 'check_approval_escalations'],
   skillSeeds: APPROVAL_SKILLS,
 
   async publish(input: ApprovalsInput): Promise<ApprovalsOutput> {
