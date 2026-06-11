@@ -33,6 +33,8 @@ export interface Deal {
     company?: { id: string; name: string } | null;
   } | null;
   stage: DealStage;
+  /** Configurable stage from pipeline_stages (entity_type='deal'). Synced with `stage` via DB trigger. */
+  stage_id?: string | null;
   value_cents: number;
   currency: string;
   expected_close: string | null;
