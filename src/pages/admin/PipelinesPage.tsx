@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 // New tables/RPCs not in generated types yet — bypass strict typing.
-const supabase = supabaseTyped as any;
+const supabase = supabaseTyped;
 import {
   DndContext,
   DragEndEvent,

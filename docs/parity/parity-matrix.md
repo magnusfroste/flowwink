@@ -38,7 +38,6 @@ category: reference
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `████░░░░░░` 40% | 7/1/9 | EPIC-03 |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
-| **approvals** | Approvals + studio approval rules | L3 → L4 | `████░░░░░░` 42% | 3/2/4 | EPIC-04 |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `████░░░░░░` 43% | 3/3/5 | EPIC-03 |
@@ -52,13 +51,13 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
-| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `█████░░░░░` 52% | 5/6/4 | EPIC-01 |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
+| **approvals** | Approvals + studio approval rules | L3 → L4 | `██████░░░░` 62% | 5/0/4 | EPIC-04 |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
@@ -66,6 +65,7 @@ category: reference
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
+| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
 | **webinars** | Events (event.event) | L3 → L4 | `████████░░` 78% | 4/2/1 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
@@ -87,15 +87,12 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| approvals | Sequential approval chains (manager→director→CFO) | partial | EPIC-04 |
 | crm | Configurable pipeline stages (not status enum) | partial | EPIC-03 |
 | deals | Configurable pipeline stages | partial | EPIC-03 |
 | inventory | Stock valuation (FIFO / weighted-average) | missing | EPIC-02 |
 | invoicing | Recurring/subscription invoices | missing | — |
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |
-| products | Product variants (attributes → SKUs) | partial | EPIC-01 |
-| products | Normalized order lines (not JSONB) | partial | EPIC-01 |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
 | subscriptions | Proration on mid-cycle change | missing | — |
 | tickets | Configurable stage pipeline | partial | EPIC-03 |

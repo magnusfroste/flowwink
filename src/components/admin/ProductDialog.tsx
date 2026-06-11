@@ -138,13 +138,13 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   const [salesUomId, setSalesUomId] = useStateAlias<string | null>(null);
   useEffectAlias(() => {
     if (!product) { setSalesUomId(null); return; }
-    (supabase as any).from('products').select('sales_uom_id').eq('id', product.id).maybeSingle()
+    supabase.from('products').select('sales_uom_id').eq('id', product.id).maybeSingle()
       .then(({ data }: any) => setSalesUomId(data?.sales_uom_id ?? null))
       .catch(() => setSalesUomId(null));
   }, [product]);
 
   const saveSalesUom = async (id: string) => {
-    await (supabase as any).from('products').update({ sales_uom_id: salesUomId }).eq('id', id);
+    await supabase.from('products').update({ sales_uom_id: salesUomId }).eq('id', id);
   };
 
   return (
