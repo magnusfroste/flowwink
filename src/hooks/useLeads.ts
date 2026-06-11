@@ -40,7 +40,7 @@ export function useLeads(options?: { status?: LeadStatus; needsReview?: boolean 
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as LeadWithCompany[];
+      return data as unknown as LeadWithCompany[];
     },
   });
 }
@@ -65,7 +65,7 @@ export function useLead(id: string | undefined) {
         .single();
 
       if (error) throw error;
-      return data as LeadWithCompany;
+      return data as unknown as LeadWithCompany;
     },
     enabled: !!id,
   });
