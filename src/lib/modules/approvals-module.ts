@@ -243,6 +243,30 @@ const APPROVAL_SKILLS: SkillSeed[] = [
     },
     instructions: 'Only steps with escalate_after_hours set are considered, measured from step_entered_at. Escalation moves current_step forward and records audit_logs (approval_escalated / approval_escalation_overdue) plus context.escalated_from_step on the request.',
   },
+  {
+    name: 'bulk_advance_approvals',
+    description: 'Approve or reject MANY chain approval requests in one call. Use when: clearing an approval backlog, batch sign-off after review. NOT for: a single request (advance_approval_step) or staged operations (approve_pending_operation).',
+    category: 'system',
+    handler: 'rpc:bulk_advance_approvals',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'bulk_advance_approvals',
+        description: 'Apply one decision to a list of chain approval requests; per-request failures are reported, not fatal.',
+        parameters: {
+          type: 'object',
+          required: ['p_request_ids', 'p_decision'],
+          properties: {
+            p_request_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
+            p_decision: { type: 'string', enum: ['approve', 'reject'] },
+            p_comment: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Loops advance_approval_step per id under the caller authorization rules (delegations honored). Returns processed/failed counts plus per-failure errors so partial batches are transparent.',
+  },
 ];
 
 export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
@@ -257,7 +281,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   tier: 'standard',
   inputSchema: approvalsInputSchema,
   outputSchema: approvalsOutputSchema,
-  skills: ['manage_approvals', 'approve_pending_operation', 'list_pending_operations', 'reject_pending_operation', 'manage_approval_chain', 'advance_approval_step', 'request_entity_approval', 'manage_approval_delegation', 'check_approval_escalations'],
+  skills: ['manage_approvals', 'approve_pending_operation', 'list_pending_operations', 'reject_pending_operation', 'manage_approval_chain', 'advance_approval_step', 'request_entity_approval', 'manage_approval_delegation', 'check_approval_escalations', 'bulk_advance_approvals'],
   skillSeeds: APPROVAL_SKILLS,
 
   async publish(input: ApprovalsInput): Promise<ApprovalsOutput> {
