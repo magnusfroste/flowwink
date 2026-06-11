@@ -170,7 +170,12 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
     if (currentSid === targetStage.id) return;
 
     // Write stage_id; sync_deal_stage trigger keeps the enum column in sync.
-    updateDeal.mutate({ id: deal.id, stage_id: targetStage.id } as Partial<Deal> & { id: string; stage_id: string });
+    // We also pass `stage` so useUpdateDeal's closed_at + lead-bump logic fires.
+    updateDeal.mutate({
+      id: deal.id,
+      stage_id: targetStage.id,
+      stage: targetStage.key as DealStage,
+    } as Partial<Deal> & { id: string; stage_id: string });
     onStageChanged?.(deal, targetStage.key as DealStage);
   };
 
