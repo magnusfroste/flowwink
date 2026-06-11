@@ -54,7 +54,7 @@ export default function ApprovalChainsPage() {
   );
 }
 
-function ChainsSection() {
+export function ChainsSection() {
   const qc = useQueryClient();
 
   const { data: chains, isLoading } = useQuery({
@@ -234,7 +234,7 @@ function CreateChainForm() {
   );
 }
 
-function GroupsSection() {
+export function GroupsSection() {
   const qc = useQueryClient();
   const [name, setName] = useState('');
 
