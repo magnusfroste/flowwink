@@ -59,10 +59,11 @@
       "id": "forecast",
       "name": "Forecasting (expected revenue × probability)",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
       "epic": "EPIC-03",
-      "verify": "probability per stage; weighted pipeline report"
+      "verify": "lead_pipeline_review returns weighted deal forecast (Σ value × stage probability) — agent-execute index.ts ~L4546; Stage-3 verified 2026-06-11 (weighted=1800000 matches SQL), per-stage breakdown included",
+      "notes": "EPIC-03.4. Forecast computed from pipeline_stages.probability over open deals; surfaced in the lead_pipeline_review skill."
     },
     {
       "id": "bulk_email",

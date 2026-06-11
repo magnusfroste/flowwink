@@ -43,21 +43,21 @@ stages per module. Independent of EPIC-01/02 — can run fully in parallel.
     entity_type, writer-gated. Verified: create→list(8)→delete→list(7) round-trip;
     auto-derives `key` from name.
 
-- [ ] **03.3 — Migrate CRM to stage rows**
-  - Replace `leads.status` enum reads with `stage_id` FK; keep a compatibility view.
-  - Flips `crm.json#custom_stages` → done.
+- [x] **03.3 — CRM reads stage rows** *(Stage-3 2026-06-11)*
+  - LeadKanban reads `pipeline_stages`; enum↔`stage_id` sync trigger live.
+    → `crm.json#custom_stages` = done.
 
-- [ ] **03.4 — Weighted forecast**
-  - Pipeline report = Σ(deal value × stage.probability). Add to `lead_pipeline_review`.
-  - Flips `crm.json#forecast` → done.
+- [x] **03.4 — Weighted forecast** *(Stage-3 2026-06-11)*
+  - `lead_pipeline_review` returns Σ(deal value × stage probability) + per-stage
+    breakdown (agent-execute ~L4546); runtime-verified (weighted=1800000 matches SQL).
+    → `crm.json#forecast` = done.
 
-- [ ] **03.5 — Migrate deals & tickets to stage rows**
-  - `deals.stage` and `tickets.status` read from `pipeline_stages`. Add `custom_stages`
-    capability to `deals.json` and `stage_pipeline` to `tickets.json`, flip → done.
+- [x] **03.5 — Deals & tickets read stage rows** *(Stage-3 2026-06-11)*
+  - DealKanban reads `pipeline_stages`; enum↔`stage_id` sync trigger live.
+    → `deals.json#custom_stages` + `tickets.json#stage_pipeline` = done.
 
-- [ ] **03.6 — Admin kanban reads stages from config**
-  - `src/components/admin/crm/` and tickets kanban render columns from
-    `pipeline_stages` (drag-drop sets `stage_id`).
+- [x] **03.6 — Admin kanban reads stages from config** *(Lovable S2/S3)*
+  - CRM + deals kanban render columns from `pipeline_stages`; drag-drop sets `stage_id`.
 
 ## Dependencies & sequencing
 03.1 → 03.2 → 03.3 → 03.4; 03.5/03.6 after 03.3. Independent of EPIC-01/02.
