@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 47%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 48%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -34,20 +34,19 @@ category: reference
 | **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████░░░░░░` 39% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 39% | 7/0/9 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `████░░░░░░` 40% | 4/2/5 | EPIC-03 |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `████░░░░░░` 40% | 7/1/9 | EPIC-03 |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
-| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `████░░░░░░` 43% | 3/3/5 | EPIC-03 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 45% | 8/1/7 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 47% | 8/0/7 | — |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████░░░░░` 50% | 5/1/5 | EPIC-03 |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `█████░░░░░` 50% | 10/0/8 | EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
@@ -57,6 +56,7 @@ category: reference
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
+| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████░░░░` 61% | 5/1/5 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████░░░░` 62% | 5/0/4 | EPIC-04 |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
@@ -87,13 +87,10 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| crm | Configurable pipeline stages (not status enum) | partial | EPIC-03 |
-| deals | Configurable pipeline stages | partial | EPIC-03 |
 | inventory | Stock valuation (FIFO / weighted-average) | missing | EPIC-02 |
 | invoicing | Recurring/subscription invoices | missing | — |
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
 | subscriptions | Proration on mid-cycle change | missing | — |
-| tickets | Configurable stage pipeline | partial | EPIC-03 |
 
