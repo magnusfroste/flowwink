@@ -4,18 +4,98 @@
   "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "deal_crud", "name": "Deal CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "manage_deal skill list/create/update/delete" },
-    { "id": "stale_check", "name": "Stale-deal check", "odoo": true, "status": "done", "weight": 1, "verify": "stale-deal detection logic in deals module" },
-    { "id": "deal_to_quote", "name": "Deal→quote linkage", "odoo": true, "status": "done", "weight": 1, "verify": "deal links to quote record" },
-
-    { "id": "stages_basic", "name": "Stage flow (4 hardcoded)", "odoo": true, "status": "partial", "weight": 1, "notes": "Hardcoded enum; superseded by custom_stages", "verify": "stage enum on deals" },
-
-    { "id": "custom_stages", "name": "Configurable pipeline stages", "odoo": true, "status": "partial", "weight": 3, "epic": "EPIC-03", "verify": "shared pipeline_stages (entity_type='deal') + deals.stage_id backfilled (migration 20260610190000)", "notes": "Engine + stage_id link shipped; deals reads still use the stage enum (03.5) + kanban UI pending before done." },
-    { "id": "probability_weighting", "name": "Stage probability weighting", "odoo": true, "status": "partial", "weight": 2, "epic": "EPIC-03", "verify": "pipeline_stages.probability seeded per deal stage; weighted-pipeline query verified (=110000 in test)", "notes": "Probability stored + computable; forecast surfaced in lead_pipeline_review (03.4) pending before done." },
-    { "id": "deal_templates", "name": "Deal/quote templates", "odoo": true, "status": "missing", "weight": 1, "verify": "deal/quote template records" },
-    { "id": "deal_teams", "name": "Deal team assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "team assignment on deals" },
-    { "id": "lost_reasons", "name": "Lost-reason codes", "odoo": true, "status": "missing", "weight": 1, "verify": "lost_reason codes on closed deals" },
-    { "id": "deal_history", "name": "Deal change history", "odoo": true, "status": "missing", "weight": 1, "verify": "deal change audit/history records" },
-    { "id": "multicurrency_conversion", "name": "Multi-currency auto-conversion", "odoo": true, "status": "missing", "weight": 1, "verify": "auto FX conversion on deal amounts" }
+    {
+      "id": "deal_crud",
+      "name": "Deal CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manage_deal skill list/create/update/delete"
+    },
+    {
+      "id": "stale_check",
+      "name": "Stale-deal check",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stale-deal detection logic in deals module"
+    },
+    {
+      "id": "deal_to_quote",
+      "name": "Deal→quote linkage",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "deal links to quote record"
+    },
+    {
+      "id": "stages_basic",
+      "name": "Stage flow (4 hardcoded)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "notes": "Hardcoded enum; superseded by custom_stages",
+      "verify": "stage enum on deals"
+    },
+    {
+      "id": "custom_stages",
+      "name": "Configurable pipeline stages",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "epic": "EPIC-03",
+      "verify": "shared pipeline_stages (entity_type='deal') + deals.stage_id backfilled (migration 20260610190000)",
+      "notes": "Stage-3 verified 2026-06-11: DealKanban reads pipeline_stages (Lovable S2), enum<->stage_id sync trigger live; manage_pipeline_stage runtime-verified."
+    },
+    {
+      "id": "probability_weighting",
+      "name": "Stage probability weighting",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-03",
+      "verify": "pipeline_stages.probability seeded per deal stage; weighted-pipeline query verified (=110000 in test)",
+      "notes": "Stage-3 verified 2026-06-11: lead_pipeline_review forecast via agent-execute matches SQL (weighted=1800000); per-stage breakdown included."
+    },
+    {
+      "id": "deal_templates",
+      "name": "Deal/quote templates",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "deal/quote template records"
+    },
+    {
+      "id": "deal_teams",
+      "name": "Deal team assignment",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "team assignment on deals"
+    },
+    {
+      "id": "lost_reasons",
+      "name": "Lost-reason codes",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "lost_reason codes on closed deals"
+    },
+    {
+      "id": "deal_history",
+      "name": "Deal change history",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "deal change audit/history records"
+    },
+    {
+      "id": "multicurrency_conversion",
+      "name": "Multi-currency auto-conversion",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "auto FX conversion on deal amounts"
+    }
   ]
 }

@@ -4543,12 +4543,51 @@ async function executeLeadPipelineReview(
     suggestions.push('Pipeline is healthy — no urgent action required.');
   }
 
+  // Weighted deal forecast (EPIC-03 S4): Σ(value × stage probability) over the
+  // shared stage engine. Lost stages excluded; won counted at 100% and also
+  // reported separately so callers can split forecast vs booked.
+  let forecast: Record<string, unknown> | null = null;
+  const { data: deals, error: dealsError } = await supabase
+    .from('deals')
+    .select('value_cents, stage_id, pipeline_stages(key, probability, is_won, is_lost)')
+    .not('stage_id', 'is', null);
+  if (!dealsError && deals) {
+    let weighted = 0;
+    let openTotal = 0;
+    let wonTotal = 0;
+    const byStage: Record<string, { count: number; total_cents: number; weighted_cents: number; probability: number | null }> = {};
+    for (const d of deals as any[]) {
+      const s = d.pipeline_stages;
+      if (!s || s.is_lost) continue;
+      const value = Number(d.value_cents) || 0;
+      const prob = s.probability == null ? null : Number(s.probability);
+      const w = prob == null ? value : Math.round(value * prob / 100);
+      weighted += w;
+      if (s.is_won) wonTotal += value; else openTotal += value;
+      const key = s.key ?? 'unknown';
+      byStage[key] ??= { count: 0, total_cents: 0, weighted_cents: 0, probability: prob };
+      byStage[key].count += 1;
+      byStage[key].total_cents += value;
+      byStage[key].weighted_cents += w;
+    }
+    forecast = {
+      weighted_pipeline_cents: weighted,
+      open_pipeline_cents: openTotal,
+      won_cents: wonTotal,
+      by_stage: byStage,
+    };
+    if (openTotal > 0) {
+      suggestions.push(`Weighted deal forecast: ${(weighted / 100).toFixed(0)} (open pipeline ${(openTotal / 100).toFixed(0)}).`);
+    }
+  }
+
   return {
     total: all.length,
     by_status: byStatus,
     stale_count: stale.length,
     high_score_leads: highScore.slice(0, 10),
     neglected_leads: neglected.slice(0, 10),
+    forecast,
     suggestions,
   };
 }

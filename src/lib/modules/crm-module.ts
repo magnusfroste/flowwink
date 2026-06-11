@@ -583,7 +583,7 @@ Use this to find email addresses and contact information for people at a company
   },
   {
     name: 'lead_pipeline_review',
-    description: 'Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads).',
+    description: 'Reviews leads by status and score, suggests follow-up, and returns the weighted deal forecast (deal value × stage probability from the pipeline stage engine). Use when: heartbeat pipeline review, prioritizing lead outreach, sales forecasting. NOT for: updating lead status (use manage_leads) or editing stages (use manage_pipeline_stage).',
     category: 'crm',
     handler: 'module:crm',
     scope: 'internal',
