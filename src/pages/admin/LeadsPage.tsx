@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
+import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -99,11 +100,8 @@ export default function LeadsPage() {
     { label: 'Customers', value: stats?.customers || 0, icon: UserCheck, color: 'text-green-500' },
   ];
 
-  const pipelineStages: LeadStatus[] = ['lead', 'opportunity', 'customer'];
+  // pipeline column rendering now lives inside <LeadKanban /> (dynamic stages).
 
-  const getLeadsByStatus = (status: LeadStatus) => {
-    return leads?.filter(l => l.status === status) || [];
-  };
 
   return (
     <AdminLayout>
@@ -269,40 +267,11 @@ export default function LeadsPage() {
         </div>
 
         <TabsContent value="pipeline" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {pipelineStages.map((status) => {
-              const stageLeads = getLeadsByStatus(status);
-              const statusInfo = getLeadStatusInfo(status);
-              
-              return (
-                <div key={status} className="space-y-3">
-                  <div className="flex items-center gap-2 pb-2 border-b">
-                    <div className={cn("h-3 w-3 rounded-full", statusInfo.color)} />
-                    <h3 className="font-medium">{statusInfo.label}</h3>
-                    <Badge variant="secondary" className="ml-auto">
-                      {stageLeads.length}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 min-h-[200px]">
-                    {leadsLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading...</p>
-                    ) : stageLeads.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">No contacts</p>
-                    ) : (
-                      stageLeads.map((lead) => (
-                        <LeadCard
-                          key={lead.id}
-                          lead={lead}
-                          onClick={() => navigate(`/admin/contacts/${lead.id}`)}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <LeadKanban
+            leads={leads ?? []}
+            isLoading={leadsLoading}
+            onLeadClick={(id) => navigate(`/admin/contacts/${id}`)}
+          />
         </TabsContent>
 
         <TabsContent value="all" className="mt-6 space-y-3">
