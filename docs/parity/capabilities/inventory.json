@@ -73,11 +73,11 @@
       "id": "valuation",
       "name": "Stock valuation (FIFO / weighted-average)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 3,
       "epic": "EPIC-02",
       "verify": "stock_valuation_layers + process_stock_move_valuation trigger (FIFO/average per product_category.costing_method) + COGS JE 4990/1460 + inventory_valuation_report skill (migration 20260611200000)",
-      "notes": "Stage-3 verified 2026-06-11 on real schema: avg=15000 exact, FIFO across layers=110000, shortfall fallback, COGS JE balanced, report=remaining value. Pending: 02.4 valuation UI (Lovable) + fleet deploy before done."
+      "notes": "Stage-3 verified 2026-06-11 (avg/FIFO/shortfall/COGS JE/report exact); UI = InventoryValuationPanel tab + cost price in ProductDialog + costing_method on category (Lovable); engine + skill live on demo+www."
     },
     {
       "id": "landed_costs",
