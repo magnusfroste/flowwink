@@ -24,6 +24,7 @@ export interface Product {
   available_in_pos?: boolean;
   barcode?: string | null;
   pos_category_id?: string | null;
+  cost_cents?: number | null;
   created_at: string;
   updated_at: string;
 }

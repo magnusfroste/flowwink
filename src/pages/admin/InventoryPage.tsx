@@ -15,6 +15,7 @@ import { useProductStock, useStockMoves, useAdjustStock, useSetReorderPoint, use
 import { ReorderMrpPanel, LocationsPanel } from '@/components/admin/inventory/InventoryV2Panels';
 import { PickPackPanel } from '@/components/admin/inventory/PickPackPanel';
 import { ReceivingPanel } from '@/components/admin/inventory/ReceivingPanel';
+import { InventoryValuationPanel } from '@/components/admin/inventory/InventoryValuationPanel';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -143,6 +144,7 @@ export default function InventoryPage() {
       <Tabs defaultValue="stock">
         <TabsList>
           <TabsTrigger value="stock">Stock Levels</TabsTrigger>
+          <TabsTrigger value="valuation">Valuation</TabsTrigger>
           <TabsTrigger value="pickpack">Pick & Pack</TabsTrigger>
           <TabsTrigger value="receiving">Receiving</TabsTrigger>
           <TabsTrigger value="moves">Movements</TabsTrigger>
@@ -150,6 +152,10 @@ export default function InventoryPage() {
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="untracked">Untracked ({untrackedProducts.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="valuation">
+          <InventoryValuationPanel />
+        </TabsContent>
 
         <TabsContent value="stock">
           <Card>

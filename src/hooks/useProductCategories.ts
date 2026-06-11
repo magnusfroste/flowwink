@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type CostingMethod = 'average' | 'fifo';
+
 export interface ProductCategory {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface ProductCategory {
   image_url: string | null;
   sort_order: number;
   is_active: boolean;
+  costing_method?: CostingMethod;
   created_at: string;
   updated_at: string;
 }
