@@ -4,22 +4,137 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "locations", "name": "Multi-location with hierarchy", "odoo": true, "status": "done", "weight": 1, "verify": "stock_locations with parent_id + location_type" },
-    { "id": "lots_serials", "name": "Lot / serial tracking", "odoo": true, "status": "done", "weight": 1, "verify": "stock_lots, lot_id on quants/moves" },
-    { "id": "quants", "name": "Stock quants (on-hand snapshot)", "odoo": true, "status": "done", "weight": 1, "verify": "stock_quants table" },
-    { "id": "reservations", "name": "Stock reservations", "odoo": true, "status": "done", "weight": 1, "verify": "stock_reservations + reserve/cancel/consume skills" },
-    { "id": "moves", "name": "Stock moves audit trail", "odoo": true, "status": "done", "weight": 1, "verify": "stock_moves table" },
-    { "id": "mrp_run", "name": "MRP / procurement run", "odoo": true, "status": "done", "weight": 1, "verify": "procurement_run skill, procurement_suggestions" },
-    { "id": "pick_pack", "name": "Pick & pack workflow", "odoo": true, "status": "done", "weight": 1, "verify": "picking_orders + allocate/confirm/ship skills" },
-    { "id": "reorder_rules", "name": "Reorder rules (min/reorder point)", "odoo": true, "status": "partial", "weight": 1, "notes": "Single-threshold only; no min/max two-bin", "verify": "reorder_point per product/location" },
-
-    { "id": "valuation", "name": "Stock valuation (FIFO / weighted-average)", "odoo": true, "status": "missing", "weight": 3, "epic": "EPIC-02", "verify": "stock_valuation_layers table; COGS posts to accounting", "notes": "Without this, accounting can never reconcile to inventory." },
-    { "id": "landed_costs", "name": "Landed cost allocation (freight/duty)", "odoo": true, "status": "missing", "weight": 2, "epic": "EPIC-02", "verify": "landed cost added to valuation layer on receipt" },
-    { "id": "multi_step_routes", "name": "Multi-step routes (receive→QC→putaway)", "odoo": true, "status": "missing", "weight": 2, "verify": "route + rule config, intermediate locations" },
-    { "id": "cycle_count", "name": "Cycle counts / physical inventory variance", "odoo": true, "status": "missing", "weight": 2, "verify": "inventory_adjustment sessions with variance posting" },
-    { "id": "barcode_app", "name": "Barcode scanning UI (pick/pack/count)", "odoo": true, "status": "missing", "weight": 1, "verify": "scanner-driven flow in picking UI" },
-    { "id": "interwarehouse", "name": "Inter-warehouse replenishment", "odoo": true, "status": "missing", "weight": 1, "verify": "DC→store transfer rules" },
-    { "id": "expiry_alerts", "name": "Expiry-date alerts / FEFO picking", "odoo": true, "status": "missing", "weight": 1, "verify": "automation on stock_lots.expiry_date" },
-    { "id": "abc_analysis", "name": "ABC / slow-moving analysis", "odoo": true, "status": "missing", "weight": 1, "verify": "report classifying SKUs by velocity" }
+    {
+      "id": "locations",
+      "name": "Multi-location with hierarchy",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock_locations with parent_id + location_type"
+    },
+    {
+      "id": "lots_serials",
+      "name": "Lot / serial tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock_lots, lot_id on quants/moves"
+    },
+    {
+      "id": "quants",
+      "name": "Stock quants (on-hand snapshot)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock_quants table"
+    },
+    {
+      "id": "reservations",
+      "name": "Stock reservations",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock_reservations + reserve/cancel/consume skills"
+    },
+    {
+      "id": "moves",
+      "name": "Stock moves audit trail",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stock_moves table"
+    },
+    {
+      "id": "mrp_run",
+      "name": "MRP / procurement run",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "procurement_run skill, procurement_suggestions"
+    },
+    {
+      "id": "pick_pack",
+      "name": "Pick & pack workflow",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "picking_orders + allocate/confirm/ship skills"
+    },
+    {
+      "id": "reorder_rules",
+      "name": "Reorder rules (min/reorder point)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "notes": "Single-threshold only; no min/max two-bin",
+      "verify": "reorder_point per product/location"
+    },
+    {
+      "id": "valuation",
+      "name": "Stock valuation (FIFO / weighted-average)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 3,
+      "epic": "EPIC-02",
+      "verify": "stock_valuation_layers + process_stock_move_valuation trigger (FIFO/average per product_category.costing_method) + COGS JE 4990/1460 + inventory_valuation_report skill (migration 20260611200000)",
+      "notes": "Stage-3 verified 2026-06-11 on real schema: avg=15000 exact, FIFO across layers=110000, shortfall fallback, COGS JE balanced, report=remaining value. Pending: 02.4 valuation UI (Lovable) + fleet deploy before done."
+    },
+    {
+      "id": "landed_costs",
+      "name": "Landed cost allocation (freight/duty)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "epic": "EPIC-02",
+      "verify": "landed cost added to valuation layer on receipt"
+    },
+    {
+      "id": "multi_step_routes",
+      "name": "Multi-step routes (receive→QC→putaway)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "route + rule config, intermediate locations"
+    },
+    {
+      "id": "cycle_count",
+      "name": "Cycle counts / physical inventory variance",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "inventory_adjustment sessions with variance posting"
+    },
+    {
+      "id": "barcode_app",
+      "name": "Barcode scanning UI (pick/pack/count)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "scanner-driven flow in picking UI"
+    },
+    {
+      "id": "interwarehouse",
+      "name": "Inter-warehouse replenishment",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "DC→store transfer rules"
+    },
+    {
+      "id": "expiry_alerts",
+      "name": "Expiry-date alerts / FEFO picking",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "automation on stock_lots.expiry_date"
+    },
+    {
+      "id": "abc_analysis",
+      "name": "ABC / slow-moving analysis",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "report classifying SKUs by velocity"
+    }
   ]
 }

@@ -25,7 +25,6 @@ category: reference
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███░░░░░░░` 32% | 6/0/8 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████░░░░░░` 35% | 8/0/10 | — |
-| **inventory** | Inventory (stock) | L3 → L4 | `████░░░░░░` 36% | 7/1/8 | EPIC-02 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `████░░░░░░` 36% | 5/0/5 | — |
 | **payroll** | Payroll (hr.payslip) | L2 → L4 | `████░░░░░░` 36% | 8/0/9 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
@@ -38,6 +37,7 @@ category: reference
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
+| **inventory** | Inventory (stock) | L3 → L4 | `████░░░░░░` 43% | 7/2/7 | EPIC-02 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
@@ -87,7 +87,7 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| inventory | Stock valuation (FIFO / weighted-average) | missing | EPIC-02 |
+| inventory | Stock valuation (FIFO / weighted-average) | partial | EPIC-02 |
 | invoicing | Recurring/subscription invoices | missing | — |
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |

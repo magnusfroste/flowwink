@@ -294,6 +294,28 @@ const INVENTORY_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'inventory_valuation_report',
+    description:
+      'Stock valuation report: on-hand quantity, average unit cost and total value per product from the valuation layers (FIFO/average costing). Use when: reviewing inventory value for the balance sheet, month-end close, or COGS sanity checks. NOT for: stock counts/levels (manage_inventory) or adjusting stock (adjust_quant).',
+    category: 'commerce',
+    handler: 'rpc:inventory_valuation_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'inventory_valuation_report',
+        description: 'Per-product on-hand qty, avg unit cost and value from stock valuation layers, plus the total inventory value.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_limit: { type: 'number', description: 'Max products to return (default 50)' },
+          },
+        },
+      },
+    },
+    instructions: 'Reads stock_valuation_layers (remaining_qty > 0). Valuation starts from when EPIC-02 landed — products received before that have no layers until their next receipt. total_value_cents should tie out to GL account 1460 for activity after that point.',
+  },
 ];
 
 const INVENTORY_AUTOMATIONS: AutomationSeed[] = [
@@ -343,6 +365,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
     'confirm_pick',
     'ship_picking',
     'cancel_picking',
+    'inventory_valuation_report',
   ],
   skillSeeds: INVENTORY_SKILLS,
   automations: INVENTORY_AUTOMATIONS,
