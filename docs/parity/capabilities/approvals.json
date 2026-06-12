@@ -81,10 +81,10 @@
       "id": "notifications",
       "name": "Approver notification on assignment",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "approval.assigned event + 'Notify approvers in cowork chat' automation (event-dispatcher) → post_to_cowork_chat; e2e-verified: request → templated notice w/ request_id in cowork_messages",
-      "notes": "Full pipeline live (incl. fixing the dormant event→automation path: matcher key, templating, event-injection, error masking). → done when the Lovable cowork feed surfaces messages."
+      "notes": "Full pipeline live (incl. fixing the dormant event→automation path: matcher key, templating, event-injection, error masking). AgentFeed UI shipped 2026-06-12 (realtime+poll, agent bubbles, source-chips, inbox link, graceful when table missing). Dual-surface complete."
     }
   ]
 }

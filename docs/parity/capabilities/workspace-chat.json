@@ -17,10 +17,10 @@
       "id": "agent_post",
       "name": "Agent can post/answer in cowork chat (optional)",
       "odoo": false,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "cowork_messages table + post_to_cowork_chat RPC/skill (migration 20260612160000); runtime-verified (agent/FlowPilot message persisted)",
-      "notes": "FlowPilot's voice in the workspace. Pending: chat UI surfaces cowork_messages alongside the RAG thread (Lovable) before done."
+      "notes": "FlowPilot's voice in the workspace. AgentFeed UI shipped 2026-06-12 (realtime+poll, agent bubbles, source-chips, inbox link, graceful when table missing). Dual-surface complete."
     }
   ]
 }
