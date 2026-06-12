@@ -1,0 +1,15 @@
+{
+  "module": "maintenance",
+  "odoo_app": "Maintenance (maintenance.equipment / maintenance.request)",
+  "current_maturity": "L3",
+  "target_maturity": "L4",
+  "capabilities": [
+    { "id": "equipment_registry", "name": "Equipment registry", "odoo": true, "status": "partial", "weight": 2, "verify": "equipment table + manage_equipment RPC/skill (migration 20260612180000); smoke M.1", "notes": "Backend + skill verified; admin UI pending (Lovable) before done." },
+    { "id": "corrective_requests", "name": "Corrective maintenance requests", "odoo": true, "status": "partial", "weight": 2, "verify": "maintenance_requests + manage_maintenance_request; critical→under_maintenance, last-close→operational (smoke M.2/M.3)", "notes": "UI pending before done." },
+    { "id": "preventive_schedules", "name": "Preventive schedules + sweep", "odoo": true, "status": "partial", "weight": 2, "verify": "maintenance_schedules + run_preventive_maintenance (due→request, next_due rolls, idempotent; smoke M.4-M.6) + nightly cron automation seed", "notes": "UI pending before done." },
+    { "id": "work_center_link", "name": "Work-center/manufacturing integration", "odoo": true, "status": "missing", "weight": 1, "verify": "equipment ↔ work centers (depends on community work-centers track)" },
+    { "id": "kanban_calendar", "name": "Request kanban/calendar views", "odoo": true, "status": "missing", "weight": 1, "verify": "maintenance board UI" },
+    { "id": "mtbf_stats", "name": "MTBF/MTTR statistics", "odoo": true, "status": "missing", "weight": 1, "verify": "duration_minutes aggregation report" },
+    { "id": "asset_link", "name": "Link to fixed assets", "odoo": true, "status": "partial", "weight": 1, "verify": "equipment.fixed_asset_id column", "notes": "Column shipped; flow/UI pending." }
+  ]
+}

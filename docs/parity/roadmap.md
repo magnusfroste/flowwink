@@ -70,7 +70,7 @@ summary into the sprint review. The trend line *is* the report.
 From the breadth analysis — scaffold with `bun run scripts/new-module.ts`,
 target L2 (manual CRUD), then let depth/community follow:
 
-`attendance` · `maintenance` · `quality` · `planning` (shift scheduling) ·
+~~`attendance`~~ (covered by hr: attendance_entries + clock_in, done since S0) · ~~`maintenance`~~ (shipped 2026-06-12) · `quality` · `planning` (shift scheduling) ·
 `rental` · `elearning` · `forum` · `membership` · `fleet` · `appraisals` (lift
 from `hr`) · `time-off` (lift `manage_leave` to its own module) · `sms-marketing` ·
 `social-marketing`

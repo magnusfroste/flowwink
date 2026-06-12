@@ -36,6 +36,7 @@ export { workspaceChatModule } from './workspace-chat-module';
 export { customer360Module } from './customer360-module';
 export { surveysModule } from './surveys-module';
 export { fieldServiceModule } from './field-service-module';
+export { maintenanceModule } from './maintenance-module';
 export { posModule } from './pos-module';
 
 // ── Insights ──
