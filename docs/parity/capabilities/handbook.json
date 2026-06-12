@@ -1,43 +1,33 @@
 {
   "module": "handbook",
-  "odoo_app": "Knowledge (internal handbook)",
+  "odoo_app": "none (FlowWink differentiator)",
   "current_maturity": "L2",
-  "target_maturity": "L4",
+  "target_maturity": "L3",
   "capabilities": [
     {
-      "id": "section_crud",
-      "name": "Section/page CRUD",
-      "odoo": true,
-      "status": "missing",
+      "id": "github_sync",
+      "name": "GitHub-synced handbook content",
+      "odoo": false,
+      "status": "done",
       "weight": 2,
-      "verify": "handbook_search is read-only; admin HandbookPage.tsx only syncs chapters from GitHub (useSyncHandbook)",
-      "notes": "Benchmark mismatch found 2026-06-12: handbook_chapters is GitHub-SYNCED read-only content (repo/sha/synced_at) — local CRUD would fight the sync. Owner decision pending: keep read-only (re-benchmark like workspace-chat) or build local authoring."
-    },
-    {
-      "id": "publishing",
-      "name": "Publish workflow",
-      "odoo": true,
-      "status": "missing",
-      "weight": 1,
-      "verify": "no publish/draft state on handbook chapters; everything synced is live",
-      "notes": "Benchmark mismatch found 2026-06-12: handbook_chapters is GitHub-SYNCED read-only content (repo/sha/synced_at) — local CRUD would fight the sync. Owner decision pending: keep read-only (re-benchmark like workspace-chat) or build local authoring."
+      "verify": "handbook_chapters (repo_owner/sha/synced_at) + github-content-sync edge fn",
+      "notes": "The Agentic Handbook (clawable) synced into the app. Read-only by design — the repo is the source of truth. Owner confirmed 2026-06-12: unique module, not an Odoo Knowledge clone."
     },
     {
       "id": "search",
-      "name": "Search",
-      "odoo": true,
+      "name": "Search + slug fetch",
+      "odoo": false,
       "status": "done",
       "weight": 1,
-      "verify": "handbook_search skill (module:handbook, slug fetch + ILIKE search over handbook_chapters) + public handbook UI",
-      "notes": "Verified 2026-06-12: handler fetches by slug and searches content."
+      "verify": "handbook_search skill (module:handbook) + public handbook UI"
     },
     {
-      "id": "acknowledgement",
-      "name": "Employee read-acknowledgement",
+      "id": "agent_surface",
+      "name": "Agent-readable handbook (MCP)",
       "odoo": false,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no acknowledgement skill, table, or UI"
+      "verify": "handbook_search exposed over MCP — agents can cite the handbook"
     }
   ]
 }

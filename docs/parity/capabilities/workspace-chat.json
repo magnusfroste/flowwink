@@ -1,15 +1,26 @@
 {
   "module": "workspace-chat",
-  "odoo_app": "Discuss (mail.channel)",
-  "current_maturity": "L3",
-  "target_maturity": "L4",
+  "odoo_app": "none (FlowWink differentiator)",
+  "current_maturity": "L2",
+  "target_maturity": "L3",
   "capabilities": [
-    { "id": "channels", "name": "Channels", "odoo": true, "status": "missing", "weight": 2, "verify": "no channel concept; module is Cowork Chat (AI sessions via useWorkspaceSessions), exposes no skills" },
-    { "id": "direct_messages", "name": "Direct messages", "odoo": true, "status": "missing", "weight": 1, "verify": "no user-to-user DM skill or UI; chat is user-to-AI only" },
-    { "id": "mentions", "name": "@mentions", "odoo": true, "status": "missing", "weight": 1, "verify": "no mention handling in WorkspaceChatPage or hooks" },
-    { "id": "threads", "name": "Threaded replies", "odoo": true, "status": "missing", "weight": 1, "verify": "sessions are linear AI conversations (useWorkspaceSessions), no threaded replies" },
-    { "id": "file_sharing", "name": "File sharing", "odoo": true, "status": "partial", "weight": 1, "verify": "WorkspaceChatPage attachment upload (AttachmentChip, 20MB/5 files)", "notes": "Skill surface missing: workspace-chat-module deliberately exposes no skills (skills: [])" },
-    { "id": "search", "name": "Message search", "odoo": true, "status": "missing", "weight": 1, "verify": "no message-search UI or skill; only RAG search over workspace data, not chat messages" },
-    { "id": "rag_chat", "name": "AI workspace chat (RAG/CAG with citations)", "odoo": false, "status": "partial", "weight": 1, "verify": "WorkspaceChatPage + useWorkspaceChat + CitationsDrawer; blended workspace/model/web modes", "notes": "Added capability. No skill surface — module intentionally exposes no skills (read-only internal chat)" }
+    {
+      "id": "rag_chat",
+      "name": "AI RAG chat over workspace context",
+      "odoo": false,
+      "status": "done",
+      "weight": 2,
+      "verify": "Cowork Chat UI + workspace-chat edge fn (RAG over workspace data)",
+      "notes": "Owner confirmed 2026-06-12: unique module — an AI interface to your own data, NOT a Discuss/Slack clone. Previous Discuss-benchmark (channels/DM/threads) removed as a category error."
+    },
+    {
+      "id": "agent_post",
+      "name": "Agent can post/answer in cowork chat (optional)",
+      "odoo": false,
+      "status": "missing",
+      "weight": 1,
+      "verify": "a skill surface for the chat (cf. post_to_river)",
+      "notes": "Optional future: dual-surface for the chat itself, so FlowPilot/external agents can participate. Not a parity gap."
+    }
   ]
 }

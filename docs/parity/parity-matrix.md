@@ -9,15 +9,13 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 53%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 52  ·  **Mean parity:** 55%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
-| **workspace-chat** | Discuss (mail.channel) | L3 → L4 | `█░░░░░░░░░` 7% | 0/1/5 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
-| **handbook** | Knowledge (internal handbook) | L2 → L4 | `███░░░░░░░` 25% | 1/0/2 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████░░░░░░` 35% | 8/0/10 | — |
@@ -80,8 +78,10 @@ category: reference
 | **developer** | none (FlowWink differentiator) | 4 |
 | **federation** | none (FlowWink differentiator) | 8 |
 | **flowpilot** | none (FlowWink differentiator) | 7 |
+| **handbook** | none (FlowWink differentiator) | 3 |
 | **river** | none (FlowWink differentiator) | 5 |
 | **site-migration** | none (FlowWink differentiator) | 4 |
+| **workspace-chat** | none (FlowWink differentiator) | 2 |
 
 ## Foundational gaps (weight 3, still open)
 
