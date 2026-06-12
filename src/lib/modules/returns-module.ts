@@ -39,6 +39,7 @@ const SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
+            reason_code: { type: 'string', enum: ['defective','wrong_item','not_as_described','changed_mind','damaged_in_transit','other'], description: 'Categorized return reason (free-text reason field still available)' },
             action: { type: 'string', enum: ['create'], default: 'create' },
             order_id: { type: 'string' },
             rma_number: { type: 'string', description: 'Optional — auto-generated if omitted' },
@@ -138,6 +139,7 @@ const SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
+            p_final: { type: 'boolean', description: 'Mark the refund as final even if below the expected total (closes the RMA)' },
             return_id: { type: 'string' },
             refund_cents: { type: 'integer' },
             method: { type: 'string', enum: ['stripe', 'manual', 'store_credit'], default: 'manual' },
@@ -148,6 +150,49 @@ const SKILLS: SkillSeed[] = [
     },
     instructions:
       'For Stripe-paid orders, prefer method="stripe" so an actual refund is recorded. For card-not-present or offline orders use "manual".',
+  },
+  {
+    name: 'inspect_return',
+    description: 'QC-inspect a received return: record inspection notes and set the restocking fee before refunding. Use when: goods arrived back and need checking; deciding a restocking fee. NOT for: refunding (refund_return) or receiving (receive_return).',
+    category: 'commerce',
+    handler: 'rpc:inspect_return',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'inspect_return',
+        description: 'Record QC inspection on a received return and optionally set restocking_fee_cents.',
+        parameters: {
+          type: 'object',
+          required: ['p_return_id'],
+          properties: {
+            p_return_id: { type: 'string', format: 'uuid' },
+            p_notes: { type: 'string' },
+            p_restocking_fee_cents: { type: 'number', description: 'Deducted from the refundable total' },
+          },
+        },
+      },
+    },
+    instructions: 'Only valid in status=received. The expected refund becomes Σ(return_items qty × unit_refund_cents) − restocking_fee_cents; refund_return enforces it.',
+  },
+  {
+    name: 'return_reason_report',
+    description: 'Return-reason analytics: counts and refunded value per reason_code over a period. Use when: spotting product quality issues, monthly returns review. NOT for: managing a single RMA (create_return/refund_return).',
+    category: 'commerce',
+    handler: 'rpc:return_reason_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'return_reason_report',
+        description: 'Counts + refunded cents grouped by reason_code for the last N days (default 90).',
+        parameters: {
+          type: 'object',
+          properties: { p_days: { type: 'number' } },
+        },
+      },
+    },
+    instructions: 'Read-only. Returns with no reason_code are grouped as "unspecified" — encourage setting reason_code on create_return.',
   },
 ];
 
@@ -164,7 +209,7 @@ export const returnsModule = defineModule<Input, Output>({
   tier: 'extended',
   inputSchema,
   outputSchema,
-  skills: ['create_return', 'manage_return_item', 'approve_return', 'receive_return', 'refund_return'],
+  skills: ['create_return', 'manage_return_item', 'approve_return', 'receive_return', 'refund_return', 'inspect_return', 'return_reason_report'],
   skillSeeds: SKILLS,
   async publish(input: Input): Promise<Output> {
     const v = inputSchema.parse(input);

@@ -4,19 +4,114 @@
   "current_maturity": "L2",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "rma_lifecycle", "name": "RMA lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "RMA status lifecycle" },
-    { "id": "line_items", "name": "Return line items", "odoo": true, "status": "done", "weight": 1, "verify": "return line items" },
-    { "id": "restock_event", "name": "Restock stock-movement event", "odoo": true, "status": "done", "weight": 1, "verify": "restock stock-movement event" },
-    { "id": "refund_methods", "name": "Refund methods (Stripe/manual/credit)", "odoo": true, "status": "done", "weight": 1, "verify": "refund methods: Stripe/manual/credit" },
-
-    { "id": "inspection_qc", "name": "Return inspection/QC state", "odoo": true, "status": "missing", "weight": 2, "verify": "return inspection/QC state" },
-    { "id": "return_to_vendor", "name": "Return-to-vendor flow", "odoo": true, "status": "missing", "weight": 2, "verify": "return-to-vendor flow" },
-    { "id": "partial_refund", "name": "Partial refunds", "odoo": true, "status": "missing", "weight": 2, "verify": "partial refund support" },
-    { "id": "reason_codes", "name": "Return reason codes", "odoo": true, "status": "missing", "weight": 1, "verify": "return reason codes" },
-    { "id": "restocking_fee", "name": "Restocking fee logic", "odoo": true, "status": "missing", "weight": 1, "verify": "restocking fee logic" },
-    { "id": "reason_analytics", "name": "Return reason analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "return reason analytics" },
-    { "id": "return_email", "name": "Automated return email/label", "odoo": true, "status": "missing", "weight": 1, "verify": "automated return email/label" },
-    { "id": "reverse_logistics", "name": "Reverse logistics pickup", "odoo": true, "status": "missing", "weight": 1, "verify": "reverse logistics pickup" },
-    { "id": "condition_actions", "name": "Condition-based actions", "odoo": true, "status": "missing", "weight": 1, "verify": "condition-based actions on returns" }
+    {
+      "id": "rma_lifecycle",
+      "name": "RMA lifecycle",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "RMA status lifecycle"
+    },
+    {
+      "id": "line_items",
+      "name": "Return line items",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "return line items"
+    },
+    {
+      "id": "restock_event",
+      "name": "Restock stock-movement event",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "restock stock-movement event"
+    },
+    {
+      "id": "refund_methods",
+      "name": "Refund methods (Stripe/manual/credit)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "refund methods: Stripe/manual/credit"
+    },
+    {
+      "id": "inspection_qc",
+      "name": "Return inspection/QC state",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "inspect_return RPC/skill (received→inspected_at/notes before refund)",
+      "notes": "Smoke F2.3 + runtime guiding error verified. Inspection UI pending."
+    },
+    {
+      "id": "return_to_vendor",
+      "name": "Return-to-vendor flow",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "return-to-vendor flow"
+    },
+    {
+      "id": "partial_refund",
+      "name": "Partial refunds",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "refund_return v2: accumulates refund_amount_cents per call, over-refund rejected, closes on full/p_final",
+      "notes": "Smoke F2.4-F2.7 (partial→remaining 10000, over-refund rejected, completion flips status). UI pending."
+    },
+    {
+      "id": "reason_codes",
+      "name": "Return reason codes",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "returns.reason_code (text+CHECK: defective/wrong_item/not_as_described/changed_mind/damaged_in_transit/other) in create_return (migration 20260612110000)",
+      "notes": "Smoke F2.1/F2.2 (stored + invalid rejected). Reason select UI pending."
+    },
+    {
+      "id": "restocking_fee",
+      "name": "Restocking fee logic",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "returns.restocking_fee_cents + inspect_return sets it; refund_return deducts it from the expected total",
+      "notes": "Smoke verified (expected = items − fee). Fee UI pending."
+    },
+    {
+      "id": "reason_analytics",
+      "name": "Return reason analytics",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "return_reason_report RPC/skill (counts+refunded per reason, N days)",
+      "notes": "Runtime-verified. Dashboard widget pending."
+    },
+    {
+      "id": "return_email",
+      "name": "Automated return email/label",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "automated return email/label"
+    },
+    {
+      "id": "reverse_logistics",
+      "name": "Reverse logistics pickup",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "reverse logistics pickup"
+    },
+    {
+      "id": "condition_actions",
+      "name": "Condition-based actions",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "condition-based actions on returns"
+    }
   ]
 }

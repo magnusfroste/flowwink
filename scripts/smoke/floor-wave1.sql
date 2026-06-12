@@ -51,5 +51,61 @@ DELETE FROM companies WHERE name LIKE 'SMOKE-FW1%';
 SELECT CASE WHEN count(*)=0 THEN 'PASS F1.9 cleanup' ELSE 'FAIL F1.9 cleanup' END
 FROM companies WHERE name LIKE 'SMOKE-FW1%';
 
+-- ── F2 returns ──────────────────────────────────────────────────────────────
+INSERT INTO orders (customer_email, status, total_cents, currency)
+VALUES ('smoke-fw1@test.dev','pending',20000,'SEK') RETURNING id AS oid \gset
+INSERT INTO returns (rma_number, order_id, status, reason_code, restocking_fee_cents)
+VALUES ('SMOKE-FW1-RMA1', :'oid','received','defective',2000) RETURNING id AS rid \gset
+INSERT INTO return_items (return_id, quantity, unit_refund_cents)
+VALUES (:'rid', 2, 10000);
+
+SELECT CASE WHEN reason_code='defective' THEN 'PASS F2.1 reason_code stored' ELSE 'FAIL F2.1' END
+FROM returns WHERE id=:'rid';
+
+-- invalid reason rejected
+DO $$ BEGIN
+  BEGIN
+    UPDATE returns SET reason_code='nonsense' WHERE status='received' AND reason_code='defective';
+    RAISE NOTICE 'FAIL F2.2 invalid reason allowed';
+  EXCEPTION WHEN check_violation THEN
+    RAISE NOTICE 'PASS F2.2 invalid reason rejected';
+  END;
+END $$;
+
+-- QC inspection
+SELECT CASE WHEN (inspect_return(:'rid','looks ok',NULL)->>'inspected')::boolean
+       THEN 'PASS F2.3 inspection' ELSE 'FAIL F2.3' END;
+
+-- partial refund: expected = 2×10000 − 2000 fee = 18000; pay 8000 → remaining 10000
+SELECT CASE WHEN (refund_return(:'rid', 8000, 'manual', false)->>'remaining_cents')::bigint = 10000
+       THEN 'PASS F2.4 partial refund (remaining 10000)' ELSE 'FAIL F2.4' END;
+SELECT CASE WHEN status='received' THEN 'PASS F2.5 still open after partial' ELSE 'FAIL F2.5' END
+FROM returns WHERE id=:'rid';
+
+-- over-refund rejected
+DO $$
+DECLARE rid uuid;
+BEGIN
+  SELECT id INTO rid FROM returns WHERE reason_code='defective' AND status='received' LIMIT 1;
+  BEGIN
+    PERFORM refund_return(rid, 99999, 'manual', false);
+    RAISE NOTICE 'FAIL F2.6 over-refund allowed';
+  EXCEPTION WHEN others THEN
+    RAISE NOTICE 'PASS F2.6 over-refund rejected';
+  END;
+END $$;
+
+-- completing refund flips to refunded
+SELECT CASE WHEN (refund_return(:'rid', 10000, 'manual', false)->>'status') = 'refunded'
+       THEN 'PASS F2.7 full refund completes' ELSE 'FAIL F2.7' END;
+
+-- reason analytics
+SELECT CASE WHEN (return_reason_report(30)->'reasons') @> jsonb_build_array(jsonb_build_object('reason_code','defective'))
+       THEN 'PASS F2.8 reason report' ELSE 'FAIL F2.8' END;
+
+-- cleanup F2
+DELETE FROM returns WHERE id=:'rid';
+DELETE FROM orders WHERE id=:'oid';
+
 ROLLBACK;  -- belt & braces: nothing this file does should persist
 SELECT 'SMOKE floor-wave1 F1 done (transaction rolled back)';
