@@ -16,6 +16,8 @@ import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useComp
 import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
+import { DuplicateCompaniesPanel } from '@/components/admin/companies/DuplicateCompaniesPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
   AlertDialog,
