@@ -14,11 +14,12 @@ import {
   openCustomerPortal, type SubscriptionStatus, type Subscription,
 } from '@/hooks/useSubscriptions';
 import { format } from 'date-fns';
-import { ExternalLink, MoreHorizontal, RefreshCw, XCircle } from 'lucide-react';
+import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ChangePlanDialog } from '@/components/admin/subscriptions/ChangePlanDialog';
 
 const STATUS_LABEL: Record<SubscriptionStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
