@@ -40,7 +40,7 @@ Priority weighs business value × how much of the flow already exists. Each is
 **blocked** by specific module-depth gaps already tracked in the matrix — process
 work and depth work reinforce each other.
 
-### P1 — Subscribe-to-Renew (recurring revenue)
+### P1 — Subscribe-to-Renew (recurring revenue) — ✅ SHIPPED L3 (2026-06-12, see docs/processes/subscribe-to-renew.md)
 *Signup → bill on cycle → dunning → churn/win-back → renew/expand.*
 - **Modules:** subscriptions, invoicing, accounting, crm
 - **Blocked by:** `invoicing#recurring` (weight 3), `subscriptions#proration`,

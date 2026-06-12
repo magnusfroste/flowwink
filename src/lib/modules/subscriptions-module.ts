@@ -227,6 +227,32 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'change_subscription',
+    description: 'Change quantity or unit price on a manual (invoice-billed) subscription with PRORATION: mid-period upgrades create a prorated adjustment invoice; downgrades record a credit (applied next cycle). Use when: customer adds/removes seats, plan price changes mid-period. NOT for: card subscriptions (change at the provider), cancellation (cancel_manual_subscription).',
+    category: 'commerce',
+    handler: 'rpc:change_subscription',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'change_subscription',
+        description: 'Update qty/price on a manual subscription; mid-period delta is prorated by remaining days — upgrade → draft adjustment invoice, downgrade → credit_cents recorded on metadata.',
+        parameters: {
+          type: 'object',
+          required: ['p_subscription_id'],
+          properties: {
+            p_subscription_id: { type: 'string', format: 'uuid' },
+            p_new_quantity: { type: 'number', description: '>= 1; omit to keep' },
+            p_new_unit_amount_cents: { type: 'number', description: 'Omit to keep' },
+            p_generate_adjustment: { type: 'boolean', description: 'Create the prorated draft invoice on upgrades (default true)' },
+            p_tax_rate: { type: 'number', description: 'Tax rate for the adjustment (default 0.25)' },
+          },
+        },
+      },
+    },
+    instructions: 'Manual-provider subscriptions only. Proration fraction = remaining days / period days from current_period_start/end (0 when unknown → no adjustment). Returns prorated_cents, adjustment_invoice_id (upgrades) or credit_cents (downgrades — apply on the next invoice; recorded under metadata.last_change). No negative invoices in v1.',
+  },
 ];
 
 export const subscriptionsModule = defineModule<Input, Output>({
@@ -254,7 +280,8 @@ export const subscriptionsModule = defineModule<Input, Output>({
     'cancel_manual_subscription',
     // Dunning skills (list_dunning_sequences, pause_dunning, escalate_dunning)
     // exist as edge function `subscriptions` but are not yet seeded as skills.
-    // Re-add here once SkillSeed entries are written.
+    // Re-add here once SkillSeed entries are written.,
+    'change_subscription',
   ],
   skillSeeds: SUBSCRIPTIONS_SKILLS,
 

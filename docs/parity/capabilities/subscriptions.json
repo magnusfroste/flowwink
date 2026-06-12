@@ -4,20 +4,118 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "sub_crud", "name": "Subscription CRUD/list", "odoo": true, "status": "done", "weight": 1, "verify": "subscription CRUD/list" },
-    { "id": "mrr_arr_churn", "name": "MRR/ARR/churn metrics", "odoo": true, "status": "done", "weight": 1, "verify": "MRR/ARR/churn metrics" },
-    { "id": "manual_invoice_subs", "name": "Manual invoice-billed subs", "odoo": true, "status": "done", "weight": 1, "verify": "manual invoice-billed subscriptions" },
-    { "id": "churn_reasons", "name": "Churn-reason capture", "odoo": true, "status": "done", "weight": 1, "verify": "churn-reason capture" },
-    { "id": "winback_config", "name": "Win-back campaign config", "odoo": true, "status": "done", "weight": 1, "verify": "win-back campaign config" },
-    { "id": "stripe_webhooks", "name": "Stripe webhook events", "odoo": true, "status": "done", "weight": 1, "verify": "stripe webhook event handling" },
-
-    { "id": "proration", "name": "Proration on mid-cycle change", "odoo": true, "status": "missing", "weight": 3, "verify": "proration on mid-cycle plan change" },
-    { "id": "usage_based", "name": "Usage-based billing", "odoo": true, "status": "missing", "weight": 2, "verify": "usage-based billing" },
-    { "id": "plan_templates", "name": "Plan/package templates", "odoo": true, "status": "missing", "weight": 2, "verify": "plan/package templates" },
-    { "id": "dunning_sequences", "name": "Automated dunning retry", "odoo": true, "status": "missing", "weight": 2, "verify": "automated dunning retry sequences" },
-    { "id": "cohort_analysis", "name": "Cohort retention analysis", "odoo": true, "status": "missing", "weight": 1, "verify": "cohort retention analysis" },
-    { "id": "trial_conversion", "name": "Trial→paid funnel", "odoo": true, "status": "missing", "weight": 1, "verify": "trial→paid conversion funnel" },
-    { "id": "seat_scaling", "name": "Seat/license auto-scaling", "odoo": true, "status": "missing", "weight": 1, "verify": "seat/license auto-scaling" },
-    { "id": "commitment_periods", "name": "Commitment/lock-in periods", "odoo": true, "status": "missing", "weight": 1, "verify": "commitment/lock-in period support" }
+    {
+      "id": "sub_crud",
+      "name": "Subscription CRUD/list",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "subscription CRUD/list"
+    },
+    {
+      "id": "mrr_arr_churn",
+      "name": "MRR/ARR/churn metrics",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "MRR/ARR/churn metrics"
+    },
+    {
+      "id": "manual_invoice_subs",
+      "name": "Manual invoice-billed subs",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manual invoice-billed subscriptions"
+    },
+    {
+      "id": "churn_reasons",
+      "name": "Churn-reason capture",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "churn-reason capture"
+    },
+    {
+      "id": "winback_config",
+      "name": "Win-back campaign config",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "win-back campaign config"
+    },
+    {
+      "id": "stripe_webhooks",
+      "name": "Stripe webhook events",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "stripe webhook event handling"
+    },
+    {
+      "id": "proration",
+      "name": "Proration on mid-cycle change",
+      "odoo": true,
+      "status": "partial",
+      "weight": 3,
+      "verify": "change_subscription RPC/skill — prorates by remaining days; upgrade→draft adjustment invoice, downgrade→credit on metadata (migration 20260612140000)",
+      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI pending before done."
+    },
+    {
+      "id": "usage_based",
+      "name": "Usage-based billing",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "usage-based billing"
+    },
+    {
+      "id": "plan_templates",
+      "name": "Plan/package templates",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "plan/package templates"
+    },
+    {
+      "id": "dunning_sequences",
+      "name": "Automated dunning retry",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "automated dunning retry sequences"
+    },
+    {
+      "id": "cohort_analysis",
+      "name": "Cohort retention analysis",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "cohort retention analysis"
+    },
+    {
+      "id": "trial_conversion",
+      "name": "Trial→paid funnel",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "trial→paid conversion funnel"
+    },
+    {
+      "id": "seat_scaling",
+      "name": "Seat/license auto-scaling",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "seat/license auto-scaling"
+    },
+    {
+      "id": "commitment_periods",
+      "name": "Commitment/lock-in periods",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "commitment/lock-in period support"
+    }
   ]
 }
