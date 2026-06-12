@@ -107,5 +107,26 @@ SELECT CASE WHEN (return_reason_report(30)->'reasons') @> jsonb_build_array(json
 DELETE FROM returns WHERE id=:'rid';
 DELETE FROM orders WHERE id=:'oid';
 
+-- ── F4 calendar ─────────────────────────────────────────────────────────────
+SELECT (manage_calendar_event('create',NULL,'SMOKE-FW1 möte','beskr', now()+interval '1 day', now()+interval '1 day 1 hour', false, 'Kontoret', '[{"email":"a@b.se"}]'::jsonb, NULL, NULL)->>'event_id') AS ev \gset
+SELECT CASE WHEN :'ev' IS NOT NULL THEN 'PASS F4.1 event created' ELSE 'FAIL F4.1' END;
+SELECT CASE WHEN jsonb_array_length(manage_calendar_event('list',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, now(), now()+interval '2 days')->'events') >= 1
+       THEN 'PASS F4.2 list in range' ELSE 'FAIL F4.2' END;
+SELECT CASE WHEN (manage_calendar_event('update',(:'ev')::uuid,'SMOKE-FW1 möte v2')->>'success')::boolean
+       THEN 'PASS F4.3 update' ELSE 'FAIL F4.3' END;
+-- ends_at before starts_at rejected
+DO $$
+DECLARE eid uuid;
+BEGIN
+  BEGIN
+    PERFORM manage_calendar_event('create',NULL,'bad',NULL, now(), now()-interval '1 hour');
+    RAISE NOTICE 'FAIL F4.4 time-order allowed';
+  EXCEPTION WHEN check_violation THEN
+    RAISE NOTICE 'PASS F4.4 time-order rejected';
+  END;
+END $$;
+SELECT CASE WHEN (manage_calendar_event('delete',(:'ev')::uuid)->>'success')::boolean
+       THEN 'PASS F4.5 delete' ELSE 'FAIL F4.5' END;
+
 ROLLBACK;  -- belt & braces: nothing this file does should persist
 SELECT 'SMOKE floor-wave1 F1 done (transaction rolled back)';

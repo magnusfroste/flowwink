@@ -52,6 +52,38 @@ const CALENDAR_SKILLS: SkillSeed[] = [
     instructions:
       'Default to a 7-day window if user is vague. Returned events are normalized: { id, sourceId, title, start, end, url }. Source IDs map to module domains.',
   },
+  {
+    name: 'manage_calendar_event',
+    description: 'Create, update, delete or list standalone calendar events (meetings, deadlines) with attendees. Use when: scheduling an internal meeting or deadline; listing what is on the calendar. NOT for: customer bookings (book_appointment / manage_bookings) — those live in the booking module and are aggregated separately.',
+    category: 'crm',
+    handler: 'rpc:manage_calendar_event',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_calendar_event',
+        description: 'CRUD for calendar_events. list takes an optional p_from/p_to range (defaults: -7d to +30d).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'update', 'delete'] },
+            p_event_id: { type: 'string', format: 'uuid' },
+            p_title: { type: 'string' },
+            p_description: { type: 'string' },
+            p_starts_at: { type: 'string', description: 'ISO timestamp' },
+            p_ends_at: { type: 'string', description: 'ISO timestamp (must be >= starts_at)' },
+            p_all_day: { type: 'boolean' },
+            p_location: { type: 'string' },
+            p_attendees: { type: 'array', items: { type: 'object' }, description: '[{email, name?}]' },
+            p_from: { type: 'string', description: 'list: range start (ISO)' },
+            p_to: { type: 'string', description: 'list: range end (ISO)' },
+          },
+        },
+      },
+    },
+    instructions: 'Standalone events only — bookings remain in the booking module (list_events aggregates both views for read). Admin/service-role for mutations; staff can read.',
+  },
 ];
 
 /**
@@ -72,7 +104,7 @@ export const calendarModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['list_events'],
+  skills: ['list_events', 'manage_calendar_event'],
   skillSeeds: CALENDAR_SKILLS,
 
 
