@@ -17,10 +17,10 @@
       "id": "agent_post",
       "name": "Agent can post/answer in cowork chat (optional)",
       "odoo": false,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "a skill surface for the chat (cf. post_to_river)",
-      "notes": "Optional future: dual-surface for the chat itself, so FlowPilot/external agents can participate. Not a parity gap."
+      "verify": "cowork_messages table + post_to_cowork_chat RPC/skill (migration 20260612160000); runtime-verified (agent/FlowPilot message persisted)",
+      "notes": "FlowPilot's voice in the workspace. Pending: chat UI surfaces cowork_messages alongside the RAG thread (Lovable) before done."
     }
   ]
 }
