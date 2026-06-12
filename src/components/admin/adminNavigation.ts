@@ -140,6 +140,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Recruitment", href: "/admin/recruitment", icon: Briefcase, moduleId: "recruitment", allowedRoles: ['hr'] },
       { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts", allowedRoles: ['hr'] },
       { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
+      { name: "Maintenance", href: "/admin/maintenance", icon: Wrench, moduleId: "maintenance" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
   },
