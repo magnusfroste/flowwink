@@ -4,16 +4,86 @@
   "current_maturity": "L2",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "exchange_rate_table", "name": "Exchange-rate table", "odoo": true, "status": "done", "weight": 1, "verify": "exchange-rate table" },
-    { "id": "ecb_rates", "name": "ECB daily rate fetch", "odoo": true, "status": "done", "weight": 1, "verify": "ECB daily rate fetch" },
-    { "id": "manual_rates", "name": "Manual rate override", "odoo": true, "status": "done", "weight": 1, "verify": "manual rate override" },
-    { "id": "fx_revaluation", "name": "Unrealized FX revaluation", "odoo": true, "status": "done", "weight": 1, "verify": "unrealized FX revaluation" },
-    { "id": "transaction_currency", "name": "Per-transaction currency", "odoo": true, "status": "done", "weight": 1, "verify": "per-transaction currency" },
-
-    { "id": "realized_fx", "name": "Realized FX gain/loss on payment", "odoo": true, "status": "missing", "weight": 3, "verify": "realized FX gain/loss on payment" },
-    { "id": "subsidiary_ledgers", "name": "Local-currency subsidiary ledgers", "odoo": true, "status": "missing", "weight": 2, "verify": "local-currency subsidiary ledgers" },
-    { "id": "consolidation_translation", "name": "Consolidation currency translation", "odoo": true, "status": "missing", "weight": 2, "verify": "consolidation currency translation" },
-    { "id": "forward_contracts", "name": "Hedging/forward contracts", "odoo": true, "status": "missing", "weight": 1, "verify": "hedging/forward contracts" },
-    { "id": "historical_rate_import", "name": "Bulk historical rate import", "odoo": true, "status": "missing", "weight": 1, "verify": "bulk historical rate import" }
+    {
+      "id": "exchange_rate_table",
+      "name": "Exchange-rate table",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "exchange-rate table"
+    },
+    {
+      "id": "ecb_rates",
+      "name": "ECB daily rate fetch",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "ECB daily rate fetch"
+    },
+    {
+      "id": "manual_rates",
+      "name": "Manual rate override",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manual rate override"
+    },
+    {
+      "id": "fx_revaluation",
+      "name": "Unrealized FX revaluation",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "unrealized FX revaluation"
+    },
+    {
+      "id": "transaction_currency",
+      "name": "Per-transaction currency",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "per-transaction currency"
+    },
+    {
+      "id": "realized_fx",
+      "name": "Realized FX gain/loss on payment",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "verify": "book_invoice_paid v2: payment-date rate vs invoices.exchange_rate → Cr 3960 gain / Dt 7960 loss, mirrors revalue_open_balances delta model (migration 20260612150000)",
+      "notes": "Stage-3 verified 2026-06-12: smoke 6/6 (gain 5000 + loss -6000 JEs balanced, base-currency no-op, idempotent, rate-lookup failure never blocks payment). Existing skill/UI surfaces (mark_paid, auto_mark_invoice_paid, status trigger) gain it with no contract change — dual-surface unchanged."
+    },
+    {
+      "id": "subsidiary_ledgers",
+      "name": "Local-currency subsidiary ledgers",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "local-currency subsidiary ledgers"
+    },
+    {
+      "id": "consolidation_translation",
+      "name": "Consolidation currency translation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "consolidation currency translation"
+    },
+    {
+      "id": "forward_contracts",
+      "name": "Hedging/forward contracts",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "hedging/forward contracts"
+    },
+    {
+      "id": "historical_rate_import",
+      "name": "Bulk historical rate import",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "bulk historical rate import"
+    }
   ]
 }
