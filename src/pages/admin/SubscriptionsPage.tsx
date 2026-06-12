@@ -198,6 +198,8 @@ function SubscriptionRow({
   const renews = sub.current_period_end
     ? format(new Date(sub.current_period_end), 'MMM d, yyyy')
     : '—';
+  const [changeOpen, setChangeOpen] = useState(false);
+  const canChangePlan = isManual && sub.status === 'active';
   return (
     <TableRow>
       <TableCell>
@@ -240,6 +242,11 @@ function SubscriptionRow({
             <DropdownMenuItem onClick={onPortal}>
               <ExternalLink className="h-4 w-4 mr-2" />Customer portal
             </DropdownMenuItem>
+            {canChangePlan && (
+              <DropdownMenuItem onClick={() => setChangeOpen(true)}>
+                <ArrowUpDown className="h-4 w-4 mr-2" />Change plan
+              </DropdownMenuItem>
+            )}
             {sub.cancel_at_period_end ? (
               <DropdownMenuItem onClick={onResume}>
                 <RefreshCw className="h-4 w-4 mr-2" />Resume
@@ -253,6 +260,9 @@ function SubscriptionRow({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+        {canChangePlan && (
+          <ChangePlanDialog open={changeOpen} onOpenChange={setChangeOpen} sub={sub} />
+        )}
       </TableCell>
     </TableRow>
   );
