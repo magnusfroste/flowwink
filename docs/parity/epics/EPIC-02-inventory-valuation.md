@@ -49,7 +49,7 @@ COGS is computed per variant and posted per normalized order line.
     valuation layer (by value or by weight). Scope: allocation on receipt only.
   - Flips `inventory.json#landed_costs` → partial.
 
-- [ ] **02.4 — Valuation report + reconciliation check**
+- [x] **02.4 — Valuation report + reconciliation check** *(inventory_valuation_report #30 + inventory_gl_reconciliation skill: GL 1460 vs Σ layers w/ unbooked-receipt breakdown; runtime-verified — EPIC-02 COMPLETE)*
   - **Admin UI / report:** stock valuation report by product/location.
   - **Test:** assert inventory GL account balance == Σ `remaining_qty × unit_cost`.
 

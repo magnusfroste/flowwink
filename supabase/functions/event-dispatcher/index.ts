@@ -26,6 +26,43 @@ const corsHeaders = {
 
 const BATCH_SIZE = 100;
 
+/**
+ * Substitute {{event...}} templates in skill_arguments. Whole-string templates
+ * preserve the raw value type ({{event.payload.order_id}} → the uuid string);
+ * embedded templates interpolate. Paths: event.name, event.source, event.id,
+ * event.payload.<key...>.
+ */
+function resolveTemplates(value: unknown, ev: { name: string; payload: any; source: string; id: string }): unknown {
+  const lookup = (path: string): unknown => {
+    const parts = path.split('.');
+    if (parts[0] !== 'event') return undefined;
+    let cur: any = ev;
+    for (const part of parts.slice(1)) {
+      cur = cur?.[part];
+      if (cur === undefined) return undefined;
+    }
+    return cur;
+  };
+  if (typeof value === 'string') {
+    const whole = value.match(/^\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}$/);
+    if (whole) {
+      const v = lookup(whole[1]);
+      return v === undefined ? value : v;
+    }
+    return value.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (m, path) => {
+      const v = lookup(path);
+      return v === undefined ? m : String(v);
+    });
+  }
+  if (Array.isArray(value)) return value.map((v) => resolveTemplates(v, ev));
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = resolveTemplates(v, ev);
+    return out;
+  }
+  return value;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -83,7 +120,11 @@ serve(async (req) => {
     // 4. Process each event
     for (const ev of events) {
       const matchingAutos = (automations || []).filter((a) => {
-        const cfgEvent = (a.trigger_config as any)?.event_name;
+        // Seeds write {event: ...}; older docs said {event_name: ...} — accept both.
+        // (Before this fix NO event automation ever matched: seeds and matcher
+        // disagreed on the key, silently disabling the event→automation path.)
+        const cfg = a.trigger_config as any;
+        const cfgEvent = cfg?.event_name ?? cfg?.event;
         return cfgEvent && cfgEvent === ev.event_name;
       });
 
@@ -117,24 +158,25 @@ serve(async (req) => {
               body: JSON.stringify({
                 skill_id: auto.skill_id,
                 skill_name: auto.skill_name,
-                arguments: {
-                  ...(auto.skill_arguments || {}),
-                  event: {
-                    name: ev.event_name,
-                    payload: ev.payload,
-                    source: ev.source,
-                    id: ev.id,
-                  },
-                },
+                // {{event...}} templates resolved against the event; the raw event
+                // object is NOT injected (it broke the rpc p_-prefix mapping as
+                // p_event and no RPC accepts it — payload access is via templates).
+                arguments: resolveTemplates(auto.skill_arguments || {}, {
+                  name: ev.event_name,
+                  payload: ev.payload,
+                  source: ev.source,
+                  id: ev.id,
+                }) as Record<string, unknown>,
                 agent_type: executor === "flowpilot" ? "flowpilot" : "platform",
               }),
             },
           );
 
           const out = await resp.json().catch(() => ({}));
-          if (!resp.ok || out.error) {
+          const innerError = out?.result?.error || (out?.result?.status === 'failed' ? 'skill failed' : null);
+          if (!resp.ok || out.error || innerError) {
             errs.push(
-              `${auto.name}: ${out.error || `HTTP ${resp.status}`}`,
+              `${auto.name}: ${out.error || innerError || `HTTP ${resp.status}`}`,
             );
           } else {
             fired += 1;

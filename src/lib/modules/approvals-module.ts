@@ -9,7 +9,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { defineModule } from '@/lib/module-def';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const approvalsInputSchema = z.object({
   action: z.enum([
@@ -269,6 +269,21 @@ const APPROVAL_SKILLS: SkillSeed[] = [
   },
 ];
 
+const APPROVAL_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Notify approvers in cowork chat',
+    description: 'When a chain approval is created or advances to a new step, post a notice in Cowork Chat (approval.assigned event).',
+    trigger_type: 'event',
+    trigger_config: { event: 'approval.assigned' },
+    skill_name: 'post_to_cowork_chat',
+    skill_arguments: {
+      p_content: '🔔 Attest väntar: {{event.payload.entity_type}} {{event.payload.entity_id}} — steg {{event.payload.step}}. Godkänn via advance_approval_step eller Approval Inbox.',
+      p_author_name: 'Approvals',
+      p_metadata: { source: 'approvals', request_id: '{{event.payload.request_id}}' },
+    },
+  },
+];
+
 export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   id: 'approvals',
   name: 'Approvals',
@@ -283,6 +298,7 @@ export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   outputSchema: approvalsOutputSchema,
   skills: ['manage_approvals', 'approve_pending_operation', 'list_pending_operations', 'reject_pending_operation', 'manage_approval_chain', 'advance_approval_step', 'request_entity_approval', 'manage_approval_delegation', 'check_approval_escalations', 'bulk_advance_approvals'],
   skillSeeds: APPROVAL_SKILLS,
+  automations: APPROVAL_AUTOMATIONS,
 
   async publish(input: ApprovalsInput): Promise<ApprovalsOutput> {
     const v = approvalsInputSchema.parse(input);

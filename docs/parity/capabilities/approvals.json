@@ -83,8 +83,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "notify_approval_assigned trigger emits approval.assigned platform event (agent_events) on create + step advance",
-      "notes": "Event verified in agent_events; automation/email listener wiring pending before done."
+      "verify": "approval.assigned event + 'Notify approvers in cowork chat' automation (event-dispatcher) → post_to_cowork_chat; e2e-verified: request → templated notice w/ request_id in cowork_messages",
+      "notes": "Full pipeline live (incl. fixing the dormant event→automation path: matcher key, templating, event-injection, error masking). → done when the Lovable cowork feed surfaces messages."
     }
   ]
 }
