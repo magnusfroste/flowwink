@@ -6,16 +6,45 @@ interface UseScrollAnimationOptions {
   triggerOnce?: boolean;
 }
 
+/**
+ * Reveal-on-scroll hook.
+ *
+ * Respects two global signals:
+ *  - `prefers-reduced-motion: reduce` → skip animation, show immediately.
+ *  - `<html data-scroll-animations="...">` set by BrandingProvider:
+ *      'off'   → skip animation, show immediately.
+ *      'eager' → use rootMargin '0px 0px 200px 0px' so reveals pre-trigger
+ *                before the block enters view (recommended for fast scroll).
+ *      'on'    → default rootMargin '0px 0px -50px 0px'.
+ */
 export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>(
   options: UseScrollAnimationOptions = {}
 ) {
-  const { threshold = 0.1, rootMargin = '0px 0px -50px 0px', triggerOnce = true } = options;
+  const { threshold = 0.1, rootMargin, triggerOnce = true } = options;
   const ref = useRef<T>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+
+    // Honor reduced motion + global off switch — render immediately.
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const mode =
+      typeof document !== 'undefined'
+        ? document.documentElement.dataset.scrollAnimations
+        : undefined;
+
+    if (reduced || mode === 'off') {
+      setIsVisible(true);
+      return;
+    }
+
+    const effectiveRootMargin =
+      rootMargin ??
+      (mode === 'eager' ? '0px 0px 200px 0px' : '0px 0px -50px 0px');
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -28,7 +57,7 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>(
           setIsVisible(false);
         }
       },
-      { threshold, rootMargin }
+      { threshold, rootMargin: effectiveRootMargin }
     );
 
     observer.observe(element);

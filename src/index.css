@@ -357,3 +357,25 @@
 .shadow-glow {
   box-shadow: var(--shadow-glow);
 }
+
+/* ---------------------------------------------------------------------------
+ * Motion controls
+ * - Respect OS-level prefers-reduced-motion at all times.
+ * - When BrandingProvider sets <html data-scroll-animations="off">, force
+ *   animations and transitions off site-wide (matches docs/parity/ui-backlog.md).
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-scroll-animations="off"] *,
+html[data-scroll-animations="off"] *::before,
+html[data-scroll-animations="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+}

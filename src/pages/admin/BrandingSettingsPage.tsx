@@ -906,6 +906,27 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                     <p className="text-xs text-muted-foreground">How much the background image in hero blocks is dimmed by the primary color</p>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Scroll animations</Label>
+                    <Select
+                      value={settings.scrollAnimations || 'on'}
+                      onValueChange={(value) => updateField('scrollAnimations', value as BrandingSettings['scrollAnimations'])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="on">On — reveal as blocks enter view (default)</SelectItem>
+                        <SelectItem value="eager">Eager — pre-trigger 200px before entry (best for fast scroll)</SelectItem>
+                        <SelectItem value="off">Off — render everything immediately</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Controls reveal-on-scroll animations site-wide. <code>prefers-reduced-motion</code> is always respected regardless of this setting.
+                    </p>
+                  </div>
+
+
                   {/* Preview */}
                   <div className="mt-8 p-6 rounded-lg border bg-muted/30">
                     <p className="text-sm font-medium mb-4">Preview</p>
