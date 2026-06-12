@@ -56,10 +56,10 @@
       "id": "proration",
       "name": "Proration on mid-cycle change",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 3,
       "verify": "change_subscription RPC/skill — prorates by remaining days; upgrade→draft adjustment invoice, downgrade→credit on metadata (migration 20260612140000)",
-      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI pending before done."
+      "notes": "Stage-3 verified 2026-06-12: smoke 7/7 (prorated=10000 at 50%, invoice matches, credit w/o negative invoice, non-manual rejected) + runtime via agent-execute. Qty/price-change UI. UI shipped 2026-06-12 (ChangePlanDialog: live preview delta×fraction, manual-only, invoice/credit toast). Dual-surface complete."
     },
     {
       "id": "usage_based",

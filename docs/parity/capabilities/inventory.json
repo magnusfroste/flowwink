@@ -83,11 +83,11 @@
       "id": "landed_costs",
       "name": "Landed cost allocation (freight/duty)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "epic": "EPIC-02",
       "verify": "landed_costs table + allocate_landed_cost RPC/skill (by_value|by_qty over receipt layers; Dt 1460/Cr 5710) (migration 20260611220000)",
-      "notes": "Stage-3 verified 2026-06-11: 25000 freight → layer 100000→125000, unit 12500, JE balanced, subsequent COGS uses landed cost. Pending: UI + consumed-qty restatement before done."
+      "notes": "Stage-3 verified 2026-06-11: 25000 freight → layer 100000→125000, unit 12500, JE balanced, subsequent COGS uses landed cost. UI shipped 2026-06-12 (LandedCostPanel on received POs + history table w/ journal link). Dual-surface complete; consumed-qty restatement remains a documented v1 limit."
     },
     {
       "id": "multi_step_routes",

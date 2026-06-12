@@ -72,10 +72,10 @@
       "id": "bulk",
       "name": "Bulk approve/reject",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "bulk_advance_approvals RPC/skill — per-request failures reported (migration 20260611220000)",
-      "notes": "Skill verified via runtime; bulk-select UI in ApprovalInboxPage pending before done."
+      "notes": "Skill verified via runtime; bulk-select UI in ApprovalInboxPage. UI shipped 2026-06-12 (inbox checkboxes + sticky bulk bar, processed/failed surfaced). Dual-surface complete."
     },
     {
       "id": "notifications",
