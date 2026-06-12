@@ -48,6 +48,8 @@ For each process we mark **who does what**:
 | **Record-to-Report** | L3 | Accounting (period lock + SIE/SAF-T), Reconciliation, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
 | **Support-to-Resolution** | L3 | Chat, Tickets, Live Support, Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
 | **Subscribe-to-Renew** | L3 | Subscriptions, Invoicing, Reconciliation, CRM | [subscribe-to-renew.md](./subscribe-to-renew.md) |
+| **Return-to-Refund** | L3 | Returns, Inventory, Invoicing, Shipping | [return-to-refund.md](./return-to-refund.md) |
+| **Acquire-to-Retire** | L3 | Fixed Assets, Accounting, Purchasing | [acquire-to-retire.md](./acquire-to-retire.md) |
 
 ---
 
