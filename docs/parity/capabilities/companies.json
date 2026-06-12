@@ -40,64 +40,64 @@
       "id": "vat_tax_id",
       "name": "VAT/org/tax ID",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "companies.org_number + vat_number (migration 20260612100000); manage_company create/update/list via runtime",
-      "notes": "Stage-3 verified 2026-06-12; company-dialog UI fields pending before done."
+      "notes": "Stage-3 verified 2026-06-12; company-dialog UI fields. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "credit_limit",
       "name": "Credit limit/AR scoring",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "companies.credit_limit_cents",
-      "notes": "Field + skill shipped; AR-hold logic + UI pending."
+      "notes": "Field + skill shipped; AR-hold logic + UI. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "company_hierarchy",
       "name": "Parent/subsidiary hierarchy",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "companies.parent_company_id FK (self, ON DELETE SET NULL, self-parent CHECK)",
-      "notes": "Verified via smoke F1.2/F1.3; hierarchy UI pending."
+      "notes": "Verified via smoke F1.2/F1.3; hierarchy UI. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "employee_count",
       "name": "Numeric employee count",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "companies.employee_count integer",
-      "notes": "Verified via runtime create."
+      "notes": "Verified via runtime create. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "revenue_tracking",
       "name": "Company revenue/ARR",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "companies.annual_revenue_cents",
-      "notes": "Field + skill shipped; reporting pending."
+      "notes": "Field + skill shipped; reporting. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "preferred_contact",
       "name": "Sales-rep assignment",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "companies.account_owner uuid (sales rep)",
-      "notes": "Field shipped; assignment UI pending."
+      "notes": "Field shipped; assignment UI. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "dup_detection",
       "name": "Duplicate detection/merge",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "find_duplicate_companies RPC/skill (pg_trgm name similarity + identical-domain=1.0)",
-      "notes": "Detection verified via smoke F1.4; merge UI pending."
+      "notes": "Detection verified via smoke F1.4; merge UI. UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     },
     {
       "id": "contact_roles",
@@ -111,10 +111,10 @@
       "id": "company_tags",
       "name": "Company tags",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "companies.tags text[]",
-      "notes": "Verified via runtime create (tags stored)."
+      "notes": "Verified via runtime create (tags stored). UI shipped 2026-06-12 (CreateCompanyDialog fields+pickers+tag chips; DuplicateCompaniesPanel). Dual-surface complete."
     }
   ]
 }
