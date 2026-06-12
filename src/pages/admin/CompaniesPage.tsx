@@ -302,6 +302,8 @@ export default function CompaniesPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
