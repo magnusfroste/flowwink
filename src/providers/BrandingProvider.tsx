@@ -100,6 +100,11 @@ function applyBrandingToDocument(branding: BrandingSettings) {
     root.style.setProperty('--radius', radiusMap[branding.borderRadius] || '0.5rem');
   }
   
+  // Apply scroll animation mode (on | eager | off). Read by useScrollAnimation
+  // and by global CSS rule that forces animation:none when off.
+  const scrollMode = branding.scrollAnimations || 'on';
+  root.dataset.scrollAnimations = scrollMode;
+
   // Apply favicon
   if (branding.favicon) {
     const existingFavicon = document.querySelector('link[rel="icon"]');
