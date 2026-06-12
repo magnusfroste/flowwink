@@ -317,3 +317,33 @@ registerCalendarSource({
     });
   },
 });
+
+registerCalendarSource({
+  id: 'events',
+  label: 'Events',
+  color: '#0ea5e9',
+  icon: CalendarDays,
+  moduleId: 'calendar',
+  async fetch({ start, end }) {
+    const { data, error } = await supabase.rpc('manage_calendar_event' as any, {
+      p_action: 'list',
+      p_from: start.toISOString(),
+      p_to: end.toISOString(),
+    });
+    if (error) {
+      logger.error('[calendar:events]', error);
+      return [];
+    }
+    const items = (data as any)?.events ?? (Array.isArray(data) ? data : []);
+    return (items as any[]).map((e): CalendarEvent => ({
+      id: `event:${e.id}`,
+      sourceId: 'events',
+      title: e.title,
+      start: e.starts_at ?? e.start,
+      end: e.ends_at ?? e.end,
+      allDay: e.all_day ?? false,
+      color: '#0ea5e9',
+      meta: { location: e.location, attendees: e.attendees, raw: e },
+    }));
+  },
+});

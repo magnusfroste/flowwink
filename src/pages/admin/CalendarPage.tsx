@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { NewCalendarEventDialog } from '@/components/admin/calendar/NewCalendarEventDialog';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
@@ -90,10 +91,14 @@ export default function CalendarPage() {
               Unified view of bookings, tasks, leave and contract renewals.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => calendarRef.current?.getApi().today()}>
-            Today
-          </Button>
+          <div className="flex items-center gap-2">
+            <NewCalendarEventDialog />
+            <Button variant="outline" size="sm" onClick={() => calendarRef.current?.getApi().today()}>
+              Today
+            </Button>
+          </div>
         </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
           {/* Source toggles */}

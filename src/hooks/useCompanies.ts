@@ -20,6 +20,14 @@ export interface Company {
   enriched_at: string | null;
   lifecycle_stage: CompanyLifecycleStage;
   customer_since: string | null;
+  org_number?: string | null;
+  vat_number?: string | null;
+  employee_count?: number | null;
+  annual_revenue_cents?: number | null;
+  credit_limit_cents?: number | null;
+  tags?: string[] | null;
+  parent_company_id?: string | null;
+  account_owner?: string | null;
 }
 
 export function useCompanies() {

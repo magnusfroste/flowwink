@@ -16,6 +16,8 @@ import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useComp
 import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
+import { DuplicateCompaniesPanel } from '@/components/admin/companies/DuplicateCompaniesPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -137,6 +139,15 @@ export default function CompaniesPage() {
         </Card>
       </div>
 
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="list">All companies</TabsTrigger>
+          <TabsTrigger value="duplicates">Duplicates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="duplicates">
+          <DuplicateCompaniesPanel />
+        </TabsContent>
+        <TabsContent value="list">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -291,6 +302,8 @@ export default function CompaniesPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
