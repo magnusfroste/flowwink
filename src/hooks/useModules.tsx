@@ -106,6 +106,7 @@ export interface ModulesSettings {
   customer360: ModuleConfig;
   surveys: ModuleConfig;
   fieldService: ModuleConfig;
+  maintenance: ModuleConfig;
   pos: ModuleConfig;
   pricelists: ModuleConfig;
   returns: ModuleConfig;
@@ -654,6 +655,17 @@ export const defaultModulesSettings: ModulesSettings = {
     description:
       'Dispatch on-site service orders: schedule technicians, track visits with calendar integration, capture customer signatures, and auto-generate invoices on completion. FlowPilot can auto-schedule open orders to available time slots.',
     icon: 'Truck',
+    category: 'data',
+    autonomy: 'view-required',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
+  maintenance: {
+    enabled: false,
+    name: 'Maintenance',
+    description:
+      'Equipment registry with corrective and preventive maintenance: track machines and their status, log breakdowns, and let interval-based schedules auto-create preventive work orders via a nightly sweep.',
+    icon: 'Wrench',
     category: 'data',
     autonomy: 'view-required',
     adminUI: true,
