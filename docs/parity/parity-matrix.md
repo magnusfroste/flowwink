@@ -19,7 +19,6 @@ category: reference
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
 | **handbook** | Knowledge (internal handbook) | L2 → L4 | `███░░░░░░░` 25% | 1/0/2 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
-| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███░░░░░░░` 32% | 6/0/8 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████░░░░░░` 35% | 8/0/10 | — |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `████░░░░░░` 36% | 5/0/5 | — |
@@ -29,6 +28,7 @@ category: reference
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `████░░░░░░` 38% | 5/0/7 | — |
 | **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 39% | 7/0/9 | — |
+| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `████░░░░░░` 39% | 6/1/7 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
@@ -91,5 +91,5 @@ category: reference
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
-| subscriptions | Proration on mid-cycle change | missing | — |
+| subscriptions | Proration on mid-cycle change | partial | — |
 
