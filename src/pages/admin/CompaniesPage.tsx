@@ -139,6 +139,15 @@ export default function CompaniesPage() {
         </Card>
       </div>
 
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="list">All companies</TabsTrigger>
+          <TabsTrigger value="duplicates">Duplicates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="duplicates">
+          <DuplicateCompaniesPanel />
+        </TabsContent>
+        <TabsContent value="list">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
