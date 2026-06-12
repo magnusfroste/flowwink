@@ -1,5 +1,33 @@
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
+import type { SkillSeed } from '@/lib/module-bootstrap';
+
+const WORKSPACE_CHAT_SKILLS: SkillSeed[] = [
+  {
+    name: 'post_to_cowork_chat',
+    description: 'Post a message into the Cowork Chat as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team something; surfacing an autonomous action. NOT for: public site chat (chat-completion), the social feed (post_to_river), or answering a user question in-thread.',
+    category: 'communication',
+    handler: 'rpc:post_to_cowork_chat',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'post_to_cowork_chat',
+        description: 'Persist a message in cowork_messages (author_type=agent for service-role callers). The chat UI surfaces these alongside the RAG conversation.',
+        parameters: {
+          type: 'object',
+          required: ['p_content'],
+          properties: {
+            p_content: { type: 'string', description: 'Message text (markdown ok)' },
+            p_author_name: { type: 'string', description: 'Display name (default FlowPilot)' },
+            p_metadata: { type: 'object', description: 'Optional context, e.g. {source: "heartbeat", objective_id}' },
+          },
+        },
+      },
+    },
+    instructions: 'The agent\'s voice in the team workspace. Keep messages short and actionable; include metadata.source so the UI can badge them. Staff roles may also post (author_type=user).',
+  },
+];
 
 const inputSchema = z.object({
   action: z.enum(['get_config']),
@@ -40,7 +68,8 @@ export const workspaceChatModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: [],
+  skills: ['post_to_cowork_chat'],
+  skillSeeds: WORKSPACE_CHAT_SKILLS,
 
   async publish(_input: Input): Promise<Output> {
     return { success: true };

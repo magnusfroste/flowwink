@@ -2880,12 +2880,30 @@ async function executeKbAction(
   }
 
   if (action === 'get') {
-    const { article_id, slug } = args as any;
+    const { article_id, slug, title } = args as any;
     let query = supabase.from('kb_articles')
       .select('*');
     if (article_id) query = query.eq('id', article_id);
     else if (slug) query = query.eq('slug', slug);
-    else throw new Error('article_id or slug required');
+    else if (title) {
+      // Resolve by title like manage_wiki_page does: exact (case-insensitive)
+      // first, then unique prefix match — never guess between ambiguous hits.
+      const { data: matches, error: mErr } = await supabase.from('kb_articles')
+        .select('id, title').ilike('title', title).limit(2);
+      if (mErr) throw new Error(`Get KB article failed: ${mErr.message}`);
+      let hit = matches?.length === 1 ? matches[0] : null;
+      if (!hit) {
+        const { data: pref } = await supabase.from('kb_articles')
+          .select('id, title').ilike('title', `${title}%`).limit(2);
+        if (pref?.length === 1) hit = pref[0];
+        else if ((matches?.length ?? 0) + (pref?.length ?? 0) > 1) {
+          throw new Error(`Multiple KB articles match title "${title}" — use slug or article_id (try list/search first)`);
+        }
+      }
+      if (!hit) throw new Error(`No KB article with title "${title}" — use list or search_kb to find the slug`);
+      query = query.eq('id', hit.id);
+    }
+    else throw new Error('article_id, slug or title required');
     const { data, error } = await query.single();
     if (error) throw new Error(`Get KB article failed: ${error.message}`);
     return data;
