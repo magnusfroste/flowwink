@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 52%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 53%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -28,7 +28,6 @@ category: reference
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 38% | 5/2/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `████░░░░░░` 38% | 5/0/7 | — |
 | **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
-| **invoicing** | Invoicing (account.move) | L4 → L4 | `████░░░░░░` 39% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 39% | 7/0/9 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `████░░░░░░` 41% | 9/0/10 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `████░░░░░░` 41% | 7/0/8 | — |
@@ -40,6 +39,7 @@ category: reference
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 45% | 8/1/7 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 47% | 8/0/7 | — |
+| **invoicing** | Invoicing (account.move) | L4 → L4 | `█████░░░░░` 47% | 7/1/6 | — |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████░░░░░` 50% | 2/0/3 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
@@ -87,7 +87,7 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| invoicing | Recurring/subscription invoices | missing | — |
+| invoicing | Recurring/subscription invoices | partial | — |
 | manufacturing | Work centers + routing operations | missing | — |
 | multi-currency | Realized FX gain/loss on payment | missing | — |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |

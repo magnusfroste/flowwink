@@ -4,20 +4,118 @@
   "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "lifecycle", "name": "Invoice lifecycle draft→sent→paid", "odoo": true, "status": "done", "weight": 1, "verify": "invoice status lifecycle draft/sent/paid" },
-    { "id": "line_items", "name": "Line items", "odoo": true, "status": "done", "weight": 1, "verify": "invoice line items" },
-    { "id": "tax", "name": "Tax computation", "odoo": true, "status": "done", "weight": 1, "verify": "tax computation on invoice" },
-    { "id": "due_date", "name": "Due-date + payment terms", "odoo": true, "status": "done", "weight": 1, "verify": "due date and payment terms" },
-    { "id": "dunning", "name": "Graduated dunning reminders", "odoo": true, "status": "done", "weight": 1, "verify": "graduated dunning reminders" },
-    { "id": "time_invoicing", "name": "Invoice from timesheets", "odoo": true, "status": "done", "weight": 1, "verify": "invoice generated from timesheets" },
-    { "id": "bank_auto_paid", "name": "Auto-mark paid on reconciliation", "odoo": true, "status": "done", "weight": 1, "verify": "auto-mark paid on bank reconciliation" },
-
-    { "id": "recurring", "name": "Recurring/subscription invoices", "odoo": true, "status": "missing", "weight": 3, "verify": "recurring/subscription invoice generation" },
-    { "id": "credit_notes", "name": "Credit/debit notes", "odoo": true, "status": "missing", "weight": 2, "verify": "credit and debit notes" },
-    { "id": "partial_payment", "name": "Partial/over/under payment handling", "odoo": true, "status": "missing", "weight": 2, "verify": "partial/over/under payment handling" },
-    { "id": "invoice_templates", "name": "Branded invoice templates", "odoo": true, "status": "missing", "weight": 1, "verify": "branded invoice templates" },
-    { "id": "revenue_recognition", "name": "Revenue recognition (IFRS15/ASC606)", "odoo": true, "status": "missing", "weight": 1, "verify": "revenue recognition schedules" },
-    { "id": "aging_report", "name": "AR aging report", "odoo": true, "status": "missing", "weight": 1, "verify": "accounts receivable aging report" },
-    { "id": "advance_deposit", "name": "Advance/deposit invoicing", "odoo": true, "status": "missing", "weight": 1, "verify": "advance/deposit invoicing" }
+    {
+      "id": "lifecycle",
+      "name": "Invoice lifecycle draft→sent→paid",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "invoice status lifecycle draft/sent/paid"
+    },
+    {
+      "id": "line_items",
+      "name": "Line items",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "invoice line items"
+    },
+    {
+      "id": "tax",
+      "name": "Tax computation",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "tax computation on invoice"
+    },
+    {
+      "id": "due_date",
+      "name": "Due-date + payment terms",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "due date and payment terms"
+    },
+    {
+      "id": "dunning",
+      "name": "Graduated dunning reminders",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "graduated dunning reminders"
+    },
+    {
+      "id": "time_invoicing",
+      "name": "Invoice from timesheets",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "invoice generated from timesheets"
+    },
+    {
+      "id": "bank_auto_paid",
+      "name": "Auto-mark paid on reconciliation",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "auto-mark paid on bank reconciliation"
+    },
+    {
+      "id": "recurring",
+      "name": "Recurring/subscription invoices",
+      "odoo": true,
+      "status": "partial",
+      "weight": 3,
+      "verify": "subscription-billing-cron (due manual subs → invoice) + generate_subscription_invoice skill + subscriptions.next_invoice_date/billing_interval",
+      "notes": "Verify-first 2026-06-12: engine already exists for invoice-billed (manual) subscriptions — audit 'missing' was stale. Remaining: proration (P1.1), card-provider recurring is Stripe-native."
+    },
+    {
+      "id": "credit_notes",
+      "name": "Credit/debit notes",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "credit and debit notes"
+    },
+    {
+      "id": "partial_payment",
+      "name": "Partial/over/under payment handling",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "partial/over/under payment handling"
+    },
+    {
+      "id": "invoice_templates",
+      "name": "Branded invoice templates",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "branded invoice templates"
+    },
+    {
+      "id": "revenue_recognition",
+      "name": "Revenue recognition (IFRS15/ASC606)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "revenue recognition schedules"
+    },
+    {
+      "id": "aging_report",
+      "name": "AR aging report",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "accounts receivable aging report"
+    },
+    {
+      "id": "advance_deposit",
+      "name": "Advance/deposit invoicing",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "advance/deposit invoicing"
+    }
   ]
 }
