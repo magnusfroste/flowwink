@@ -160,6 +160,7 @@ import ActivitiesPage from "./pages/admin/ActivitiesPage";
 import PricelistsPage from "./pages/admin/PricelistsPage";
 import ReturnsPage from "./pages/admin/ReturnsPage";
 import ShippingPage from "./pages/admin/ShippingPage";
+import MaintenancePage from "./pages/admin/MaintenancePage";
 
 import PipelineStagesPage from "./pages/admin/PipelineStagesPage";
 import UnitsOfMeasurePage from "./pages/admin/UnitsOfMeasurePage";
@@ -366,6 +367,7 @@ const router = createBrowserRouter([
       { path: "/admin/reconciliation", element: <ReconciliationPage /> },
       { path: "/admin/pricelists", element: <PricelistsPage /> },
       { path: "/admin/returns", element: <ReturnsPage /> },
+      { path: "/admin/maintenance", element: <MaintenancePage /> },
       { path: "/admin/shipping", element: <ShippingPage /> },
       { path: "/admin/api-keys", element: <Navigate to="/admin/developer?tab=mcp-keys" replace /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },

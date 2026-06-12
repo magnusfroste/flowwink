@@ -3,7 +3,7 @@ import {
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
-  Network, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
+  Network, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban, Wrench,
   RefreshCw, AlertTriangle, CheckSquare, Sparkles, Factory, UserSearch, Plus, FlaskConical,
   LayoutTemplate,
 } from 'lucide-react';
@@ -140,6 +140,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Recruitment", href: "/admin/recruitment", icon: Briefcase, moduleId: "recruitment", allowedRoles: ['hr'] },
       { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts", allowedRoles: ['hr'] },
       { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
+      { name: "Maintenance", href: "/admin/maintenance", icon: Wrench, moduleId: "maintenance" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
   },
