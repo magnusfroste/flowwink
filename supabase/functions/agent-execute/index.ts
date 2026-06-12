@@ -3596,17 +3596,21 @@ async function executeCompaniesAction(
 
   if (action === 'list') {
     const { data, error } = await supabase.from('companies')
-      .select('id, name, domain, industry, size, address, phone, website, notes, created_at')
+      .select('id, name, domain, industry, size, address, phone, website, notes, org_number, vat_number, parent_company_id, employee_count, annual_revenue_cents, credit_limit_cents, tags, lifecycle_stage, created_at')
       .order('created_at', { ascending: false }).limit(50);
     if (error) throw new Error(`List companies failed: ${error.message}`);
     return { companies: data || [] };
   }
 
   if (action === 'create') {
-    const { name, domain, industry, size, address, phone, website, notes } = args as any;
+    const { name, domain, industry, size, address, phone, website, notes,
+      org_number, vat_number, parent_company_id, employee_count,
+      annual_revenue_cents, credit_limit_cents, account_owner, tags } = args as any;
     if (!name) throw new Error('name is required');
     const { data, error } = await supabase.from('companies').insert({
       name, domain, industry, size, address, phone, website, notes,
+      org_number, vat_number, parent_company_id, employee_count,
+      annual_revenue_cents, credit_limit_cents, account_owner, tags,
     }).select('id, name, domain').single();
     if (error) throw new Error(`Create company failed: ${error.message}`);
     return { company_id: data.id, name: data.name, domain: data.domain };

@@ -13,7 +13,7 @@ import {
 const COMPANIES_SKILLS: SkillSeed[] = [
   {
     name: 'manage_company',
-    description: 'Manage companies: list, get, create, update, delete. Use when: adding a new company to CRM; updating company contact info; removing an inactive company. NOT for: enriching company data (enrich_company); prospect research (prospect_research).',
+    description: 'Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a company to CRM; updating company info or B2B master data. NOT for: enriching company data (enrich_company); finding duplicates (find_duplicate_companies).',
     category: 'crm',
     handler: 'module:companies',
     scope: 'internal',
@@ -21,7 +21,7 @@ const COMPANIES_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_company',
-        description: 'Manage companies: list, get, create, update, delete. Use when: adding a new company to CRM; updating company contact info; removing an inactive company. NOT for: enriching company data (enrich_company); prospect research (prospect_research).',
+        description: 'Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a company to CRM; updating company info or B2B master data. NOT for: enriching company data (enrich_company); finding duplicates (find_duplicate_companies).',
         parameters: {
           type: 'object',
           properties: {
@@ -56,6 +56,30 @@ const COMPANIES_SKILLS: SkillSeed[] = [
             phone: {
               type: 'string',
             },
+            org_number: {
+              type: 'string', description: 'Company registration number (org-nr)',
+            },
+            vat_number: {
+              type: 'string', description: 'VAT number (e.g. SE556677889901)',
+            },
+            parent_company_id: {
+              type: 'string', format: 'uuid', description: 'Parent company (subsidiary hierarchy)',
+            },
+            employee_count: {
+              type: 'number',
+            },
+            annual_revenue_cents: {
+              type: 'number',
+            },
+            credit_limit_cents: {
+              type: 'number', description: 'Max outstanding AR before holds',
+            },
+            account_owner: {
+              type: 'string', format: 'uuid', description: 'Responsible sales rep (user id)',
+            },
+            tags: {
+              type: 'array', items: { type: 'string' },
+            },
             website: {
               type: 'string',
             },
@@ -84,6 +108,28 @@ Manages CRM companies: list, get, create, update, delete.
 - Use enrich_company after creating to auto-fill industry, size, etc.
 - Domain should not include http/https prefix.`,
   },
+  {
+    name: 'find_duplicate_companies',
+    description: 'Find likely duplicate companies by name similarity or identical domain (read-only). Use when: cleaning the CRM, before creating a company that might already exist. NOT for: merging (manual for now) or creating companies (manage_company).',
+    category: 'crm',
+    handler: 'rpc:find_duplicate_companies',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'find_duplicate_companies',
+        description: 'List candidate duplicate company pairs scored by trigram name similarity; identical domains score 1.0.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_threshold: { type: 'number', description: 'Similarity 0-1 (default 0.45)' },
+            p_limit: { type: 'number', description: 'Max pairs (default 25)' },
+          },
+        },
+      },
+    },
+    instructions: 'Read-only. Returns pairs {company_a, name_a, company_b, name_b, score, same_domain} ordered by score. Merge is a manual decision — present pairs to the admin.',
+  },
 ];
 
 export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOutput>({
@@ -100,6 +146,7 @@ export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOut
 
   skills: [
     'manage_company',
+    'find_duplicate_companies',
     // Seeded via migration; declared here for ownership in /admin/approvals → Gated Skills.
     'update_company_profile',
     // Polymorphic multi-address skill — primary owner is companies.
