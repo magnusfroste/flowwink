@@ -104,7 +104,7 @@ const MAINTENANCE_AUTOMATIONS: AutomationSeed[] = [
 export const maintenanceModule = defineModule<Input, Output>({
   id: 'maintenance',
   name: 'Maintenance',
-  category: 'operations',
+  version: '1.0.0',
   maturity: 'L3',
   description:
     'Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep. Odoo Maintenance counterpart.',
