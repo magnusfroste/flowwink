@@ -97,6 +97,8 @@ export default function CalendarPage() {
               Today
             </Button>
           </div>
+        </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
           {/* Source toggles */}
