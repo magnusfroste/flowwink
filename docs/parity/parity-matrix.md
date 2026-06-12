@@ -16,9 +16,9 @@ category: reference
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
 | **workspace-chat** | Discuss (mail.channel) | L3 → L4 | `█░░░░░░░░░` 7% | 0/1/5 | — |
-| **handbook** | Knowledge (internal handbook) | L2 → L4 | `█░░░░░░░░░` 13% | 0/1/2 | — |
-| **calendar** | Calendar (calendar.event) | L3 → L4 | `██░░░░░░░░` 17% | 0/1/4 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
+| **calendar** | Calendar (calendar.event) | L3 → L4 | `███░░░░░░░` 25% | 0/2/3 | — |
+| **handbook** | Knowledge (internal handbook) | L2 → L4 | `███░░░░░░░` 25% | 1/0/2 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `███░░░░░░░` 32% | 6/0/8 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
