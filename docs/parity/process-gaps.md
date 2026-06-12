@@ -49,7 +49,7 @@ work and depth work reinforce each other.
   the billing backbone (recurring invoices) is missing. High value, clear path.
 - **Reachable maturity once unblocked:** L3 → L4 (agent runs dunning + win-back).
 
-### P2 — Return-to-Refund (reverse logistics)
+### P2 — Return-to-Refund (reverse logistics) — ✅ SHIPPED L3 (2026-06-12)
 *Return request → approve → receive → inspect/QC → restock → refund/credit.*
 - **Modules:** returns, inventory, invoicing, accounting, shipping
 - **Blocked by:** `returns#inspection_qc`, `returns#partial_refund`,
@@ -86,7 +86,7 @@ work and depth work reinforce each other.
   demand gen (Odoo Marketing Automation / Email / SMS / Social).
 - **Reachable maturity:** L4 (agent already strong on content).
 
-### P6 — Acquire-to-Retire (asset lifecycle)
+### P6 — Acquire-to-Retire (asset lifecycle) — ✅ SHIPPED L3 (2026-06-12)
 *Acquire/capitalise → depreciate → revalue/impair → dispose.*
 - **Modules:** fixed-assets, accounting, purchasing
 - **Blocked by:** mostly documentation; `fixed-assets#impairment`,
