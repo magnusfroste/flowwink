@@ -4,20 +4,117 @@
   "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "company_crud", "name": "Company CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "company CRUD" },
-    { "id": "lifecycle_stage", "name": "Lifecycle stage", "odoo": true, "status": "done", "weight": 1, "verify": "company lifecycle stage" },
-    { "id": "address_mgmt", "name": "Address management", "odoo": true, "status": "done", "weight": 1, "verify": "address management on companies" },
-
-    { "id": "ai_enrichment", "name": "AI domain enrichment", "odoo": false, "status": "done", "weight": 2, "verify": "AI domain enrichment of company data" },
-
-    { "id": "vat_tax_id", "name": "VAT/org/tax ID", "odoo": true, "status": "missing", "weight": 2, "verify": "VAT/org/tax ID fields" },
-    { "id": "credit_limit", "name": "Credit limit/AR scoring", "odoo": true, "status": "missing", "weight": 2, "verify": "credit limit/AR scoring" },
-    { "id": "company_hierarchy", "name": "Parent/subsidiary hierarchy", "odoo": true, "status": "missing", "weight": 1, "verify": "parent/subsidiary hierarchy" },
-    { "id": "employee_count", "name": "Numeric employee count", "odoo": true, "status": "missing", "weight": 1, "verify": "numeric employee count field" },
-    { "id": "revenue_tracking", "name": "Company revenue/ARR", "odoo": true, "status": "missing", "weight": 1, "verify": "company revenue/ARR tracking" },
-    { "id": "preferred_contact", "name": "Sales-rep assignment", "odoo": true, "status": "missing", "weight": 1, "verify": "sales-rep assignment on company" },
-    { "id": "dup_detection", "name": "Duplicate detection/merge", "odoo": true, "status": "missing", "weight": 1, "verify": "duplicate detection/merge" },
-    { "id": "contact_roles", "name": "Contact roles (billing/shipping)", "odoo": true, "status": "missing", "weight": 1, "verify": "contact roles (billing/shipping)" },
-    { "id": "company_tags", "name": "Company tags", "odoo": true, "status": "missing", "weight": 1, "verify": "company tags" }
+    {
+      "id": "company_crud",
+      "name": "Company CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "company CRUD"
+    },
+    {
+      "id": "lifecycle_stage",
+      "name": "Lifecycle stage",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "company lifecycle stage"
+    },
+    {
+      "id": "address_mgmt",
+      "name": "Address management",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "address management on companies"
+    },
+    {
+      "id": "ai_enrichment",
+      "name": "AI domain enrichment",
+      "odoo": false,
+      "status": "done",
+      "weight": 2,
+      "verify": "AI domain enrichment of company data"
+    },
+    {
+      "id": "vat_tax_id",
+      "name": "VAT/org/tax ID",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "companies.org_number + vat_number (migration 20260612100000); manage_company create/update/list via runtime",
+      "notes": "Stage-3 verified 2026-06-12; company-dialog UI fields pending before done."
+    },
+    {
+      "id": "credit_limit",
+      "name": "Credit limit/AR scoring",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "companies.credit_limit_cents",
+      "notes": "Field + skill shipped; AR-hold logic + UI pending."
+    },
+    {
+      "id": "company_hierarchy",
+      "name": "Parent/subsidiary hierarchy",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "companies.parent_company_id FK (self, ON DELETE SET NULL, self-parent CHECK)",
+      "notes": "Verified via smoke F1.2/F1.3; hierarchy UI pending."
+    },
+    {
+      "id": "employee_count",
+      "name": "Numeric employee count",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "companies.employee_count integer",
+      "notes": "Verified via runtime create."
+    },
+    {
+      "id": "revenue_tracking",
+      "name": "Company revenue/ARR",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "companies.annual_revenue_cents",
+      "notes": "Field + skill shipped; reporting pending."
+    },
+    {
+      "id": "preferred_contact",
+      "name": "Sales-rep assignment",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "companies.account_owner uuid (sales rep)",
+      "notes": "Field shipped; assignment UI pending."
+    },
+    {
+      "id": "dup_detection",
+      "name": "Duplicate detection/merge",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "find_duplicate_companies RPC/skill (pg_trgm name similarity + identical-domain=1.0)",
+      "notes": "Detection verified via smoke F1.4; merge UI pending."
+    },
+    {
+      "id": "contact_roles",
+      "name": "Contact roles (billing/shipping)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "contact roles (billing/shipping)"
+    },
+    {
+      "id": "company_tags",
+      "name": "Company tags",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "companies.tags text[]",
+      "notes": "Verified via runtime create (tags stored)."
+    }
   ]
 }

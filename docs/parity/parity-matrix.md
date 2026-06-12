@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 49%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 50%  ·  **Differentiators (no Odoo benchmark):** 8  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -18,7 +18,6 @@ category: reference
 | **workspace-chat** | Discuss (mail.channel) | L3 → L4 | `█░░░░░░░░░` 7% | 0/1/5 | — |
 | **handbook** | Knowledge (internal handbook) | L2 → L4 | `█░░░░░░░░░` 13% | 0/1/2 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `██░░░░░░░░` 17% | 0/1/4 | — |
-| **companies** | Contacts (res.partner companies) | L4 → L4 | `██░░░░░░░░` 21% | 3/0/9 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███░░░░░░░` 25% | 4/0/9 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `███░░░░░░░` 29% | 5/0/8 | — |
@@ -50,6 +49,7 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 55% | 8/2/6 | EPIC-02 |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
+| **companies** | Contacts (res.partner companies) | L4 → L4 | `██████░░░░` 57% | 3/8/1 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
