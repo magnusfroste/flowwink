@@ -14,7 +14,7 @@ generated: true
 - 🟡 **config-required** — requires setup before agent use
 - ⚪ **manual** — no agent skills; UI-driven
 
-**Total:** 62 modules across 6 categories.
+**Total:** 63 modules across 6 categories.
 
 
 ## Content

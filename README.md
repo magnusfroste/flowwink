@@ -9,7 +9,7 @@
 > A modular, self-hosted SaaS platform whose every capability is exposed as a skill over **MCP**. Run it with the built-in vertically-integrated operator **FlowPilot**, swap in an external one like **[OpenClaw](https://www.clawable.org)**, mix several in parallel — or run it as a pure SaaS with humans in the loop. The platform doesn't care.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v2.1-brightgreen)](https://github.com/magnusfroste/flowwink/releases)
+[![Release](https://img.shields.io/badge/release-v1.3.0-brightgreen)](https://github.com/magnusfroste/flowwink/releases)
 
 ---
 
@@ -27,7 +27,7 @@
 
 For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (62 across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
+**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (63 across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
 
 You set the direction. The operator runs the business. You choose which operator.
 
@@ -38,7 +38,7 @@ You set the direction. The operator runs the business. You choose which operator
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  FlowWink SaaS Platform  (always on, agent-agnostic)         │
-│  • 62 modules · 280 MCP-exposed skills                      │
+│  • 63 modules · 300 MCP-exposed skills                      │
 │  • Database + RLS · Automations · Event bus · Workflows      │
 │  • MCP server — the universal surface for any operator       │
 └──────────────────────────────────────────────────────────────┘
@@ -94,7 +94,7 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 
 ---
 
-## Modules — 50+ integrated domains
+## Modules — 63 integrated domains
 
 FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and skill seeds. Modules register via `defineModule()` with typed contracts.
 
@@ -104,12 +104,13 @@ FlowWink follows an **Odoo-inspired modular architecture** where each module own
 | **CRM & Sales** | Leads, Companies, Deals, Quotes, Sales Intelligence, Customer 360, Company Insights |
 | **Commerce** | Products, Orders, POS, Bookings, Subscriptions, Inventory |
 | **Finance** | Accounting (BAS 2024 / IFRS / US GAAP), Invoicing, Expenses, Reconciliation, Timesheets |
-| **HR & People** | HR, Recruitment, Resume, Contracts, Signature, Calendar |
-| **Operations** | Projects, Tasks, Field Service, Manufacturing (MRP-light), Purchasing, SLA, Approvals |
+| **HR & People** | HR, Recruitment, Resume, Contracts, Calendar |
+| **Operations** | Projects, Field Service, Manufacturing (MRP-light), Purchasing, SLA, Approvals, Maintenance |
 | **Communication** | Email, Newsletter, Webinars, Chat, Workspace Chat |
 | **Support** | Tickets (Kanban + auto-triage), Live Support |
-| **Growth** | Analytics, Paid Growth, Content Campaigns |
+| **Growth** | Analytics, Paid Growth |
 | **System & Operator** | FlowPilot, Federation (A2A + MCP), Browser Control, Composio, Site Migration, Developer, Documents |
+| **Money & Assets** *(cross-cutting finance)* | Multi-Currency, Pricelists, Fixed Assets, Payroll, Returns, Shipping, River, Wiki |
 
 Each module provides:
 - **Data layer** — Supabase tables + RLS policies + RPCs
@@ -121,7 +122,7 @@ Composite MCP groups (`marketing`, `sales`, `operations`, …) let an external o
 
 ---
 
-## Skills — 280 capabilities, exposed over MCP
+## Skills — 300 capabilities, exposed over MCP
 
 | Domain | Sample skills |
 |--------|---------------|
@@ -137,7 +138,7 @@ Composite MCP groups (`marketing`, `sales`, `operations`, …) let an external o
 | **Intelligence** | `search_web`, `extract_pdf_text`, `competitor_monitor`, `prospect_research` |
 | **Operator-internal** *(FlowPilot only, not MCP)* | objectives, soul, reflect, planning, A2A delegation |
 
-All skills follow Anthropic's MCP best practices: self-describing (`Use when:` / `NOT for:`), flat OpenAI-strict-mode-safe JSON Schemas, namespaced. See [`docs/architecture/mcp-overview.md`](docs/architecture/mcp-overview.md).
+All skills follow Anthropic's MCP best practices: self-describing (`Use when:` / `NOT for:`), flat OpenAI-strict-mode-safe JSON Schemas, namespaced. See [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md).
 
 ---
 
@@ -205,7 +206,7 @@ skill_pack_install("CRM Nurture Pack")       → lead_pipeline_review, deal_stal
 
 FlowWink speaks two open protocols so any operator can connect:
 
-- **MCP (Model Context Protocol)** — the primary surface. 280 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
+- **MCP (Model Context Protocol)** — the primary surface. 300 skills exposed as tools, resources like `flowwink://briefing`, group filtering via `?groups=marketing`. Works with Claude Desktop, OpenClaw, custom MCP clients.
 - **A2A (Agent-to-Agent JSON-RPC 2.0)** — peer-to-peer delegation between agents.
 
 ```
@@ -213,8 +214,8 @@ FlowWink speaks two open protocols so any operator can connect:
 │  FlowWink   │◄──────────────▶│  Operator           │
 │  Platform   │   tools/call   │  • FlowPilot (local)│
 │ (modules +  │   resources    │  • OpenClaw         │
-│  280 skills)│   message/send │  • Claude Desktop   │
-└─────────────┘                │  • custom           │
+│ (modules +  │   message/send │  • Claude Desktop   │
+│  300 skills)│                │  • custom           │
                                 └────────────────────┘
 ```
 
@@ -245,7 +246,7 @@ FlowWink follows the **OpenClaw** agentic architecture — composable layers wit
        ┌──────▼─────┐  ┌───────▼───────┐  ┌────────▼──────┐
        │   Skills    │  │   Heartbeat   │  │   Workflows   │
        │             │  │               │  │               │
-       │ 60+ skills  │  │ 7-step loop   │  │ DAG chains    │
+       │ 300 skills  │  │ 7-step loop   │  │ DAG chains    │
        │ Skill Packs │  │ Self-healing  │  │ Conditions    │
        │ A2A peers   │  │ Outcome eval  │  │ Template vars │
        └─────────────┘  └───────────────┘  └───────────────┘
@@ -305,7 +306,7 @@ FlowWink draws inspiration from the best-in-class platforms across every busines
 | **E-Commerce** | Shopify, WooCommerce | Products, orders, inventory, Stripe checkout |
 | **Finance** | QuickBooks, Xero, FreshBooks | Invoicing, double-entry accounting, expenses |
 | **Time Tracking** | Toggl, Harvest, Clockify | Timesheets with project-based tracking |
-| **ERP** | Odoo, ERPNext | Modular architecture — 37 domains, one platform |
+| **ERP** | Odoo, ERPNext | Modular architecture — 63 domains, one platform |
 | **Headless CMS** | Contentful, Storyblok, Strapi | REST + GraphQL content API, multi-channel delivery |
 
 **The difference:** those platforms give you tools. FlowWink gives you an operator that *uses* the tools.
@@ -429,8 +430,7 @@ FlowWink is the reference implementation of a thesis: **traditional SaaS becomes
 
 Cross-references inside this repo:
 - [`docs/concepts/operator-strategy.md`](docs/concepts/operator-strategy.md) — Why FlowPilot is a *module*, not the core
-- [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md) — The rule that keeps modules + MCP independent of any operator
-- [`docs/architecture/mcp-overview.md`](docs/architecture/mcp-overview.md) — MCP endpoints, auth, schemas, group filtering
+- [`docs/architecture/mcp-as-platform.md`](docs/architecture/mcp-as-platform.md) — The rule that keeps modules + MCP independent of any operator, and the MCP endpoints / auth / schemas / group-filter reference
 - [`docs/concepts/openclaw-law.md`](docs/concepts/openclaw-law.md) — The 10 inviolable agentic architecture laws
 
 ## License

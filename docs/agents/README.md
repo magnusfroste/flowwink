@@ -10,7 +10,7 @@ last_updated: "2026-05-04"
 > invite → role → seed/reset (Game Master) flow, then come back for the
 > department-specific playbooks below.
 
-FlowWink exposes ~280 MCP skills. A focused **department claw** picks up
+FlowWink exposes ~300 MCP skills. A focused **department claw** picks up
 one composite group and runs that department end-to-end — without FlowPilot.
 
 | Department | Playbook | Composite group | Brief |

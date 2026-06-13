@@ -34,7 +34,7 @@ The comparison below is from the operator's point of view — what you actually 
 
 ## When to pick something else
 
-- **You need an Odoo-style apps marketplace today.** FlowWink's module count is growing (~62 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
+- **You need an Odoo-style apps marketplace today.** FlowWink's module count is growing (~63 modules) but Odoo has 10 000+ third-party apps. If your business depends on a specific industry vertical app, check Odoo first.
 - **You're a Fortune-500 multi-entity, multi-currency consolidation.** NetSuite is purpose-built for that. FlowWink supports multi-currency and locale packs but is not yet a consolidation suite.
 - **You only need CRM and marketing automation.** HubSpot is best-of-breed for that narrow scope — FlowWink is a wider system and may be over-engineered for pure CRM use.
 
@@ -43,7 +43,7 @@ The comparison below is from the operator's point of view — what you actually 
 1. **MCP-native by design.** Every business capability is a skill, every skill is callable by any MCP client. You aren't waiting for the vendor to ship an "AI feature."
 2. **Operator-agnostic.** Run FlowPilot, or run Claude Desktop, or run no agent at all — the platform is the same.
 3. **Single codebase, single DB.** No integration glue between CMS, CRM and ERP. A lead has the same `id` whether it was captured from a landing page, a chat conversation or a manual entry.
-4. **Department claws.** Specialist external agents (marketing, sales, finance, ops, support, success) each get a focused composite MCP group instead of seeing all ~280 skills.
+4. **Department claws.** Specialist external agents (marketing, sales, finance, ops, support, success) each get a focused composite MCP group instead of seeing all ~300 skills.
 
 ## Related
 

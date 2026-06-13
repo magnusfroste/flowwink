@@ -19,7 +19,7 @@ last_updated: "2026-05-29"
 │                     FLOWWINK PLATFORM                        │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐   │
 │  │   MODULES   │  │   SKILLS    │  │   MCP GATEWAY       │   │
-│  │  (62 real   │  │  (280+ in   │  │  (?groups= /        │   │
+│  │  (63 real   │  │  (300+ in   │  │  (?groups= /        │   │
 │  │   SaaS      │  │   DB)       │  │   ?mode=dispatch)   │   │
 │  │   tables)   │  │             │  │                     │   │
 │  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘   │
