@@ -1,24 +1,130 @@
 {
   "module": "shipping",
-  "odoo_app": "Inventory → Delivery/Shipping connectors",
+  "odoo_app": "Inventory \u2192 Delivery/Shipping connectors",
   "current_maturity": "L2",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "carrier_crud", "name": "Carrier CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "carrier CRUD" },
-    { "id": "shipments", "name": "Shipment records", "odoo": true, "status": "done", "weight": 1, "verify": "shipment records" },
-    { "id": "tracking_templates", "name": "Tracking URL templates", "odoo": true, "status": "done", "weight": 1, "verify": "tracking URL templates" },
-    { "id": "label_storage", "name": "Label PDF storage", "odoo": true, "status": "done", "weight": 1, "verify": "label PDF storage" },
-
-    { "id": "rate_shopping", "name": "Carrier rate shopping", "odoo": true, "status": "missing", "weight": 2, "verify": "carrier rate shopping" },
-    { "id": "weight_rate_calc", "name": "Weight-based rate calc", "odoo": true, "status": "missing", "weight": 2, "verify": "weight-based rate calculation" },
-    { "id": "international_customs", "name": "International/customs handling", "odoo": true, "status": "missing", "weight": 2, "verify": "international/customs handling" },
-    { "id": "dimensional_weight", "name": "Dimensional weight", "odoo": true, "status": "missing", "weight": 1, "verify": "dimensional weight calculation" },
-    { "id": "address_validation", "name": "Address validation", "odoo": true, "status": "missing", "weight": 1, "verify": "address validation" },
-    { "id": "delivery_estimation", "name": "Delivery-date estimation", "odoo": true, "status": "missing", "weight": 1, "verify": "delivery-date estimation" },
-    { "id": "pickup_scheduling", "name": "Carrier pickup scheduling", "odoo": true, "status": "missing", "weight": 1, "verify": "carrier pickup scheduling" },
-    { "id": "proof_of_delivery", "name": "Proof of delivery", "odoo": true, "status": "missing", "weight": 1, "verify": "proof of delivery capture" },
-    { "id": "multicarrier_failover", "name": "Multi-carrier failover", "odoo": true, "status": "missing", "weight": 1, "verify": "multi-carrier failover" },
-    { "id": "return_labels", "name": "Return shipping labels", "odoo": true, "status": "missing", "weight": 1, "verify": "return shipping label generation" },
-    { "id": "batch_labels", "name": "Batch label printing", "odoo": true, "status": "missing", "weight": 1, "verify": "batch label printing" }
+    {
+      "id": "carrier_crud",
+      "name": "Carrier CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "carrier CRUD"
+    },
+    {
+      "id": "shipments",
+      "name": "Shipment records",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "shipment records"
+    },
+    {
+      "id": "tracking_templates",
+      "name": "Tracking URL templates",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "tracking URL templates"
+    },
+    {
+      "id": "label_storage",
+      "name": "Label PDF storage",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "label PDF storage"
+    },
+    {
+      "id": "rate_shopping",
+      "name": "Carrier rate shopping",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "carrier rate shopping"
+    },
+    {
+      "id": "weight_rate_calc",
+      "name": "Weight-based rate calc",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "shipping_rates weight bands + calc_shipping_rate RPC/skill (cheapest matching band) + manage_shipping_rate CRUD (migration 20260613030000)",
+      "notes": "Built + verified against LOCAL Supabase 2026-06-13 (800g=4900, 2000g=7900, 50000g=band L; idempotent). Pending: checkout/shipment wiring + admin rate-card UI + Stage-3 fleet deploy before done."
+    },
+    {
+      "id": "international_customs",
+      "name": "International/customs handling",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "international/customs handling"
+    },
+    {
+      "id": "dimensional_weight",
+      "name": "Dimensional weight",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "calc_shipping_rate bills max(actual, dimensional); dim grams = L\u00d7W\u00d7H/dim_divisor\u00d71000 (default 5000) (migration 20260613030000)",
+      "notes": "Verified on local Supabase: 300g @40\u00d740\u00d740cm \u2192 dim 12800g, billed_on=dimensional \u2192 band L. Pending: dimensions on shipment/checkout + UI before done."
+    },
+    {
+      "id": "address_validation",
+      "name": "Address validation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "address validation"
+    },
+    {
+      "id": "delivery_estimation",
+      "name": "Delivery-date estimation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "delivery-date estimation"
+    },
+    {
+      "id": "pickup_scheduling",
+      "name": "Carrier pickup scheduling",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "carrier pickup scheduling"
+    },
+    {
+      "id": "proof_of_delivery",
+      "name": "Proof of delivery",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "proof of delivery capture"
+    },
+    {
+      "id": "multicarrier_failover",
+      "name": "Multi-carrier failover",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "multi-carrier failover"
+    },
+    {
+      "id": "return_labels",
+      "name": "Return shipping labels",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "return shipping label generation"
+    },
+    {
+      "id": "batch_labels",
+      "name": "Batch label printing",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "batch label printing"
+    }
   ]
 }

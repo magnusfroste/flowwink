@@ -9,13 +9,13 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 53  ·  **Mean parity:** 55%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
+**Benchmarked modules:** 53  ·  **Mean parity:** 56%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
-| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `██░░░░░░░░` 22% | 4/0/11 | — |
+| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `████░░░░░░` 35% | 8/0/10 | — |
 | **payroll** | Payroll (hr.payslip) | L2 → L4 | `████░░░░░░` 36% | 8/0/9 | — |
