@@ -214,7 +214,7 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 **`manage_company`** — B2B master data lives on `companies`: `org_number`, `vat_number`, `parent_company_id` (subsidiary hierarchy; self-parent rejected), `employee_count`, `annual_revenue_cents`, `credit_limit_cents`, `account_owner`, `tags` (text[]). Use `find_duplicate_companies` before creating a company that might already exist (identical domain scores 1.0).
 
-**`refund_return`** — supports **partial refunds**: each call adds `p_refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
+**`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
 
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
