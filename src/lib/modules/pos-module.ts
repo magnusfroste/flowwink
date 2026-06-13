@@ -202,6 +202,78 @@ const POS_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'add_tip',
+    description: 'Add a tip to a completed POS sale (records tip_cents + a tip payment row). Use when: the customer leaves a tip after tendering. NOT for: the sale itself (record_pos_sale_v2).',
+    category: 'commerce',
+    handler: 'rpc:add_tip',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'add_tip',
+        description: 'Attach a tip to a sale. Adds to pos_sales.tip_cents and inserts a tip payment. Returns the new tip + grand total (goods + tip).',
+        parameters: {
+          type: 'object',
+          required: ['p_sale_id', 'p_tip_cents'],
+          properties: {
+            p_sale_id: { type: 'string', format: 'uuid' },
+            p_tip_cents: { type: 'number' },
+            p_method: { type: 'string', enum: ['cash', 'card', 'swish', 'klarna', 'other'], description: 'Tender used for the tip (default card)' },
+          },
+        },
+      },
+    },
+    instructions: 'Tips are tracked separately from the taxable goods total. grand_total_cents = total_cents + tip_cents. Admin/writer/service-role only.',
+  },
+  {
+    name: 'manage_gift_card',
+    description: 'Issue and manage gift cards (balance ledger). Use when: selling/issuing a gift card, checking a balance, deactivating a lost card. NOT for: spending a card at checkout (redeem_gift_card).',
+    category: 'commerce',
+    handler: 'rpc:manage_gift_card',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_gift_card',
+        description: 'issue (code + amount), get (by code), list, deactivate gift cards.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['issue', 'get', 'list', 'deactivate'] },
+            p_code: { type: 'string' },
+            p_amount_cents: { type: 'number', description: 'Initial balance on issue' },
+            p_currency: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'issue sets initial_balance = balance = amount. Codes are unique. Admin/service-role only for issue/deactivate.',
+  },
+  {
+    name: 'redeem_gift_card',
+    description: 'Spend against a gift card balance (e.g. as a POS gift_card payment). Use when: applying a gift card at checkout. Guards inactive cards and insufficient balance. NOT for: issuing cards (manage_gift_card).',
+    category: 'commerce',
+    handler: 'rpc:redeem_gift_card',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'redeem_gift_card',
+        description: 'Decrement a gift card balance by amount_cents (row-locked). Returns redeemed + remaining balance; errors on inactive / insufficient.',
+        parameters: {
+          type: 'object',
+          required: ['p_code', 'p_amount_cents'],
+          properties: {
+            p_code: { type: 'string' },
+            p_amount_cents: { type: 'number' },
+          },
+        },
+      },
+    },
+    instructions: 'Redeems against an active card; raises on insufficient balance. Pair with a pos payment of method gift_card for the same amount. Admin/writer/service-role only.',
+  },
 ];
 
 export const posModule = defineModule<Input, Output>({
@@ -216,7 +288,7 @@ export const posModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2'],
+  skills: ['open_pos_session', 'close_pos_session', 'record_pos_sale', 'list_pos_sales', 'record_pos_sale_v2', 'close_pos_session_v2', 'add_tip', 'manage_gift_card', 'redeem_gift_card'],
   skillSeeds: POS_SKILLS,
 
 
