@@ -30,6 +30,23 @@ already-shipped RPCs/tables. This tracks the UI surface per capability and the
 | `crm/deals/tickets` stages | `pages/admin/PipelinesPage.tsx` + `PipelineStagesPage.tsx` | `pipeline_stages`, `manage_pipeline_stage` |
 | `approvals.approval_chains` / `approval_groups` | `pages/admin/ApprovalChainsPage.tsx` + `ApprovalInboxPage.tsx` | `manage_approval_chain`, `advance_approval_step` |
 
+## New backend awaiting UI (2026-06-13) — Lovable backlog
+
+Shipped backend (RPC + skill, verified on local Supabase); each is `partial` until a
+UI surface + Stage-3 land. Build UI only; **extend** the existing module pages.
+
+| Capability(ies) | Build (UI) | Backend it calls |
+|---|---|---|
+| `projects.milestones` + `subtasks` | milestones panel on the project view + sub-task nesting in the task list | `manage_project_milestone`; `manage_project_task` w/ `parent_task_id` |
+| `pricelists.tiered_quantity` | multiple quantity-break rows per pricelist item (several `min_quantity`) | existing pricelist editor + `resolve_pricelist_price` |
+| `shipping.weight_rate_calc` + `dimensional_weight` | carrier rate-card admin + parcel cost estimator (L×W×H) | `manage_shipping_rate`, `calc_shipping_rate` |
+| `manufacturing.work_centers_routing` + `work_orders` + `labor_cost` | work-centers admin, BOM routing editor, MO work-orders view | `manage_work_center`, `manage_routing_operation`, `generate_mo_work_orders` |
+| `pos.tipping` + `gift_card_balance` | tip prompt after a sale + gift-card mgmt/redeem | `add_tip`, `manage_gift_card`, `redeem_gift_card` |
+| `payroll.pension` + `sick_pay` | pension % on a draft run + sick-pay calculator | `apply_pension`, `calc_sick_pay` |
+
+Prereq: these migrations are applied on **local** Supabase (done during verification);
+prod needs `supabase db push` before the UI works against the fleet.
+
 ## Remaining to reach `done` (Stage-3 / local session)
 
 1. **`supabase db push`** per instance — the EPIC-01/03/04 migrations exist as files
