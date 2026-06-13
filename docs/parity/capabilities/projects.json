@@ -4,19 +4,111 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "project_crud", "name": "Project CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "Project create/read/update/delete supported" },
-    { "id": "task_crud", "name": "Task CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "Task create/read/update/delete supported" },
-    { "id": "kanban", "name": "Task Kanban", "odoo": true, "status": "done", "weight": 1, "verify": "Kanban board view for tasks" },
-    { "id": "billable_rate", "name": "Billable hourly rate", "odoo": true, "status": "done", "weight": 1, "verify": "Billable hourly rate field on project" },
-    { "id": "budget_hours", "name": "Budget hours", "odoo": true, "status": "done", "weight": 1, "verify": "Budget hours field on project" },
-
-    { "id": "milestones", "name": "Milestones", "odoo": true, "status": "missing", "weight": 2, "verify": "Project milestones with dates/status" },
-    { "id": "gantt", "name": "Gantt/dependencies", "odoo": true, "status": "missing", "weight": 2, "verify": "Gantt chart with task dependencies" },
-    { "id": "subtasks", "name": "Sub-tasks", "odoo": true, "status": "missing", "weight": 2, "verify": "Nested sub-tasks under parent task" },
-    { "id": "resource_planning", "name": "Resource/capacity planning", "odoo": true, "status": "missing", "weight": 2, "verify": "Resource allocation/capacity planning view" },
-    { "id": "templates", "name": "Project templates", "odoo": true, "status": "missing", "weight": 1, "verify": "Reusable project templates" },
-    { "id": "status_workflow", "name": "Stage workflow gating", "odoo": true, "status": "missing", "weight": 1, "verify": "Stage transition gating rules" },
-    { "id": "team_roles", "name": "Team/stakeholder roles", "odoo": true, "status": "missing", "weight": 1, "verify": "Team/stakeholder role assignment on project" },
-    { "id": "cost_forecasting", "name": "Cost forecasting/burn rate", "odoo": true, "status": "missing", "weight": 1, "verify": "Cost forecasting/burn-rate reporting" }
+    {
+      "id": "project_crud",
+      "name": "Project CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Project create/read/update/delete supported"
+    },
+    {
+      "id": "task_crud",
+      "name": "Task CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Task create/read/update/delete supported"
+    },
+    {
+      "id": "kanban",
+      "name": "Task Kanban",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Kanban board view for tasks"
+    },
+    {
+      "id": "billable_rate",
+      "name": "Billable hourly rate",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Billable hourly rate field on project"
+    },
+    {
+      "id": "budget_hours",
+      "name": "Budget hours",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Budget hours field on project"
+    },
+    {
+      "id": "milestones",
+      "name": "Milestones",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "project_milestones table + manage_project_milestone RPC/skill (list/create/update/reach/reopen/delete) + task progress rollup (migration 20260613010000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-13 (progress rollup 3 tasks/1 done, reach/reopen, cascade). Pending: admin UI + Stage-3 runtime verify before done."
+    },
+    {
+      "id": "gantt",
+      "name": "Gantt/dependencies",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "Gantt chart with task dependencies"
+    },
+    {
+      "id": "subtasks",
+      "name": "Sub-tasks",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "project_tasks.parent_task_id self-FK (ON DELETE CASCADE) exposed via manage_project_task; milestone_id link too (migration 20260613010000)",
+      "notes": "Built + verified: parent delete cascades subtasks; MCP via generic db engine. Pending: nested-task admin UI + Stage-3 before done."
+    },
+    {
+      "id": "resource_planning",
+      "name": "Resource/capacity planning",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "Resource allocation/capacity planning view"
+    },
+    {
+      "id": "templates",
+      "name": "Project templates",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Reusable project templates"
+    },
+    {
+      "id": "status_workflow",
+      "name": "Stage workflow gating",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Stage transition gating rules"
+    },
+    {
+      "id": "team_roles",
+      "name": "Team/stakeholder roles",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Team/stakeholder role assignment on project"
+    },
+    {
+      "id": "cost_forecasting",
+      "name": "Cost forecasting/burn rate",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Cost forecasting/burn-rate reporting"
+    }
   ]
 }
