@@ -120,6 +120,54 @@ const SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'apply_pension',
+    description: 'Apply occupational pension to a DRAFT payroll run (employer contribution + optional employee deduction, as a % of gross). Use when: adding tjänstepension before approving a run. NOT for: a posted/approved run (immutable). Idempotent — re-run to change the rate.',
+    category: 'system',
+    handler: 'rpc:apply_pension',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'apply_pension',
+        description: 'Per-line pension on gross for a draft run. Employee % reduces net; recomputes run totals (total_pension_employer/employee_cents). Re-running replaces (no compounding).',
+        parameters: {
+          type: 'object',
+          required: ['p_run_id', 'p_employer_pct'],
+          properties: {
+            p_run_id: { type: 'string', format: 'uuid' },
+            p_employer_pct: { type: 'number', description: 'Employer pension % of gross (e.g. 4.5)' },
+            p_employee_pct: { type: 'number', description: 'Employee pension % of gross, deducted from net (default 0)' },
+          },
+        },
+      },
+    },
+    instructions: 'Only valid on a draft run. Employer pension is an additional cost (not part of net); employee pension is deducted from net. Idempotent: re-running with a new pct restores net from the prior employee pension first. Admin/service-role only.',
+  },
+  {
+    name: 'calc_sick_pay',
+    description: 'Compute Swedish statutory sick pay (sjuklön) for the employer period (days 1–14) at 80% with one karensavdrag. Use when: estimating sick pay for a payroll adjustment. Pure calculator — does not write.',
+    category: 'system',
+    handler: 'rpc:calc_sick_pay',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'calc_sick_pay',
+        description: '80% × daily salary × min(sick_days,14) − one karensavdrag (20% of a 5-day 80% week). Returns sick_pay_cents + breakdown.',
+        parameters: {
+          type: 'object',
+          required: ['p_monthly_salary_cents', 'p_sick_days'],
+          properties: {
+            p_monthly_salary_cents: { type: 'number' },
+            p_sick_days: { type: 'number' },
+            p_work_days_per_month: { type: 'number', description: 'Default 21' },
+          },
+        },
+      },
+    },
+    instructions: 'Statutory model: employer pays days 1–14 (cap), 80% of daily salary, minus one karensavdrag (= 0.8 × daily). Returns sick_pay_cents (net), gross_sick_pay_cents, karensavdrag_cents, paid_sick_days, capped. Read-only.',
+  },
 ];
 
 export const payrollModule = defineModule<Input, Output>({
@@ -135,7 +183,7 @@ export const payrollModule = defineModule<Input, Output>({
   tier: 'extended',
   inputSchema,
   outputSchema,
-  skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines'],
+  skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines', 'apply_pension', 'calc_sick_pay'],
   skillSeeds: SKILLS,
   // No publish() — Payroll exposes its behaviour exclusively through MCP skills
   // (mcp_create_payroll_run, mcp_approve_payroll_run, mcp_mark_payroll_paid).

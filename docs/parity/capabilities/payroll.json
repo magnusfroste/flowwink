@@ -4,23 +4,143 @@
   "current_maturity": "L2",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "payroll_runs", "name": "Payroll runs", "odoo": true, "status": "done", "weight": 1, "verify": "payroll runs exist" },
-    { "id": "payroll_lines", "name": "Per-employee lines", "odoo": true, "status": "done", "weight": 1, "verify": "per-employee payroll lines exist" },
-    { "id": "components", "name": "Salary components", "odoo": true, "status": "done", "weight": 1, "verify": "salary components exist" },
-    { "id": "tax_calc", "name": "Per-employee tax calc", "odoo": true, "status": "done", "weight": 1, "verify": "per-employee tax calculation exists" },
-    { "id": "employer_social_fee", "name": "Employer social fee", "odoo": true, "status": "done", "weight": 1, "verify": "employer social fee calculation exists" },
-    { "id": "journal_integration", "name": "GL journal posting", "odoo": true, "status": "done", "weight": 1, "verify": "GL journal posting exists" },
-    { "id": "bank_payment_posting", "name": "Bank disbursement posting", "odoo": true, "status": "done", "weight": 1, "verify": "bank disbursement posting exists" },
-    { "id": "fortnox_paxml_export", "name": "Fortnox CSV + PAXML export", "odoo": true, "status": "done", "weight": 1, "verify": "Fortnox CSV + PAXML export exists" },
-
-    { "id": "salary_structures", "name": "Salary structure config", "odoo": true, "status": "missing", "weight": 2, "verify": "salary structure config exists" },
-    { "id": "payslip_generation", "name": "Payslip PDF + self-service", "odoo": true, "status": "missing", "weight": 2, "verify": "payslip PDF generation + self-service access exists" },
-    { "id": "pension", "name": "Pension contributions", "odoo": true, "status": "missing", "weight": 2, "verify": "pension contributions exist" },
-    { "id": "sick_pay", "name": "Statutory sick pay", "odoo": true, "status": "missing", "weight": 2, "verify": "statutory sick pay calculation exists" },
-    { "id": "multi_country", "name": "Multi-country payroll", "odoo": true, "status": "missing", "weight": 2, "verify": "multi-country payroll support exists" },
-    { "id": "tax_corrections", "name": "Tax adjustment/correction", "odoo": true, "status": "missing", "weight": 1, "verify": "tax adjustment/correction exists" },
-    { "id": "salary_advances", "name": "Salary advance/loan", "odoo": true, "status": "missing", "weight": 1, "verify": "salary advance/loan tracking exists" },
-    { "id": "year_end_certification", "name": "Year-end tax certification", "odoo": true, "status": "missing", "weight": 1, "verify": "year-end tax certification exists" },
-    { "id": "authority_integration", "name": "Tax-authority integration", "odoo": true, "status": "missing", "weight": 1, "verify": "tax-authority integration exists" }
+    {
+      "id": "payroll_runs",
+      "name": "Payroll runs",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "payroll runs exist"
+    },
+    {
+      "id": "payroll_lines",
+      "name": "Per-employee lines",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "per-employee payroll lines exist"
+    },
+    {
+      "id": "components",
+      "name": "Salary components",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "salary components exist"
+    },
+    {
+      "id": "tax_calc",
+      "name": "Per-employee tax calc",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "per-employee tax calculation exists"
+    },
+    {
+      "id": "employer_social_fee",
+      "name": "Employer social fee",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "employer social fee calculation exists"
+    },
+    {
+      "id": "journal_integration",
+      "name": "GL journal posting",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "GL journal posting exists"
+    },
+    {
+      "id": "bank_payment_posting",
+      "name": "Bank disbursement posting",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "bank disbursement posting exists"
+    },
+    {
+      "id": "fortnox_paxml_export",
+      "name": "Fortnox CSV + PAXML export",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Fortnox CSV + PAXML export exists"
+    },
+    {
+      "id": "salary_structures",
+      "name": "Salary structure config",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "salary structure config exists"
+    },
+    {
+      "id": "payslip_generation",
+      "name": "Payslip PDF + self-service",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "payslip PDF generation + self-service access exists"
+    },
+    {
+      "id": "pension",
+      "name": "Pension contributions",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "payroll_lines.pension_employer/employee_cents + payroll_runs totals + apply_pension RPC/skill (draft-only, idempotent) (migration 20260613060000)",
+      "notes": "Verified on LOCAL Supabase 2026-06-13: 4.5%/2% on 7,000,000 gross \u2192 employer 315000, employee 140000, net 4,900,000\u21924,760,000; re-run idempotent (no compounding). Pending: pension UI + wire into approve posting + Stage-3 before done."
+    },
+    {
+      "id": "sick_pay",
+      "name": "Statutory sick pay",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "calc_sick_pay RPC/skill \u2014 80% \u00d7 daily \u00d7 min(days,14) \u2212 karensavdrag (migration 20260613060000)",
+      "notes": "Verified on LOCAL Supabase: 30000/mo, 5 sick days \u2192 net 457143 (gross 571429, karens 114286); 20 days capped at 14; 0 days \u2192 0. Pending: wire into payroll run as an adjustment line + UI + Stage-3 before done."
+    },
+    {
+      "id": "multi_country",
+      "name": "Multi-country payroll",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "multi-country payroll support exists"
+    },
+    {
+      "id": "tax_corrections",
+      "name": "Tax adjustment/correction",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "tax adjustment/correction exists"
+    },
+    {
+      "id": "salary_advances",
+      "name": "Salary advance/loan",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "salary advance/loan tracking exists"
+    },
+    {
+      "id": "year_end_certification",
+      "name": "Year-end tax certification",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "year-end tax certification exists"
+    },
+    {
+      "id": "authority_integration",
+      "name": "Tax-authority integration",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "tax-authority integration exists"
+    }
   ]
 }

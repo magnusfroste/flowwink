@@ -17,7 +17,6 @@ category: reference
 |---|---|---|---|---|---|
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
 | **docs** | Knowledge (documentation) | L3 → L4 | `███░░░░░░░` 33% | 2/0/3 | — |
-| **payroll** | Payroll (hr.payslip) | L2 → L4 | `████░░░░░░` 36% | 8/0/9 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 38% | 5/2/7 | — |
 | **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
@@ -32,6 +31,7 @@ category: reference
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 45% | 8/1/7 | — |
+| **payroll** | Payroll (hr.payslip) | L2 → L4 | `█████░░░░░` 45% | 8/2/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `█████░░░░░` 46% | 5/1/6 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 47% | 8/0/7 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `█████░░░░░` 47% | 7/1/6 | — |
