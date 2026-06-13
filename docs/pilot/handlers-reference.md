@@ -177,4 +177,4 @@ Returns `null` if no provider is available (graceful degradation — memory stil
 
 ---
 
-*See also: [README](./README.md) · [Architecture](./architecture.md)*
+*See also: [Pilot docs index](../pilot/) · [Architecture](./architecture.md)*

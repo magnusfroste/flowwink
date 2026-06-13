@@ -6,7 +6,7 @@ Thank you for your interest in contributing to FlowWink! This guide will help yo
 
 1. Fork the repository
 2. Clone your fork
-3. Follow the setup instructions in [SETUP.md](./SETUP.md)
+3. Follow the setup instructions in [SETUP.md](../guides/setup.md)
 4. Create a branch for your changes
 
 ## Development Workflow

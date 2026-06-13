@@ -69,7 +69,7 @@ The module ships three optional layers — all enabled together when the module 
 ## Used in Processes
 
 - [record-to-report](../processes/record-to-report.md)
-- [order-to-cash](../processes/order-to-cash.md)
+- [order-to-cash](../processes/order-to-delivery.md)
 - [procure-to-pay](../processes/procure-to-pay.md)
 
 ## File Map
@@ -87,4 +87,4 @@ Key rules:
 - Follow `ModuleDefinition<I, O>` contract pattern
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
-- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+- New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)

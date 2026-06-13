@@ -3,7 +3,7 @@
 Quick reference for running FlowWink's tests locally and in CI, plus how to refresh snapshots when the database schema or skill contracts change.
 
 > Full overview of every test layer: [`test-suite.md`](./test-suite.md)
-> Server-side L1–L6 autonomy tests: [`testing.md`](./testing.md)
+> Server-side L1–L6 autonomy tests: [`testing.md`](./running-tests.md)
 
 ---
 
@@ -63,7 +63,7 @@ These run **inside an edge function** — not via Vitest. Trigger from the admin
 /admin/autonomy-tests
 ```
 
-See [`testing.md`](./testing.md) for details.
+See [`testing.md`](./running-tests.md) for details.
 
 ---
 

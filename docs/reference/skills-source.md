@@ -24,7 +24,7 @@ When a module is **enabled**, the bootstrap seeds those rows into `public.agent_
 ## Adding a skill
 
 1. Add a `SkillSeed` to the module's `skillSeeds` array.
-2. Pass [`Agent Contract Integrity`](../architecture/agent-contract-integrity.md) — every NOT NULL DB column the action writes must be in the JSON schema (`bun run lint:skills`).
+2. Pass [`Agent Contract Integrity`](../../mem/architecture/agent-contract-integrity.md) — every NOT NULL DB column the action writes must be in the JSON schema (`bun run lint:skills`).
 3. Write `description` with explicit `Use when:` and `NOT for:` markers (Law 2 — skills are self-describing).
 4. Disable & re-enable the module, or run the "Sync Skills" action in `/admin/developer`.
 
@@ -34,4 +34,4 @@ When a module is **enabled**, the bootstrap seeds those rows into `public.agent_
 
 ---
 
-*See also: [Module API](./module-api.md) · [MCP as Platform](../architecture/mcp-as-platform.md) · [Agent Contract Integrity](../architecture/agent-contract-integrity.md)*
+*See also: [Module API](./module-api.md) · [MCP as Platform](../architecture/mcp-as-platform.md) · [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md)*

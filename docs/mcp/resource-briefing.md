@@ -176,7 +176,7 @@ All database queries execute in parallel via `Promise.all`. The edge function ha
 
 ## Convenience Gradient Impact
 
-This resource directly addresses the [Data Locality Law](../strategy/data-locality-law.md) and [Convenience Gradient](../strategy/embedded-agent-convenience-gradient.md):
+This resource directly addresses the **Data Locality Law** and **Convenience Gradient** principles (internal memos — not yet published):
 
 | Metric | Without briefing | With briefing |
 |--------|-----------------|---------------|
@@ -187,4 +187,4 @@ This resource directly addresses the [Data Locality Law](../strategy/data-locali
 
 ---
 
-*See also: [Embedded vs Orchestrated Autonomy](../orchestrating/embedded-vs-orchestrated-autonomy.md) · [Convenience Gradient](../strategy/embedded-agent-convenience-gradient.md) · [Data Locality Law](../strategy/data-locality-law.md)*
+*See also: Embedded vs Orchestrated Autonomy · Convenience Gradient · Data Locality Law — internal memos (pending publication).*
