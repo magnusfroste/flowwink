@@ -86,6 +86,8 @@ const PROJECT_SKILLS: SkillSeed[] = [
             priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
             assigned_to: { type: 'string' },
             due_date: { type: 'string' },
+            parent_task_id: { type: 'string', description: 'Parent task UUID — makes this a sub-task' },
+            milestone_id: { type: 'string', description: 'Milestone UUID this task belongs to' },
           },
           required: ['action'],
           'x-action-required': {
@@ -94,7 +96,35 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → done. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone.',
+  },
+  {
+    name: 'manage_project_milestone',
+    description: 'Manage project milestones (named delivery gates with a due date and task-completion progress). Use when: planning project phases, marking a milestone reached, tracking gate progress. NOT for: individual tasks (use manage_project_task) or project CRUD (manage_project).',
+    category: 'crm',
+    handler: 'rpc:manage_project_milestone',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_project_milestone',
+        description: 'List/create/update/reach/reopen/delete project milestones. list returns task-progress rollup (tasks_total / tasks_done) per milestone.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'update', 'reach', 'reopen', 'delete'] },
+            p_milestone_id: { type: 'string', format: 'uuid' },
+            p_project_id: { type: 'string', format: 'uuid' },
+            p_name: { type: 'string' },
+            p_description: { type: 'string' },
+            p_due_date: { type: 'string', description: 'YYYY-MM-DD' },
+            p_sort_order: { type: 'number' },
+          },
+        },
+      },
+    },
+    instructions: 'Milestones are delivery gates per project. Attach tasks via manage_project_task milestone_id; list shows tasks_total/tasks_done rollup (done = task.completed_at set). reach marks it complete; reopen reverses. Admin/service-role only for mutations.',
   },
 ];
 
@@ -110,7 +140,7 @@ export const projectsModule = defineModule<ProjectsInput, ProjectsOutput>({
   inputSchema: projectsInputSchema,
   outputSchema: projectsOutputSchema,
 
-  skills: ['manage_project', 'manage_project_task'],
+  skills: ['manage_project', 'manage_project_task', 'manage_project_milestone'],
   skillSeeds: PROJECT_SKILLS,
   automations: [],
 
