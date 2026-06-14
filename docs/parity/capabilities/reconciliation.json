@@ -4,19 +4,111 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "multi_format_import", "name": "CAMT/MT940/OFX/SIE/CSV import", "odoo": true, "status": "done", "weight": 1, "verify": "multi-format bank statement import" },
-    { "id": "stripe_sync", "name": "Stripe payout sync", "odoo": true, "status": "done", "weight": 1, "verify": "Stripe payout sync" },
-    { "id": "ocr_import", "name": "OCR bank statement import", "odoo": true, "status": "done", "weight": 1, "verify": "OCR bank statement import" },
-    { "id": "auto_match", "name": "Confidence-scored auto-match", "odoo": true, "status": "done", "weight": 1, "verify": "confidence-scored auto-matching" },
-    { "id": "bank_account_linking", "name": "IBAN/GL account linking", "odoo": true, "status": "done", "weight": 1, "verify": "IBAN/GL account linking" },
-    { "id": "dedup", "name": "Transaction dedup", "odoo": true, "status": "done", "weight": 1, "verify": "transaction deduplication" },
-    { "id": "status_tracking", "name": "Match status tracking", "odoo": true, "status": "done", "weight": 1, "verify": "match status tracking" },
-
-    { "id": "live_bank_connectivity", "name": "Live bank feeds (Plaid/Tink/GoCardless)", "odoo": true, "status": "missing", "weight": 3, "verify": "live bank feed connectivity" },
-    { "id": "rule_engine", "name": "Configurable matching rules", "odoo": true, "status": "missing", "weight": 2, "verify": "configurable matching rule engine" },
-    { "id": "variance_investigation", "name": "Partial-match variance tools", "odoo": true, "status": "missing", "weight": 1, "verify": "partial-match variance investigation" },
-    { "id": "cash_reconciliation", "name": "Petty-cash reconciliation", "odoo": true, "status": "missing", "weight": 1, "verify": "petty-cash reconciliation" },
-    { "id": "statement_certification", "name": "Reconciliation sign-off", "odoo": true, "status": "missing", "weight": 1, "verify": "reconciliation sign-off/certification" },
-    { "id": "reconciliation_report", "name": "Reconciliation summary report", "odoo": true, "status": "missing", "weight": 1, "verify": "reconciliation summary report" }
+    {
+      "id": "multi_format_import",
+      "name": "CAMT/MT940/OFX/SIE/CSV import",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "multi-format bank statement import"
+    },
+    {
+      "id": "stripe_sync",
+      "name": "Stripe payout sync",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Stripe payout sync"
+    },
+    {
+      "id": "ocr_import",
+      "name": "OCR bank statement import",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "OCR bank statement import"
+    },
+    {
+      "id": "auto_match",
+      "name": "Confidence-scored auto-match",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "confidence-scored auto-matching"
+    },
+    {
+      "id": "bank_account_linking",
+      "name": "IBAN/GL account linking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "IBAN/GL account linking"
+    },
+    {
+      "id": "dedup",
+      "name": "Transaction dedup",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "transaction deduplication"
+    },
+    {
+      "id": "status_tracking",
+      "name": "Match status tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "match status tracking"
+    },
+    {
+      "id": "live_bank_connectivity",
+      "name": "Live bank feeds (Plaid/Tink/GoCardless)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 3,
+      "verify": "live bank feed connectivity"
+    },
+    {
+      "id": "rule_engine",
+      "name": "Configurable matching rules",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "reconciliation_rules table + apply_reconciliation_rules (priority match on counterparty/reference/description, contains|equals|regex) + manage_reconciliation_rule (migration 20260614060000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: Spotify\u21926540 (contains), El\u21925020 (regex), first-priority-wins, idempotent. Pending: rule admin UI + Stage-3 before done."
+    },
+    {
+      "id": "variance_investigation",
+      "name": "Partial-match variance tools",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "partial-match variance investigation"
+    },
+    {
+      "id": "cash_reconciliation",
+      "name": "Petty-cash reconciliation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "petty-cash reconciliation"
+    },
+    {
+      "id": "statement_certification",
+      "name": "Reconciliation sign-off",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "reconciliation sign-off/certification"
+    },
+    {
+      "id": "reconciliation_report",
+      "name": "Reconciliation summary report",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "reconciliation_report(from,to) \u2014 matched/unmatched count+cents + rule_suggested_count (migration 20260614060000)",
+      "notes": "Built + verified 2026-06-14 (3 tx: 1 matched 2500, 2 unmatched, 2 rule-suggested). Pending: report UI + Stage-3 before done."
+    }
   ]
 }

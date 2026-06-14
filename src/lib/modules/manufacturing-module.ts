@@ -326,6 +326,27 @@ const MANUFACTURING_SKILLS: SkillSeed[] = [
     },
     instructions: 'Run after confirming a MO. Returns work_orders_created + total_planned_minutes + total_planned_labor_cost_cents. Re-running replaces the MO\'s work orders. Admin/service-role only.',
   },
+  {
+    name: 'mrp_reorder_run',
+    description: 'Scan manufactured products (those with an active BOM) at/below their reorder point and create draft manufacturing orders to replenish. Use when: MRP planning, auto-replenishing made-in-house stock. NOT for: purchased items (those go via purchasing reorder/procurement_run).',
+    category: 'commerce',
+    handler: 'rpc:mrp_reorder_run',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'mrp_reorder_run',
+        description: 'Creates draft MOs (source_type=reorder, qty = reorder_point − on_hand) for products with an active BOM, below reorder point, and no open MO. dry_run returns candidates without creating.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_dry_run: { type: 'boolean', description: 'Default true — preview candidates without creating MOs' },
+          },
+        },
+      },
+    },
+    instructions: 'Only manufactured products (active bom_headers) are considered — bought items are skipped. Idempotent: products that already have an open MO (not done/cancelled) are not re-ordered. Run with p_dry_run=false to actually create the draft MOs (admin/service-role).',
+  },
 ];
 
 const MANUFACTURING_AUTOMATIONS: AutomationSeed[] = [
@@ -366,6 +387,7 @@ export const manufacturingModule = defineModule<ManufacturingInput, Manufacturin
     'manage_work_center',
     'manage_routing_operation',
     'generate_mo_work_orders',
+    'mrp_reorder_run',
   ],
   skillSeeds: MANUFACTURING_SKILLS,
   automations: MANUFACTURING_AUTOMATIONS,

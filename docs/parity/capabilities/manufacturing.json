@@ -98,9 +98,10 @@
       "id": "mrp_reorder",
       "name": "Auto-MO on reorder point",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "Auto-create MO when reorder point hit"
+      "verify": "mrp_reorder_run(dry_run) \u2014 draft MOs for active-BOM products below reorder point with no open MO (migration 20260614070000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: 1 candidate (on_hand 2 \u2264 reorder 10, has BOM), live created MO qty 8 draft/reorder; bought item + above-reorder skipped; rerun=0 (open-MO guard). Pending: MRP UI + Stage-3 before done."
     },
     {
       "id": "alternative_boms_eco",
