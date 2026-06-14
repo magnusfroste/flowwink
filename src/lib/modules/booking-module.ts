@@ -272,6 +272,33 @@ Lists, views, updates, or cancels bookings.
 - Cancel sends a cancellation email to the customer.
 - Cancelled bookings free up the time slot.`,
   },
+  {
+    name: 'book_appointment_slot',
+    description: 'Create a booking from a start time — the end is derived from the service duration, and overlapping bookings for the same service are rejected. Use when: booking with proper slot length + double-booking protection. NOT for: ad-hoc bookings without a service (book_appointment) or availability listing (check_availability).',
+    category: 'commerce',
+    handler: 'rpc:book_appointment_slot',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_appointment_slot',
+        description: 'Books a service at a start time; end_time = start + service.duration_minutes. Rejects overlap with any non-cancelled booking of the same service (slot_unavailable).',
+        parameters: {
+          type: 'object',
+          required: ['p_service_id', 'p_customer_name', 'p_customer_email', 'p_start_time'],
+          properties: {
+            p_service_id: { type: 'string', format: 'uuid' },
+            p_customer_name: { type: 'string' },
+            p_customer_email: { type: 'string' },
+            p_start_time: { type: 'string', description: 'ISO timestamp of the slot start' },
+            p_customer_phone: { type: 'string' },
+            p_notes: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'The slot length comes from booking_services.duration_minutes — callers only pass the start. Double-booking the same service is rejected (slot_unavailable); cancelled bookings free the slot; adjacent slots are allowed. Pair with check_availability to find open starts.',
+  },
 ];
 
 export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutput>({
@@ -292,6 +319,7 @@ export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutpu
     'browse_services',
     'manage_booking_availability',
     'manage_bookings',
+    'book_appointment_slot',
   ],
   skillSeeds: BOOKING_SKILLS,
 
