@@ -4,21 +4,126 @@
   "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "receipt_ocr", "name": "AI receipt OCR", "odoo": true, "status": "done", "weight": 1, "verify": "AI receipt OCR extraction" },
-    { "id": "categories", "name": "Expense categories", "odoo": true, "status": "done", "weight": 1, "verify": "expense categories" },
-    { "id": "representation", "name": "Representation w/ attendees", "odoo": true, "status": "done", "weight": 1, "verify": "representation expenses with attendees" },
-    { "id": "vat_extraction", "name": "VAT extraction", "odoo": true, "status": "done", "weight": 1, "verify": "VAT extraction from receipt" },
-    { "id": "report_workflow", "name": "Monthly report draft→booked→paid", "odoo": true, "status": "done", "weight": 1, "verify": "monthly expense report workflow" },
-    { "id": "approval", "name": "Manager approval", "odoo": true, "status": "done", "weight": 1, "verify": "manager approval step" },
-    { "id": "autonomous_booking", "name": "Autonomous JE booking", "odoo": true, "status": "done", "weight": 1, "verify": "autonomous journal-entry booking" },
-    { "id": "payout_methods", "name": "Multiple payout methods", "odoo": true, "status": "done", "weight": 1, "verify": "multiple payout methods" },
-
-    { "id": "policy_limits", "name": "Policy limits/category rules", "odoo": true, "status": "missing", "weight": 2, "verify": "policy limits and category rules" },
-    { "id": "mileage_perdiem", "name": "Mileage/per-diem rate tables", "odoo": true, "status": "missing", "weight": 2, "verify": "mileage/per-diem rate tables" },
-    { "id": "multicurrency_fx", "name": "Multi-currency FX conversion", "odoo": true, "status": "missing", "weight": 1, "verify": "multi-currency FX conversion" },
-    { "id": "advance_tracking", "name": "Employee advance tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "employee advance tracking" },
-    { "id": "delegation", "name": "Approval delegation", "odoo": true, "status": "missing", "weight": 1, "verify": "approval delegation" },
-    { "id": "po_matching", "name": "PO-to-expense matching", "odoo": true, "status": "missing", "weight": 1, "verify": "PO-to-expense matching" },
-    { "id": "bulk_actions", "name": "Bulk approve/reject", "odoo": true, "status": "missing", "weight": 1, "verify": "bulk approve/reject actions" }
+    {
+      "id": "receipt_ocr",
+      "name": "AI receipt OCR",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "AI receipt OCR extraction"
+    },
+    {
+      "id": "categories",
+      "name": "Expense categories",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "expense categories"
+    },
+    {
+      "id": "representation",
+      "name": "Representation w/ attendees",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "representation expenses with attendees"
+    },
+    {
+      "id": "vat_extraction",
+      "name": "VAT extraction",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "VAT extraction from receipt"
+    },
+    {
+      "id": "report_workflow",
+      "name": "Monthly report draft\u2192booked\u2192paid",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "monthly expense report workflow"
+    },
+    {
+      "id": "approval",
+      "name": "Manager approval",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manager approval step"
+    },
+    {
+      "id": "autonomous_booking",
+      "name": "Autonomous JE booking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "autonomous journal-entry booking"
+    },
+    {
+      "id": "payout_methods",
+      "name": "Multiple payout methods",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "multiple payout methods"
+    },
+    {
+      "id": "policy_limits",
+      "name": "Policy limits/category rules",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "expense_policies (per-category caps/receipt/approval threshold) + evaluate_expense_policy + manage_expense_policy (migration 20260614080000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: travel cap 50000/receipt/approval>20000; 30k+receipt allowed (approval), 60k over_limit blocked, no-receipt blocked, '*' catch-all fallback. Pending: policy admin UI + wire into expense create + Stage-3 before done."
+    },
+    {
+      "id": "mileage_perdiem",
+      "name": "Mileage/per-diem rate tables",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "mileage/per-diem rate tables"
+    },
+    {
+      "id": "multicurrency_fx",
+      "name": "Multi-currency FX conversion",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "multi-currency FX conversion"
+    },
+    {
+      "id": "advance_tracking",
+      "name": "Employee advance tracking",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "employee advance tracking"
+    },
+    {
+      "id": "delegation",
+      "name": "Approval delegation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "approval delegation"
+    },
+    {
+      "id": "po_matching",
+      "name": "PO-to-expense matching",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "PO-to-expense matching"
+    },
+    {
+      "id": "bulk_actions",
+      "name": "Bulk approve/reject",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "bulk approve/reject actions"
+    }
   ]
 }

@@ -248,6 +248,57 @@ const EXPENSE_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'manage_expense_policy',
+    description: 'Configure expense spend policies per category (max amount, receipt requirement, approval threshold). Use when: setting company expense rules. NOT for: checking one expense (evaluate_expense_policy) or booking expenses (book_expense_report).',
+    category: 'commerce',
+    handler: 'rpc:manage_expense_policy',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_expense_policy',
+        description: 'List/upsert/delete expense policies. category "*" is the catch-all; a category-specific policy overrides it. Upsert is keyed on category.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'upsert', 'delete'] },
+            p_policy_id: { type: 'string', format: 'uuid' },
+            p_category: { type: 'string', description: 'Expense category, or "*" for all' },
+            p_max_amount_cents: { type: 'number', description: 'Hard cap (omit for none)' },
+            p_requires_receipt: { type: 'boolean' },
+            p_requires_approval_over_cents: { type: 'number', description: 'Above this, approval is required' },
+          },
+        },
+      },
+    },
+    instructions: 'Define "*" first as the baseline, then per-category overrides. Pair with evaluate_expense_policy at expense-entry time.',
+  },
+  {
+    name: 'evaluate_expense_policy',
+    description: 'Check a prospective expense against the policies — returns allowed, requires_approval, and any violations (over_limit, missing_receipt, needs_approval). Use when: validating an expense before submit, deciding if approval is needed. NOT for: editing policies (manage_expense_policy).',
+    category: 'commerce',
+    handler: 'rpc:evaluate_expense_policy',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'evaluate_expense_policy',
+        description: 'Evaluates category + amount (+ receipt) against the matching policy (specific over "*"). over_limit/missing_receipt block (allowed=false); over the approval threshold sets requires_approval.',
+        parameters: {
+          type: 'object',
+          required: ['p_category', 'p_amount_cents'],
+          properties: {
+            p_category: { type: 'string' },
+            p_amount_cents: { type: 'number' },
+            p_has_receipt: { type: 'boolean' },
+          },
+        },
+      },
+    },
+    instructions: 'allowed=false means a hard violation (over the cap or a required receipt is missing). requires_approval=true routes it to manage_approvals before booking. No matching policy → allowed.',
+  },
 ];
 
 const EXPENSE_AUTOMATIONS: AutomationSeed[] = [
@@ -285,6 +336,8 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
     'book_expense_report',
     'mark_expense_report_paid',
     'list_expense_reports',
+    'manage_expense_policy',
+    'evaluate_expense_policy',
   ],
   skillSeeds: EXPENSE_SKILLS,
   automations: EXPENSE_AUTOMATIONS,
