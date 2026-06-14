@@ -7801,12 +7801,13 @@ BEGIN
     result := result || '{"automation_dispatcher": "already_exists"}'::jsonb;
   END IF;
 
-  -- 3. Publish scheduled pages (every minute)
+  -- 3. Publish scheduled pages (every 5 minutes — keeps per-minute cron write load
+  --    down; pg_cron logs every run to cron.job_run_details. See retention migration.)
   SELECT EXISTS(SELECT 1 FROM cron.job WHERE jobname = 'publish-scheduled-pages') INTO job_exists;
   IF NOT job_exists THEN
     PERFORM cron.schedule(
       'publish-scheduled-pages',
-      '* * * * *',
+      '*/5 * * * *',
       format(
         'SELECT net.http_post(url := %L, headers := %L::jsonb, body := ''{}''::jsonb) AS request_id;',
         p_supabase_url || '/functions/v1/publish-scheduled-pages',
