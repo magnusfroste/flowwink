@@ -26,7 +26,6 @@ category: reference
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 44% | 7/2/7 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
-| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `████░░░░░░` 44% | 7/0/6 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████░░░░░` 45% | 9/1/9 | — |
 | **payroll** | Payroll (hr.payslip) | L2 → L4 | `█████░░░░░` 45% | 8/2/7 | — |
@@ -35,13 +34,14 @@ category: reference
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `█████░░░░░` 47% | 7/1/6 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `█████░░░░░` 47% | 7/1/7 | — |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `█████░░░░░` 47% | 7/0/7 | — |
-| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `█████░░░░░` 48% | 8/3/7 | — |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 50% | 8/2/6 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████░░░░░` 50% | 2/0/3 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
+| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `█████░░░░░` 52% | 8/4/6 | — |
+| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████░░░░░` 53% | 7/2/4 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |

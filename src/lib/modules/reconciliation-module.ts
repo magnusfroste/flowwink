@@ -179,6 +179,74 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     },
     instructions: 'Returned rows are candidates for manage_journal_entry (book) or human matching. Order by transaction_date DESC by default.',
   },
+  {
+    name: 'manage_reconciliation_rule',
+    description: 'Manage auto-categorisation rules for bank transactions (match counterparty/reference/description → suggested account + category). Use when: setting up recurring-payment rules, automating bank coding. NOT for: running the rules (apply_reconciliation_rules) or matching to invoices (auto_match_transactions).',
+    category: 'commerce',
+    handler: 'rpc:manage_reconciliation_rule',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_reconciliation_rule',
+        description: 'List/create/update/delete reconciliation rules. Each rule matches a field (counterparty|reference|description) by contains|equals|regex and suggests an account_code + category, ordered by priority.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'update', 'delete'] },
+            p_rule_id: { type: 'string', format: 'uuid' },
+            p_name: { type: 'string' },
+            p_match_field: { type: 'string', enum: ['counterparty', 'reference', 'description'] },
+            p_match_type: { type: 'string', enum: ['contains', 'equals', 'regex'] },
+            p_pattern: { type: 'string' },
+            p_suggested_account_code: { type: 'string' },
+            p_suggested_category: { type: 'string' },
+            p_priority: { type: 'number' },
+          },
+        },
+      },
+    },
+    instructions: 'Lower priority wins first. After editing rules, run apply_reconciliation_rules to tag unmatched transactions.',
+  },
+  {
+    name: 'apply_reconciliation_rules',
+    description: 'Tag unmatched bank transactions with a suggested account/category from the highest-priority matching reconciliation rule. Use when: after importing a bank file, before manual review. NOT for: invoice/payment matching (auto_match_transactions).',
+    category: 'commerce',
+    handler: 'rpc:apply_reconciliation_rules',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'apply_reconciliation_rules',
+        description: 'Runs active reconciliation rules over unmatched, un-tagged transactions; sets suggested_account_code + matched_rule_id. Returns how many were tagged.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Idempotent per transaction (skips already-tagged). First matching rule by priority wins.',
+  },
+  {
+    name: 'reconciliation_report',
+    description: 'Bank reconciliation summary for a period: matched vs unmatched counts and amounts, plus rule-suggested count. Use when: month-end reconciliation review, reporting bank-feed health.',
+    category: 'commerce',
+    handler: 'rpc:reconciliation_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reconciliation_report',
+        description: 'Totals over bank_transactions in [p_from, p_to]: matched/unmatched count + cents, rule_suggested_count.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_from: { type: 'string', description: 'YYYY-MM-DD (optional)' },
+            p_to: { type: 'string', description: 'YYYY-MM-DD (optional)' },
+          },
+        },
+      },
+    },
+    instructions: 'Omit dates for an all-time summary. unmatched + rule_suggested helps prioritise review.',
+  },
 ];
 
 /**
@@ -217,6 +285,9 @@ export const reconciliationModule = defineModule<Input, Output>({
     'import_bank_image',
     'auto_match_transactions',
     'list_unmatched_transactions',
+    'manage_reconciliation_rule',
+    'apply_reconciliation_rules',
+    'reconciliation_report',
   ],
 
   skillSeeds: RECONCILIATION_SKILLS,
