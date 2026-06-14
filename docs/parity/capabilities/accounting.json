@@ -4,22 +4,135 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "double_entry", "name": "Double-entry journals", "odoo": true, "status": "done", "weight": 1, "verify": "balanced debit/credit journal entries" },
-    { "id": "chart_of_accounts", "name": "Multi-locale chart of accounts (BAS/IFRS/GAAP)", "odoo": true, "status": "done", "weight": 1, "verify": "chart of accounts with locale variants" },
-    { "id": "analytic_accounts", "name": "Analytic/cost accounting with hierarchy", "odoo": true, "status": "done", "weight": 1, "verify": "analytic accounts with parent hierarchy" },
-    { "id": "tax_vat", "name": "Tax/VAT codes + grids", "odoo": true, "status": "partial", "weight": 1, "verify": "tax/VAT codes and reporting grids", "notes": "VAT codes/rates exist (VatPolicy in src/lib/locale-packs/se/index.ts:74, output/input accounts, vendor default_vat_code). But the VAT-return/reporting grid is unimplemented: vatReturnAdapter references edge_function 'accounting-vat-return-se' (se/index.ts:58) which does not exist under supabase/functions/." },
-    { "id": "financial_reports", "name": "P&L, balance sheet, GL, trial balance", "odoo": true, "status": "done", "weight": 1, "verify": "P&L, balance sheet, general ledger, trial balance reports" },
-    { "id": "period_close", "name": "Period close/reopen + lock", "odoo": true, "status": "done", "weight": 1, "verify": "period close/reopen with lock" },
-    { "id": "vendor_defaults", "name": "Vendor default account learning", "odoo": true, "status": "done", "weight": 1, "verify": "vendor default account learning" },
-    { "id": "audit_trail", "name": "Audit log of changes", "odoo": true, "status": "done", "weight": 1, "verify": "audit log of changes" },
-    { "id": "voucher_gaps", "name": "Voucher-gap audit", "odoo": true, "status": "done", "weight": 1, "verify": "voucher-gap audit check" },
-
-    { "id": "budgets", "name": "Budget vs actual + variance", "odoo": true, "status": "missing", "weight": 2, "verify": "budget vs actual with variance" },
-    { "id": "consolidation", "name": "Multi-company consolidation", "odoo": true, "status": "missing", "weight": 2, "verify": "multi-company consolidation" },
-    { "id": "cash_flow_forecast", "name": "Cash-flow forecasting", "odoo": true, "status": "missing", "weight": 2, "verify": "cash-flow forecast" },
-    { "id": "project_accounting", "name": "Full project P&L/milestone costing", "odoo": true, "status": "missing", "weight": 1, "verify": "project P&L and milestone costing" },
-    { "id": "custom_report_builder", "name": "Custom financial report builder", "odoo": true, "status": "missing", "weight": 1, "verify": "custom financial report builder" },
-    { "id": "fiscal_year_variants", "name": "Quarterly/half-year close variants", "odoo": true, "status": "missing", "weight": 1, "verify": "quarterly/half-year close variants" },
-    { "id": "je_approval", "name": "Journal-entry approval workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "journal-entry approval workflow" }
+    {
+      "id": "double_entry",
+      "name": "Double-entry journals",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "balanced debit/credit journal entries"
+    },
+    {
+      "id": "chart_of_accounts",
+      "name": "Multi-locale chart of accounts (BAS/IFRS/GAAP)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "chart of accounts with locale variants"
+    },
+    {
+      "id": "analytic_accounts",
+      "name": "Analytic/cost accounting with hierarchy",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "analytic accounts with parent hierarchy"
+    },
+    {
+      "id": "tax_vat",
+      "name": "Tax/VAT codes + grids",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "tax/VAT codes and reporting grids",
+      "notes": "VAT codes/rates exist (VatPolicy in src/lib/locale-packs/se/index.ts:74, output/input accounts, vendor default_vat_code). But the VAT-return/reporting grid is unimplemented: vatReturnAdapter references edge_function 'accounting-vat-return-se' (se/index.ts:58) which does not exist under supabase/functions/."
+    },
+    {
+      "id": "financial_reports",
+      "name": "P&L, balance sheet, GL, trial balance",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "P&L, balance sheet, general ledger, trial balance reports"
+    },
+    {
+      "id": "period_close",
+      "name": "Period close/reopen + lock",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "period close/reopen with lock"
+    },
+    {
+      "id": "vendor_defaults",
+      "name": "Vendor default account learning",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "vendor default account learning"
+    },
+    {
+      "id": "audit_trail",
+      "name": "Audit log of changes",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "audit log of changes"
+    },
+    {
+      "id": "voucher_gaps",
+      "name": "Voucher-gap audit",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "voucher-gap audit check"
+    },
+    {
+      "id": "budgets",
+      "name": "Budget vs actual + variance",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "budgets table (annual/monthly per account) + manage_budget + budget_vs_actual RPC/skill (variance vs \u03a3 debit\u2212credit, draft excluded) (migration 20260614030000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: annual budget 120000 vs actual 35000 (draft excluded) variance 85000; Jan 10000 vs 30000 = -20000; upsert idempotent. Pending: budget admin UI + Stage-3 before done."
+    },
+    {
+      "id": "consolidation",
+      "name": "Multi-company consolidation",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "multi-company consolidation"
+    },
+    {
+      "id": "cash_flow_forecast",
+      "name": "Cash-flow forecasting",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "cash-flow forecast"
+    },
+    {
+      "id": "project_accounting",
+      "name": "Full project P&L/milestone costing",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "project P&L and milestone costing"
+    },
+    {
+      "id": "custom_report_builder",
+      "name": "Custom financial report builder",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "custom financial report builder"
+    },
+    {
+      "id": "fiscal_year_variants",
+      "name": "Quarterly/half-year close variants",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "quarterly/half-year close variants"
+    },
+    {
+      "id": "je_approval",
+      "name": "Journal-entry approval workflow",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "journal-entry approval workflow"
+    }
   ]
 }
