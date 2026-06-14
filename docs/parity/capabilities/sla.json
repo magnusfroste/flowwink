@@ -4,21 +4,126 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "policies", "name": "SLA policies", "odoo": true, "status": "done", "weight": 1, "verify": "SLA policies defined" },
-    { "id": "violation_detection", "name": "Violation detection sweep", "odoo": true, "status": "done", "weight": 1, "verify": "Violation detection sweep runs" },
-    { "id": "multi_entity", "name": "Multi-entity (ticket/order/lead/chat/booking)", "odoo": true, "status": "done", "weight": 1, "verify": "SLA applies across ticket/order/lead/chat/booking" },
-    { "id": "auto_resolution", "name": "Auto-resolve on handled", "odoo": true, "status": "done", "weight": 1, "verify": "SLA auto-resolves when entity handled" },
-    { "id": "default_thresholds", "name": "Seeded default thresholds", "odoo": true, "status": "done", "weight": 1, "verify": "Default SLA thresholds seeded" },
-    { "id": "idempotent", "name": "Idempotent checking", "odoo": true, "status": "done", "weight": 1, "verify": "SLA checking is idempotent" },
-    { "id": "reporting_period", "name": "Period-based reporting", "odoo": true, "status": "done", "weight": 1, "verify": "Period-based SLA reporting" },
-
-    { "id": "escalation_actions", "name": "Escalation actions on breach", "odoo": true, "status": "missing", "weight": 2, "verify": "Escalation actions fired on SLA breach" },
-    { "id": "business_hours", "name": "Business-hours calendar", "odoo": true, "status": "missing", "weight": 2, "verify": "Business-hours calendar for SLA clock" },
-    { "id": "performance_dashboards", "name": "Compliance dashboards", "odoo": true, "status": "missing", "weight": 1, "verify": "SLA compliance dashboards" },
-    { "id": "remediation_workflow", "name": "Remediation workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "Remediation workflow on breach" },
-    { "id": "severity_thresholds", "name": "Severity-based thresholds", "odoo": true, "status": "missing", "weight": 1, "verify": "Severity-based SLA thresholds" },
-    { "id": "per_customer_tiers", "name": "Per-customer SLA tiers", "odoo": true, "status": "missing", "weight": 1, "verify": "Per-customer SLA tier assignment" },
-    { "id": "clock_stop", "name": "Clock-stop on waiting", "odoo": true, "status": "missing", "weight": 1, "verify": "SLA clock stops while waiting on customer" },
-    { "id": "breach_credits", "name": "Service-credit accounting", "odoo": true, "status": "missing", "weight": 1, "verify": "Service-credit accounting on breach" }
+    {
+      "id": "policies",
+      "name": "SLA policies",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "SLA policies defined"
+    },
+    {
+      "id": "violation_detection",
+      "name": "Violation detection sweep",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Violation detection sweep runs"
+    },
+    {
+      "id": "multi_entity",
+      "name": "Multi-entity (ticket/order/lead/chat/booking)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "SLA applies across ticket/order/lead/chat/booking"
+    },
+    {
+      "id": "auto_resolution",
+      "name": "Auto-resolve on handled",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "SLA auto-resolves when entity handled"
+    },
+    {
+      "id": "default_thresholds",
+      "name": "Seeded default thresholds",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Default SLA thresholds seeded"
+    },
+    {
+      "id": "idempotent",
+      "name": "Idempotent checking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "SLA checking is idempotent"
+    },
+    {
+      "id": "reporting_period",
+      "name": "Period-based reporting",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Period-based SLA reporting"
+    },
+    {
+      "id": "escalation_actions",
+      "name": "Escalation actions on breach",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "Escalation actions fired on SLA breach"
+    },
+    {
+      "id": "business_hours",
+      "name": "Business-hours calendar",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "business_hours + business_holidays tables + business_minutes_between(start,end) working-hours function + manage_business_hours skill (migration 20260614020000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: within-day 240, 08\u201318 clipped to 480, Fri16\u2192Mon10 weekend-skip 120, holiday/Saturday/reverse=0. Pending: wire sla-check sweep to use business minutes + admin UI before done."
+    },
+    {
+      "id": "performance_dashboards",
+      "name": "Compliance dashboards",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "SLA compliance dashboards"
+    },
+    {
+      "id": "remediation_workflow",
+      "name": "Remediation workflow",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Remediation workflow on breach"
+    },
+    {
+      "id": "severity_thresholds",
+      "name": "Severity-based thresholds",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Severity-based SLA thresholds"
+    },
+    {
+      "id": "per_customer_tiers",
+      "name": "Per-customer SLA tiers",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Per-customer SLA tier assignment"
+    },
+    {
+      "id": "clock_stop",
+      "name": "Clock-stop on waiting",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "SLA clock stops while waiting on customer"
+    },
+    {
+      "id": "breach_credits",
+      "name": "Service-credit accounting",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "Service-credit accounting on breach"
+    }
   ]
 }

@@ -128,6 +128,34 @@ const SLA_SKILLS: SkillSeed[] = [
     instructions:
       'Filter by entity_type when reporting on a specific area (e.g. ticket SLA health). Include resolved=true only when computing historical compliance metrics — default to open violations.',
   },
+  {
+    name: 'manage_business_hours',
+    description: 'Configure the business-hours calendar (per-weekday open/close) and holidays used to measure SLA elapsed time on working hours instead of 24/7. Use when: setting office hours, adding a public holiday. NOT for: SLA thresholds (manage_sla_policy).',
+    category: 'system',
+    handler: 'rpc:manage_business_hours',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_business_hours',
+        description: 'List/set weekday open-close windows and add/remove holidays. Feeds business_minutes_between() for working-hours SLA timers.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'set_hours', 'clear_day', 'add_holiday', 'remove_holiday'] },
+            p_weekday: { type: 'number', description: '0=Sunday … 6=Saturday' },
+            p_open_time: { type: 'string', description: 'HH:MM' },
+            p_close_time: { type: 'string', description: 'HH:MM' },
+            p_is_open: { type: 'boolean' },
+            p_holiday: { type: 'string', description: 'YYYY-MM-DD' },
+            p_holiday_name: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Default calendar is Mon–Fri 09:00–17:00. set_hours upserts a weekday window; clear_day removes a weekday (closed); add_holiday/remove_holiday manage closed dates. business_minutes_between(start,end) uses this to compute working-hours elapsed for SLA. Admin/service-role only for mutations.',
+  },
 ];
 
 export const slaModule = defineModule<SlaInput, SlaOutput>({
@@ -143,7 +171,7 @@ export const slaModule = defineModule<SlaInput, SlaOutput>({
   inputSchema: slaInputSchema,
   outputSchema: slaOutputSchema,
 
-  skills: ['sla_check', 'manage_sla_policy', 'list_sla_violations'],
+  skills: ['sla_check', 'manage_sla_policy', 'list_sla_violations', 'manage_business_hours'],
   skillSeeds: SLA_SKILLS,
 
   async publish(input: SlaInput): Promise<SlaOutput> {
