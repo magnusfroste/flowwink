@@ -358,6 +358,35 @@ const INVENTORY_SKILLS: SkillSeed[] = [
     },
     instructions: 'Read-only. Only purchase receipts post Dt 1460, while ALL receipts create layers — unbooked_receipt_value_cents quantifies that expected gap. reconciled=true when the difference is zero or fully explained.',
   },
+  {
+    name: 'manage_inventory_count',
+    description: 'Run a physical cycle count: open a count for a location, snapshot system quantities, record counted quantities, and post variances to stock. Use when: stocktake, periodic cycle count, reconciling on-hand to reality. NOT for: ad-hoc single adjustments (adjust_quant) or receiving goods (receive_goods).',
+    category: 'commerce',
+    handler: 'rpc:manage_inventory_count',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_inventory_count',
+        description: 'create / add_line (snapshots system qty) / set_count / post (applies variance via adjust_quant) / get / list. Posting is idempotent (draft→posted only once).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'add_line', 'set_count', 'post', 'get', 'list'] },
+            p_count_id: { type: 'string', format: 'uuid' },
+            p_location_id: { type: 'string', format: 'uuid' },
+            p_product_id: { type: 'string', format: 'uuid' },
+            p_lot_id: { type: 'string', format: 'uuid' },
+            p_counted_qty: { type: 'number' },
+            p_line_id: { type: 'string', format: 'uuid' },
+            p_notes: { type: 'string' },
+          },
+        },
+      },
+    },
+    instructions: 'Flow: create(location) → add_line(product) [snapshots system_qty] → set_count(line, counted) → post(count). post applies each non-zero variance (counted−system) via adjust_quant with reason cycle_count and locks the count. Admin/service-role only.',
+  },
 ];
 
 const INVENTORY_AUTOMATIONS: AutomationSeed[] = [
@@ -410,6 +439,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
     'inventory_valuation_report',
     'allocate_landed_cost',
     'inventory_gl_reconciliation',
+    'manage_inventory_count',
   ],
   skillSeeds: INVENTORY_SKILLS,
   automations: INVENTORY_AUTOMATIONS,

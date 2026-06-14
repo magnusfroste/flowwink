@@ -87,11 +87,11 @@
       "weight": 2,
       "epic": "EPIC-02",
       "verify": "landed_costs table + allocate_landed_cost RPC/skill (by_value|by_qty over receipt layers; Dt 1460/Cr 5710) (migration 20260611220000)",
-      "notes": "Stage-3 verified 2026-06-11: 25000 freight → layer 100000→125000, unit 12500, JE balanced, subsequent COGS uses landed cost. UI shipped 2026-06-12 (LandedCostPanel on received POs + history table w/ journal link). Dual-surface complete; consumed-qty restatement remains a documented v1 limit."
+      "notes": "Stage-3 verified 2026-06-11: 25000 freight \u2192 layer 100000\u2192125000, unit 12500, JE balanced, subsequent COGS uses landed cost. UI shipped 2026-06-12 (LandedCostPanel on received POs + history table w/ journal link). Dual-surface complete; consumed-qty restatement remains a documented v1 limit."
     },
     {
       "id": "multi_step_routes",
-      "name": "Multi-step routes (receive→QC→putaway)",
+      "name": "Multi-step routes (receive\u2192QC\u2192putaway)",
       "odoo": true,
       "status": "missing",
       "weight": 2,
@@ -101,9 +101,10 @@
       "id": "cycle_count",
       "name": "Cycle counts / physical inventory variance",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "inventory_adjustment sessions with variance posting"
+      "verify": "inventory_counts + inventory_count_lines (generated variance) + manage_inventory_count RPC/skill; post applies variance via adjust_quant (migration 20260614040000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: snapshot system_qty, count A 100\u219295/B 50\u219260, post applied 2 cycle_count adjustments, on-hand updated, double-post guarded. Pending: count admin UI + Stage-3 before done."
     },
     {
       "id": "barcode_app",
@@ -119,7 +120,7 @@
       "odoo": true,
       "status": "missing",
       "weight": 1,
-      "verify": "DC→store transfer rules"
+      "verify": "DC\u2192store transfer rules"
     },
     {
       "id": "expiry_alerts",
