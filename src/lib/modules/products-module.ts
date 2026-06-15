@@ -365,9 +365,9 @@ Manages e-commerce orders: list, get details, update status, view stats.
   },
   {
     name: 'place_order',
-    description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
+    description: 'Place an order as a customer — resolves products server-side, creates the order + line items. Accepts product_id or product_name per item. Use when: external agent creates an order programmatically, tests the purchase flow. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), Stripe-hosted storefront checkout (that is the website flow, not this skill).',
     category: 'commerce',
-    handler: 'edge:create-checkout',
+    handler: 'module:orders',
     scope: 'external',
     tool_definition: {
       type: 'function',

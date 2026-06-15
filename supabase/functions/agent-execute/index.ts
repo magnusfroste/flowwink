@@ -4451,6 +4451,65 @@ async function executeOrdersAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  if (skillName === 'place_order') {
+    // External agent places an order as a customer. Accepts snake_case AND camelCase
+    // (customer_email/customerEmail, item.product_id/productId) and resolves products
+    // server-side. Was mis-routed to edge:create-checkout (storefront/Stripe, camel-only,
+    // expects pre-priced cart items) — that broke snake_case and the MCP item contract.
+    const a = args as any;
+    const customer_email = a.customer_email ?? a.customerEmail;
+    const customer_name = a.customer_name ?? a.customerName;
+    const items = a.items;
+    const currency = a.currency ?? 'SEK';
+    const notes = a.notes;
+    if (!customer_email || !items?.length) {
+      return { error: 'customer_email and items[] (each with product_id or product_name, quantity) are required' };
+    }
+
+    let totalCents = 0;
+    const resolvedItems: any[] = [];
+    for (const item of items) {
+      const qty = item.quantity ?? item.qty ?? 1;
+      const productId = item.product_id ?? item.productId;
+      const productName = item.product_name ?? item.productName ?? item.name;
+      let product: any = null;
+      if (productId) {
+        const { data } = await supabase.from('products').select('id, name, price_cents').eq('id', productId).single();
+        product = data;
+      } else if (productName) {
+        const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${productName}%`).limit(1).single();
+        product = data;
+      }
+      if (!product) return { error: `Product not found: ${productId || productName}` };
+      totalCents += (product.price_cents || 0) * qty;
+      resolvedItems.push({ product_id: product.id, product_name: product.name, price_cents: product.price_cents, quantity: qty });
+    }
+
+    const { data: order, error: orderErr } = await supabase.from('orders').insert({
+      customer_email,
+      customer_name: customer_name || customer_email,
+      total_cents: totalCents,
+      currency,
+      status: 'pending',
+      metadata: { source: 'mcp_place_order', notes },
+    }).select('id, status, total_cents, currency').single();
+    if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
+
+    for (const ri of resolvedItems) {
+      await supabase.from('order_items').insert({ order_id: order.id, ...ri });
+    }
+
+    return {
+      success: true,
+      order_id: order.id,
+      status: order.status,
+      total_cents: order.total_cents,
+      currency: order.currency,
+      items_count: resolvedItems.length,
+      message: `Order ${order.id} created with ${resolvedItems.length} item(s) totaling ${(totalCents / 100).toFixed(2)} ${currency}`,
+    };
+  }
+
   if (skillName === 'manage_orders') {
     let { action = 'list', order_id, status, period = 'month', limit = 20 } = args as any;
 
