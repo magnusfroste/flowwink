@@ -53,6 +53,47 @@ Searches the public Flowwink docs site (synced from GitHub).
 - Read full page: docs_search(category: "modules", slug: "purchasing")
 Always cite results with markdown links to /docs/{category}/{slug}.`,
   },
+  {
+    name: 'manage_docs_page',
+    description:
+      'Author and maintain documentation pages in-app (not via GitHub sync): create, update, delete, or restore a previous version. Use when: writing a new docs page from inside the platform, editing an existing page, toggling a draft public/private, or rolling back to an earlier version. NOT for: public knowledge base Q&A (manage_kb_article); internal wiki/SOPs (manage_wiki_page); marketing pages (manage_pages). Reads go via docs_search. App-authored pages are never overwritten by the GitHub sync (it only touches source=github rows).',
+    category: 'content',
+    handler: 'rpc:manage_docs_page',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_docs_page',
+        description:
+          'Create / update / delete / restore_version a documentation page. Update & restore snapshot the prior content into version history automatically.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: ['create', 'update', 'delete', 'restore_version'],
+              description: 'Operation to perform.',
+            },
+            id: { type: 'string', description: 'Doc page UUID (required for update/delete/restore_version).' },
+            title: { type: 'string', description: 'Page title (required for create).' },
+            content: { type: 'string', description: 'Markdown body (required for create).' },
+            category: { type: 'string', description: 'Category (default "general"), e.g. modules, guides.' },
+            slug: { type: 'string', description: 'URL slug; auto-derived from title on create if omitted.' },
+            is_published: { type: 'boolean', description: 'Public visibility. Default true on create.' },
+            version_no: { type: 'number', description: 'Version to restore (required for restore_version).' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: `## manage_docs_page
+In-app docs authoring (separate from GitHub-synced docs).
+- Create: manage_docs_page(action:"create", title:"...", content:"# ...", category:"guides")
+- Update (auto-snapshots old version): manage_docs_page(action:"update", id:"<uuid>", content:"...")
+- Unpublish (make private): manage_docs_page(action:"update", id:"<uuid>", is_published:false)
+- Roll back: manage_docs_page(action:"restore_version", id:"<uuid>", version_no:2)
+Confirm with the user before delete. Slug auto-derives from the title on create.`,
+  },
 ];
 
 export const docsModule = defineModule<DocsInput, DocsOutput>({

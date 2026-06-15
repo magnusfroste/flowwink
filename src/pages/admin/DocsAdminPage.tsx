@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { BookOpen, RefreshCw, Loader2, ExternalLink, Settings, Eye } from 'lucide-react';
+import { BookOpen, RefreshCw, Loader2, ExternalLink, Settings, Eye, Pencil } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useDocsPages, useSyncDocs } from '@/hooks/useDocs';
+import { DocsAuthoring } from '@/components/admin/docs/DocsAuthoring';
 
 export default function DocsAdminPage() {
   const { data: pages = [], isLoading } = useDocsPages();
@@ -56,6 +57,10 @@ export default function DocsAdminPage() {
               <Eye className="h-3.5 w-3.5 mr-1.5" />
               Live preview
             </TabsTrigger>
+            <TabsTrigger value="authoring">
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Authoring
+            </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="h-3.5 w-3.5 mr-1.5" />
               Sync & settings
@@ -95,6 +100,10 @@ export default function DocsAdminPage() {
               This is the live public site embedded — exactly what visitors see at{' '}
               <code>/docs</code>. Navigate inside the preview to inspect any page.
             </p>
+          </TabsContent>
+
+          <TabsContent value="authoring" className="space-y-4">
+            <DocsAuthoring />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">

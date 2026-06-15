@@ -868,6 +868,7 @@ async function executeModuleAction(
           .select('category, slug, title, content, frontmatter, synced_at')
           .eq('category', a.category)
           .eq('slug', a.slug)
+          .eq('is_published', true)
           .maybeSingle();
         if (error) return { error: `docs fetch failed: ${error.message}`, status: 'failed' };
         if (!data) return { results: [], count: 0, message: 'Page not found' };
@@ -879,6 +880,7 @@ async function executeModuleAction(
       let q = supabase
         .from('docs_pages')
         .select('category, slug, title, content, synced_at')
+        .eq('is_published', true)
         .order('category', { ascending: true })
         .order('sort_order', { ascending: true })
         .limit(limit);
