@@ -55,13 +55,13 @@ category: reference
 | **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
-| **forms** | Website forms | L4 → L4 | `███████░░░` 67% | 4/2/1 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **pages** | Website (website.page) | L4 → L4 | `███████░░░` 70% | 5/0/3 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
+| **forms** | Website forms | L4 → L4 | `████████░░` 78% | 5/2/0 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `████████░░` 78% | 4/2/1 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |

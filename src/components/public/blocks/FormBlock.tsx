@@ -178,6 +178,37 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         data: submissionData as Record<string, unknown>,
       });
 
+      // Submission notification — fire-and-forget email to the configured address.
+      // Public block: use the fetch + publishable-key pattern (not functions.invoke).
+      if (data.notifyEmail?.trim()) {
+        try {
+          const lines = Object.entries(submissionData)
+            .map(([k, v]) => {
+              const val =
+                v && typeof v === 'object' && 'name' in (v as Record<string, unknown>)
+                  ? (v as { name: string }).name
+                  : v;
+              return `${k}: ${val ?? ''}`;
+            })
+            .join('\n');
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              to: data.notifyEmail.trim(),
+              subject: `New submission: ${data.title || 'Contact Form'}`,
+              body: `A new form submission was received:\n\n${lines}`,
+            }),
+          });
+        } catch (notifyErr) {
+          logger.error('Form notification email failed:', notifyErr);
+        }
+      }
+
       setIsSubmitted(true);
       setFormData({});
       setFiles({});

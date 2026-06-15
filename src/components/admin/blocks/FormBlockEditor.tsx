@@ -505,6 +505,19 @@ export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorPr
         </div>
 
         <div className="space-y-2">
+          <Label>Notify email (optional)</Label>
+          <Input
+            type="email"
+            value={data.notifyEmail || ''}
+            onChange={(e) => updateField('notifyEmail', e.target.value)}
+            placeholder="team@company.com"
+          />
+          <p className="text-xs text-muted-foreground">
+            Email this address on every submission. Leave blank to disable.
+          </p>
+        </div>
+
+        <div className="space-y-2">
           <Label>Style Variant</Label>
           <Select
             value={data.variant}
