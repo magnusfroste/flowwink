@@ -209,6 +209,33 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         }
       }
 
+      // Job application — route the uploaded CV into the recruitment pipeline.
+      if (data.jobPostingId) {
+        const fileFieldId = data.fields.find((f) => f.type === 'file')?.id;
+        const cv = fileFieldId ? uploadedFiles[fileFieldId] : undefined;
+        if (cv) {
+          try {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-job-application`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+              body: JSON.stringify({
+                job_posting_id: data.jobPostingId,
+                storage_path: `form-uploads/${cv.path}`,
+                candidate_name: nameField ? (formData[nameField.id] as string) : undefined,
+                candidate_email: emailField ? (formData[emailField.id] as string) : undefined,
+                candidate_phone: phoneField ? (formData[phoneField.id] as string) : undefined,
+              }),
+            });
+          } catch (appErr) {
+            logger.error('process-job-application failed:', appErr);
+          }
+        }
+      }
+
       setIsSubmitted(true);
       setFormData({});
       setFiles({});

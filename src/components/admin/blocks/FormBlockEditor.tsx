@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DndContext,
   closestCenter,
@@ -259,6 +261,21 @@ function SortableFieldItem({ field, onUpdate, onDelete, isExpanded, onToggleExpa
 export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorProps) {
   const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
+  // Job postings to optionally link this form to (turns it into an application form).
+  const { data: jobPostings = [] } = useQuery({
+    queryKey: ['form-job-postings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_postings')
+        .select('id, title, status')
+        .neq('status', 'draft')
+        .order('title');
+      if (error) return [];
+      return (data || []) as { id: string; title: string; status: string }[];
+    },
+    enabled: isEditing,
+  });
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -514,6 +531,28 @@ export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorPr
           />
           <p className="text-xs text-muted-foreground">
             Email this address on every submission. Leave blank to disable.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Job posting (optional)</Label>
+          <Select
+            value={data.jobPostingId || '__none__'}
+            onValueChange={(v) => updateField('jobPostingId', v === '__none__' ? undefined : v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="None — regular form" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">None — regular form</SelectItem>
+              {jobPostings.map((j) => (
+                <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Link a job to make this an application form — a submitted CV (file field) is
+            parsed into a recruitment application.
           </p>
         </div>
 

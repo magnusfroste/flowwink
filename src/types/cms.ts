@@ -203,6 +203,12 @@ export interface FormBlockData {
   variant: 'default' | 'card' | 'minimal';
   /** When set, each submission emails this address (submission notifications). */
   notifyEmail?: string;
+  /**
+   * When set, this form is a job application: on submit the uploaded CV (file field)
+   * is routed through process-job-application (extract-pdf-text → parse-resume →
+   * recruitment application) for the linked job posting.
+   */
+  jobPostingId?: string;
 }
 
 // Global block slot types

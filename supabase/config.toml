@@ -116,6 +116,9 @@ verify_jwt = false
 [functions.parse-resume]
 verify_jwt = false
 
+[functions.process-job-application]
+verify_jwt = false
+
 [functions.process-image]
 verify_jwt = false
 
