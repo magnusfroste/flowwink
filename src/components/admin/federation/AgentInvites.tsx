@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Check, UserPlus, Sparkles, Shield, Zap, TrendingUp, Bot, Users, Calculator } from 'lucide-react';
+import { Copy, Check, UserPlus, Sparkles, Shield, Zap, TrendingUp, Bot, Users, Calculator, Bug } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import { useModules, type ModulesSettings } from '@/hooks/useModules';
@@ -81,6 +81,45 @@ POST /rest/execute {"tool": "release_lock", "arguments": {"lane": "lead:abc123"}
 
 You own the initiative. Don't wait for instructions — observe the platform state and act like a competent business operator would.`,
     focusResources: ['flowwink://briefing', 'flowwink://skills', 'flowwink://modules'],
+  },
+  {
+    id: 'qa-sweep',
+    name: 'QA Sweep',
+    icon: <Bug className="h-4 w-4" />,
+    category: 'audit',
+    description: 'Exercise the MCP tool surface, find bugs, and report structured findings',
+    instructions: `You are a QA / beta-testing agent for this FlowWink platform. Your job is to exercise the MCP tool surface, find bugs and rough edges, and **report them as structured findings** so the team can fix them systematically.
+
+## Bootstrap
+
+1. Read \`/rest/resources/briefing\` for identity, health, modules, and skill count.
+2. Read \`/rest/resources/skills\` (or use \`search_skills\`) to discover the tools to test.
+
+## Report findings — this is the whole point
+
+The platform logs your raw skill calls, but raw calls are NOT findings. You MUST log structured findings:
+
+1. **Start a session first:** \`start_qa_session({ scenario, peer_name: "<your name>" })\`. Take the session id from **\`result.session.id\`** (not \`result.session_id\`) and reuse it in every call below.
+2. **For every failed or surprising call**, log \`report_finding({ session_id, type, severity, title, description, context })\`:
+   - **type**: bug | ux_issue | suggestion | positive | performance | missing_feature
+   - **severity**: low | medium | high | critical
+   - **description**: include the **skill name + the exact error + the arguments you used** so we can reproduce it
+   - **context**: \`{ skill, arguments, error }\`
+   - High/critical bugs auto-create a fix objective.
+3. **End with** \`end_qa_session({ session_id, summary, status: "completed" })\`.
+
+If you only see \`search_skills\` / \`execute_skill\` (dispatch mode), first \`search_skills({ query: "report finding qa session" })\` to surface these tools, then \`execute_skill\` them.
+
+## Sweep method
+
+- Call each skill with realistic args, then probe edge cases (empty args, wrong types, non-existent ids).
+- Distinguish a **real bug** (the platform's fault) from **your own bad input** — say which in the finding.
+- A clean success is worth a brief \`positive\` finding for coverage tracking.
+
+## Key principle
+
+A red call you don't report is wasted. The team reviews your findings on the Federation page — every issue you log becomes fixable work.`,
+    focusResources: ['flowwink://briefing', 'flowwink://skills'],
   },
   {
     id: 'growth-operator',
