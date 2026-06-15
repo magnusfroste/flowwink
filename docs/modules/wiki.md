@@ -1,3 +1,10 @@
+---
+id: wiki
+name: Wiki
+manual: true
+description: Internal TEdit-style wiki / intranet for FlowWink.
+---
+
 # Wiki
 
 > Internal TEdit-style wiki / intranet for FlowWink.

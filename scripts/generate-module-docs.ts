@@ -656,7 +656,7 @@ function generateMarkdown(
   lines.push('- All schema changes require idempotent migrations');
   lines.push('- Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))');
   lines.push('- Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))');
-  lines.push('- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)');
+  lines.push('- New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)');
   lines.push('');
   lines.push('---');
   lines.push('');

@@ -1,6 +1,7 @@
 ---
 title: Module Overview
 summary: All FlowWink modules, their skills, webhooks, and relationships
+manual: true
 read_when:
   - Planning module work
   - Understanding system capabilities

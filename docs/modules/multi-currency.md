@@ -4,6 +4,7 @@ module_id: "multiCurrency"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
+manual: true
 ---
 
 # Multi-Currency
