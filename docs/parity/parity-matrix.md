@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 53  ·  **Mean parity:** 58%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
+**Benchmarked modules:** 53  ·  **Mean parity:** 59%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
 
 ## Scored modules
 
@@ -17,7 +17,6 @@ category: reference
 |---|---|---|---|---|---|
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
-| **forms** | Website forms | L4 → L4 | `████░░░░░░` 39% | 1/3/3 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `████░░░░░░` 41% | 5/2/6 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
@@ -43,6 +42,7 @@ category: reference
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████░░░░░` 53% | 7/2/4 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
+| **forms** | Website forms | L4 → L4 | `██████░░░░` 56% | 3/2/2 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `██████░░░░` 57% | 6/0/4 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |

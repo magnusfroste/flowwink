@@ -166,7 +166,16 @@ export type ContentBlockType =
   | 'handbook';
 
 // Form field types
-export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
+export type FormFieldType =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'textarea'
+  | 'checkbox'
+  | 'select'
+  | 'radio'
+  | 'date'
+  | 'number';
 
 export interface FormField {
   id: string;
@@ -175,6 +184,8 @@ export interface FormField {
   placeholder?: string;
   required: boolean;
   width: 'full' | 'half';
+  /** Choices for 'select' and 'radio' fields. */
+  options?: string[];
 }
 
 export interface FormBlockData {
@@ -185,6 +196,8 @@ export interface FormBlockData {
   successMessage: string;
   // Styling
   variant: 'default' | 'card' | 'minimal';
+  /** When set, each submission emails this address (submission notifications). */
+  notifyEmail?: string;
 }
 
 // Global block slot types

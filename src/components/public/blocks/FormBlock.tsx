@@ -1,11 +1,19 @@
 import { logger } from '@/lib/logger';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FormBlockData, FormField } from '@/types/cms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +34,10 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  // Spam protection: a honeypot field (hidden from humans) + a time-trap. Bots fill
+  // the honeypot and/or submit near-instantly; we drop those silently.
+  const [honeypot, setHoneypot] = useState('');
+  const mountedAt = useRef(Date.now());
   const { toast } = useToast();
 
   const validateField = (field: FormField, value: string | boolean): string | null => {
@@ -57,7 +69,15 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Spam protection — honeypot filled or submitted suspiciously fast (<800ms):
+    // a human can't, so silently show success without persisting (don't tip off bots).
+    if (honeypot.trim() !== '' || Date.now() - mountedAt.current < 800) {
+      setIsSubmitted(true);
+      setFormData({});
+      return;
+    }
+
     // Validate all fields
     const newErrors: Record<string, string> = {};
     data.fields.forEach(field => {
@@ -200,6 +220,53 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
           </div>
         );
 
+      case 'select':
+        return (
+          <div key={field.id} className={fieldClasses}>
+            <Label htmlFor={field.id}>
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Select
+              value={(value as string) || ''}
+              onValueChange={(v) => handleFieldChange(field.id, v)}
+            >
+              <SelectTrigger id={field.id} className={cn(error && 'border-destructive')}>
+                <SelectValue placeholder={field.placeholder || 'Select…'} />
+              </SelectTrigger>
+              <SelectContent>
+                {(field.options || []).map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+        );
+
+      case 'radio':
+        return (
+          <div key={field.id} className={fieldClasses}>
+            <Label>
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <RadioGroup
+              value={(value as string) || ''}
+              onValueChange={(v) => handleFieldChange(field.id, v)}
+              className="gap-2 pt-1"
+            >
+              {(field.options || []).map((opt) => (
+                <div key={opt} className="flex items-center gap-2">
+                  <RadioGroupItem value={opt} id={`${field.id}-${opt}`} />
+                  <Label htmlFor={`${field.id}-${opt}`} className="font-normal cursor-pointer">{opt}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+        );
+
       default:
         return (
           <div key={field.id} className={fieldClasses}>
@@ -209,7 +276,13 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
             </Label>
             <Input
               id={field.id}
-              type={field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'text'}
+              type={
+                field.type === 'email' ? 'email'
+                : field.type === 'phone' ? 'tel'
+                : field.type === 'date' ? 'date'
+                : field.type === 'number' ? 'number'
+                : 'text'
+              }
               value={(value as string) || ''}
               onChange={(e) => handleFieldChange(field.id, e.target.value)}
               placeholder={field.placeholder}
@@ -251,9 +324,21 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
       <div className="grid grid-cols-2 gap-4">
         {data.fields.map(renderField)}
       </div>
-      
-      <Button 
-        type="submit" 
+
+      {/* Honeypot — hidden from humans; bots that fill it are dropped on submit. */}
+      <input
+        type="text"
+        name="company_website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+      />
+
+      <Button
+        type="submit"
         className="w-full"
         disabled={isSubmitting}
       >

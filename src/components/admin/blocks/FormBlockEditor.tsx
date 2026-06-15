@@ -30,17 +30,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { 
-  GripVertical, 
-  Plus, 
-  Trash2, 
-  Type, 
-  Mail, 
-  Phone, 
-  AlignLeft, 
+import {
+  GripVertical,
+  Plus,
+  Trash2,
+  Type,
+  Mail,
+  Phone,
+  AlignLeft,
   CheckSquare,
   ChevronDown,
   ChevronUp,
+  List,
+  CircleDot,
+  Calendar,
+  Hash,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +60,13 @@ const FIELD_TYPE_OPTIONS: { value: FormFieldType; label: string; icon: React.Rea
   { value: 'phone', label: 'Phone', icon: <Phone className="h-4 w-4" /> },
   { value: 'textarea', label: 'Text Area', icon: <AlignLeft className="h-4 w-4" /> },
   { value: 'checkbox', label: 'Checkbox', icon: <CheckSquare className="h-4 w-4" /> },
+  { value: 'select', label: 'Dropdown', icon: <List className="h-4 w-4" /> },
+  { value: 'radio', label: 'Radio', icon: <CircleDot className="h-4 w-4" /> },
+  { value: 'date', label: 'Date', icon: <Calendar className="h-4 w-4" /> },
+  { value: 'number', label: 'Number', icon: <Hash className="h-4 w-4" /> },
 ];
+
+const CHOICE_TYPES: FormFieldType[] = ['select', 'radio'];
 
 interface SortableFieldItemProps {
   field: FormField;
@@ -179,13 +189,29 @@ function SortableFieldItem({ field, onUpdate, onDelete, isExpanded, onToggleExpa
             />
           </div>
 
-          {field.type !== 'checkbox' && (
+          {field.type !== 'checkbox' && !CHOICE_TYPES.includes(field.type) && (
             <div className="space-y-1.5">
               <Label className="text-xs">Placeholder</Label>
               <Input
                 value={field.placeholder || ''}
                 onChange={(e) => onUpdate({ placeholder: e.target.value })}
                 placeholder="Placeholder text"
+              />
+            </div>
+          )}
+
+          {CHOICE_TYPES.includes(field.type) && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Options (one per line)</Label>
+              <Textarea
+                value={(field.options || []).join('\n')}
+                onChange={(e) =>
+                  onUpdate({
+                    options: e.target.value.split('\n').map((o) => o.trim()).filter(Boolean),
+                  })
+                }
+                placeholder={'Option A\nOption B\nOption C'}
+                rows={4}
               />
             </div>
           )}
@@ -235,6 +261,7 @@ export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorPr
       placeholder: type === 'email' ? 'email@example.com' : type === 'phone' ? '+46 70 123 4567' : '',
       required: type !== 'checkbox',
       width: type === 'textarea' ? 'full' : 'half',
+      ...(CHOICE_TYPES.includes(type) ? { options: ['Option 1', 'Option 2'] } : {}),
     };
     updateField('fields', [...data.fields, newField]);
     setExpandedFieldId(newField.id);
