@@ -31,6 +31,7 @@ interface FormBlockProps {
 
 export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   const [formData, setFormData] = useState<Record<string, string | boolean>>({});
+  const [files, setFiles] = useState<Record<string, File>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -81,6 +82,18 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
     // Validate all fields
     const newErrors: Record<string, string> = {};
     data.fields.forEach(field => {
+      if (field.type === 'file') {
+        const file = files[field.id];
+        if (field.required && !file) {
+          newErrors[field.id] = 'Please attach a file';
+        } else if (file) {
+          const maxBytes = (field.maxSizeMB ?? 10) * 1024 * 1024;
+          if (file.size > maxBytes) {
+            newErrors[field.id] = `File must be under ${field.maxSizeMB ?? 10} MB`;
+          }
+        }
+        return;
+      }
       const error = validateField(field, formData[field.id] || '');
       if (error) {
         newErrors[field.id] = error;
@@ -96,11 +109,30 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
     setErrors({});
 
     try {
+      // Upload any file fields to the private bucket; store {path,name} in the submission.
+      const uploadedFiles: Record<string, { path: string; name: string }> = {};
+      for (const field of data.fields) {
+        if (field.type !== 'file') continue;
+        const file = files[field.id];
+        if (!file) continue;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${blockId}/${Date.now()}-${safeName}`;
+        const { error: upErr } = await supabase.storage
+          .from('form-uploads')
+          .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
+        if (upErr) throw upErr;
+        uploadedFiles[field.id] = { path, name: file.name };
+      }
+
       // Build submission data with field labels
       const submissionData: Record<string, Json> = {};
       data.fields.forEach(field => {
-        submissionData[field.label] = formData[field.id] !== undefined 
-          ? formData[field.id] 
+        if (field.type === 'file') {
+          submissionData[field.label] = uploadedFiles[field.id] ?? null;
+          return;
+        }
+        submissionData[field.label] = formData[field.id] !== undefined
+          ? formData[field.id]
           : (field.type === 'checkbox' ? false : '');
       });
 
@@ -148,6 +180,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
       setIsSubmitted(true);
       setFormData({});
+      setFiles({});
     } catch (error) {
       logger.error('Form submission error:', error);
       toast({
@@ -263,6 +296,40 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
                 </div>
               ))}
             </RadioGroup>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+        );
+
+      case 'file':
+        return (
+          <div key={field.id} className={fieldClasses}>
+            <Label htmlFor={field.id}>
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Input
+              id={field.id}
+              type="file"
+              accept={field.accept || undefined}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setFiles((prev) => {
+                  const next = { ...prev };
+                  if (f) next[field.id] = f;
+                  else delete next[field.id];
+                  return next;
+                });
+                if (errors[field.id]) {
+                  setErrors((prev) => {
+                    const n = { ...prev };
+                    delete n[field.id];
+                    return n;
+                  });
+                }
+              }}
+              className={cn('cursor-pointer', error && 'border-destructive')}
+            />
+            {field.accept && <p className="text-xs text-muted-foreground">Accepted: {field.accept}</p>}
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
         );
