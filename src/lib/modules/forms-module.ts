@@ -66,6 +66,35 @@ Views and manages form submissions from website forms.
 - Form submissions may contain PII — handle with care.
 - Stats action returns submission counts by form.`,
   },
+  {
+    name: 'manage_form',
+    description:
+      'Inspect website forms and their performance. A form is a Form block on a page (its fields define the form); this reads those definitions. Use when: an operator asks what forms exist, which fields a form has, how many submissions a form got, or its submission→lead conversion. NOT for: reading individual submissions (manage_form_submissions); building/editing a form (that is a page edit via manage_pages — add or change a Form block).',
+    category: 'crm',
+    handler: 'module:forms',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_form',
+        description:
+          'List forms across pages (with field counts + submission counts), or get one form by block_id with its field definitions and submission→lead conversion.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get'], description: 'list = all forms; get = one form by block_id.' },
+            block_id: { type: 'string', description: 'Form block id (from list) — required for get.' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: `## manage_form
+Forms live as Form blocks inside pages (no forms table). This skill reads them.
+- Inventory: manage_form(action:"list") → forms with page, field_count, submissions
+- Detail: manage_form(action:"get", block_id:"<id>") → field definitions + submission→lead conversion
+To CREATE or EDIT a form, edit the page (manage_pages) and add/change a Form block — the block's fields ARE the form.`,
+  },
 ];
 
 export const formsModule = defineModule<FormSubmissionModuleInput, FormSubmissionModuleOutput>({

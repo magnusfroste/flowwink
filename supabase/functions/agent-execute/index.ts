@@ -3664,10 +3664,79 @@ async function executeCompaniesAction(
 
 async function executeFormsAction(
   supabase: SupabaseClient,
-  _skillName: string,
+  skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { action = 'list' } = args as any;
+
+  // manage_form — forms are FormBlocks inside pages.content_json (there is no forms
+  // table), so read the definitions from there. Gives agents form context: fields,
+  // which page, submission counts, and submission→lead conversion.
+  if (skillName === 'manage_form') {
+    const { data: pages, error: pErr } = await supabase
+      .from('pages')
+      .select('id, slug, title, status, content_json');
+    if (pErr) throw new Error(`Load pages failed: ${pErr.message}`);
+
+    type FormInfo = {
+      block_id: string; title: string; page_id: string; page_slug: string;
+      page_title: string; status: string;
+      fields: { label: string; type: string; required: boolean }[];
+    };
+    const forms: FormInfo[] = [];
+    for (const pg of pages || []) {
+      const blocks = Array.isArray((pg as any).content_json) ? (pg as any).content_json : [];
+      for (const b of blocks as any[]) {
+        if (b?.type === 'form' && b?.id) {
+          forms.push({
+            block_id: b.id,
+            title: b.data?.title || 'Untitled form',
+            page_id: (pg as any).id,
+            page_slug: (pg as any).slug,
+            page_title: (pg as any).title,
+            status: (pg as any).status,
+            fields: (b.data?.fields || []).map((f: any) => ({
+              label: f.label, type: f.type, required: !!f.required,
+            })),
+          });
+        }
+      }
+    }
+
+    // Submission counts per block_id (single query, counted in memory).
+    const { data: subs } = await supabase.from('form_submissions').select('block_id');
+    const subCount: Record<string, number> = {};
+    for (const s of subs || []) subCount[(s as any).block_id] = (subCount[(s as any).block_id] || 0) + 1;
+
+    if (action === 'get') {
+      const { block_id } = args as any;
+      if (!block_id) throw new Error('block_id is required for get (use action:list to find it)');
+      const form = forms.find((f) => f.block_id === block_id);
+      if (!form) return { error: `No form block found with id ${block_id}` };
+      const { count: leadCount } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('source', 'form')
+        .eq('source_id', block_id);
+      const submissions = subCount[block_id] || 0;
+      return {
+        form: { ...form, field_count: form.fields.length, url: `/${form.page_slug}` },
+        submissions,
+        leads_converted: leadCount || 0,
+        conversion_rate_pct: submissions ? Math.round(((leadCount || 0) / submissions) * 100) : 0,
+      };
+    }
+
+    // default: list every form across pages with submission counts
+    return {
+      forms: forms.map((f) => ({
+        block_id: f.block_id, title: f.title, page: f.page_slug,
+        page_title: f.page_title, status: f.status,
+        field_count: f.fields.length, submissions: subCount[f.block_id] || 0,
+      })),
+      count: forms.length,
+    };
+  }
 
   if (action === 'list') {
     const { form_name, limit = 50 } = args as any;
