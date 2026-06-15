@@ -45,6 +45,7 @@ import {
   CircleDot,
   Calendar,
   Hash,
+  Paperclip,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +65,7 @@ const FIELD_TYPE_OPTIONS: { value: FormFieldType; label: string; icon: React.Rea
   { value: 'radio', label: 'Radio', icon: <CircleDot className="h-4 w-4" /> },
   { value: 'date', label: 'Date', icon: <Calendar className="h-4 w-4" /> },
   { value: 'number', label: 'Number', icon: <Hash className="h-4 w-4" /> },
+  { value: 'file', label: 'File', icon: <Paperclip className="h-4 w-4" /> },
 ];
 
 const CHOICE_TYPES: FormFieldType[] = ['select', 'radio'];
@@ -189,7 +191,7 @@ function SortableFieldItem({ field, onUpdate, onDelete, isExpanded, onToggleExpa
             />
           </div>
 
-          {field.type !== 'checkbox' && !CHOICE_TYPES.includes(field.type) && (
+          {field.type !== 'checkbox' && !CHOICE_TYPES.includes(field.type) && field.type !== 'file' && (
             <div className="space-y-1.5">
               <Label className="text-xs">Placeholder</Label>
               <Input
@@ -197,6 +199,28 @@ function SortableFieldItem({ field, onUpdate, onDelete, isExpanded, onToggleExpa
                 onChange={(e) => onUpdate({ placeholder: e.target.value })}
                 placeholder="Placeholder text"
               />
+            </div>
+          )}
+
+          {field.type === 'file' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Accepted types</Label>
+                <Input
+                  value={field.accept || ''}
+                  onChange={(e) => onUpdate({ accept: e.target.value })}
+                  placeholder=".pdf,.docx"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Max size (MB)</Label>
+                <Input
+                  type="number"
+                  value={field.maxSizeMB ?? ''}
+                  onChange={(e) => onUpdate({ maxSizeMB: e.target.value ? Number(e.target.value) : undefined })}
+                  placeholder="10"
+                />
+              </div>
             </div>
           )}
 

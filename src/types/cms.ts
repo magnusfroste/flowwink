@@ -175,7 +175,8 @@ export type FormFieldType =
   | 'select'
   | 'radio'
   | 'date'
-  | 'number';
+  | 'number'
+  | 'file';
 
 export interface FormField {
   id: string;
@@ -186,6 +187,10 @@ export interface FormField {
   width: 'full' | 'half';
   /** Choices for 'select' and 'radio' fields. */
   options?: string[];
+  /** Accept attribute for 'file' fields, e.g. ".pdf,.docx". */
+  accept?: string;
+  /** Client-side max size hint for 'file' fields (the bucket enforces 10 MB server-side). */
+  maxSizeMB?: number;
 }
 
 export interface FormBlockData {

@@ -53,6 +53,34 @@ interface FormSubmission {
   page?: { title: string; slug: string } | null;
 }
 
+/** A file-upload field value persisted by FormBlock: { path, name }. */
+function isFileValue(v: unknown): v is { path: string; name: string } {
+  return (
+    !!v && typeof v === 'object' && 'path' in v &&
+    typeof (v as { path: unknown }).path === 'string'
+  );
+}
+
+/** Renders an uploaded file as a download link, generating a short-lived signed URL on click. */
+function FileDownloadLink({ file }: { file: { path: string; name: string } }) {
+  const [loading, setLoading] = useState(false);
+  const open = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.storage
+      .from('form-uploads')
+      .createSignedUrl(file.path, 120);
+    setLoading(false);
+    if (!error && data?.signedUrl) {
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+  return (
+    <Button variant="link" size="sm" className="h-auto p-0" onClick={open} disabled={loading}>
+      {loading ? 'Preparing…' : file.name || 'Download file'}
+    </Button>
+  );
+}
+
 export default function FormSubmissionsPage() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -357,7 +385,7 @@ export default function FormSubmissionsPage() {
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium text-right max-w-[60%] break-words">
-                        {formatDisplayValue(value)}
+                        {isFileValue(value) ? <FileDownloadLink file={value} /> : formatDisplayValue(value)}
                       </span>
                     </div>
                   ))}

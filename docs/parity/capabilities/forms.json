@@ -9,7 +9,7 @@
     { "id": "spam_protection", "name": "Spam protection", "odoo": true, "status": "done", "weight": 1, "verify": "honeypot field (off-screen) + 800ms time-trap in FormBlock.tsx — bot submissions dropped silently; build-verified" },
     { "id": "notifications", "name": "Submission notifications", "odoo": true, "status": "missing", "weight": 1, "verify": "no notification skill or UI; only the form.submitted webhook event for automations" },
     { "id": "custom_fields", "name": "Custom field types", "odoo": true, "status": "done", "weight": 1, "verify": "text/email/phone/textarea/checkbox + select/radio/date/number in FormBlockEditor (options UI) and FormBlock public render; build-verified", "notes": "Added select/radio (with options), date, number field types." },
-    { "id": "file_uploads", "name": "File upload fields", "odoo": true, "status": "missing", "weight": 1, "verify": "no file field type in FormBlockEditor" },
+    { "id": "file_uploads", "name": "File upload fields", "odoo": true, "status": "done", "weight": 1, "verify": "file field type (accept + max-size settings) in FormBlockEditor; FormBlock uploads to private form-uploads bucket on submit; FormSubmissionsPage signed-URL downloads. Verified on demo: anon upload OK, anon read denied (private), bucket RLS applied", "notes": "Private 10MB bucket + RLS (anon insert, admin read/delete). Recruiting/CV pipeline (extract-pdf-text→parse-resume) is the natural follow-on." },
     { "id": "submissions_admin", "name": "Submission management (list/get/stats/delete)", "odoo": true, "status": "done", "weight": 1, "verify": "manage_form_submissions skill; FormSubmissionsPage.tsx", "notes": "Added: full submission admin on both surfaces." }
   ]
 }
