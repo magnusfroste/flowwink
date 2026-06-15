@@ -61,16 +61,16 @@ Default handler for inbound A2A messages from connected federation peers (e.g. O
 - **parts**: Raw message parts (optional)`,
   },
   {
-    name: 'openclaw_start_session',
-    description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing OpenClaw for a new testing task. NOT for: ending a session (openclaw_end_session); getting status (openclaw_get_status).',
+    name: 'start_qa_session',
+    description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing for a new testing task. NOT for: ending a session (end_qa_session); getting status (openclaw_get_status).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
-        name: 'openclaw_start_session',
-        description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing OpenClaw for a new testing task. NOT for: ending a session (openclaw_end_session); getting status (openclaw_get_status).',
+        name: 'start_qa_session',
+        description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing for a new testing task. NOT for: ending a session (end_qa_session); getting status (openclaw_get_status).',
         parameters: {
           type: 'object',
           properties: {
@@ -93,28 +93,28 @@ Default handler for inbound A2A messages from connected federation peers (e.g. O
         },
       },
     },
-    instructions: `## openclaw_start_session
+    instructions: `## start_qa_session
 ### What
-Opens a new OpenClaw beta test session. Registers the session in the database before any findings or exchanges can be logged.
+Opens a new beta test session. Registers the session in the database before any findings or exchanges can be logged.
 ### When to use
-- OpenClaw initiates a testing session — call this first
-- Returns a session_id used in all subsequent openclaw calls
+- The testing agent initiates a session — call this first
+- Returns a session_id used in all subsequent QA-session calls
 ### Parameters
 - **scenario**: Short description of what is being tested
-- **peer_name**: Name of the tester (defaults to "openclaw")
+- **peer_name**: Name of the tester (defaults to "agent")
 - **metadata**: Optional additional context`,
   },
   {
-    name: 'openclaw_end_session',
-    description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (openclaw_start_session); reporting findings (openclaw_report_finding).',
+    name: 'end_qa_session',
+    description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (start_qa_session); reporting findings (report_finding).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
-        name: 'openclaw_end_session',
-        description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (openclaw_start_session); reporting findings (openclaw_report_finding).',
+        name: 'end_qa_session',
+        description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (start_qa_session); reporting findings (report_finding).',
         parameters: {
           type: 'object',
           properties: {
@@ -137,12 +137,12 @@ Opens a new OpenClaw beta test session. Registers the session in the database be
         },
       },
     },
-    instructions: `## openclaw_end_session
+    instructions: `## end_qa_session
 ### What
-Closes an active OpenClaw beta test session with a summary and final status.
+Closes an active beta test session with a summary and final status.
 ### When to use
 - A beta test session is complete
-- Call with the session_id from openclaw_start_session
+- Call with the session_id from start_qa_session
 ### NOT for
 - Ending sessions that were never started
 ### Parameters
@@ -151,7 +151,7 @@ Closes an active OpenClaw beta test session with a summary and final status.
 - **status**: Final status (e.g. "completed", "aborted")`,
   },
   {
-    name: 'openclaw_report_finding',
+    name: 'report_finding',
     description: 'Report a bug, UX issue, suggestion, positive note, missing feature, or performance issue from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
     category: 'system',
     handler: 'module:openclaw',
@@ -159,7 +159,7 @@ Closes an active OpenClaw beta test session with a summary and final status.
     tool_definition: {
       type: 'function',
       function: {
-        name: 'openclaw_report_finding',
+        name: 'report_finding',
         description: 'Report a bug, UX issue, suggestion, positive note, missing feature, or performance issue from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
         parameters: {
           type: 'object',
@@ -214,11 +214,11 @@ Closes an active OpenClaw beta test session with a summary and final status.
         },
       },
     },
-    instructions: `## openclaw_report_finding
+    instructions: `## report_finding
 ### What
 Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or performance issue) discovered during a beta test session.
 ### When to use
-- OpenClaw discovers something worth logging during an active session
+- The agent discovers something worth logging during an active session
 - Include as much context as possible in the description field
 ### Parameters
 - **session_id**: Optional active session ID
@@ -231,7 +231,7 @@ Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or pe
   },
   {
     name: 'openclaw_exchange',
-    description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (openclaw_report_finding).',
+    description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (report_finding).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
@@ -239,7 +239,7 @@ Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or pe
       type: 'function',
       function: {
         name: 'openclaw_exchange',
-        description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (openclaw_report_finding).',
+        description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (report_finding).',
         parameters: {
           type: 'object',
           properties: {
@@ -295,7 +295,7 @@ Sends a structured message between OpenClaw and FlowPilot during a session.
   },
   {
     name: 'openclaw_get_status',
-    description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (openclaw_start_session); ending a session (openclaw_end_session).',
+    description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (start_qa_session); ending a session (end_qa_session).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
@@ -303,7 +303,7 @@ Sends a structured message between OpenClaw and FlowPilot during a session.
       type: 'function',
       function: {
         name: 'openclaw_get_status',
-        description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (openclaw_start_session); ending a session (openclaw_end_session).',
+        description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (start_qa_session); ending a session (end_qa_session).',
         parameters: {
           type: 'object',
           properties: {},
@@ -485,7 +485,7 @@ Queue a test scenario for OpenClaw to pick up.`,
   },
   {
     name: 'resolve_finding',
-    description: 'Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use openclaw_report_finding).',
+    description: 'Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use report_finding).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'internal',
@@ -507,7 +507,7 @@ Queue a test scenario for OpenClaw to pick up.`,
             },
           },
         },
-        description: 'Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use openclaw_report_finding).',
+        description: 'Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use report_finding).',
       },
     },
     instructions: `# Resolve Finding
@@ -656,9 +656,9 @@ export const federationModule = defineModule<FederationPeerInput, FederationPeer
   skills: [
     'a2a_chat',
     'a2a_request',
-    'openclaw_start_session',
-    'openclaw_end_session',
-    'openclaw_report_finding',
+    'start_qa_session',
+    'end_qa_session',
+    'report_finding',
     'openclaw_exchange',
     'openclaw_get_status',
     'queue_beta_test',
