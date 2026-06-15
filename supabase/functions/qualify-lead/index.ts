@@ -39,11 +39,14 @@ serve(async (req) => {
   }
 
   try {
-    const { leadId } = await req.json();
+    // Accept both camelCase (leadId) and snake_case (lead_id) — external MCP agents
+    // naturally send snake_case, and dropping it silently looked like "Lead ID is required".
+    const body = await req.json();
+    const leadId = body.leadId ?? body.lead_id;
 
     if (!leadId) {
       return new Response(
-        JSON.stringify({ error: 'Lead ID is required' }),
+        JSON.stringify({ error: 'Lead ID is required (pass leadId or lead_id)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
