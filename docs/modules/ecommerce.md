@@ -67,7 +67,7 @@ Key rules:
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
 - Blocks are interfaces, not pipelines ([Law 3](../concepts/openclaw-law.md))
-- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+- New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
 
 ---
 

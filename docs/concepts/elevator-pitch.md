@@ -52,7 +52,7 @@ See [`../architecture/mcp-as-platform.md`](../architecture/mcp-as-platform.md) a
 
 If you don't want to wire up an external agent, enable FlowPilot:
 
-- Soul, memory, heartbeat, 280+ skills tuned to FlowWink's modules
+- Soul, memory, heartbeat, 300+ skills tuned to FlowWink's modules
 - Runs on OpenAI, Gemini or a local private model — no vendor lock-in
 - Same skill catalog any MCP client sees — nothing FlowPilot-only on the data side
 - Turn it off and the platform keeps working as plain SaaS

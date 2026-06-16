@@ -6,7 +6,7 @@ This guide explains how to safely upgrade your self-hosted FlowWink installation
 
 ### 1. Read the Changelog
 
-Always check [CHANGELOG.md](../CHANGELOG.md) before upgrading to understand:
+Always check [CHANGELOG.md](../../CHANGELOG.md) before upgrading to understand:
 - New features added
 - Breaking changes that require action
 - Deprecated features

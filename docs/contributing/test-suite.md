@@ -90,7 +90,7 @@ These run **outside** the Vitest pipeline because they hit live edge functions. 
 ## 3. Server-side autonomy tests (L1–L6)
 
 Lives entirely in `supabase/functions/run-autonomy-tests/index.ts`. Triggered from `/admin/autonomy-tests`.
-**Full guide:** [`testing.md`](./testing.md).
+**Full guide:** [`testing.md`](./running-tests.md).
 
 | Layer | Tests |
 |---|---|

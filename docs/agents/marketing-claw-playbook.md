@@ -24,7 +24,7 @@ Get a key from `/admin/developer → MCP Keys`.
 
 ## Pull only the marketing toolkit
 
-The MCP server exposes ~280 skills. A focused claw should request only the
+The MCP server exposes ~300 skills. A focused claw should request only the
 marketing toolset to keep its context budget tight:
 
 ```http

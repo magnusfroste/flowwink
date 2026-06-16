@@ -29,7 +29,7 @@ FlowWink follows Odoo's module ecosystem model with three tiers:
 
 | Tier | Name | Origin | Trust | Status |
 |------|------|--------|-------|--------|
-| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (62 modules) |
+| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (63 modules) |
 | **2** | **Community-Submitted** | PR → FlowWink review → merge | `bundled` after review | 🔜 Next |
 | **3** | **External/Marketplace** | Loaded at runtime from external source | `community` + admin install | 🔮 Future |
 
@@ -85,7 +85,7 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     FLOWPILOT (Autonomous Agent)                 │
-│  280 skills · pgvector memory · heartbeat · self-healing · A2A  │
+│  300 skills · pgvector memory · heartbeat · self-healing · A2A  │
 │  See FLOWPILOT.md for the agent's full architecture              │
 └──────────────────────────────────────────────────────────────────┘
 
@@ -387,14 +387,14 @@ HMAC-SHA256 signatures · Retry with exponential backoff · Auto-disable after 5
 
 | Document | Purpose |
 |----------|---------|
-| [FLOWPILOT.md](./flowpilot.md) | FlowPilot agent architecture — the brain of the system |
+| [FLOWPILOT.md](../modules/flowpilot.md) | FlowPilot agent architecture — the brain of the system |
 | [OPENCLAW-LAW.md](./openclaw-law.md) | The 10 laws of agent development |
-| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
-| [MODULE-API.md](./MODULE-API.md) | Technical module API |
+| [SKILLS-SOURCE.md](../reference/skills-source.md) | Skill registry source of truth |
+| [MODULE-API.md](../reference/module-api.md) | Technical module API |
 | [INTEGRATIONS-STRATEGY.md](./integrations-strategy.md) | Integration architecture |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Deployment instructions |
-| [SECURITY.md](./SECURITY.md) | Security model |
+| [CONTRIBUTING.md](../contributing/contributing.md) | Development guidelines |
+| [DEPLOYMENT.md](../guides/deployment.md) | Deployment instructions |
+| [SECURITY.md](../guides/security.md) | Security model |
 
 ---
 
@@ -481,8 +481,8 @@ The invoicing module (`src/lib/module-bootstraps/invoicing.ts`) closes the Quote
 
 | Reference doc | Path |
 |---|---|
-| [MODULE-API.md](./MODULE-API.md) | Technical module API |
-| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+| [MODULE-API.md](../reference/module-api.md) | Technical module API |
+| [SKILLS-SOURCE.md](../reference/skills-source.md) | Skill registry source of truth |
 
 ---
 
@@ -500,8 +500,8 @@ The inventory module tracks stock levels across all e-commerce products with aut
 
 | Reference doc | Path |
 |---|---|
-| [MODULE-API.md](./MODULE-API.md) | Technical module API |
-| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+| [MODULE-API.md](../reference/module-api.md) | Technical module API |
+| [SKILLS-SOURCE.md](../reference/skills-source.md) | Skill registry source of truth |
 
 ---
 
@@ -548,8 +548,8 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 
 | Reference doc | Path |
 |---|---|
-| [MODULE-API.md](./MODULE-API.md) | Technical module API |
-| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+| [MODULE-API.md](../reference/module-api.md) | Technical module API |
+| [SKILLS-SOURCE.md](../reference/skills-source.md) | Skill registry source of truth |
 
 ---
 
@@ -609,7 +609,7 @@ Introduce a runtime module-loader that reads module manifests from the database,
 Trade-offs: requires runtime dependency resolution, loses some TypeScript compile-time safety, adds startup latency for async loading. Mitigated by keeping manifests statically typed and validating at registration time.
 
 ### Current state (April 2026)
-All 62 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
+All 63 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
 
 ---
 

@@ -66,10 +66,10 @@ Without this discipline, two things break:
 1. **Customers who turn FlowPilot off** still have a fully working FlowChat. The platform is independently useful.
 2. **External operators** (OpenClaw, Claude Desktop, department claws) can replace FlowPilot entirely — they drive the same MCP surface FlowChat uses. The platform stays intact.
 
-This is why the layering is explicit: **Platform → FlowChat (always on) → FlowPilot (opt-in operator on top)**, with skills on the platform. See [`platform-modules-operators-layering`](../../mem/architecture/platform-modules-operators-layering.md), [`flowpilot-as-optional-operator-layer`](../../mem/architecture/flowpilot-as-optional-operator-layer.md), and [`internal-flowchat-and-noise-separation`](../../mem/features/internal-flowchat-and-noise-separation.md).
+This is why the layering is explicit: **Platform → FlowChat (always on) → FlowPilot (opt-in operator on top)**, with skills on the platform. See [`flowpilot-as-optional-operator-layer`](../../mem/architecture/flowpilot-as-optional-operator-layer.md), [`flowchat-vs-flowpilot-roles`](../../mem/architecture/flowchat-vs-flowpilot-roles.md), and [`internal-flowchat-and-noise-separation`](../../mem/features/internal-flowchat-and-noise-separation.md).
 
 ## Related
 
 - [FlowPilot Development Laws](./openclaw-law.md) — Law 3: blocks/skills are interfaces, not pipelines
 - [Operator Strategy](./operator-strategy.md) — swappable operator shells
-- [AI Utility vs Skill](../../mem/architecture/ai-utility-vs-skill-classification.md) — pure text transforms vs context-aware skills
+- AI Utility vs Skill — pure text transforms vs context-aware skills (memo pending)

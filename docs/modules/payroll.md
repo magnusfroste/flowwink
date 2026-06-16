@@ -4,6 +4,7 @@ module_id: "payroll"
 version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
+manual: true
 ---
 
 # Payroll (SE-locale MVP)
@@ -94,4 +95,4 @@ Key rules:
 - Follow `ModuleDefinition<I, O>` contract pattern
 - All schema changes require idempotent migrations
 - Skills must be self-describing ([Law 2](../concepts/openclaw-law.md))
-- New skills must pass the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)
+- New skills must pass the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist (`bun run lint:skills`)

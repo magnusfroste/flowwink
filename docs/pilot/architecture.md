@@ -1,6 +1,6 @@
 # Pilot Architecture — Deep Dive
 
-> Technical reference for the Pilot reasoning engine. Read [README.md](./README.md) first for the overview.
+> Technical reference for the Pilot reasoning engine. Read the [pilot docs index](../pilot/) first for the overview.
 
 ---
 
@@ -318,4 +318,4 @@ Every tool execution is logged to `agent_activity`:
 
 ---
 
-*See also: [README](./README.md) · [Handler Reference](./handlers-reference.md)*
+*See also: [Pilot docs index](../pilot/) · [Handler Reference](./handlers-reference.md)*

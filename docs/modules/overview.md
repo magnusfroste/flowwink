@@ -1,6 +1,7 @@
 ---
 title: Module Overview
 summary: All FlowWink modules, their skills, webhooks, and relationships
+manual: true
 read_when:
   - Planning module work
   - Understanding system capabilities
@@ -135,7 +136,7 @@ Each module has auto-generated documentation with API contracts, webhook events,
 | Analytics | [analytics.md](./analytics.md) |
 | Approvals | [approvals.md](./approvals.md) |
 | Blog | [blog.md](./blog.md) |
-| Booking | [booking.md](./booking.md) |
+| Booking | [booking.md](./bookings.md) |
 | Browser Control | [browser-control.md](./browser-control.md) |
 | Calendar | [calendar.md](./calendar.md) |
 | Chat | [chat.md](./chat.md) |
@@ -158,9 +159,9 @@ Each module has auto-generated documentation with API contracts, webhook events,
 | HR | [hr.md](./hr.md) |
 | Inventory | [inventory.md](./inventory.md) |
 | Invoicing | [invoicing.md](./invoicing.md) |
-| Knowledge Base | [kb.md](./kb.md) |
+| Knowledge Base | [kb.md](./knowledge-base.md) |
 | Live Support | [live-support.md](./live-support.md) |
-| Media Library | [media.md](./media.md) |
+| Media Library | [media.md](./media-library.md) |
 | Newsletter | [newsletter.md](./newsletter.md) |
 | Paid Growth | [paid-growth.md](./paid-growth.md) |
 | Pages | [pages.md](./pages.md) |

@@ -6,9 +6,9 @@
 This guide covers setting up the Supabase backend for FlowWink self-hosting.
 
 > **After completing this guide**, proceed to:
-> - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deploy to production (Easypanel, Railway, etc.)
+> - [DEPLOYMENT.md](./deployment.md) - Deploy to production (Easypanel, Railway, etc.)
 >
-> **Already running FlowWink?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
+> **Already running FlowWink?** See [UPGRADING.md](./upgrading.md) for upgrade instructions.
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ Before deploying, configure your organization's branding in the Admin panel:
 
 ### 5. Deploy Frontend
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for deploying to Easypanel or other platforms.
+See [DEPLOYMENT.md](./deployment.md) for deploying to Easypanel or other platforms.
 
 ### 5. Login
 
@@ -95,7 +95,7 @@ After first login, configure your AI preferences:
 
 > **Important:** The language setting affects ALL AI-generated content including Campaign Manager, blog posts, text generation, and content migration. Default is English.
 
-See [AI_DEPENDENCIES.md](./AI_DEPENDENCIES.md) for detailed AI configuration.
+See [AI_DEPENDENCIES.md](../concepts/ai-dependencies.md) for detailed AI configuration.
 
 ---
 
@@ -225,7 +225,7 @@ Access the app at `http://localhost:5173`
 
 ## Production Deployment
 
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or other platforms.
+See **[DEPLOYMENT.md](./deployment.md)** for deploying to Easypanel, Railway, or other platforms.
 
 ---
 

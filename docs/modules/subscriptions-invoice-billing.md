@@ -1,3 +1,10 @@
+---
+id: subscriptions-invoice-billing
+name: Invoice-Driven Subscriptions
+manual: true
+description: B2B manual (invoice-billed) subscriptions — the design and operations playbook alongside the Stripe-mirrored subscriptions module.
+---
+
 # Invoice-Driven Subscriptions (B2B Manual Billing)
 
 Companion doc to [`subscriptions.md`](./subscriptions.md). Covers the full design, operations and recovery playbook for **manual (invoice-billed) subscriptions** — the B2B path that runs alongside Stripe.

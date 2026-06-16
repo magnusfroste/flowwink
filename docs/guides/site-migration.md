@@ -257,10 +257,10 @@ Planned enhancements for Site Migration:
 
 ## Related Documentation
 
-- [Integrations Strategy](./INTEGRATIONS-STRATEGY.md) — Overview of external integrations
-- [Setup Guide](./SETUP.md) — Initial FlowWink setup
-- [Module API](./MODULE-API.md) — Technical API documentation
-- [Developer Guide](./DEVELOPER_GUIDE.md) — Development workflows
+- [Integrations Strategy](../concepts/integrations-strategy.md) — Overview of external integrations
+- [Setup Guide](./setup.md) — Initial FlowWink setup
+- [Module API](../reference/module-api.md) — Technical API documentation
+- [Developer Guide](../modules/developer.md) — Development workflows
 
 ## Support
 

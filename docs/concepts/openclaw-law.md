@@ -27,7 +27,7 @@ if (/migrate|import/i.test(message)) forcePick('migrate_url');
 
 Every skill MUST contain enough metadata (`description`, `Use when:`, `NOT for:`, `tool_definition.parameters`) for the general scoring algorithm to select it correctly. If a skill isn't being picked up, the fix is **always better metadata** — never a routing hack.
 
-This is enforced by the [Skill Linter](../architecture/skill-linter.md) and the [Agent Contract Integrity](../architecture/agent-contract-integrity.md) checklist.
+This is enforced by the [Skill Linter](../../mem/architecture/skill-linter.md) and the [Agent Contract Integrity](../../mem/architecture/agent-contract-integrity.md) checklist.
 
 ---
 
@@ -68,6 +68,6 @@ Break one law and the rest erode within weeks. That's why FlowWink runs CI guard
 
 ## See also
 
-- [`architecture/agent-contract-integrity.md`](../architecture/agent-contract-integrity.md) — pre-release checklist
-- [`architecture/skill-linter.md`](../architecture/skill-linter.md) — automated enforcement
+- [`architecture/agent-contract-integrity.md`](../../mem/architecture/agent-contract-integrity.md) — pre-release checklist
+- [`architecture/skill-linter.md`](../../mem/architecture/skill-linter.md) — automated enforcement
 - [`concepts/operator-strategy.md`](./operator-strategy.md) — how operators (FlowPilot, OpenClaw, external) plug into this model

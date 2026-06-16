@@ -114,7 +114,7 @@ Block layout in `BlockRenderer`: full-bleed blocks (hero, parallax-section, marq
 
 ### Module System
 
-FlowWink has 62+ business modules in `src/lib/modules/`. Each module is a TypeScript file defining:
+FlowWink has 63 business modules in `src/lib/modules/`. Each module is a TypeScript file defining:
 - Module metadata (id, name, category, dependencies)
 - Feature set and capabilities
 - Skill registrations pointing to `agent_skills` rows
@@ -171,7 +171,7 @@ All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-bas
 
 `mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno.
 
-The system has 200+ skills. Exposing all of them as individual MCP tools floods a client's context. Three connection profiles control what a client sees (all via query params; default = unfiltered, kept for backward compat):
+The system has 300 skills. Exposing all of them as individual MCP tools floods a client's context. Three connection profiles control what a client sees (all via query params; default = unfiltered, kept for backward compat):
 
 - `?groups=crm,commerce` — specialist: only that category's tools (~8). See `_shared/mcp/groups.ts` and `/rest/groups`.
 - `?mode=dispatch` — generalist operator: a **2-tool surface** — `search_skills({query, groups?})` ranks skills by intent, `execute_skill({name, arguments})` runs one. Broad reach, ~2 schemas in context.
@@ -179,7 +179,7 @@ The system has 200+ skills. Exposing all of them as individual MCP tools floods 
 
 **Skill relevance is a platform primitive, not a FlowPilot-internal one.** The component is the **Skill Relevance Engine** (`scoreSkillsByIntent` / `loadRecentUsageCounts` in `_shared/skills/intent-scorer.ts`). Name it for what it does (ranks skills by intent), NOT for a transport — it is neither "MCP" nor "FlowPilot" specific. It has **two consumers**:
 
-1. **FlowPilot** (`reason.ts`) — internal, every ReAct turn: narrows 200+ skills → ~25 relevant ones. No MCP involved here; this is a direct in-process call over the DB-loaded skill set. The scorer receives `config.scoringIntent` (e.g. active objectives) concatenated with the last user message — so autonomous loops surface objective-relevant skills, not just meta-tools.
+1. **FlowPilot** (`reason.ts`) — internal, every ReAct turn: narrows 300 skills → ~25 relevant ones. No MCP involved here; this is a direct in-process call over the DB-loaded skill set. The scorer receives `config.scoringIntent` (e.g. active objectives) concatenated with the last user message — so autonomous loops surface objective-relevant skills, not just meta-tools.
 2. **The outward MCP gateway** (`search_skills` in `?mode=dispatch`) — external operators, the same ranking exposed as a tool.
 
 It lives in `_shared/skills/` (NOT under `pilot/`) precisely because the gateway must work for external agents even when the FlowPilot module is disabled. When promoting capability-discovery logic, keep it here. FlowPilot's actual intelligence (soul, objectives, ReAct decisions) stays in FlowPilot; only the "which skill is relevant" lookup is shared. Avoid naming it "Router"/"Selector" — selection is by scoring on metadata, not hardcoded dispatch (Law 1).
