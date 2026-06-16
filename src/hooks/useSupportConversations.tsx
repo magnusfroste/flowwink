@@ -323,6 +323,31 @@ export function useConversationMessages(conversationId: string | null) {
       }
 
       logger.log('sendMessage: Message sent successfully', data);
+
+      // If this conversation lives on an external channel (e.g. Telegram), relay the
+      // agent's reply back to that channel so the visitor actually receives it.
+      try {
+        const { data: conv } = await supabase
+          .from('chat_conversations')
+          .select('channel')
+          .eq('id', conversationId)
+          .maybeSingle();
+        if (conv?.channel === 'telegram') {
+          const { error: relayError } = await supabase.functions.invoke('telegram-send', {
+            body: {
+              conversation_id: conversationId,
+              message_id: data?.[0]?.id,
+              content,
+            },
+          });
+          if (relayError) {
+            logger.error('sendMessage: telegram-send failed', relayError);
+          }
+        }
+      } catch (relayErr) {
+        logger.error('sendMessage: channel relay error', relayErr);
+      }
+
       return data;
     },
     onSuccess: () => {
