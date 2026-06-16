@@ -13752,7 +13752,7 @@ export type Database = {
         Returns: undefined
       }
       release_agent_conversations: {
-        Args: { p_user_id: string }
+        Args: { p_agent_id: string }
         Returns: {
           channel: string
           channel_thread_id: string
