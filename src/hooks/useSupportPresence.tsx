@@ -93,6 +93,25 @@ export function useSupportPresence() {
     },
   });
 
+  // Update which channels the agent currently accepts work on.
+  const updateSupportedChannels = useMutation({
+    mutationFn: async (channels: string[]) => {
+      if (!user?.id) throw new Error('No user');
+      const { error } = await supabase
+        .from('support_agents')
+        // supported_channels lives on the agent contract; cast through any so
+        // the UI keeps compiling on instances where the column has not been
+        // applied yet.
+        .update({ supported_channels: channels, updated_at: new Date().toISOString() } as any)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return channels;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-agent', user?.id] });
+    },
+  });
+
   // Set up realtime presence
   useEffect(() => {
     if (!user?.id || !agentRecord) return;
