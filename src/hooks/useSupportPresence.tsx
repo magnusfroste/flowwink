@@ -204,6 +204,9 @@ export function useSupportPresence() {
     setBusy,
     updateStatus: updateStatus.mutate,
     isUpdating: updateStatus.isPending,
+    supportedChannels: (agentRecord as any)?.supported_channels as string[] | undefined,
+    updateSupportedChannels: updateSupportedChannels.mutate,
+    isUpdatingChannels: updateSupportedChannels.isPending,
   };
 }
 
