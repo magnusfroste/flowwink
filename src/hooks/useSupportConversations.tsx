@@ -324,7 +324,7 @@ export function useConversationMessages(conversationId: string | null) {
 
       logger.log('sendMessage: Message sent successfully', data);
 
-      // If this conversation lives on an external channel (e.g. Telegram), relay the
+      // If this conversation lives on an external channel (e.g. Telegram, SMS), relay the
       // agent's reply back to that channel so the visitor actually receives it.
       try {
         const { data: conv } = await supabase
@@ -332,16 +332,20 @@ export function useConversationMessages(conversationId: string | null) {
           .select('channel')
           .eq('id', conversationId)
           .maybeSingle();
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token ?? '';
+        const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+
         if (conv?.channel === 'telegram') {
-          const { data: { session } } = await supabase.auth.getSession();
           const relayResp = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/telegram-ingest?action=send`,
+            `${baseUrl}/functions/v1/telegram-ingest?action=send`,
             {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token ?? ''}`,
-                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
+                'apikey': apiKey,
               },
               body: JSON.stringify({
                 conversation_id: conversationId,
@@ -352,6 +356,28 @@ export function useConversationMessages(conversationId: string | null) {
           );
           if (!relayResp.ok) {
             logger.error('sendMessage: telegram relay failed', await relayResp.text());
+          }
+        }
+
+        if (conv?.channel === 'sms') {
+          const relayResp = await fetch(
+            `${baseUrl}/functions/v1/twilio-ingest?action=send`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'apikey': apiKey,
+              },
+              body: JSON.stringify({
+                conversation_id: conversationId,
+                message_id: data?.[0]?.id,
+                content,
+              }),
+            },
+          );
+          if (!relayResp.ok) {
+            logger.error('sendMessage: sms relay failed', await relayResp.text());
           }
         }
       } catch (relayErr) {
