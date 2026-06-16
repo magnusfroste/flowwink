@@ -13751,6 +13751,15 @@ export type Database = {
         Args: { p_id: string; p_reason?: string }
         Returns: undefined
       }
+      release_agent_conversations: {
+        Args: { p_user_id: string }
+        Returns: {
+          channel: string
+          channel_thread_id: string
+          conversation_id: string
+          customer_name: string
+        }[]
+      }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
       reopen_accounting_period: {
         Args: { p_month: number; p_reason?: string; p_year: number }
