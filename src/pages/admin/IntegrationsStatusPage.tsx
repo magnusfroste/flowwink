@@ -882,7 +882,7 @@ function IntegrationConfigPanel({
               <li>Log in to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">console.twilio.com</a></li>
               <li>Left sidebar: <strong>Phone Numbers</strong> → <strong>Manage</strong> → <strong>Active Numbers</strong></li>
               <li>Click your SMS-enabled phone number</li>
-              <li>Scroll to <strong>Messaging configuration</strong></li>
+              <li>Scroll to <strong>Messaging configuration</strong> (not "Voice & Fax")</li>
               <li>Under <em>"A message comes in"</em> — change dropdown to <strong>Webhook</strong></li>
               <li>Paste the URL above, set HTTP method to <strong>POST</strong></li>
               <li>Click <strong>Save configuration</strong></li>
