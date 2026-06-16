@@ -29,7 +29,9 @@ import {
   PhoneCall,
   Voicemail as VoicemailIcon,
   Plug,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
