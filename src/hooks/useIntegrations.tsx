@@ -104,7 +104,9 @@ export interface IntegrationsSettings {
   meta_ads: IntegrationConfig;
   composio: IntegrationConfig;
   searxng: IntegrationConfig;
+  telegram: IntegrationConfig;
 }
+
 
 // Default settings - auto-enabled when API key exists, admin can explicitly disable
 export const defaultIntegrationsSettings: IntegrationsSettings = {
