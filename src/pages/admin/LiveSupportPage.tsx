@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useSupportPresence, AgentStatus } from '@/hooks/useSupportPresence';
@@ -9,14 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { 
-  Headphones, 
-  Circle, 
-  Send, 
-  User, 
-  Bot, 
-  Clock, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Headphones,
+  Circle,
+  Send,
+  User,
+  Bot,
+  Clock,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -24,7 +24,11 @@ import {
   Loader2,
   UserCheck,
   Coffee,
-  Moon
+  Moon,
+  Inbox,
+  PhoneCall,
+  Voicemail as VoicemailIcon,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -34,6 +38,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ChannelFilter } from '@/components/admin/live-support/ChannelFilter';
+import { ChannelToggleGroup } from '@/components/admin/live-support/ChannelToggleGroup';
+import { TelegramIntegrationCard, TwilioIntegrationPlaceholder } from '@/components/admin/live-support/TelegramIntegrationCard';
+import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
+import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
+import { ALL_CHANNELS, ChannelChip, ChannelIcon, channelMeta, getChannel, type SupportChannel } from '@/lib/support-channels';
 
 const statusConfig: Record<AgentStatus, { label: string; color: string; icon: React.ReactNode }> = {
   online: { label: 'Online', color: 'bg-green-500', icon: <Circle className="h-2 w-2 fill-green-500 text-green-500" /> },
