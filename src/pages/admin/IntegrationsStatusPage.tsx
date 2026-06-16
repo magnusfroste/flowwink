@@ -861,11 +861,36 @@ function IntegrationConfigPanel({
         </div>
         <div className="space-y-2">
           <Label className="text-xs">Inbound webhook URL</Label>
-          <Input value={webhookUrl} readOnly className="h-8 text-sm font-mono" />
-          <p className="text-xs text-muted-foreground">
-            Paste this into Twilio Console → Phone Numbers → your number → Messaging → "A message comes in" (HTTP POST).
-            Enable SMS Pumping Protection and Geo Permissions before going live.
-          </p>
+          <div className="flex gap-2">
+            <Input value={webhookUrl} readOnly className="h-8 text-sm font-mono" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                toast.success('Webhook URL copied');
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p><strong>Where to paste in Twilio Console:</strong></p>
+            <ol className="list-decimal list-inside space-y-0.5 pl-1">
+              <li>Log in to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">console.twilio.com</a></li>
+              <li>Left sidebar: <strong>Phone Numbers</strong> → <strong>Manage</strong> → <strong>Active Numbers</strong></li>
+              <li>Click your SMS-enabled phone number</li>
+              <li>Scroll to <strong>Messaging configuration</strong></li>
+              <li>Under <em>"A message comes in"</em> — change dropdown to <strong>Webhook</strong></li>
+              <li>Paste the URL above, set HTTP method to <strong>POST</strong></li>
+              <li>Click <strong>Save configuration</strong></li>
+            </ol>
+            <p className="pt-1">
+              Enable <strong>SMS Pumping Protection</strong> and <strong>Geo Permissions</strong> before going live.
+            </p>
+          </div>
         </div>
       </div>
     );
