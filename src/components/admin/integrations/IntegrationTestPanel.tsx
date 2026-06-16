@@ -161,6 +161,31 @@ function useProviderActions(key: string): ProviderSpec | null {
           ],
         };
       }
+      case 'gatewayapi': {
+        const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+        const webhookUrl = base ? `${base}/functions/v1/gatewayapi-ingest` : '';
+        return {
+          derived: [{
+            label: 'Webhook URL (auto-derived)',
+            value: webhookUrl,
+            hint: 'Paste this into GatewayAPI → Settings → Webhooks → Incoming messages.',
+          }],
+          actions: [
+            {
+              label: 'Test connection',
+              run: async () => {
+                const { data, error } = await supabase.functions.invoke('gatewayapi-ingest', {
+                  body: { action: 'test' },
+                });
+                if (error) throw error;
+                const payload = data as any;
+                if (payload?.error) throw new Error(payload.error + (payload.details ? ` — ${payload.details}` : ''));
+                toast.success(`GatewayAPI connected — credit: ${payload?.credit ?? 'unknown'}`);
+              },
+            },
+          ],
+        };
+      }
       default:
         return null;
     }
