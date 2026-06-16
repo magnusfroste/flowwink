@@ -840,6 +840,37 @@ function IntegrationConfigPanel({
 
 
 
+  if (integrationKey === 'twilio') {
+    const fromNumber = config?.from_number || '';
+    const webhookBase = (import.meta as any).env?.VITE_SUPABASE_URL || '';
+    const webhookUrl = webhookBase ? `${webhookBase}/functions/v1/twilio-ingest` : '';
+    return (
+      <div className="space-y-4 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="twilio-from" className="text-xs">From number (E.164)</Label>
+          <Input
+            id="twilio-from"
+            value={fromNumber}
+            onChange={(e) => handleChange({ from_number: e.target.value })}
+            placeholder="+46701234567"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Your Twilio SMS-enabled number. Used as the sender for outbound replies.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Inbound webhook URL</Label>
+          <Input value={webhookUrl} readOnly className="h-8 text-sm font-mono" />
+          <p className="text-xs text-muted-foreground">
+            Paste this into Twilio Console → Phone Numbers → your number → Messaging → "A message comes in" (HTTP POST).
+            Enable SMS Pumping Protection and Geo Permissions before going live.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (integrationKey === 'resend') {
     const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };
