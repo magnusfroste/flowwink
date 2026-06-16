@@ -593,15 +593,20 @@ function ConversationItem({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className={cn('font-medium truncate', compact ? 'text-xs' : 'text-sm')}>
-            {conversation.customer_name || conversation.title || 'Anonymous'}
-          </p>
-          {!compact && (
-            <p className="text-xs text-muted-foreground truncate">
-              {conversation.customer_email || `Session: ${conversation.session_id?.slice(0, 8) || 'N/A'}`}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <ChannelIcon channel={getChannel(conversation.channel)} />
+          <div className="min-w-0">
+            <p className={cn('font-medium truncate', compact ? 'text-xs' : 'text-sm')}>
+              {conversation.customer_name || conversation.title || 'Anonymous'}
             </p>
-          )}
+            {!compact && (
+              <p className="text-xs text-muted-foreground truncate">
+                {conversation.customer_email
+                  || conversation.contact_phone
+                  || `Session: ${conversation.session_id?.slice(0, 8) || 'N/A'}`}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           {conversation.priority === 'urgent' && (
