@@ -15,9 +15,9 @@ category: reference
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
-| **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `███░░░░░░░` 27% | 0/3/3 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
+| **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `████░░░░░░` 41% | 5/2/6 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |

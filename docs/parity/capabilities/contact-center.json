@@ -35,25 +35,28 @@
       "id": "telegram_channel",
       "name": "Telegram inbound/outbound adapter",
       "odoo": false,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "telegram-ingest + telegram-send edge functions + manage_channel skill (Fas 1)"
+      "verify": "telegram-ingest webhook (inbound → conversation hub → FlowPilot reply) + contact-center skill manage_channel (getMe/setWebhook) + send_channel_message (outbound). Fas 1. Stage-3: live bot-token end-to-end test pending (needs a Telegram bot token); agent→Telegram outbound trigger on chat_messages role='agent' is the remaining wire.",
+      "notes": "Fas 1 differentiator. Inbound + FlowPilot round-trip built; live verify needs credentials."
     },
     {
       "id": "callback_offer",
       "name": "Callback offer + scheduling",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "request_callback skill wrapping book_appointment_slot; rides bookings.metadata.kind='callback' (Fas 2)"
+      "verify": "request_callback RPC + skill (create/mark_attempted/list) riding bookings.metadata.kind='callback'; scratch-Postgres verified 2026-06-16. CallbacksPanel UI reads it. Fas 1.",
+      "notes": "Stage-3: live runtime verify pending."
     },
     {
       "id": "voicemail_transcription",
       "name": "Voicemail → transcription → FlowPilot intent",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "transcribe-voicemail edge function mirroring extract-pdf-text + parse-resume; handle_voicemail skill (Fas 2)"
+      "verify": "handle_voicemail skill (contact-center fn): structured AI extraction of summary/intent/sentiment/callback_requested from a transcript via resolveAiConfig+callAiCompletion. Fas 1. Audio→transcript step lands with the voice channel (Fas 3).",
+      "notes": "Analysis of an existing transcript is done; speech-to-text needs the PSTN/voice channel."
     },
     {
       "id": "live_voice",
