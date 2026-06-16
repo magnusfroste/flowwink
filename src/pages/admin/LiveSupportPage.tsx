@@ -60,16 +60,19 @@ const priorityConfig: Record<string, { label: string; variant: 'default' | 'seco
 };
 
 export default function LiveSupportPage() {
-  const { 
-    agentRecord, 
-    agentLoading, 
-    onlineAgents, 
+  const {
+    agentRecord,
+    agentLoading,
+    onlineAgents,
     isConnected,
-    goOnline, 
+    goOnline,
     goOffline,
     setAway,
     setBusy,
-    isUpdating 
+    isUpdating,
+    supportedChannels,
+    updateSupportedChannels,
+    isUpdatingChannels,
   } = useSupportPresence();
 
   const {
@@ -83,11 +86,34 @@ export default function LiveSupportPage() {
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
+  const [channelFilter, setChannelFilter] = useState<SupportChannel | 'all'>('all');
+  const [tab, setTab] = useState<'inbox' | 'callbacks' | 'voicemail' | 'integrations'>('inbox');
 
   const { messages, isLoading: messagesLoading, sendMessage } = useConversationMessages(selectedConversationId);
 
   const currentStatus = agentRecord?.status || 'offline';
   const statusInfo = statusConfig[currentStatus as AgentStatus];
+  const activeChannels: SupportChannel[] = (supportedChannels?.length
+    ? supportedChannels.filter((c): c is SupportChannel => (ALL_CHANNELS as string[]).includes(c))
+    : (['web', 'telegram', 'sms', 'voice'] as SupportChannel[]));
+
+  const filterByChannel = <T extends { channel?: string | null }>(rows: T[]) =>
+    channelFilter === 'all' ? rows : rows.filter(r => getChannel(r.channel) === channelFilter);
+
+  const filteredAssigned   = useMemo(() => filterByChannel(assignedConversations),   [assignedConversations,   channelFilter]);
+  const filteredWaiting    = useMemo(() => filterByChannel(waitingConversations),    [waitingConversations,    channelFilter]);
+  const filteredEscalated  = useMemo(() => filterByChannel(escalatedConversations),  [escalatedConversations,  channelFilter]);
+
+  const counts = useMemo(() => {
+    const all = [...assignedConversations, ...waitingConversations, ...escalatedConversations];
+    const out: Partial<Record<SupportChannel | 'all', number>> = { all: all.length };
+    for (const c of ALL_CHANNELS) out[c] = 0;
+    for (const r of all) {
+      const c = getChannel((r as any).channel);
+      out[c] = (out[c] ?? 0) + 1;
+    }
+    return out;
+  }, [assignedConversations, waitingConversations, escalatedConversations]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
@@ -104,6 +130,7 @@ export default function LiveSupportPage() {
 
   const selectedConversation = [...assignedConversations, ...waitingConversations, ...escalatedConversations]
     .find(c => c.id === selectedConversationId);
+  const selectedChannel = getChannel((selectedConversation as any)?.channel);
 
   if (agentLoading) {
     return (
