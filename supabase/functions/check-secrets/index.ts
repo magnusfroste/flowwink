@@ -107,7 +107,9 @@ serve(async (req) => {
         hunter: !!Deno.env.get('HUNTER_API_KEY'),
         jina: !!Deno.env.get('JINA_API_KEY'),
         composio: !!Deno.env.get('COMPOSIO_API_KEY'),
+        telegram: !!Deno.env.get('TELEGRAM_BOT_TOKEN'),
       }
+
     };
 
     console.log('[check-secrets] Status:', JSON.stringify(status));
