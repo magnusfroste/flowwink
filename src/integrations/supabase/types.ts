@@ -2908,6 +2908,8 @@ export type Database = {
       chat_conversations: {
         Row: {
           assigned_agent_id: string | null
+          channel: string
+          channel_thread_id: string | null
           conversation_status: string | null
           created_at: string
           customer_email: string | null
@@ -2926,6 +2928,8 @@ export type Database = {
         }
         Insert: {
           assigned_agent_id?: string | null
+          channel?: string
+          channel_thread_id?: string | null
           conversation_status?: string | null
           created_at?: string
           customer_email?: string | null
@@ -2944,6 +2948,8 @@ export type Database = {
         }
         Update: {
           assigned_agent_id?: string | null
+          channel?: string
+          channel_thread_id?: string | null
           conversation_status?: string | null
           created_at?: string
           customer_email?: string | null
