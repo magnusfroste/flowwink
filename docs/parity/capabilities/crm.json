@@ -98,6 +98,15 @@
       "verify": "consent tracking per contact"
     },
     {
+      "id": "lead_dedup",
+      "name": "Duplicate detection + merge",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "find_duplicate_leads + merge_leads RPCs (migration 20260616120000); scratch-Postgres verified 2026-06-16 (plus-addressing normalized, children reassigned, scores summed, dupe deleted, guards). Dogfooded on demo. Stage-3: admin UI + runtime sign-off pending.",
+      "notes": "Odoo crm.lead has a Merge action. Email comparison normalizes plus-addressing + case so gmail-style aliases of the same person collapse — the case a naive exact-string dedup missed in demo."
+    },
+    {
       "id": "ai_enrich",
       "name": "AI company enrichment",
       "odoo": false,

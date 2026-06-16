@@ -647,6 +647,51 @@ Use this to find email addresses and contact information for people at a company
     },
     instructions: 'The shared stage engine for lead/deal/ticket pipelines. list returns stages ordered by sort_order. create auto-derives p_key from p_name when omitted. probability feeds weighted forecasting. Admin/service-role only for create/update/delete.',
   },
+  {
+    name: 'find_duplicate_leads',
+    description: 'Find likely duplicate leads by name similarity or matching email — normalizes plus-addressing and case so aliases collapse (anna+x@d ≡ anna+y@d ≡ anna@d) (read-only). Use when: cleaning the CRM, before adding a lead that might already exist, after a bulk import. NOT for: merging the pair (merge_leads); creating/editing leads (manage_leads).',
+    category: 'crm',
+    handler: 'rpc:find_duplicate_leads',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'find_duplicate_leads',
+        description: 'List candidate duplicate lead pairs scored by trigram name similarity and normalized-email match (plus-addressing and case stripped). A matching normalized email scores 1.0.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_threshold: { type: 'number', description: 'Name similarity 0-1 (default 0.45)' },
+            p_limit: { type: 'number', description: 'Max pairs (default 25)' },
+          },
+        },
+      },
+    },
+    instructions: 'Read-only. Returns pairs {lead_a, name_a, email_a, status_a, lead_b, name_b, email_b, status_b, score, same_email} ordered by score. To resolve a pair, call merge_leads with the record to KEEP as p_primary_id. Email comparison ignores +tags and case, so gmail-style aliases of the same person are caught even though the raw strings differ.',
+  },
+  {
+    name: 'merge_leads',
+    description: "Merge two duplicate leads into one: moves the duplicate's tasks, deals, activities, quotes, invoices, tickets and webinar registrations onto the primary, fills empty primary fields from the duplicate, sums their scores, then deletes the duplicate. Use when: resolving a pair from find_duplicate_leads, consolidating a re-imported contact. NOT for: deleting a single lead (manage_leads delete); finding duplicates (find_duplicate_leads).",
+    category: 'crm',
+    handler: 'rpc:merge_leads',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'merge_leads',
+        description: 'Merge a duplicate lead into a primary one; reassigns every child record (tasks, deals, activities, invoices, quotes, tickets, webinar registrations) then deletes the duplicate. Pass the record to KEEP as p_primary_id.',
+        parameters: {
+          type: 'object',
+          required: ['p_primary_id', 'p_duplicate_id'],
+          properties: {
+            p_primary_id: { type: 'string', format: 'uuid', description: 'UUID of the lead to KEEP (winner). Choose the more complete / more advanced record.' },
+            p_duplicate_id: { type: 'string', format: 'uuid', description: 'UUID of the lead to merge in and then delete.' },
+          },
+        },
+      },
+    },
+    instructions: 'Destructive: deletes p_duplicate_id after moving its children to p_primary_id, so no tasks/deals/history are lost. Pick the keeper as primary — usually the record whose status is further along (customer > opportunity > lead). Scores are summed; empty primary fields are filled from the duplicate. Returns {moved:{table:count}}. Run find_duplicate_leads first to get the pair.',
+  },
 ];
 
 export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
@@ -676,6 +721,8 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
     'follow_entity',
     'manage_saved_views',
     'manage_pipeline_stage',
+    'find_duplicate_leads',
+    'merge_leads',
   ],
   skillSeeds: CRM_SKILLS,
 

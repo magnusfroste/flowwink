@@ -50,7 +50,7 @@ category: reference
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████░░░░` 61% | 5/1/5 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `██████░░░░` 63% | 6/1/4 | — |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `██████░░░░` 63% | 6/2/4 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
