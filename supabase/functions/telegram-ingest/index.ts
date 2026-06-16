@@ -200,12 +200,19 @@ async function handleIngest(req: Request): Promise<Response> {
       }),
     });
     const aiData = await aiResp.json().catch(() => ({}));
-    const reply: string | undefined = aiData?.message || aiData?.content || aiData?.reply;
+    let reply: string | undefined = aiData?.message || aiData?.content || aiData?.reply;
+
+    // If chat-completion skipped (routing_mode=human_*), surface the handoff note over Telegram
+    if (!reply && aiData?.skipped) {
+      reply = aiData?.agents_online
+        ? 'Thanks — an agent will respond here shortly.'
+        : 'Thanks for your message. Our team is currently offline; we\'ll get back to you as soon as we\'re back.';
+    }
 
     if (reply && botToken) {
       await sendTelegram(botToken, chatId, reply);
     }
-    return json({ ok: true, replied: !!reply }, 200);
+    return json({ ok: true, replied: !!reply, skipped: !!aiData?.skipped }, 200);
   } catch (err: any) {
     console.error("[telegram-ingest] error:", err?.message ?? err);
     return json({ ok: false, error: err?.message ?? "error" }, 200);

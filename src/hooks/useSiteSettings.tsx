@@ -225,6 +225,12 @@ export interface ChatSettings {
   allowedSkillNames: string[];
   firecrawlSearchEnabled: boolean;
   humanHandoffEnabled: boolean;
+  /** Routing policy for ALL inbound channels (web, telegram, sms, voice).
+   *  ai_first   = AI answers, escalates on demand (default, today's behavior)
+   *  human_first= goes directly to live-support; AI fallback only if no agent online
+   *  ai_only    = AI always answers, no escalation
+   *  human_only = always live-support; never AI (queues if offline) */
+  routingMode: 'ai_first' | 'human_first' | 'ai_only' | 'human_only';
   sentimentDetectionEnabled: boolean;
   sentimentThreshold: number; // 0-10, triggers handoff when exceeded
   localSupportsToolCalling: boolean; // Whether local AI supports OpenAI-compatible tool calling
@@ -312,6 +318,7 @@ export const defaultChatSettings: ChatSettings = {
   allowedSkillNames: [],
   firecrawlSearchEnabled: false,
   humanHandoffEnabled: false,
+  routingMode: 'ai_first',
   sentimentDetectionEnabled: true,
   sentimentThreshold: 7,
   localSupportsToolCalling: false,

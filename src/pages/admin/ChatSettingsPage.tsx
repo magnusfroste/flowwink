@@ -813,6 +813,32 @@ export default function ChatSettingsPage() {
                     )}
                   </div>
 
+                  {/* Routing Mode — channel-agnostic policy for web/telegram/voice */}
+                  <div className="space-y-2 p-4 rounded-lg border">
+                    <div>
+                      <h4 className="font-medium">Routing Mode</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Applies to all transports (web widget, Telegram, SMS, voice).
+                      </p>
+                    </div>
+                    <Select
+                      value={formData.routingMode ?? 'ai_first'}
+                      onValueChange={(routingMode: 'ai_first' | 'human_first' | 'ai_only' | 'human_only') =>
+                        setFormData({ ...formData, routingMode })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ai_first">AI first — AI answers, escalates on demand</SelectItem>
+                        <SelectItem value="human_first">Human first — straight to live-support, AI fallback if no agent online</SelectItem>
+                        <SelectItem value="ai_only">AI only — no escalation</SelectItem>
+                        <SelectItem value="human_only">Human only — never AI, queues if offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Live Agent Banner setting */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
