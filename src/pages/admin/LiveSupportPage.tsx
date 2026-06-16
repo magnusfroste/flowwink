@@ -273,14 +273,14 @@ export default function LiveSupportPage() {
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
-                    Escalated ({escalatedConversations.length})
+                    Escalated ({filteredEscalated.length})
                   </CardTitle>
                 </CardHeader>
-                {escalatedConversations.length > 0 && (
+                {filteredEscalated.length > 0 && (
                   <CardContent className="p-2">
                     <ScrollArea className="max-h-32">
                       <div className="space-y-1">
-                        {escalatedConversations.slice(0, 5).map(conv => (
+                        {filteredEscalated.slice(0, 5).map(conv => (
                           <ConversationItem
                             key={conv.id}
                             conversation={conv}
