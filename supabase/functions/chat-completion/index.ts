@@ -319,6 +319,15 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = getServiceClient();
 
+    // Load chat_settings from DB if not provided (e.g. telegram-ingest path)
+    let effectiveSettings: any = settings;
+    if (!effectiveSettings?.routingMode) {
+      const { data: cs } = await supabase
+        .from('site_settings').select('value').eq('key', 'chat_settings').maybeSingle();
+      effectiveSettings = { ...(cs?.value as any || {}), ...(settings || {}) };
+    }
+    const routingMode: string = effectiveSettings?.routingMode || 'ai_first';
+
     // Check if conversation is handled by a live agent
     if (conversationId) {
       const { data: conversation } = await supabase
@@ -333,6 +342,42 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
+    }
+
+    // Routing-mode gate (channel-agnostic). Applies BEFORE AI is invoked.
+    if (routingMode === 'human_only' || routingMode === 'human_first') {
+      // Count agents currently reachable
+      const { count: onlineCount } = await supabase
+        .from('support_agents')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['online', 'away']);
+      const agentsOnline = (onlineCount ?? 0) > 0;
+
+      const routeToHuman = routingMode === 'human_only' || agentsOnline;
+      if (routeToHuman) {
+        // Move conversation into the human queue
+        if (conversationId) {
+          await supabase
+            .from('chat_conversations')
+            .update({ conversation_status: 'waiting_agent', updated_at: new Date().toISOString() })
+            .eq('id', conversationId);
+          const handoffMsg = agentsOnline
+            ? 'Thanks — an agent will respond shortly.'
+            : 'Thanks for your message. Our team is currently offline; we\'ll get back to you as soon as we\'re back.';
+          await supabase.from('chat_messages').insert({
+            conversation_id: conversationId,
+            role: 'system',
+            source: 'system',
+            content: handoffMsg,
+            metadata: { event: 'routing_mode_handoff', routing_mode: routingMode, agents_online: agentsOnline },
+          });
+        }
+        return new Response(
+          JSON.stringify({ skipped: true, reason: `routing_mode=${routingMode}`, queued_for_agent: true, agents_online: agentsOnline }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+      // human_first + no agents online → fall through to AI
     }
 
     // Load integrations config
