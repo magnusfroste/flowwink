@@ -15,6 +15,7 @@ interface SupportAgent {
   last_seen_at: string;
   created_at: string;
   updated_at: string;
+  supported_channels?: string[] | null;
 }
 
 interface OnlineAgent {
