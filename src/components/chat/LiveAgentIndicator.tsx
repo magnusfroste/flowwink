@@ -1,22 +1,40 @@
-import { User } from 'lucide-react';
+import { type SupportChannel, channelMeta } from '@/lib/support-channels';
 import { cn } from '@/lib/utils';
 
 interface LiveAgentIndicatorProps {
   className?: string;
+  channel?: SupportChannel;
+  agentName?: string;
 }
 
-export function LiveAgentIndicator({ className }: LiveAgentIndicatorProps) {
+export function LiveAgentIndicator({ className, channel = 'web', agentName }: LiveAgentIndicatorProps) {
+  const meta = channelMeta[channel];
+  const Icon = meta.icon;
+
+  const copy = (() => {
+    const who = agentName ? `with ${agentName}` : 'with a live agent';
+    switch (channel) {
+      case 'telegram': return `You're now connected to ${who} on Telegram`;
+      case 'sms':      return `${agentName ?? 'A live agent'} is replying by SMS`;
+      case 'voice':    return `${agentName ?? 'A live agent'} is on the line`;
+      case 'voicemail':return `${agentName ?? 'A live agent'} will follow up on your voicemail`;
+      case 'web':
+      default:         return `You are now chatting ${who}`;
+    }
+  })();
+
   return (
     <div className={cn(
-      'flex items-center gap-2 px-4 py-2.5 bg-primary/10 border-b border-primary/20',
+      'flex items-center gap-2 px-4 py-2.5 border-b',
+      meta.bg, 'border-current/20',
       className
     )}>
       <div className="relative">
-        <User className="h-4 w-4 text-primary" />
+        <Icon className={cn('h-4 w-4', meta.color)} />
         <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
       </div>
-      <span className="text-sm font-medium text-primary">
-        You are now chatting with a live agent
+      <span className={cn('text-sm font-medium', meta.color)}>
+        {copy}
       </span>
     </div>
   );
