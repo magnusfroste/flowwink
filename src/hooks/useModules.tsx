@@ -192,6 +192,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'communication',
     autonomy: 'view-required',
     adminUI: true,
+    optionalIntegrations: ['telegram'],
   },
   newsletter: {
     enabled: false,

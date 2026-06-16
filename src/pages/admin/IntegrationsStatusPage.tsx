@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { IntegrationTestPanel } from "@/components/admin/integrations/IntegrationTestPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import {
@@ -1394,7 +1395,7 @@ export default function IntegrationsStatusPage() {
                 <SheetTitle>{integration.name}</SheetTitle>
                 <SheetDescription>{integration.description}</SheetDescription>
               </SheetHeader>
-              <div className="flex-1 py-4">
+              <div className="flex-1 py-4 space-y-4">
                 <IntegrationConfigPanel
                   integrationKey={openDrawerKey}
                   config={effectiveConfig}
@@ -1402,6 +1403,7 @@ export default function IntegrationsStatusPage() {
                   hasKey={hasKey}
                   isEnabled={isEnabled}
                 />
+                <IntegrationTestPanel providerKey={openDrawerKey as string} hasKey={hasKey} />
               </div>
               <SheetFooter className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={closeDrawer} className="flex-1">

@@ -29,7 +29,9 @@ import {
   PhoneCall,
   Voicemail as VoicemailIcon,
   Plug,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -40,7 +42,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChannelFilter } from '@/components/admin/live-support/ChannelFilter';
 import { ChannelToggleGroup } from '@/components/admin/live-support/ChannelToggleGroup';
-import { TelegramIntegrationCard, TwilioIntegrationPlaceholder } from '@/components/admin/live-support/TelegramIntegrationCard';
+import { TelegramChannelStatus } from '@/components/admin/live-support/TelegramChannelStatus';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
 import { ALL_CHANNELS, ChannelChip, ChannelIcon, channelMeta, getChannel, type SupportChannel } from '@/lib/support-channels';
@@ -556,8 +558,14 @@ export default function LiveSupportPage() {
 
             <TabsContent value="integrations" className="flex-1 min-h-0 mt-2 p-4 overflow-auto">
               <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
-                <TelegramIntegrationCard />
-                <TwilioIntegrationPlaceholder />
+                <TelegramChannelStatus />
+              </div>
+              <div className="max-w-4xl mt-4 text-xs text-muted-foreground">
+                Provider credentials, webhook registration, and connection tests live under{' '}
+                <Link to="/admin/integrations" className="underline inline-flex items-center gap-1">
+                  Integrations <ExternalLink className="h-3 w-3" />
+                </Link>
+                . This tab only configures how channels are used here.
               </div>
             </TabsContent>
           </Tabs>
