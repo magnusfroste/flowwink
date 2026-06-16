@@ -876,18 +876,33 @@ function IntegrationConfigPanel({
               <Copy className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>Where to paste in Twilio Console:</strong></p>
-            <ol className="list-decimal list-inside space-y-0.5 pl-1">
-              <li>Log in to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">console.twilio.com</a></li>
-              <li>Left sidebar: <strong>Phone Numbers</strong> → <strong>Manage</strong> → <strong>Active Numbers</strong></li>
-              <li>Click your SMS-enabled phone number</li>
-              <li>Scroll to <strong>Messaging configuration</strong> (not "Voice & Fax")</li>
-              <li>Under <em>"A message comes in"</em> — change dropdown to <strong>Webhook</strong></li>
-              <li>Paste the URL above, set HTTP method to <strong>POST</strong></li>
-              <li>Click <strong>Save configuration</strong></li>
-            </ol>
-            <p className="pt-1">
+          <div className="text-xs text-muted-foreground space-y-2">
+            <p><strong>Two ways to configure — pick one:</strong></p>
+            <div className="space-y-1">
+              <p className="font-medium">Option A — TwiML App (recommended for multiple numbers)</p>
+              <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                <li>Log in to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">console.twilio.com</a></li>
+                <li>Left sidebar: <strong>Twilio Apps</strong> (or <strong>Develop</strong> → <strong>TwiML Apps</strong>)</li>
+                <li>Click <strong>Create new TwiML App</strong> → give it a name (e.g. "FlowWink SMS")</li>
+                <li>Under <strong>Messaging</strong> → <em>Request URL</em>: paste the URL above, set method to <strong>POST</strong></li>
+                <li>Save the app, then go to <strong>Phone Numbers</strong> → <strong>Active Numbers</strong></li>
+                <li>Click your number → under <strong>Messaging configuration</strong> → <em>"A message comes in"</em> dropdown: select your TwiML App</li>
+                <li>Click <strong>Save configuration</strong></li>
+              </ol>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium">Option B — Direct webhook on number</p>
+              <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                <li>Log in to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">console.twilio.com</a></li>
+                <li>Left sidebar: <strong>Phone Numbers</strong> → <strong>Manage</strong> → <strong>Active Numbers</strong></li>
+                <li>Click your SMS-enabled phone number</li>
+                <li>Scroll to <strong>Messaging configuration</strong> (not "Voice & Fax")</li>
+                <li>Under <em>"A message comes in"</em> — change dropdown to <strong>Webhook</strong></li>
+                <li>Paste the URL above, set HTTP method to <strong>POST</strong></li>
+                <li>Click <strong>Save configuration</strong></li>
+              </ol>
+            </div>
+            <p className="pt-1 text-amber-600 dark:text-amber-400">
               Enable <strong>SMS Pumping Protection</strong> and <strong>Geo Permissions</strong> before going live.
             </p>
           </div>
