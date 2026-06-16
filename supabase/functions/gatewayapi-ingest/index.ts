@@ -130,7 +130,7 @@ async function handleIngest(req: Request): Promise<Response> {
           channel: "sms", channel_thread_id: threadId,
           customer_name: fromName, scope: "visitor", conversation_status: "waiting_agent",
           title: `SMS · ${fromName}`,
-          metadata: { sms_provider: "gatewayapi", gatewayapi_message_id: msgId, from: normalizedFrom, to, keyword: msgKeyword },
+          visitor_profile: { sms_provider: "gatewayapi", gatewayapi_message_id: msgId, from: normalizedFrom, to, keyword: msgKeyword },
         })
         .select("id").single();
       if (insErr) throw insErr;

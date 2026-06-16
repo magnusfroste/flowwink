@@ -109,6 +109,7 @@ async function handleIngest(req: Request): Promise<Response> {
           channel: "sms", channel_thread_id: threadId,
           customer_name: fromName, scope: "visitor", conversation_status: "waiting_agent",
           title: `SMS · ${fromName}`,
+          visitor_profile: { sms_provider: "twilio", twilio_message_sid: messageSid, from, to },
         })
         .select("id").single();
       if (insErr) throw insErr;
@@ -124,7 +125,7 @@ async function handleIngest(req: Request): Promise<Response> {
 
     await supabase.from("chat_messages").insert({
       conversation_id: conversationId, role: "user", source: "sms", content: text,
-      metadata: { twilio_message_sid: messageSid, from, to, sms_provider: "twilio" },
+      metadata: { twilio_message_sid: messageSid, from, to },
     });
 
     if (assignedAgent && (status === "with_agent" || status === "waiting_agent")) {
