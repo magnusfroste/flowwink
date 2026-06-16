@@ -105,6 +105,7 @@ export interface IntegrationsSettings {
   composio: IntegrationConfig;
   searxng: IntegrationConfig;
   telegram: IntegrationConfig;
+  twilio: IntegrationConfig;
 }
 
 
