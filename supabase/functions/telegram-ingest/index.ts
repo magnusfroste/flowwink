@@ -2,42 +2,50 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
- * Telegram Ingest — inbound channel adapter (Contact Center, Fas 1).
+ * Telegram channel adapter — consolidated inbound + outbound.
  *
- * Telegram's Bot API delivers updates to this webhook. It normalizes the message into the
- * EXISTING conversation hub (chat_conversations + chat_messages) — channel='telegram',
- * channel_thread_id=<telegram chat id> — so a Telegram chat is just another thread in the
- * same inbox. If a human agent has taken the conversation, we store the inbound message and
- * stop (the agent answers from the inbox); otherwise FlowPilot (chat-completion) replies and
- * we send that reply back via the Telegram sendMessage API.
+ * Two modes (selected by `?action=send` query param):
+ *  - default (no query): INBOUND webhook from Telegram Bot API. Verifies the
+ *    X-Telegram-Bot-Api-Secret-Token header, normalizes the update into the
+ *    chat_conversations/chat_messages inbox (channel='telegram'), and if no
+ *    human agent owns the thread, lets FlowPilot reply via chat-completion.
+ *  - ?action=send: OUTBOUND from the Live Support UI after an admin posts a
+ *    chat_messages row. Requires an admin JWT; relays the message back to the
+ *    visitor's Telegram chat via sendMessage.
  *
- * Deploy with --no-verify-jwt: Telegram cannot present a Supabase JWT. Authenticity is
- * verified via the X-Telegram-Bot-Api-Secret-Token header (set when the webhook is registered
- * by manage_channel), compared against site_settings.integrations.telegram.config.webhook_secret.
+ * Deploy with --no-verify-jwt (Telegram cannot present a Supabase JWT; the send
+ * branch validates the bearer token itself).
  */
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-telegram-bot-api-secret-token",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const url = new URL(req.url);
+  const action = url.searchParams.get("action");
+
+  if (action === "send") return handleSend(req);
+  return handleIngest(req);
+});
+
+// ───────────────────────────────────────────── INBOUND (Telegram webhook)
+async function handleIngest(req: Request): Promise<Response> {
   const supabase = getServiceClient();
 
-  // Telegram config (bot token + webhook secret) lives in site_settings.integrations.
   const { data: settingRow } = await supabase
     .from("site_settings").select("value").eq("key", "integrations").maybeSingle();
   const tgConfig = ((settingRow?.value as any)?.telegram?.config) ?? {};
   const botToken: string = tgConfig.bot_token || Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
   const webhookSecret: string = tgConfig.webhook_secret || Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
 
-  // Verify the webhook secret Telegram echoes back (set at registration time).
   if (webhookSecret) {
     const got = req.headers.get("x-telegram-bot-api-secret-token");
     if (got !== webhookSecret) {
@@ -52,7 +60,6 @@ serve(async (req) => {
     const text: string | undefined = msg?.text;
     const chatId = msg?.chat?.id;
     if (!chatId || !text) {
-      // Non-text update (sticker, join, etc.) — ack so Telegram stops retrying.
       return json({ ok: true, skipped: "no text message" }, 200);
     }
 
@@ -60,7 +67,6 @@ serve(async (req) => {
     const fromName = [msg?.from?.first_name, msg?.from?.last_name].filter(Boolean).join(" ")
       || msg?.from?.username || "Telegram user";
 
-    // Find an open conversation for this Telegram thread, else create one.
     const { data: existing } = await supabase
       .from("chat_conversations")
       .select("id, conversation_status, assigned_agent_id")
@@ -71,7 +77,7 @@ serve(async (req) => {
 
     let conversationId = existing?.id as string | undefined;
     let status = existing?.conversation_status as string | undefined;
-    let assignedAgent = existing?.assigned_agent_id as string | undefined;
+    const assignedAgent = existing?.assigned_agent_id as string | undefined;
 
     if (!conversationId) {
       const { data: created, error: insErr } = await supabase
@@ -86,8 +92,6 @@ serve(async (req) => {
       conversationId = created.id;
       status = "waiting_agent";
     } else if (status === "active") {
-      // Telegram is an operator-facing support channel, so keep existing Telegram threads
-      // visible in the Live Support queue even though web-widget AI conversations use "active".
       const { error: updateErr } = await supabase
         .from("chat_conversations")
         .update({ conversation_status: "waiting_agent", updated_at: new Date().toISOString() })
@@ -96,19 +100,15 @@ serve(async (req) => {
       status = "waiting_agent";
     }
 
-    // Persist the inbound message.
     await supabase.from("chat_messages").insert({
       conversation_id: conversationId, role: "user", source: "telegram", content: text,
       metadata: { telegram_message_id: msg?.message_id, from: msg?.from },
     });
 
-    // If a human agent owns the conversation, don't let FlowPilot answer — the agent replies
-    // from the inbox. (Agent→Telegram outbound is wired via send_channel_message; see notes.)
     if (assignedAgent && (status === "with_agent" || status === "waiting_agent")) {
       return json({ ok: true, queued_for_agent: true }, 200);
     }
 
-    // FlowPilot answers via the same endpoint the web widget uses.
     const aiResp = await fetch(`${supabaseUrl}/functions/v1/chat-completion`, {
       method: "POST",
       headers: {
@@ -130,10 +130,77 @@ serve(async (req) => {
     return json({ ok: true, replied: !!reply }, 200);
   } catch (err: any) {
     console.error("[telegram-ingest] error:", err?.message ?? err);
-    // Always 200 to Telegram to avoid a retry storm; surface the error in the body.
     return json({ ok: false, error: err?.message ?? "error" }, 200);
   }
-});
+}
+
+// ───────────────────────────────────────────── OUTBOUND (admin → Telegram)
+async function handleSend(req: Request): Promise<Response> {
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+
+  try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) return json({ error: "missing bearer token" }, 401);
+
+    const supabase = getServiceClient();
+
+    const { data: userData, error: userErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) return json({ error: "unauthorized" }, 401);
+    const { data: hasAdmin } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "admin",
+    });
+    if (!hasAdmin) return json({ error: "forbidden" }, 403);
+
+    const body = (await req.json().catch(() => ({}))) as {
+      conversation_id?: string; message_id?: string; content?: string;
+    };
+    const conversationId = body.conversation_id;
+    let content = body.content;
+    if (!conversationId) return json({ error: "conversation_id required" }, 400);
+
+    const { data: conv, error: convErr } = await supabase
+      .from("chat_conversations")
+      .select("id, channel, channel_thread_id")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (convErr || !conv) return json({ error: "conversation not found" }, 404);
+    if (conv.channel !== "telegram") return json({ ok: true, skipped: "not telegram" });
+    if (!conv.channel_thread_id) return json({ error: "missing channel_thread_id" }, 400);
+
+    if (!content && body.message_id) {
+      const { data: msg } = await supabase
+        .from("chat_messages")
+        .select("content")
+        .eq("id", body.message_id)
+        .maybeSingle();
+      content = msg?.content ?? undefined;
+    }
+    if (!content || !content.trim()) return json({ error: "no content" }, 400);
+
+    const { data: settingRow } = await supabase
+      .from("site_settings").select("value").eq("key", "integrations").maybeSingle();
+    const tgConfig = ((settingRow?.value as any)?.telegram?.config) ?? {};
+    const botToken: string = tgConfig.bot_token || Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
+    if (!botToken) return json({ error: "telegram bot token not configured" }, 500);
+
+    const tgResp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: conv.channel_thread_id, text: content }),
+    });
+    const tgData = await tgResp.json().catch(() => ({}));
+    if (!tgResp.ok || tgData?.ok === false) {
+      console.error("[telegram-ingest:send] failed", tgResp.status, tgData);
+      return json({ error: "telegram api failed", status: tgResp.status, telegram: tgData }, 502);
+    }
+
+    return json({ ok: true, telegram_message_id: tgData?.result?.message_id ?? null });
+  } catch (err: any) {
+    console.error("[telegram-ingest:send] error", err?.message ?? err);
+    return json({ error: err?.message ?? "internal error" }, 500);
+  }
+}
 
 async function sendTelegram(botToken: string, chatId: number | string, text: string) {
   const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -144,7 +211,7 @@ async function sendTelegram(botToken: string, chatId: number | string, text: str
   if (!resp.ok) console.error("[telegram-ingest] sendMessage failed:", resp.status, await resp.text());
 }
 
-function json(payload: unknown, status: number) {
+function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
