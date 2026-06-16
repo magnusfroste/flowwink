@@ -213,13 +213,13 @@ export default function LiveSupportPage() {
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Active ({assignedConversations.length})
+                    Active ({filteredAssigned.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0 p-0">
                   <ScrollArea className="h-full">
                     <div className="space-y-1 p-2">
-                      {assignedConversations.map(conv => (
+                      {filteredAssigned.map(conv => (
                         <ConversationItem
                           key={conv.id}
                           conversation={conv}
@@ -227,7 +227,7 @@ export default function LiveSupportPage() {
                           onClick={() => setSelectedConversationId(conv.id)}
                         />
                       ))}
-                      {assignedConversations.length === 0 && (
+                      {filteredAssigned.length === 0 && (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           No active conversations
                         </p>
