@@ -558,8 +558,14 @@ export default function LiveSupportPage() {
 
             <TabsContent value="integrations" className="flex-1 min-h-0 mt-2 p-4 overflow-auto">
               <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
-                <TelegramIntegrationCard />
-                <TwilioIntegrationPlaceholder />
+                <TelegramChannelStatus />
+              </div>
+              <div className="max-w-4xl mt-4 text-xs text-muted-foreground">
+                Provider credentials, webhook registration, and connection tests live under{' '}
+                <Link to="/admin/integrations" className="underline inline-flex items-center gap-1">
+                  Integrations <ExternalLink className="h-3 w-3" />
+                </Link>
+                . This tab only configures how channels are used here.
               </div>
             </TabsContent>
           </Tabs>
