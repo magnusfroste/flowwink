@@ -391,6 +391,17 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://core.telegram.org/bots#how-do-i-create-a-bot',
     docsLabel: 'Create bot in BotFather',
   },
+  twilio: {
+    name: 'Twilio',
+    description: 'SMS (and voice) channel. Inbound webhook routes to FlowPilot via chat-completion; outbound replies sent through the Twilio gateway.',
+    icon: 'MessageSquare',
+    category: 'communication',
+    features: ['Inbound SMS', 'Outbound SMS', 'Agent takeover', 'Voice-ready'],
+    secretName: 'TWILIO_API_KEY',
+    docsUrl: 'https://console.twilio.com/',
+    docsLabel: 'Open Twilio Console',
+    config: { from_number: '' },
+  },
 
 };
 
