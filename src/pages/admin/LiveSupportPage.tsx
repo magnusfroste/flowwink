@@ -242,13 +242,13 @@ export default function LiveSupportPage() {
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Clock className="h-4 w-4 text-yellow-500" />
-                    Waiting ({waitingConversations.length})
+                    Waiting ({filteredWaiting.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-0 p-0">
                   <ScrollArea className="h-full">
                     <div className="space-y-1 p-2">
-                      {waitingConversations.map(conv => (
+                      {filteredWaiting.map(conv => (
                         <ConversationItem
                           key={conv.id}
                           conversation={conv}
@@ -258,7 +258,7 @@ export default function LiveSupportPage() {
                           onClaim={() => claimConversation.mutate(conv.id)}
                         />
                       ))}
-                      {waitingConversations.length === 0 && (
+                      {filteredWaiting.length === 0 && (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           No waiting conversations
                         </p>
