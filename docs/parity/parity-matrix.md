@@ -9,12 +9,13 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 53  ·  **Mean parity:** 60%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
+**Benchmarked modules:** 54  ·  **Mean parity:** 59%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 0
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
+| **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `███░░░░░░░` 27% | 0/3/3 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `████░░░░░░` 41% | 5/2/6 | — |
@@ -88,6 +89,7 @@ category: reference
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
+| contact-center | Presence-aware routing → queue → escalation | partial | — |
 | invoicing | Recurring/subscription invoices | partial | — |
 | manufacturing | Work centers + routing operations | partial | — |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |

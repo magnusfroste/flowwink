@@ -1,0 +1,67 @@
+{
+  "module": "contact-center",
+  "odoo_app": "Live Chat + Helpdesk (omnichannel routing, VOIP voicemail)",
+  "current_maturity": "L1",
+  "target_maturity": "L3",
+  "capabilities": [
+    {
+      "id": "agent_routing",
+      "name": "Presence-aware routing → queue → escalation",
+      "odoo": true,
+      "status": "partial",
+      "weight": 3,
+      "verify": "route_conversation_to_agent RPC + support-router edge function (migration 20260616170000); scratch-Postgres verified 2026-06-16 (least-loaded assignment, idempotent re-route, channel filter, queue fallback, escalation row, unknown-conv guard). Fixes the chat handoff that POSTed to a non-existent support-router (404).",
+      "notes": "Fas 0. Single routing primitive shared by chat handoff and future channel adapters (Law 1). Stage-3: live runtime verify + admin UI sign-off pending."
+    },
+    {
+      "id": "omnichannel_schema",
+      "name": "Channel dimension + contact identity on conversations",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "chat_conversations.channel/.channel_thread_id/.contact_phone/.contact_id + support_agents.supported_channels (migration 20260616170000). Unified Inbox UI (already merged) reads these.",
+      "notes": "Fas 0. Lays the contract the merged Lovable UI is hardcoded against."
+    },
+    {
+      "id": "voicemail_store",
+      "name": "Voicemail store",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "voicemail_messages table (migration 20260616170000); VoicemailPanel reads it. Transcription + analysis skill is Fas 2.",
+      "notes": "Fas 0 lays the table; handle_voicemail skill lands in Fas 2."
+    },
+    {
+      "id": "telegram_channel",
+      "name": "Telegram inbound/outbound adapter",
+      "odoo": false,
+      "status": "missing",
+      "weight": 2,
+      "verify": "telegram-ingest + telegram-send edge functions + manage_channel skill (Fas 1)"
+    },
+    {
+      "id": "callback_offer",
+      "name": "Callback offer + scheduling",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "request_callback skill wrapping book_appointment_slot; rides bookings.metadata.kind='callback' (Fas 2)"
+    },
+    {
+      "id": "voicemail_transcription",
+      "name": "Voicemail → transcription → FlowPilot intent",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "transcribe-voicemail edge function mirroring extract-pdf-text + parse-resume; handle_voicemail skill (Fas 2)"
+    },
+    {
+      "id": "live_voice",
+      "name": "Two-way live voice (WebRTC/PSTN)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "Deferred (Fas 3) — voice v1 is fallback-only (callback + voicemail) per product decision 2026-06-16"
+    }
+  ]
+}
