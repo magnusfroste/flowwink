@@ -380,6 +380,17 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       url: '',
     },
   },
+  telegram: {
+    name: 'Telegram',
+    description: 'Inbound + outbound chat via your Telegram bot. Webhook URL is derived automatically from this instance — you only set the bot token.',
+    icon: 'Send',
+    category: 'communication',
+    features: ['Two-way messaging', 'Agent takeover', 'Callbacks'],
+    secretName: 'TELEGRAM_BOT_TOKEN',
+    docsUrl: 'https://core.telegram.org/bots#how-do-i-create-a-bot',
+    docsLabel: 'Create bot in BotFather',
+  },
+
 };
 
 // Category definitions
