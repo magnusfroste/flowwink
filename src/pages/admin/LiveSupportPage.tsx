@@ -420,7 +420,7 @@ export default function LiveSupportPage() {
                         <Input
                           value={messageInput}
                           onChange={(e) => setMessageInput(e.target.value)}
-                          placeholder="Type your message..."
+                          placeholder={channelMeta[selectedChannel].composerPlaceholder}
                           disabled={sendMessage.isPending}
                         />
                         <Button type="submit" disabled={sendMessage.isPending || !messageInput.trim()}>
