@@ -173,6 +173,55 @@ const INVOICING_SKILLS: SkillSeed[] = [
     },
     instructions: 'Query invoices with status=sent and due_date < today. Report count and total amount. If auto_flag is true, update their status to overdue. Format output showing invoice number, customer, amount, and days overdue.',
   },
+  {
+    name: 'create_credit_note',
+    description: 'Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document. NOT for: editing the original invoice (manage_invoice) or recording payment.',
+    category: 'commerce',
+    handler: 'rpc:create_credit_note',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'create_credit_note',
+        description: 'Creates a credit_note invoice linked to the original (credited_invoice_id), with negative totals. Omit p_amount_cents for a full credit; pass it (≤ invoice total) for a partial credit. Numbered CN-<invoice>-<n>.',
+        parameters: {
+          type: 'object',
+          required: ['p_invoice_id'],
+          properties: {
+            p_invoice_id: { type: 'string', format: 'uuid' },
+            p_reason: { type: 'string' },
+            p_amount_cents: { type: 'number', description: 'Partial credit amount; omit for full credit' },
+          },
+        },
+      },
+    },
+    instructions: 'Full credit negates subtotal/tax/total of the original; partial credit creates a -p_amount_cents credit. Over-crediting (> invoice total) and crediting a credit note are rejected. Admin/service-role only.',
+  },
+  {
+    name: 'record_invoice_payment',
+    description: 'Record a manual payment (cash/Swish/card, no bank transaction) against an invoice; tracks paid_amount_cents and marks the invoice paid when fully settled. Use when: logging a payment received outside the bank feed. NOT for: bank-feed matching (reconcile via reconciliation) or refunds/credit notes (create_credit_note).',
+    category: 'commerce',
+    handler: 'rpc:record_invoice_payment',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'record_invoice_payment',
+        description: 'Adds a payment to an invoice (partial allowed). Increments paid_amount_cents, rejects overpayment, sets status=paid + paid_at when the balance reaches zero. Returns remaining_cents.',
+        parameters: {
+          type: 'object',
+          required: ['p_invoice_id', 'p_amount_cents'],
+          properties: {
+            p_invoice_id: { type: 'string', format: 'uuid' },
+            p_amount_cents: { type: 'number' },
+            p_method: { type: 'string', description: 'cash|swish|card|manual|…' },
+            p_paid_at: { type: 'string', description: 'ISO timestamp (default now)' },
+          },
+        },
+      },
+    },
+    instructions: 'Partial payments accumulate in paid_amount_cents; the invoice flips to paid only when fully settled. Overpayment is rejected (use create_credit_note for corrections). Complements the bank-reconciliation payment path. Admin/approver/service-role only.',
+  },
 ];
 
 const INVOICING_AUTOMATIONS: AutomationSeed[] = [
@@ -198,7 +247,7 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
   inputSchema: invoicingInputSchema,
   outputSchema: invoicingOutputSchema,
 
-  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid'],
+  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid', 'create_credit_note', 'record_invoice_payment'],
   skillSeeds: INVOICING_SKILLS,
   automations: INVOICING_AUTOMATIONS,
 

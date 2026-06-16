@@ -6,7 +6,7 @@
   "capabilities": [
     {
       "id": "lifecycle",
-      "name": "Invoice lifecycle draft→sent→paid",
+      "name": "Invoice lifecycle draft\u2192sent\u2192paid",
       "odoo": true,
       "status": "done",
       "weight": 1,
@@ -66,24 +66,26 @@
       "odoo": true,
       "status": "partial",
       "weight": 3,
-      "verify": "subscription-billing-cron (due manual subs → invoice) + generate_subscription_invoice skill + subscriptions.next_invoice_date/billing_interval",
-      "notes": "Verify-first 2026-06-12: engine already exists for invoice-billed (manual) subscriptions — audit 'missing' was stale. Remaining: proration (P1.1), card-provider recurring is Stripe-native."
+      "verify": "subscription-billing-cron (due manual subs \u2192 invoice) + generate_subscription_invoice skill + subscriptions.next_invoice_date/billing_interval",
+      "notes": "Verify-first 2026-06-12: engine already exists for invoice-billed (manual) subscriptions \u2014 audit 'missing' was stale. Remaining: proration (P1.1), card-provider recurring is Stripe-native."
     },
     {
       "id": "credit_notes",
       "name": "Credit/debit notes",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "credit and debit notes"
+      "verify": "invoices.invoice_type + credited_invoice_id + create_credit_note RPC/skill (full negates original, partial = -amount, over-credit rejected) (migration 20260614090000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: full credit -12500, partial -5000, CN-<inv>-n numbering, over-credit + credit-a-credit-note rejected. Pending: credit-note UI + ledger reversal posting + Stage-3 before done."
     },
     {
       "id": "partial_payment",
       "name": "Partial/over/under payment handling",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "partial/over/under payment handling"
+      "verify": "invoices.paid_amount_cents tracked by reconcile_invoice_payments (bank path) + record_invoice_payment RPC/skill (manual partial payments, overpay rejected, status\u2192paid when settled) (migration 20260614100000)",
+      "notes": "Bank-rec partial/over/under already existed; added manual payment path. Scratch-Postgres verified 2026-06-14: 5000 then 7500 on a 12500 invoice \u2192 remaining 7500 then 0/status paid/paid_at set; overpay rejected. Pending: payments UI + Stage-3 before done."
     },
     {
       "id": "invoice_templates",
