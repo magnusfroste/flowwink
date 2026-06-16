@@ -13049,6 +13049,46 @@ export type Database = {
           last_status: string
         }[]
       }
+      get_contract_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          accept_token: string | null
+          body_markdown: string | null
+          body_updated_at: string | null
+          contract_type: Database["public"]["Enums"]["contract_type"]
+          counterparty_email: string | null
+          counterparty_name: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          renewal_notice_days: number | null
+          renewal_type: Database["public"]["Enums"]["renewal_type"]
+          sent_at: string | null
+          signed_at: string | null
+          signer_email: string | null
+          signer_ip: string | null
+          signer_name: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["contract_status"]
+          template_id: string | null
+          terminated_at: string | null
+          title: string
+          updated_at: string
+          value_cents: number | null
+          version: number
+          viewed_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "contracts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -13125,6 +13165,54 @@ export type Database = {
       get_order_status: {
         Args: { p_email?: string; p_id: string }
         Returns: Json
+      }
+      get_quote_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          accept_token: string | null
+          accepted_at: string | null
+          approval_request_id: string | null
+          company_id: string | null
+          converted_at: string | null
+          converted_to_invoice_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_address: string | null
+          customer_company: string | null
+          customer_email: string | null
+          customer_name: string | null
+          deal_id: string | null
+          discount_cents: number
+          exchange_rate: number
+          id: string
+          intro_text: string | null
+          invoice_id: string | null
+          lead_id: string | null
+          line_items: Json
+          notes: string | null
+          quote_number: string
+          rejected_at: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents: number
+          tax_cents: number
+          tax_rate: number
+          template_id: string | null
+          terms_text: string | null
+          title: string | null
+          total_cents: number
+          updated_at: string
+          valid_until: string | null
+          version: number
+          viewed_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_support_agent_user_id: {
         Args: { p_agent_id: string }
@@ -14021,6 +14109,34 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sign_contract_by_token: {
+        Args: {
+          p_signature_data?: string
+          p_signer_email: string
+          p_signer_ip?: string
+          p_signer_name: string
+          p_token: string
+          p_user_agent?: string
+        }
+        Returns: {
+          action: string
+          comment: string | null
+          contract_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          signature_data: string | null
+          signer_email: string | null
+          signer_name: string | null
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contract_signatures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       sign_employment_contract: {
         Args: { p_contract_id: string; p_side?: string }
         Returns: {

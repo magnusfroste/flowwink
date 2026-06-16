@@ -4,11 +4,34 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatFeedback } from './ChatFeedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import DOMPurify from 'dompurify';
 
-// Simple markdown parser for chat messages
-function parseMarkdown(text: string): string {
+// Escape any raw HTML in user-supplied text so markdown can't be used to inject tags
+function escapeHtml(text: string): string {
   return text
-    // Code blocks (must be before inline code)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Only allow safe URL schemes for links
+function isSafeUrl(url: string): boolean {
+  try {
+    const trimmed = url.trim();
+    if (trimmed.startsWith('/') || trimmed.startsWith('#')) return true;
+    const parsed = new URL(trimmed, 'https://example.com');
+    return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+// Simple markdown parser for chat messages — escape first, then apply markdown, then sanitize
+function parseMarkdown(text: string): string {
+  const html = escapeHtml(text)
+    // Code blocks (must be before inline code) — content already escaped
     .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
     // Inline code
     .replace(/`([^`]+)`/g, '<code class="bg-muted-foreground/20 px-1 py-0.5 rounded text-sm">$1</code>')
@@ -16,10 +39,19 @@ function parseMarkdown(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     // Italic
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline">$1</a>')
+    // Links — reject non-http(s)/mailto/tel/relative URLs
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
+      if (!isSafeUrl(url)) return label;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${label}</a>`;
+    })
     // Line breaks
     .replace(/\n/g, '<br />');
+
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['a', 'br', 'code', 'pre', 'strong', 'em'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[/#])/i,
+  });
 }
 
 interface AgentInfo {
