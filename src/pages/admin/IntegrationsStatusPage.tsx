@@ -1184,7 +1184,7 @@ export default function IntegrationsStatusPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader
-          title="Integrations"
+          title="Integrations Hub"
           description="Manage external service integrations"
         />
         {hasSecretsError && (
