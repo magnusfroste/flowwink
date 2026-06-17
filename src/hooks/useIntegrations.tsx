@@ -406,6 +406,28 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Open Twilio Console',
     config: { from_number: '' },
   },
+  gatewayapi: {
+    name: 'GatewayAPI',
+    description: 'Danish SMS provider. Shared numbers (keyword-based) or dedicated numbers. No subscription, pay-per-SMS.',
+    icon: 'MessageSquare',
+    category: 'communication',
+    features: ['Inbound SMS', 'Outbound SMS', 'Shared numbers', 'EU-hosted'],
+    secretName: 'GATEWAYAPI_API_KEY',
+    docsUrl: 'https://gatewayapi.com/',
+    docsLabel: 'Open GatewayAPI',
+    config: { sender_id: 'Flowwink', keyword: '' },
+  },
+  elks46: {
+    name: '46elks',
+    description: 'Swedish SMS + Voice provider (Uppsala). Pay-as-you-go, dedicated Swedish numbers, no subscription. Voice supports WebSocket streaming for real-time AI agents.',
+    icon: 'Phone',
+    category: 'communication',
+    features: ['Inbound/Outbound SMS', 'Voice calls', 'Swedish numbers', 'EU-hosted', 'Voice streaming (AI-ready)'],
+    secretName: 'ELKS46_API_PASSWORD',
+    docsUrl: 'https://46elks.se/',
+    docsLabel: 'Open 46elks',
+    config: { from_number: '', voice_webhook_url: '' },
+  },
 
 };
 
