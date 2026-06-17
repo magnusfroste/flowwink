@@ -161,6 +161,24 @@ verify_jwt = false
 [functions.web-search]
 verify_jwt = false
 
+# ─────────────────────────────────────────────────────────────────────
+# Contact Center inbound channel webhooks — external providers (Telegram,
+# Twilio, 46elks, GatewayAPI) POST here with NO Supabase JWT. Each verifies
+# its own provider secret/signature inside the handler. verify_jwt MUST be
+# false or the gateway 401s every inbound message before the function runs.
+# ─────────────────────────────────────────────────────────────────────
+[functions.telegram-ingest]
+verify_jwt = false
+
+[functions.twilio-ingest]
+verify_jwt = false
+
+[functions.elks46-ingest]
+verify_jwt = false
+
+[functions.gatewayapi-ingest]
+verify_jwt = false
+
 # Agent-called edge functions (invoked server-to-server by agent-execute with the
 # service role key). These MUST be verify_jwt=false on instances where the edge
 # runtime's SERVICE_ROLE_KEY doesn't match the gateway JWT secret — otherwise the
@@ -220,4 +238,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.signal-ingest]
+verify_jwt = false
+
+# Contact Center: support-router is called by chat-completion (handoff), and
+# contact-center is the edge:contact-center multi-skill router called by
+# agent-execute — both server-to-server with the service key.
+[functions.support-router]
+verify_jwt = false
+
+[functions.contact-center]
 verify_jwt = false
