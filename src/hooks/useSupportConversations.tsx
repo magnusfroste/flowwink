@@ -363,7 +363,10 @@ export function useConversationMessages(conversationId: string | null) {
         if (conv?.channel === 'sms') {
           // Determine which SMS provider to use based on conversation visitor_profile
           const smsProvider = (conv?.visitor_profile as any)?.sms_provider ?? 'twilio';
-          const functionName = smsProvider === 'gatewayapi' ? 'gatewayapi-ingest' : 'twilio-ingest';
+          const functionName =
+            smsProvider === 'gatewayapi' ? 'gatewayapi-ingest'
+            : smsProvider === 'elks46' ? 'elks46-ingest'
+            : 'twilio-ingest';
           const relayResp = await fetch(
             `${baseUrl}/functions/v1/${functionName}?action=send`,
             {

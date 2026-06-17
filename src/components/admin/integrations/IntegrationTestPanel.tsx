@@ -186,6 +186,38 @@ function useProviderActions(key: string): ProviderSpec | null {
           ],
         };
       }
+      case 'elks46': {
+        const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+        const smsWebhookUrl = base ? `${base}/functions/v1/elks46-ingest` : '';
+        return {
+          derived: [
+            {
+              label: 'SMS webhook URL (auto-derived)',
+              value: smsWebhookUrl,
+              hint: 'Paste this into 46elks Dashboard → Your number → SMS URL (POST).',
+            },
+            {
+              label: 'Voice webhook URL (auto-derived)',
+              value: smsWebhookUrl,
+              hint: 'Same endpoint handles incoming voice calls — paste into Voice Start URL on your number.',
+            },
+          ],
+          actions: [
+            {
+              label: 'Test connection',
+              run: async () => {
+                const { data, error } = await supabase.functions.invoke('elks46-ingest', {
+                  body: { action: 'test' },
+                });
+                if (error) throw error;
+                const payload = data as any;
+                if (payload?.error) throw new Error(payload.error + (payload.details ? ` — ${payload.details}` : ''));
+                toast.success(`46elks connected — ${payload?.numbers_found ?? 0} number(s), balance: ${payload?.balance ?? '?'} ${payload?.currency ?? ''}`);
+              },
+            },
+          ],
+        };
+      }
       default:
         return null;
     }

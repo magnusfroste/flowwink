@@ -31,6 +31,7 @@ interface IntegrationStatus {
     telegram: boolean;
     twilio: boolean;
     gatewayapi: boolean;
+    elks46: boolean;
   };
 }
 

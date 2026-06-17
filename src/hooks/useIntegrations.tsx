@@ -65,8 +65,13 @@ export interface IntegrationProviderConfig {
   url?: string;
   // Web-data provider fallback order (firecrawl/searxng/jina). 1 = try first.
   priority?: number;
-  // Twilio — E.164 sender number for SMS replies (e.g. +46701234567)
+  // Twilio / 46elks — E.164 sender number for SMS replies (e.g. +46701234567)
   from_number?: string;
+  // GatewayAPI
+  sender_id?: string;
+  keyword?: string;
+  // 46elks voice
+  voice_webhook_url?: string;
 }
 
 // Integration configuration type
@@ -108,6 +113,8 @@ export interface IntegrationsSettings {
   searxng: IntegrationConfig;
   telegram: IntegrationConfig;
   twilio: IntegrationConfig;
+  gatewayapi: IntegrationConfig;
+  elks46: IntegrationConfig;
 }
 
 
@@ -403,6 +410,28 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://console.twilio.com/',
     docsLabel: 'Open Twilio Console',
     config: { from_number: '' },
+  },
+  gatewayapi: {
+    name: 'GatewayAPI',
+    description: 'Danish SMS provider. Shared numbers (keyword-based) or dedicated numbers. No subscription, pay-per-SMS.',
+    icon: 'MessageSquare',
+    category: 'communication',
+    features: ['Inbound SMS', 'Outbound SMS', 'Shared numbers', 'EU-hosted'],
+    secretName: 'GATEWAYAPI_API_KEY',
+    docsUrl: 'https://gatewayapi.com/',
+    docsLabel: 'Open GatewayAPI',
+    config: { sender_id: 'Flowwink', keyword: '' },
+  },
+  elks46: {
+    name: '46elks',
+    description: 'Swedish SMS + Voice provider (Uppsala). Pay-as-you-go, dedicated Swedish numbers, no subscription. Voice supports WebSocket streaming for real-time AI agents.',
+    icon: 'Phone',
+    category: 'communication',
+    features: ['Inbound/Outbound SMS', 'Voice calls', 'Swedish numbers', 'EU-hosted', 'Voice streaming (AI-ready)'],
+    secretName: 'ELKS46_API_PASSWORD',
+    docsUrl: 'https://46elks.se/',
+    docsLabel: 'Open 46elks',
+    config: { from_number: '', voice_webhook_url: '' },
   },
 
 };
