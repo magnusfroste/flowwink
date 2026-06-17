@@ -113,6 +113,7 @@ serve(async (req) => {
         telegram: !!Deno.env.get('TELEGRAM_BOT_TOKEN'),
         twilio: !!Deno.env.get('TWILIO_API_KEY'),
         gatewayapi: !!Deno.env.get('GATEWAYAPI_API_KEY'),
+        elks46: !!(Deno.env.get('ELKS46_API_USERNAME') && Deno.env.get('ELKS46_API_PASSWORD')),
       }
 
     };
