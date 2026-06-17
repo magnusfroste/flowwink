@@ -335,6 +335,56 @@ function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
   );
 }
 
+// 46elks live balance + number count — calls elks46-ingest?action=test
+function Elks46BalanceBadge({ hasKey }: { hasKey: boolean }) {
+  const [info, setInfo] = useState<{ balance: number; currency: string; numbers: number } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!hasKey) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('elks46-ingest', {
+        body: { action: 'test' },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // 46elks returns balance in öre/cents
+      setInfo({
+        balance: (data?.balance ?? 0) / 100,
+        currency: data?.currency ?? 'SEK',
+        numbers: data?.numbers_found ?? 0,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [hasKey]);
+
+  if (!hasKey) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs">
+      <span className="text-muted-foreground">46elks balance</span>
+      {info ? (
+        <span className="font-medium tabular-nums">
+          {info.balance.toFixed(2)} {info.currency}
+          <span className="text-muted-foreground ml-1">· {info.numbers} number{info.numbers === 1 ? '' : 's'}</span>
+        </span>
+      ) : error ? (
+        <span className="text-destructive">{error}</span>
+      ) : (
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled={loading} onClick={load}>
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Check'}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // OpenAI live usage indicator — calls openai-account edge function.
 // OpenAI has no remaining-credits endpoint for sk- keys, so we surface
 // month-to-date estimated spend + optional admin-key org cost.
@@ -1359,6 +1409,11 @@ export default function IntegrationsStatusPage() {
                                 budgetUsd={currentConfig?.monthlyBudgetUsd}
                                 warnAtPct={currentConfig?.warnAtPct}
                               />
+                            </div>
+                          )}
+                          {key === 'elks46' && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Elks46BalanceBadge hasKey={hasKey} />
                             </div>
                           )}
                           {/* Actions */}
