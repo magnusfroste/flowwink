@@ -65,8 +65,13 @@ export interface IntegrationProviderConfig {
   url?: string;
   // Web-data provider fallback order (firecrawl/searxng/jina). 1 = try first.
   priority?: number;
-  // Twilio — E.164 sender number for SMS replies (e.g. +46701234567)
+  // Twilio / 46elks — E.164 sender number for SMS replies (e.g. +46701234567)
   from_number?: string;
+  // GatewayAPI
+  sender_id?: string;
+  keyword?: string;
+  // 46elks voice
+  voice_webhook_url?: string;
 }
 
 // Integration configuration type
