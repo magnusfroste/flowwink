@@ -60,8 +60,20 @@ export interface UiNamespace {
 }
 
 export interface DataNamespace {
-  /** Reserved — table names this module owns (for doc-drift / ownership audits) */
+  /**
+   * Tables this module owns. Used by:
+   *  - Site reset (dynamic wipe instead of hardcoded list)
+   *  - Orphan detection (rows for disabled modules)
+   *  - Doc-drift / ownership audits
+   *
+   * IMPORTANT: order child tables BEFORE parents (FK-safe delete order).
+   * A table may be co-owned by multiple modules — list it in each.
+   */
   tables?: string[];
+  /** Storage buckets this module owns (wiped at reset). */
+  storageBuckets?: string[];
+  /** `site_settings.key` rows owned by this module (reset at site reset). */
+  settingsKeys?: string[];
   /** Reference data seeding function — runs on enable */
   seedData?: () => Promise<void>;
 }
