@@ -152,6 +152,9 @@ export const riverModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
   skills: ['post_to_river', 'search_river'],
+  data: {
+    tables: ['river_reactions', 'river_posts'],
+  },
   skillSeeds: RIVER_SKILLS,
   async publish(_input: Input): Promise<Output> {
     return { success: true };
