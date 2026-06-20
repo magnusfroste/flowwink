@@ -231,6 +231,9 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
     'mark_webinar_attendance',
     'generate_blog_from_webinar',
   ],
+  data: {
+    tables: ['webinar_registrations', 'webinars'],
+  },
   skillSeeds: WEBINARS_SKILLS,
 
   async publish(input: WebinarModuleInput): Promise<WebinarModuleOutput> {
