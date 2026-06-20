@@ -603,6 +603,18 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     'inventory_report',
     'fulfill_order_line',
   ],
+  data: {
+    // children first (FK-safe order)
+    tables: [
+      'product_variant_values',
+      'product_attribute_values',
+      'product_variants',
+      'product_attributes',
+      'product_stock',
+      'products',
+      'product_categories',
+    ],
+  },
   skillSeeds: PRODUCTS_SKILLS,
 
   webhookEvents: [
