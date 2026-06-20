@@ -112,6 +112,9 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
   inputSchema: quotesInputSchema,
   outputSchema: quotesOutputSchema,
   skills: ['manage_quote'],
+  data: {
+    tables: ['quote_items', 'quote_signatures', 'quote_versions', 'quotes', 'quote_templates'],
+  },
   skillSeeds: QUOTES_SKILLS,
 
   async publish(input: QuotesInput): Promise<QuotesOutput> {
