@@ -248,6 +248,17 @@ export const contractsModule = defineModule<ContractsInput, ContractsOutput>({
   outputSchema: contractsOutputSchema,
 
   skills: ['manage_contract', 'list_contract_templates', 'contract_renewal_check', 'get_contract_content', 'search_contracts', 'send_contract_for_signature', 'list_contract_documents'],
+  data: {
+    tables: [
+      'contract_signatures',
+      'contract_versions',
+      'contract_documents',
+      'contracts',
+      'contract_templates',
+      'employment_contracts',
+      'employment_contract_templates',
+    ],
+  },
   skillSeeds: CONTRACT_SKILLS,
   automations: CONTRACT_AUTOMATIONS,
 
