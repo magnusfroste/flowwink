@@ -62,9 +62,22 @@ export function getAllModuleOwnership(): ModuleOwnership[] {
     });
 }
 
+async function detachJournalEntryReferences() {
+  const client = supabase as any;
+  await client.from('expense_reports').update({ journal_entry_id: null }).not('journal_entry_id', 'is', null);
+  await client.from('expense_payments').update({ journal_entry_id: null }).not('journal_entry_id', 'is', null);
+  await client.from('payroll_runs').update({ approval_journal_id: null }).not('approval_journal_id', 'is', null);
+  await client.from('payroll_runs').update({ payment_journal_id: null }).not('payment_journal_id', 'is', null);
+  await client.from('payment_reconciliations').update({ journal_entry_id: null }).not('journal_entry_id', 'is', null);
+  await client.from('payment_reconciliations').update({ reversal_journal_entry_id: null }).not('reversal_journal_entry_id', 'is', null);
+}
+
 /** Delete every row from one table. Returns null on success, error message on failure. */
 async function wipeTable(table: string): Promise<string | null> {
   const client = supabase as any;
+  if (table === 'journal_entries') {
+    await detachJournalEntryReferences();
+  }
   let { error } = await client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
   if (error && /column .*id.* does not exist|invalid input syntax for type/i.test(error.message ?? '')) {
     // Non-uuid PK fallback — works for tables with created_at
