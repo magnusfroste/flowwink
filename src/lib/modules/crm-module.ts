@@ -724,6 +724,9 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
     'find_duplicate_leads',
     'merge_leads',
   ],
+  data: {
+    tables: ['lead_activities', 'leads', 'crm_tasks', 'activities'],
+  },
   skillSeeds: CRM_SKILLS,
 
   async publish(input: CRMLeadInput): Promise<CRMLeadOutput> {
