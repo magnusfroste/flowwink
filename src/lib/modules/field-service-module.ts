@@ -133,6 +133,9 @@ const fieldServiceModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
   skills: ['manage_service_order'],
+  data: {
+    tables: ['service_order_lines', 'service_visits', 'service_orders'],
+  },
   skillSeeds: FIELD_SERVICE_SKILLS,
   automations: FIELD_SERVICE_AUTOMATIONS,
   async publish(input: Input): Promise<Output> {
