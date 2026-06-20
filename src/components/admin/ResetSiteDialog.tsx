@@ -37,7 +37,7 @@ import {
   LifeBuoy,
   Package,
 } from 'lucide-react';
-import { getAllModuleOwnership, wipeModuleData, countModuleRows } from '@/lib/module-data-ownership';
+import { getAllModuleOwnership, wipeModulesData, countModuleRows } from '@/lib/module-data-ownership';
 import type { ModulesSettings } from '@/hooks/useModules';
 
 interface ResetSiteDialogProps {
@@ -727,22 +727,25 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     }
 
     // -------------------- Dynamic module wipes (manifest-driven) --------------------
-    // Each module that declares `data.tables` in its manifest gets a task here
-    // automatically — no code change needed when a new module is annotated.
-    for (const ownership of moduleOwnership) {
-      if (!selectedModules.has(ownership.moduleId)) continue;
+    // Run all selected modules' tables in one multi-pass loop so cross-module
+    // FKs (e.g. expense_reports → journal_entries) resolve themselves.
+    const selectedIds = moduleOwnership
+      .filter(m => selectedModules.has(m.moduleId))
+      .map(m => m.moduleId as keyof ModulesSettings);
+    if (selectedIds.length > 0) {
       tasks.push({
         key: 'pages', // placeholder — not used for module tasks
-        label: `Module: ${ownership.moduleName} (${ownership.tables.length} tables)`,
+        label: `Modules: ${selectedIds.length} selected (${selectedIds.reduce((n, id) => n + (moduleOwnership.find(m => m.moduleId === id)?.tables.length ?? 0), 0)} tables)`,
         fn: async () => {
-          const results = await wipeModuleData(ownership.moduleId as keyof ModulesSettings);
-          const failed = results.filter(r => !r.ok && r.error !== 'protected');
+          const results = await wipeModulesData(selectedIds);
+          const failed = results.filter(r => !r.ok);
           if (failed.length > 0) {
-            throw new Error(`${failed.length}/${results.length} tables failed: ${failed.map(f => f.table).join(', ')}`);
+            throw new Error(`${failed.length} tables failed: ${failed.map(f => `${f.module}.${f.table}`).slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''}`);
           }
         },
       });
     }
+
 
     // Initialize progress items
     setProgress(tasks.map(t => ({ label: t.label, status: 'pending' as const })));
