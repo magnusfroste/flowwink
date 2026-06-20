@@ -950,6 +950,38 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
                   </label>
                 </div>
               </div>
+
+              {moduleOwnership.length > 0 && (
+                <div className="pt-3 border-t">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Modular (manifest-driven)
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Modules that declare their own tables. New modules appear here automatically.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {moduleOwnership.map(m => (
+                      <label key={m.moduleId} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={selectedModules.has(m.moduleId)}
+                          onCheckedChange={(c) => {
+                            setSelectedModules(prev => {
+                              const next = new Set(prev);
+                              if (c) next.add(m.moduleId); else next.delete(m.moduleId);
+                              return next;
+                            });
+                          }}
+                        />
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{m.moduleName}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          ({m.tables.length}t)
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="mt-6">
