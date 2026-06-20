@@ -112,6 +112,13 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
   const [progress, setProgress] = useState<ProgressItem[]>([]);
   const [overallProgress, setOverallProgress] = useState(0);
 
+  // Dynamic modular wipe — modules that declare `data.tables` show up here
+  // automatically. No code change required when a new module is annotated.
+  const moduleOwnership = getAllModuleOwnership();
+  const [selectedModules, setSelectedModules] = useState<Set<string>>(
+    () => new Set(moduleOwnership.map(m => m.moduleId))
+  );
+
   const resetState = () => {
     setStep('warning');
     setOptions(defaultOptions);
@@ -121,6 +128,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     setProgress([]);
     setOverallProgress(0);
     setIsResetting(false);
+    setSelectedModules(new Set(moduleOwnership.map(m => m.moduleId)));
   };
 
   const handleClose = () => {
