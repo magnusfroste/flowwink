@@ -745,7 +745,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     await executeReset();
   };
 
-  const selectedCount = Object.values(options).filter(Boolean).length;
+  const selectedCount = Object.values(options).filter(Boolean).length + selectedModules.size;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
