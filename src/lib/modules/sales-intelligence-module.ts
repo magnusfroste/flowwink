@@ -246,6 +246,9 @@ export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, Sale
     'competitor_monitor',
     'competitor_watch',
   ],
+  data: {
+    tables: ['sales_intelligence_profiles'],
+  },
   skillSeeds: SALESINTELLIGENCE_SKILLS,
 
   async publish(input: SalesIntelligenceInput): Promise<SalesIntelligenceOutput> {
