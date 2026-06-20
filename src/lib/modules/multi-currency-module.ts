@@ -130,6 +130,9 @@ export const multiCurrencyModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
   skills: ['set_exchange_rate', 'fetch_ecb_rates', 'revalue_open_balances'],
+  data: {
+    tables: ['exchange_rates', 'currencies'],
+  },
   skillSeeds: SKILLS,
   automations: AUTOMATIONS,
   async publish(input: Input): Promise<Output> {
