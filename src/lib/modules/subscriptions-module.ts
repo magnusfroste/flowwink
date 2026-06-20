@@ -283,6 +283,15 @@ export const subscriptionsModule = defineModule<Input, Output>({
     // Re-add here once SkillSeed entries are written.,
     'change_subscription',
   ],
+  data: {
+    tables: [
+      'subscription_winback_sends',
+      'subscription_winback_campaigns',
+      'subscription_events',
+      'subscription_churn_reasons',
+      'subscriptions',
+    ],
+  },
   skillSeeds: SUBSCRIPTIONS_SKILLS,
 
   async publish(input: Input): Promise<Output> {
