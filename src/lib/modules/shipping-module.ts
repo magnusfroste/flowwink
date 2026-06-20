@@ -160,6 +160,10 @@ export const shippingModule = defineModule<Input, Output>({
   outputSchema,
   skills: ['manage_carrier', 'manage_shipment', 'manage_shipping_rate', 'calc_shipping_rate'],
   skillSeeds: SKILLS,
+  data: {
+    // children first (FK-safe order)
+    tables: ['shipments', 'carriers'],
+  },
   async publish(input: Input): Promise<Output> {
     const v = inputSchema.parse(input);
     logger.log('[shipping] action:', v.action);
