@@ -141,6 +141,9 @@ export const projectsModule = defineModule<ProjectsInput, ProjectsOutput>({
   outputSchema: projectsOutputSchema,
 
   skills: ['manage_project', 'manage_project_task', 'manage_project_milestone'],
+  data: {
+    tables: ['project_tasks', 'project_members', 'projects'],
+  },
   skillSeeds: PROJECT_SKILLS,
   automations: [],
 
