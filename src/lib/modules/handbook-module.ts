@@ -81,6 +81,9 @@ export const handbookModule = defineModule<HandbookInput, HandbookOutput>({
   skills: [
     'handbook_search',
   ],
+  data: {
+    tables: ['handbook_chapters'],
+  },
   skillSeeds: HANDBOOK_SKILLS,
 
   async publish(input: HandbookInput): Promise<HandbookOutput> {
