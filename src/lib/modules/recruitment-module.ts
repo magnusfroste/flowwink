@@ -310,6 +310,9 @@ export const recruitmentModule = defineModule<RecruitmentInput, RecruitmentOutpu
     'hire_application',
     'summarize_candidate_pipeline',
   ],
+  data: {
+    tables: ['candidate_notes', 'applications', 'application_stages', 'job_postings', 'skills_catalog'],
+  },
   skillSeeds: RECRUITMENT_SKILLS,
   automations: RECRUITMENT_AUTOMATIONS,
 
