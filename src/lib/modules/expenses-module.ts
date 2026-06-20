@@ -339,6 +339,9 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
     'manage_expense_policy',
     'evaluate_expense_policy',
   ],
+  data: {
+    tables: ['expense_attachments', 'expense_payments', 'expenses', 'expense_reports'],
+  },
   skillSeeds: EXPENSE_SKILLS,
   automations: EXPENSE_AUTOMATIONS,
 
