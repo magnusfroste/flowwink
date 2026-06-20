@@ -34,7 +34,10 @@ import {
   ClipboardList,
   Truck,
   LifeBuoy,
+  Package,
 } from 'lucide-react';
+import { getAllModuleOwnership, wipeModuleData } from '@/lib/module-data-ownership';
+import type { ModulesSettings } from '@/hooks/useModules';
 
 interface ResetSiteDialogProps {
   open: boolean;
