@@ -362,6 +362,9 @@ export const newsletterModule = defineModule<NewsletterModuleInput, NewsletterMo
     'manage_newsletter_subscribers',
     'newsletter_subscribe',
   ],
+  data: {
+    tables: ['newsletter_email_opens', 'newsletter_link_clicks', 'newsletter_subscribers', 'newsletters'],
+  },
   skillSeeds: NEWSLETTER_SKILLS,
 
   webhookEvents: [
