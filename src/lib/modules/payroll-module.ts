@@ -184,6 +184,9 @@ export const payrollModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
   skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines', 'apply_pension', 'calc_sick_pay'],
+  data: {
+    tables: ['payroll_export_lines', 'payroll_exports', 'payroll_lines', 'payroll_runs', 'payroll_components'],
+  },
   skillSeeds: SKILLS,
   // No publish() — Payroll exposes its behaviour exclusively through MCP skills
   // (mcp_create_payroll_run, mcp_approve_payroll_run, mcp_mark_payroll_paid).
