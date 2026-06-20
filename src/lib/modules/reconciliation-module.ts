@@ -290,6 +290,15 @@ export const reconciliationModule = defineModule<Input, Output>({
     'reconciliation_report',
   ],
 
+  data: {
+    tables: [
+      'reconciliation_matches',
+      'payment_reconciliations',
+      'bank_transactions',
+      'bank_import_batches',
+      'bank_accounts',
+    ],
+  },
   skillSeeds: RECONCILIATION_SKILLS,
 
   async publish(input: Input): Promise<Output> {
