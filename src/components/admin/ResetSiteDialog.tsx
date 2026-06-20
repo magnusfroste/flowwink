@@ -693,6 +693,24 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
       });
     }
 
+    // -------------------- Dynamic module wipes (manifest-driven) --------------------
+    // Each module that declares `data.tables` in its manifest gets a task here
+    // automatically — no code change needed when a new module is annotated.
+    for (const ownership of moduleOwnership) {
+      if (!selectedModules.has(ownership.moduleId)) continue;
+      tasks.push({
+        key: 'pages', // placeholder — not used for module tasks
+        label: `Module: ${ownership.moduleName} (${ownership.tables.length} tables)`,
+        fn: async () => {
+          const results = await wipeModuleData(ownership.moduleId as keyof ModulesSettings);
+          const failed = results.filter(r => !r.ok && r.error !== 'protected');
+          if (failed.length > 0) {
+            throw new Error(`${failed.length}/${results.length} tables failed: ${failed.map(f => f.table).join(', ')}`);
+          }
+        },
+      });
+    }
+
     // Initialize progress items
     setProgress(tasks.map(t => ({ label: t.label, status: 'pending' as const })));
 
