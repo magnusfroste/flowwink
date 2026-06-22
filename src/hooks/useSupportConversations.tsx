@@ -100,22 +100,25 @@ export function useSupportConversations() {
     },
   });
 
-  // Realtime subscription for conversation updates
+  // Realtime subscription — invalidates list queries on any conversation OR new message
   useEffect(() => {
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['support-escalated-conversations'] });
+    };
+
     const channel = supabase
-      .channel('support-conversations-realtime')
+      .channel('support-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_conversations',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
-          queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
-          queryClient.invalidateQueries({ queryKey: ['support-escalated-conversations'] });
-        }
+        { event: '*', schema: 'public', table: 'chat_conversations' },
+        invalidate,
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        invalidate,
       )
       .subscribe();
 
