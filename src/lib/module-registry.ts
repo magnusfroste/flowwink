@@ -20,7 +20,7 @@ import {
   blogModule, pagesModule, kbModule, mediaModule, newsletterModule,
   handbookModule, templatesModule, crmModule, dealsModule, companiesModule,
   formsModule, bookingModule, productsModule, inventoryModule, chatModule,
-  liveSupportModule, webinarsModule, analyticsModule, companyInsightsModule,
+  liveSupportModule, voiceModule, webinarsModule, analyticsModule, companyInsightsModule,
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
   purchasingModule, manufacturingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
   slaModule, calendarModule, subscriptionsModule, salesIntelligenceModule,
@@ -64,7 +64,7 @@ class ModuleRegistry {
     // side-effectful module body runs.
     void [
       fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
-  maintenanceModule,
+      maintenanceModule, voiceModule,
     ];
   }
 
