@@ -14305,6 +14305,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sweep_stale_voice_calls: { Args: never; Returns: number }
       transfer_stock: {
         Args: {
           p_from_location_id: string
