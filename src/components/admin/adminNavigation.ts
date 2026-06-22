@@ -5,7 +5,7 @@ import {
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
   Network, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban, Wrench,
   RefreshCw, AlertTriangle, CheckSquare, Sparkles, Factory, UserSearch, Plus, FlaskConical,
-  LayoutTemplate,
+  LayoutTemplate, Phone,
 } from 'lucide-react';
 
 import type { AppRole } from '@/types/cms';
@@ -78,6 +78,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Cowork Chat", href: "/admin/cowork", icon: Sparkles, moduleId: "workspaceChat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
+      { name: "Voice", href: "/admin/voice", icon: Phone, moduleId: "voice" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
     ],
   },

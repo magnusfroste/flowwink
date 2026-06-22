@@ -77,6 +77,7 @@ import PublicSurveyPage from "./pages/PublicSurveyPage";
 import FieldServicePage from "./pages/admin/FieldServicePage";
 import POSPage from "./pages/admin/POSPage";
 import PosAuditPage from "./pages/admin/PosAuditPage";
+import VoicePage from "./pages/admin/VoicePage";
 
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -347,6 +348,7 @@ const router = createBrowserRouter([
       { path: "/admin/customer/:identifier", element: <Customer360Page /> },
       { path: "/admin/surveys", element: <SurveysPage /> },
       { path: "/admin/field-service", element: <FieldServicePage /> },
+      { path: "/admin/voice", element: <VoicePage /> },
       { path: "/admin/pos", element: <POSPage /> },
       { path: "/admin/pos/audit", element: <PosAuditPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
