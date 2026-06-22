@@ -46,6 +46,7 @@ serve(async (req) => {
   if (action === "send") return handleSend(req);
   if (action === "call") return handleCall(req);
   if (action === "test") return handleTest(req);
+  if (action === "set_voice_start") return handleSetVoiceStart(req);
   return handleIngest(req);
 });
 
