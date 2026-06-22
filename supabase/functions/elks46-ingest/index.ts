@@ -46,6 +46,7 @@ serve(async (req) => {
   if (action === "send") return handleSend(req);
   if (action === "call") return handleCall(req);
   if (action === "test") return handleTest(req);
+  if (action === "set_voice_start") return handleSetVoiceStart(req);
   return handleIngest(req);
 });
 
@@ -385,10 +386,71 @@ async function handleTest(req: Request): Promise<Response> {
       currency: (meData as any)?.currency ?? null,
       balance: (meData as any)?.balance ?? null,
       numbers_found: numbers.length,
-      numbers: numbers.slice(0, 5).map((n: any) => ({ number: n.number, country: n.country, capabilities: n.capabilities })),
+      numbers: numbers.slice(0, 20).map((n: any) => ({
+        id: n.id,
+        number: n.number,
+        country: n.country,
+        capabilities: n.capabilities,
+        sms_url: n.sms_url ?? null,
+        voice_start: n.voice_start ?? null,
+      })),
     });
   } catch (err: any) {
     console.error("[elks46-ingest:test] error", err?.message ?? err);
+    return json({ error: err?.message ?? "internal error" }, 500);
+  }
+}
+
+// ───────────────────────────────────────────── Set voice_start (and optionally sms_url) on a number
+async function handleSetVoiceStart(req: Request): Promise<Response> {
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+  try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) return json({ error: "missing bearer token" }, 401);
+    const supabase = getServiceClient();
+    const { data: userData, error: userErr } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) return json({ error: "unauthorized" }, 401);
+    const { data: hasAdmin } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id, _role: "admin",
+    });
+    if (!hasAdmin) return json({ error: "forbidden" }, 403);
+
+    const body = (await req.json().catch(() => ({}))) as {
+      number_id?: string;
+      voice_start?: string;
+      sms_url?: string;
+      also_sms?: boolean;
+    };
+    if (!body.number_id) return json({ error: "number_id required" }, 400);
+
+    const ingestUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
+    const voiceStart = body.voice_start || ingestUrl;
+    const smsUrl = body.sms_url || (body.also_sms ? ingestUrl : undefined);
+
+    let auth: string;
+    try { auth = basicAuthHeader(); }
+    catch (e: any) { return json({ error: e?.message ?? "not configured" }, 400); }
+
+    const form = new URLSearchParams({ voice_start: voiceStart });
+    if (smsUrl) form.set("sms_url", smsUrl);
+
+    const resp = await fetch(`${ELKS_BASE}/Numbers/${encodeURIComponent(body.number_id)}`, {
+      method: "POST",
+      headers: { Authorization: auth, "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      return json({ error: `46elks ${resp.status}`, details: (data as any)?.message || JSON.stringify(data) }, 502);
+    }
+    return json({
+      ok: true,
+      number: (data as any)?.number,
+      voice_start: (data as any)?.voice_start,
+      sms_url: (data as any)?.sms_url,
+    });
+  } catch (err: any) {
+    console.error("[elks46-ingest:set_voice_start] error", err?.message ?? err);
     return json({ error: err?.message ?? "internal error" }, 500);
   }
 }

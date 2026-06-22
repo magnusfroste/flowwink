@@ -52,6 +52,109 @@ export function IntegrationTestPanel({ providerKey, hasKey }: { providerKey: str
           <ActionButton key={a.label} action={a} disabled={!hasKey} />
         ))}
       </div>
+
+      {providerKey === 'elks46' && hasKey && <Elks46NumbersPanel />}
+    </div>
+  );
+}
+
+function Elks46NumbersPanel() {
+  const [numbers, setNumbers] = useState<Array<{ id: string; number: string; voice_start: string | null; sms_url: string | null }> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const expectedUrl = useMemo(() => {
+    const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    return base ? `${base}/functions/v1/elks46-ingest` : '';
+  }, []);
+
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('elks46-ingest', { body: { action: 'test' } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setNumbers((data as any)?.numbers ?? []);
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load numbers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setVoiceStart = async (numberId: string, alsoSms: boolean) => {
+    setSavingId(numberId);
+    try {
+      const { data, error } = await supabase.functions.invoke('elks46-ingest', {
+        body: { action: 'set_voice_start', number_id: numberId, also_sms: alsoSms },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success('voice_start updated on 46elks');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to update');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-2 pt-2 border-t">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Numbers on this account</Label>
+        <Button size="sm" variant="ghost" onClick={load} disabled={loading}>
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : (numbers ? 'Refresh' : 'Load')}
+        </Button>
+      </div>
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
+      {numbers && numbers.length === 0 && (
+        <p className="text-xs text-muted-foreground">No active numbers on your 46elks account.</p>
+      )}
+      {numbers && numbers.length > 0 && (
+        <div className="space-y-2">
+          {numbers.map((n) => {
+            const isConfigured = n.voice_start === expectedUrl;
+            const isSaving = savingId === n.id;
+            return (
+              <div key={n.id} className="rounded-md border p-2 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono font-medium">{n.number}</span>
+                  {isConfigured ? (
+                    <span className="inline-flex items-center gap-1 text-green-600">
+                      <CheckCircle2 className="h-3 w-3" /> voice_start points to FlowWink
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7"
+                      onClick={() => setVoiceStart(n.id, !n.sms_url)}
+                      disabled={isSaving}
+                    >
+                      {isSaving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                      Set voice_start → FlowWink
+                    </Button>
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground break-all">
+                  <span>voice_start: </span>
+                  <code>{n.voice_start || '— (not set)'}</code>
+                </div>
+                {n.sms_url && (
+                  <div className="text-[11px] text-muted-foreground break-all">
+                    <span>sms_url: </span><code>{n.sms_url}</code>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <p className="text-[11px] text-muted-foreground">
+            "Set voice_start" calls the 46elks API for you — no need to log in and paste URLs manually.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

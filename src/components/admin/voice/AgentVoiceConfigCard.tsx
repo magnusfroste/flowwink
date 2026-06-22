@@ -4,14 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserCircle, Loader2, ChevronDown, ChevronRight, Info } from 'lucide-react';
 
-import { listVoiceProviders } from '@/lib/voice-providers';
 import {
   useMyAgentVoice,
   useUpdateMyAgentVoice,
-  voiceProviderLabel,
   type SupportAgentVoice,
 } from '@/hooks/useVoice';
 
@@ -21,6 +19,7 @@ export function AgentVoiceConfigCard() {
   const { data: agent, isLoading } = useMyAgentVoice();
   const update = useUpdateMyAgentVoice();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     setDraft(null);
@@ -37,10 +36,14 @@ export function AgentVoiceConfigCard() {
     ...(draft ?? {}),
   };
 
+  // Auto-expand advanced if SIP credentials already configured
+  useEffect(() => {
+    if (merged.voice_sip_uri || merged.voice_sip_username) setShowAdvanced(true);
+  }, [merged.voice_sip_uri, merged.voice_sip_username]);
+
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft({ ...(draft ?? {}), [k]: v });
 
-  const providers = listVoiceProviders();
   const dirty = draft !== null;
 
   if (isLoading) {
@@ -57,17 +60,21 @@ export function AgentVoiceConfigCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <UserCircle className="h-5 w-5" />My voice configuration
+          <UserCircle className="h-5 w-5" />My voice routing
         </CardTitle>
         <CardDescription>
-          Enable WebRTC voice calls for your account. SIP credentials come from your provider (e.g. 46elks SIP user).
+          Where should inbound calls reach you? Use mobile fallback for the standard
+          46elks-webhook flow — no SIP user required.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between rounded-md border p-3">
           <div>
             <Label className="text-sm font-medium">Receive voice calls</Label>
-            <p className="text-xs text-muted-foreground">When enabled, inbound calls ring in your browser softphone.</p>
+            <p className="text-xs text-muted-foreground">
+              When off, calls go straight to voicemail/IVR. You can stay logged in
+              for chat/SMS/email regardless.
+            </p>
           </div>
           <Switch
             checked={!!merged.voice_enabled}
@@ -76,62 +83,73 @@ export function AgentVoiceConfigCard() {
         </div>
 
         <div className="space-y-2">
-          <Label>Provider</Label>
-          <Select
-            value={merged.voice_provider ?? 'none'}
-            onValueChange={(v) => set('voice_provider', v === 'none' ? null : v)}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Use site default</SelectItem>
-              {providers.map((p) => (
-                <SelectItem key={p.metadata.id} value={p.metadata.id}>
-                  {voiceProviderLabel(p.metadata.id)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="mobile">Mobile number (E.164)</Label>
+          <Input
+            id="mobile"
+            placeholder="+46701234567"
+            value={merged.voice_mobile_number ?? ''}
+            onChange={(e) => set('voice_mobile_number', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            46elks rings this number on inbound calls. Every call is still logged
+            in FlowWink with recording/transcript when available.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="sip-uri">SIP URI</Label>
-            <Input
-              id="sip-uri"
-              placeholder="sip:user@sip.46elks.com"
-              value={merged.voice_sip_uri ?? ''}
-              onChange={(e) => set('voice_sip_uri', e.target.value)}
-            />
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            All calls — answered on mobile, missed, or sent to voicemail — land in
+            the unified Voice inbox so the team has one source of truth.
+          </AlertDescription>
+        </Alert>
+
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          {showAdvanced ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          Advanced — browser softphone (requires SIP user)
+        </button>
+
+        {showAdvanced && (
+          <div className="rounded-md border border-dashed p-3 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Only needed if you want calls to ring inside the browser via WebRTC.
+              Most setups skip this and use the mobile fallback above. Create a SIP
+              user in your 46elks dashboard first.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="sip-uri" className="text-xs">SIP URI</Label>
+                <Input
+                  id="sip-uri"
+                  placeholder="sip:user@sip.46elks.com"
+                  value={merged.voice_sip_uri ?? ''}
+                  onChange={(e) => set('voice_sip_uri', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sip-user" className="text-xs">SIP username</Label>
+                <Input
+                  id="sip-user"
+                  value={merged.voice_sip_username ?? ''}
+                  onChange={(e) => set('voice_sip_username', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="sip-pass" className="text-xs">SIP password</Label>
+                <Input
+                  id="sip-pass"
+                  type="password"
+                  value={merged.voice_sip_password ?? ''}
+                  onChange={(e) => set('voice_sip_password', e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="sip-user">SIP username</Label>
-            <Input
-              id="sip-user"
-              value={merged.voice_sip_username ?? ''}
-              onChange={(e) => set('voice_sip_username', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="sip-pass">SIP password</Label>
-            <Input
-              id="sip-pass"
-              type="password"
-              value={merged.voice_sip_password ?? ''}
-              onChange={(e) => set('voice_sip_password', e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">Stored in support_agents; consider rotating regularly.</p>
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="mobile">Mobile fallback number</Label>
-            <Input
-              id="mobile"
-              placeholder="+46701234567"
-              value={merged.voice_mobile_number ?? ''}
-              onChange={(e) => set('voice_mobile_number', e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">If WebRTC isn't available, the provider forwards to this number.</p>
-          </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-end gap-2 border-t pt-4">
           {dirty && <Button variant="ghost" onClick={() => setDraft(null)} disabled={update.isPending}>Reset</Button>}
