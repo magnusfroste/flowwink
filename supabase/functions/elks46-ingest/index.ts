@@ -102,6 +102,17 @@ async function startCall(to: string, from: string, voiceStart: string) {
   return data;
 }
 
+function normalizePhone(value: string): string {
+  if (!value) return "";
+  return value.startsWith("+") ? value : `+${value}`;
+}
+
+function paramsToRecord(params: URLSearchParams): Record<string, string> {
+  const raw: Record<string, string> = {};
+  params.forEach((value, key) => { raw[key] = value; });
+  return raw;
+}
+
 // ───────────────────────────────────────────── INBOUND (webhook from 46elks)
 async function handleIngest(req: Request): Promise<Response> {
   const supabase = getServiceClient();
@@ -129,25 +140,57 @@ async function handleIngest(req: Request): Promise<Response> {
 
     // ── Voice call inbound: return JSON dial-plan ─────────────────────────
     if (callid && !message) {
-      // Minimal answer: greet, then hangup. Real voice ↔ AI streaming would
-      // use 46elks Connect Stream (WebSocket) — wire that in once an account
-      // exists for testing.
-      const reply = {
-        play: "https://api.46elks.com/static/sounds/welcome-sv.mp3",
-        next: { hangup: "reject" },
-      };
+      const normalizedFrom = normalizePhone(from);
+      const normalizedTo = normalizePhone(to);
+
+      const { data: agents, error: agentErr } = await supabase
+        .from("support_agents")
+        .select("id, voice_sip_uri, voice_mobile_number, voice_enabled, status")
+        .eq("voice_enabled", true)
+        .in("status", ["online", "away"])
+        .limit(10);
+      if (agentErr) console.warn("[elks46-ingest] voice agent lookup failed", agentErr.message);
+      const agent = (agents ?? []).find((a: any) => a.voice_sip_uri || a.voice_mobile_number) as any | undefined;
+
       // Log incoming call for visibility
+      let conversationId: string | null = null;
       try {
-        await supabase.from("chat_conversations").insert({
+        const { data: conversation } = await supabase.from("chat_conversations").insert({
           channel: "voice",
-          channel_thread_id: from || callid,
-          customer_name: from || "Unknown caller",
+          channel_thread_id: normalizedFrom || callid,
+          customer_name: normalizedFrom || "Unknown caller",
           scope: "visitor",
-          conversation_status: "closed",
-          title: `Voice · ${from || callid}`,
-          visitor_profile: { sms_provider: "elks46", elks46_callid: callid, from, to },
-        });
+          conversation_status: agent ? "with_agent" : "closed",
+          title: `Voice · ${normalizedFrom || callid}`,
+          visitor_profile: { sms_provider: "elks46", elks46_callid: callid, from: normalizedFrom, to: normalizedTo },
+        }).select("id").maybeSingle();
+        conversationId = conversation?.id ?? null;
       } catch (e) { console.warn("[elks46-ingest] voice log skipped", (e as Error)?.message); }
+
+      const target = agent?.voice_sip_uri
+        ? (String(agent.voice_sip_uri).startsWith("sip:") ? agent.voice_sip_uri : `sip:${agent.voice_sip_uri}`)
+        : agent?.voice_mobile_number;
+      const status = target ? "ringing" : "missed";
+      const reply = target
+        ? { connect: target, callerid: normalizedFrom || from, timeout: 25 }
+        : { play: "https://api.46elks.com/static/sounds/welcome-sv.mp3", next: { hangup: "reject" } };
+
+      await supabase.from("voice_calls").upsert(
+        {
+          provider: "elks46",
+          provider_call_id: callid,
+          direction: "inbound",
+          status,
+          from_number: normalizedFrom || from || "unknown",
+          to_number: normalizedTo || to || "unknown",
+          agent_id: agent?.id ?? null,
+          conversation_id: conversationId,
+          started_at: new Date().toISOString(),
+          callback_status: target ? "none" : "pending",
+          metadata: { initial_action: reply, raw: paramsToRecord(params) },
+        },
+        { onConflict: "provider,provider_call_id" },
+      );
       return new Response(JSON.stringify(reply), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
