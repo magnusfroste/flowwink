@@ -361,12 +361,13 @@ export function useConversationMessages(conversationId: string | null) {
         }
 
         if (conv?.channel === 'sms') {
-          // Determine which SMS provider to use based on conversation visitor_profile
-          const smsProvider = (conv?.visitor_profile as any)?.sms_provider ?? 'twilio';
+          // Determine which SMS provider to use based on conversation visitor_profile.
+          // Default = 46elks (Twilio kept as fallback for legacy threads tagged 'twilio').
+          const smsProvider = (conv?.visitor_profile as any)?.sms_provider ?? 'elks46';
           const functionName =
             smsProvider === 'gatewayapi' ? 'gatewayapi-ingest'
-            : smsProvider === 'elks46' ? 'elks46-ingest'
-            : 'twilio-ingest';
+            : smsProvider === 'twilio' ? 'twilio-ingest'
+            : 'elks46-ingest';
           const relayResp = await fetch(
             `${baseUrl}/functions/v1/${functionName}?action=send`,
             {
