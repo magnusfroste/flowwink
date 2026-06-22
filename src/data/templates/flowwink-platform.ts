@@ -26,7 +26,26 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   icon: 'Bot',
   tagline: 'The Business Operating System. CMS · CRM · ERP — run by an operator.',
   aiChatPosition: 'Embedded autonomous agent for site operations',
-  requiredModules: ['blog', 'knowledgeBase', 'docs', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'developer', 'webinars', 'resume', 'tickets', 'federation', 'salesIntelligence', 'paidGrowth'],
+  // Full BOS stack — content, CRM, commerce, finance, HR, operations, platform.
+  // Optional modules (pos, manufacturing, field-service, etc.) stay opt-in.
+  requiredModules: [
+    // Content & marketing
+    'pages', 'blog', 'knowledgeBase', 'docs', 'wiki', 'handbook', 'newsletter', 'media', 'forms', 'globalBlocks',
+    // CRM & sales
+    'leads', 'deals', 'companies', 'quotes', 'customer360', 'salesIntelligence', 'paidGrowth',
+    // Commerce
+    'products', 'pricelists', 'ecommerce', 'inventory', 'shipping', 'returns', 'subscriptions',
+    // Finance
+    'invoicing', 'accounting', 'reconciliation', 'expenses', 'purchasing', 'fixedAssets', 'multiCurrency',
+    // HR & people
+    'hr', 'payroll', 'recruitment', 'timesheets', 'contracts', 'documents',
+    // Operations
+    'projects', 'tickets', 'sla', 'approvals', 'calendar', 'bookings', 'surveys',
+    // Communication
+    'chat', 'liveSupport', 'workspaceChat', 'webinars', 'river', 'email',
+    // Platform & agent
+    'flowpilot', 'federation', 'composio', 'browserControl', 'siteMigration', 'developer', 'analytics', 'resume',
+  ],
   pages: [
     // ═══════════════════════════════════════════════════════════
     // HOME — The Pitch + Pricing (convince & convert in one scroll)
