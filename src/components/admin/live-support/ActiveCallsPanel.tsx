@@ -18,9 +18,8 @@ import { useVoiceCalls, useUpdateVoiceCall, type VoiceCallRow } from '@/hooks/us
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Phone, PhoneCall, MessageSquare, CalendarClock, CheckCircle2 } from 'lucide-react';
+import { Phone, PhoneCall, CalendarClock, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
 
 export function ActiveCallsPanel() {
   const qc = useQueryClient();
