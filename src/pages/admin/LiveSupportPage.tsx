@@ -46,6 +46,7 @@ import { TelegramChannelStatus } from '@/components/admin/live-support/TelegramC
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
 import { ActiveCallsPanel } from '@/components/admin/live-support/ActiveCallsPanel';
+import Softphone from '@/components/admin/voice/Softphone';
 import { ALL_CHANNELS, ChannelChip, ChannelIcon, channelMeta, getChannel, type SupportChannel } from '@/lib/support-channels';
 
 const statusConfig: Record<AgentStatus, { label: string; color: string; icon: React.ReactNode }> = {
