@@ -88,18 +88,22 @@ Deno.serve(async (req) => {
 
     if (!page) {
       console.log(`[get-page] Page not found: ${slug}`)
+      // Return 200 with found:false so browser devtools / runtime-error monitors
+      // don't flag a normal "no page yet" state (e.g. fresh install or post-reset).
+      // Frontend treats `error` field as not-found and renders Coming Soon.
       return new Response(
-        JSON.stringify({ error: 'Page not found' }),
+        JSON.stringify({ found: false, error: 'Page not found' }),
         {
-          status: 404,
+          status: 200,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=60', // Short cache for 404s
+            'Cache-Control': 'public, max-age=60',
           },
         }
       )
     }
+
 
     // Update cache if enabled
     if (cachingEnabled) {
