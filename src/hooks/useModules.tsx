@@ -117,6 +117,7 @@ export interface ModulesSettings {
   
   wiki: ModuleConfig;
   river: ModuleConfig;
+  voice: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -766,6 +767,17 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'MessageSquare',
     category: 'communication',
     autonomy: 'view-required',
+    adminUI: true,
+    enhancedByFlowPilot: true,
+  },
+  voice: {
+    enabled: false,
+    name: 'Voice',
+    description:
+      'Inbound + outbound phone calls via pluggable providers (46elks for Nordics, Twilio for global, more coming). WebRTC browser client, voicemail, missed-call queue, callback flow, optional booking-IVR. Provider-agnostic — pick adapter per market.',
+    icon: 'Phone',
+    category: 'communication',
+    autonomy: 'config-required',
     adminUI: true,
     enhancedByFlowPilot: true,
   },

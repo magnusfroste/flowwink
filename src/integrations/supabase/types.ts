@@ -11085,6 +11085,12 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          voice_enabled: boolean
+          voice_mobile_number: string | null
+          voice_provider: string | null
+          voice_sip_password: string | null
+          voice_sip_uri: string | null
+          voice_sip_username: string | null
         }
         Insert: {
           created_at?: string
@@ -11095,6 +11101,12 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          voice_enabled?: boolean
+          voice_mobile_number?: string | null
+          voice_provider?: string | null
+          voice_sip_password?: string | null
+          voice_sip_uri?: string | null
+          voice_sip_username?: string | null
         }
         Update: {
           created_at?: string
@@ -11105,6 +11117,12 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          voice_enabled?: boolean
+          voice_mobile_number?: string | null
+          voice_provider?: string | null
+          voice_sip_password?: string | null
+          voice_sip_uri?: string | null
+          voice_sip_username?: string | null
         }
         Relationships: [
           {
@@ -12195,6 +12213,99 @@ export type Database = {
             columns: ["last_used_template_id"]
             isOneToOne: false
             referencedRelation: "accounting_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_calls: {
+        Row: {
+          agent_id: string | null
+          answered_at: string | null
+          callback_completed_at: string | null
+          callback_scheduled_at: string | null
+          callback_status: Database["public"]["Enums"]["voice_callback_status"]
+          conversation_id: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["voice_call_direction"]
+          duration_seconds: number | null
+          ended_at: string | null
+          from_number: string
+          id: string
+          metadata: Json
+          provider: string
+          provider_call_id: string | null
+          recording_duration_seconds: number | null
+          recording_url: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["voice_call_status"]
+          to_number: string
+          transcript: string | null
+          updated_at: string
+          voicemail: boolean
+        }
+        Insert: {
+          agent_id?: string | null
+          answered_at?: string | null
+          callback_completed_at?: string | null
+          callback_scheduled_at?: string | null
+          callback_status?: Database["public"]["Enums"]["voice_callback_status"]
+          conversation_id?: string | null
+          created_at?: string
+          direction: Database["public"]["Enums"]["voice_call_direction"]
+          duration_seconds?: number | null
+          ended_at?: string | null
+          from_number: string
+          id?: string
+          metadata?: Json
+          provider: string
+          provider_call_id?: string | null
+          recording_duration_seconds?: number | null
+          recording_url?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["voice_call_status"]
+          to_number: string
+          transcript?: string | null
+          updated_at?: string
+          voicemail?: boolean
+        }
+        Update: {
+          agent_id?: string | null
+          answered_at?: string | null
+          callback_completed_at?: string | null
+          callback_scheduled_at?: string | null
+          callback_status?: Database["public"]["Enums"]["voice_callback_status"]
+          conversation_id?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["voice_call_direction"]
+          duration_seconds?: number | null
+          ended_at?: string | null
+          from_number?: string
+          id?: string
+          metadata?: Json
+          provider?: string
+          provider_call_id?: string | null
+          recording_duration_seconds?: number | null
+          recording_url?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["voice_call_status"]
+          to_number?: string
+          transcript?: string | null
+          updated_at?: string
+          voicemail?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_calls_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "support_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -14473,6 +14584,22 @@ export type Database = {
         | "waiting"
         | "resolved"
         | "closed"
+      voice_call_direction: "inbound" | "outbound"
+      voice_call_status:
+        | "ringing"
+        | "answered"
+        | "missed"
+        | "voicemail"
+        | "completed"
+        | "failed"
+        | "busy"
+        | "no_answer"
+      voice_callback_status:
+        | "none"
+        | "pending"
+        | "scheduled"
+        | "completed"
+        | "failed"
       webhook_event:
         | "page.published"
         | "page.updated"
@@ -14811,6 +14938,24 @@ export const Constants = {
         "waiting",
         "resolved",
         "closed",
+      ],
+      voice_call_direction: ["inbound", "outbound"],
+      voice_call_status: [
+        "ringing",
+        "answered",
+        "missed",
+        "voicemail",
+        "completed",
+        "failed",
+        "busy",
+        "no_answer",
+      ],
+      voice_callback_status: [
+        "none",
+        "pending",
+        "scheduled",
+        "completed",
+        "failed",
       ],
       webhook_event: [
         "page.published",
