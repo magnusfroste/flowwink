@@ -113,6 +113,25 @@ function paramsToRecord(params: URLSearchParams): Record<string, string> {
   return raw;
 }
 
+function parseIntParam(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseActionsResult(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const actions = JSON.parse(value);
+    if (!Array.isArray(actions) || actions.length === 0) return null;
+    const last = actions[actions.length - 1] as Record<string, unknown>;
+    const result = last?.result ?? last?.why;
+    return typeof result === "string" ? result : null;
+  } catch {
+    return null;
+  }
+}
+
 // ───────────────────────────────────────────── INBOUND (webhook from 46elks)
 async function handleIngest(req: Request): Promise<Response> {
   const supabase = getServiceClient();
@@ -136,12 +155,56 @@ async function handleIngest(req: Request): Promise<Response> {
     const to = params.get("to") ?? "";
     const message = params.get("message") ?? "";
     const id = params.get("id") ?? "";
-    const callid = params.get("callid") ?? "";
+    const callid = params.get("callid") || id;
 
     // ── Voice call inbound: return JSON dial-plan ─────────────────────────
     if (callid && !message) {
       const normalizedFrom = normalizePhone(from);
       const normalizedTo = normalizePhone(to);
+      const raw = paramsToRecord(params);
+      const result = params.get("result");
+      const state = params.get("state");
+      const actionResult = parseActionsResult(params.get("actions"));
+      const durationSeconds = parseIntParam(params.get("duration"));
+      const terminalSignal = Boolean(state || params.get("actions") || params.get("start") || params.get("duration"))
+        || ["hangup", "failed", "busy", "noanswer", "no_answer", "success", "answered"].includes(result ?? "");
+
+      if (terminalSignal && result !== "newincoming") {
+        const { data: existing } = await supabase
+          .from("voice_calls")
+          .select("status, started_at, answered_at, metadata")
+          .eq("provider", "elks46")
+          .eq("provider_call_id", callid)
+          .maybeSingle();
+
+        const now = new Date().toISOString();
+        const answeredAt = existing?.answered_at
+          ?? params.get("start")
+          ?? (["answered", "success"].includes(result ?? "") || state === "success" || actionResult === "success" ? now : null);
+        const failureSignal = state === "busy" || state === "failed" || ["busy", "failed", "noanswer", "no_answer"].includes(result ?? "")
+          || ["busy", "failed", "noanswer", "no_answer"].includes(actionResult ?? "");
+        const finalStatus = failureSignal
+          ? (state === "busy" || result === "busy" || actionResult === "busy" ? "busy" : "missed")
+          : (answeredAt ? "completed" : "missed");
+
+        const previousMetadata = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
+        const { error: updateErr } = await supabase
+          .from("voice_calls")
+          .update({
+            status: finalStatus,
+            answered_at: answeredAt,
+            ended_at: now,
+            duration_seconds: durationSeconds,
+            callback_status: finalStatus === "completed" ? "none" : "pending",
+            metadata: { ...previousMetadata, final_event: { raw, result, state, actionResult } },
+          })
+          .eq("provider", "elks46")
+          .eq("provider_call_id", callid);
+        if (updateErr) console.warn("[elks46-ingest] voice status update failed", updateErr.message);
+        return new Response(JSON.stringify({ hangup: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       const { data: agents, error: agentErr } = await supabase
         .from("support_agents")
@@ -170,12 +233,13 @@ async function handleIngest(req: Request): Promise<Response> {
       const target = agent?.voice_sip_uri
         ? (String(agent.voice_sip_uri).startsWith("sip:") ? agent.voice_sip_uri : `sip:${agent.voice_sip_uri}`)
         : agent?.voice_mobile_number;
+      const selfUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
       const status = target ? "ringing" : "missed";
       const reply = target
-        ? { connect: target, callerid: normalizedFrom || from, timeout: 25 }
-        : { play: "https://api.46elks.com/static/sounds/welcome-sv.mp3", next: { hangup: "reject" } };
+        ? { connect: target, callerid: normalizedFrom || from, timeout: 25, next: selfUrl, whenhangup: selfUrl }
+        : { play: "https://api.46elks.com/static/sounds/welcome-sv.mp3", next: { hangup: "reject" }, whenhangup: selfUrl };
 
-      await supabase.from("voice_calls").upsert(
+      const { error: callErr } = await supabase.from("voice_calls").upsert(
         {
           provider: "elks46",
           provider_call_id: callid,
@@ -187,10 +251,11 @@ async function handleIngest(req: Request): Promise<Response> {
           conversation_id: conversationId,
           started_at: new Date().toISOString(),
           callback_status: target ? "none" : "pending",
-          metadata: { initial_action: reply, raw: paramsToRecord(params) },
+          metadata: { initial_action: reply, raw },
         },
         { onConflict: "provider,provider_call_id" },
       );
+      if (callErr) console.warn("[elks46-ingest] voice call upsert failed", callErr.message);
       return new Response(JSON.stringify(reply), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
