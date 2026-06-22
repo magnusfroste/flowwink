@@ -207,15 +207,15 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════
     const knownEdgeFunctions = new Set([
       "chat-completion", "agent-operate", "agent-execute", "agent-reason",
-      "flowpilot-heartbeat", "flowpilot-briefing", "flowpilot-learn",
-      "setup-flowpilot", "get-page", "copilot-action", "research-content",
-      "generate-content-proposal", "newsletter-send", "send-webhook",
+      "flowpilot-heartbeat", "flowpilot-briefing", "flowpilot-learn", "flowpilot-distill",
+      "get-page", "copilot-action",
+      "newsletter-send", "send-webhook",
       "qualify-lead", "enrich-company", "prospect-research", "prospect-fit-analysis",
       "gmail-inbox-scan", "signal-ingest", "signal-dispatcher", "automation-dispatcher",
-      "publish-scheduled-pages", "business-digest", "ad-campaign-create",
-      "ad-creative-generate", "ad-optimize", "ad-performance-check",
-      "run-autonomy-tests", "system-integrity-check", "ai-text-assist",
-      "manage-cron-schedules", "stripe-webhook", "customer-signup",
+      "event-dispatcher",
+      "run-autonomy-tests", "system-integrity-check",
+      "stripe-webhook", "customer-signup",
+      "elks46-ingest", "gatewayapi-ingest", "telegram-ingest",
     ]);
 
     const knownModules = new Set([
