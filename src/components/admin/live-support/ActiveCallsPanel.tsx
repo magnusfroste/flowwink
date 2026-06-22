@@ -84,12 +84,10 @@ function CallCard({
   call,
   onMarkHandled,
   onScheduleCallback,
-  onSendSms,
 }: {
   call: VoiceCallRow;
   onMarkHandled: () => void;
   onScheduleCallback: () => void;
-  onSendSms: () => void;
 }) {
   return (
     <Card className="border-green-500/40 bg-green-500/5">
@@ -110,11 +108,7 @@ function CallCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5">
-          <Button size="sm" variant="outline" className="text-xs gap-1" onClick={onSendSms}>
-            <MessageSquare className="h-3 w-3" />
-            SMS
-          </Button>
+        <div className="grid grid-cols-2 gap-1.5">
           <Button size="sm" variant="outline" className="text-xs gap-1" onClick={onScheduleCallback}>
             <CalendarClock className="h-3 w-3" />
             Callback
