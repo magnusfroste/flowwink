@@ -45,6 +45,7 @@ import { ChannelToggleGroup } from '@/components/admin/live-support/ChannelToggl
 import { TelegramChannelStatus } from '@/components/admin/live-support/TelegramChannelStatus';
 import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
+import { ActiveCallsPanel } from '@/components/admin/live-support/ActiveCallsPanel';
 import { ALL_CHANNELS, ChannelChip, ChannelIcon, channelMeta, getChannel, type SupportChannel } from '@/lib/support-channels';
 
 const statusConfig: Record<AgentStatus, { label: string; color: string; icon: React.ReactNode }> = {
@@ -228,7 +229,8 @@ export default function LiveSupportPage() {
               )}
             </div>
 
-            <TabsContent value="inbox" className="flex-1 min-h-0 mt-2">
+            <TabsContent value="inbox" className="flex-1 min-h-0 mt-2 flex flex-col">
+          <ActiveCallsPanel />
           <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 p-4 h-full">
 
             {/* Conversation list */}
