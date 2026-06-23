@@ -438,6 +438,8 @@ export function useChat(options?: UseChatOptions) {
               localSupportsToolCalling: settings?.localSupportsToolCalling || false,
               // General knowledge
               allowGeneralKnowledge: settings?.allowGeneralKnowledge || false,
+              // Routing mode (ai_first / human_first / ai_only / human_only)
+              routingMode: (settings as any)?.routingMode || 'ai_first',
             },
           }),
           signal: abortControllerRef.current.signal,

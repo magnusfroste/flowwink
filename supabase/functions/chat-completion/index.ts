@@ -323,7 +323,7 @@ serve(async (req) => {
     let effectiveSettings: any = settings;
     if (!effectiveSettings?.routingMode) {
       const { data: cs } = await supabase
-        .from('site_settings').select('value').eq('key', 'chat_settings').maybeSingle();
+        .from('site_settings').select('value').eq('key', 'chat').maybeSingle();
       effectiveSettings = { ...(cs?.value as any || {}), ...(settings || {}) };
     }
     const routingMode: string = effectiveSettings?.routingMode || 'ai_first';
