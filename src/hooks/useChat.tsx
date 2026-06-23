@@ -567,6 +567,7 @@ export function useChat(options?: UseChatOptions) {
     error,
     conversationId,
     isWithLiveAgent,
+    isClosed,
     agentInfo,
     sendMessage,
     cancelRequest,
