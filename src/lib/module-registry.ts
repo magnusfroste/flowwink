@@ -20,7 +20,7 @@ import {
   blogModule, pagesModule, kbModule, mediaModule, newsletterModule,
   handbookModule, templatesModule, crmModule, dealsModule, companiesModule,
   formsModule, bookingModule, productsModule, inventoryModule, chatModule,
-  liveSupportModule, voiceModule, webinarsModule, analyticsModule, companyInsightsModule,
+  liveSupportModule, voiceModule, webinarsModule, webmeetModule, analyticsModule, companyInsightsModule,
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
   purchasingModule, manufacturingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
   slaModule, calendarModule, subscriptionsModule, salesIntelligenceModule,

@@ -33,6 +33,7 @@ export { chatModule } from './chat-module';
 export { liveSupportModule } from './live-support-module';
 export { voiceModule } from './voice-module';
 export { webinarsModule } from './webinars-module';
+export { webmeetModule } from './webmeet-module';
 export { workspaceChatModule } from './workspace-chat-module';
 export { customer360Module } from './customer360-module';
 export { surveysModule } from './surveys-module';

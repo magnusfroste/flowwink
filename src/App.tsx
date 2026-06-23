@@ -116,6 +116,8 @@ import MySkillsPage from "./pages/account/MySkillsPage";
 import MyContractsPage from "./pages/account/MyContractsPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
+import WebmeetPage from "./pages/admin/WebmeetPage";
+import MeetRoomPage from "./pages/MeetRoomPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
 import ConsultantProfilesPage from "./pages/admin/ConsultantProfilesPage";
 import FederationPage from "./pages/admin/FederationPage";
@@ -319,6 +321,8 @@ const router = createBrowserRouter([
       { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },
       { path: "/admin/webinars", element: <WebinarsPage /> },
+      { path: "/admin/webmeet", element: <WebmeetPage /> },
+      { path: "/meet/:slug", element: <MeetRoomPage /> },
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
       { path: "/admin/resume", element: <ConsultantProfilesPage /> },
       { path: "/admin/federation", element: <FederationPage /> },

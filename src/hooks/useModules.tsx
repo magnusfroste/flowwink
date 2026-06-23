@@ -118,6 +118,7 @@ export interface ModulesSettings {
   wiki: ModuleConfig;
   river: ModuleConfig;
   voice: ModuleConfig;
+  webmeet: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -781,6 +782,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     enhancedByFlowPilot: true,
   },
+  webmeet: {
+    enabled: false,
+    name: 'WebMeet',
+    description:
+      'Quick 1-to-few video meetings with shareable URLs and screen sharing — peer-to-peer WebRTC, no install for guests. Use for internal huddles, customer consultations (e.g. psychologist sessions), and ad-hoc calls. For 50+ viewer broadcasts, use Webinars instead.',
+    icon: 'Video',
+    category: 'communication',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -807,6 +818,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/global-blocks': 'pages',
   '/admin/media': 'mediaLibrary',
   '/admin/webinars': 'webinars',
+  '/admin/webmeet': 'webmeet',
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/resume': 'resume',
   '/admin/federation': 'federation',

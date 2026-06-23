@@ -12519,6 +12519,54 @@ export type Database = {
         }
         Relationships: []
       }
+      webmeet_rooms: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          expires_at: string | null
+          host_user_id: string | null
+          id: string
+          is_locked: boolean
+          max_participants: number
+          name: string | null
+          password: string | null
+          recording_enabled: boolean
+          settings: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string | null
+          host_user_id?: string | null
+          id?: string
+          is_locked?: boolean
+          max_participants?: number
+          name?: string | null
+          password?: string | null
+          recording_enabled?: boolean
+          settings?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string | null
+          host_user_id?: string | null
+          id?: string
+          is_locked?: boolean
+          max_participants?: number
+          name?: string | null
+          password?: string | null
+          recording_enabled?: boolean
+          settings?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wiki_pages: {
         Row: {
           content_md: string
@@ -13085,6 +13133,16 @@ export type Database = {
         Returns: Json
       }
       create_payroll_run: { Args: { p_period_date: string }; Returns: Json }
+      create_webmeet_room: {
+        Args: {
+          p_expires_in_minutes?: number
+          p_host_user_id?: string
+          p_max_participants?: number
+          p_name?: string
+          p_password?: string
+        }
+        Returns: Json
+      }
       current_employee_id: { Args: never; Returns: string }
       dispatch_automation_event: {
         Args: {
@@ -13111,6 +13169,7 @@ export type Database = {
         Args: { _event_name: string; _payload?: Json; _source?: string }
         Returns: string
       }
+      end_webmeet_room: { Args: { p_room_id: string }; Returns: Json }
       evaluate_approval_required: {
         Args: {
           p_amount_cents?: number
@@ -13132,6 +13191,7 @@ export type Database = {
         Args: { p_line_id: string; p_qty?: number }
         Returns: Json
       }
+      gen_webmeet_slug: { Args: never; Returns: string }
       generate_monthly_expense_report: {
         Args: { p_period?: string; p_user_id?: string }
         Returns: Json
@@ -13437,6 +13497,10 @@ export type Database = {
           next_existing_number: number
           series: string
         }[]
+      }
+      list_webmeet_rooms: {
+        Args: { p_active_only?: boolean; p_limit?: number }
+        Returns: Json
       }
       lock_accounting_period: {
         Args: { p_month: number; p_year: number }

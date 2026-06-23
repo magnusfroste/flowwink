@@ -131,6 +131,7 @@ export const MODULE_TIER_MAP: Readonly<Record<string, ModuleTier>> = {
   multiCurrency: 'extended',
   fieldService: 'extended',
   webinars: 'extended',
+  webmeet: 'extended',
   surveys: 'extended',
   liveSupport: 'extended',
   customer360: 'extended',

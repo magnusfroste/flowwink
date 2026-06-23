@@ -43,3 +43,26 @@ Se [docs/modules/voice.md](docs/modules/voice.md) för fullständiga use cases (
 ### Senare-att-dokumentera
 
 Detta dokument kompletteras när fas 2 levereras (WebRTC-klient, transkription, IVR).
+
+## WebMeet (video meetings)
+
+Quick 1-to-few video meetings with shareable URLs — like Google Meet, built in. See [docs/modules/webmeet.md](docs/modules/webmeet.md).
+
+**What ships now:**
+- `webmeet_rooms` table (slug, name, host, password, max_participants, expires_at, ended_at).
+- Hook `useWebmeet` — browser-native `RTCPeerConnection` mesh over Supabase Realtime broadcast (`webmeet:<slug>`), with presence sync and screen-share track-replacement.
+- Admin page `/admin/webmeet` — list + create rooms, copy link.
+- Public page `/meet/:slug` — anonymous-friendly lobby → join → grid + mic/cam/screen-share/end controls.
+- 3 MCP-exposed skills: `create_webmeet_room`, `end_webmeet_room`, `list_webmeet_rooms`. FlowPilot and external agents can mint a meeting URL and share it.
+- Module flag `webmeet` in `ModulesSettings` (opt-in, default off).
+
+**Design principles:**
+- **No SFU.** Peer-to-peer mesh — works up to ~6 participants. Larger broadcasts go to `webinars` (planned LiveKit/Agora runtime).
+- **No signaling tables.** Realtime broadcast carries SDP + ICE.
+- **Public-safe.** Anonymous guests can read an active room row and join the channel — only authenticated users can create or end rooms.
+- **MCP-first.** Any agent (FlowPilot, OpenClaw peers, marketing claw) can create a meeting URL via the same skill the admin UI uses.
+
+**Later:**
+- Invite fan-out — auto-send the join link via email / SMS / Telegram (per `mem/features/webinars-and-webmeet-plan.md`).
+- Optional TURN config per site.
+- Optional recording → push to `documents`.
