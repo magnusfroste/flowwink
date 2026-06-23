@@ -89,14 +89,12 @@ export default function WebmeetPage() {
       <AdminPageHeader
         title="WebMeet"
         description="Quick video meetings with a shareable URL — like Google Meet, built in."
-        icon={Video}
-        actions={
-          <Button onClick={() => setDialogOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New meeting
-          </Button>
-        }
-      />
+      >
+        <Button onClick={() => setDialogOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New meeting
+        </Button>
+      </AdminPageHeader>
 
       <AdminPageContainer>
         {loading ? (
