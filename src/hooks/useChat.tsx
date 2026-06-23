@@ -228,6 +228,7 @@ export function useChat(options?: UseChatOptions) {
             (updated.conversation_status === 'with_agent' || updated.conversation_status === 'waiting_agent');
           
           setIsWithLiveAgent(isWithAgent);
+          setIsClosed(updated.conversation_status === 'closed');
           
           // Fetch agent info when agent is assigned
           if (isWithAgent && updated.assigned_agent_id) {
