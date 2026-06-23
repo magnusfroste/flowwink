@@ -48,9 +48,26 @@ export interface AgentNamespace {
   skillSeeds?: SkillSeed[];
   /** Automations to register when module is enabled */
   automations?: AutomationSeed[];
-  /** Canonical events this module emits or listens to (see docs/architecture/event-bus.md) */
+  /**
+   * Events this module **emits** to the platform event bus.
+   * See docs/architecture/event-bus.md for the canonical catalog.
+   */
+  emits?: WebhookEventInfo[];
+  /**
+   * Events this module **listens to** (drives automations, triggers, fan-outs).
+   * Used by /admin/event-bus to render the producer→consumer graph and by CI
+   * to flag dead listeners (event no module emits) or dead events (emitted
+   * but no consumer).
+   */
+  listens?: WebhookEventInfo[];
+  /**
+   * @deprecated Use `emits` (and `listens` for consumers). Kept as an alias
+   * for `emits` so the 12 modules that pre-date the split keep working
+   * unchanged. `normaliseModule` mirrors between the two.
+   */
   webhookEvents?: WebhookEventInfo[];
 }
+
 
 export interface UiNamespace {
   /** Reserved — sidebar entries owned by this module */
@@ -198,11 +215,21 @@ export function defineModule<TInput, TOutput>(
 function normaliseModule<TInput, TOutput>(
   def: UnifiedModuleDef<TInput, TOutput>
 ): UnifiedModuleDef<TInput, TOutput> {
+  // emits / webhookEvents are aliases — mirror in both directions so old and
+  // new readers see the same data regardless of which field was declared.
+  const emits =
+    def.agent?.emits ??
+    def.agent?.webhookEvents ??
+    def.webhookEvents;
+  const listens = def.agent?.listens;
+
   const agent: AgentNamespace = {
     skills: def.agent?.skills ?? def.skills,
     skillSeeds: def.agent?.skillSeeds ?? def.skillSeeds,
     automations: def.agent?.automations ?? def.automations,
-    webhookEvents: def.agent?.webhookEvents ?? def.webhookEvents,
+    emits,
+    listens,
+    webhookEvents: emits, // backwards-compat mirror
   };
   const data: DataNamespace = {
     tables: def.data?.tables,
@@ -219,10 +246,11 @@ function normaliseModule<TInput, TOutput>(
     skills: agent.skills,
     skillSeeds: agent.skillSeeds,
     automations: agent.automations,
-    webhookEvents: agent.webhookEvents,
+    webhookEvents: emits,
     seedData: data.seedData,
   };
 }
+
 
 // =============================================================================
 // Registry Accessors (used by module-bootstrap.ts, skill-map.ts, etc.)
