@@ -114,6 +114,7 @@ serve(async (req) => {
         twilio: !!Deno.env.get('TWILIO_API_KEY'),
         gatewayapi: !!Deno.env.get('GATEWAYAPI_API_KEY'),
         elks46: !!(Deno.env.get('ELKS46_API_USERNAME') && Deno.env.get('ELKS46_API_PASSWORD')),
+        elevenlabs: !!Deno.env.get('ELEVENLABS_API_KEY'),
       }
 
     };

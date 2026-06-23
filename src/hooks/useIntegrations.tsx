@@ -115,6 +115,7 @@ export interface IntegrationsSettings {
   twilio: IntegrationConfig;
   gatewayapi: IntegrationConfig;
   elks46: IntegrationConfig;
+  elevenlabs: IntegrationConfig;
 }
 
 
@@ -432,6 +433,21 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://46elks.se/',
     docsLabel: 'Open 46elks',
     config: { from_number: '', voice_webhook_url: '' },
+  },
+  elevenlabs: {
+    name: 'ElevenLabs',
+    description: 'Studio-quality voice AI — Speech-to-Text (Scribe), Text-to-Speech, conversational voice agents, music, and SFX.',
+    icon: 'Headphones',
+    category: 'ai',
+    features: ['Speech-to-Text (Scribe)', 'Text-to-Speech (multilingual)', 'Conversational agents', 'Music & SFX', 'Voice cloning'],
+    secretName: 'ELEVENLABS_API_KEY',
+    docsUrl: 'https://elevenlabs.io/app/settings/api-keys',
+    docsLabel: 'Get API key',
+    config: {
+      sttModel: 'scribe_v1',
+      ttsModel: 'eleven_multilingual_v2',
+      ttsVoiceId: 'JBFqnCBsd6RMkjVDRZzb',
+    },
   },
 
 };
