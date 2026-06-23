@@ -63,12 +63,24 @@ export function AgentVoiceConfigCard() {
       });
       if (error) throw error;
       const creds: WebrtcCred[] = (data as any)?.credentials ?? [];
+      const debug = (data as any)?.debug;
       if (!creds.length) {
-        toast.error('No SIP-capable numbers found in your 46elks account', {
-          description: 'Contact support@46elks.com and ask for WebRTC credentials on your number.',
-        });
+        const total = debug?.total_numbers ?? 0;
+        const numbersList = (debug?.numbers ?? [])
+          .map((n: any) => `${n.number} (${(n.capabilities ?? []).join('/') || 'no caps'})${n.has_secret ? ' ✓' : ''}`)
+          .join(', ');
+        toast.error(
+          total === 0 ? 'No active numbers in your 46elks account' : 'No SIP-capable numbers found',
+          {
+            description: total > 0
+              ? `Found ${total} number(s): ${numbersList}. None have a WebRTC secret — email support@46elks.com and ask them to enable WebRTC/SIP on your number.`
+              : 'Buy a number at 46elks.com first.',
+            duration: 12000,
+          }
+        );
         return;
       }
+
       // Pick the first one (most accounts only have one WebRTC number)
       const c = creds[0];
       setDraft({
