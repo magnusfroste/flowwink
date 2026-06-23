@@ -832,7 +832,7 @@ export default function ChatSettingsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ai_first">AI first — AI answers, escalates on demand</SelectItem>
-                        <SelectItem value="human_first">Human first — straight to live-support, AI fallback if no agent online</SelectItem>
+                        <SelectItem value="human_first">Human first — straight to live-support, AI fallback if no teammate online</SelectItem>
                         <SelectItem value="ai_only">AI only — no escalation</SelectItem>
                         <SelectItem value="human_only">Human only — never AI, queues if offline</SelectItem>
                       </SelectContent>
@@ -842,9 +842,9 @@ export default function ChatSettingsPage() {
                   {/* Live Agent Banner setting */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
-                      <h4 className="font-medium">Show Live Agent Banner</h4>
+                      <h4 className="font-medium">Show Live Teammate Banner</h4>
                       <p className="text-sm text-muted-foreground">
-                        Display "You are now chatting with a live agent" banner
+                        Display "You are now chatting with a teammate" banner
                       </p>
                     </div>
                     <Switch
@@ -874,9 +874,9 @@ export default function ChatSettingsPage() {
                   {/* Live Agent Icon Style setting */}
                   <div className="space-y-2 p-4 rounded-lg border">
                     <div>
-                      <h4 className="font-medium">Live Agent Icon Style</h4>
+                      <h4 className="font-medium">Live Teammate Icon Style</h4>
                       <p className="text-sm text-muted-foreground">
-                        What to display instead of the robot icon when chatting with a live agent
+                        What to display instead of the robot icon when chatting with a teammate
                       </p>
                     </div>
                     <Select

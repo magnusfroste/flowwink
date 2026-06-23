@@ -12,12 +12,12 @@ export function LiveAgentIndicator({ className, channel = 'web', agentName }: Li
   const Icon = meta.icon;
 
   const copy = (() => {
-    const who = agentName ? `with ${agentName}` : 'with a live agent';
+    const who = agentName ? `with ${agentName}` : 'with a teammate';
     switch (channel) {
-      case 'telegram': return `You're now connected to ${who} on Telegram`;
-      case 'sms':      return `${agentName ?? 'A live agent'} is replying by SMS`;
-      case 'voice':    return `${agentName ?? 'A live agent'} is on the line`;
-      case 'voicemail':return `${agentName ?? 'A live agent'} will follow up on your voicemail`;
+      case 'telegram': return `You're now connected ${who} on Telegram`;
+      case 'sms':      return `${agentName ?? 'A teammate'} is replying by SMS`;
+      case 'voice':    return `${agentName ?? 'A teammate'} is on the line`;
+      case 'voicemail':return `${agentName ?? 'A teammate'} will follow up on your voicemail`;
       case 'web':
       default:         return `You are now chatting ${who}`;
     }

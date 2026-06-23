@@ -57,7 +57,7 @@ export function LiveSupportDashboardWidget() {
             <Headphones className="h-5 w-5" />
             Live Support
           </CardTitle>
-          <CardDescription>Human handoff and agent status</CardDescription>
+          <CardDescription>Human handoff and teammate status</CardDescription>
         </div>
         <Button asChild size="sm" variant="ghost">
           <Link to="/admin/support">
@@ -118,7 +118,7 @@ export function LiveSupportDashboardWidget() {
                 isOnline ? "text-green-500 animate-pulse" : "text-muted-foreground"
               )} />
               <span className={isOnline ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
-                {isOnline ? 'Agents available' : 'No agents online'}
+                {isOnline ? 'Teammates available' : 'No teammates online'}
               </span>
             </div>
 
@@ -146,7 +146,7 @@ export function LiveSupportDashboardWidget() {
               >
                 <Clock className="h-4 w-4 text-amber-500" />
                 <span className="text-sm flex-1">
-                  {pendingConversations.length} conversation{pendingConversations.length !== 1 ? 's' : ''} waiting for agent
+                  {pendingConversations.length} conversation{pendingConversations.length !== 1 ? 's' : ''} waiting for a teammate
                 </span>
                 <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 dark:text-amber-300">
                   Pending

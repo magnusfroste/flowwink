@@ -108,9 +108,9 @@ export function ChatMessage({
           if (agentInfo?.avatarUrl) {
             return (
               <Avatar className="h-8 w-8">
-                <AvatarImage src={agentInfo.avatarUrl} alt={agentInfo.fullName || 'Agent'} />
+                <AvatarImage src={agentInfo.avatarUrl} alt={agentInfo.fullName || 'Teammate'} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {agentInfo.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'AG'}
+                  {agentInfo.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'TM'}
                 </AvatarFallback>
               </Avatar>
             );

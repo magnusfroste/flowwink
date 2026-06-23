@@ -154,10 +154,10 @@ export default function LiveSupportPage() {
           description="Manage real-time customer conversations"
         >
           <div className="flex items-center gap-3">
-            {/* Online agents count */}
+            {/* Online teammates count */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <UserCheck className="h-4 w-4" />
-              <span>{onlineAgents.length} agent{onlineAgents.length !== 1 ? 's' : ''} online</span>
+              <span>{onlineAgents.length} teammate{onlineAgents.length !== 1 ? 's' : ''} online</span>
             </div>
 
             {/* Status dropdown */}
