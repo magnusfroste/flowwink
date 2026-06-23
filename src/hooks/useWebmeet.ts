@@ -224,8 +224,8 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
         });
 
         channel.on('presence', { event: 'join' }, ({ newPresences }) => {
-          newPresences.forEach((p: { peerId: string }) => {
-            if (p.peerId === peerIdRef.current) return;
+          (newPresences as Array<{ peerId?: string }>).forEach((p) => {
+            if (!p.peerId || p.peerId === peerIdRef.current) return;
             // Deterministic initiator: lower id calls higher id
             if (peerIdRef.current < p.peerId) {
               createPeerConnection(p.peerId, true);
@@ -234,7 +234,9 @@ export function useWebmeet(roomSlug: string | undefined, displayName: string) {
         });
 
         channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
-          leftPresences.forEach((p: { peerId: string }) => removeParticipant(p.peerId));
+          (leftPresences as Array<{ peerId?: string }>).forEach((p) => {
+            if (p.peerId) removeParticipant(p.peerId);
+          });
         });
 
         await new Promise<void>((resolve, reject) => {
