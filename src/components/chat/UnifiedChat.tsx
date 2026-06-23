@@ -205,6 +205,8 @@ interface UnifiedChatProps {
     error?: string | null;
     sendMessage: (msg: string) => void;
     cancelRequest?: () => void;
+    isClosed?: boolean;
+    onStartNew?: () => void;
   };
   visitorSettings?: {
     title?: string;
