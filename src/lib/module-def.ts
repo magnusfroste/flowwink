@@ -48,9 +48,26 @@ export interface AgentNamespace {
   skillSeeds?: SkillSeed[];
   /** Automations to register when module is enabled */
   automations?: AutomationSeed[];
-  /** Canonical events this module emits or listens to (see docs/architecture/event-bus.md) */
+  /**
+   * Events this module **emits** to the platform event bus.
+   * See docs/architecture/event-bus.md for the canonical catalog.
+   */
+  emits?: WebhookEventInfo[];
+  /**
+   * Events this module **listens to** (drives automations, triggers, fan-outs).
+   * Used by /admin/event-bus to render the producer→consumer graph and by CI
+   * to flag dead listeners (event no module emits) or dead events (emitted
+   * but no consumer).
+   */
+  listens?: WebhookEventInfo[];
+  /**
+   * @deprecated Use `emits` (and `listens` for consumers). Kept as an alias
+   * for `emits` so the 12 modules that pre-date the split keep working
+   * unchanged. `normaliseModule` mirrors between the two.
+   */
   webhookEvents?: WebhookEventInfo[];
 }
+
 
 export interface UiNamespace {
   /** Reserved — sidebar entries owned by this module */
