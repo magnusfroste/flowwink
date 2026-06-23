@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { UnifiedChatInput } from './UnifiedChatInput';
 import { ChatTypingIndicator } from './ChatTypingIndicator';
 import { ChatEmptyState } from './ChatEmptyState';
+import { ChatContextIndicator } from './ChatContextIndicator';
 import { ChatMessage } from './ChatMessage';
 import { ConversationCSAT } from './ConversationCSAT';
 import { ProactiveMessageCard } from './ProactiveMessageCard';
