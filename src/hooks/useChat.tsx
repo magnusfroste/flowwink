@@ -546,7 +546,7 @@ export function useChat(options?: UseChatOptions) {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, conversationId, settings, getSessionId, createConversation, saveMessage, isLoading, updateConversationTitle]);
+  }, [messages, conversationId, settings, getSessionId, createConversation, saveMessage, isLoading, isClosed, updateConversationTitle]);
 
   const cancelRequest = useCallback(() => {
     abortControllerRef.current?.abort();
