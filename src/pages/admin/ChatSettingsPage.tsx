@@ -896,21 +896,6 @@ export default function ChatSettingsPage() {
                     </Select>
                   </div>
 
-                  {/* Context indicator setting */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <h4 className="font-medium">Show Context Indicator</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Display "X pages • Y articles" badge in chat
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.showContextIndicator ?? true}
-                      onCheckedChange={(showContextIndicator) => 
-                        setFormData({ ...formData, showContextIndicator })
-                      }
-                    />
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
