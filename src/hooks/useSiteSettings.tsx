@@ -282,10 +282,8 @@ export interface ChatSettings {
   
   // Chat appearance
   showChatIcons: boolean;
-  
-  // FlowPilot integration
-  showEscalationsInCopilot: boolean;
-  showPublicChatsInCopilot: boolean;
+
+
   
   // Speech — STT & TTS
   sttProvider: ChatSttProvider;
@@ -350,8 +348,6 @@ export const defaultChatSettings: ChatSettings = {
   showLiveAgentBanner: true,
   liveAgentIconStyle: 'avatar',
   showChatIcons: true,
-  showEscalationsInCopilot: false,
-  showPublicChatsInCopilot: false,
   sttProvider: 'browser',
   sttLocalEndpoint: '',
   sttLocalModel: 'whisper-1',
