@@ -32,6 +32,7 @@ interface IntegrationStatus {
     twilio: boolean;
     gatewayapi: boolean;
     elks46: boolean;
+    elevenlabs: boolean;
   };
 }
 
