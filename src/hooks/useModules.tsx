@@ -118,6 +118,7 @@ export interface ModulesSettings {
   wiki: ModuleConfig;
   river: ModuleConfig;
   voice: ModuleConfig;
+  webmeet: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
