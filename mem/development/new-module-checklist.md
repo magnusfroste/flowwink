@@ -22,6 +22,11 @@ PR-block. Use `bun run new:module <id>` to scaffold the boilerplate.
 - [ ] `category` is set so MCP `?groups=<dept>` filtering works.
 - [ ] `bun run lint:skills` passes (Agent Contract Integrity).
 
+## 2b. Events (producer + consumer)
+- [ ] If the module emits any platform event, declared in `agent.emits[]` (or legacy `webhookEvents[]`).
+- [ ] If the module **reacts to** events (automations, triggers, fan-outs), declared in `agent.listens[]`. Empty array is fine if the module is pure producer.
+- [ ] **When touching an existing module:** if it consumes events that weren't declared yet, backfill `agent.listens[]` now — this is how `/admin/event-bus` graph data accumulates organically.
+
 ## 3. UI / navigation (only if module ships UI)
 - [ ] Admin route registered + `useIsModuleEnabled(<id>)` gate.
 - [ ] Sidebar entry added.
