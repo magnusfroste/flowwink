@@ -41,9 +41,11 @@ export function ChatConversation({
     isLoading,
     error,
     isWithLiveAgent,
+    isClosed,
     agentInfo,
     sendMessage,
     cancelRequest,
+    clearMessages,
   } = useChat({ conversationId, onNewConversation, skipRestore, checkinId });
 
   // Load visitor-scoped skills for /commands
