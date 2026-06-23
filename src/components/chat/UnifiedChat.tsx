@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { UnifiedChatInput } from './UnifiedChatInput';
 import { ChatTypingIndicator } from './ChatTypingIndicator';
 import { ChatEmptyState } from './ChatEmptyState';
+import { ChatContextIndicator } from './ChatContextIndicator';
 import { ChatMessage } from './ChatMessage';
 import { ConversationCSAT } from './ConversationCSAT';
 import { ProactiveMessageCard } from './ProactiveMessageCard';
@@ -299,13 +300,18 @@ export function UnifiedChat({
 
   // ─── Visitor empty state ──────────────────────────────────────────────
   const renderVisitorEmpty = () => (
-    <ChatEmptyState
-      title={visitorSettings?.title}
-      welcomeMessage={visitorSettings?.welcomeMessage}
-      suggestedPrompts={visitorSettings?.suggestedPrompts}
-      onPromptClick={handleSend}
-      compact={compact}
-    />
+    <div className="flex flex-col h-full">
+      <ChatEmptyState
+        title={visitorSettings?.title}
+        welcomeMessage={visitorSettings?.welcomeMessage}
+        suggestedPrompts={visitorSettings?.suggestedPrompts}
+        onPromptClick={handleSend}
+        compact={compact}
+      />
+      <div className="flex justify-center pb-4">
+        <ChatContextIndicator variant="compact" />
+      </div>
+    </div>
   );
 
   // ─── Render ───────────────────────────────────────────────────────────
