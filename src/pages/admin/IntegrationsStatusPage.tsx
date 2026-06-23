@@ -1496,6 +1496,11 @@ export default function IntegrationsStatusPage() {
                               <Elks46BalanceBadge hasKey={hasKey} />
                             </div>
                           )}
+                          {key === 'elevenlabs' && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <ElevenLabsUsageBadge hasKey={hasKey} />
+                            </div>
+                          )}
                           {/* Actions */}
                           <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                             {(key === 'openai' || key === 'gemini' || key === 'anthropic') && (
