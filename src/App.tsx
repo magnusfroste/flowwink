@@ -116,6 +116,8 @@ import MySkillsPage from "./pages/account/MySkillsPage";
 import MyContractsPage from "./pages/account/MyContractsPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
+import WebmeetPage from "./pages/admin/WebmeetPage";
+import MeetRoomPage from "./pages/MeetRoomPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
 import ConsultantProfilesPage from "./pages/admin/ConsultantProfilesPage";
 import FederationPage from "./pages/admin/FederationPage";
