@@ -34,6 +34,7 @@ export function useChat(options?: UseChatOptions) {
   const [conversationId, setConversationId] = useState<string | undefined>(options?.conversationId);
   const [initialized, setInitialized] = useState(false);
   const [isWithLiveAgent, setIsWithLiveAgent] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
   const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const locallyCreatedConvIdsRef = useRef<Set<string>>(new Set());
