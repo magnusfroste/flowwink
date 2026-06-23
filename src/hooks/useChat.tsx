@@ -160,6 +160,7 @@ export function useChat(options?: UseChatOptions) {
   useEffect(() => {
     if (!conversationId) {
       setIsWithLiveAgent(false);
+      setIsClosed(false);
       setAgentInfo(null);
       return;
     }
@@ -175,6 +176,7 @@ export function useChat(options?: UseChatOptions) {
         (data.conversation_status === 'with_agent' || data.conversation_status === 'waiting_agent');
       
       setIsWithLiveAgent(isWithAgent);
+      setIsClosed(data?.conversation_status === 'closed');
       
       // Fetch agent info separately if agent is assigned
       if (isWithAgent && data?.assigned_agent_id) {
