@@ -588,9 +588,20 @@ async function handleGetWebrtcCredentials(req: Request): Promise<Response> {
       return json({ error: `46elks ${resp.status}`, details: (data as any)?.message || JSON.stringify(data) }, 502);
     }
     const numbers = Array.isArray((data as any)?.data) ? (data as any).data : [];
-    // Filter to numbers that have a secret (i.e. SIP/WebRTC-capable) — 46elks exposes
-    // `secret` on number objects that can be registered as a softphone account.
-    const sipCapable = numbers
+
+    // The /Numbers list endpoint usually omits `secret`. Fetch each number individually.
+    const detailed = await Promise.all(
+      numbers.map(async (n: any) => {
+        if (typeof n?.secret === "string" && n.secret.length > 0) return n;
+        try {
+          const r = await fetch(`${ELKS_BASE}/Numbers/${n.id}`, { headers: { Authorization: auth } });
+          if (!r.ok) return n;
+          return await r.json();
+        } catch { return n; }
+      })
+    );
+
+    const sipCapable = detailed
       .filter((n: any) => typeof n?.secret === "string" && n.secret.length > 0)
       .map((n: any) => {
         const num = String(n.number || "").replace(/^\+/, "");
@@ -604,10 +615,20 @@ async function handleGetWebrtcCredentials(req: Request): Promise<Response> {
           sip_uri: `sip:${num}@voip.46elks.com`,
         };
       });
+
     return json({
       ok: true,
       count: sipCapable.length,
       credentials: sipCapable,
+      debug: {
+        total_numbers: numbers.length,
+        numbers: detailed.map((n: any) => ({
+          id: n?.id,
+          number: n?.number,
+          capabilities: n?.capabilities,
+          has_secret: typeof n?.secret === "string" && n.secret.length > 0,
+        })),
+      },
     });
   } catch (err: any) {
     console.error("[elks46-ingest:get_webrtc_credentials] error", err?.message ?? err);
