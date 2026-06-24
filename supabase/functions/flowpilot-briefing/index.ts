@@ -419,12 +419,15 @@ serve(async (req) => {
       let conversationId: string | null = null;
 
       if (adminUserId) {
+        // Look for an existing "Daily Briefing — <today>" conversation for this admin.
+        // Match by title prefix so we update today's briefing in place instead of
+        // creating a new conversation every cron run.
         const { data: todaySession } = await supabase
           .from("chat_conversations")
           .select("id")
-          .eq("conversation_status", "active")
-          .is("session_id", null)
+          .eq("scope", "internal")
           .eq("user_id", adminUserId)
+          .eq("title", `Daily Briefing — ${todayLabel}`)
           .gte("created_at", todayStart.toISOString())
           .order("created_at", { ascending: false })
           .limit(1)
@@ -441,6 +444,8 @@ serve(async (req) => {
             conversation_status: "active",
             priority: "normal",
             user_id: adminUserId,
+            scope: "internal",
+            session_id: crypto.randomUUID(),
           })
           .select("id")
           .single();
