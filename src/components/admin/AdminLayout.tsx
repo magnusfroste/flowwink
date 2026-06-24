@@ -17,11 +17,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Copilot/FlowPilot + FlowChat render edge-to-edge (own header/chrome)
-  // but still get the standard left sidebar.
-  const isCopilotMode =
-    location.pathname === '/admin/flowpilot' ||
-    location.pathname === '/admin/flowchat';
+  // Only FlowPilot cockpit renders edge-to-edge (morning briefing chrome).
+  // FlowChat is a regular admin page — keeps pinned-pages header.
+  const isCopilotMode = location.pathname === '/admin/flowpilot';
 
   // Auto-seed FlowPilot on first admin session (idempotent)
   useFlowPilotBootstrap();

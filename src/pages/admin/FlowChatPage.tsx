@@ -6,8 +6,9 @@
  * ask questions. FlowChat is the platform-layer chat surface; FlowPilot's
  * cockpit (briefings, autonomy loop, HIL approvals) lives at /admin/flowpilot.
  *
- * Layout mirrors /admin/cowork: no left aside (admin sidebar is already
- * there), sessions live in a header `SessionPicker` dropdown.
+ * Layout: regular AdminLayout (pinned-pages header, left admin sidebar)
+ * plus a right collapsible `SessionsAside` for chat history. Mobile gets
+ * the same SessionPicker dropdown the workspace uses.
  */
 
 import { useEffect, useMemo } from 'react';
@@ -16,8 +17,8 @@ import { useAgentOperate } from '@/hooks/useAgentOperate';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { OperateChat } from '@/components/admin/copilot/OperateChat';
 import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
+import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkspaceSession } from '@/hooks/useWorkspaceSessions';
 
@@ -46,7 +47,6 @@ export default function FlowChatPage() {
     loadConversations();
   }, [user, isWriter, loadSkills, loadConversations]);
 
-  // Reload sidebar shortly after a fresh conversation is created
   useEffect(() => {
     if (conversationId) {
       const t = setTimeout(() => loadConversations(), 800);
@@ -54,7 +54,6 @@ export default function FlowChatPage() {
     }
   }, [conversationId, loadConversations]);
 
-  // Map FlowPilotConversation → WorkspaceSession shape for SessionPicker reuse
   const sessions = useMemo<WorkspaceSession[]>(
     () =>
       conversations.map((c) => ({
@@ -79,14 +78,13 @@ export default function FlowChatPage() {
 
   return (
     <AdminLayout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col bg-background">
-        {/* Slim header — mirrors /admin/cowork */}
-        <div className="border-b border-border/40 px-4 md:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2 shrink-0">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">FlowChat</span>
-            </div>
+      {/* AdminLayout wraps non-cockpit pages in `<main className="p-8">`.
+          We need edge-to-edge inside that main, so neutralise the padding. */}
+      <div className="-m-8 flex h-[calc(100vh-4rem-3.5rem)] min-h-0">
+        {/* Chat column */}
+        <div className="flex-1 flex flex-col min-w-0 bg-background">
+          {/* Mobile-only thin toolbar: session picker + operator badge */}
+          <div className="md:hidden border-b border-border/40 px-4 py-2 flex items-center justify-between gap-2 shrink-0">
             <SessionPicker
               sessions={sessions}
               activeId={conversationId}
@@ -95,14 +93,19 @@ export default function FlowChatPage() {
               onRename={handleRename}
               onDelete={handleDelete}
             />
+            <Badge variant="secondary" className="text-[10px]">
+              {skillStats ? `${skillStats.exposed} skills` : `${skills.length} skills`}
+            </Badge>
           </div>
-          <div className="flex items-center gap-1.5">
+
+          {/* Desktop: operator badge floats top-right of the chat column */}
+          <div className="hidden md:flex justify-end px-4 pt-3 shrink-0">
             <Badge
               variant="secondary"
               className="text-[10px]"
               title={
                 skillStats
-                  ? `${skillStats.exposed} skills exposed to FlowChat. ${skillStats.disabled} more skills exist but are hidden because their module is off (${skillStats.modulesOff} modules disabled). Enable modules in /admin/modules to expand FlowChat's reach.`
+                  ? `${skillStats.exposed} skills exposed to FlowChat. ${skillStats.disabled} more skills exist but are hidden because their module is off (${skillStats.modulesOff} modules disabled).`
                   : `${skills.length} skills total in catalog`
               }
             >
@@ -110,19 +113,28 @@ export default function FlowChatPage() {
               {skillStats && skillStats.disabled > 0 ? ` · ${skillStats.disabled} hidden` : ''}
             </Badge>
           </div>
+
+          <div className="flex-1 flex flex-col min-h-0">
+            <OperateChat
+              messages={messages}
+              skills={skills}
+              isLoading={isLoading}
+              onSendMessage={sendMessage}
+              onReset={handleNew}
+              onCancel={cancelRequest}
+            />
+          </div>
         </div>
 
-        {/* Chat body */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <OperateChat
-            messages={messages}
-            skills={skills}
-            isLoading={isLoading}
-            onSendMessage={sendMessage}
-            onReset={handleNew}
-            onCancel={cancelRequest}
-          />
-        </div>
+        {/* Right collapsible chat history (desktop+) */}
+        <SessionsAside
+          sessions={sessions}
+          activeId={conversationId}
+          onSelect={switchConversation}
+          onNew={handleNew}
+          onRename={handleRename}
+          onDelete={handleDelete}
+        />
       </div>
     </AdminLayout>
   );
