@@ -170,6 +170,8 @@ Deno.serve(async (req) => {
     };
 
     const callComposio = async (url: string, init?: RequestInit) => {
+      const sentHeaders = init?.headers as Record<string, string> | undefined;
+      console.log('[composio-proxy] → outgoing', url, 'header keys:', sentHeaders ? Object.keys(sentHeaders) : 'none');
       const res = await fetch(url, init);
       const data = await readResponse(res);
       return { ok: res.ok, status: res.status, statusText: res.statusText, data };
