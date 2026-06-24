@@ -135,6 +135,9 @@ export interface FlowPilotConversation {
   updated_at: string;
 }
 
+const isDailyBriefingConversation = (title: string | null | undefined) =>
+  (title ?? '').startsWith('Daily Briefing —');
+
 export function useAgentOperate() {
   const [messages, setMessages] = useState<OperateMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -679,28 +682,38 @@ export function useAgentOperate() {
   // ─── Conversation history ────────────────────────────────────────────
 
   const loadConversations = useCallback(async () => {
-    // Only show conversations that have at least one user message —
-    // filters out auto-generated "Session — May X" buckets that contain
-    // only briefings or stale autonomous logs.
+    // Show normal operator chats that have at least one user message, plus
+    // system-created Daily Briefing sessions. Briefings are assistant-only and
+    // have a real session_id, so an inner join on user messages would hide them.
     const { data } = await supabase
       .from('chat_conversations')
-      .select('id, title, created_at, updated_at, chat_messages!inner(role)')
+      .select('id, title, created_at, updated_at')
       .eq('conversation_status', 'active')
       .not('title', 'is', null)
-      .is('session_id', null)        // Exclude public/visitor chats
-      .eq('chat_messages.role', 'user')
       .order('updated_at', { ascending: false })
       .limit(50);
-    if (data) {
-      // Dedupe — inner join can repeat the conversation per matching message
-      const seen = new Set<string>();
-      const unique = (data as any[]).filter((c) => {
-        if (seen.has(c.id)) return false;
-        seen.add(c.id);
-        return true;
-      });
-      setConversations(unique as FlowPilotConversation[]);
+    if (!data?.length) {
+      setConversations([]);
+      return;
     }
+
+    const ids = data.map((c) => c.id);
+    const { data: messageRows } = await supabase
+      .from('chat_messages')
+      .select('conversation_id, role')
+      .in('conversation_id', ids);
+
+    const conversationsWithUserMessage = new Set(
+      (messageRows ?? [])
+        .filter((m: any) => m.role === 'user')
+        .map((m: any) => m.conversation_id),
+    );
+
+    setConversations(
+      (data as FlowPilotConversation[]).filter(
+        (c) => conversationsWithUserMessage.has(c.id) || isDailyBriefingConversation(c.title),
+      ),
+    );
   }, []);
 
   const switchConversation = useCallback(async (targetId: string) => {
