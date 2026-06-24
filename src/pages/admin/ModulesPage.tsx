@@ -551,40 +551,6 @@ export default function ModulesPage() {
             ))}
           </div>
         )}
-
-        {/* Roadmap — Planned modules (read-only) */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Rocket className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Roadmap — Coming soon
-            </h2>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Small, high-value modules planned next. Tackling the simplest first — vote or comment in GitHub Issues to influence priority.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PLANNED_MODULES.map((m) => (
-              <Card key={m.id} className="border-dashed bg-muted/20">
-                <CardContent className="pt-6 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-sm">{m.name}</h3>
-                    <div className="flex gap-1.5 shrink-0">
-                      <Badge variant="outline" className="text-[10px]">Planned</Badge>
-                      <Badge variant="secondary" className="text-[10px]">{m.effort}</Badge>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {m.description}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                    {CATEGORY_LABELS[m.category]}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
       </div>
     </AdminLayout>
   );
