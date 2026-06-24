@@ -144,10 +144,12 @@ Deno.serve(async (req) => {
     const { action, intent, app, params, entity_id } = body;
     const effectiveUserId = entity_id || 'default';
 
+    // Composio v3 rejects requests with multiple auth modes (error 10401).
+    // Use only x-api-key — that's the v3 standard. Sending Authorization: Bearer
+    // alongside causes "Multiple authentication modes were provided".
     const composioHeaders = {
       'Content-Type': 'application/json',
       'x-api-key': composioKey,
-      'Authorization': `Bearer ${composioKey}`,
     };
 
     const json = (data: unknown, status = 200) =>
