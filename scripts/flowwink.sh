@@ -412,60 +412,71 @@ cmd_update_funcs() {
         if [ "$failed" -ne 0 ]; then
             echo -e "  ${YELLOW}⚠ Skipping prune — ${failed} function(s) failed to deploy.${NC}"
             echo -e "  ${DIM}Fix the deploy first so prune can't remove something still needed.${NC}"
-            echo ""
-            return 0
-        fi
-
-        local deployed
-        deployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
-            | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")
-        if [ -z "$deployed" ]; then
-            echo -e "  ${YELLOW}⚠ Could not list deployed functions — skipping prune (nothing deleted).${NC}"
-            echo ""
-            return 0
-        fi
-
-        # extras = deployed − keep-set ($functions). Never touches the keep-set.
-        local extras="" e
-        for e in $deployed; do
-            grep -qxF "$e" <<<"$functions" || extras+="$e"$'\n'
-        done
-        extras=$(echo "$extras" | sed '/^$/d')
-
-        local extra_count
-        extra_count=$(echo "$extras" | grep -c . | tr -d ' ')
-        if [ "$extra_count" -eq 0 ]; then
-            echo -e "  ${GREEN}✓ Nothing to prune — deployed set already matches this site.${NC}"
-            echo ""
-            return 0
-        fi
-
-        echo -e "  These ${extra_count} deployed function(s) are NOT needed by this site:"
-        echo "$extras" | sed 's/^/    ✗ /'
-        echo ""
-        if [ "${FLOWWINK_PRUNE_YES:-0}" != "1" ]; then
-            local confirm
-            read -e -p "  Type DELETE to remove them (anything else cancels): " confirm
-            if [ "$confirm" != "DELETE" ]; then
-                echo -e "  ${DIM}Cancelled — nothing deleted.${NC}"
-                echo ""
-                return 0
-            fi
-        fi
-
-        local pruned=0 prune_failed=0
-        for e in $extras; do
-            printf "  deleting %-42s" "$e"
-            if supabase functions delete "$e" --project-ref "$PROJECT_REF" >/dev/null 2>&1; then
-                echo -e "${GREEN}✓${NC}"; pruned=$((pruned + 1))
+        else
+            local pdeployed
+            pdeployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
+                | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")
+            if [ -z "$pdeployed" ]; then
+                echo -e "  ${YELLOW}⚠ Could not list deployed functions — skipping prune (nothing deleted).${NC}"
             else
-                echo -e "${RED}✗${NC}"; prune_failed=$((prune_failed + 1))
+                # extras = deployed − keep-set ($functions). Never touches the keep-set.
+                local extras="" e
+                for e in $pdeployed; do
+                    grep -qxF "$e" <<<"$functions" || extras+="$e"$'\n'
+                done
+                extras=$(echo "$extras" | sed '/^$/d')
+                local extra_count
+                extra_count=$(echo "$extras" | grep -c . | tr -d ' ')
+                if [ "$extra_count" -eq 0 ]; then
+                    echo -e "  ${GREEN}✓ Nothing to prune — deployed set already matches this site.${NC}"
+                else
+                    echo -e "  These ${extra_count} deployed function(s) are NOT needed by this site:"
+                    echo "$extras" | sed 's/^/    ✗ /'
+                    echo ""
+                    local do_prune=1
+                    if [ "${FLOWWINK_PRUNE_YES:-0}" != "1" ]; then
+                        local confirm
+                        read -e -p "  Type DELETE to remove them (anything else cancels): " confirm
+                        [ "$confirm" != "DELETE" ] && { echo -e "  ${DIM}Cancelled — nothing deleted.${NC}"; do_prune=0; }
+                    fi
+                    if [ "$do_prune" = "1" ]; then
+                        local pruned=0 prune_failed=0
+                        for e in $extras; do
+                            printf "  deleting %-42s" "$e"
+                            if supabase functions delete "$e" --project-ref "$PROJECT_REF" >/dev/null 2>&1; then
+                                echo -e "${GREEN}✓${NC}"; pruned=$((pruned + 1))
+                            else
+                                echo -e "${RED}✗${NC}"; prune_failed=$((prune_failed + 1))
+                            fi
+                        done
+                        echo ""
+                        echo -e "  ${GREEN}✓ Pruned ${pruned} function(s)${NC}$([ "$prune_failed" -gt 0 ] && echo -e " ${RED}(${prune_failed} failed)${NC}")"
+                    fi
+                fi
             fi
-        done
-        echo ""
-        echo -e "  ${GREEN}✓ Pruned ${pruned} function(s)${NC}$([ "$prune_failed" -gt 0 ] && echo -e " ${RED}(${prune_failed} failed)${NC}")"
+        fi
     fi
+
+    record_deployed_functions
     echo ""
+}
+
+# Record the instance's deployed edge functions into site_settings so the admin
+# Modules page can flag "module enabled but its function isn't deployed".
+record_deployed_functions() {
+    local token deployed json
+    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    [ -z "$token" ] && return 0
+    deployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
+        | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")
+    [ -z "$deployed" ] && return 0
+    json=$(echo "$deployed" | jq -R . | jq -s -c .)
+    local sql
+    sql="insert into public.site_settings(key, value) values('edge_functions_deployed', jsonb_build_object('functions', '${json}'::jsonb, 'updated_at', now()::text)) on conflict (key) do update set value = excluded.value;"
+    curl -s -o /dev/null -m 25 -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+        -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
+        -d "$(jq -n --arg q "$sql" '{query:$q}')" \
+        && echo -e "  ${DIM}Recorded deployed function list for the admin UI.${NC}"
 }
 
 cmd_set_keys() {

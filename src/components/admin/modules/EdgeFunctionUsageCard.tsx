@@ -7,7 +7,7 @@
  * truth) + the currently-enabled modules, so it updates live as modules toggle.
  */
 import { useMemo } from 'react';
-import { Server, TriangleAlert, ArrowUpCircle, CheckCircle2 } from 'lucide-react';
+import { Server, TriangleAlert, ArrowUpCircle, CheckCircle2, CloudOff } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -15,9 +15,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
   edgeFunctionUsage,
+  requiredEdgeFunctions,
+  MODULE_EDGE_FUNCTIONS,
   PLAN_FUNCTION_LIMITS,
   type ModuleId,
 } from '@/lib/edge-function-registry';
+import { useDeployedEdgeFunctions } from '@/hooks/useDeployedEdgeFunctions';
 
 interface Props {
   /** Module ids currently enabled (use the live/unsaved set for instant feedback). */
@@ -30,6 +33,27 @@ const WARN_AT = 0.85; // start nudging toward Pro at 85% of the free ceiling
 
 export function EdgeFunctionUsageCard({ enabledModuleIds, moduleNames }: Props) {
   const usage = useMemo(() => edgeFunctionUsage(enabledModuleIds), [enabledModuleIds]);
+  const { data: deployed } = useDeployedEdgeFunctions();
+
+  // Which enabled modules need an edge-function deploy that hasn't happened yet?
+  // Only meaningful once the deploy script has recorded what's deployed.
+  const undeployed = useMemo(() => {
+    const list = deployed?.functions;
+    if (!list) return null; // status unknown — never deployed via the current script
+    const deployedSet = new Set(list);
+    const required = requiredEdgeFunctions(enabledModuleIds);
+    const missing = required.filter((fn) => !deployedSet.has(fn));
+    if (missing.length === 0) return [];
+    // map missing functions back to the enabled modules that own them
+    const enabled = new Set(enabledModuleIds);
+    const affected: Array<{ moduleId: ModuleId; functions: string[] }> = [];
+    for (const [moduleId, fns] of Object.entries(MODULE_EDGE_FUNCTIONS) as Array<[ModuleId, readonly string[]]>) {
+      if (!enabled.has(moduleId)) continue;
+      const miss = fns.filter((fn) => missing.includes(fn));
+      if (miss.length) affected.push({ moduleId, functions: miss });
+    }
+    return affected;
+  }, [deployed, enabledModuleIds]);
 
   const pct = Math.min(100, Math.round((usage.required / usage.freeLimit) * 100));
   const remaining = usage.freeLimit - usage.required;
@@ -68,6 +92,26 @@ export function EdgeFunctionUsageCard({ enabledModuleIds, moduleNames }: Props) 
             </span>
           </div>
         </div>
+
+        {undeployed && undeployed.length > 0 && (
+          <Alert className="border-amber-500/50">
+            <CloudOff className="h-4 w-4" />
+            <AlertTitle>Edge function deploy needed</AlertTitle>
+            <AlertDescription className="text-xs">
+              {undeployed.length} enabled module(s) have edge functions that aren't deployed on
+              this instance yet — enabling a module in the UI can't deploy them. Run{' '}
+              <code>flowwink.sh /update-funcs</code> to deploy:
+              <ul className="mt-1 space-y-0.5">
+                {undeployed.map(({ moduleId, functions }) => (
+                  <li key={moduleId}>
+                    <span className="font-medium">{moduleNames?.[moduleId] ?? moduleId}</span>
+                    <span className="text-muted-foreground"> — {functions.join(', ')}</span>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {over && (
           <Alert variant="destructive">
