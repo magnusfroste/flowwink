@@ -182,6 +182,15 @@ deploy). Admins see the live footprint vs 100 on `/admin/modules`
 Force the old behaviour with `FLOWWINK_DEPLOY_ALL=1`. Adding a module with its
 own function? Add it to `MODULE_EDGE_FUNCTIONS` and rerun `edge-map:json`.
 
+Selective deploy only *skips* unneeded functions — it does not remove ones a
+prior full deploy already pushed, so an existing instance won't drop below 100
+from a deploy alone. To actually reduce the count, run `/update-funcs --prune`
+(or `FLOWWINK_PRUNE=1`): it deploys first, then deletes only the extras
+(deployed − required) after confirmation — **deploy-then-prune**, so a required
+function is never momentarily missing. Prune is skipped if the deploy had
+failures. Do NOT blind `delete-all` then redeploy on a live instance — that's a
+multi-minute outage window; `--prune` achieves the same clean state with none.
+
 **Consolidation into domain routers (optional, not done).** If even a
 fully-loaded site (all modules on → full count → needs Pro) must fit Free, fold
 clusters — transactional emails → `email-send`, provider probes → one function.

@@ -90,7 +90,7 @@ cmd_help() {
     echo ""
     echo -e "  ${BOLD}── Update existing installation ──────────────────────${NC}"
     echo -e "  ${CYAN}/update-db${NC}       Push new database migrations to linked project"
-    echo -e "  ${CYAN}/update-funcs${NC}    Deploy edge functions for enabled modules (FLOWWINK_DEPLOY_ALL=1 for all)"
+    echo -e "  ${CYAN}/update-funcs${NC}    Deploy edge functions for enabled modules (--prune removes unused; FLOWWINK_DEPLOY_ALL=1 for all)"
     echo -e "  ${CYAN}/set-keys${NC}        Add or rotate API keys & Supabase secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create a new admin user account"
     echo -e "  ${CYAN}/patch-flowpilot${NC} (deprecated) FlowPilot is now seeded via /admin/modules"
@@ -283,6 +283,9 @@ cmd_update_funcs() {
     print_section "Deploy Edge Functions"
     require_link || return 1
 
+    local prune=0
+    [[ "${1:-}" == "--prune" || "${FLOWWINK_PRUNE:-0}" == "1" ]] && prune=1
+
     local functions_dir="supabase/functions"
     if [ ! -d "$functions_dir" ]; then
         echo -e "  ${RED}✗ No functions directory found${NC}"
@@ -395,6 +398,72 @@ cmd_update_funcs() {
         echo ""
         echo -e "  ${DIM}Skipped ${skipped_count} function(s) for disabled modules (Free-tier friendly).${NC}"
         echo -e "  ${DIM}Enable the module in admin, or set FLOWWINK_DEPLOY_ALL=1 to deploy all.${NC}"
+    fi
+
+    # ── Prune (deploy-then-prune) ────────────────────────────────────────────
+    # Remove functions deployed on the instance that this site no longer needs
+    # (disabled modules, or removed from the codebase). Runs AFTER deploy, so a
+    # required function is never missing. Only deletes the extras; never the
+    # keep-set. Skipped if the deploy had failures (safety).
+    if [ "$prune" = "1" ]; then
+        echo ""
+        print_divider
+        echo -e "  ${BOLD}Prune unused functions${NC}"
+        if [ "$failed" -ne 0 ]; then
+            echo -e "  ${YELLOW}⚠ Skipping prune — ${failed} function(s) failed to deploy.${NC}"
+            echo -e "  ${DIM}Fix the deploy first so prune can't remove something still needed.${NC}"
+            echo ""
+            return 0
+        fi
+
+        local deployed
+        deployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
+            | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")
+        if [ -z "$deployed" ]; then
+            echo -e "  ${YELLOW}⚠ Could not list deployed functions — skipping prune (nothing deleted).${NC}"
+            echo ""
+            return 0
+        fi
+
+        # extras = deployed − keep-set ($functions). Never touches the keep-set.
+        local extras="" e
+        for e in $deployed; do
+            grep -qxF "$e" <<<"$functions" || extras+="$e"$'\n'
+        done
+        extras=$(echo "$extras" | sed '/^$/d')
+
+        local extra_count
+        extra_count=$(echo "$extras" | grep -c . | tr -d ' ')
+        if [ "$extra_count" -eq 0 ]; then
+            echo -e "  ${GREEN}✓ Nothing to prune — deployed set already matches this site.${NC}"
+            echo ""
+            return 0
+        fi
+
+        echo -e "  These ${extra_count} deployed function(s) are NOT needed by this site:"
+        echo "$extras" | sed 's/^/    ✗ /'
+        echo ""
+        if [ "${FLOWWINK_PRUNE_YES:-0}" != "1" ]; then
+            local confirm
+            read -e -p "  Type DELETE to remove them (anything else cancels): " confirm
+            if [ "$confirm" != "DELETE" ]; then
+                echo -e "  ${DIM}Cancelled — nothing deleted.${NC}"
+                echo ""
+                return 0
+            fi
+        fi
+
+        local pruned=0 prune_failed=0
+        for e in $extras; do
+            printf "  deleting %-42s" "$e"
+            if supabase functions delete "$e" --project-ref "$PROJECT_REF" >/dev/null 2>&1; then
+                echo -e "${GREEN}✓${NC}"; pruned=$((pruned + 1))
+            else
+                echo -e "${RED}✗${NC}"; prune_failed=$((prune_failed + 1))
+            fi
+        done
+        echo ""
+        echo -e "  ${GREEN}✓ Pruned ${pruned} function(s)${NC}$([ "$prune_failed" -gt 0 ] && echo -e " ${RED}(${prune_failed} failed)${NC}")"
     fi
     echo ""
 }
@@ -976,7 +1045,7 @@ while true; do
         /link)                       cmd_link ;;
         /install)                    cmd_install ;;
         /update-db)                  cmd_update_db ;;
-        /update-funcs|/update-functions) cmd_update_funcs ;;
+        /update-funcs|/update-functions) cmd_update_funcs "$(echo "$input" | awk '{print $2}')" ;;
         /set-keys|/set-secrets)      cmd_set_keys ;;
         /create-admin)               cmd_create_admin ;;
         /patch-flowpilot|/setup-flowpilot) cmd_setup_flowpilot ;;
