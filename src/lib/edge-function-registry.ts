@@ -86,8 +86,14 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
  */
 export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>> = {
   // ── Communication / contact center ───────────────────────────────────────
-  voice: ['elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-ingest', 'chat-stt'],
-  liveSupport: ['contact-center', 'telegram-ingest', 'support-router', 'csat-dispatch'],
+  // voice: only the provider-agnostic voice webhook. `elks46-ingest` is shared
+  // with liveSupport (SMS) but listed there as the primary owner.
+  voice: ['voice-ingest'],
+  // SMS/chat adapters for Live Support. `chat-stt` is core (chat widget).
+  liveSupport: [
+    'contact-center', 'telegram-ingest', 'support-router', 'csat-dispatch',
+    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest',
+  ],
   email: ['gmail-inbox-scan', 'gmail-oauth-callback'],
   newsletter: ['newsletter'],
 

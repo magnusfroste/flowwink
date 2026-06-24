@@ -70,10 +70,10 @@ describe('edge-function registry', () => {
   });
 
   it('enabling a module adds exactly its (still-disabled-elsewhere) functions', () => {
-    // voice owns chat-stt etc. exclusively → enabling voice adds all 5.
+    // liveSupport owns its adapters exclusively → enabling it adds all of them.
     const base = requiredEdgeFunctions([]).length;
-    const withVoice = requiredEdgeFunctions(['voice']).length;
-    expect(withVoice).toBe(base + (MODULE_EDGE_FUNCTIONS.voice?.length ?? 0));
+    const withLiveSupport = requiredEdgeFunctions(['liveSupport']).length;
+    expect(withLiveSupport).toBe(base + (MODULE_EDGE_FUNCTIONS.liveSupport?.length ?? 0));
   });
 
   it('edge-function-map.json is in sync with the registry (run `npm run edge-map:json`)', () => {
