@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -13,7 +12,7 @@ interface GdprRequest {
   token?: string;
 }
 
-serve(async (req) => {
+export async function handle(req: Request): Promise<Response> {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -45,9 +44,9 @@ serve(async (req) => {
 
       if (subError || !subscriber) {
         // Don't reveal if email exists or not for security
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: "If this email is registered, you will receive a verification link." 
+        return new Response(JSON.stringify({
+          success: true,
+          message: "If this email is registered, you will receive a verification link."
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -68,8 +67,8 @@ serve(async (req) => {
       console.log(`[newsletter-gdpr] Verification URL generated for: ${email}`);
 
       // In production, send email here. For now, return success message
-      return new Response(JSON.stringify({ 
-        success: true, 
+      return new Response(JSON.stringify({
+        success: true,
         message: "If this email is registered, you will receive a verification link.",
         // For development, include token (remove in production)
         _dev_token: subscriber.confirmation_token,
@@ -95,8 +94,8 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
+      return new Response(JSON.stringify({
+        success: true,
         verified: true,
         subscriber: {
           email: subscriber.email,
@@ -210,9 +209,9 @@ serve(async (req) => {
 
       console.log(`[newsletter-gdpr] Data deleted for: ${email}`);
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: "All your data has been permanently deleted." 
+      return new Response(JSON.stringify({
+        success: true,
+        message: "All your data has been permanently deleted."
       }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -230,4 +229,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}

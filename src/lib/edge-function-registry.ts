@@ -62,8 +62,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'flowpilot-distill', 'flowpilot-heartbeat', 'flowpilot-learn', 'gatewayapi-ingest',
   'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-inbox-scan',
   'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',
-  'llms-txt', 'mcp-server', 'migrate-page', 'newsletter-export', 'newsletter-gdpr',
-  'newsletter-link', 'newsletter-send', 'newsletter-subscribe', 'newsletter-track',
+  'llms-txt', 'mcp-server', 'migrate-page', 'newsletter',
   'openai-account', 'openclaw-responses', 'parse-resume', 'process-image',
   'process-job-application', 'prospect-fit-analysis', 'prospect-research', 'qualify-lead',
   'quote-sign', 'reconciliation', 'resume-match', 'run-autonomy-tests',
@@ -90,10 +89,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   voice: ['elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-ingest', 'chat-stt'],
   liveSupport: ['contact-center', 'telegram-ingest', 'support-router', 'csat-dispatch'],
   email: ['gmail-inbox-scan', 'gmail-oauth-callback'],
-  newsletter: [
-    'newsletter-send', 'newsletter-subscribe', 'newsletter-export',
-    'newsletter-gdpr', 'newsletter-link', 'newsletter-track',
-  ],
+  newsletter: ['newsletter'],
 
   // ── CRM / sales / leads ──────────────────────────────────────────────────
   leads: ['contact-finder', 'qualify-lead', 'enrich-company'],

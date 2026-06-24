@@ -67,7 +67,7 @@ Creates a newsletter draft (does NOT send immediately). Requires approval.
     name: 'execute_newsletter_send',
     description: 'Actually send a prepared newsletter to all confirmed subscribers via email. Use when: newsletter is approved and ready to send; executing a scheduled send; distributing content to subscriber list. NOT for: creating newsletters (manage_newsletters); managing subscribers (manage_newsletter_subscribers).',
     category: 'communication',
-    handler: 'edge:newsletter-send',
+    handler: 'edge:newsletter/send',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -312,7 +312,7 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
     name: 'newsletter_subscribe',
     description: 'Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use execute_newsletter_send).',
     category: 'communication',
-    handler: 'edge:newsletter-subscribe',
+    handler: 'edge:newsletter/subscribe',
     scope: 'external',
     tool_definition: {
       type: 'function',

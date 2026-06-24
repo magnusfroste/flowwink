@@ -40,7 +40,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newsletter-subscribe`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newsletter/subscribe`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

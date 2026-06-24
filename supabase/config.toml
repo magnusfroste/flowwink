@@ -104,13 +104,7 @@ verify_jwt = false
 [functions.mcp-server]
 verify_jwt = false
 
-[functions.newsletter-link]
-verify_jwt = false
-
-[functions.newsletter-subscribe]
-verify_jwt = false
-
-[functions.newsletter-track]
+[functions.newsletter]
 verify_jwt = false
 
 [functions.parse-resume]
@@ -208,9 +202,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.migrate-page]
-verify_jwt = false
-
-[functions.newsletter-send]
 verify_jwt = false
 
 [functions.openclaw-responses]

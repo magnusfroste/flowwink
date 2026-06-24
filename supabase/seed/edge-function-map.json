@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/edge-functions-to-json.ts",
   "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
-  "total": 108,
+  "total": 103,
   "core_count": 37,
   "plan_limits": {
     "free": 100,
@@ -131,12 +131,7 @@
       "fetch-fx-rates"
     ],
     "newsletter": [
-      "newsletter-export",
-      "newsletter-gdpr",
-      "newsletter-link",
-      "newsletter-send",
-      "newsletter-subscribe",
-      "newsletter-track"
+      "newsletter"
     ],
     "quotes": [
       "quote-sign",

@@ -1,8 +1,7 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
-serve(async (req) => {
+export async function handle(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const linkId = url.searchParams.get("l");
 
@@ -144,4 +143,4 @@ serve(async (req) => {
     console.error("[newsletter-link] Error:", error);
     return new Response("Internal error", { status: 500 });
   }
-});
+}

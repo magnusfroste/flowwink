@@ -181,7 +181,7 @@ export default function NewsletterPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const response = await supabase.functions.invoke("newsletter-send", {
+      const response = await supabase.functions.invoke("newsletter/send", {
         body: { newsletter_id: id },
       });
 
@@ -236,7 +236,7 @@ export default function NewsletterPage() {
         return;
       }
 
-      const response = await supabase.functions.invoke("newsletter-export", {
+      const response = await supabase.functions.invoke("newsletter/export", {
         method: "GET",
       });
 

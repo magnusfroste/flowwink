@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
       "chat-completion", "agent-operate", "agent-execute", "agent-reason",
       "flowpilot-heartbeat", "flowpilot-briefing", "flowpilot-learn", "flowpilot-distill",
       "get-page", "copilot-action",
-      "newsletter-send", "send-webhook",
+      "newsletter/send", "newsletter/subscribe", "send-webhook",
       "qualify-lead", "enrich-company", "prospect-research", "prospect-fit-analysis",
       "gmail-inbox-scan", "signal-ingest", "signal-dispatcher", "automation-dispatcher",
       "event-dispatcher",

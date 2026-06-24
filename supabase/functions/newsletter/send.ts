@@ -1,8 +1,7 @@
-// newsletter-send — sends a newsletter to all confirmed subscribers via the
+// newsletter send — sends a newsletter to all confirmed subscribers via the
 // provider-agnostic `email-send` router. Provider selection (SMTP / Resend)
-// lives in `email-send` — this function only handles list expansion,
+// lives in `email-send` — this handler only handles list expansion,
 // per-recipient tracking pixel rewriting, link click rewriting, and status.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -21,7 +20,7 @@ interface NewsletterTrackingConfig {
   enableClickTracking: boolean;
 }
 
-serve(async (req) => {
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -34,24 +33,26 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const supabase = getServiceClient();
 
-    // Auth: admin only
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    // Auth: admin only. This function is deployed --no-verify-jwt, so the
+    // admin check MUST be enforced here.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
+    const { data: userData, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", ""),
     );
-    if (authError || !user) {
+    if (authError || !userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { data: roleData } = await supabase
-      .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").limit(1).maybeSingle();
-    if (roleData?.role !== "admin") {
+    const { data: hasAdmin } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id, _role: "admin",
+    });
+    if (!hasAdmin) {
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -102,8 +103,8 @@ serve(async (req) => {
     const { data: siteUrlSetting } = await supabase
       .from("site_settings").select("value").eq("key", "siteUrl").maybeSingle();
     const siteUrl = (siteUrlSetting?.value as string) || "";
-    const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-track`;
-    const linkTrackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-link`;
+    const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter/track`;
+    const linkTrackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter/link`;
 
     const rewriteLinksForTracking = async (
       html: string, newsletterId: string, recipientEmail: string,
@@ -114,7 +115,7 @@ serve(async (req) => {
       let processedHtml = html;
       for (const match of matches) {
         const originalUrl = match[1];
-        if (originalUrl.includes("newsletter-subscribe") || originalUrl.includes("newsletter/manage")) continue;
+        if (originalUrl.includes("newsletter/subscribe") || originalUrl.includes("newsletter/manage")) continue;
         const { data: linkRecord, error: linkError } = await supabase
           .from("newsletter_link_clicks")
           .insert({ newsletter_id: newsletterId, recipient_email: recipientEmail, original_url: originalUrl })
@@ -142,7 +143,7 @@ serve(async (req) => {
         }
         const personalUnsubscribe = siteUrl
           ? `${siteUrl}/newsletter/manage?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`
-          : `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`;
+          : `${supabaseUrl}/functions/v1/newsletter/subscribe?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`;
 
         const contentHtml = newsletter.content_html || "<p>No content</p>";
         const processedContent = await rewriteLinksForTracking(contentHtml, newsletter_id, subscriber.email);
@@ -191,4 +192,4 @@ serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
