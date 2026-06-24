@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { useModules } from '@/hooks/useModules';
 import { bootstrapModule } from '@/lib/module-bootstrap';
+import { bootstrapPlatform } from '@/lib/platform-seeds';
 
 /**
  * useFlowPilotBootstrap
@@ -50,6 +51,30 @@ export function useFlowPilotBootstrap() {
       logger.error('[FlowPilotBootstrap] Repair failed:', error);
     },
   });
+
+  // Platform seeds (Daily Briefing, etc.) must exist on every instance regardless
+  // of FlowPilot. Self-heal once per session: if the briefing skill is missing,
+  // re-seed the platform layer.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('agent_skills')
+        .select('id')
+        .eq('name', 'run_daily_briefing')
+        .maybeSingle();
+      if (cancelled || error) return;
+      if (!data) {
+        logger.log('[PlatformBootstrap] run_daily_briefing missing — seeding platform layer');
+        await bootstrapPlatform().catch((err) =>
+          logger.warn('[PlatformBootstrap] Platform seed failed (non-fatal):', err)
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isFlowPilotEnabled || !modules || hasTriggered.current) return;

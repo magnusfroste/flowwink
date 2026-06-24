@@ -406,36 +406,10 @@ Generates a cross-module business summary covering views, leads, bookings, order
 - Returns zeros for modules that have no data — this is normal for new sites.
 - Can be heavy on DB queries — avoid running more than once per hour.`,
   },
-  {
-    name: 'run_daily_briefing',
-    description: 'Generate the daily business briefing: health score, key metrics (visitors, leads, orders, revenue), AI summary and action items. Writes to flowpilot_briefings + admin FlowChat. Use when: scheduled daily run; admin requests today\'s briefing. NOT for: weekly review (weekly_business_digest); ad-hoc analytics (analyze_analytics).',
-    category: 'analytics',
-    handler: 'edge:flowpilot-briefing',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'run_daily_briefing',
-        description: 'Generate the daily business briefing. Aggregates metrics, asks LLM for a summary, persists to flowpilot_briefings, posts to admin FlowChat as a system message, and emails the owner.',
-        parameters: {
-          type: 'object',
-          properties: {
-            source: { type: 'string', description: 'Trigger source label (cron, manual, automation).' },
-          },
-        },
-      },
-    },
-    instructions: `## run_daily_briefing
-### What
-Deterministic metric aggregation + a single LLM-call for narrative summary. NOT a ReAct loop — this is a SaaS automation, not an agent action.
-### When to use
-- Scheduled daily via the platform automation 'Daily Briefing' (07:00 UTC)
-- Admin asks for today's briefing on demand
-### Output
-- Inserts row in flowpilot_briefings (consumed by BusinessPulseWidget)
-- Posts a system message in the admin's today-session FlowChat
-- Emails the owner if Resend is configured`,
-  },
+  // NOTE: `run_daily_briefing` was moved to src/lib/platform-seeds.ts.
+  // It is a platform SaaS automation (deterministic metrics + one LLM call),
+  // not a FlowPilot ReAct skill — it must exist on every instance regardless
+  // of whether the FlowPilot module is enabled.
   {
     name: 'learn_from_data',
     description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institutional knowledge. NOT for: analyzing analytics directly (analyze_analytics); generating business digests (weekly_business_digest).',
@@ -662,14 +636,9 @@ export const flowpilotModule = defineModule<Input, Output>({
       skill_name: 'weekly_business_digest',
       skill_arguments: {},
     },
-    {
-      name: 'Daily Briefing',
-      description: 'Platform automation. Generates the daily business briefing every morning at 07:00 UTC and posts it to admin FlowChat. Runs deterministically (no ReAct).',
-      trigger_type: 'cron',
-      trigger_config: { cron: '0 7 * * *', timezone: 'UTC' },
-      skill_name: 'run_daily_briefing',
-      skill_arguments: { source: 'automation' },
-    },
+    // 'Daily Briefing' lives in src/lib/platform-seeds.ts — it's a platform
+    // SaaS automation, not a FlowPilot-owned one.
+
   ],
 
   async publish(input: Input): Promise<Output> {
