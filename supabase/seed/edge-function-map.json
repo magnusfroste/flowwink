@@ -2,7 +2,7 @@
   "generated_by": "scripts/edge-functions-to-json.ts",
   "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
   "total": 103,
-  "core_count": 37,
+  "core_count": 38,
   "plan_limits": {
     "free": 100,
     "pro": 500,
@@ -16,6 +16,7 @@
     "ai-task",
     "automation-dispatcher",
     "chat-completion",
+    "chat-stt",
     "check-secrets",
     "content-api",
     "copilot-action",
@@ -124,8 +125,11 @@
     "liveSupport": [
       "contact-center",
       "csat-dispatch",
+      "elks46-ingest",
+      "gatewayapi-ingest",
       "support-router",
-      "telegram-ingest"
+      "telegram-ingest",
+      "twilio-ingest"
     ],
     "multiCurrency": [
       "fetch-fx-rates"
@@ -171,10 +175,6 @@
       "survey-send"
     ],
     "voice": [
-      "chat-stt",
-      "elks46-ingest",
-      "gatewayapi-ingest",
-      "twilio-ingest",
       "voice-ingest"
     ],
     "workspaceChat": [
