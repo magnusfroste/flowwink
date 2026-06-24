@@ -28,6 +28,7 @@
     "parity:report": "bun run scripts/parity-report.ts",
     "parity:check": "bun run scripts/parity-report.ts --check",
     "skills:json": "bun run scripts/skills-to-json.ts",
+    "edge-map:json": "bun run scripts/edge-functions-to-json.ts",
     "sync:skills": "bun run scripts/sync-skills.ts",
     "fleet:status": "bun run scripts/fleet-status.ts",
     "local:smoke": "bun run scripts/local-smoke.ts",

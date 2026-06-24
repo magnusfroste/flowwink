@@ -1,0 +1,189 @@
+{
+  "generated_by": "scripts/edge-functions-to-json.ts",
+  "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
+  "total": 108,
+  "core_count": 37,
+  "plan_limits": {
+    "free": 100,
+    "pro": 500,
+    "team": 1000,
+    "enterprise": null
+  },
+  "core": [
+    "agent-execute",
+    "agent-operate",
+    "agent-reason",
+    "ai-task",
+    "automation-dispatcher",
+    "chat-completion",
+    "check-secrets",
+    "content-api",
+    "copilot-action",
+    "create-user",
+    "customer-signup",
+    "demo-cycle",
+    "elevenlabs-account",
+    "email-send",
+    "event-dispatcher",
+    "extract-pdf-text",
+    "fetch-image",
+    "firecrawl-account",
+    "get-page",
+    "hunter-account",
+    "instance-health",
+    "llms-txt",
+    "mcp-server",
+    "openai-account",
+    "process-image",
+    "run-platform-tests",
+    "send-contact-email",
+    "send-webhook",
+    "setup-database",
+    "signal-dispatcher",
+    "sitemap",
+    "stripe-webhook",
+    "system-integrity-check",
+    "test-ai-connection",
+    "track-auth-event",
+    "track-page-view",
+    "unsplash-search"
+  ],
+  "modules": {
+    "blog": [
+      "blog-rss"
+    ],
+    "bookings": [
+      "send-booking-confirmation"
+    ],
+    "browserControl": [
+      "browser-fetch"
+    ],
+    "companies": [
+      "enrich-company"
+    ],
+    "companyInsights": [
+      "company-profile",
+      "enrich-company-profile"
+    ],
+    "composio": [
+      "composio-proxy"
+    ],
+    "contracts": [
+      "contract-sign"
+    ],
+    "customer360": [
+      "customer-360"
+    ],
+    "docs": [
+      "docs-chat",
+      "docs-sync"
+    ],
+    "ecommerce": [
+      "create-checkout",
+      "send-order-confirmation"
+    ],
+    "email": [
+      "gmail-inbox-scan",
+      "gmail-oauth-callback"
+    ],
+    "expenses": [
+      "extract-receipt"
+    ],
+    "federation": [
+      "a2a",
+      "agent-card",
+      "federation-invite-peer",
+      "openclaw-responses"
+    ],
+    "fieldService": [
+      "field-service-skill"
+    ],
+    "flowpilot": [
+      "flowpilot-briefing",
+      "flowpilot-distill",
+      "flowpilot-heartbeat",
+      "flowpilot-learn",
+      "run-autonomy-tests",
+      "update-autonomy-cron",
+      "web-scrape",
+      "web-search"
+    ],
+    "handbook": [
+      "github-content-sync"
+    ],
+    "invoicing": [
+      "create-invoice-payment",
+      "generate-invoice-pdf",
+      "send-invoice-email"
+    ],
+    "leads": [
+      "contact-finder",
+      "enrich-company",
+      "qualify-lead"
+    ],
+    "liveSupport": [
+      "contact-center",
+      "csat-dispatch",
+      "support-router",
+      "telegram-ingest"
+    ],
+    "multiCurrency": [
+      "fetch-fx-rates"
+    ],
+    "newsletter": [
+      "newsletter-export",
+      "newsletter-gdpr",
+      "newsletter-link",
+      "newsletter-send",
+      "newsletter-subscribe",
+      "newsletter-track"
+    ],
+    "quotes": [
+      "quote-sign",
+      "send-quote-email"
+    ],
+    "reconciliation": [
+      "reconciliation"
+    ],
+    "recruitment": [
+      "invite-employee",
+      "parse-resume",
+      "process-job-application"
+    ],
+    "resume": [
+      "consultant-checkin",
+      "resume-match"
+    ],
+    "salesIntelligence": [
+      "prospect-fit-analysis",
+      "prospect-research",
+      "sales-profile-setup",
+      "signal-ingest"
+    ],
+    "siteMigration": [
+      "analyze-brand",
+      "migrate-page"
+    ],
+    "sla": [
+      "sla-check"
+    ],
+    "subscriptions": [
+      "dunning-processor",
+      "subscription-billing-cron",
+      "subscriptions"
+    ],
+    "surveys": [
+      "survey-send"
+    ],
+    "voice": [
+      "chat-stt",
+      "elks46-ingest",
+      "gatewayapi-ingest",
+      "twilio-ingest",
+      "voice-ingest"
+    ],
+    "workspaceChat": [
+      "workspace-chat"
+    ]
+  }
+}

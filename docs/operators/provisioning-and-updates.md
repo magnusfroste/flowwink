@@ -166,19 +166,31 @@ supabase migration repair --status applied 00000000000000 --db-url '<conn>'
 
 Re-baseline every ~6 months as deltas accumulate.
 
-### 2. Consolidate edge functions into domain routers
+### 2. Edge-function footprint vs the Supabase Free ceiling
 
-~99 functions sits at the Supabase free-tier ceiling. The `reconciliation` /
-`a2a` functions already route sub-paths via `url.pathname`, so the pattern
-exists. **But consolidation here has the same lockstep tail as the RPC rename
-above:** nearly every function is invoked by the admin frontend directly, and
-forks don't auto-deploy — so you cannot delete an old function until *every*
-frontend (including forks) is live on the new router. Safe sequence: ship the
-router additively, migrate all callers, redeploy all frontends, *then* delete
-the old functions. There are no dead functions to delete outright (all
-zero-reference ones are crons/webhooks/test runners). Treat this as a planned
-migration, not a quick win — and consider routing the admin UI through fewer
-gateways first.
+Supabase caps functions per project by plan (Free 100 · Pro 500 · Team 1000).
+FlowWink ships 100+, so a Free-tier fork that deploys all of them hits the wall.
+
+**Selective deploy (implemented).** `flowwink.sh /update-funcs` deploys only the
+functions a site's enabled modules need. The map is
+`src/lib/edge-function-registry.ts` → `supabase/seed/edge-function-map.json`
+(regenerate: `npm run edge-map:json`): ~37 **core** functions always deploy; the
+rest are **module-bound** and skip only when *every* owning module is explicitly
+disabled (fail-open — missing/unknown modules and brand-new functions always
+deploy). Admins see the live footprint vs 100 on `/admin/modules`
+(EdgeFunctionUsageCard) with an upgrade-to-Pro nudge as they grow into modules.
+Force the old behaviour with `FLOWWINK_DEPLOY_ALL=1`. Adding a module with its
+own function? Add it to `MODULE_EDGE_FUNCTIONS` and rerun `edge-map:json`.
+
+**Consolidation into domain routers (optional, not done).** If even a
+fully-loaded site (all modules on → full count → needs Pro) must fit Free, fold
+clusters — transactional emails → `email-send`, provider probes → one function.
+`reconciliation` / `a2a` already route sub-paths via `url.pathname`, so the
+pattern exists. **Same lockstep tail as the RPC rename above:** functions are
+invoked by the admin frontend directly and forks don't auto-deploy — ship the
+router additively, migrate all callers, redeploy all frontends, *then* delete the
+old functions. No dead functions to delete outright (zero-reference ones are
+crons/webhooks/test runners). A planned migration, not a quick win.
 3. **Fail loud on migrations.** `scripts/run-migrations.js` swallows errors so a
    Vercel build "succeeds" against a DB that never migrated — a prime drift
    source. Either fail the build, or decouple migrations from the build and run

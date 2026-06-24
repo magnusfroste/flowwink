@@ -5,7 +5,7 @@
  * If this fails, an edge function was added or removed — update
  * `src/lib/edge-function-registry.ts` (ALL_EDGE_FUNCTIONS / MODULE_EDGE_FUNCTIONS).
  */
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -74,5 +74,26 @@ describe('edge-function registry', () => {
     const base = requiredEdgeFunctions([]).length;
     const withVoice = requiredEdgeFunctions(['voice']).length;
     expect(withVoice).toBe(base + (MODULE_EDGE_FUNCTIONS.voice?.length ?? 0));
+  });
+
+  it('edge-function-map.json is in sync with the registry (run `npm run edge-map:json`)', () => {
+    const mapPath = join(process.cwd(), 'supabase', 'seed', 'edge-function-map.json');
+    expect(existsSync(mapPath), 'edge-function-map.json missing — run `npm run edge-map:json`').toBe(true);
+    const artifact = JSON.parse(readFileSync(mapPath, 'utf8')) as {
+      total: number;
+      core: string[];
+      modules: Record<string, string[]>;
+    };
+
+    expect(artifact.total, 'total drift — run `npm run edge-map:json`').toBe(ALL_EDGE_FUNCTIONS.length);
+    expect([...artifact.core].sort(), 'core drift — run `npm run edge-map:json`').toEqual(coreEdgeFunctions().sort());
+
+    const expectedModules = Object.fromEntries(
+      Object.entries(MODULE_EDGE_FUNCTIONS).map(([id, fns]) => [id, [...(fns ?? [])].sort()]),
+    );
+    const actualModules = Object.fromEntries(
+      Object.entries(artifact.modules).map(([id, fns]) => [id, [...fns].sort()]),
+    );
+    expect(actualModules, 'module map drift — run `npm run edge-map:json`').toEqual(expectedModules);
   });
 });

@@ -90,7 +90,7 @@ cmd_help() {
     echo ""
     echo -e "  ${BOLD}── Update existing installation ──────────────────────${NC}"
     echo -e "  ${CYAN}/update-db${NC}       Push new database migrations to linked project"
-    echo -e "  ${CYAN}/update-funcs${NC}    Re-deploy all edge functions (picks up code changes)"
+    echo -e "  ${CYAN}/update-funcs${NC}    Deploy edge functions for enabled modules (FLOWWINK_DEPLOY_ALL=1 for all)"
     echo -e "  ${CYAN}/set-keys${NC}        Add or rotate API keys & Supabase secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create a new admin user account"
     echo -e "  ${CYAN}/patch-flowpilot${NC} (deprecated) FlowPilot is now seeded via /admin/modules"
@@ -290,14 +290,68 @@ cmd_update_funcs() {
         return 1
     fi
 
-    local functions total
-    functions=$(find "$functions_dir" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+    local all_functions
+    all_functions=$(find "$functions_dir" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
         [ -f "$dir/index.ts" ] && basename "$dir"
     done | sort)
-    total=$(echo "$functions" | wc -l | tr -d ' ')
+
+    # ── Selective deploy ─────────────────────────────────────────────────────
+    # Deploy only functions the site's enabled modules need (Supabase Free caps
+    # at 100/project). Fail-open: any uncertainty → deploy everything.
+    # Override with FLOWWINK_DEPLOY_ALL=1.
+    local functions total skipped="" skipped_count=0
+    functions="$all_functions"
+    local map_file="supabase/seed/edge-function-map.json"
+
+    if [ "${FLOWWINK_DEPLOY_ALL:-0}" != "1" ] && [ -f "$map_file" ]; then
+        local token modules_json
+        token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+        if [ -n "$token" ]; then
+            local resp
+            resp=$(curl -s -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+                -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
+                -d "$(jq -n '{query:"select value from site_settings where key='"'"'modules'"'"' limit 1"}')" 2>/dev/null || echo "")
+            modules_json=$(echo "$resp" | jq -c '.[0].value // empty' 2>/dev/null || echo "")
+
+            if [ -n "$modules_json" ]; then
+                # Skip a function ONLY if EVERY owning module is explicitly
+                # { enabled: false }. Missing/unknown modules and core/new
+                # functions always deploy. (fail-open)
+                local disabled_arr
+                disabled_arr=$(echo "$modules_json" | jq -c '[to_entries[] | select(.value.enabled == false) | .key]' 2>/dev/null || echo "[]")
+                if [ -n "$disabled_arr" ] && [ "$disabled_arr" != "[]" ]; then
+                    local skip_set
+                    skip_set=$(jq -r --argjson dis "$disabled_arr" \
+                        '([.modules | to_entries[] | .key as $mod | .value[] | {fn:., mod:$mod}]
+                            | group_by(.fn)
+                            | map({fn:.[0].fn, owners:map(.mod)})) as $owned
+                         | $owned[] | select((.owners - $dis) | length == 0) | .fn' \
+                        "$map_file" 2>/dev/null || echo "")
+                    if [ -n "$skip_set" ]; then
+                        local keep="" f
+                        for f in $all_functions; do
+                            if grep -qxF "$f" <<<"$skip_set"; then
+                                skipped+="$f"$'\n'           # all owning modules disabled
+                                skipped_count=$((skipped_count + 1))
+                            else
+                                keep+="$f"$'\n'
+                            fi
+                        done
+                        functions=$(echo "$keep" | sed '/^$/d')
+                    fi
+                fi
+            fi
+        fi
+    fi
+
+    total=$(echo "$functions" | grep -c . | tr -d ' ')
 
     echo -e "  ${DIM}Project: ${PROJECT_NAME}${NC}"
-    echo -e "  Deploying ${total} functions..."
+    if [ "$skipped_count" -gt 0 ]; then
+        echo -e "  Deploying ${total} functions ${DIM}(${skipped_count} skipped — module disabled)${NC}..."
+    else
+        echo -e "  Deploying ${total} functions..."
+    fi
     echo ""
 
     local count=0 failed=0
@@ -335,6 +389,12 @@ cmd_update_funcs() {
             echo "${failed_errors[$i]}" | grep -i "error\|failed\|invalid" | head -3 | sed 's/^/    /'
             echo ""
         done
+    fi
+
+    if [ "$skipped_count" -gt 0 ]; then
+        echo ""
+        echo -e "  ${DIM}Skipped ${skipped_count} function(s) for disabled modules (Free-tier friendly).${NC}"
+        echo -e "  ${DIM}Enable the module in admin, or set FLOWWINK_DEPLOY_ALL=1 to deploy all.${NC}"
     fi
     echo ""
 }
