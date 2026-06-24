@@ -34,9 +34,8 @@ interface Props {
   onNew: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
-  /** Controlled collapsed state; defaults to uncontrolled. */
-  collapsed?: boolean;
-  onCollapsedChange?: (collapsed: boolean) => void;
+  /** localStorage key for persisting collapsed state across visits. */
+  storageKey?: string;
 }
 
 export function SessionsAside({
@@ -46,14 +45,17 @@ export function SessionsAside({
   onNew,
   onRename,
   onDelete,
-  collapsed: collapsedProp,
-  onCollapsedChange,
+  storageKey = 'sessions-aside-collapsed',
 }: Props) {
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const collapsed = collapsedProp ?? internalCollapsed;
+  const [collapsed, setCollapsedState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(storageKey) === '1';
+  });
   const setCollapsed = (v: boolean) => {
-    if (onCollapsedChange) onCollapsedChange(v);
-    else setInternalCollapsed(v);
+    setCollapsedState(v);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, v ? '1' : '0');
+    }
   };
 
   const [renameTarget, setRenameTarget] = useState<WorkspaceSession | null>(null);
