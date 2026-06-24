@@ -133,6 +133,7 @@ export interface FlowPilotConversation {
   title: string | null;
   created_at: string;
   updated_at: string;
+  session_id?: string | null;
 }
 
 const isDailyBriefingConversation = (title: string | null | undefined) =>
@@ -687,7 +688,7 @@ export function useAgentOperate() {
     // have a real session_id, so an inner join on user messages would hide them.
     const { data } = await supabase
       .from('chat_conversations')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, created_at, updated_at, session_id')
       .eq('conversation_status', 'active')
       .not('title', 'is', null)
       .order('updated_at', { ascending: false })
@@ -711,7 +712,7 @@ export function useAgentOperate() {
 
     setConversations(
       (data as FlowPilotConversation[]).filter(
-        (c) => conversationsWithUserMessage.has(c.id) || isDailyBriefingConversation(c.title),
+        (c) => (c.session_id === null && conversationsWithUserMessage.has(c.id)) || isDailyBriefingConversation(c.title),
       ),
     );
   }, []);
