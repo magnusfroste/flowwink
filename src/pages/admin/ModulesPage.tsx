@@ -95,6 +95,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useModules, useUpdateModules, defaultModulesSettings, type ModulesSettings } from "@/hooks/useModules";
 import { useModuleStats } from "@/hooks/useModuleStats";
 import { ModuleCard } from "@/components/admin/modules/ModuleCard";
+import { EdgeFunctionUsageCard } from "@/components/admin/modules/EdgeFunctionUsageCard";
 import { moduleRegistry } from "@/lib/module-registry";
 import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
 import { runWithConcurrency } from "@/lib/run-with-concurrency";
@@ -378,6 +379,17 @@ export default function ModulesPage() {
   const totalCount = Object.keys(defaultModulesSettings).length;
   const registeredModules = moduleRegistry.list();
 
+  const enabledModuleIds = localModules
+    ? (Object.entries(localModules)
+        .filter(([, m]) => m.enabled)
+        .map(([id]) => id) as (keyof ModulesSettings)[])
+    : [];
+  const moduleNames = localModules
+    ? (Object.fromEntries(
+        Object.entries(localModules).map(([id, m]) => [id, m.name]),
+      ) as Partial<Record<keyof ModulesSettings, string>>)
+    : {};
+
   return (
     <AdminLayout>
       <div className="space-y-8">
@@ -432,6 +444,9 @@ export default function ModulesPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Edge function footprint vs Supabase Free tier */}
+        <EdgeFunctionUsageCard enabledModuleIds={enabledModuleIds} moduleNames={moduleNames} />
 
         {/* Registry Info */}
         <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-4">
