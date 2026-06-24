@@ -357,6 +357,11 @@ export default function ModulesPage() {
         .filter(([, config]) => config.enabled)
         .map(([id]) => id as keyof ModulesSettings);
       const results = await runWithConcurrency(targets, 5, (id) => bootstrapModule(id, localModules));
+      // Always re-seed platform-level skills & automations (Daily Briefing, etc).
+      // These aren't owned by any module and must exist on every instance.
+      await bootstrapPlatform().catch((err) => {
+        console.warn('[ModulesPage] Platform seed refresh failed (non-fatal):', err);
+      });
       const failed = results.filter((r) => !r.ok || r.value.errors.length > 0);
       if (failed.length > 0) {
         toast({
