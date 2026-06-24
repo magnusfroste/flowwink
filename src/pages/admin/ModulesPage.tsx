@@ -36,57 +36,6 @@ import {
   Rocket,
 } from "lucide-react";
 
-// Roadmap — small/easy modules planned next. Pure presentation; no toggles.
-const PLANNED_MODULES: Array<{
-  id: string;
-  name: string;
-  description: string;
-  category: 'content' | 'data' | 'communication' | 'system' | 'insights';
-  effort: 'S' | 'M' | 'L';
-}> = [
-  {
-    id: 'vendor-portal',
-    name: 'Vendor Portal',
-    description: 'Self-service login for suppliers to view POs, upload invoices and track payments.',
-    category: 'data',
-    effort: 'M',
-  },
-  {
-    id: 'carrier-labels',
-    name: 'Carrier Labels (PostNord)',
-    description: 'Generate shipping labels and tracking numbers via PostNord API from the Shipping module.',
-    category: 'data',
-    effort: 'S',
-  },
-  {
-    id: 'performance-reviews',
-    name: 'Performance Reviews',
-    description: '1:1s, goals and appraisal cycles on top of the HR module.',
-    category: 'data',
-    effort: 'M',
-  },
-  {
-    id: 'budgets',
-    name: 'Budgets vs Actuals',
-    description: 'Yearly/quarterly budget per account and analytic dimension, compared with bookings.',
-    category: 'insights',
-    effort: 'M',
-  },
-  {
-    id: 'utm-attribution',
-    name: 'UTM Attribution',
-    description: 'Track UTM params through forms and orders to attribute revenue to campaigns.',
-    category: 'insights',
-    effort: 'S',
-  },
-  {
-    id: 'csat-survey',
-    name: 'CSAT Auto-Survey',
-    description: 'Auto-trigger short survey when a ticket is resolved; feeds into Surveys module.',
-    category: 'communication',
-    effort: 'S',
-  },
-];
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent } from "@/components/ui/card";
