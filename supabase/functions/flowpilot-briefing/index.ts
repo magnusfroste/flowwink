@@ -396,104 +396,102 @@ serve(async (req) => {
 
     console.log(`[briefing] Created: ${title} | Health: ${healthScore} | Actions: ${actionItems.length}`);
 
-    // ─── Inject proactive chat message ─────────────────────────────
-    // Only when FlowPilot is enabled — the chat thread is FlowPilot's
-    // autonomous voice. With FP off, FlowChat stays a pure human web-CLI
-    // and the briefing is consumed via the dashboard widget instead.
-    if (fpEnabled) {
-      try {
-        const { data: adminRoleRow } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin")
+    // ─── Post briefing to admin FlowChat ───────────────────────────
+    // The daily briefing is a platform SaaS automation, not FlowPilot's
+    // "voice". It runs regardless of whether the FlowPilot operator
+    // module is enabled, and is posted as a system message (source='system')
+    // into the admin's today-session conversation. Visitor chat is unaffected
+    // because conversations are scoped to user_id with RLS.
+    try {
+      const { data: adminRoleRow } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .limit(1)
+        .maybeSingle();
+
+      const adminUserId = adminRoleRow?.user_id ?? null;
+
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      let conversationId: string | null = null;
+
+      if (adminUserId) {
+        const { data: todaySession } = await supabase
+          .from("chat_conversations")
+          .select("id")
+          .eq("conversation_status", "active")
+          .is("session_id", null)
+          .eq("user_id", adminUserId)
+          .gte("created_at", todayStart.toISOString())
+          .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        const adminUserId = adminRoleRow?.user_id ?? null;
-
-        const todayStart = new Date(now);
-        todayStart.setHours(0, 0, 0, 0);
-        const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-        let conversationId: string | null = null;
-
-        if (adminUserId) {
-          const { data: todaySession } = await supabase
-            .from("chat_conversations")
-            .select("id")
-            .eq("conversation_status", "active")
-            .is("session_id", null)
-            .eq("user_id", adminUserId)
-            .gte("created_at", todayStart.toISOString())
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (todaySession) conversationId = todaySession.id;
-        }
-
-        if (!conversationId) {
-          const { data: newConv } = await supabase
-            .from("chat_conversations")
-            .insert({
-              title: `Session — ${todayLabel}`,
-              conversation_status: "active",
-              priority: "normal",
-              user_id: adminUserId,
-            })
-            .select("id")
-            .single();
-          conversationId = newConv?.id ?? null;
-        }
-
-        if (conversationId) {
-          const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
-          const lines: string[] = [
-            `☀️ **Good morning!** Here's your daily briefing:`,
-            ``,
-            `${healthEmoji} **Health Score: ${healthScore}/100**`,
-          ];
-          if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
-          if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
-          if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
-          if (fpAutonomousActions > 0) lines.push(`• FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
-          lines.push(``);
-          lines.push(`Anything you'd like me to focus on today?`);
-
-          const chatContent = lines.join("\n");
-
-          const actionPayload = {
-            type: "briefing",
-            title,
-            healthScore,
-            metrics: [
-              { label: "Visitors", value: trafficToday },
-              { label: "Leads", value: newLeadsToday },
-              { label: "Traffic", value: `${trafficTrend >= 0 ? "+" : ""}${trafficTrend}%` },
-            ],
-            actions: actionItems.slice(0, 3).map((item: any) => ({
-              label: item.text.length > 40 ? item.text.substring(0, 40) + "…" : item.text,
-              link: item.link,
-              variant: item.priority === "high" ? "default" : "outline",
-            })),
-          };
-
-          await supabase.from("chat_messages").insert({
-            conversation_id: conversationId,
-            role: "assistant",
-            content: chatContent,
-            source: "proactive",
-            action_payload: actionPayload,
-          });
-
-          console.log(`[briefing] Proactive message injected into "Session — ${todayLabel}" (${conversationId})`);
-        }
-      } catch (chatErr: any) {
-        console.error("[briefing] Failed to inject chat message:", chatErr.message);
+        if (todaySession) conversationId = todaySession.id;
       }
-    } else {
-      console.log("[briefing] FlowPilot disabled — skipping proactive chat injection");
+
+      if (!conversationId) {
+        const { data: newConv } = await supabase
+          .from("chat_conversations")
+          .insert({
+            title: `Daily Briefing — ${todayLabel}`,
+            conversation_status: "active",
+            priority: "normal",
+            user_id: adminUserId,
+          })
+          .select("id")
+          .single();
+        conversationId = newConv?.id ?? null;
+      }
+
+      if (conversationId) {
+        const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+        const lines: string[] = [
+          `☀️ **Daily briefing**`,
+          ``,
+          `${healthEmoji} **Health Score: ${healthScore}/100**`,
+        ];
+        if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
+        if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
+        if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
+        if (fpEnabled && fpAutonomousActions > 0) lines.push(`• FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+
+        const chatContent = lines.join("\n");
+
+        const actionPayload = {
+          type: "briefing",
+          title,
+          healthScore,
+          metrics: [
+            { label: "Visitors", value: trafficToday },
+            { label: "Leads", value: newLeadsToday },
+            { label: "Traffic", value: `${trafficTrend >= 0 ? "+" : ""}${trafficTrend}%` },
+          ],
+          actions: actionItems.slice(0, 3).map((item: any) => ({
+            label: item.text.length > 40 ? item.text.substring(0, 40) + "…" : item.text,
+            link: item.link,
+            variant: item.priority === "high" ? "default" : "outline",
+          })),
+        };
+
+        await supabase.from("chat_messages").insert({
+          conversation_id: conversationId,
+          role: "assistant",
+          content: chatContent,
+          source: "system",
+          action_payload: actionPayload,
+        });
+
+        console.log(`[briefing] System message posted to "Daily Briefing — ${todayLabel}" (${conversationId})`);
+      }
+    } catch (chatErr: any) {
+      console.error("[briefing] Failed to post chat message:", chatErr.message);
     }
+
+
 
     // ─── Send email via Resend ──────────────────────────────────────
     let emailed = false;
