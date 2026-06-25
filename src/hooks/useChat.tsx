@@ -316,11 +316,15 @@ export function useChat(options?: UseChatOptions) {
     if (!settings?.saveConversations) return;
 
     try {
-      await supabase.from('chat_messages').insert({
+      const { error } = await supabase.from('chat_messages').insert({
         conversation_id: convId,
         role,
         content,
       });
+
+      if (error) {
+        logger.error('Failed to save message:', error);
+      }
     } catch (err) {
       logger.error('Failed to save message:', err);
     }
@@ -328,28 +332,30 @@ export function useChat(options?: UseChatOptions) {
 
   const createConversation = useCallback(async () => {
     const sessionId = getSessionId();
+    const id = crypto.randomUUID();
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('chat_conversations')
       .insert({
+        id,
         user_id: user?.id || null,
         session_id: user?.id ? null : sessionId,
         title: 'New conversation',
-      })
-      .select('id')
-      .single();
+        scope: 'visitor',
+        channel: 'web',
+      });
 
     if (error) {
       logger.error('Failed to create conversation:', error);
       return null;
     }
 
-    locallyCreatedConvIdsRef.current.add(data.id);
-    setConversationId(data.id);
+    locallyCreatedConvIdsRef.current.add(id);
+    setConversationId(id);
     // Persist conversation ID to localStorage
-    localStorage.setItem(CONVERSATION_STORAGE_KEY, data.id);
-    options?.onNewConversation?.(data.id);
-    return data.id;
+    localStorage.setItem(CONVERSATION_STORAGE_KEY, id);
+    options?.onNewConversation?.(id);
+    return id;
   }, [user?.id, getSessionId, options]);
 
   const updateConversationTitle = useCallback(async (convId: string, content: string) => {

@@ -9,6 +9,18 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    fetch: (input, init) => {
+      const headers = new Headers(init?.headers);
+      const visitorChatSessionId = localStorage.getItem('chat-session-id');
+
+      if (visitorChatSessionId && !headers.has('x-chat-session')) {
+        headers.set('x-chat-session', visitorChatSessionId);
+      }
+
+      return fetch(input, { ...init, headers });
+    },
+  },
   auth: {
     storage: localStorage,
     persistSession: true,
