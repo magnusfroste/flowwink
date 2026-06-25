@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useChatSettings } from './useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { applyVisitorChatSessionHeader } from '@/lib/visitor-chat-session';
 
 export interface ChatMessage {
   id: string;
@@ -61,8 +62,9 @@ export function useChat(options?: UseChatOptions) {
       sessionId = crypto.randomUUID();
       localStorage.setItem('chat-session-id', sessionId);
     }
-    // Ensure RLS header is bound to the current session id
-    import('@/lib/visitor-chat-session').then(m => m.applyVisitorChatSessionHeader(sessionId));
+    // Ensure RLS header is bound to the current session id BEFORE any
+    // downstream PostgREST call — must be synchronous, not a dynamic import.
+    applyVisitorChatSessionHeader(sessionId);
     return sessionId;
   }, []);
 
