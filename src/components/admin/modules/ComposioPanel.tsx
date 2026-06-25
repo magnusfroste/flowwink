@@ -553,3 +553,205 @@ export function ComposioPanel() {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inbound Email Section
+// Lists configured inbound mailboxes and lets the admin register the V1
+// shared "company inbox" + activate Gmail Watch on it.
+// ─────────────────────────────────────────────────────────────────────────────
+function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }) {
+  const [email, setEmail] = useState('');
+  const [composioAccountId, setComposioAccountId] = useState('');
+  const [registering, setRegistering] = useState(false);
+  const [activatingWatch, setActivatingWatch] = useState<string | null>(null);
+
+  const { data: accounts, isLoading, refetch } = useQuery({
+    queryKey: ['inbound-email-accounts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inbound_email_accounts')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 15 * 1000,
+  });
+
+  const handleRegister = async () => {
+    if (!email.trim()) {
+      toast.error('Enter an email address');
+      return;
+    }
+    setRegistering(true);
+    try {
+      const { error } = await supabase.from('inbound_email_accounts').insert({
+        provider: 'composio_gmail',
+        email_address: email.trim(),
+        composio_account_id: composioAccountId.trim() || null,
+        is_shared: true,
+        enabled: true,
+      });
+      if (error) throw error;
+      toast.success('Mailbox registered');
+      setEmail('');
+      setComposioAccountId('');
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to register');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const handleActivateWatch = async (accountId: string, composioAccId: string | null) => {
+    setActivatingWatch(accountId);
+    try {
+      const { data, error } = await supabase.functions.invoke('composio-proxy', {
+        body: {
+          action: 'gmail_watch',
+          params: { account_id: composioAccId },
+          entity_id: 'default',
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // Gmail Watch expires after 7 days — store best-effort expiry.
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      await supabase
+        .from('inbound_email_accounts')
+        .update({ watch_expires_at: expiresAt })
+        .eq('id', accountId);
+      toast.success('Gmail Watch activated — push events will start arriving');
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to activate watch');
+    } finally {
+      setActivatingWatch(null);
+    }
+  };
+
+  const handleToggleEnabled = async (accountId: string, enabled: boolean) => {
+    await supabase.from('inbound_email_accounts').update({ enabled }).eq('id', accountId);
+    refetch();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-xs text-muted-foreground">
+        Inbound mailboxes turn incoming emails into tickets (or comments on existing threads).
+        V1 supports one shared company inbox; per-user inboxes coming later.
+      </div>
+
+      {!isGmailConnected && (
+        <Card className="border-dashed border-amber-500/40 bg-amber-500/5">
+          <CardContent className="py-3 px-4 text-xs">
+            Connect Gmail first (Gmail tab) so Composio knows which account this mailbox lives in.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Registered accounts */}
+      {isLoading ? (
+        <div className="flex justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : accounts && accounts.length > 0 ? (
+        <div className="space-y-2">
+          {accounts.map((acc: any) => {
+            const watchActive = acc.watch_expires_at && new Date(acc.watch_expires_at) > new Date();
+            return (
+              <Card key={acc.id} className="border-muted">
+                <CardContent className="py-3 px-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{acc.email_address}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <Badge variant={acc.enabled ? 'default' : 'secondary'} className="text-[10px]">
+                          {acc.enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                        <Badge variant={watchActive ? 'default' : 'outline'} className="text-[10px]">
+                          {watchActive ? 'Watch active' : 'No watch'}
+                        </Badge>
+                        {acc.is_shared && (
+                          <Badge variant="outline" className="text-[10px]">Shared</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7"
+                        onClick={() => handleActivateWatch(acc.id, acc.composio_account_id)}
+                        disabled={activatingWatch === acc.id || !isGmailConnected}
+                      >
+                        {activatingWatch === acc.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : watchActive ? 'Renew watch' : 'Activate watch'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs h-7"
+                        onClick={() => handleToggleEnabled(acc.id, !acc.enabled)}
+                      >
+                        {acc.enabled ? 'Disable' : 'Enable'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground space-y-0.5">
+                    {acc.last_received_at && (
+                      <div>Last received: {new Date(acc.last_received_at).toLocaleString()}</div>
+                    )}
+                    {acc.watch_expires_at && (
+                      <div>Watch expires: {new Date(acc.watch_expires_at).toLocaleString()}</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="border-dashed border-muted-foreground/30">
+          <CardContent className="py-4 text-center text-xs text-muted-foreground">
+            No inbound mailbox registered yet.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Register form */}
+      <Card className="border-muted">
+        <CardContent className="py-3 px-4 space-y-2">
+          <p className="text-xs font-medium">Register company inbox</p>
+          <Input
+            placeholder="info@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <Input
+            placeholder="Composio connected_account_id (optional)"
+            value={composioAccountId}
+            onChange={(e) => setComposioAccountId(e.target.value)}
+            className="h-8 text-xs font-mono"
+          />
+          <Button
+            size="sm"
+            className="w-full text-xs"
+            onClick={handleRegister}
+            disabled={registering || !email.trim()}
+          >
+            {registering && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            Register mailbox
+          </Button>
+          <p className="text-[10px] text-muted-foreground">
+            Leave account id empty to let the webhook auto-match by the inbound message.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
