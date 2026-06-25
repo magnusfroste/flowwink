@@ -201,9 +201,9 @@ Deno.serve(async (req) => {
   };
 
   const { error: emitErr } = await supabase.rpc('emit_platform_event', {
-    p_event_name: 'email.received',
-    p_payload: eventPayload,
-    p_source: 'composio-webhook',
+    _event_name: 'email.received',
+    _payload: eventPayload,
+    _source: 'composio-webhook',
   });
   if (emitErr) {
     console.error('[composio-webhook] emit_platform_event failed:', emitErr);
