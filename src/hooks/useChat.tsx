@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useChatSettings } from './useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { applyVisitorChatSessionHeader } from '@/lib/visitor-chat-session';
 
 export interface ChatMessage {
   id: string;
