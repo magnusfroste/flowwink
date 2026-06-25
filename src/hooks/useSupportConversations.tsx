@@ -432,6 +432,52 @@ export function useConversationMessages(conversationId: string | null) {
             logger.error(`sendMessage: ${smsProvider} relay failed`, await relayResp.text());
           }
         }
+
+        // Voice / voicemail threads: an agent's reply goes out as an SMS to the
+        // caller (e.g. "I'll call you back at 10:30"). The edge function gates
+        // this on the Voice setting + a landline guard. When it declines, we drop
+        // a visible system note into the thread so the agent is never misled into
+        // thinking an undeliverable reply was sent.
+        if (conv?.channel === 'voice') {
+          const relayResp = await fetch(
+            `${baseUrl}/functions/v1/elks46-ingest?action=send`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'apikey': apiKey,
+              },
+              body: JSON.stringify({
+                conversation_id: conversationId,
+                message_id: data?.[0]?.id,
+                content,
+              }),
+            },
+          );
+          let notice: string | null = null;
+          if (relayResp.ok) {
+            const result = await relayResp.json().catch(() => ({} as any));
+            if (result?.sms_sent === false) {
+              notice = result.reason === 'landline'
+                ? '⚠️ SMS-svaret skickades inte: uppringaren ringde från ett fast nummer som inte kan ta emot SMS. Ring upp istället.'
+                : result.reason === 'sms_reply_disabled'
+                  ? 'ℹ️ SMS-svar på röstmeddelanden är avstängt. Slå på det i Voice-inställningarna för att kunna svara via SMS.'
+                  : '⚠️ SMS-svaret kunde inte skickas.';
+            }
+          } else {
+            logger.error('sendMessage: voice SMS relay failed', await relayResp.text());
+            notice = '⚠️ SMS-svaret kunde inte skickas (tekniskt fel).';
+          }
+          if (notice) {
+            await supabase.from('chat_messages').insert({
+              conversation_id: conversationId,
+              role: 'system',
+              content: notice,
+            });
+            queryClient.invalidateQueries({ queryKey: ['conversation-messages', conversationId] });
+          }
+        }
       } catch (relayErr) {
         logger.error('sendMessage: channel relay error', relayErr);
       }

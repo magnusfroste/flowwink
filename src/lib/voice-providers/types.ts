@@ -97,4 +97,10 @@ export interface VoiceSettings {
   bookingIvrEnabled: boolean;
   /** Vilken booking_service som föreslås i UC4. */
   bookingServiceId?: string;
+  /**
+   * Låt en agent svara på ett röstmeddelande med SMS till uppringaren
+   * (t.ex. "Jag ringer upp dig 10:30"). Skickas bara till mobilnummer —
+   * fasta nummer blockeras med en notis i tråden.
+   */
+  smsReplyEnabled?: boolean;
 }

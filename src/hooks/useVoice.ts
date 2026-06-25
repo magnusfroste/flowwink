@@ -16,6 +16,7 @@ export const defaultVoiceSettings: VoiceSettings = {
   ringTimeoutSeconds: 20,
   bookingIvrEnabled: false,
   bookingServiceId: undefined,
+  smsReplyEnabled: false,
 };
 
 export function useVoiceSettings() {

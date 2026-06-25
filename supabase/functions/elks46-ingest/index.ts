@@ -83,7 +83,17 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
   return {
     voicemailGreetingUrl: (v.voicemailGreetingUrl as string) || DEFAULT_GREETING_URL,
     ringTimeoutSeconds: Number(v.ringTimeoutSeconds) > 0 ? Number(v.ringTimeoutSeconds) : 25,
+    smsReplyEnabled: v.smsReplyEnabled === true,
   };
+}
+
+// A Swedish mobile number is +46 7x; any other +46 prefix is a landline that
+// can't receive SMS. We only ever *block* confirmed Swedish landlines — foreign
+// numbers get the benefit of the doubt (likely mobile, and we can't classify
+// them cheaply). This is the guard that stops the silent-failure mode where an
+// agent texts a voicemail caller who phoned in from a fast telefon.
+function isLikelySwedishLandline(num: string): boolean {
+  return /^\+46(?!7)/.test(num);
 }
 
 // 46elks dial-plan: ANSWER the call, play the greeting, then record a voicemail.
@@ -662,8 +672,31 @@ async function handleSend(req: Request): Promise<Response> {
       .select("id, channel, channel_thread_id, visitor_profile")
       .eq("id", conversationId).maybeSingle();
     if (convErr || !conv) return json({ error: "conversation not found" }, 404);
-    if (conv.channel !== "sms") return json({ ok: true, skipped: "not sms" });
-    if (!conv.channel_thread_id) return json({ error: "missing channel_thread_id" }, 400);
+
+    const isVoice = conv.channel === "voice";
+    if (conv.channel !== "sms" && !isVoice) return json({ ok: true, skipped: "unsupported channel" });
+
+    const profile = (conv.visitor_profile as any) || {};
+    // SMS thread → the thread id is the destination. Voice thread → the caller's
+    // number (visitor_profile.from), falling back to the thread id.
+    const destinationRaw = isVoice
+      ? (profile.from || conv.channel_thread_id || "")
+      : (conv.channel_thread_id || "");
+    if (!destinationRaw) return json({ error: "missing destination number" }, 400);
+    const destination = normalizePhone(String(destinationRaw));
+
+    // Voice replies go out as SMS — gated by a Voice setting and a landline
+    // guard so the agent is never misled into thinking an undeliverable reply
+    // was sent. Returns a clear reason the inbox surfaces to the agent.
+    if (isVoice) {
+      const voice = await loadVoiceSettings(supabase);
+      if (!voice.smsReplyEnabled) {
+        return json({ ok: true, sms_sent: false, reason: "sms_reply_disabled" });
+      }
+      if (isLikelySwedishLandline(destination)) {
+        return json({ ok: true, sms_sent: false, reason: "landline" });
+      }
+    }
 
     if (!content && body.message_id) {
       const { data: msg } = await supabase
@@ -673,10 +706,9 @@ async function handleSend(req: Request): Promise<Response> {
     if (!content || !content.trim()) return json({ error: "no content" }, 400);
 
     const { fromNumber } = await loadElks46Config(supabase);
-    const profile = (conv.visitor_profile as any) || {};
     const from = fromNumber || profile.to || "";
-    const data = await sendSms(conv.channel_thread_id, from, content);
-    return json({ ok: true, elks46_message_id: data?.id ?? null });
+    const data = await sendSms(destination, from, content);
+    return json({ ok: true, sms_sent: true, elks46_message_id: data?.id ?? null });
   } catch (err: any) {
     console.error("[elks46-ingest:send] error", err?.message ?? err);
     return json({ error: err?.message ?? "internal error" }, 500);

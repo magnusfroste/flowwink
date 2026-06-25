@@ -284,6 +284,20 @@ function VoiceSettingsCard() {
           </div>
         )}
 
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label className="text-sm font-medium">Reply to voicemail by SMS</Label>
+            <p className="text-xs text-muted-foreground">
+              Let an agent answer a voice message with an SMS to the caller (e.g. “I’ll call you back at 10:30”).
+              Sent only to mobile numbers — landlines are blocked with a note in the thread.
+            </p>
+          </div>
+          <Switch
+            checked={settings.smsReplyEnabled ?? false}
+            onCheckedChange={(v) => set('smsReplyEnabled', v)}
+          />
+        </div>
+
         <div className="flex items-center justify-end gap-2 border-t pt-4">
           {dirty && (
             <Button variant="ghost" onClick={() => setDraft(null)} disabled={update.isPending}>
