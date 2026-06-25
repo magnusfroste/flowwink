@@ -84,16 +84,161 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
 
 // 46elks dial-plan: ANSWER the call, play the greeting, then record a voicemail.
 // Per the 46elks docs (/docs/voice-record) the `record` value is the URL the
-// recording is POSTed to (delivered as the `wav` param) — NOT "true". `next`
-// continues the flow afterwards. IMPORTANT: never combine `play` with
-// `hangup: "reject"` — reject means "don't answer", so the audio never plays.
-// That was the bug behind "nothing played".
+// recording is POSTed to (delivered as the `wav` param) — NOT "true".
+//
+// CRITICAL: the `record` action must NOT carry an inner `next`. We previously
+// had `next: { record: selfUrl, next: selfUrl }`, which made 46elks CONTINUE
+// the dial-plan after each recording — it re-fetched selfUrl, got a fresh
+// greeting, and replayed it in a loop. The call actions log proved it:
+//   play(ok) → record(failed,tooshort) → play(ok) → record(ok) → play(hangup)
+// Without an inner `next`, the call ends after the recording. The recording is
+// still captured (it appears in the call's `recordings[]`, fetched via the API
+// in the terminal handler) and, if 46elks POSTs a `wav`, handled directly.
+//
+// Never combine `play` with `hangup: "reject"` — reject means "don't answer",
+// so the audio never plays. That was the earlier "nothing played" bug.
 function voicemailReply(greetingUrl: string, selfUrl: string) {
   return {
     play: greetingUrl,
-    next: { record: selfUrl, silencedetection: "yes", next: selfUrl },
+    next: { record: selfUrl, silencedetection: "yes" },
     whenhangup: selfUrl,
   };
+}
+
+function hangupResponse(): Response {
+  return new Response(JSON.stringify({ hangup: true }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// Ask 46elks for a call's recordings. 46elks does not reliably POST the audio
+// back to our webhook, but the finished call object lists recording ids in
+// `recordings[]` (e.g. "c76c…-r0"), retrievable at /a1/Recordings/{id}.wav
+// behind Basic auth. Returns the recording ids (newest last).
+async function fetchCallRecordings(callid: string): Promise<string[]> {
+  try {
+    const resp = await fetch(`${ELKS_BASE}/calls/${encodeURIComponent(callid)}`, {
+      headers: { Authorization: basicAuthHeader() },
+    });
+    if (!resp.ok) {
+      console.warn("[elks46-ingest] fetchCallRecordings", resp.status);
+      return [];
+    }
+    const data = await resp.json().catch(() => ({}));
+    const recs = (data as any)?.recordings;
+    return Array.isArray(recs) ? recs.filter((r: unknown): r is string => typeof r === "string") : [];
+  } catch (e) {
+    console.warn("[elks46-ingest] fetchCallRecordings error", (e as Error)?.message);
+    return [];
+  }
+}
+
+// Fetch the (Basic-auth-protected) recording wav and run it through chat-stt,
+// reusing the site's configured STT provider. Returns the transcript or null.
+async function transcribeWav(supabase: ReturnType<typeof getServiceClient>, wavUrl: string): Promise<string | null> {
+  try {
+    const audioResp = await fetch(wavUrl, { headers: { Authorization: basicAuthHeader() } });
+    if (!audioResp.ok) {
+      console.warn("[elks46-ingest] recording fetch failed", audioResp.status);
+      return null;
+    }
+    const buf = await audioResp.arrayBuffer();
+    if (buf.byteLength === 0) return null;
+
+    // Use the same STT provider the chat widget uses (site_settings key 'chat').
+    // 'browser' STT only runs client-side, so fall back to OpenAI Whisper here.
+    const { data: cs } = await supabase
+      .from("site_settings").select("value").eq("key", "chat").maybeSingle();
+    const chat = ((cs?.value as any) || {}) as Record<string, unknown>;
+    let provider = (chat.sttProvider as string) || "openai";
+    if (provider === "browser") provider = "openai";
+
+    const fd = new FormData();
+    fd.append("file", new File([buf], "voicemail.wav", { type: "audio/wav" }));
+    fd.append("provider", provider);
+    if (provider === "local") {
+      if (chat.sttLocalEndpoint) fd.append("endpoint", String(chat.sttLocalEndpoint));
+      if (chat.sttLocalModel) fd.append("model", String(chat.sttLocalModel));
+    }
+
+    const sttResp = await fetch(`${supabaseUrl}/functions/v1/chat-stt`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+      body: fd,
+    });
+    if (!sttResp.ok) {
+      console.warn("[elks46-ingest] chat-stt failed", sttResp.status, await sttResp.text().catch(() => ""));
+      return null;
+    }
+    const out = await sttResp.json().catch(() => ({}));
+    const text = typeof (out as any)?.text === "string" ? (out as any).text.trim() : "";
+    return text || null;
+  } catch (e) {
+    console.warn("[elks46-ingest] transcribeWav error", (e as Error)?.message);
+    return null;
+  }
+}
+
+// Store a captured voicemail, transcribe it, and drop the transcript into the
+// unified inbox as a text message on the call's voice conversation. Idempotent
+// per call via metadata.voicemail_transcribed so the wav-POST and the terminal
+// hangup callback don't double-post.
+async function recordVoicemail(
+  supabase: ReturnType<typeof getServiceClient>,
+  opts: { callid: string; existing: any; wavUrl: string; durationSeconds: number | null; fromNumber: string },
+): Promise<void> {
+  const { callid, existing, wavUrl, durationSeconds, fromNumber } = opts;
+  const prevMeta = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
+  if ((prevMeta as any).voicemail_transcribed === true) return; // already handled
+
+  const transcript = await transcribeWav(supabase, wavUrl);
+
+  await supabase.from("voice_calls").update({
+    status: "voicemail",
+    voicemail: true,
+    recording_url: wavUrl,
+    transcript,
+    ended_at: new Date().toISOString(),
+    duration_seconds: durationSeconds,
+    callback_status: "pending",
+    metadata: { ...prevMeta, voicemail_transcribed: true, voicemail: { recording_url: wavUrl } },
+  }).eq("provider", "elks46").eq("provider_call_id", callid);
+
+  // Ensure a voice conversation exists, then surface the voicemail as text.
+  let conversationId: string | null = existing?.conversation_id ?? null;
+  if (!conversationId) {
+    const { data: conv } = await supabase.from("chat_conversations").insert({
+      channel: "voice",
+      channel_thread_id: fromNumber || callid,
+      customer_name: fromNumber || "Unknown caller",
+      scope: "visitor",
+      conversation_status: "waiting_agent",
+      title: `Voice · ${fromNumber || callid}`,
+      visitor_profile: { sms_provider: "elks46", elks46_callid: callid, from: fromNumber },
+    }).select("id").maybeSingle();
+    conversationId = conv?.id ?? null;
+    if (conversationId) {
+      await supabase.from("voice_calls").update({ conversation_id: conversationId })
+        .eq("provider", "elks46").eq("provider_call_id", callid);
+    }
+  }
+
+  if (conversationId) {
+    await supabase.from("chat_messages").insert({
+      conversation_id: conversationId,
+      role: "user",
+      source: "voice",
+      content: transcript
+        ? `🎙️ Voicemail: ${transcript}`
+        : `🎙️ Voicemail received (transcription unavailable).`,
+      metadata: { elks46_callid: callid, recording_url: wavUrl, channel: "voice", voicemail: true },
+    });
+    // Move it into the queue so it shows up as an unhandled inbox item.
+    await supabase.from("chat_conversations").update({
+      conversation_status: "waiting_agent",
+      updated_at: new Date().toISOString(),
+    }).eq("id", conversationId);
+  }
 }
 
 async function sendSms(to: string, from: string, message: string) {
@@ -195,48 +340,46 @@ async function handleIngest(req: Request): Promise<Response> {
       const state = params.get("state");
       const actionResult = parseActionsResult(params.get("actions"));
       const durationSeconds = parseIntParam(params.get("duration"));
+      const wavParam = params.get("wav") ?? params.get("recording_url") ?? params.get("recording");
       const terminalSignal = Boolean(state || params.get("actions") || params.get("start") || params.get("duration"))
         || ["hangup", "failed", "busy", "noanswer", "no_answer", "success", "answered"].includes(result ?? "");
 
-      // (A) Voicemail recording arrived — 46elks POSTs the audio to the `record`
-      // URL as the `wav` param (see /docs/voice-record). Store it + queue a
-      // callback. (TODO next: fetch → chat-stt transcribe → chat_messages
-      // channel='voice' so it lands as text in the inbox.)
-      const recordingUrl = params.get("wav") ?? params.get("recording_url") ?? params.get("recording");
-      if (recordingUrl) {
-        const { data: existing } = await supabase
-          .from("voice_calls").select("metadata")
-          .eq("provider", "elks46").eq("provider_call_id", callid).maybeSingle();
-        const prev = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
-        await supabase.from("voice_calls").update({
-          status: "voicemail",
-          recording_url: recordingUrl,
-          ended_at: new Date().toISOString(),
-          duration_seconds: durationSeconds,
-          callback_status: "pending",
-          metadata: { ...prev, voicemail: { recording_url: recordingUrl } },
-        }).eq("provider", "elks46").eq("provider_call_id", callid);
-        return new Response(JSON.stringify({ hangup: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Load the call row once — used by the recording, guard, and terminal paths.
+      const { data: existingCall } = await supabase
+        .from("voice_calls")
+        .select("status, started_at, answered_at, conversation_id, metadata")
+        .eq("provider", "elks46")
+        .eq("provider_call_id", callid)
+        .maybeSingle();
+      const existingMeta = (existingCall?.metadata && typeof existingCall.metadata === "object")
+        ? existingCall.metadata : {};
+      const alreadyOffered = (existingMeta as any)?.voicemail_offered === true;
+
+      // (A) 46elks POSTed the recording directly (wav param) → transcribe + post
+      // to the inbox, then end the call. (Belt-and-braces: the terminal handler
+      // below also pulls recordings from the API in case no wav is delivered.)
+      if (wavParam) {
+        await recordVoicemail(supabase, {
+          callid, existing: existingCall, wavUrl: wavParam, durationSeconds, fromNumber: normalizedFrom || from,
         });
+        return hangupResponse();
+      }
+
+      // Double-play guard: if we've already played the greeting for this call
+      // and this callback carries neither a recording nor a terminal signal,
+      // it's a stray continuation — hang up instead of replaying the greeting.
+      if (alreadyOffered && !terminalSignal && result !== "newincoming") {
+        return hangupResponse();
       }
 
       if (terminalSignal && result !== "newincoming") {
-        const { data: existing } = await supabase
-          .from("voice_calls")
-          .select("status, started_at, answered_at, metadata")
-          .eq("provider", "elks46")
-          .eq("provider_call_id", callid)
-          .maybeSingle();
-
         const now = new Date().toISOString();
-        const answeredAt = existing?.answered_at
+        const answeredAt = existingCall?.answered_at
           ?? params.get("start")
           ?? (["answered", "success"].includes(result ?? "") || state === "success" || actionResult === "success" ? now : null);
         const failureSignal = state === "busy" || state === "failed" || ["busy", "failed", "noanswer", "no_answer"].includes(result ?? "")
           || ["busy", "failed", "noanswer", "no_answer"].includes(actionResult ?? "");
-        const previousMetadata = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
-        const alreadyOffered = (previousMetadata as any)?.voicemail_offered === true;
+        const previousMetadata = existingMeta;
 
         // (B) Agent's phone didn't pick up (no-answer/busy/failed) and the call
         // was never answered → play the greeting + record a voicemail instead of
@@ -256,6 +399,21 @@ async function handleIngest(req: Request): Promise<Response> {
           });
         }
 
+        // (C) Voicemail was offered for this call → the recording (if the caller
+        // spoke) now exists in the call's recordings[]. Pull it from the API and
+        // transcribe into the inbox. If the caller hung up without speaking,
+        // there's no recording and we just finalize as missed below.
+        if (alreadyOffered) {
+          const recordings = await fetchCallRecordings(callid);
+          if (recordings.length > 0) {
+            const wavUrl = `${ELKS_BASE}/Recordings/${recordings[recordings.length - 1]}.wav`;
+            await recordVoicemail(supabase, {
+              callid, existing: existingCall, wavUrl, durationSeconds, fromNumber: normalizedFrom || from,
+            });
+            return hangupResponse();
+          }
+        }
+
         const finalStatus = failureSignal
           ? (state === "busy" || result === "busy" || actionResult === "busy" ? "busy" : "missed")
           : (answeredAt ? "completed" : "missed");
@@ -273,9 +431,7 @@ async function handleIngest(req: Request): Promise<Response> {
           .eq("provider", "elks46")
           .eq("provider_call_id", callid);
         if (updateErr) console.warn("[elks46-ingest] voice status update failed", updateErr.message);
-        return new Response(JSON.stringify({ hangup: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return hangupResponse();
       }
 
       const { data: agents, error: agentErr } = await supabase
@@ -337,7 +493,9 @@ async function handleIngest(req: Request): Promise<Response> {
           conversation_id: conversationId,
           started_at: new Date().toISOString(),
           callback_status: target ? "none" : "pending",
-          metadata: { initial_action: reply, raw },
+          // No agent → we go straight to greeting+record, so the voicemail was
+          // already offered. With an agent, it's only offered later on no-answer.
+          metadata: { initial_action: reply, raw, voicemail_offered: !target },
         },
         { onConflict: "provider,provider_call_id" },
       );
