@@ -82,14 +82,16 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
   };
 }
 
-// 46elks dial-plan: ANSWER the call, play the greeting, then record a voicemail
-// and post it back to `next` (→ recording_ready → voice_calls.recording_url).
-// IMPORTANT: never combine `play` with `hangup: "reject"` — reject means "don't
-// answer", so the audio never plays. This was the bug behind "nothing played".
+// 46elks dial-plan: ANSWER the call, play the greeting, then record a voicemail.
+// Per the 46elks docs (/docs/voice-record) the `record` value is the URL the
+// recording is POSTed to (delivered as the `wav` param) — NOT "true". `next`
+// continues the flow afterwards. IMPORTANT: never combine `play` with
+// `hangup: "reject"` — reject means "don't answer", so the audio never plays.
+// That was the bug behind "nothing played".
 function voicemailReply(greetingUrl: string, selfUrl: string) {
   return {
     play: greetingUrl,
-    next: { record: "true", maxlength: 120, next: selfUrl },
+    next: { record: selfUrl, silencedetection: "yes", next: selfUrl },
     whenhangup: selfUrl,
   };
 }
@@ -196,10 +198,11 @@ async function handleIngest(req: Request): Promise<Response> {
       const terminalSignal = Boolean(state || params.get("actions") || params.get("start") || params.get("duration"))
         || ["hangup", "failed", "busy", "noanswer", "no_answer", "success", "answered"].includes(result ?? "");
 
-      // (A) Voicemail recording arrived — 46elks posts recording_url to `next`.
-      // Store it + queue a callback. (TODO next: fetch → chat-stt transcribe →
-      // chat_messages channel='voice' so it lands as text in the inbox.)
-      const recordingUrl = params.get("recording_url") ?? params.get("recording");
+      // (A) Voicemail recording arrived — 46elks POSTs the audio to the `record`
+      // URL as the `wav` param (see /docs/voice-record). Store it + queue a
+      // callback. (TODO next: fetch → chat-stt transcribe → chat_messages
+      // channel='voice' so it lands as text in the inbox.)
+      const recordingUrl = params.get("wav") ?? params.get("recording_url") ?? params.get("recording");
       if (recordingUrl) {
         const { data: existing } = await supabase
           .from("voice_calls").select("metadata")
