@@ -281,25 +281,33 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'gmail_send') {
-      const { to, subject, body: emailBody, cc, bcc } = params || {};
+      const { to, subject, body: emailBody, cc, bcc, in_reply_to, references, thread_id, account_id: explicitAccountId } = params || {};
       if (!to || !subject || !emailBody) {
         return json({ error: 'to, subject, and body required' }, 400);
       }
 
-      const accountId = await getConnectedAccountId('gmail');
+      const accountId = explicitAccountId || await getConnectedAccountId('gmail');
       if (!accountId) {
         return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
       }
 
-      const input: Record<string, string> = {
+      const input: Record<string, unknown> = {
         recipient_email: to,
         subject,
         body: emailBody,
       };
       if (cc) input.cc = cc;
       if (bcc) input.bcc = bcc;
+      // Composio GMAIL_SEND_EMAIL accepts extra_headers + thread_id for threading.
+      if (in_reply_to) {
+        input.extra_headers = {
+          'In-Reply-To': in_reply_to,
+          ...(references ? { References: references } : {}),
+        };
+      }
+      if (thread_id) input.thread_id = thread_id;
 
-      const data = await executeToolV3('GMAIL_SEND_EMAIL', input, accountId);
+      const data = await executeToolV3('GMAIL_SEND_EMAIL', input as Record<string, string>, accountId);
       console.log('[composio-proxy] Gmail send response:', JSON.stringify(data).slice(0, 500));
 
       const success = data?.successful === true || data?.success === true || data?.data?.response_data?.labelIds?.includes?.('SENT');
@@ -313,10 +321,13 @@ Deno.serve(async (req) => {
         metadata: {
           tool: 'GMAIL_SEND_EMAIL',
           entity_id: effectiveUserId,
+          connected_account_id: accountId,
           cc: cc ?? null,
           bcc: bcc ?? null,
+          in_reply_to: in_reply_to ?? null,
+          thread_id: thread_id ?? null,
           gmail_message_id: data?.data?.response_data?.id ?? null,
-          thread_id: data?.data?.response_data?.threadId ?? null,
+          response_thread_id: data?.data?.response_data?.threadId ?? null,
           log_id: data?.log_id ?? null,
         },
       });
@@ -325,7 +336,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'gmail_read') {
-      const accountId = await getConnectedAccountId('gmail');
+      const accountId = params?.account_id || await getConnectedAccountId('gmail');
       if (!accountId) {
         return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
       }
@@ -337,6 +348,36 @@ Deno.serve(async (req) => {
       console.log('[composio-proxy] Gmail read response:', JSON.stringify(data).slice(0, 300));
       return json({ result: data });
     }
+
+    if (action === 'gmail_get') {
+      // Fetch one message by id (used by composio-webhook to fully expand a push notification).
+      const messageId = params?.message_id;
+      if (!messageId) return json({ error: 'message_id required' }, 400);
+      const accountId = params?.account_id || await getConnectedAccountId('gmail');
+      if (!accountId) return json({ error: 'Gmail not connected.' }, 400);
+
+      // GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID is the Composio v3 action slug.
+      const data = await executeToolV3('GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID', {
+        message_id: messageId,
+        format: 'full',
+      }, accountId);
+      return json({ result: data });
+    }
+
+    if (action === 'gmail_watch') {
+      // Register a Gmail Watch on the connected account.
+      // Composio v3 wraps Gmail's users.watch with the GMAIL_WATCH_USER action.
+      const accountId = params?.account_id || await getConnectedAccountId('gmail');
+      if (!accountId) return json({ error: 'Gmail not connected.' }, 400);
+
+      const data = await executeToolV3('GMAIL_WATCH_USER', {
+        // Defaults to INBOX. Override via params.label_ids / params.topic_name.
+        label_ids: params?.label_ids || ['INBOX'],
+        ...(params?.topic_name ? { topic_name: params.topic_name } : {}),
+      }, accountId);
+      return json({ result: data });
+    }
+
 
     if (action === 'list_apps') {
       const res = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE`, {
