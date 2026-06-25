@@ -68,6 +68,32 @@ async function loadElks46Config(supabase: ReturnType<typeof getServiceClient>) {
   };
 }
 
+// A reachable default greeting so callers always hear *something* before
+// recording. Admins override via Voice settings (voicemailGreetingUrl).
+const DEFAULT_GREETING_URL = "https://api.46elks.com/static/sounds/welcome-sv.mp3";
+
+async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) {
+  const { data } = await supabase
+    .from("site_settings").select("value").eq("key", "voice").maybeSingle();
+  const v = (data?.value as any) || {};
+  return {
+    voicemailGreetingUrl: (v.voicemailGreetingUrl as string) || DEFAULT_GREETING_URL,
+    ringTimeoutSeconds: Number(v.ringTimeoutSeconds) > 0 ? Number(v.ringTimeoutSeconds) : 25,
+  };
+}
+
+// 46elks dial-plan: ANSWER the call, play the greeting, then record a voicemail
+// and post it back to `next` (→ recording_ready → voice_calls.recording_url).
+// IMPORTANT: never combine `play` with `hangup: "reject"` — reject means "don't
+// answer", so the audio never plays. This was the bug behind "nothing played".
+function voicemailReply(greetingUrl: string, selfUrl: string) {
+  return {
+    play: greetingUrl,
+    next: { record: "true", maxlength: 120, next: selfUrl },
+    whenhangup: selfUrl,
+  };
+}
+
 async function sendSms(to: string, from: string, message: string) {
   const auth = basicAuthHeader();
   if (!from) throw new Error("Missing sender (configure from_number in site_settings.elks46.config)");
@@ -170,6 +196,28 @@ async function handleIngest(req: Request): Promise<Response> {
       const terminalSignal = Boolean(state || params.get("actions") || params.get("start") || params.get("duration"))
         || ["hangup", "failed", "busy", "noanswer", "no_answer", "success", "answered"].includes(result ?? "");
 
+      // (A) Voicemail recording arrived — 46elks posts recording_url to `next`.
+      // Store it + queue a callback. (TODO next: fetch → chat-stt transcribe →
+      // chat_messages channel='voice' so it lands as text in the inbox.)
+      const recordingUrl = params.get("recording_url") ?? params.get("recording");
+      if (recordingUrl) {
+        const { data: existing } = await supabase
+          .from("voice_calls").select("metadata")
+          .eq("provider", "elks46").eq("provider_call_id", callid).maybeSingle();
+        const prev = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
+        await supabase.from("voice_calls").update({
+          status: "voicemail",
+          recording_url: recordingUrl,
+          ended_at: new Date().toISOString(),
+          duration_seconds: durationSeconds,
+          callback_status: "pending",
+          metadata: { ...prev, voicemail: { recording_url: recordingUrl } },
+        }).eq("provider", "elks46").eq("provider_call_id", callid);
+        return new Response(JSON.stringify({ hangup: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (terminalSignal && result !== "newincoming") {
         const { data: existing } = await supabase
           .from("voice_calls")
@@ -184,11 +232,31 @@ async function handleIngest(req: Request): Promise<Response> {
           ?? (["answered", "success"].includes(result ?? "") || state === "success" || actionResult === "success" ? now : null);
         const failureSignal = state === "busy" || state === "failed" || ["busy", "failed", "noanswer", "no_answer"].includes(result ?? "")
           || ["busy", "failed", "noanswer", "no_answer"].includes(actionResult ?? "");
+        const previousMetadata = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
+        const alreadyOffered = (previousMetadata as any)?.voicemail_offered === true;
+
+        // (B) Agent's phone didn't pick up (no-answer/busy/failed) and the call
+        // was never answered → play the greeting + record a voicemail instead of
+        // just dropping. The original inbound leg is still live here, so 46elks
+        // continues it with this dial-plan. Guarded by voicemail_offered so the
+        // follow-up hangup callback finalizes instead of looping.
+        if (failureSignal && !answeredAt && !alreadyOffered) {
+          const selfUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
+          const voice = await loadVoiceSettings(supabase);
+          await supabase.from("voice_calls").update({
+            status: "missed",
+            callback_status: "pending",
+            metadata: { ...previousMetadata, voicemail_offered: true, no_answer_event: { result, state } },
+          }).eq("provider", "elks46").eq("provider_call_id", callid);
+          return new Response(JSON.stringify(voicemailReply(voice.voicemailGreetingUrl, selfUrl)), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         const finalStatus = failureSignal
           ? (state === "busy" || result === "busy" || actionResult === "busy" ? "busy" : "missed")
           : (answeredAt ? "completed" : "missed");
 
-        const previousMetadata = (existing?.metadata && typeof existing.metadata === "object") ? existing.metadata : {};
         const { error: updateErr } = await supabase
           .from("voice_calls")
           .update({
@@ -235,10 +303,14 @@ async function handleIngest(req: Request): Promise<Response> {
         ? (String(agent.voice_sip_uri).startsWith("sip:") ? agent.voice_sip_uri : `sip:${agent.voice_sip_uri}`)
         : agent?.voice_mobile_number;
       const selfUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
+      const voice = await loadVoiceSettings(supabase);
       const status = target ? "ringing" : "missed";
+      // Agent reachable → ring their phone; on no-answer the connect's `next`
+      // callback (below) plays the greeting + records. No agent (phone off /
+      // nobody online) → straight to greeting + voicemail.
       const reply = target
-        ? { connect: target, callerid: normalizedFrom || from, timeout: 25, next: selfUrl, whenhangup: selfUrl }
-        : { play: "https://api.46elks.com/static/sounds/welcome-sv.mp3", next: { hangup: "reject" }, whenhangup: selfUrl };
+        ? { connect: target, callerid: normalizedFrom || from, timeout: voice.ringTimeoutSeconds, next: selfUrl, whenhangup: selfUrl }
+        : voicemailReply(voice.voicemailGreetingUrl, selfUrl);
 
       const { error: callErr } = await supabase.from("voice_calls").upsert(
         {
