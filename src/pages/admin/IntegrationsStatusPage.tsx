@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { IntegrationTestPanel } from "@/components/admin/integrations/IntegrationTestPanel";
+import { ComposioPanel } from "@/components/admin/modules/ComposioPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import {
@@ -1398,7 +1399,7 @@ export default function IntegrationsStatusPage() {
                     const requiresSecret = !CONFIG_BASED_KEYS.includes(key);
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
-                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi'].includes(key);
+                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina', 'hunter', 'searxng', 'firecrawl', 'telegram', 'twilio', 'elks46', 'gatewayapi', 'composio'].includes(key);
                     // Web-data providers share a priority-ordered fallback chain.
                     const WEB_PROVIDER_DEFAULT_PRIORITY: Record<string, number> = { searxng: 1, firecrawl: 2, jina: 3 };
                     const webProviderPriority = key in WEB_PROVIDER_DEFAULT_PRIORITY
@@ -1607,14 +1608,20 @@ export default function IntegrationsStatusPage() {
                 <SheetDescription>{integration.description}</SheetDescription>
               </SheetHeader>
               <div className="flex-1 py-4 space-y-4">
-                <IntegrationConfigPanel
-                  integrationKey={openDrawerKey}
-                  config={effectiveConfig}
-                  onConfigChange={setDrawerConfig}
-                  hasKey={hasKey}
-                  isEnabled={isEnabled}
-                />
-                <IntegrationTestPanel providerKey={openDrawerKey as string} hasKey={hasKey} />
+                {openDrawerKey === 'composio' ? (
+                  <ComposioPanel />
+                ) : (
+                  <>
+                    <IntegrationConfigPanel
+                      integrationKey={openDrawerKey}
+                      config={effectiveConfig}
+                      onConfigChange={setDrawerConfig}
+                      hasKey={hasKey}
+                      isEnabled={isEnabled}
+                    />
+                    <IntegrationTestPanel providerKey={openDrawerKey as string} hasKey={hasKey} />
+                  </>
+                )}
               </div>
               <SheetFooter className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={closeDrawer} className="flex-1">
