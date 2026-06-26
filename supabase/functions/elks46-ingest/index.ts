@@ -84,7 +84,102 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
     voicemailGreetingUrl: (v.voicemailGreetingUrl as string) || DEFAULT_GREETING_URL,
     ringTimeoutSeconds: Number(v.ringTimeoutSeconds) > 0 ? Number(v.ringTimeoutSeconds) : 25,
     smsReplyEnabled: v.smsReplyEnabled === true,
+    // Callback auto-scheduler (opt-in). When off, missed calls/voicemails stay
+    // `pending` for a human to schedule manually — exactly today's behaviour.
+    autoScheduleCallbacks: v.autoScheduleCallbacks === true,
+    autoScheduleSms: v.autoScheduleSms === true,
+    callbackTimezone: (v.callbackTimezone as string) || "Europe/Stockholm",
+    callbackWindowStart: (v.callbackWindowStart as string) || "09:00",
+    callbackWindowEnd: (v.callbackWindowEnd as string) || "17:00",
+    callbackSlotMinutes: Number(v.callbackSlotMinutes) > 0 ? Number(v.callbackSlotMinutes) : 15,
   };
+}
+
+type VoiceSettingsResolved = Awaited<ReturnType<typeof loadVoiceSettings>>;
+
+// ── Timezone-aware callback slot finder ──────────────────────────────────────
+// Business hours live in the site's wall-clock timezone, but the edge runtime is
+// UTC, so we convert through Intl. DST-safe.
+
+function tzOffsetMs(instant: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const map: Record<string, string> = {};
+  for (const p of dtf.formatToParts(instant)) map[p.type] = p.value;
+  const asUTC = Date.UTC(+map.year, +map.month - 1, +map.day, +map.hour, +map.minute, +map.second);
+  return asUTC - instant.getTime();
+}
+
+// Local wall-clock minutes-since-midnight for a UTC instant, in the given zone.
+function localMinutes(instant: Date, timeZone: string): number {
+  const local = new Date(instant.getTime() + tzOffsetMs(instant, timeZone));
+  return local.getUTCHours() * 60 + local.getUTCMinutes();
+}
+
+// The UTC instant matching a local wall-clock time (same calendar day as `ref`
+// in the zone, optionally +dayOffset days), for `minutesOfDay` past midnight.
+function zonedWallTimeToUtc(ref: Date, timeZone: string, minutesOfDay: number, dayOffset = 0): Date {
+  const local = new Date(ref.getTime() + tzOffsetMs(ref, timeZone));
+  const y = local.getUTCFullYear(), mo = local.getUTCMonth(), d = local.getUTCDate();
+  const guess = Date.UTC(y, mo, d + dayOffset, Math.floor(minutesOfDay / 60), minutesOfDay % 60);
+  // Correct for the offset at the guessed instant (handles DST boundaries).
+  const corrected = guess - tzOffsetMs(new Date(guess), timeZone);
+  return new Date(corrected);
+}
+
+function parseHHMM(s: string, fallback: number): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((s || "").trim());
+  if (!m) return fallback;
+  const mins = (+m[1]) * 60 + (+m[2]);
+  return Number.isFinite(mins) && mins >= 0 && mins < 24 * 60 ? mins : fallback;
+}
+
+// Pick the next free callback slot inside business hours that no other scheduled
+// callback already occupies. Returns an ISO string, or null if none found within
+// a week (degrades to leaving the call `pending`).
+async function findNextFreeCallbackSlot(
+  supabase: ReturnType<typeof getServiceClient>,
+  s: VoiceSettingsResolved,
+  now: Date,
+): Promise<string | null> {
+  const tz = s.callbackTimezone;
+  const slotMin = s.callbackSlotMinutes;
+  const slotMs = slotMin * 60_000;
+  const startMin = parseHHMM(s.callbackWindowStart, 9 * 60);
+  const endMin = parseHHMM(s.callbackWindowEnd, 17 * 60);
+  const LEAD_MIN = 20; // never propose a time sooner than ~20 min from now
+
+  // Slots already taken by other scheduled callbacks (rounded to the slot grid).
+  const { data: scheduled } = await supabase
+    .from("voice_calls")
+    .select("callback_scheduled_at")
+    .eq("callback_status", "scheduled")
+    .gte("callback_scheduled_at", new Date(now.getTime() - slotMs).toISOString());
+  const taken = new Set<number>();
+  for (const r of scheduled ?? []) {
+    const t = Date.parse((r as any).callback_scheduled_at);
+    if (Number.isFinite(t)) taken.add(Math.round(t / slotMs) * slotMs);
+  }
+
+  // Start at the next slot boundary at least LEAD_MIN out.
+  let cand = new Date(Math.ceil((now.getTime() + LEAD_MIN * 60_000) / slotMs) * slotMs);
+  for (let i = 0; i < 24 * 60 / slotMin * 7; i++) { // up to ~7 days of slots
+    const mins = localMinutes(cand, tz);
+    if (mins < startMin || mins >= endMin) {
+      // Outside hours → jump to the next window start (today if still before it,
+      // otherwise tomorrow).
+      const dayOffset = mins < startMin ? 0 : 1;
+      cand = zonedWallTimeToUtc(cand, tz, startMin, dayOffset);
+      continue;
+    }
+    const key = Math.round(cand.getTime() / slotMs) * slotMs;
+    if (!taken.has(key)) return cand.toISOString();
+    cand = new Date(cand.getTime() + slotMs);
+  }
+  return null;
 }
 
 // A Swedish mobile number is +46 7x; any other +46 prefix is a landline that
@@ -263,6 +358,66 @@ async function recordVoicemail(
       conversation_status: "waiting_agent",
       updated_at: new Date().toISOString(),
     }).eq("id", conversationId);
+  }
+
+  await maybeAutoScheduleCallback(supabase, { callid, fromNumber, conversationId });
+}
+
+// If the callback auto-scheduler is enabled, pick a non-conflicting slot inside
+// business hours, book it on the (still-pending) call, and — when configured —
+// SMS the caller their callback time. Fully opt-in: with the toggle off this is
+// a no-op and the call stays `pending` for manual handling. Best-effort: any
+// failure is logged, never throws into the webhook path.
+async function maybeAutoScheduleCallback(
+  supabase: ReturnType<typeof getServiceClient>,
+  opts: { callid: string; fromNumber: string; conversationId: string | null },
+): Promise<void> {
+  try {
+    const s = await loadVoiceSettings(supabase);
+    if (!s.autoScheduleCallbacks) return;
+
+    const slotIso = await findNextFreeCallbackSlot(supabase, s, new Date());
+    if (!slotIso) return; // no free slot this week → leave pending for a human
+
+    // Only book if still pending — never override a time a human already set.
+    const { data: booked } = await supabase
+      .from("voice_calls")
+      .update({ callback_status: "scheduled", callback_scheduled_at: slotIso })
+      .eq("provider", "elks46").eq("provider_call_id", opts.callid)
+      .eq("callback_status", "pending")
+      .select("id");
+    if (!booked || booked.length === 0) return;
+
+    const when = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: s.callbackTimezone, weekday: "short", hour: "2-digit", minute: "2-digit",
+    }).format(new Date(slotIso));
+
+    let smsNote = "";
+    const dest = normalizePhone(opts.fromNumber || "");
+    if (s.autoScheduleSms && dest) {
+      if (isLikelySwedishLandline(dest)) {
+        smsNote = " · fast nummer, inget SMS";
+      } else {
+        try {
+          const { fromNumber } = await loadElks46Config(supabase);
+          await sendSms(dest, fromNumber, `Tack för ditt samtal! Vi ringer upp dig ${when}.`);
+          smsNote = ` · SMS skickat till ${dest}`;
+        } catch (e) {
+          console.warn("[elks46-ingest] auto-schedule SMS failed", (e as Error)?.message);
+          smsNote = " · SMS kunde inte skickas";
+        }
+      }
+    }
+
+    if (opts.conversationId) {
+      await supabase.from("chat_messages").insert({
+        conversation_id: opts.conversationId,
+        role: "system",
+        content: `🗓️ Återuppringning inbokad ${when}${smsNote}.`,
+      });
+    }
+  } catch (e) {
+    console.warn("[elks46-ingest] maybeAutoScheduleCallback error", (e as Error)?.message);
   }
 }
 
@@ -456,6 +611,14 @@ async function handleIngest(req: Request): Promise<Response> {
           .eq("provider", "elks46")
           .eq("provider_call_id", callid);
         if (updateErr) console.warn("[elks46-ingest] voice status update failed", updateErr.message);
+        // Missed/busy with no voicemail → still a callback owed. Auto-schedule it
+        // if enabled (the caller hung up before recording, so there's no inbox
+        // thread yet — pass the call's conversation_id if one exists).
+        if (finalStatus !== "completed") {
+          await maybeAutoScheduleCallback(supabase, {
+            callid, fromNumber: normalizedFrom || from, conversationId: existingCall?.conversation_id ?? null,
+          });
+        }
         return hangupResponse();
       }
 

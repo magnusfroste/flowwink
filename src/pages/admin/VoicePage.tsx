@@ -301,6 +301,78 @@ function VoiceSettingsCard() {
           />
         </div>
 
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label className="text-sm font-medium">Auto-schedule callbacks</Label>
+            <p className="text-xs text-muted-foreground">
+              When a missed call or voicemail comes in, automatically book the next free, non-conflicting
+              callback time inside business hours. Off = staff schedule manually (today’s behaviour).
+            </p>
+          </div>
+          <Switch
+            checked={settings.autoScheduleCallbacks ?? false}
+            onCheckedChange={(v) => set('autoScheduleCallbacks', v)}
+          />
+        </div>
+
+        {settings.autoScheduleCallbacks && (
+          <div className="space-y-4 rounded-md border border-dashed p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Text the caller the booked time</Label>
+                <p className="text-xs text-muted-foreground">
+                  SMS the caller their callback time (mobile numbers only). Off = book silently; staff call at the time.
+                </p>
+              </div>
+              <Switch
+                checked={settings.autoScheduleSms ?? false}
+                onCheckedChange={(v) => set('autoScheduleSms', v)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="space-y-1">
+                <Label htmlFor="cb-start" className="text-xs">Hours from</Label>
+                <Input
+                  id="cb-start"
+                  type="time"
+                  value={settings.callbackWindowStart ?? '09:00'}
+                  onChange={(e) => set('callbackWindowStart', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cb-end" className="text-xs">Hours to</Label>
+                <Input
+                  id="cb-end"
+                  type="time"
+                  value={settings.callbackWindowEnd ?? '17:00'}
+                  onChange={(e) => set('callbackWindowEnd', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cb-slot" className="text-xs">Slot (min)</Label>
+                <Input
+                  id="cb-slot"
+                  type="number"
+                  min={5}
+                  step={5}
+                  value={settings.callbackSlotMinutes ?? 15}
+                  onChange={(e) => set('callbackSlotMinutes', Number(e.target.value) || 15)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cb-tz" className="text-xs">Timezone</Label>
+                <Input
+                  id="cb-tz"
+                  placeholder="Europe/Stockholm"
+                  value={settings.callbackTimezone ?? 'Europe/Stockholm'}
+                  onChange={(e) => set('callbackTimezone', e.target.value || undefined)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-2 border-t pt-4">
           {dirty && (
             <Button variant="ghost" onClick={() => setDraft(null)} disabled={update.isPending}>
