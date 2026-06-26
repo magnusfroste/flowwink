@@ -4,64 +4,58 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Voicemail, Loader2, Sparkles, Play, Pause } from 'lucide-react';
+import { Voicemail, Loader2, Play, Pause, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
+// Voicemails live on `voice_calls` (status = 'voicemail'), the same source the
+// Voice admin view reads. The old panel queried a `voicemail_messages` table
+// that was never provisioned, so it always rendered the "not provisioned" state.
 interface VoicemailRow {
   id: string;
   from_number: string | null;
-  from_name: string | null;
   duration_seconds: number | null;
-  audio_url: string | null;
+  recording_url: string | null;
   transcript: string | null;
-  summary: string | null;
-  status: string | null;
-  created_at: string;
+  callback_status: string | null;
+  started_at: string;
 }
 
 export function VoicemailPanel() {
   const qc = useQueryClient();
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['voicemail-messages'],
+  const { data, isLoading } = useQuery({
+    queryKey: ['voicemail-calls'],
     queryFn: async () => {
-      // voicemail_messages is part of the omnichannel contract owned by
-      // Claude Code. Read defensively so the UI keeps rendering on instances
-      // where the table hasn't been migrated yet.
-      const { data, error } = await (supabase as any)
-        .from('voicemail_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('voice_calls')
+        .select('id, from_number, duration_seconds, recording_url, transcript, callback_status, started_at')
+        .eq('status', 'voicemail')
+        .order('started_at', { ascending: false })
         .limit(50);
-      if (error) {
-        if ((error as any).code === '42P01' || /relation .* does not exist/i.test(error.message)) {
-          return null; // table not provisioned yet
-        }
-        throw error;
-      }
+      if (error) throw error;
       return (data ?? []) as VoicemailRow[];
     },
-    retry: false,
   });
 
-  const summarize = useMutation({
-    mutationFn: async (voicemail_id: string) => {
-      const { data, error } = await supabase.functions.invoke('agent-execute', {
-        body: {
-          skill_name: 'handle_voicemail',
-          arguments: { action: 'summarize', voicemail_id },
-        },
-      });
+  const markDone = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('voice_calls')
+        .update({
+          callback_status: 'completed',
+          callback_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as never)
+        .eq('id', id);
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
-      toast.success('FlowPilot summarized the voicemail');
-      qc.invalidateQueries({ queryKey: ['voicemail-messages'] });
+      toast.success('Marked handled');
+      qc.invalidateQueries({ queryKey: ['voicemail-calls'] });
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Summarization failed'),
+    onError: (e: any) => toast.error(e?.message ?? 'Failed'),
   });
 
   if (isLoading) {
@@ -74,38 +68,20 @@ export function VoicemailPanel() {
     );
   }
 
-  if (data === null || error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Voicemail className="h-4 w-4 text-amber-500" />
-            Voicemail
-          </CardTitle>
-          <CardDescription>
-            Voicemail storage isn't provisioned on this instance yet. Once the
-            backend lands voicemail_messages, recordings, transcripts and
-            FlowPilot summaries will appear here.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Voicemail className="h-4 w-4 text-amber-500" />
           Voicemail
-          <Badge variant="outline">{data.length}</Badge>
+          <Badge variant="outline">{data?.length ?? 0}</Badge>
         </CardTitle>
         <CardDescription>
-          Inbound voicemails with transcript and a FlowPilot summary.
+          Inbound voicemails with transcript and recording.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {!data || data.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             No voicemails.
           </p>
@@ -116,16 +92,16 @@ export function VoicemailPanel() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {vm.from_name || vm.from_number || 'Unknown caller'}
+                      {vm.from_number || 'Unknown caller'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(vm.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(vm.started_at), { addSuffix: true })}
                       {vm.duration_seconds ? ` · ${vm.duration_seconds}s` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline">{vm.status ?? 'new'}</Badge>
-                    {vm.audio_url && (
+                    <Badge variant="outline">{vm.callback_status ?? 'pending'}</Badge>
+                    {vm.recording_url && (
                       <Button
                         size="sm" variant="ghost"
                         onClick={() => setPlayingId(playingId === vm.id ? null : vm.id)}
@@ -133,36 +109,25 @@ export function VoicemailPanel() {
                         {playingId === vm.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                       </Button>
                     )}
+                    <Button
+                      size="sm" variant="ghost"
+                      onClick={() => markDone.mutate(vm.id)}
+                      disabled={markDone.isPending}
+                      className="gap-1"
+                    >
+                      <Check className="h-3.5 w-3.5" /> Done
+                    </Button>
                   </div>
                 </div>
 
-                {playingId === vm.id && vm.audio_url && (
-                  <audio src={vm.audio_url} controls autoPlay className="w-full h-8" />
-                )}
-
-                {vm.summary ? (
-                  <div className="rounded-md bg-primary/5 border border-primary/10 p-2 text-xs">
-                    <p className="font-medium text-primary mb-1 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" /> FlowPilot summary
-                    </p>
-                    <p>{vm.summary}</p>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm" variant="outline"
-                    onClick={() => summarize.mutate(vm.id)}
-                    disabled={summarize.isPending}
-                    className="gap-1"
-                  >
-                    <Sparkles className="h-3 w-3" /> Ask FlowPilot to summarize
-                  </Button>
+                {playingId === vm.id && vm.recording_url && (
+                  <audio src={vm.recording_url} controls autoPlay className="w-full h-8" />
                 )}
 
                 {vm.transcript && (
-                  <details className="text-xs">
-                    <summary className="cursor-pointer text-muted-foreground">Transcript</summary>
-                    <p className="mt-1 whitespace-pre-wrap">{vm.transcript}</p>
-                  </details>
+                  <div className="rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">
+                    {vm.transcript}
+                  </div>
                 )}
               </li>
             ))}
