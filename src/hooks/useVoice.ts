@@ -17,6 +17,12 @@ export const defaultVoiceSettings: VoiceSettings = {
   bookingIvrEnabled: false,
   bookingServiceId: undefined,
   smsReplyEnabled: false,
+  autoScheduleCallbacks: false,
+  autoScheduleSms: false,
+  callbackTimezone: 'Europe/Stockholm',
+  callbackWindowStart: '09:00',
+  callbackWindowEnd: '17:00',
+  callbackSlotMinutes: 15,
 };
 
 export function useVoiceSettings() {

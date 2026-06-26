@@ -103,4 +103,22 @@ export interface VoiceSettings {
    * fasta nummer blockeras med en notis i tråden.
    */
   smsReplyEnabled?: boolean;
+
+  // ── Callback auto-scheduler (opt-in) ───────────────────────────────────────
+  /**
+   * Boka automatiskt in en återuppringningstid (nästa lediga lucka som inte
+   * krockar) när ett missat samtal/röstmeddelande kommer in. Av = manuell
+   * bokning som idag.
+   */
+  autoScheduleCallbacks?: boolean;
+  /** Skicka även ett SMS till uppringaren med den inbokade tiden (mobil-only). */
+  autoScheduleSms?: boolean;
+  /** IANA-tidszon för arbetstidsfönstret (default Europe/Stockholm). */
+  callbackTimezone?: string;
+  /** Arbetstidens start, "HH:MM" lokal tid (default 09:00). */
+  callbackWindowStart?: string;
+  /** Arbetstidens slut, "HH:MM" lokal tid (default 17:00). */
+  callbackWindowEnd?: string;
+  /** Minuter mellan callback-luckor (default 15). */
+  callbackSlotMinutes?: number;
 }
