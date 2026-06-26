@@ -74,18 +74,29 @@ Deno.serve(async (req) => {
       }
 
       if (action === "fix-disable-broken-skills") {
-        // Disable skills without instructions
+        // Disable GENUINELY broken skills — missing the REQUIRED description,
+        // handler, or tool_definition. NOT skills merely missing the OPTIONAL
+        // `instructions` field: that used to disable ~92 working skills (a
+        // footgun), since description — not instructions — drives skill selection.
         const { data: skills } = await sb
           .from("agent_skills")
-          .select("id, name, instructions")
+          .select("id, name, description, handler, tool_definition")
           .eq("enabled", true);
         for (const s of (skills || [])) {
-          if (!s.instructions || s.instructions.trim() === "") {
+          const noDesc = !s.description || String(s.description).trim() === "";
+          const noHandler = !s.handler || String(s.handler).trim() === "";
+          const noToolDef = !s.tool_definition;
+          if (noDesc || noHandler || noToolDef) {
+            const reasons = [
+              noDesc && "no description",
+              noHandler && "no handler",
+              noToolDef && "no tool_definition",
+            ].filter(Boolean).join(", ");
             const { error } = await sb.from("agent_skills").update({ enabled: false }).eq("id", s.id);
             fixResults.push({
               action: `Disable skill "${s.name}"`,
               success: !error,
-              message: error ? error.message : "Disabled (missing instructions)",
+              message: error ? error.message : `Disabled (${reasons})`,
             });
           }
         }
@@ -128,7 +139,12 @@ Deno.serve(async (req) => {
 
     const enabledSkills = (skills || []).filter((s: any) => s.enabled);
 
-    // 1a. Skills without instructions
+    // 1a. Skills without instructions — INFORMATIONAL ONLY.
+    // `instructions` is an OPTIONAL field; `description` (checked in 1b) is the
+    // required one and is what drives skill selection. Missing instructions is a
+    // quality nudge, never a failure — and must NOT be "fixable" by disabling,
+    // which would turn off ~92 working skills. Mirrors _shared/integrity.ts,
+    // which deliberately doesn't report on this at all.
     const noInstructions = enabledSkills.filter(
       (s: any) => !s.instructions || s.instructions.trim() === ""
     );
@@ -136,14 +152,13 @@ Deno.serve(async (req) => {
       id: "skill-instructions",
       category: "Skills",
       label: "Skill instructions completeness",
-      status: noInstructions.length === 0 ? "pass" : "fail",
+      status: noInstructions.length === 0 ? "pass" : "warn",
       message:
         noInstructions.length === 0
           ? `All ${enabledSkills.length} enabled skills have instructions`
-          : `${noInstructions.length} skills missing instructions (agent can't use them effectively)`,
+          : `${noInstructions.length} enabled skills have no optional instructions field (description still drives selection; backfilling improves agent guidance)`,
       details: noInstructions.map((s: any) => s.name),
-      fixable: noInstructions.length > 0,
-      fixAction: "fix-disable-broken-skills",
+      fixable: false,
     });
 
     // 1b. Skills without description

@@ -124,12 +124,13 @@ export function useContentResearch() {
       const jsonStr = fullContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const result = JSON.parse(jsonStr);
 
-      // Handle both direct research response and wrapped { success, research } format
-      if (result?.success !== undefined) {
-        return result as ResearchResponse;
-      }
-      // result IS the research object directly
-      return { success: true, research: result as ContentResearch, ai_provider: 'flowpilot' };
+      // The tool result may arrive in any of three shapes, depending on how the
+      // model echoes it: the ai-task envelope { success, result: <research> },
+      // a legacy { success, research } wrapper, or the bare ContentResearch
+      // object. Unwrap to the actual research either way.
+      const research = (result?.result ?? result?.research ?? result) as ContentResearch;
+      const ai_provider = result?.provider_used ?? result?.ai_provider ?? 'flowpilot';
+      return { success: true, research, ai_provider };
     },
     onSuccess: (data) => {
       const angleCount = data.research.content_angles?.length || 0;

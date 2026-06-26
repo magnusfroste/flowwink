@@ -464,6 +464,127 @@ Rules:
   options: { temperature: 0.2, max_tokens: 600 },
 };
 
+// ─── content_research ─────────────────────────────────────────────────────
+// Generative content research. Previously the `research_content` skill was
+// wired to a `db:content_research` CRUD list, so it returned the (empty) table
+// → always {items:[],count:0}. It's consumed as a GENERATIVE skill (see
+// src/hooks/useContentResearch.ts, which drives FlowPilot to "return the raw
+// JSON the tool returned" and types it as ContentResearch), so it must produce
+// research, not list rows. The tool schema below matches the ContentResearch type.
+const contentResearchInput = z.object({
+  topic: z.string(),
+  target_audience: z.string().optional(),
+  industry: z.string().optional(),
+  target_channels: z.array(z.string()).default([]),
+});
+
+const strList = { type: "array", items: { type: "string" } };
+
+const contentResearchTask: TaskSpec<z.infer<typeof contentResearchInput>, any> = {
+  name: "content_research",
+  description:
+    "Deep content research for a topic — audience insights, content angles, hooks, competitive landscape, recommended structure, SEO. Returns a structured ContentResearch object.",
+  tier: "reasoning",
+  inputSchema: contentResearchInput,
+  system: () =>
+    `You are an expert content strategist. Produce deep, specific, non-generic research for the given brief and return it via the submit_content_research tool. Ground angles and hooks in real audience psychology; avoid filler and platitudes. Tailor angles to the requested channels.`,
+  user: (input) =>
+    `## Brief\n${JSON.stringify({
+      topic: (input as any).topic,
+      target_audience: (input as any).target_audience ?? null,
+      industry: (input as any).industry ?? null,
+      target_channels: (input as any).target_channels ?? [],
+    }, null, 2)}`,
+  tool: {
+    name: "submit_content_research",
+    description: "Return structured content research",
+    parameters: {
+      type: "object",
+      properties: {
+        topic_analysis: {
+          type: "object",
+          properties: {
+            main_theme: { type: "string" },
+            sub_topics: strList,
+            key_questions: strList,
+          },
+          required: ["main_theme", "sub_topics", "key_questions"],
+        },
+        content_angles: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              angle: { type: "string" },
+              description: { type: "string" },
+              why_it_works: { type: "string" },
+              hook_example: { type: "string" },
+              best_for_channels: strList,
+            },
+            required: ["angle", "description", "why_it_works", "hook_example", "best_for_channels"],
+          },
+        },
+        audience_insights: {
+          type: "object",
+          properties: {
+            pain_points: strList,
+            desires: strList,
+            objections: strList,
+            language_patterns: strList,
+          },
+          required: ["pain_points", "desires", "objections", "language_patterns"],
+        },
+        competitive_landscape: {
+          type: "object",
+          properties: {
+            common_approaches: strList,
+            content_gaps: strList,
+            differentiation_opportunities: strList,
+          },
+          required: ["common_approaches", "content_gaps", "differentiation_opportunities"],
+        },
+        content_hooks: {
+          type: "object",
+          properties: {
+            curiosity_hooks: strList,
+            controversy_hooks: strList,
+            story_hooks: strList,
+            data_hooks: strList,
+          },
+          required: ["curiosity_hooks", "controversy_hooks", "story_hooks", "data_hooks"],
+        },
+        recommended_structure: {
+          type: "object",
+          properties: {
+            opening_strategy: { type: "string" },
+            key_points: strList,
+            closing_strategy: { type: "string" },
+            cta_suggestions: strList,
+          },
+          required: ["opening_strategy", "key_points", "closing_strategy", "cta_suggestions"],
+        },
+        seo_insights: {
+          type: "object",
+          properties: {
+            primary_keywords: strList,
+            secondary_keywords: strList,
+            questions_people_ask: strList,
+          },
+        },
+      },
+      required: [
+        "topic_analysis",
+        "content_angles",
+        "audience_insights",
+        "competitive_landscape",
+        "content_hooks",
+        "recommended_structure",
+      ],
+    },
+  },
+  options: { temperature: 0.7, max_tokens: 4096 },
+};
+
 // ─── Registry ───────────────────────────────────────────────────────────────
 export const TASKS: Record<string, TaskSpec<any, any>> = {
   score_candidate: scoreCandidateTask,
@@ -471,6 +592,7 @@ export const TASKS: Record<string, TaskSpec<any, any>> = {
   qualify_lead_summary: qualifyLeadSummaryTask,
   generate_blog_from_webinar: generateBlogFromWebinarTask,
   ticket_triage: ticketTriageTask,
+  content_research: contentResearchTask,
 };
 
 export function listTasks() {

@@ -90,7 +90,9 @@ Creates a draft blog post in the CMS with title, topic, tone, and content.
     name: 'research_content',
     description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; needing competitive analysis. NOT for: writing a blog post (write_blog_post); generating multi-channel content (generate_content_proposal).',
     category: 'content',
-    handler: 'db:content_research',
+    // Generative — runs through the ai-task hub (content_research task). Was
+    // wired to db:content_research (CRUD list) which always returned 0 items.
+    handler: 'ai-task:content_research',
     scope: 'internal',
     tool_definition: {
       type: 'function',

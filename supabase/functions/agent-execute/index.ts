@@ -4832,17 +4832,31 @@ async function executeLeadsAction(
 
   if (action === 'update' && lead_id) {
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    let statusNote: string | undefined;
     if (status !== undefined) {
       if (!normalizedStatus) {
         return { error: `Invalid status "${status}". Allowed: lead, opportunity, customer, lost.` };
       }
       updates.status = normalizedStatus;
+      // Don't silently swallow a non-canonical status. The pipeline only has
+      // lead|opportunity|customer|lost, and aliases (e.g. "contacted"→"lead")
+      // collapse to those. Surface the mapping so the caller isn't misled into
+      // thinking a distinct stage was set.
+      const requested = String(status).trim().toLowerCase();
+      if (requested !== normalizedStatus) {
+        statusNote = `Requested status "${status}" was mapped to canonical "${normalizedStatus}" (pipeline stages: lead, opportunity, customer, lost).`;
+      }
     }
     if (score !== undefined) updates.score = score;
     const { data, error } = await supabase.from('leads')
       .update(updates).eq('id', lead_id).select('id, email, status, score').single();
     if (error) throw new Error(`Update lead failed: ${error.message}`);
-    return { lead_id: data.id, status: data.status, score: data.score };
+    return {
+      lead_id: data.id,
+      status: data.status,
+      score: data.score,
+      ...(statusNote ? { requested_status: status, note: statusNote } : {}),
+    };
   }
 
   if (action === 'delete' && lead_id) {
