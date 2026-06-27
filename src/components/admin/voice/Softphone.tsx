@@ -55,6 +55,7 @@ export default function Softphone({ wssUrl }: Props) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [remoteParty, setRemoteParty] = useState<string>('');
   const [muted, setMuted] = useState(false);
+  const [dialTarget, setDialTarget] = useState('');
 
   const ready = useMemo(() => {
     if (!agent?.voice_enabled) return false;
