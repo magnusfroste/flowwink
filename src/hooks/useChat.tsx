@@ -303,9 +303,33 @@ export function useChat(options?: UseChatOptions) {
       )
       .subscribe();
 
+    // Broadcast fallback: anon visitors can't receive postgres_changes for
+    // chat_messages because the RLS SELECT policy requires the x-chat-session
+    // header, which Supabase Realtime doesn't forward. The agent's send path
+    // emits an 'agent_message' broadcast on this channel — listen for it.
+    const broadcastChannel = supabase
+      .channel(`chat-broadcast-${conversationId}`)
+      .on('broadcast', { event: 'agent_message' }, ({ payload }) => {
+        const msg = payload as { id: string; role: string; content: string; created_at: string };
+        if (msg.role !== 'agent') return;
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, {
+            id: msg.id,
+            role: 'assistant' as const,
+            content: msg.content,
+            createdAt: new Date(msg.created_at),
+            isFromAgent: true,
+          }];
+        });
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
     };
+
   }, [conversationId, settings?.saveConversations]);
 
   const saveMessage = useCallback(async (

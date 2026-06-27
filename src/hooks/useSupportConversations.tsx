@@ -369,6 +369,31 @@ export function useConversationMessages(conversationId: string | null) {
 
       logger.log('sendMessage: Message sent successfully', data);
 
+      // Broadcast to the visitor widget. Realtime postgres_changes can't deliver
+      // to anonymous visitors (RLS SELECT requires x-chat-session header, which
+      // realtime doesn't carry), so we push via broadcast which bypasses RLS.
+      try {
+        const inserted = data?.[0];
+        if (inserted) {
+          const broadcastChannel = supabase.channel(`chat-broadcast-${conversationId}`);
+          await broadcastChannel.subscribe();
+          await broadcastChannel.send({
+            type: 'broadcast',
+            event: 'agent_message',
+            payload: {
+              id: inserted.id,
+              role: 'agent',
+              content,
+              created_at: inserted.created_at,
+            },
+          });
+          supabase.removeChannel(broadcastChannel);
+        }
+      } catch (e) {
+        logger.error('sendMessage: broadcast failed', e);
+      }
+
+
       // If this conversation lives on an external channel (e.g. Telegram, SMS), relay the
       // agent's reply back to that channel so the visitor actually receives it.
       try {
