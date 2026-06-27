@@ -217,7 +217,8 @@ export default function Softphone({ wssUrl }: Props) {
   // Allow other panels (e.g. Callbacks) to initiate a call via the softphone.
   useEffect(() => {
     const handler = (e: Event) => {
-      const number = (e as CustomEvent<string>).detail;
+      const detail = (e as CustomEvent<any>).detail;
+      const number = typeof detail === 'string' ? detail : detail?.number;
       if (!number) return;
       if (number.startsWith('sip:') || number.startsWith('sips:')) startDirectSipCall(number);
       else void startProviderCall(number);
