@@ -49,7 +49,7 @@ function deriveWss(sipUri: string | null | undefined, override?: string): string
   }
 }
 
-export default function Softphone({ wssUrl }: Props) {
+export default function Softphone({ wssUrl, floating = false }: Props) {
   const { data: agent, isLoading } = useMyAgentVoice();
   const uaRef = useRef<JsSIP.UA | null>(null);
   const sessionRef = useRef<RTCSession | null>(null);
