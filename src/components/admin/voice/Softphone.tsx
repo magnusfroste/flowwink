@@ -226,16 +226,32 @@ export default function Softphone({ wssUrl, floating = false }: Props) {
 
   // Allow other panels (e.g. Callbacks) to initiate a call via the softphone.
   useEffect(() => {
-    const handler = (e: Event) => {
+    const dialHandler = (e: Event) => {
       const detail = (e as CustomEvent<any>).detail;
       const number = typeof detail === 'string' ? detail : detail?.number;
       if (!number) return;
       if (number.startsWith('sip:') || number.startsWith('sips:')) startDirectSipCall(number);
       else void startProviderCall(number);
     };
-    window.addEventListener('softphone:dial', handler as EventListener);
-    return () => window.removeEventListener('softphone:dial', handler as EventListener);
-  }, [sipState]);
+    const answerHandler = () => {
+      if (sessionRef.current && callState === 'ringing') {
+        try {
+          sessionRef.current.answer({ mediaConstraints: { audio: true, video: false } });
+          setMinimized(false);
+        } catch (err) {
+          logger.error('softphone answer-from-toast failed', err);
+        }
+      } else {
+        setMinimized(false);
+      }
+    };
+    window.addEventListener('softphone:dial', dialHandler as EventListener);
+    window.addEventListener('softphone:answer', answerHandler as EventListener);
+    return () => {
+      window.removeEventListener('softphone:dial', dialHandler as EventListener);
+      window.removeEventListener('softphone:answer', answerHandler as EventListener);
+    };
+  }, [sipState, callState]);
 
 
 
