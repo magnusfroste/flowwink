@@ -989,11 +989,14 @@ async function handleCall(req: Request): Promise<Response> {
 
       const destination = normalizePhone(body.to);
       const webRtcNumber = normalizePhone(webRtcUser);
+      // Fall back to the agent's WebRTC number as caller-ID when no public DID
+      // is configured in site_settings.integrations.elks46.config.from_number.
+      const callerId = fromNumber || webRtcNumber;
       const voiceStart = body.voice_start || JSON.stringify({
         connect: destination,
-        callerid: fromNumber,
+        callerid: callerId,
       });
-      const data = await startCall(webRtcNumber, fromNumber, voiceStart);
+      const data = await startCall(webRtcNumber, callerId, voiceStart);
       return json({
         ok: true,
         mode: "webrtc",
