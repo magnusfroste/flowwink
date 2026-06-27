@@ -207,7 +207,23 @@ export default function Softphone({ wssUrl }: Props) {
         <audio ref={audioRef} autoPlay />
 
         {callState === 'idle' && (
-          <p className="text-sm text-muted-foreground">Waiting for incoming calls…</p>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Waiting for incoming calls — or dial out:</p>
+            <div className="flex gap-2">
+              <Input
+                type="tel"
+                placeholder="+46701234567"
+                value={dialTarget}
+                onChange={(e) => setDialTarget(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') dial(); }}
+                disabled={sipState !== 'registered'}
+                className="font-mono"
+              />
+              <Button size="sm" onClick={dial} disabled={sipState !== 'registered' || !dialTarget.trim()}>
+                <PhoneOutgoing className="h-4 w-4 mr-1" />Call
+              </Button>
+            </div>
+          </div>
         )}
 
         {callState === 'ringing' && (
