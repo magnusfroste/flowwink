@@ -69,7 +69,12 @@ function CallRow({ call, onAction }: { call: VoiceCallRow; onAction: (c: VoiceCa
       </TableCell>
       <TableCell>
         {call.recording_url ? (
-          <a href={call.recording_url} target="_blank" rel="noreferrer" className="text-xs underline">
+          <a
+            href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${call.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs underline"
+          >
             <Voicemail className="inline h-3 w-3 mr-1" />Recording
           </a>
         ) : <span className="text-xs text-muted-foreground">–</span>}
@@ -126,7 +131,11 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
             <div className="rounded-md bg-muted p-3 text-xs whitespace-pre-wrap">{call.transcript}</div>
           )}
           {call.recording_url && (
-            <audio src={call.recording_url} controls className="w-full" />
+            <audio
+              src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${call.id}`}
+              controls
+              className="w-full"
+            />
           )}
           <div className="border-t pt-3 space-y-2">
             <Label htmlFor="schedule">Schedule callback</Label>
