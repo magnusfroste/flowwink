@@ -11136,6 +11136,7 @@ export type Database = {
           voice_enabled: boolean
           voice_mobile_number: string | null
           voice_provider: string | null
+          voice_routing_mode: string
           voice_sip_password: string | null
           voice_sip_uri: string | null
           voice_sip_username: string | null
@@ -11152,6 +11153,7 @@ export type Database = {
           voice_enabled?: boolean
           voice_mobile_number?: string | null
           voice_provider?: string | null
+          voice_routing_mode?: string
           voice_sip_password?: string | null
           voice_sip_uri?: string | null
           voice_sip_username?: string | null
@@ -11168,6 +11170,7 @@ export type Database = {
           voice_enabled?: boolean
           voice_mobile_number?: string | null
           voice_provider?: string | null
+          voice_routing_mode?: string
           voice_sip_password?: string | null
           voice_sip_uri?: string | null
           voice_sip_username?: string | null
