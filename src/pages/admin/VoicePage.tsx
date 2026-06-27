@@ -149,9 +149,14 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
           <Button onClick={handleSchedule} disabled={update.isPending}>
             {scheduledAt ? 'Schedule callback' : 'Mark pending'}
           </Button>
-          <a href={`tel:${call.from_number}`} className="inline-flex">
-            <Button variant="default"><PhoneCall className="h-4 w-4 mr-1" />Call back</Button>
-          </a>
+          <Button
+            variant="default"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('softphone:dial', { detail: { number: call.from_number } }));
+            }}
+          >
+            <PhoneCall className="h-4 w-4 mr-1" />Call back
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
