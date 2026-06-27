@@ -563,11 +563,11 @@ export default function LiveSupportPage() {
           </div>
             </TabsContent>
 
-            <TabsContent value="callbacks" className="flex-1 min-h-0 mt-2 p-4 overflow-auto">
+            <TabsContent value="callbacks" className="flex-1 min-h-0 mt-0 p-2 overflow-auto">
               <CallbacksPanel />
             </TabsContent>
 
-            <TabsContent value="voicemail" className="flex-1 min-h-0 mt-2 p-4 overflow-auto">
+            <TabsContent value="voicemail" className="flex-1 min-h-0 mt-0 p-2 overflow-auto">
               <VoicemailPanel />
             </TabsContent>
 
