@@ -139,6 +139,34 @@ export function AgentVoiceConfigCard() {
           />
         </div>
 
+        <div className="space-y-2 rounded-md border p-3">
+          <Label className="text-sm font-medium">How should calls reach you?</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {([
+              { v: 'softphone', label: 'Browser only', desc: 'Ring in the open Live Support tab.' },
+              { v: 'mobile', label: 'Mobile only', desc: '46elks forwards to your phone.' },
+              { v: 'both', label: 'Both', desc: 'Softphone first (15s) → mobile → voicemail.' },
+            ] as const).map((opt) => {
+              const active = (merged.voice_routing_mode ?? 'both') === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => set('voice_routing_mode', opt.v)}
+                  className={`text-left rounded-md border p-2.5 text-xs transition ${
+                    active
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                      : 'border-border hover:border-muted-foreground/40'
+                  }`}
+                >
+                  <div className="font-medium">{opt.label}</div>
+                  <div className="text-muted-foreground mt-0.5">{opt.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="mobile">Mobile number (E.164)</Label>
           <Input
@@ -148,8 +176,7 @@ export function AgentVoiceConfigCard() {
             onChange={(e) => set('voice_mobile_number', e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            46elks rings this number on inbound calls. Every call is still logged
-            in FlowWink with recording/transcript when available.
+            Used when routing mode is <strong>Mobile only</strong> or as the fallback in <strong>Both</strong>.
           </p>
         </div>
 
@@ -160,6 +187,7 @@ export function AgentVoiceConfigCard() {
             the unified Voice inbox so the team has one source of truth.
           </AlertDescription>
         </Alert>
+
 
         <button
           type="button"
