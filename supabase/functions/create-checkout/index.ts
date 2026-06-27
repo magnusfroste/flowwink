@@ -83,6 +83,23 @@ serve(async (req: Request) => {
       bookingId,
     }: CheckoutRequest = await req.json();
 
+    // The storefront passes a real successUrl (its own confirmation page), but
+    // autonomous/MCP callers (e.g. place_order via an agent) don't — which made
+    // the sandbox redirectUrl come out as "undefined?order_id=…". Fall back to a
+    // resolved site origin so the URL is always valid. (Reported by OpenClaw,
+    // finding efb271fa.)
+    let resolvedSuccessUrl = (successUrl ?? "").trim();
+    if (!resolvedSuccessUrl) {
+      resolvedSuccessUrl = Deno.env.get("PUBLIC_SITE_URL") || "";
+      if (!resolvedSuccessUrl) {
+        const { data: gen } = await supabase
+          .from("site_settings").select("value").eq("key", "general").maybeSingle();
+        const g = (gen?.value as any) || {};
+        resolvedSuccessUrl = g.siteUrl || g.site_url || g.public_url || g.publicUrl || "";
+      }
+      resolvedSuccessUrl = (resolvedSuccessUrl || "https://dev.flowwink.com").replace(/\/+$/, "");
+    }
+
     if (!items || items.length === 0) {
       throw new Error("No items in cart");
     }

@@ -72,8 +72,8 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'sla-check', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions',
   'support-router', 'survey-send', 'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
-  'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'web-scrape', 'web-search',
-  'workspace-chat',
+  'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
+  'web-scrape', 'web-search', 'workspace-chat',
 ];
 
 /**
@@ -86,13 +86,16 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
  */
 export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>> = {
   // ── Communication / contact center ───────────────────────────────────────
-  // voice: only the provider-agnostic voice webhook. `elks46-ingest` is shared
-  // with liveSupport (SMS) but listed there as the primary owner.
-  voice: ['voice-ingest'],
+  // voice: the provider-agnostic voice webhook + the recording proxy (streams
+  // 46elks voicemail audio server-side so the browser skips the Basic-Auth
+  // popup). `elks46-ingest` is shared with liveSupport but owned there.
+  voice: ['voice-ingest', 'voice-recording'],
   // SMS/chat adapters for Live Support. `chat-stt` is core (chat widget).
+  // `voice-recording` also listed here (fail-open) — the Voicemail panel lives
+  // in Live Support and needs recording playback even with the voice module off.
   liveSupport: [
     'contact-center', 'telegram-ingest', 'support-router', 'csat-dispatch',
-    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest',
+    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording',
   ],
   email: ['gmail-inbox-scan', 'gmail-oauth-callback'],
   newsletter: ['newsletter'],
