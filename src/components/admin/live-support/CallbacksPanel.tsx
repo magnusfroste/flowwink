@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Loader2, PhoneCall, Clock, Check } from 'lucide-react';
+import { Phone, Loader2, PhoneCall, Clock, Check, Smartphone } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Callbacks live on `voice_calls` (callback_status pending/scheduled), the same
