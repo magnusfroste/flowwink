@@ -3208,6 +3208,25 @@ async function executeRiverAction(
       : [];
     const insert: Record<string, unknown> = { body, media_urls };
     if (parent_id) insert.parent_id = parent_id;
+
+    // river_posts.author_id is `DEFAULT auth.uid() NOT NULL`, so service-role
+    // (autonomous MCP) writes — which have no auth.uid() — hit the NOT NULL
+    // constraint. Resolve an author explicitly: the forwarded caller user, else
+    // the owner of the calling API key, else a site admin as a last resort. This
+    // mirrors how other MCP-originated writes set author_id from _caller_user_id.
+    let authorId = (args as any)._caller_user_id as string | undefined;
+    if (!authorId && (args as any)._caller_api_key_id) {
+      const { data: key } = await supabase
+        .from('api_keys').select('created_by').eq('id', (args as any)._caller_api_key_id).maybeSingle();
+      authorId = (key as any)?.created_by ?? undefined;
+    }
+    if (!authorId) {
+      const { data: admin } = await supabase
+        .from('user_roles').select('user_id').eq('role', 'admin').limit(1).maybeSingle();
+      authorId = (admin as any)?.user_id ?? undefined;
+    }
+    if (authorId) insert.author_id = authorId;
+
     const { data, error } = await supabase
       .from('river_posts')
       .insert(insert)
