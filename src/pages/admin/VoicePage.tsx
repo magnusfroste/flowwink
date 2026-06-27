@@ -499,10 +499,7 @@ export default function VoicePage() {
           <TabsContent value="callbacks" className="mt-4"><CallsTable calls={filtered} onAction={onAction} /></TabsContent>
 
           <TabsContent value="softphone" className="mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AgentVoiceConfigCard />
-              <Softphone />
-            </div>
+            <AgentVoiceConfigCard />
           </TabsContent>
 
 
@@ -511,6 +508,10 @@ export default function VoicePage() {
             <ProviderCapabilitiesCard />
           </TabsContent>
         </Tabs>
+
+        <div className={tab === 'softphone' ? 'mt-6' : 'hidden'}>
+          <Softphone />
+        </div>
 
         <CallActionDialog call={selected} open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
