@@ -446,7 +446,7 @@ async function startCall(to: string, from: string, voiceStart: string) {
   if (!from) throw new Error("Missing caller number (configure from_number)");
   if (!voiceStart) throw new Error("Missing voice_start URL");
   const body = new URLSearchParams({ from, to, voice_start: voiceStart });
-  const resp = await fetch(`${ELKS_BASE}/Calls`, {
+  const resp = await fetch(`${ELKS_BASE}/calls`, {
     method: "POST",
     headers: { "Authorization": auth, "Content-Type": "application/x-www-form-urlencoded" },
     body,
