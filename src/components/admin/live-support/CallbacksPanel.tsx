@@ -105,11 +105,38 @@ export function CallbacksPanel() {
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant="outline">{cb.callback_status ?? 'pending'}</Badge>
                   {cb.from_number && (
-                    <a href={`tel:${cb.from_number}`} className="inline-flex">
-                      <Button size="sm" variant="outline" className="gap-1">
+                    <div className="inline-flex">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 rounded-r-none border-r-0"
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('softphone:dial', { detail: cb.from_number! }));
+                          toast.success('Ringer via softphone…');
+                        }}
+                      >
                         <PhoneCall className="h-3.5 w-3.5" /> Call
                       </Button>
-                    </a>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" className="rounded-l-none px-1.5">
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            window.dispatchEvent(new CustomEvent('softphone:dial', { detail: cb.from_number! }));
+                          }}>
+                            <PhoneCall className="h-3.5 w-3.5 mr-2" /> Call via softphone
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <a href={`tel:${cb.from_number}`}>
+                              <Smartphone className="h-3.5 w-3.5 mr-2" /> Open in system dialer
+                            </a>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   )}
                   <Button
                     size="sm" variant="ghost"
