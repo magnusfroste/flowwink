@@ -976,7 +976,7 @@ async function handleCall(req: Request): Promise<Response> {
     if (body.mode === "webrtc") {
       const { data: agent, error: agentErr } = await supabase
         .from("support_agents")
-        .select("voice_sip_uri, voice_sip_username, voice_enabled")
+        .select("id, voice_sip_uri, voice_sip_username, voice_enabled")
         .eq("user_id", userData.user.id)
         .maybeSingle();
       if (agentErr) throw agentErr;
@@ -997,14 +997,33 @@ async function handleCall(req: Request): Promise<Response> {
         callerid: callerId,
       });
       const data = await startCall(webRtcNumber, callerId, voiceStart);
+      const callid = data?.callid ?? data?.id ?? null;
+
+      // Log outbound call so agents see it in /admin/voice even if they forget
+      // to mark a callback as done.
+      if (callid) {
+        const { error: logErr } = await supabase.from("voice_calls").insert({
+          provider: "elks46",
+          provider_call_id: String(callid),
+          direction: "outbound",
+          status: "ringing",
+          from_number: callerId,
+          to_number: destination,
+          agent_id: agent.id,
+          metadata: { mode: "webrtc", initiated_by: userData.user.id },
+        });
+        if (logErr) console.error("[elks46-ingest:call] log insert failed", logErr.message);
+      }
+
       return json({
         ok: true,
         mode: "webrtc",
-        callid: data?.callid ?? data?.id ?? null,
+        callid,
         destination,
         webrtc_number: webRtcNumber,
         raw: data,
       });
+
     }
 
     const voiceStart = body.voice_start || voiceWebhookUrl
