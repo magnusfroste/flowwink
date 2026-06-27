@@ -576,6 +576,149 @@ export default function LiveSupportPage() {
           </div>
             </TabsContent>
 
+            <TabsContent value="closed" className="flex-1 min-h-0 mt-2 data-[state=active]:flex flex-col">
+              <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 p-4 h-full">
+                {/* Closed list */}
+                <div className="col-span-4 flex flex-col min-h-0">
+                  <Card className="flex-1 flex flex-col min-h-0">
+                    <CardHeader className="py-3 px-4 space-y-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Archive className="h-4 w-4 text-muted-foreground" />
+                        Closed ({closedConversations.length})
+                      </CardTitle>
+                      <div className="relative">
+                        <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={closedSearch}
+                          onChange={(e) => setClosedSearch(e.target.value)}
+                          placeholder="Search name, email, phone…"
+                          className="h-8 pl-7 text-sm"
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 min-h-0 p-0">
+                      <ScrollArea className="h-full">
+                        <div className="space-y-1 p-2">
+                          {closedLoading && (
+                            <div className="flex justify-center py-4">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
+                          {!closedLoading && closedConversations.map((conv) => (
+                            <ConversationItem
+                              key={conv.id}
+                              conversation={conv}
+                              isSelected={selectedClosedId === conv.id}
+                              onClick={() => setSelectedClosedId(conv.id)}
+                            />
+                          ))}
+                          {!closedLoading && closedConversations.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              {closedSearch ? 'No matching closed conversations' : 'No closed conversations yet'}
+                            </p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Closed chat (read-only) */}
+                <div className="col-span-8 flex flex-col min-h-0">
+                  <Card className="flex-1 flex flex-col min-h-0">
+                    {selectedClosed ? (
+                      <>
+                        <CardHeader className="py-3 px-4 border-b">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback>
+                                  {(selectedClosed.customer_name || 'U')[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <CardTitle className="text-sm flex items-center gap-2">
+                                  <span className="truncate">{selectedClosed.customer_name || 'Anonymous User'}</span>
+                                  <ChannelChip channel={getChannel((selectedClosed as any).channel)} />
+                                  <Badge variant="outline" className="text-xs">Closed</Badge>
+                                </CardTitle>
+                                <CardDescription className="text-xs truncate">
+                                  {selectedClosed.customer_email
+                                    || (selectedClosed as any).contact_phone
+                                    || `Closed ${formatDistanceToNow(new Date(selectedClosed.updated_at), { addSuffix: true })}`}
+                                </CardDescription>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                await reopenConversation.mutateAsync(selectedClosed.id);
+                                setSelectedClosedId(null);
+                                setTab('inbox');
+                              }}
+                              disabled={reopenConversation.isPending}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Reopen
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 min-h-0 p-0">
+                          <ScrollArea className="h-full p-4">
+                            <div className="space-y-4">
+                              {closedMessages.map((message) => (
+                                <div
+                                  key={message.id}
+                                  className={cn(
+                                    'flex gap-3',
+                                    message.role === 'agent' && 'flex-row-reverse',
+                                  )}
+                                >
+                                  <Avatar className="h-7 w-7 mt-0.5 shrink-0">
+                                    <AvatarFallback>
+                                      {message.role === 'agent' ? <UserCheck className="h-3.5 w-3.5" />
+                                        : message.role === 'assistant' ? <Bot className="h-3.5 w-3.5" />
+                                        : <User className="h-3.5 w-3.5" />}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className={cn(
+                                    'rounded-lg px-3 py-2 max-w-[75%] text-sm whitespace-pre-wrap',
+                                    message.role === 'agent' ? 'bg-primary text-primary-foreground' : 'bg-muted',
+                                  )}>
+                                    {message.content}
+                                    <div className={cn(
+                                      'text-[10px] mt-1 opacity-70',
+                                      message.role === 'agent' ? 'text-primary-foreground' : 'text-muted-foreground',
+                                    )}>
+                                      {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {closedMessages.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-8">
+                                  No messages in this conversation
+                                </p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </CardContent>
+                      </>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Select a closed conversation to view its history</p>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+
             <TabsContent value="callbacks" className="flex-1 min-h-0 mt-0 p-2 overflow-auto">
               <CallbacksPanel />
             </TabsContent>
