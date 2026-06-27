@@ -170,27 +170,26 @@ export default function Softphone({ wssUrl }: Props) {
     const handler = (e: Event) => {
       const number = (e as CustomEvent<string>).detail;
       if (!number) return;
-      if (sipState !== 'registered') {
+      if (!uaRef.current || sipState !== 'registered') {
         logger.warn('softphone:dial received but not registered', { sipState });
         return;
       }
+      // IMPORTANT: call synchronously in the user-gesture frame — setTimeout
+      // breaks the gesture chain and Chrome blocks getUserMedia (mic permission).
+      const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
+      const cleaned = number.replace(/[^\d+]/g, '');
+      const sipTarget = `sip:${cleaned.replace(/^\+/, '')}@${host}`;
       setDialTarget(number);
-      // Defer one tick so state is applied before dialing.
-      setTimeout(() => {
-        const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
-        const cleaned = number.replace(/[^\d+]/g, '');
-        const sipTarget = `sip:${cleaned.replace(/^\+/, '')}@${host}`;
-        try {
-          uaRef.current?.call(sipTarget, {
-            mediaConstraints: { audio: true, video: false },
-            pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
-          });
-          setCallState('in-call');
-          setRemoteParty(sipTarget);
-        } catch (err) {
-          logger.error('softphone external dial failed', err);
-        }
-      }, 0);
+      try {
+        uaRef.current.call(sipTarget, {
+          mediaConstraints: { audio: true, video: false },
+          pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
+        });
+        setCallState('in-call');
+        setRemoteParty(sipTarget);
+      } catch (err) {
+        logger.error('softphone external dial failed', err);
+      }
     };
     window.addEventListener('softphone:dial', handler as EventListener);
     return () => window.removeEventListener('softphone:dial', handler as EventListener);
