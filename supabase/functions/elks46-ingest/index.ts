@@ -599,6 +599,32 @@ async function handleIngest(req: Request): Promise<Response> {
         if (failureSignal && !answeredAt && !alreadyOffered) {
           const selfUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
           const voice = await loadVoiceSettings(supabase);
+
+          // (B0) Routing mode = 'both' AND first leg was the softphone AND
+          // mobile is configured AND we haven't tried mobile yet → ring the
+          // agent's mobile before falling back to voicemail.
+          const meta = previousMetadata as any;
+          const routingMode = meta?.routing_mode as string | undefined;
+          const agentMobile = meta?.agent_mobile as string | undefined;
+          const firstLeg = meta?.first_leg as string | undefined;
+          const mobileAlreadyTried = meta?.mobile_attempted === true;
+          const firstLegWasSoftphone = !!firstLeg && !!agentMobile && firstLeg !== normalizePhone(agentMobile);
+          if (routingMode === 'both' && agentMobile && firstLegWasSoftphone && !mobileAlreadyTried) {
+            const mobileTarget = normalizePhone(agentMobile);
+            await supabase.from("voice_calls").update({
+              metadata: { ...previousMetadata, mobile_attempted: true, mobile_target: mobileTarget },
+            }).eq("provider", "elks46").eq("provider_call_id", callid);
+            return new Response(JSON.stringify({
+              connect: mobileTarget,
+              callerid: normalizedFrom || from,
+              timeout: voice.ringTimeoutSeconds,
+              busy: voicemailReply(voice.voicemailGreetingUrl, selfUrl),
+              next: selfUrl,
+              whenhangup: selfUrl,
+            }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+
+          // (B) Agent's phone didn't pick up → play greeting + record voicemail.
           await supabase.from("voice_calls").update({
             status: "missed",
             callback_status: "pending",
@@ -608,6 +634,7 @@ async function handleIngest(req: Request): Promise<Response> {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+
 
         // (C) Voicemail was offered for this call → the recording (if the caller
         // spoke) now exists in the call's recordings[]. Pull it from the API and
