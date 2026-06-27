@@ -121,7 +121,12 @@ export function VoicemailPanel() {
                 </div>
 
                 {playingId === vm.id && vm.recording_url && (
-                  <audio src={vm.recording_url} controls autoPlay className="w-full h-8" />
+                  <audio
+                    src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${vm.id}`}
+                    controls
+                    autoPlay
+                    className="w-full h-8"
+                  />
                 )}
 
                 {vm.transcript && (
