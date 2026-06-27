@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
 import { IncomingCallToaster } from './voice/IncomingCallToaster';
+import Softphone from './voice/Softphone';
 
 interface AdminLayoutProps {
   children: ReactNode;
