@@ -52,6 +52,7 @@ export default function Softphone({ wssUrl }: Props) {
   const uaRef = useRef<JsSIP.UA | null>(null);
   const sessionRef = useRef<RTCSession | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pendingOutboundRef = useRef(false);
 
   const [sipState, setSipState] = useState<SipState>('disabled');
   const [callState, setCallState] = useState<CallState>('idle');
@@ -76,6 +77,7 @@ export default function Softphone({ wssUrl }: Props) {
     setDialTarget(target);
     setRemoteParty(target);
     setCallState('dialing');
+    pendingOutboundRef.current = true;
 
     try {
       const { data, error } = await supabase.functions.invoke('elks46-ingest', {
@@ -86,6 +88,7 @@ export default function Softphone({ wssUrl }: Props) {
       toast.success('Calling via 46elks softphone…');
     } catch (err) {
       logger.error('softphone provider call failed', err);
+      pendingOutboundRef.current = false;
       setCallState('idle');
       toast.error('Could not start softphone call', {
         description: err instanceof Error ? err.message : '46elks call setup failed',
@@ -151,10 +154,22 @@ export default function Softphone({ wssUrl }: Props) {
       setRemoteParty(session.remote_identity?.uri?.toString() ?? '');
       setCallState(isIncoming ? 'ringing' : 'in-call');
 
+      if (isIncoming && pendingOutboundRef.current) {
+        pendingOutboundRef.current = false;
+        try {
+          session.answer({
+            mediaConstraints: { audio: true, video: false },
+          });
+          setCallState('in-call');
+        } catch (err) {
+          logger.error('softphone auto-answer failed', err);
+        }
+      }
+
       session.on('accepted', () => setCallState('in-call'));
       session.on('confirmed', () => setCallState('in-call'));
-      session.on('ended', () => { setCallState('ended'); sessionRef.current = null; });
-      session.on('failed', () => { setCallState('ended'); sessionRef.current = null; });
+      session.on('ended', () => { setCallState('ended'); sessionRef.current = null; pendingOutboundRef.current = false; });
+      session.on('failed', () => { setCallState('ended'); sessionRef.current = null; pendingOutboundRef.current = false; });
 
       // Attach remote audio
       session.connection?.addEventListener('addstream', (ev: unknown) => {
