@@ -11,7 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as JsSIP from 'jssip';
 import type { RTCSession } from 'jssip/lib/RTCSession';
-import { Phone, PhoneOff, PhoneIncoming, Loader2, MicOff, Mic } from 'lucide-react';
+import { Phone, PhoneOff, PhoneIncoming, PhoneOutgoing, Loader2, MicOff, Mic } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export default function Softphone({ wssUrl }: Props) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [remoteParty, setRemoteParty] = useState<string>('');
   const [muted, setMuted] = useState(false);
+  const [dialTarget, setDialTarget] = useState('');
 
   const ready = useMemo(() => {
     if (!agent?.voice_enabled) return false;
@@ -143,6 +145,27 @@ export default function Softphone({ wssUrl }: Props) {
     setMuted(!muted);
   };
 
+  const dial = () => {
+    if (!uaRef.current || sipState !== 'registered') return;
+    const target = dialTarget.trim();
+    if (!target) return;
+    // Build SIP target. Accept E.164 (+46...) or raw digits → route via 46elks host.
+    const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
+    const cleaned = target.replace(/[^\d+]/g, '');
+    const sipTarget = cleaned.startsWith('sip:') ? cleaned : `sip:${cleaned.replace(/^\+/, '')}@${host}`;
+    try {
+      uaRef.current.call(sipTarget, {
+        mediaConstraints: { audio: true, video: false },
+        pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
+      });
+      setCallState('in-call');
+      setRemoteParty(sipTarget);
+    } catch (err) {
+      logger.error('softphone dial failed', err);
+    }
+  };
+
+
   if (isLoading) {
     return (
       <Card>
@@ -184,7 +207,23 @@ export default function Softphone({ wssUrl }: Props) {
         <audio ref={audioRef} autoPlay />
 
         {callState === 'idle' && (
-          <p className="text-sm text-muted-foreground">Waiting for incoming calls…</p>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Waiting for incoming calls — or dial out:</p>
+            <div className="flex gap-2">
+              <Input
+                type="tel"
+                placeholder="+46701234567"
+                value={dialTarget}
+                onChange={(e) => setDialTarget(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') dial(); }}
+                disabled={sipState !== 'registered'}
+                className="font-mono"
+              />
+              <Button size="sm" onClick={dial} disabled={sipState !== 'registered' || !dialTarget.trim()}>
+                <PhoneOutgoing className="h-4 w-4 mr-1" />Call
+              </Button>
+            </div>
+          </div>
         )}
 
         {callState === 'ringing' && (
