@@ -12,3 +12,16 @@
 - **C. Behåll nuvarande** — pragmatiskt: om agent är borta ska kunden inte vänta på en specifik person.
 
 **Beslut:** Avvakta. Det finns en poäng att ärenden återgår till Waiting om de inte är stängda — säkrar att ingen kund glöms bort.
+
+## Architecture
+
+### Migrate channels to ChannelAdapter contract
+**Status:** TBD
+**Context:** Vi har en formaliserad target-arkitektur i `docs/architecture/channel-adapter-contract.md` (inspirerad av OpenClaws ChannelPlugin). Voice följer redan mönstret via `VoiceProvider`. Telegram, SMS och web saknar adapter och har outbound hardcoded i `useSupportConversations` / edge functions.
+
+**Faser:**
+- **Fas 2:** Skapa `src/lib/channels/types.ts` + `registry.ts`. Wrappa `voice` som referens-impl. Migrera `telegram` (flytta outbound till adapter).
+- **Fas 3:** 46elks `messaging` sub-adapter för SMS. `web` adapter formaliserar broadcast-fallback. Drop hardcoded channel-checks i Live Support UI.
+- **Fas 4:** Nya kanaler (WhatsApp, Slack, email) byggs adapter-first. Heartbeat-dashboard i `/admin/integrations`.
+
+**Beslut:** Inte refaktorera idag — kontraktet är dokumenterat så vi inte uppfinner nya one-off-kanaler. Plockas upp när vi lägger till WhatsApp/Slack eller behöver heartbeat-vy.
