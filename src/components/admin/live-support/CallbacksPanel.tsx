@@ -59,16 +59,16 @@ export function CallbacksPanel() {
 
   return (
     <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+      <CardHeader className="py-3 px-4">
+        <CardTitle className="text-sm flex items-center gap-2">
           <PhoneCall className="h-4 w-4 text-violet-500" />
           Callbacks
+          <span className="text-xs font-normal text-muted-foreground ml-1">
+            · Missed calls & voicemails queued for a callback
+          </span>
         </CardTitle>
-        <CardDescription>
-          Missed calls and voicemails queued for a callback.
-        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0 px-4 pb-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
