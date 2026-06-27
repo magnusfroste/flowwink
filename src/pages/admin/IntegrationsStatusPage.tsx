@@ -1042,6 +1042,54 @@ function IntegrationConfigPanel({
     );
   }
 
+  if (integrationKey === 'elks46') {
+    const fromNumber = config?.from_number || '';
+    const webhookBase = (import.meta as any).env?.VITE_SUPABASE_URL || '';
+    const webhookUrl = webhookBase ? `${webhookBase}/functions/v1/elks46-ingest` : '';
+    return (
+      <div className="space-y-4 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="elks46-from" className="text-xs">From number / Caller ID (E.164)</Label>
+          <Input
+            id="elks46-from"
+            value={fromNumber}
+            onChange={(e) => handleChange({ from_number: e.target.value })}
+            placeholder="+46766861000"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Ditt publika 46elks-nummer (med SMS + Voice). Används som avsändare för utgående SMS
+            och som caller ID när softphone ringer ut via PSTN. Utan detta misslyckas utringning med HTTP 500.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Inbound webhook URL (SMS + Voice)</Label>
+          <div className="flex gap-2">
+            <Input value={webhookUrl} readOnly className="h-8 text-sm font-mono" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                toast.success('Webhook URL copied');
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Klistra in i 46elks dashboard → ditt nummer → SMS URL och voice_start URL (POST).
+          </p>
+        </div>
+        {PriorityField}
+      </div>
+    );
+  }
+
+
+
   if (integrationKey === 'resend') {
     const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };
