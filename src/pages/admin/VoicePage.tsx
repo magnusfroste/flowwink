@@ -509,10 +509,6 @@ export default function VoicePage() {
           </TabsContent>
         </Tabs>
 
-        <div className={tab === 'softphone' ? 'mt-6' : 'hidden'}>
-          <Softphone />
-        </div>
-
         <CallActionDialog call={selected} open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
     </AdminLayout>
