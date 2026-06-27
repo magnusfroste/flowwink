@@ -446,7 +446,7 @@ async function startCall(to: string, from: string, voiceStart: string) {
   if (!from) throw new Error("Missing caller number (configure from_number)");
   if (!voiceStart) throw new Error("Missing voice_start URL");
   const body = new URLSearchParams({ from, to, voice_start: voiceStart });
-  const resp = await fetch(`${ELKS_BASE}/Calls`, {
+  const resp = await fetch(`${ELKS_BASE}/calls`, {
     method: "POST",
     headers: { "Authorization": auth, "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -968,11 +968,42 @@ async function handleCall(req: Request): Promise<Response> {
     if (!hasAdmin) return json({ error: "forbidden" }, 403);
 
     const body = (await req.json().catch(() => ({}))) as {
-      to?: string; voice_start?: string;
+      to?: string; voice_start?: string; mode?: string;
     };
     if (!body.to) return json({ error: "to required" }, 400);
 
     const { fromNumber, voiceWebhookUrl } = await loadElks46Config(supabase);
+    if (body.mode === "webrtc") {
+      const { data: agent, error: agentErr } = await supabase
+        .from("support_agents")
+        .select("voice_sip_uri, voice_sip_username, voice_enabled")
+        .eq("user_id", userData.user.id)
+        .maybeSingle();
+      if (agentErr) throw agentErr;
+      if (!agent?.voice_enabled) return json({ error: "softphone not enabled for this agent" }, 400);
+
+      const sipUsername = String(agent.voice_sip_username ?? "").trim();
+      const sipUriUser = String(agent.voice_sip_uri ?? "").match(/^sips?:?([^@;]+)(?:@([^;]+))?/i)?.[1] ?? "";
+      const webRtcUser = (sipUsername || sipUriUser).replace(/^\+/, "");
+      if (!/^\d{6,}$/.test(webRtcUser)) return json({ error: "missing valid 46elks WebRTC number on agent" }, 400);
+
+      const destination = normalizePhone(body.to);
+      const webRtcNumber = normalizePhone(webRtcUser);
+      const voiceStart = body.voice_start || JSON.stringify({
+        connect: destination,
+        callerid: fromNumber,
+      });
+      const data = await startCall(webRtcNumber, fromNumber, voiceStart);
+      return json({
+        ok: true,
+        mode: "webrtc",
+        callid: data?.callid ?? data?.id ?? null,
+        destination,
+        webrtc_number: webRtcNumber,
+        raw: data,
+      });
+    }
+
     const voiceStart = body.voice_start || voiceWebhookUrl
       || `${supabaseUrl}/functions/v1/elks46-ingest`;
     const data = await startCall(body.to, fromNumber, voiceStart);

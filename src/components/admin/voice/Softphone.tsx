@@ -18,9 +18,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMyAgentVoice } from '@/hooks/useVoice';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toast } from 'sonner';
 
-type CallState = 'idle' | 'ringing' | 'in-call' | 'ended';
+type CallState = 'idle' | 'dialing' | 'ringing' | 'in-call' | 'ended';
 type SipState = 'disabled' | 'connecting' | 'registered' | 'failed' | 'disconnected';
 
 interface Props {
@@ -50,6 +52,7 @@ export default function Softphone({ wssUrl }: Props) {
   const uaRef = useRef<JsSIP.UA | null>(null);
   const sessionRef = useRef<RTCSession | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pendingOutboundRef = useRef(false);
 
   const [sipState, setSipState] = useState<SipState>('disabled');
   const [callState, setCallState] = useState<CallState>('idle');
@@ -62,6 +65,53 @@ export default function Softphone({ wssUrl }: Props) {
     if (!agent.voice_sip_uri || !agent.voice_sip_username || !agent.voice_sip_password) return false;
     return true;
   }, [agent]);
+
+  const startProviderCall = async (number: string) => {
+    const target = number.trim();
+    if (!target) return;
+    if (!uaRef.current || sipState !== 'registered') {
+      toast.error('Softphone is not registered yet');
+      return;
+    }
+
+    setDialTarget(target);
+    setRemoteParty(target);
+    setCallState('dialing');
+    pendingOutboundRef.current = true;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('elks46-ingest', {
+        body: { action: 'call', mode: 'webrtc', to: target },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success('Calling via 46elks softphone…');
+    } catch (err) {
+      logger.error('softphone provider call failed', err);
+      pendingOutboundRef.current = false;
+      setCallState('idle');
+      toast.error('Could not start softphone call', {
+        description: err instanceof Error ? err.message : '46elks call setup failed',
+      });
+    }
+  };
+
+  const startDirectSipCall = (target: string) => {
+    if (!uaRef.current || sipState !== 'registered') return;
+    const sipTarget = target.startsWith('sip:') || target.startsWith('sips:')
+      ? target
+      : `sip:${target}`;
+    try {
+      uaRef.current.call(sipTarget, {
+        mediaConstraints: { audio: true, video: false },
+        pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
+      });
+      setCallState('in-call');
+      setRemoteParty(sipTarget);
+    } catch (err) {
+      logger.error('softphone direct SIP dial failed', err);
+    }
+  };
 
   // Initialise / tear down UA
   useEffect(() => {
@@ -104,10 +154,22 @@ export default function Softphone({ wssUrl }: Props) {
       setRemoteParty(session.remote_identity?.uri?.toString() ?? '');
       setCallState(isIncoming ? 'ringing' : 'in-call');
 
+      if (isIncoming && pendingOutboundRef.current) {
+        pendingOutboundRef.current = false;
+        try {
+          session.answer({
+            mediaConstraints: { audio: true, video: false },
+          });
+          setCallState('in-call');
+        } catch (err) {
+          logger.error('softphone auto-answer failed', err);
+        }
+      }
+
       session.on('accepted', () => setCallState('in-call'));
       session.on('confirmed', () => setCallState('in-call'));
-      session.on('ended', () => { setCallState('ended'); sessionRef.current = null; });
-      session.on('failed', () => { setCallState('ended'); sessionRef.current = null; });
+      session.on('ended', () => { setCallState('ended'); sessionRef.current = null; pendingOutboundRef.current = false; });
+      session.on('failed', () => { setCallState('ended'); sessionRef.current = null; pendingOutboundRef.current = false; });
 
       // Attach remote audio
       session.connection?.addEventListener('addstream', (ev: unknown) => {
@@ -146,23 +208,10 @@ export default function Softphone({ wssUrl }: Props) {
   };
 
   const dial = () => {
-    if (!uaRef.current || sipState !== 'registered') return;
     const target = dialTarget.trim();
     if (!target) return;
-    // Build SIP target. Accept E.164 (+46...) or raw digits → route via 46elks host.
-    const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
-    const cleaned = target.replace(/[^\d+]/g, '');
-    const sipTarget = cleaned.startsWith('sip:') ? cleaned : `sip:${cleaned.replace(/^\+/, '')}@${host}`;
-    try {
-      uaRef.current.call(sipTarget, {
-        mediaConstraints: { audio: true, video: false },
-        pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
-      });
-      setCallState('in-call');
-      setRemoteParty(sipTarget);
-    } catch (err) {
-      logger.error('softphone dial failed', err);
-    }
+    if (target.startsWith('sip:') || target.startsWith('sips:')) startDirectSipCall(target);
+    else void startProviderCall(target);
   };
 
   // Allow other panels (e.g. Callbacks) to initiate a call via the softphone.
@@ -170,30 +219,12 @@ export default function Softphone({ wssUrl }: Props) {
     const handler = (e: Event) => {
       const number = (e as CustomEvent<string>).detail;
       if (!number) return;
-      if (!uaRef.current || sipState !== 'registered') {
-        logger.warn('softphone:dial received but not registered', { sipState });
-        return;
-      }
-      // IMPORTANT: call synchronously in the user-gesture frame — setTimeout
-      // breaks the gesture chain and Chrome blocks getUserMedia (mic permission).
-      const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
-      const cleaned = number.replace(/[^\d+]/g, '');
-      const sipTarget = `sip:${cleaned.replace(/^\+/, '')}@${host}`;
-      setDialTarget(number);
-      try {
-        uaRef.current.call(sipTarget, {
-          mediaConstraints: { audio: true, video: false },
-          pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
-        });
-        setCallState('in-call');
-        setRemoteParty(sipTarget);
-      } catch (err) {
-        logger.error('softphone external dial failed', err);
-      }
+      if (number.startsWith('sip:') || number.startsWith('sips:')) startDirectSipCall(number);
+      else void startProviderCall(number);
     };
     window.addEventListener('softphone:dial', handler as EventListener);
     return () => window.removeEventListener('softphone:dial', handler as EventListener);
-  }, [agent, sipState]);
+  }, [sipState]);
 
 
 
@@ -255,6 +286,21 @@ export default function Softphone({ wssUrl }: Props) {
                 <PhoneOutgoing className="h-4 w-4 mr-1" />Call
               </Button>
             </div>
+          </div>
+        )}
+
+        {callState === 'dialing' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 animate-pulse">
+              <PhoneOutgoing className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Calling</p>
+                <p className="text-xs text-muted-foreground font-mono">{remoteParty}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              46elks is calling this browser first. Answer the incoming softphone call to connect the callback.
+            </p>
           </div>
         )}
 
