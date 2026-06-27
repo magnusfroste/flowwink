@@ -165,6 +165,39 @@ export default function Softphone({ wssUrl }: Props) {
     }
   };
 
+  // Allow other panels (e.g. Callbacks) to initiate a call via the softphone.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const number = (e as CustomEvent<string>).detail;
+      if (!number) return;
+      if (sipState !== 'registered') {
+        logger.warn('softphone:dial received but not registered', { sipState });
+        return;
+      }
+      setDialTarget(number);
+      // Defer one tick so state is applied before dialing.
+      setTimeout(() => {
+        const host = agent?.voice_sip_uri?.split('@')[1]?.split(';')[0] ?? 'voip.46elks.com';
+        const cleaned = number.replace(/[^\d+]/g, '');
+        const sipTarget = `sip:${cleaned.replace(/^\+/, '')}@${host}`;
+        try {
+          uaRef.current?.call(sipTarget, {
+            mediaConstraints: { audio: true, video: false },
+            pcConfig: { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] },
+          });
+          setCallState('in-call');
+          setRemoteParty(sipTarget);
+        } catch (err) {
+          logger.error('softphone external dial failed', err);
+        }
+      }, 0);
+    };
+    window.addEventListener('softphone:dial', handler as EventListener);
+    return () => window.removeEventListener('softphone:dial', handler as EventListener);
+  }, [agent, sipState]);
+
+
+
 
   if (isLoading) {
     return (
