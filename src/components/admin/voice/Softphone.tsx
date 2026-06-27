@@ -11,7 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as JsSIP from 'jssip';
 import type { RTCSession } from 'jssip/lib/RTCSession';
-import { Phone, PhoneOff, PhoneIncoming, Loader2, MicOff, Mic } from 'lucide-react';
+import { Phone, PhoneOff, PhoneIncoming, PhoneOutgoing, Loader2, MicOff, Mic } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
