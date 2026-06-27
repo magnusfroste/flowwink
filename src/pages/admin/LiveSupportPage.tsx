@@ -224,7 +224,7 @@ export default function LiveSupportPage() {
               )}
             </div>
 
-            <TabsContent value="inbox" className="flex-1 min-h-0 mt-2 flex flex-col">
+            <TabsContent value="inbox" className="flex-1 min-h-0 mt-2 data-[state=active]:flex flex-col">
           <ActiveCallsPanel />
           <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 p-4 h-full">
 
