@@ -7625,8 +7625,15 @@ async function executeDbAction(
       const { action = 'list' } = args as any;
 
       // ── helpers ──
+      // Accept common field-name aliases so an autonomous operator that sends
+      // `quantity`/`unit_price` (instead of the schema's `qty`/`unit_price_cents`)
+      // still gets correct totals instead of a silent 0-total invoice. Law 4:
+      // fail forward, don't gate. Canonical names stay qty / unit_price_cents.
+      const lineQty = (it: any) => Number(it.qty ?? it.quantity ?? it.units ?? 0);
+      const lineUnitCents = (it: any) =>
+        Number(it.unit_price_cents ?? it.unitPriceCents ?? it.unit_price ?? it.price_cents ?? it.unit_amount_cents ?? 0);
       const computeTotals = (items: any[], taxRate: number) => {
-        const subtotal = (items || []).reduce((s, it) => s + (Number(it.qty || 0) * Number(it.unit_price_cents || 0)), 0);
+        const subtotal = (items || []).reduce((s, it) => s + (lineQty(it) * lineUnitCents(it)), 0);
         const tax = Math.round(subtotal * Number(taxRate || 0));
         return { subtotal_cents: subtotal, tax_cents: tax, total_cents: subtotal + tax };
       };
