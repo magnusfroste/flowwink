@@ -241,6 +241,7 @@ export default function SystemHubPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            <CoreBackendStatusCard />
             <EnvironmentInfoCard />
             <QuickLinksCard />
           </TabsContent>
