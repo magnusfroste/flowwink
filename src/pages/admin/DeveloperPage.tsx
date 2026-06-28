@@ -29,11 +29,10 @@ export default function DeveloperPage() {
                 <Cpu className="h-3.5 w-3.5" />
                 MCP Skills
               </TabsTrigger>
-              <TabsTrigger value="mcp-activity" className="gap-1.5">
-                <Activity className="h-3.5 w-3.5" />
-                MCP Activity
-              </TabsTrigger>
               <TabsTrigger value="mcp-keys" className="gap-1.5">
+                <KeyRound className="h-3.5 w-3.5" />
+                MCP Keys
+              </TabsTrigger>
                 <KeyRound className="h-3.5 w-3.5" />
                 MCP Keys
               </TabsTrigger>
