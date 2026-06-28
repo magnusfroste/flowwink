@@ -1247,10 +1247,6 @@ export default function IntegrationsStatusPage() {
     }
   };
 
-  const coreSecretsConfigured = secretsStatus?.core
-    ? Object.values(secretsStatus.core).every(Boolean)
-    : false;
-
   // Calculate active count — use shared resolver so we never drift from the hook logic
   const integrationKeys = Object.keys(defaultIntegrationsSettings) as (keyof IntegrationsSettings)[];
   let activeCount = 0;
