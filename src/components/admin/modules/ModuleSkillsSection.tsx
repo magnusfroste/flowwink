@@ -179,6 +179,15 @@ function SkillRow({ skill, moduleEnabled = true }: { skill: AgentSkill; moduleEn
               {skill.trust_level}
             </Badge>
           )}
+          {!(skill.instructions ?? '').trim() && (
+            <Badge
+              variant="outline"
+              className="text-[9px] h-4 gap-0.5 text-amber-600 border-amber-300"
+              title="No instructions — description still drives selection, but extra guidance helps the agent"
+            >
+              <FileWarning className="h-2 w-2" /> No instructions
+            </Badge>
+          )}
         </div>
         {skill.description && (
           <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
