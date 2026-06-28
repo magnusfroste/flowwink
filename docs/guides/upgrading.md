@@ -259,6 +259,7 @@ psql $DATABASE_URL < backup-YYYYMMDD.sql
 - Default configurations (you can override)
 - UI components (if you haven't modified them)
 - Edge function logic
+- **Skill trust levels changed only in the admin UI** (`/admin/approvals → Gated Skills`) are runtime overrides. During upgrade or module reseed, `bootstrapModule()` re-seeds skills from the module manifest (`skillSeeds` in `src/lib/modules/*.ts`), which will overwrite any UI-only change. To make a change permanent, update the source manifest and run `npm run sync:skills -- --apply`.
 
 ### Recommended: Separation of Concerns
 
@@ -267,6 +268,7 @@ To make upgrades easier:
 1. **Don't modify core components directly** - Create wrapper components instead
 2. **Use the site_settings table** - For configuration that should persist
 3. **Keep custom code in separate files** - Makes merging easier
+4. **For skill trust levels** - Edit the module manifest (`skillSeeds`) and sync skills with `npm run sync:skills -- --apply`. UI changes in `/admin/approvals` are runtime overrides only.
 
 ---
 

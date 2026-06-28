@@ -380,6 +380,20 @@ function GatedSkillsPanel() {
 
   return (
     <>
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="py-4 flex gap-3 text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-1">
+            <p className="font-medium text-amber-700 dark:text-amber-300">Runtime override</p>
+            <p className="text-muted-foreground">
+              Trust levels changed here are stored in the database but are not the source of truth. They will be reset when a module is reseeded or upgraded, because skills are bootstrapped from the module manifests in code.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              To make a change permanent, update the skill's <code className="font-mono text-amber-700 dark:text-amber-300">trust_level</code> in the module's <code className="font-mono text-amber-700 dark:text-amber-300">skillSeeds</code> and run <code className="font-mono text-amber-700 dark:text-amber-300">npm run sync:skills -- --apply</code>.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardContent className="py-4 space-y-4">
           <div className="flex flex-wrap gap-6 text-sm">
