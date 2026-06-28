@@ -355,7 +355,7 @@ export default function ModulesPage() {
         />
 
         {/* Summary Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -399,10 +399,39 @@ export default function ModulesPage() {
               </div>
             </CardContent>
           </Card>
+
+          {(() => {
+            const usage = edgeFunctionUsage(enabledModuleIds);
+            const accent = usage.withinFree
+              ? 'bg-muted text-muted-foreground'
+              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+            return (
+              <a
+                href="#edge-functions-usage"
+                className="block"
+                title="Jump to Edge Functions Usage"
+              >
+                <Card className="border-muted hover:border-primary/30 transition-colors cursor-pointer">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${accent}`}>
+                        <Zap className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">
+                          {usage.required} / {usage.freeLimit}
+                        </p>
+                        <p className="text-sm text-muted-foreground">edge functions</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
+            );
+          })()}
         </div>
 
-        {/* Edge function footprint vs Supabase Free tier */}
-        <EdgeFunctionUsageCard enabledModuleIds={enabledModuleIds} moduleNames={moduleNames} />
+
 
         {/* Registry Info */}
         <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-4">
