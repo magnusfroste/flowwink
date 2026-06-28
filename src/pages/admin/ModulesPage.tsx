@@ -33,7 +33,7 @@ import {
   FolderOpen,
   FolderKanban,
   Factory,
-  
+  Zap,
 } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
