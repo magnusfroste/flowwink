@@ -12,7 +12,7 @@
 
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Sparkles, Cpu, ExternalLink, Filter } from 'lucide-react';
+import { Search, Sparkles, Cpu, ExternalLink, Filter, FileWarning } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Input } from '@/components/ui/input';
