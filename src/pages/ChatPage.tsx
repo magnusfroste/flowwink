@@ -29,8 +29,10 @@ export default function ChatPage() {
   const [chatKey, setChatKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // Get initial message from navigation state (from ChatLauncherBlock)
-  const initialMessage = (location.state as { initialMessage?: string })?.initialMessage;
+  // Initial message: prefer ?q= (shareable/refresh-safe), fall back to router state.
+  const initialMessage =
+    searchParams.get('q') ??
+    (location.state as { initialMessage?: string } | null)?.initialMessage;
   const initialMessageProcessed = useRef(false);
 
   // Check if landing page is enabled
