@@ -1,4 +1,4 @@
-import { Code2, Webhook, Terminal, KeyRound, Cpu, Activity } from 'lucide-react';
+import { Code2, Webhook, Terminal, KeyRound, Cpu } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +8,6 @@ import { WebhooksContent } from '@/pages/admin/WebhooksPage';
 import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
 import { ApiKeysContent } from '@/pages/admin/ApiKeysPage';
 import { McpSkillsPanel } from '@/components/admin/developer/McpSkillsPanel';
-import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 
 export default function DeveloperPage() {
   const [params, setParams] = useSearchParams();
@@ -29,10 +28,6 @@ export default function DeveloperPage() {
               <TabsTrigger value="mcp-skills" className="gap-1.5">
                 <Cpu className="h-3.5 w-3.5" />
                 MCP Skills
-              </TabsTrigger>
-              <TabsTrigger value="mcp-activity" className="gap-1.5">
-                <Activity className="h-3.5 w-3.5" />
-                MCP Activity
               </TabsTrigger>
               <TabsTrigger value="mcp-keys" className="gap-1.5">
                 <KeyRound className="h-3.5 w-3.5" />
@@ -57,13 +52,10 @@ export default function DeveloperPage() {
             <McpSkillsPanel />
           </TabsContent>
 
-          <TabsContent value="mcp-activity" className="mt-0">
-            <McpActivityPanel />
-          </TabsContent>
-
           <TabsContent value="mcp-keys" className="mt-0">
             <ApiKeysContent />
           </TabsContent>
+
 
           <TabsContent value="api" className="mt-0">
             <ContentApiContent />
