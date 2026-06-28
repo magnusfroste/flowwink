@@ -1181,7 +1181,6 @@ function IntegrationConfigPanel({
 }
 
 export default function IntegrationsStatusPage() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 
