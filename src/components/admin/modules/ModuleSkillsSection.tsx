@@ -13,7 +13,7 @@
 
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ChevronRight, ExternalLink, Cpu, Play, Lock, FlaskConical } from 'lucide-react';
+import { Sparkles, ChevronRight, ExternalLink, Cpu, Play, Lock, FlaskConical, FileWarning } from 'lucide-react';
 import { SkillTesterSheet } from '@/components/admin/skills/SkillTesterSheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
