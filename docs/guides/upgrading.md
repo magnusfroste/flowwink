@@ -268,6 +268,7 @@ To make upgrades easier:
 1. **Don't modify core components directly** - Create wrapper components instead
 2. **Use the site_settings table** - For configuration that should persist
 3. **Keep custom code in separate files** - Makes merging easier
+4. **For skill trust levels** - Edit the module manifest (`skillSeeds`) and sync skills with `npm run sync:skills -- --apply`. UI changes in `/admin/approvals` are runtime overrides only.
 
 ---
 
