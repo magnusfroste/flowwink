@@ -15501,7 +15501,12 @@ export type Database = {
         Returns: Json
       }
       refund_return: {
-        Args: { p_method?: string; p_refund_cents: number; p_return_id: string }
+        Args: {
+          p_final?: boolean
+          p_method?: string
+          p_refund_cents: number
+          p_return_id: string
+        }
         Returns: Json
       }
       register_fixed_asset: {
