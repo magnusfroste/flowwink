@@ -81,7 +81,8 @@ export default function SkillsCatalogPage() {
     const total = allSkills.length;
     const enabled = allSkills.filter(s => s.enabled).length;
     const exposed = allSkills.filter(s => s.mcp_exposed).length;
-    return { total, enabled, exposed, modules: modules.length };
+    const noInstructions = allSkills.filter(s => !(s.instructions ?? '').trim()).length;
+    return { total, enabled, exposed, noInstructions, modules: modules.length };
   }, [allSkills, modules]);
 
   return (
