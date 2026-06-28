@@ -330,24 +330,61 @@ function GatedSkillsPanel() {
     );
   }
 
-  // Group by module → category for readability
+  // Available modules for the filter dropdown (built from full unfiltered list)
+  const allModules = Array.from(
+    new Set(skills.map((s) => s.moduleName ?? '— Core / unowned —'))
+  ).sort();
+
+  // Apply filters
+  const q = search.trim().toLowerCase();
+  const filtered = skills.filter((s) => {
+    if (trustFilter !== 'all' && s.trust_level !== trustFilter) return false;
+    if (moduleFilter !== 'all' && (s.moduleName ?? '— Core / unowned —') !== moduleFilter) return false;
+    if (mcpFilter === 'exposed' && !s.mcp_exposed) return false;
+    if (mcpFilter === 'internal' && s.mcp_exposed) return false;
+    if (q && !s.name.toLowerCase().includes(q) && !(s.description?.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  // Group filtered list by module
   const groups = new Map<string, GatedSkillRow[]>();
-  for (const s of skills) {
+  for (const s of filtered) {
     const key = s.moduleName ?? '— Core / unowned —';
     const arr = groups.get(key) ?? [];
     arr.push(s);
     groups.set(key, arr);
   }
 
-  const approveCount = skills.filter((s) => s.trust_level === 'approve').length;
-  const notifyCount = skills.filter((s) => s.trust_level === 'notify').length;
-  const orphanCount = skills.filter((s) => !s.moduleId).length;
+  const approveCount = filtered.filter((s) => s.trust_level === 'approve').length;
+  const notifyCount = filtered.filter((s) => s.trust_level === 'notify').length;
+  const orphanCount = filtered.filter((s) => !s.moduleId).length;
+  const totalCount = skills.length;
+  const hasActiveFilter =
+    !!q || trustFilter !== 'all' || moduleFilter !== 'all' || mcpFilter !== 'all';
 
   return (
     <>
       <Card>
-        <CardContent className="py-4">
+        <CardContent className="py-4 space-y-4">
           <div className="flex flex-wrap gap-6 text-sm">
+            <div>
+              <div className="text-2xl font-semibold">{approveCount}</div>
+              <div className="text-muted-foreground">require approval</div>
+            </div>
+            <div>
+              <div className="text-2xl font-semibold">{notifyCount}</div>
+              <div className="text-muted-foreground">notify on use</div>
+            </div>
+            <div>
+              <div className="text-2xl font-semibold">
+                {filtered.length}
+                {hasActiveFilter && (
+                  <span className="text-base font-normal text-muted-foreground"> / {totalCount}</span>
+                )}
+              </div>
+              <div className="text-muted-foreground">{hasActiveFilter ? 'matching' : 'gated total'}</div>
+            </div>
+
             <div>
               <div className="text-2xl font-semibold">{approveCount}</div>
               <div className="text-muted-foreground">require approval</div>
