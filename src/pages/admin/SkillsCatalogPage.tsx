@@ -199,11 +199,30 @@ export default function SkillsCatalogPage() {
   );
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
+function StatCard({
+  label,
+  value,
+  accent,
+  onClick,
+  active,
+}: {
+  label: string;
+  value: number;
+  accent?: string;
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  const Wrapper: any = onClick ? 'button' : 'div';
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <Wrapper
+      onClick={onClick}
+      type={onClick ? 'button' : undefined}
+      className={`rounded-lg border bg-card p-3 text-left transition-colors ${
+        onClick ? 'hover:bg-accent/40 cursor-pointer' : ''
+      } ${active ? 'ring-2 ring-amber-500/60' : ''}`}
+    >
       <div className={`text-2xl font-bold ${accent ?? ''}`}>{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
+    </Wrapper>
   );
 }
