@@ -120,7 +120,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: `Always create POs in draft status. Calculate totals: subtotal = sum(qty * unit_price), tax = sum(qty * unit_price * tax_rate/100). Locale-specific: ${getActivePack().ai_instructions.purchasing}`,
+    instructions: `Always create POs in draft status. vendor_id MUST be a vendor UUID — look it up first with manage_vendor (action:list); passing a vendor NAME fails with "vendor_id and lines are required". Each line is {description, quantity, unit_price_cents} (unit_price_cents = integer cents, e.g. 5000 = 50.00 kr; product_id optional). Line total_cents and the PO subtotal/tax/total are computed automatically — do NOT pass them. Locale-specific: ${getActivePack().ai_instructions.purchasing}`,
   },
   {
     name: 'send_purchase_order',

@@ -432,7 +432,25 @@ serve(async (req) => {
 
         const { data: rpcData, error: rpcErr } = await supabase.rpc(fnName, rpcArgs);
         if (rpcErr) {
-          result = { error: `RPC ${fnName} failed: ${rpcErr.message}`, status: 'failed' };
+          let rpcMsg = `RPC ${fnName} failed: ${rpcErr.message}`;
+          // Self-correcting hint. PostgREST returns PGRST202 ("Could not find the
+          // function … in the schema cache") when the supplied parameter NAMES
+          // don't match the function signature — the #1 autonomous-operator
+          // mistake (e.g. sending p_payment_method instead of p_method). Echo
+          // what was sent and the exact names this skill declares so the agent
+          // can fix it on the next turn instead of seeing an opaque error.
+          if ((rpcErr as any).code === 'PGRST202' || /Could not find the function|schema cache/i.test(rpcErr.message || '')) {
+            const sent = Object.keys(rpcArgs);
+            const declared = Object.keys(
+              ((skill as any)?.tool_definition?.function?.parameters?.properties) ?? {},
+            );
+            rpcMsg += ` — the parameter names likely don't match the function signature.`
+              + ` You sent: [${sent.join(', ')}].`
+              + (declared.length
+                  ? ` This skill's declared parameters are: [${declared.join(', ')}]. Use these EXACT names (RPC params are p_-prefixed; do not substitute synonyms).`
+                  : ` Pass the exact p_-prefixed parameter names from this skill's input schema.`);
+          }
+          result = { error: rpcMsg, status: 'failed' };
         } else {
           result = (rpcData as Record<string, unknown>) ?? { success: true };
         }

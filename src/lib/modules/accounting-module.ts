@@ -106,7 +106,9 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: `Double-entry bookkeeping. Ensure debits equal credits. Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
+    instructions: `Double-entry bookkeeping. lines = [{account_code, account_name, debit_cents, credit_cents}] (integer cents); total debits MUST equal total credits.
+STAGED OPERATION: create returns {staged:true, operation_id, ...} for review — this is NOT a failure and NOT a permission error. To execute: (1) call approve_pending_operation with {p_id: <operation_id>}, then (2) re-invoke manage_journal_entry with the SAME args plus _approved_operation_id: <operation_id>. The entry is only booked after step 2.
+Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match against accounting_templates ordered by usage_count DESC; (3) only fall back to manual account selection if no template scores ≥0.6 and the vendor has no default. Always include template_id and vendor_id in the create payload when known. Locale-specific guidance: ${getActivePack().ai_instructions.journal_entry}`,
   },
   {
     name: 'accounting_reports',

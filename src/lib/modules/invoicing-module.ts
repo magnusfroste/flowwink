@@ -73,7 +73,11 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: `Invoice lifecycle: draft → sent → paid (or cancelled). When creating, auto-generate INV-XXXXX number. When marking as sent, set sent_at. When marking as paid, set paid_at. For listing, support status filter. Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
+    instructions: `Invoice lifecycle: draft → sent → paid (or cancelled).
+CREATE: line_items MUST use the field names \`qty\` and \`unit_price_cents\` — NOT quantity/unit_price. unit_price_cents is integer cents (15000 = 150.00 kr). subtotal_cents/tax_cents/total_cents are computed automatically from line_items × tax_rate — do NOT pass them yourself. tax_rate is a decimal (0.25 = 25%). The INV-YYYY-NNNNN number is auto-generated. Returns invoice_id + total_cents.
+UPDATE: pass invoice_id + only the fields to change; totals recompute automatically when line_items or tax_rate change.
+To RECORD A PAYMENT use record_invoice_payment (not update/mark_paid — mark_paid only flips status, it does not register a paid amount). To credit/refund use create_credit_note.
+Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
   },
   {
     name: 'invoice_from_timesheets',
@@ -195,7 +199,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Full credit negates subtotal/tax/total of the original; partial credit creates a -p_amount_cents credit. Over-crediting (> invoice total) and crediting a credit note are rejected. Admin/service-role only.',
+    instructions: 'Parameters: p_invoice_id (uuid, required), p_reason (optional text), p_amount_cents (optional integer cents — omit for a FULL credit, or pass a positive amount for a PARTIAL credit). Full credit negates subtotal/tax/total of the original; partial credit creates a -p_amount_cents credit. Over-crediting (> invoice total) and crediting a credit note are rejected. Admin/service-role only.',
   },
   {
     name: 'record_invoice_payment',
@@ -220,7 +224,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Partial payments accumulate in paid_amount_cents; the invoice flips to paid only when fully settled. Overpayment is rejected (use create_credit_note for corrections). Complements the bank-reconciliation payment path. Admin/approver/service-role only.',
+    instructions: 'Parameters: p_invoice_id (uuid), p_amount_cents (integer cents), p_method (one of cash|swish|card|manual), p_paid_at (optional ISO timestamp). There is NO p_payment_method or p_reference param — use p_method. Partial payments accumulate in paid_amount_cents; the invoice flips to paid only when fully settled. Overpayment is rejected (use create_credit_note for corrections). Complements the bank-reconciliation payment path. Admin/approver/service-role only.',
   },
 ];
 
