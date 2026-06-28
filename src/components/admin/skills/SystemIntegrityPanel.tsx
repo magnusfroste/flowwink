@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, AlertTriangle, XCircle, ShieldCheck, Wrench } from 'lucide-react';
+import { RefreshCw, CheckCircle, AlertTriangle, XCircle, ShieldCheck, Wrench, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
