@@ -110,6 +110,13 @@ export default function CheckoutSuccessPage() {
 
     fetchOrder();
 
+    // Watch the order this page is showing. Sandbox orders arrive via order_id
+    // (no Stripe session), so filtering on stripe_checkout_id would never match
+    // and a still-pending sandbox order would be stuck on "Awaiting payment".
+    // Filter by the order id for sandbox, stripe_checkout_id for live checkout.
+    const filter = sandboxOrderId
+      ? `id=eq.${sandboxOrderId}`
+      : `stripe_checkout_id=eq.${sessionId}`;
     const channel = supabase
       .channel('order-status')
       .on(
@@ -118,7 +125,7 @@ export default function CheckoutSuccessPage() {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
-          filter: `stripe_checkout_id=eq.${sessionId}`,
+          filter,
         },
         (payload) => {
           if (payload.new) {
@@ -131,7 +138,7 @@ export default function CheckoutSuccessPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [sessionId, sandboxOrderId]);
 
   const config = statusConfig[order?.status || 'pending'];
 
