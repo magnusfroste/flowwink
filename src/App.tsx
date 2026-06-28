@@ -271,6 +271,7 @@ const router = createBrowserRouter([
       { path: "/admin/content-api", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/developer", element: <DeveloperPage /> },
       { path: "/admin/migration-audit", element: <MigrationAuditPage /> },
+      { path: "/admin/system", element: <SystemHubPage /> },
       { path: "/admin/process-coverage", element: <ProcessCoveragePage /> },
       { path: "/admin/ai-usage", element: <AiUsagePage /> },
       { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
