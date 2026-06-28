@@ -51,7 +51,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Use generate_rma_number() if rma_number omitted. After creating, add return_items via manage_return_item, then call approve_return.',
+      'rma_number is auto-generated if omitted (DB trigger) — you do NOT need to pass it or call generate_rma_number. Set reason_code (defective|wrong_item|not_as_described|changed_mind|damaged_in_transit|other) so return_reason_report can aggregate. Full RMA flow: create_return → add lines via manage_return_item → approve_return → receive_return → inspect_return (sets restocking fee) → refund_return.',
   },
   {
     name: 'manage_return_item',
@@ -149,7 +149,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'For Stripe-paid orders, prefer method="stripe" so an actual refund is recorded. For card-not-present or offline orders use "manual".',
+      'Only valid when the return is in received or approved status (run receive_return first). Params: return_id, refund_cents (positive integer cents — partial refunds ACCUMULATE across calls), method, p_final. Expected total = Σ(return_items qty × unit_refund_cents) − restocking_fee_cents (set via inspect_return); over-refund is rejected. The RMA closes (status=refunded) when the running total reaches the expected total OR you pass p_final:true. For Stripe-paid orders prefer method="stripe" (records an actual refund); for card-not-present or offline orders use "manual".',
   },
   {
     name: 'inspect_return',

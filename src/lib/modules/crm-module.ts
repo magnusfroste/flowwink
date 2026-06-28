@@ -209,7 +209,8 @@ Full lead management: list, get, update status/score, delete.
 - **search**: Text search across name/email.
 ### Edge cases
 - Use add_lead to CREATE new leads. This skill manages EXISTING leads.
-- Delete is permanent. Consider archiving instead.`,
+- Delete is permanent. Consider archiving instead.
+- Status is normalized to the pipeline's canonical stages: setting status to "qualified" persists as "opportunity" (synonyms map to the nearest canonical stage). The update succeeds — re-read the lead to see the canonical value; this is expected, not a failure.`,
   },
   {
     name: 'crm_task_list',
