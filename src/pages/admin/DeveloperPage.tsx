@@ -1,4 +1,4 @@
-import { Code2, Webhook, Terminal, KeyRound, Cpu, Activity } from 'lucide-react';
+import { Code2, Webhook, Terminal, KeyRound, Cpu } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +8,6 @@ import { WebhooksContent } from '@/pages/admin/WebhooksPage';
 import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
 import { ApiKeysContent } from '@/pages/admin/ApiKeysPage';
 import { McpSkillsPanel } from '@/components/admin/developer/McpSkillsPanel';
-import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 
 export default function DeveloperPage() {
   const [params, setParams] = useSearchParams();
