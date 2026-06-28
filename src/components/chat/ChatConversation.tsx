@@ -107,7 +107,7 @@ export function ChatConversation({
           onStartNew: clearMessages,
         }}
         visitorSettings={{
-          title: checkinId ? 'Profile Check-in' : settings?.title,
+          title: hideInternalTitle ? '' : (checkinId ? 'Profile Check-in' : settings?.title),
           welcomeMessage: checkinId
             ? 'Hi! Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
             : settings?.welcomeMessage,
