@@ -299,6 +299,16 @@ export function ObservabilityTab() {
         <SkillAuditCard />
         <LoginActivityCard />
       </div>
+      <div className="pt-4 border-t">
+        <div className="mb-3">
+          <h3 className="font-serif text-base font-semibold">MCP Activity</h3>
+          <p className="text-xs text-muted-foreground">
+            Platform-wide MCP traffic. For peer-centric view see{' '}
+            <Link to="/admin/federation" className="underline hover:text-foreground">Federation</Link>.
+          </p>
+        </div>
+        <McpActivityPanel />
+      </div>
     </div>
   );
 }
