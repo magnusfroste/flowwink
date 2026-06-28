@@ -18,10 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { IntegrationTestPanel } from "@/components/admin/integrations/IntegrationTestPanel";
 import { ComposioPanel } from "@/components/admin/modules/ComposioPanel";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
   XCircle,
   Copy,
   Mail,
@@ -29,8 +27,6 @@ import {
   Image,
   Flame,
   Bot,
-  Database,
-  RefreshCw,
   ExternalLink,
   Key,
   Zap,
@@ -1185,7 +1181,6 @@ function IntegrationConfigPanel({
 }
 
 export default function IntegrationsStatusPage() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
   const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 
@@ -1201,14 +1196,6 @@ export default function IntegrationsStatusPage() {
   const integrationModuleMap = useIntegrationModuleMap();
 
   const isLoading = secretsLoading || settingsLoading;
-  const secretsErrorMessage = secretsError instanceof Error ? secretsError.message : 'Unknown backend error';
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await refetchSecrets();
-    setIsRefreshing(false);
-    toast.success("Status updated");
-  };
 
   const copyCommand = (secretName: string) => {
     const command = `supabase secrets set ${secretName}=your_api_key_here`;
@@ -1259,10 +1246,6 @@ export default function IntegrationsStatusPage() {
       toast.error("Failed to save settings");
     }
   };
-
-  const coreSecretsConfigured = secretsStatus?.core
-    ? Object.values(secretsStatus.core).every(Boolean)
-    : false;
 
   // Calculate active count — use shared resolver so we never drift from the hook logic
   const integrationKeys = Object.keys(defaultIntegrationsSettings) as (keyof IntegrationsSettings)[];
@@ -1316,65 +1299,6 @@ export default function IntegrationsStatusPage() {
           title="Integrations Hub"
           description="Manage external service integrations"
         />
-        {hasSecretsError && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Could not verify backend secrets</AlertTitle>
-            <AlertDescription>
-              The secret check failed, so "No API key" can be misleading here. This points more to an auth/admin-role/JWT problem than a missing provider key.
-              <span className="mt-2 block font-mono text-xs">{secretsErrorMessage}</span>
-            </AlertDescription>
-          </Alert>
-        )}
-        {/* System Status */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Database className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <CardTitle className="text-base">System Status</CardTitle>
-                  <CardDescription>Core backend configuration</CardDescription>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading || isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-24" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                {coreSecretsConfigured ? (
-                  <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-muted-foreground">
-                      All core secrets configured
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-5 w-5 text-destructive" />
-                    <span className="text-sm text-destructive">
-                      Missing core secrets
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Integrations Summary */}
         <div className="flex items-center justify-between">
