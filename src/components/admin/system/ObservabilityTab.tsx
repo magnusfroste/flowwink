@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgentEvents } from '@/hooks/useAgentEvents';
 import { useAutomationHealth } from '@/hooks/useAutomationHealth';
+import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 
 function timeAgo(iso: string | null) {
   if (!iso) return '—';
