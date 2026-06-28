@@ -5,20 +5,24 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSystemAiSettings,
   useUpdateSystemAiSettings,
   SystemAiSettings,
 } from '@/hooks/useSiteSettings';
+import { useIntegrationStatus } from '@/hooks/useIntegrationStatus';
 import { SystemAiSettingsTab } from '@/components/admin/SystemAiSettingsTab';
 import { DemoModeCard } from '@/components/admin/DemoModeCard';
 import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 import {
   Loader2, Save, Server, Copy, Check, Sparkles, AlertTriangle, Trash2,
-  Database, FlaskConical, Activity, FlaskRound,
+  Database, FlaskConical, Activity, FlaskRound, RefreshCw, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { ObservabilityTab } from '@/components/admin/system/ObservabilityTab';
 import { toast } from 'sonner';
+
 
 function EnvironmentInfoCard() {
   const [copied, setCopied] = useState<string | null>(null);
