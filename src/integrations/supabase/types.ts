@@ -14049,6 +14049,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_pension: {
+        Args: {
+          p_employee_pct?: number
+          p_employer_pct: number
+          p_run_id: string
+        }
+        Returns: Json
+      }
       apply_reconciliation_rules: { Args: never; Returns: Json }
       apply_stock_movement_event: {
         Args: { p_payload: Json }
@@ -14090,6 +14098,17 @@ export type Database = {
         }[]
       }
       award_rfq: { Args: { _bid_id: string; _rfq_id: string }; Returns: string }
+      book_appointment_slot: {
+        Args: {
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone?: string
+          p_notes?: string
+          p_service_id: string
+          p_start_time: string
+        }
+        Returns: Json
+      }
       book_expense_report: {
         Args: {
           p_entry_date?: string
@@ -14147,6 +14166,14 @@ export type Database = {
         }
         Returns: Json
       }
+      calc_sick_pay: {
+        Args: {
+          p_monthly_salary_cents: number
+          p_sick_days: number
+          p_work_days_per_month?: number
+        }
+        Returns: Json
+      }
       calculate_vacation_days: {
         Args: { p_employee_id: string; p_year: number }
         Returns: number
@@ -14184,6 +14211,16 @@ export type Database = {
       chain_approval_satisfied: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
+      }
+      change_subscription: {
+        Args: {
+          p_generate_adjustment?: boolean
+          p_new_quantity?: number
+          p_new_unit_amount_cents?: number
+          p_subscription_id: string
+          p_tax_rate?: number
+        }
+        Returns: Json
       }
       check_approval_escalations: { Args: never; Returns: Json }
       check_mo_availability: { Args: { p_mo_id: string }; Returns: Json }
@@ -14399,6 +14436,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_credit_note: {
+        Args: {
+          p_amount_cents?: number
+          p_invoice_id: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
       create_manual_subscription: {
         Args: {
           _auto_finalize?: boolean
@@ -14478,6 +14523,14 @@ export type Database = {
       }
       explain_voucher_gap: {
         Args: { p_series: string; p_voucher_number: number; p_year: number }
+        Returns: Json
+      }
+      find_duplicate_companies: {
+        Args: { p_limit?: number; p_threshold?: number }
+        Returns: Json
+      }
+      find_duplicate_leads: {
+        Args: { p_limit?: number; p_threshold?: number }
         Returns: Json
       }
       flag_at_risk_subscriptions: { Args: never; Returns: Json }
@@ -14742,6 +14795,15 @@ export type Database = {
         }
         Returns: Json
       }
+      inspect_return: {
+        Args: {
+          p_notes?: string
+          p_restocking_fee_cents?: number
+          p_return_id: string
+        }
+        Returns: Json
+      }
+      inventory_gl_reconciliation: { Args: never; Returns: Json }
       inventory_valuation_report: { Args: { p_limit?: number }; Returns: Json }
       invoice_outstanding: { Args: { p_invoice_id: string }; Returns: number }
       is_manager_of: {
@@ -15207,6 +15269,7 @@ export type Database = {
       mcp_run_monthly_depreciation: { Args: { args: Json }; Returns: Json }
       mcp_set_exchange_rate: { Args: { args: Json }; Returns: Json }
       next_mo_number: { Args: never; Returns: string }
+      normalize_email: { Args: { p_email: string }; Returns: string }
       open_pos_session: {
         Args: {
           p_cashier_name?: string
@@ -15572,6 +15635,7 @@ export type Database = {
           source: string
         }[]
       }
+      return_reason_report: { Args: { p_days?: number }; Returns: Json }
       revalue_open_balances: {
         Args: {
           p_ap_account?: string
