@@ -15268,6 +15268,11 @@ export type Database = {
       mcp_revalue_open_balances: { Args: { args: Json }; Returns: Json }
       mcp_run_monthly_depreciation: { Args: { args: Json }; Returns: Json }
       mcp_set_exchange_rate: { Args: { args: Json }; Returns: Json }
+      merge_leads: {
+        Args: { p_duplicate_id: string; p_primary_id: string }
+        Returns: Json
+      }
+      mrp_reorder_run: { Args: { p_dry_run?: boolean }; Returns: Json }
       next_mo_number: { Args: never; Returns: string }
       normalize_email: { Args: { p_email: string }; Returns: string }
       open_pos_session: {
@@ -15401,6 +15406,15 @@ export type Database = {
         }
         Returns: string
       }
+      record_invoice_payment: {
+        Args: {
+          p_amount_cents: number
+          p_invoice_id: string
+          p_method?: string
+          p_paid_at?: string
+        }
+        Returns: Json
+      }
       record_pos_sale: {
         Args: {
           p_customer_email?: string
@@ -15533,6 +15547,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      request_callback: {
+        Args: {
+          p_action: string
+          p_callback_id?: string
+          p_conversation_id?: string
+          p_customer_email?: string
+          p_customer_name?: string
+          p_customer_phone?: string
+          p_notes?: string
+          p_preferred_time?: string
+        }
+        Returns: Json
       }
       request_entity_approval: {
         Args: {
