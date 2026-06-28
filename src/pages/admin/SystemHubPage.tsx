@@ -17,6 +17,7 @@ import {
   Loader2, Save, Server, Copy, Check, Sparkles, AlertTriangle, Trash2,
   Database, FlaskConical, Activity, FlaskRound,
 } from 'lucide-react';
+import { ObservabilityTab } from '@/components/admin/system/ObservabilityTab';
 import { toast } from 'sonner';
 
 function EnvironmentInfoCard() {
@@ -150,6 +151,7 @@ export default function SystemHubPage() {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="observability">Observability</TabsTrigger>
             <TabsTrigger value="ai">AI Configuration</TabsTrigger>
             <TabsTrigger value="demo">Demo &amp; Seeding</TabsTrigger>
             <TabsTrigger value="danger">Danger Zone</TabsTrigger>
@@ -158,6 +160,10 @@ export default function SystemHubPage() {
           <TabsContent value="overview" className="space-y-6">
             <EnvironmentInfoCard />
             <QuickLinksCard />
+          </TabsContent>
+
+          <TabsContent value="observability" className="space-y-6">
+            <ObservabilityTab />
           </TabsContent>
 
           <TabsContent value="ai" className="space-y-6">
