@@ -7021,6 +7021,54 @@ export type Database = {
           },
         ]
       }
+      migration_audit_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          migration_name: string
+          source: string
+          sql_checksum: string
+          started_at: string
+          status: string
+          triggered_by: string | null
+          triggered_by_label: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          migration_name: string
+          source?: string
+          sql_checksum: string
+          started_at?: string
+          status: string
+          triggered_by?: string | null
+          triggered_by_label?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          migration_name?: string
+          source?: string
+          sql_checksum?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+          triggered_by_label?: string | null
+        }
+        Relationships: []
+      }
       mo_components: {
         Row: {
           availability: string
@@ -14226,6 +14274,10 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_migration_run: {
+        Args: { p_error_message?: string; p_run_id: string; p_status: string }
+        Returns: undefined
+      }
       complete_mo: {
         Args: { p_actual_qty?: number; p_mo_id: string }
         Returns: Json
@@ -14830,6 +14882,16 @@ export type Database = {
       log_cache_invalidation: {
         Args: { p_all?: boolean; p_slug?: string }
         Returns: Json
+      }
+      log_migration_run: {
+        Args: {
+          p_metadata?: Json
+          p_migration_name: string
+          p_source?: string
+          p_sql_text: string
+          p_triggered_by_label?: string
+        }
+        Returns: string
       }
       manage_approval_chain: {
         Args: {
