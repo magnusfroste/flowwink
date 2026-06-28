@@ -5,7 +5,7 @@ import {
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield, ShieldCheck,
   Network, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban, Wrench,
   RefreshCw, AlertTriangle, CheckSquare, Sparkles, Factory, UserSearch, Plus, FlaskConical,
-  LayoutTemplate, Phone,
+  LayoutTemplate, Phone, Database,
 } from 'lucide-react';
 
 import type { AppRole } from '@/types/cms';
@@ -161,6 +161,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
       { name: "Skills", href: "/admin/skills", icon: Sparkles },
       { name: "Platform Tests", href: "/admin/platform-tests", icon: FlaskConical },
+      { name: "Migration Audit", href: "/admin/migration-audit", icon: Database },
       
       { name: "AI Usage", href: "/admin/ai-usage", icon: BarChart3 },
 
