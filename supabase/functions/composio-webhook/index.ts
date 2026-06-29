@@ -19,7 +19,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-composio-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-composio-signature, x-signature, webhook-signature, webhook-id, webhook-timestamp',
 };
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -32,9 +32,28 @@ const json = (data: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-async function verifySignature(rawBody: string, signature: string | null): Promise<boolean> {
-  if (!WEBHOOK_SECRET) return true; // Soft mode until secret is set.
-  if (!signature) return false;
+function constantTimeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const left = enc.encode(a);
+  const right = enc.encode(b);
+  if (left.length !== right.length) return false;
+
+  let diff = 0;
+  for (let i = 0; i < left.length; i++) diff |= left[i] ^ right[i];
+  return diff === 0;
+}
+
+function toBase64(bytes: ArrayBuffer): string {
+  let binary = '';
+  for (const byte of new Uint8Array(bytes)) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function toHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function signHmac(value: string): Promise<ArrayBuffer> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
@@ -43,9 +62,37 @@ async function verifySignature(rawBody: string, signature: string | null): Promi
     false,
     ['sign'],
   );
-  const mac = await crypto.subtle.sign('HMAC', key, enc.encode(rawBody));
-  const hex = Array.from(new Uint8Array(mac)).map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hex === signature.replace(/^sha256=/, '');
+  return crypto.subtle.sign('HMAC', key, enc.encode(value));
+}
+
+async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
+  if (!WEBHOOK_SECRET) return true; // Soft mode until secret is set.
+
+  // Composio V3 signs `{webhook-id}.{webhook-timestamp}.{rawBody}` and sends
+  // base64 HMAC in `webhook-signature`. Keep the older x-* path as a fallback
+  // for already configured legacy webhooks.
+  const webhookSignature = req.headers.get('webhook-signature');
+  const webhookId = req.headers.get('webhook-id');
+  const webhookTimestamp = req.headers.get('webhook-timestamp');
+
+  if (webhookSignature && webhookId && webhookTimestamp) {
+    const timestampMs = Number(webhookTimestamp) * 1000;
+    if (!Number.isFinite(timestampMs) || Math.abs(Date.now() - timestampMs) > 300_000) {
+      console.warn('[composio-webhook] signature timestamp outside tolerance');
+      return false;
+    }
+
+    const mac = await signHmac(`${webhookId}.${webhookTimestamp}.${rawBody}`);
+    const expected = toBase64(mac);
+    const received = webhookSignature.split(',', 2)[1] ?? webhookSignature;
+    return constantTimeEqual(expected, received);
+  }
+
+  const legacySignature = req.headers.get('x-composio-signature') || req.headers.get('x-signature');
+  if (!legacySignature) return false;
+  const legacyMac = await signHmac(rawBody);
+  const legacyHex = toHex(legacyMac);
+  return constantTimeEqual(legacyHex, legacySignature.replace(/^sha256=/, ''));
 }
 
 Deno.serve(async (req) => {
@@ -53,8 +100,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 
   const rawBody = await req.text();
-  const signature = req.headers.get('x-composio-signature') || req.headers.get('x-signature');
-  const sigOk = await verifySignature(rawBody, signature);
+  const sigOk = await verifySignature(req, rawBody);
   if (!sigOk) {
     console.warn('[composio-webhook] signature mismatch');
     return json({ error: 'invalid signature' }, 401);
@@ -72,10 +118,16 @@ Deno.serve(async (req) => {
   // Composio Gmail webhook payload shape (best-effort across formats):
   //   { type: 'GMAIL_NEW_MESSAGE', data: { message_id, thread_id, connected_account_id, ... } }
   // We accept several aliases since Composio renames fields between versions.
+  const triggerSlug = body?.metadata?.trigger_slug || body?.triggerSlug || body?.trigger_slug || body?.type;
+  if (triggerSlug && !String(triggerSlug).toLowerCase().includes('gmail')) {
+    return json({ ok: true, ignored: `unsupported trigger ${triggerSlug}` });
+  }
+
   const data = body?.data || body?.payload || body;
-  const messageId = data?.message_id || data?.messageId || data?.message?.id;
-  const threadId = data?.thread_id || data?.threadId || data?.message?.threadId;
+  const messageId = data?.message_id || data?.messageId || data?.id || data?.message?.id || data?.email?.id;
+  const threadId = data?.thread_id || data?.threadId || data?.thread?.id || data?.message?.threadId || data?.email?.threadId;
   const connectedAccountId =
+    body?.metadata?.connected_account_id ||
     data?.connected_account_id ||
     data?.connectedAccountId ||
     body?.connected_account_id ||
@@ -202,10 +254,17 @@ Deno.serve(async (req) => {
 
   // Log inbound row to the unified communications log so it shows up in
   // /admin/communications alongside outbound mail. Dedupe on message_id_header.
-  const { error: logErr } = await supabase
-    .from('outbound_communications')
-    .upsert(
-      {
+  let logErr: any = null;
+  const dedupeMessageId = messageIdHeader || messageId;
+  if (dedupeMessageId) {
+    const { data: existing, error: existingErr } = await supabase
+      .from('outbound_communications')
+      .select('id')
+      .eq('message_id_header', dedupeMessageId)
+      .maybeSingle();
+    logErr = existingErr;
+    if (!existing && !existingErr) {
+      const { error } = await supabase.from('outbound_communications').insert({
         direction: 'inbound',
         channel: 'email',
         status: 'sent',
@@ -216,14 +275,34 @@ Deno.serve(async (req) => {
         subject,
         body_text: bodyText.slice(0, 50000),
         source: 'composio-webhook',
-        thread_id: threadId || null,
-        message_id_header: messageIdHeader,
+        thread_id: threadId || fullMessage?.threadId || null,
+        message_id_header: dedupeMessageId,
         in_reply_to: inReplyTo,
-        metadata: { references, inbound_account_id: account?.id ?? null, snippet },
+        metadata: { references, inbound_account_id: account?.id ?? null, snippet, gmail_message_id: messageId },
         sent_at: new Date().toISOString(),
-      },
-      { onConflict: 'message_id_header', ignoreDuplicates: true },
-    );
+      });
+      logErr = error;
+    }
+  } else {
+    const { error } = await supabase.from('outbound_communications').insert({
+      direction: 'inbound',
+      channel: 'email',
+      status: 'sent',
+      provider: 'composio',
+      simulated: false,
+      recipient: toEmail,
+      sender: fromEmail,
+      subject,
+      body_text: bodyText.slice(0, 50000),
+      source: 'composio-webhook',
+      thread_id: threadId || fullMessage?.threadId || null,
+      message_id_header: null,
+      in_reply_to: inReplyTo,
+      metadata: { references, inbound_account_id: account?.id ?? null, snippet, gmail_message_id: messageId },
+      sent_at: new Date().toISOString(),
+    });
+    logErr = error;
+  }
   if (logErr) console.error('[composio-webhook] log insert failed:', logErr);
 
   const { error: emitErr } = await supabase.rpc('emit_platform_event', {
