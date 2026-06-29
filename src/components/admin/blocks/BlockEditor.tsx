@@ -80,6 +80,8 @@ import { AiAssistantBlockEditor } from './AiAssistantBlockEditor';
 import { SmartBookingBlockEditor } from './SmartBookingBlockEditor';
 import { ResumeMatcherBlockEditor } from './ResumeMatcherBlockEditor';
 import { HandbookBlockEditor } from './HandbookBlockEditor';
+import { QuickLinksBlockEditor } from './QuickLinksBlockEditor';
+import type { QuickLinksBlockData } from '@/components/public/blocks/QuickLinksBlock';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
@@ -1147,6 +1149,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <HandbookBlockEditor
             data={block.data as unknown as HandbookBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'quick-links':
+        return (
+          <QuickLinksBlockEditor
+            data={block.data as unknown as QuickLinksBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
