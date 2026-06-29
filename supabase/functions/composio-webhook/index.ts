@@ -200,6 +200,32 @@ Deno.serve(async (req) => {
     received_at: new Date().toISOString(),
   };
 
+  // Log inbound row to the unified communications log so it shows up in
+  // /admin/communications alongside outbound mail. Dedupe on message_id_header.
+  const { error: logErr } = await supabase
+    .from('outbound_communications')
+    .upsert(
+      {
+        direction: 'inbound',
+        channel: 'email',
+        status: 'sent',
+        provider: 'composio',
+        simulated: false,
+        recipient: toEmail,
+        sender: fromEmail,
+        subject,
+        body_text: bodyText.slice(0, 50000),
+        source: 'composio-webhook',
+        thread_id: threadId || null,
+        message_id_header: messageIdHeader,
+        in_reply_to: inReplyTo,
+        metadata: { references, inbound_account_id: account?.id ?? null, snippet },
+        sent_at: new Date().toISOString(),
+      },
+      { onConflict: 'message_id_header', ignoreDuplicates: true },
+    );
+  if (logErr) console.error('[composio-webhook] log insert failed:', logErr);
+
   const { error: emitErr } = await supabase.rpc('emit_platform_event', {
     _event_name: 'email.received',
     _payload: eventPayload,
@@ -209,5 +235,5 @@ Deno.serve(async (req) => {
     console.error('[composio-webhook] emit_platform_event failed:', emitErr);
   }
 
-  return json({ ok: true, message_id: messageId, emitted: !emitErr });
+  return json({ ok: true, message_id: messageId, emitted: !emitErr, logged: !logErr });
 });
