@@ -458,10 +458,10 @@ export default function ModulesPage() {
               <ul className="list-disc list-inside ml-1 space-y-0.5">
                 <li><strong>Migrations</strong> — DB tables/RPCs the module's <code className="text-xs bg-muted px-1 rounded">db:</code> handlers call.</li>
                 <li><strong>Edge functions</strong> — anything the module's <code className="text-xs bg-muted px-1 rounded">edge:</code> handlers points to (see Edge Functions Usage below).</li>
-                <li><strong>Frontend</strong> — admin pages/blocks the module ships (rolls out via the next Vercel deploy).</li>
+                <li><strong>Frontend</strong> — admin pages/blocks the module ships (rolls out via the next frontend deploy).</li>
               </ul>
               <p>
-                On Lovable Cloud (dev) all three deploy automatically. On forked self-hosted instances (e.g. <code className="text-xs bg-muted px-1 rounded">autoversio.ai</code>) you must run <code className="text-xs bg-muted px-1 rounded">supabase db push</code> + <code className="text-xs bg-muted px-1 rounded">functions deploy</code> after enabling new modules, then click <em>Sync skills from code</em>. Full runbook: <code className="text-xs bg-muted px-1 rounded">docs/operators/provisioning-and-updates.md</code>.
+                Migrations and edge functions are <strong>not</strong> auto-deployed when you enable a module — you must run <code className="text-xs bg-muted px-1 rounded">supabase db push</code> + <code className="text-xs bg-muted px-1 rounded">supabase functions deploy</code> for new or updated modules, then click <em>Sync skills from code</em> to refresh skill definitions. The frontend deploys separately. Full runbook: <code className="text-xs bg-muted px-1 rounded">docs/operators/provisioning-and-updates.md</code>.
               </p>
             </div>
           </div>
