@@ -1207,6 +1207,32 @@ export default function IntegrationsStatusPage() {
     });
   };
 
+  const handleDisconnect = (
+    key: keyof IntegrationsSettings,
+    secretName: string | undefined,
+    integrationName: string
+  ) => {
+    if (!secretName) return;
+    const unsetCommand = `supabase secrets unset ${secretName}`;
+    updateIntegrations.mutate(
+      {
+        [key]: {
+          enabled: false,
+          config: undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          navigator.clipboard.writeText(unsetCommand);
+          toast.success(`${integrationName} disconnected. CLI command copied: ${unsetCommand}`);
+        },
+        onError: () => {
+          toast.error(`Failed to disconnect ${integrationName}`);
+        },
+      }
+    );
+  };
+
   const [search, setSearch] = useState("");
 
   const handleBulkToggle = (keys: (keyof IntegrationsSettings)[], enabled: boolean) => {
