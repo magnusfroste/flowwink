@@ -161,8 +161,8 @@ export default function CommunicationsPage() {
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.recipient}</TableCell>
                         <TableCell className="max-w-xs truncate">{r.subject ?? "—"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {r.simulated ? "—" : r.provider ?? "—"}
+                        <TableCell>
+                          <ProviderBadge provider={r.provider} simulated={r.simulated} />
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => setSelected(r)}>
@@ -258,4 +258,18 @@ function Field({ label, value }: { label: string; value: string }) {
       <div className="font-medium">{value}</div>
     </div>
   );
+}
+
+function ProviderBadge({ provider, simulated }: { provider: string | null; simulated: boolean }) {
+  if (simulated) return <Badge variant="outline" className="text-amber-700 border-amber-300">simulated</Badge>;
+  if (!provider) return <span className="text-muted-foreground text-sm">—</span>;
+  const p = provider.toLowerCase();
+  const styles: Record<string, string> = {
+    resend:   "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300",
+    composio: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
+    gmail:    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
+    smtp:     "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800/60 dark:text-slate-200",
+  };
+  const cls = styles[p] ?? "bg-muted text-foreground border-border";
+  return <Badge variant="outline" className={cls}>{provider}</Badge>;
 }
