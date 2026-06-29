@@ -335,6 +335,55 @@ fleet's refs, and fork vs. auto-deploy topology:
 **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**.
 NB: forks (e.g. autoversio.ai) do NOT auto-deploy from a `main` push — notify the owner.
 
+### Drift & agent-usability learnings (operational)
+
+Hard-won notes from reconciling the Lovable-managed dev instance and making the
+MCP skill surface usable by an autonomous operator (OpenClaw):
+
+- **Forward-date migrations for managed instances.** Lovable's migrate runner
+  applies migrations from its own `supabase_migrations` ledger; a repo migration
+  whose timestamp is **below the ledger HEAD is silently skipped**. Anything that
+  must reach a managed/forked instance has to be forward-dated (timestamp ≥ now)
+  and idempotent (`CREATE OR REPLACE`). This caused real gaps: missing functions,
+  a missing `refund_return(...,p_final)` overload, and an entire class of admin
+  functions stuck on pre-patch bodies.
+- **Name-only existence checks miss body/signature drift.** `pg_proc` by name
+  says a function exists, not that its body is current or that an overload is
+  present. Verify behavior (live call) or the specific signature, not just the name.
+- **Agent-callable SECURITY DEFINER functions need the service_role escape.** The
+  MCP gateway runs RPC skills with the service key, so inside the function
+  `auth.uid()` is NULL and `has_role(auth.uid(),'admin')` is false. Guard with
+  `(auth.role() = 'service_role' OR has_role(auth.uid(), <role>))` or the operator
+  gets "Only admins…". 44 admin functions had this patch stranded in skipped
+  backdated migrations.
+- **"Sync skills from code" is the 4th-layer deploy without DB creds.**
+  `/admin/modules` → **"Sync skills from code"** re-runs `bootstrapModule()` for
+  every enabled module, which **UPDATEs all definition fields** (handler,
+  instructions, description, tool_definition, …) on existing `agent_skills` rows
+  from the bundled seeds — runs as the admin login, no `DATABASE_URL` needed.
+  Use it after a frontend deploy when migrations/edge deploys didn't refresh
+  skills (e.g. a handler changed `db:` → `ai-task:`). It does NOT touch
+  `trust_level`, so runtime trust overrides survive a resync.
+- **Self-correcting RPC errors.** `agent-execute` enriches a PostgREST PGRST202
+  ("function not found in schema cache" — the signature of wrong param NAMES)
+  with the params the agent sent and the skill's declared parameters, so an
+  operator that guesses (e.g. `p_payment_method` instead of `p_method`)
+  self-corrects next turn. When adding RPC skills, keep `tool_definition`
+  parameter names exactly matching the function so this hint is accurate.
+- **Skill instructions are the agent-context lever.** Most autonomous-operator
+  failures are context failures, not platform bugs (guessing `quantity` vs `qty`,
+  `vendor_name` vs a `vendor_id` UUID, missing the staged-op handshake). Bake the
+  exact param/field names and non-obvious workflow (e.g. staged
+  `approve_pending_operation` → re-invoke with `_approved_operation_id`) into the
+  skill's `instructions`. `instructions` is optional — ~27% of skills rely on a
+  good `description` alone, which is valid per Law 2.
+- **QA findings live on the gateway, not just the DB.** `scan_beta_findings`
+  lists open `beta_test_findings`; `resolve_finding({finding_id, resolution_note})`
+  closes them — both callable via the FlowWink gateway with no Lovable/DB access.
+  Validate before closing: agent QA reports are frequently false positives (wrong
+  arg names read as "missing function/column"). Only a live call or `pg_proc` is
+  authoritative.
+
 ## FlowPilot Development Laws
 
 These are inviolable architectural laws for FlowPilot agent development:
