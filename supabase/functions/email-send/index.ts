@@ -181,17 +181,25 @@ serve(async (req: Request) => {
     const integrations = (integ?.value as any) ?? {};
     const resendCfg = integrations.resend ?? {};
     const smtpCfg = integrations.smtp ?? {};
+    const composioCfg = integrations.composio ?? {};
     const resendEmailCfg = resendCfg.config?.emailConfig ?? {};
     const smtpEmailCfg = smtpCfg.config ?? {};
+    const composioEmailCfg = composioCfg.config?.emailConfig ?? {};
 
+    // explicit provider may be declared on any integration's emailConfig
     const explicit: Provider | undefined =
-      resendEmailCfg.provider || smtpEmailCfg.provider;
+      composioEmailCfg.provider ||
+      resendEmailCfg.provider ||
+      smtpEmailCfg.provider;
     const resendEnabled = resendCfg.enabled !== false && !!Deno.env.get("RESEND_API_KEY");
     const smtpEnabled = smtpCfg.enabled === true && !!Deno.env.get("SMTP_HOST");
+    const composioEnabled = composioCfg.enabled === true && !!Deno.env.get("COMPOSIO_API_KEY");
 
     let provider: Provider | null = null;
-    if (explicit === "smtp" && smtpEnabled) provider = "smtp";
+    if (explicit === "composio" && composioEnabled) provider = "composio";
+    else if (explicit === "smtp" && smtpEnabled) provider = "smtp";
     else if (explicit === "resend" && resendEnabled) provider = "resend";
+    else if (composioEnabled) provider = "composio";
     else if (resendEnabled) provider = "resend";
     else if (smtpEnabled) provider = "smtp";
 
