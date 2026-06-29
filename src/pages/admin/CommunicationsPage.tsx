@@ -17,6 +17,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmailRouterSettings } from "@/components/admin/EmailRouterSettings";
 import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
@@ -78,13 +80,23 @@ export default function CommunicationsPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Communications"
-        description="Central log of every outbound message — sent, simulated, or failed. Routed through the platform-level email router."
+        title="Email Router"
+        description="Control plane for outbound + inbound mail. Route by intent: transactional via Resend, reply-expected via Composio/Gmail."
       >
-        <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
+        <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
       </AdminPageHeader>
       <AdminPageContainer>
-        <div className="space-y-6">
+        <Tabs defaultValue="log" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="log">Log</TabsTrigger>
+            <TabsTrigger value="router">Router settings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="router" className="space-y-0">
+            <EmailRouterSettings />
+          </TabsContent>
+
+          <TabsContent value="log" className="space-y-6">
           {simModeActive && <SimModeBanner />}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -176,7 +188,8 @@ export default function CommunicationsPage() {
               </Table>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
       </AdminPageContainer>
 
       <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
