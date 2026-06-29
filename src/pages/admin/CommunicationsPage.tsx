@@ -76,11 +76,13 @@ export default function CommunicationsPage() {
   const rows = data ?? [];
   const stats = {
     total: rows.length,
-    sent: rows.filter((r) => r.status === "sent").length,
-    simulated: rows.filter((r) => r.simulated).length,
+    inbound: rows.filter((r) => r.direction === "inbound").length,
+    outbound: rows.filter((r) => r.direction === "outbound").length,
     failed: rows.filter((r) => r.status === "failed").length,
   };
-  const simModeActive = rows.length > 0 && stats.simulated === stats.total && stats.sent === 0;
+  const simCount = rows.filter((r) => r.simulated).length;
+  const sentCount = rows.filter((r) => r.status === "sent" && !r.simulated).length;
+  const simModeActive = rows.length > 0 && simCount === rows.length && sentCount === 0;
 
   return (
     <AdminLayout>
@@ -106,8 +108,8 @@ export default function CommunicationsPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Total" value={stats.total} />
-            <StatCard label="Sent" value={stats.sent} tone="success" />
-            <StatCard label="Simulated" value={stats.simulated} tone={simModeActive ? "warning" : "muted"} />
+            <StatCard label="Inbound" value={stats.inbound} tone="success" />
+            <StatCard label="Outbound" value={stats.outbound} tone="muted" />
             <StatCard label="Failed" value={stats.failed} tone="danger" />
           </div>
 
@@ -116,6 +118,14 @@ export default function CommunicationsPage() {
               <CardTitle className="text-base">Filters</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
+              <Select value={direction} onValueChange={setDirection}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="Direction" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">In + Out</SelectItem>
+                  <SelectItem value="inbound">Inbound only</SelectItem>
+                  <SelectItem value="outbound">Outbound only</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={channel} onValueChange={setChannel}>
                 <SelectTrigger className="w-44"><SelectValue placeholder="Channel" /></SelectTrigger>
                 <SelectContent>
@@ -144,10 +154,11 @@ export default function CommunicationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10"></TableHead>
                     <TableHead>When</TableHead>
                     <TableHead>Channel</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Recipient</TableHead>
+                    <TableHead>From / To</TableHead>
                     <TableHead>Subject</TableHead>
                     <TableHead>Provider</TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -155,18 +166,25 @@ export default function CommunicationsPage() {
                 </TableHeader>
                 <TableBody>
                   {isLoading && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
                   )}
                   {!isLoading && rows.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No outbound communications yet. Trigger an email-sending workflow to see it logged here.
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No communications yet. Send or receive an email to see it logged here.
                     </TableCell></TableRow>
                   )}
                   {rows.map((r) => {
                     const meta = STATUS_META[r.status] ?? STATUS_META.skipped;
                     const Icon = meta.icon;
+                    const isInbound = r.direction === "inbound";
+                    const party = isInbound ? (r.sender ?? r.recipient) : r.recipient;
                     return (
-                      <TableRow key={r.id}>
+                      <TableRow key={r.id} className="cursor-pointer" onClick={() => setSelected(r)}>
+                        <TableCell>
+                          {isInbound
+                            ? <ArrowDownLeft className="h-4 w-4 text-emerald-600" aria-label="Inbound" />
+                            : <ArrowUpRight className="h-4 w-4 text-blue-600" aria-label="Outbound" />}
+                        </TableCell>
                         <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
                         </TableCell>
@@ -176,13 +194,13 @@ export default function CommunicationsPage() {
                             <Icon className="h-3 w-3" />{meta.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{r.recipient}</TableCell>
+                        <TableCell className="font-mono text-xs">{party}</TableCell>
                         <TableCell className="max-w-xs truncate">{r.subject ?? "—"}</TableCell>
                         <TableCell>
                           <ProviderBadge provider={r.provider} simulated={r.simulated} />
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => setSelected(r)}>
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelected(r); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -196,6 +214,7 @@ export default function CommunicationsPage() {
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
+
 
       <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
