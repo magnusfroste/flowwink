@@ -378,6 +378,66 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
+    if (action === 'enable_trigger') {
+      // Enable / upsert a Composio trigger instance so Composio starts pushing
+      // events to our project-wide webhook URL (configured in Composio dashboard).
+      // For Gmail inbound: trigger_slug = 'GMAIL_NEW_GMAIL_MESSAGE'.
+      const triggerSlug = params?.trigger_slug;
+      if (!triggerSlug) return json({ error: 'trigger_slug required' }, 400);
+
+      const accountId = params?.account_id || await getConnectedAccountId(params?.toolkit || 'gmail');
+      if (!accountId) return json({ error: 'No connected account found for toolkit.' }, 400);
+
+      const triggerConfig = params?.trigger_config || {
+        // Sensible defaults for GMAIL_NEW_GMAIL_MESSAGE.
+        labelIds: 'INBOX',
+        userId: 'me',
+        interval: 60,
+      };
+
+      const upsertBody = {
+        connected_account_id: accountId,
+        user_id: effectiveUserId,
+        trigger_config: triggerConfig,
+      };
+
+      // v3 trigger_instances upsert endpoint.
+      let res = await callComposio(`${COMPOSIO_V3}/trigger_instances/${triggerSlug}/upsert`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify(upsertBody),
+      });
+
+      // Fallback to the alternate plural form some Composio versions expose.
+      if (!res.ok && res.status === 404) {
+        res = await callComposio(`${COMPOSIO_V3}/triggers_instances/${triggerSlug}/upsert`, {
+          method: 'POST',
+          headers: composioHeaders,
+          body: JSON.stringify(upsertBody),
+        });
+      }
+
+      console.log('[composio-proxy] enable_trigger response:', res.status, JSON.stringify(res.data).slice(0, 500));
+
+      if (!res.ok) {
+        return json({
+          error: extractErrorMessage(res.data, `Failed to enable trigger ${triggerSlug} (${res.status})`),
+          details: res.data,
+        }, res.status);
+      }
+      return json({ result: res.data });
+    }
+
+    if (action === 'list_triggers') {
+      // Inspect active trigger instances for the current user.
+      const res = await callComposio(`${COMPOSIO_V3}/trigger_instances?user_id=${encodeURIComponent(effectiveUserId)}`, {
+        headers: composioHeaders,
+      });
+      if (!res.ok) {
+        return json({ error: extractErrorMessage(res.data, `Failed to list triggers (${res.status})`), details: res.data }, res.status);
+      }
+      return json({ result: res.data?.items || res.data });
+    }
 
     if (action === 'list_apps') {
       const res = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE`, {

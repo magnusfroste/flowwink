@@ -564,6 +564,9 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
   const [composioAccountId, setComposioAccountId] = useState('');
   const [registering, setRegistering] = useState(false);
   const [activatingWatch, setActivatingWatch] = useState<string | null>(null);
+  const [enablingTrigger, setEnablingTrigger] = useState<string | null>(null);
+
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/composio-webhook`;
 
   const { data: accounts, isLoading, refetch } = useQuery({
     queryKey: ['inbound-email-accounts'],
@@ -616,7 +619,6 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      // Gmail Watch expires after 7 days — store best-effort expiry.
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await supabase
         .from('inbound_email_accounts')
@@ -631,6 +633,30 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
     }
   };
 
+  const handleEnableTrigger = async (accountId: string, composioAccId: string | null) => {
+    setEnablingTrigger(accountId);
+    try {
+      const { data, error } = await supabase.functions.invoke('composio-proxy', {
+        body: {
+          action: 'enable_trigger',
+          params: {
+            trigger_slug: 'GMAIL_NEW_GMAIL_MESSAGE',
+            account_id: composioAccId,
+            toolkit: 'gmail',
+          },
+          entity_id: 'default',
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Composio trigger enabled — replies will now arrive via webhook');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to enable trigger');
+    } finally {
+      setEnablingTrigger(null);
+    }
+  };
+
   const handleToggleEnabled = async (accountId: string, enabled: boolean) => {
     await supabase.from('inbound_email_accounts').update({ enabled }).eq('id', accountId);
     refetch();
@@ -639,9 +665,33 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
   return (
     <div className="space-y-4">
       <div className="text-xs text-muted-foreground">
-        Inbound mailboxes turn incoming emails into tickets (or comments on existing threads).
+        Inbound mailboxes turn incoming emails into log entries, tickets, or replies on existing threads.
         V1 supports one shared company inbox; per-user inboxes coming later.
       </div>
+
+      {/* Webhook URL admins must paste into Composio dashboard → Project Settings → Webhooks */}
+      <Card className="border-muted">
+        <CardContent className="py-3 px-4 space-y-2">
+          <p className="text-xs font-medium">Composio webhook URL</p>
+          <p className="text-[10px] text-muted-foreground">
+            Paste this into Composio dashboard → Project Settings → Webhooks so trigger events reach FlowWink.
+          </p>
+          <div className="flex gap-1">
+            <Input value={webhookUrl} readOnly className="h-8 text-xs font-mono" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-8"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                toast.success('Copied');
+              }}
+            >
+              Copy
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {!isGmailConnected && (
         <Card className="border-dashed border-amber-500/40 bg-amber-500/5">
@@ -650,6 +700,7 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
           </CardContent>
         </Card>
       )}
+
 
       {/* Registered accounts */}
       {isLoading ? (
@@ -678,7 +729,19 @@ function InboundEmailSection({ isGmailConnected }: { isGmailConnected: boolean }
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7"
+                        onClick={() => handleEnableTrigger(acc.id, acc.composio_account_id)}
+                        disabled={enablingTrigger === acc.id || !isGmailConnected}
+                        title="Enable Composio GMAIL_NEW_GMAIL_MESSAGE trigger so replies are pushed to FlowWink"
+                      >
+                        {enablingTrigger === acc.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : 'Enable trigger'}
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
