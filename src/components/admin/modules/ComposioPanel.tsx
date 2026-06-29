@@ -79,6 +79,7 @@ export function ComposioPanel() {
   const [testSubject, setTestSubject] = useState("");
   const [testBody, setTestBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isDisconnectingGmail, setIsDisconnectingGmail] = useState(false);
 
   // Fetch connected apps
   const { data: connectedApps, isLoading: appsLoading, refetch: refetchApps } = useQuery({
