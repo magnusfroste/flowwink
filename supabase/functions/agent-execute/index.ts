@@ -5774,8 +5774,19 @@ async function executeDbAction(
         if (agent_id !== undefined) updates.assigned_agent_id = agent_id;
         if (priority !== undefined) updates.priority = priority;
         if (newStatus !== undefined) updates.conversation_status = newStatus;
-        const { error } = await supabase.from('chat_conversations').update(updates).eq('id', conversation_id);
+        // .select() so we can verify a row actually matched. Without this the
+        // update silently affects 0 rows yet still reports updated:true — e.g.
+        // when the caller passes a `tickets` id (from email_to_ticket) as the
+        // conversation_id, since tickets and chat_conversations are separate
+        // tables. Fail honestly and point the operator at the right entity.
+        const { data, error } = await supabase.from('chat_conversations')
+          .update(updates).eq('id', conversation_id).select('id');
         if (error) throw new Error(`Assign conversation failed: ${error.message}`);
+        if (!data || data.length === 0) {
+          throw new Error(
+            `No chat_conversation found with id ${conversation_id}. This skill only manages chat_conversations — tickets created via email_to_ticket live in the 'tickets' table and are not assignable here.`,
+          );
+        }
         return { conversation_id, updated: true };
       }
       return { error: `Unknown chat_conversations skill: ${skillName}` };
