@@ -36,6 +36,7 @@ const corsHeaders = {
 };
 
 const COMPOSIO_V3 = 'https://backend.composio.dev/api/v3';
+const COMPOSIO_V31 = 'https://backend.composio.dev/api/v3.1';
 const COMPOSIO_V2 = 'https://backend.composio.dev/api/v2';
 
 function normalizeToken(value: unknown): string {
@@ -437,6 +438,53 @@ Deno.serve(async (req) => {
         return json({ error: extractErrorMessage(res.data, `Failed to list triggers (${res.status})`), details: res.data }, res.status);
       }
       return json({ result: res.data?.items || res.data });
+    }
+
+    if (action === 'list_webhook_subscriptions') {
+      const res = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
+        headers: composioHeaders,
+      });
+      if (!res.ok) {
+        return json({ error: extractErrorMessage(res.data, `Failed to list webhook subscriptions (${res.status})`), details: res.data }, res.status);
+      }
+      return json({ result: res.data?.items || res.data });
+    }
+
+    if (action === 'ensure_webhook_subscription') {
+      const webhookUrl = params?.webhook_url || `${Deno.env.get('SUPABASE_URL')}/functions/v1/composio-webhook`;
+      const enabledEvents = params?.enabled_events || ['composio.trigger.message', 'composio.connected_account.expired'];
+
+      const existingRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
+        headers: composioHeaders,
+      });
+      if (!existingRes.ok) {
+        return json({ error: extractErrorMessage(existingRes.data, `Failed to inspect webhook subscriptions (${existingRes.status})`), details: existingRes.data }, existingRes.status);
+      }
+
+      const subscriptions = Array.isArray(existingRes.data?.items) ? existingRes.data.items : Array.isArray(existingRes.data) ? existingRes.data : [];
+      const existing = subscriptions.find((sub: any) => sub?.webhook_url === webhookUrl || sub?.url === webhookUrl);
+
+      if (existing?.id) {
+        const patchRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions/${existing.id}`, {
+          method: 'PATCH',
+          headers: composioHeaders,
+          body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
+        });
+        if (!patchRes.ok) {
+          return json({ error: extractErrorMessage(patchRes.data, `Failed to update webhook subscription (${patchRes.status})`), details: patchRes.data }, patchRes.status);
+        }
+        return json({ result: patchRes.data, action: 'updated' });
+      }
+
+      const createRes = await callComposio(`${COMPOSIO_V31}/webhook_subscriptions`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({ webhook_url: webhookUrl, enabled_events: enabledEvents }),
+      });
+      if (!createRes.ok) {
+        return json({ error: extractErrorMessage(createRes.data, `Failed to create webhook subscription (${createRes.status})`), details: createRes.data }, createRes.status);
+      }
+      return json({ result: createRes.data, action: 'created' });
     }
 
     if (action === 'list_apps') {
