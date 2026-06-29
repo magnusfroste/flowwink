@@ -30,7 +30,15 @@ interface SendBody {
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
+  provider?: Provider;       // Per-call provider preference (e.g. send_email_to_lead asks for 'composio')
+  expects_reply?: boolean;   // Hint: prefer reply-friendly channels (Composio → SMTP → Resend) on fallback
+  // logging hints
+  source?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  extra_metadata?: Record<string, unknown>;
 }
+
 
 interface EmailSettings {
   provider?: Provider;
@@ -186,8 +194,9 @@ serve(async (req: Request) => {
     const smtpEmailCfg = smtpCfg.config ?? {};
     const composioEmailCfg = composioCfg.config?.emailConfig ?? {};
 
-    // explicit provider may be declared on any integration's emailConfig
+    // explicit provider: per-call body.provider wins over the settings default
     const explicit: Provider | undefined =
+      body.provider ||
       composioEmailCfg.provider ||
       resendEmailCfg.provider ||
       smtpEmailCfg.provider;
@@ -195,13 +204,20 @@ serve(async (req: Request) => {
     const smtpEnabled = smtpCfg.enabled === true && !!Deno.env.get("SMTP_HOST");
     const composioEnabled = composioCfg.enabled === true && !!Deno.env.get("COMPOSIO_API_KEY");
 
+    // Fallback order:
+    //   reply-friendly (expects_reply or explicit=composio): Composio → SMTP → Resend
+    //   default (transactional): Resend → SMTP → Composio
+    const replyFriendly = body.expects_reply === true || explicit === "composio";
+    const fallbackOrder: Provider[] = replyFriendly
+      ? ["composio", "smtp", "resend"]
+      : ["resend", "smtp", "composio"];
+    const enabledMap = { resend: resendEnabled, smtp: smtpEnabled, composio: composioEnabled };
+
     let provider: Provider | null = null;
-    if (explicit === "composio" && composioEnabled) provider = "composio";
-    else if (explicit === "smtp" && smtpEnabled) provider = "smtp";
-    else if (explicit === "resend" && resendEnabled) provider = "resend";
-    else if (resendEnabled) provider = "resend";
-    else if (smtpEnabled) provider = "smtp";
-    else if (composioEnabled) provider = "composio";
+    if (explicit && enabledMap[explicit]) provider = explicit;
+    else provider = fallbackOrder.find((p) => enabledMap[p]) ?? null;
+
+
 
     // SIMULATE MODE — no provider configured.
     // Mirrors the Stripe pattern: if no integration is wired up, we still

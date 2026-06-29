@@ -5168,7 +5168,9 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
       to: lead.email,
       subject,
       html: bodyHtml,
-      provider: 'composio', // preferred; router falls back to Resend if unavailable
+      provider: 'composio', // preferred channel for replies-expected mail
+      expects_reply: true,  // fallback order: Composio → SMTP → Resend
+
       source: 'send_email_to_lead',
       related_entity_type: 'lead',
       related_entity_id: lead_id,
