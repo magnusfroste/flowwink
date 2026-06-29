@@ -80,6 +80,8 @@ import { AiAssistantBlockEditor } from './AiAssistantBlockEditor';
 import { SmartBookingBlockEditor } from './SmartBookingBlockEditor';
 import { ResumeMatcherBlockEditor } from './ResumeMatcherBlockEditor';
 import { HandbookBlockEditor } from './HandbookBlockEditor';
+import { QuickLinksBlockEditor } from './QuickLinksBlockEditor';
+import type { QuickLinksBlockData } from '@/components/public/blocks/QuickLinksBlock';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
