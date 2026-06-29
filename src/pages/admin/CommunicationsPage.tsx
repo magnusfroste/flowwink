@@ -161,8 +161,8 @@ export default function CommunicationsPage() {
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.recipient}</TableCell>
                         <TableCell className="max-w-xs truncate">{r.subject ?? "—"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {r.simulated ? "—" : r.provider ?? "—"}
+                        <TableCell>
+                          <ProviderBadge provider={r.provider} simulated={r.simulated} />
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => setSelected(r)}>
