@@ -47,14 +47,13 @@ export function EmailRouterSettings() {
     updateIntegrations.mutate(
       {
         resend: {
-          ...(settings?.resend ?? { enabled: true }),
           config: {
             ...(cfg ?? {}),
             emailConfig: local,
             newsletterTracking: trackLocal,
           },
         },
-      },
+      } as any,
       { onSuccess: () => setDirty(false) },
     );
   };
