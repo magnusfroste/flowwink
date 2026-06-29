@@ -5153,77 +5153,54 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
     };
   }
 
-  // 5. Send via Resend — read sender from Resend integration config (set in /admin/integrations)
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  if (!RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY is not configured');
-  }
-
-  const fromEmail = await resolveResendFrom(supabase);
-  const resendRes = await fetch('https://api.resend.com/emails', {
+  // 5. Send via the email router. Prefer Composio/Gmail for lead outreach so the
+  //    reply lands in the agent's personal inbox and threads naturally — falls
+  //    back to Resend if Composio is not connected.
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const routerRes = await fetch(`${supabaseUrl}/functions/v1/email-send`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${serviceKey}`,
     },
     body: JSON.stringify({
-      from: fromEmail,
-      to: [lead.email],
+      to: lead.email,
       subject,
       html: bodyHtml,
-    }),
-  });
-
-  const resendData = await resendRes.json();
-  if (!resendRes.ok) {
-    // Log failure
-    await supabase.from('lead_activities').insert({
-      lead_id,
-      type: 'email_failed',
-      metadata: { subject, error: resendData?.message || 'Unknown error', purpose },
-      points: 0,
-    });
-    await logOutboundEmail(supabase, {
-      status: 'failed',
-      recipient: lead.email,
-      subject,
-      body_html: bodyHtml,
-      from: fromEmail,
-      error_message: resendData?.message || resendRes.statusText,
+      provider: 'composio', // preferred; router falls back to Resend if unavailable
       source: 'send_email_to_lead',
       related_entity_type: 'lead',
       related_entity_id: lead_id,
       extra_metadata: { purpose },
+    }),
+  });
+
+  const routerData = await routerRes.json().catch(() => ({}));
+  if (!routerRes.ok || routerData?.success === false) {
+    await supabase.from('lead_activities').insert({
+      lead_id,
+      type: 'email_failed',
+      metadata: { subject, error: routerData?.error || routerRes.statusText, purpose },
+      points: 0,
     });
-    throw new Error(`Resend API error: ${resendData?.message || resendRes.statusText}`);
+    throw new Error(`email-send failed: ${routerData?.error || routerRes.statusText}`);
   }
 
-  // 6. Log success activity
+  // 6. Log success activity (router already wrote outbound_communications)
   await supabase.from('lead_activities').insert({
     lead_id,
     type: 'email_sent',
     metadata: {
       subject,
       purpose,
-      provider: 'resend',
-      message_id: resendData?.id,
-      from: fromEmail,
+      provider: routerData?.provider ?? 'unknown',
+      simulated: routerData?.simulated === true,
     },
     points: 5,
   });
 
-  await logOutboundEmail(supabase, {
-    status: 'sent',
-    recipient: lead.email,
-    subject,
-    body_html: bodyHtml,
-    from: fromEmail,
-    provider_message_id: resendData?.id,
-    source: 'send_email_to_lead',
-    related_entity_type: 'lead',
-    related_entity_id: lead_id,
-    extra_metadata: { purpose },
-  });
+
 
   return {
     sent: true,
