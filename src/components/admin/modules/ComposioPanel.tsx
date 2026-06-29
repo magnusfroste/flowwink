@@ -208,6 +208,35 @@ export function ComposioPanel() {
     }
   };
 
+  const handleDisconnectGmail = async () => {
+    if (!gmailAccount?.id) {
+      toast.error('No Gmail account to disconnect');
+      return;
+    }
+    setIsDisconnectingGmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('composio-proxy', {
+        body: {
+          action: 'disconnect_account',
+          params: { account_id: gmailAccount.id },
+          entity_id: 'default',
+        },
+      });
+      if (error) throw new Error(await getFunctionErrorMessage(error));
+      if (data?.result?.disconnected) {
+        toast.success('Gmail account disconnected from Composio');
+        await refetchApps();
+      } else {
+        throw new Error(data?.result?.error || data?.error || 'Disconnect failed');
+      }
+    } catch (err) {
+      logger.error('[ComposioPanel] Disconnect Gmail failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect Gmail');
+    } finally {
+      setIsDisconnectingGmail(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
