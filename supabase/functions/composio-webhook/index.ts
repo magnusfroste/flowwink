@@ -53,49 +53,87 @@ function toHex(bytes: ArrayBuffer): string {
   return Array.from(new Uint8Array(bytes)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function signHmac(value: string): Promise<ArrayBuffer> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(WEBHOOK_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  return crypto.subtle.sign('HMAC', key, enc.encode(value));
+function hexDecode(s: string): Uint8Array | null {
+  if (!/^[0-9a-fA-F]+$/.test(s) || s.length % 2 !== 0) return null;
+  const out = new Uint8Array(s.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(s.substr(i * 2, 2), 16);
+  return out;
+}
+
+function base64Decode(s: string): Uint8Array | null {
+  try {
+    const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+async function signWith(keyBytes: Uint8Array, value: string): Promise<ArrayBuffer> {
+  const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value));
 }
 
 async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
-  if (!WEBHOOK_SECRET) return true; // Soft mode until secret is set.
+  if (!WEBHOOK_SECRET) return true;
 
-  // Composio V3 signs `{webhook-id}.{webhook-timestamp}.{rawBody}` and sends
-  // base64 HMAC in `webhook-signature`. Keep the older x-* path as a fallback
-  // for already configured legacy webhooks.
   const webhookSignature = req.headers.get('webhook-signature');
   const webhookId = req.headers.get('webhook-id');
   const webhookTimestamp = req.headers.get('webhook-timestamp');
+  const legacySignature = req.headers.get('x-composio-signature') || req.headers.get('x-signature');
+
+  // Candidate key encodings — Standard Webhooks uses whsec_<base64>; Composio docs vary.
+  const secret = WEBHOOK_SECRET.replace(/^whsec_/, '');
+  const keyCandidates: { label: string; bytes: Uint8Array }[] = [
+    { label: 'raw', bytes: new TextEncoder().encode(WEBHOOK_SECRET) },
+    { label: 'raw-no-prefix', bytes: new TextEncoder().encode(secret) },
+  ];
+  const hex = hexDecode(secret);
+  if (hex) keyCandidates.push({ label: 'hex', bytes: hex });
+  const b64 = base64Decode(secret);
+  if (b64) keyCandidates.push({ label: 'base64', bytes: b64 });
 
   if (webhookSignature && webhookId && webhookTimestamp) {
     const numericTimestamp = Number(webhookTimestamp);
     const timestampMs = Number.isFinite(numericTimestamp)
       ? numericTimestamp * 1000
       : Date.parse(webhookTimestamp);
-    if (!Number.isFinite(timestampMs) || Math.abs(Date.now() - timestampMs) > 300_000) {
-      console.warn('[composio-webhook] signature timestamp outside tolerance');
+    if (Number.isFinite(timestampMs) && Math.abs(Date.now() - timestampMs) > 300_000) {
+      console.warn('[composio-webhook] timestamp out of tolerance');
       return false;
     }
 
-    const mac = await signHmac(`${webhookId}.${webhookTimestamp}.${rawBody}`);
-    const expected = toBase64(mac);
-    const received = webhookSignature.split(',', 2)[1] ?? webhookSignature;
-    return constantTimeEqual(expected, received);
+    const signed = `${webhookId}.${webhookTimestamp}.${rawBody}`;
+    const received = webhookSignature
+      .split(/\s+/)
+      .map((p) => (p.includes(',') ? p.split(',', 2)[1] : p))
+      .filter(Boolean);
+
+    for (const k of keyCandidates) {
+      const mac = await signWith(k.bytes, signed);
+      const b64sig = toBase64(mac);
+      const hexsig = toHex(mac);
+      for (const r of received) {
+        if (constantTimeEqual(b64sig, r) || constantTimeEqual(hexsig, r)) {
+          console.log('[composio-webhook] signature ok via', k.label);
+          return true;
+        }
+      }
+    }
+    console.warn('[composio-webhook] no key candidate matched. received=', received.map((r) => r.slice(0, 8) + '...').join(','), 'tried=', keyCandidates.map((k) => k.label).join(','));
+    return false;
   }
 
-  const legacySignature = req.headers.get('x-composio-signature') || req.headers.get('x-signature');
-  if (!legacySignature) return false;
-  const legacyMac = await signHmac(rawBody);
-  const legacyHex = toHex(legacyMac);
-  return constantTimeEqual(legacyHex, legacySignature.replace(/^sha256=/, ''));
+  if (legacySignature) {
+    const stripped = legacySignature.replace(/^sha256=/, '');
+    for (const k of keyCandidates) {
+      const mac = await signWith(k.bytes, rawBody);
+      if (constantTimeEqual(toHex(mac), stripped) || constantTimeEqual(toBase64(mac), stripped)) return true;
+    }
+  }
+  return false;
 }
 
 Deno.serve(async (req) => {
