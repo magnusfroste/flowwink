@@ -97,9 +97,13 @@ export function ComposioPanel() {
     retry: 1,
   });
 
-  const isGmailConnected = Array.isArray(connectedApps) && connectedApps.some(
-    app => (app.toolkit?.slug || app.appName || app.name || '').toLowerCase().includes('gmail')
-  );
+  const gmailAccount = Array.isArray(connectedApps)
+    ? connectedApps.find(
+        app => (app.toolkit?.slug || app.appName || app.name || '').toLowerCase().includes('gmail')
+      )
+    : null;
+
+  const isGmailConnected = Boolean(gmailAccount);
 
   const handleSearch = async () => {
     if (!searchIntent.trim()) return;
