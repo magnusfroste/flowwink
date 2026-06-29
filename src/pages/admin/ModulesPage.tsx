@@ -450,7 +450,7 @@ export default function ModulesPage() {
         {/* Deploy-layer awareness */}
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
           <div className="flex items-start gap-3">
-            <Badge variant="outline" className="mt-0.5 border-amber-500/50 text-amber-700 dark:text-amber-400">Self-hosted note</Badge>
+            <Badge variant="outline" className="mt-0.5 border-amber-500/50 text-amber-700 dark:text-amber-400">Deploy note</Badge>
             <div className="text-sm text-muted-foreground space-y-1">
               <p className="text-foreground">
                 Enabling a module flips its flag and seeds its skills — but the underlying capability needs <strong>three deploy layers</strong> in place on this instance:
