@@ -21,6 +21,7 @@ import {
   Mail,
   Send,
   Inbox,
+  Unplug,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
