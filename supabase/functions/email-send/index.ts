@@ -19,7 +19,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type Provider = "smtp" | "resend";
+type Provider = "smtp" | "resend" | "composio";
 
 interface SendBody {
   to: string | string[];
@@ -181,19 +181,27 @@ serve(async (req: Request) => {
     const integrations = (integ?.value as any) ?? {};
     const resendCfg = integrations.resend ?? {};
     const smtpCfg = integrations.smtp ?? {};
+    const composioCfg = integrations.composio ?? {};
     const resendEmailCfg = resendCfg.config?.emailConfig ?? {};
     const smtpEmailCfg = smtpCfg.config ?? {};
+    const composioEmailCfg = composioCfg.config?.emailConfig ?? {};
 
+    // explicit provider may be declared on any integration's emailConfig
     const explicit: Provider | undefined =
-      resendEmailCfg.provider || smtpEmailCfg.provider;
+      composioEmailCfg.provider ||
+      resendEmailCfg.provider ||
+      smtpEmailCfg.provider;
     const resendEnabled = resendCfg.enabled !== false && !!Deno.env.get("RESEND_API_KEY");
     const smtpEnabled = smtpCfg.enabled === true && !!Deno.env.get("SMTP_HOST");
+    const composioEnabled = composioCfg.enabled === true && !!Deno.env.get("COMPOSIO_API_KEY");
 
     let provider: Provider | null = null;
-    if (explicit === "smtp" && smtpEnabled) provider = "smtp";
+    if (explicit === "composio" && composioEnabled) provider = "composio";
+    else if (explicit === "smtp" && smtpEnabled) provider = "smtp";
     else if (explicit === "resend" && resendEnabled) provider = "resend";
     else if (resendEnabled) provider = "resend";
     else if (smtpEnabled) provider = "smtp";
+    else if (composioEnabled) provider = "composio";
 
     // SIMULATE MODE — no provider configured.
     // Mirrors the Stripe pattern: if no integration is wired up, we still
@@ -218,7 +226,10 @@ serve(async (req: Request) => {
       );
     }
 
-    const activeCfg = provider === "resend" ? resendEmailCfg : smtpEmailCfg;
+    const activeCfg =
+      provider === "resend" ? resendEmailCfg :
+      provider === "composio" ? composioEmailCfg :
+      smtpEmailCfg;
     let fromName: string = activeCfg.fromName || "FlowWink";
     let fromEmail: string =
       activeCfg.fromEmail ||
@@ -229,7 +240,7 @@ serve(async (req: Request) => {
     // Per-user sender override: if sender_user_id is supplied, look up that
     // user's personal email identity and use it as the From line. This is
     // how individual sellers send from their own address while still using
-    // the workspace transport (Resend/SMTP).
+    // the workspace transport (Resend/SMTP/Composio).
     if (body.sender_user_id) {
       const { data: senderProfile } = await supabase
         .from("profiles")
@@ -257,6 +268,40 @@ serve(async (req: Request) => {
         replyTo,
         tags: body.tags,
       });
+    } else if (provider === "composio") {
+      // Delegate to composio-proxy → Gmail OAuth send.
+      // The proxy logs to outbound_communications itself with provider='composio',
+      // so we skip our own logComm below to avoid duplicate rows.
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const entityId = composioEmailCfg.entity_id || body.sender_user_id || "default";
+      const proxyRes = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          action: "gmail_send",
+          entity_id: entityId,
+          params: {
+            to: recipients.join(", "),
+            subject: body.subject,
+            // Gmail send expects an HTML body — pass the html (proxy forwards as `body`).
+            body: body.html,
+          },
+        }),
+      });
+      const proxyJson = await proxyRes.json().catch(() => ({}));
+      if (!proxyRes.ok) {
+        throw new Error(`Composio Gmail send failed (${proxyRes.status}): ${proxyJson?.error ?? proxyRes.statusText}`);
+      }
+      result = proxyJson;
+      // Skip duplicate log — composio-proxy already inserted the outbound_communications row.
+      return new Response(
+        JSON.stringify({ success: true, provider, simulated: false, result }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     } else {
       const smtpConfig = smtpCfg.config ?? {};
       result = await sendViaSMTP({
