@@ -1,5 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Shield, ShieldOff, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Shield, ShieldOff, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { bootstrapModule, bootstrapPlatform } from '@/lib/module-bootstrap';
+import { useModulesSettings } from '@/hooks/useModulesSettings';
+import { runWithConcurrency } from '@/lib/concurrency';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
