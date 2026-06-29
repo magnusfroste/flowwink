@@ -11,8 +11,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { useSkills, useToggleSkill, useToggleMcpExposed, useBulkToggleSkills } from '@/hooks/useSkillHub';
+import { useSkills, useToggleSkill, useToggleMcpExposed, useBulkToggleSkills, useUpsertSkill, useDeleteSkill } from '@/hooks/useSkillHub';
 import type { AgentSkill } from '@/types/agent';
+import { SkillEditorSheet } from '@/components/admin/skills/SkillEditorSheet';
 
 const CATEGORY_TO_MODULES: Record<string, string[]> = {
   content: ['pages', 'blog', 'knowledgeBase', 'handbook', 'resume', 'mediaLibrary', 'siteMigration'],
