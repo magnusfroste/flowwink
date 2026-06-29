@@ -42,10 +42,13 @@ export function McpSkillsPanel() {
   const toggleEnabled = useToggleSkill();
   const toggleMcp = useToggleMcpExposed();
   const bulkToggle = useBulkToggleSkills();
+  const upsertSkill = useUpsertSkill();
+  const deleteSkill = useDeleteSkill();
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [exposureFilter, setExposureFilter] = useState<'all' | 'exposed' | 'hidden'>('all');
+  const [editing, setEditing] = useState<AgentSkill | null>(null);
 
   const filtered = useMemo(() => {
     return skills.filter((s) => {
