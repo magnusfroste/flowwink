@@ -19,7 +19,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type Provider = "smtp" | "resend";
+type Provider = "smtp" | "resend" | "composio";
 
 interface SendBody {
   to: string | string[];
