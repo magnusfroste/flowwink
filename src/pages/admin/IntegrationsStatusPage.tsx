@@ -1087,118 +1087,26 @@ function IntegrationConfigPanel({
 
 
   if (integrationKey === 'resend') {
-    const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
-    const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };
-    
     return (
-      <div className="space-y-4 pt-3 border-t">
-        {/* Outbound Provider Router */}
-        <div className="space-y-2">
-          <Label className="text-xs">Outbound Email Provider</Label>
-          <Select
-            value={emailConfig.provider || 'auto'}
-            onValueChange={(value) => handleChange({
-              emailConfig: { ...emailConfig, provider: value === 'auto' ? undefined : (value as 'resend' | 'composio' | 'smtp') },
-              newsletterTracking,
-            })}
+      <div className="space-y-3 pt-3 border-t text-sm">
+        <p className="text-muted-foreground">
+          Routing, default From identity and newsletter tracking moved to the{' '}
+          <a href="/admin/communications" className="text-primary hover:underline">
+            Email Router
+          </a>
+          . This page only manages the Resend API key and verified domain.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Verify your sending domain at{' '}
+          <a
+            href="https://resend.com/domains"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
           >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">Auto (Resend → SMTP → Composio)</SelectItem>
-              <SelectItem value="resend">Resend (transactional/newsletter)</SelectItem>
-              <SelectItem value="composio">Composio / Gmail (personal sender)</SelectItem>
-              <SelectItem value="smtp">SMTP</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Routes all outbound mail from <code>email-send</code>. Composio sends from the connected Gmail account so recipients can reply directly.
-          </p>
-        </div>
-
-        {/* Email Config */}
-        <div className="space-y-3">
-
-          <div className="space-y-2">
-            <Label htmlFor="resend-from-name" className="text-xs">From Name</Label>
-            <Input
-              id="resend-from-name"
-              value={emailConfig.fromName}
-              onChange={(e) => handleChange({ 
-                emailConfig: { ...emailConfig, fromName: e.target.value },
-                newsletterTracking
-              })}
-              placeholder="Newsletter"
-              className="h-8 text-sm"
-            />
-            <p className="text-xs text-muted-foreground">Display name for sent emails</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="resend-from-email" className="text-xs">From Email *</Label>
-            <Input
-              id="resend-from-email"
-              value={emailConfig.fromEmail}
-              onChange={(e) => handleChange({ 
-                emailConfig: { ...emailConfig, fromEmail: e.target.value },
-                newsletterTracking
-              })}
-              placeholder="news@yourdomain.com"
-              className="h-8 text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Must use a verified domain in Resend.{" "}
-              <a 
-                href="https://resend.com/domains" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-primary hover:underline"
-              >
-                Verify domain →
-              </a>
-            </p>
-          </div>
-        </div>
-
-        {/* Newsletter Tracking */}
-        <div className="space-y-3 pt-3 border-t">
-          <Label className="text-xs font-medium">Newsletter Tracking</Label>
-          <p className="text-xs text-muted-foreground">
-            Tracking may affect email deliverability. Disable if emails go to spam.
-          </p>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="open-tracking" className="text-xs">Open Tracking</Label>
-                <p className="text-xs text-muted-foreground">Track when emails are opened (uses tracking pixel)</p>
-              </div>
-              <Switch
-                id="open-tracking"
-                checked={newsletterTracking.enableOpenTracking}
-                onCheckedChange={(checked) => handleChange({ 
-                  emailConfig,
-                  newsletterTracking: { ...newsletterTracking, enableOpenTracking: checked }
-                })}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="click-tracking" className="text-xs">Click Tracking</Label>
-                <p className="text-xs text-muted-foreground">Track link clicks (rewrites URLs)</p>
-              </div>
-              <Switch
-                id="click-tracking"
-                checked={newsletterTracking.enableClickTracking}
-                onCheckedChange={(checked) => handleChange({ 
-                  emailConfig,
-                  newsletterTracking: { ...newsletterTracking, enableClickTracking: checked }
-                })}
-              />
-            </div>
-          </div>
-        </div>
+            resend.com/domains →
+          </a>
+        </p>
       </div>
     );
   }
