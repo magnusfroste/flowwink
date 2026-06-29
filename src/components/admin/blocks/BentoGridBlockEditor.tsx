@@ -43,6 +43,14 @@ export function BentoGridBlockEditor({ data, onChange, isEditing }: BentoGridBlo
     onChange({ ...data, items: newItems });
   };
 
+  const moveItem = (index: number, direction: -1 | 1) => {
+    const newItems = [...(data.items || [])];
+    const target = index + direction;
+    if (target < 0 || target >= newItems.length) return;
+    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    onChange({ ...data, items: newItems });
+  };
+
   return (
     <div className="space-y-6 p-4">
       {/* Header Settings */}
