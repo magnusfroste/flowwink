@@ -19,7 +19,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailRouterSettings } from "@/components/admin/EmailRouterSettings";
-import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 
@@ -27,13 +27,16 @@ type Comm = {
   id: string;
   channel: string;
   status: string;
+  direction: "inbound" | "outbound";
   provider: string | null;
   simulated: boolean;
   recipient: string;
+  sender: string | null;
   subject: string | null;
   body_html: string | null;
   body_text: string | null;
   source: string | null;
+  thread_id: string | null;
   error_message: string | null;
   metadata: any;
   created_at: string;
