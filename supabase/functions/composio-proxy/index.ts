@@ -622,6 +622,48 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'disconnect_account') {
+      const accountId = params?.account_id;
+      const toolkit = params?.toolkit;
+
+      if (!accountId && !toolkit) {
+        return json({ error: 'account_id or toolkit required' }, 400);
+      }
+
+      let targetAccountId = accountId;
+
+      // Resolve by toolkit (e.g. 'gmail') if no explicit account id.
+      if (!targetAccountId && toolkit) {
+        const listRes = await callComposio(`${COMPOSIO_V3}/connected_accounts?user_id=${encodeURIComponent(effectiveUserId)}&status=ACTIVE&toolkit=${encodeURIComponent(toolkit)}`, {
+          headers: composioHeaders,
+        });
+        const items = Array.isArray(listRes.data?.items) ? listRes.data.items : [];
+        const match = items.find((a: any) => {
+          const labels = getAuthConfigLabels(a).join('_');
+          return labels.includes(toolkit);
+        }) || items[0];
+        targetAccountId = match?.id;
+      }
+
+      if (!targetAccountId) {
+        return json({ error: `No active connected account found${toolkit ? ` for toolkit ${toolkit}` : ''}` }, 404);
+      }
+
+      const res = await callComposio(`${COMPOSIO_V3}/connected_accounts/${encodeURIComponent(targetAccountId)}`, {
+        method: 'DELETE',
+        headers: composioHeaders,
+      });
+
+      if (!res.ok) {
+        return json({
+          error: extractErrorMessage(res.data, `Failed to disconnect account (${res.status})`),
+          details: res.data,
+        }, res.status);
+      }
+
+      return json({ result: { disconnected: true, account_id: targetAccountId } });
+    }
+
     return json({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     console.error('[composio-proxy] Error:', err);
