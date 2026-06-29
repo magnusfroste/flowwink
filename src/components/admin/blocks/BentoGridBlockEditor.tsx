@@ -162,13 +162,35 @@ export function BentoGridBlockEditor({ data, onChange, isEditing }: BentoGridBlo
         <Accordion type="single" collapsible className="space-y-2">
           {(data.items || []).map((item, index) => (
             <AccordionItem key={item.id} value={item.id} className="border rounded-lg px-3">
-              <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="font-medium">{item.title || `Item ${index + 1}`}</span>
-                  <span className="text-xs text-muted-foreground">({item.span || 'normal'})</span>
-                </div>
-              </AccordionTrigger>
+              <div className="flex items-center gap-1">
+                <AccordionTrigger className="flex-1 py-2 text-sm hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium">{item.title || `Item ${index + 1}`}</span>
+                    <span className="text-xs text-muted-foreground">({item.span || 'normal'})</span>
+                  </div>
+                </AccordionTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={index === 0}
+                  onClick={(e) => { e.stopPropagation(); moveItem(index, -1); }}
+                  aria-label="Move up"
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={index === (data.items || []).length - 1}
+                  onClick={(e) => { e.stopPropagation(); moveItem(index, 1); }}
+                  aria-label="Move down"
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <AccordionContent className="space-y-3 pb-3">
                 <div>
                   <Label className="text-xs">Title</Label>
