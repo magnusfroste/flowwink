@@ -8,7 +8,10 @@ import { useIntegrationStatus } from './useIntegrationStatus';
 export interface EmailConfig {
   fromEmail: string;
   fromName: string;
+  /** Optional override for outbound provider. When unset, email-send falls back to auto-detection. */
+  provider?: 'resend' | 'composio' | 'smtp';
 }
+
 
 // Newsletter tracking configuration
 export interface NewsletterTrackingConfig {
