@@ -76,7 +76,10 @@ async function verifySignature(req: Request, rawBody: string): Promise<boolean> 
   const webhookTimestamp = req.headers.get('webhook-timestamp');
 
   if (webhookSignature && webhookId && webhookTimestamp) {
-    const timestampMs = Number(webhookTimestamp) * 1000;
+    const numericTimestamp = Number(webhookTimestamp);
+    const timestampMs = Number.isFinite(numericTimestamp)
+      ? numericTimestamp * 1000
+      : Date.parse(webhookTimestamp);
     if (!Number.isFinite(timestampMs) || Math.abs(Date.now() - timestampMs) > 300_000) {
       console.warn('[composio-webhook] signature timestamp outside tolerance');
       return false;
