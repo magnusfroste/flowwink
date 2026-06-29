@@ -447,6 +447,27 @@ export default function ModulesPage() {
           </div>
         </div>
 
+        {/* Deploy-layer awareness */}
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <Badge variant="outline" className="mt-0.5 border-amber-500/50 text-amber-700 dark:text-amber-400">Self-hosted note</Badge>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p className="text-foreground">
+                Enabling a module flips its flag and seeds its skills — but the underlying capability needs <strong>three deploy layers</strong> in place on this instance:
+              </p>
+              <ul className="list-disc list-inside ml-1 space-y-0.5">
+                <li><strong>Migrations</strong> — DB tables/RPCs the module's <code className="text-xs bg-muted px-1 rounded">db:</code> handlers call.</li>
+                <li><strong>Edge functions</strong> — anything the module's <code className="text-xs bg-muted px-1 rounded">edge:</code> handlers points to (see Edge Functions Usage below).</li>
+                <li><strong>Frontend</strong> — admin pages/blocks the module ships (rolls out via the next Vercel deploy).</li>
+              </ul>
+              <p>
+                On Lovable Cloud (dev) all three deploy automatically. On forked self-hosted instances (e.g. <code className="text-xs bg-muted px-1 rounded">autoversio.ai</code>) you must run <code className="text-xs bg-muted px-1 rounded">supabase db push</code> + <code className="text-xs bg-muted px-1 rounded">functions deploy</code> after enabling new modules, then click <em>Sync skills from code</em>. Full runbook: <code className="text-xs bg-muted px-1 rounded">docs/operators/provisioning-and-updates.md</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+
         {/* Search + bulk actions */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
