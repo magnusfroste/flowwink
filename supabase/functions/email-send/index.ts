@@ -30,7 +30,15 @@ interface SendBody {
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
+  provider?: Provider;       // Per-call provider preference (e.g. send_email_to_lead asks for 'composio')
+  expects_reply?: boolean;   // Hint: prefer reply-friendly channels (Composio → SMTP → Resend) on fallback
+  // logging hints
+  source?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  extra_metadata?: Record<string, unknown>;
 }
+
 
 interface EmailSettings {
   provider?: Provider;
