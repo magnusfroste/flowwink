@@ -437,7 +437,11 @@ Browse published blog posts (visitor-facing, read-only).
     name: 'generate_social_post',
     description: 'Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts (use write_blog_post), batch social posts (use social_post_batch).',
     category: 'content',
-    handler: 'db:content_proposals',
+    // Generative — runs through the ai-task hub (social_post task). Was wired to
+    // db:content_proposals (CRUD list) which always returned 0 items. To
+    // repurpose a blog post, pass its topic + key_points (fetch it via
+    // browse_blog first); the hub does not fetch source content itself.
+    handler: 'ai-task:social_post',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -447,6 +451,7 @@ Browse published blog posts (visitor-facing, read-only).
           type: 'object',
           required: [
             'platforms',
+            'topic',
           ],
           properties: {
             tone: {
@@ -461,7 +466,12 @@ Browse published blog posts (visitor-facing, read-only).
             },
             topic: {
               type: 'string',
-              description: 'Topic for freeform posts (when no source_id)',
+              description: 'Subject/angle of the posts. When repurposing a blog post or proposal, pass its topic here and the salient points in key_points.',
+            },
+            key_points: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional bullet points to base the posts on (e.g. the key takeaways of the source article).',
             },
             platforms: {
               type: 'array',

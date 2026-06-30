@@ -732,6 +732,57 @@ const seoContentBriefTask: TaskSpec<z.infer<typeof seoBriefInput>, any> = {
   options: { temperature: 0.6, max_tokens: 3072 },
 };
 
+// ─── social_post ────────────────────────────────────────────────────────────
+// Generative social posts. generate_social_post / social_post_batch were wired
+// to db:content_proposals (CRUD list) → {items:[],count:0}. The ai-task hub is
+// pass-through (no source fetch), so the brief is provided as topic + optional
+// key_points (to repurpose a blog post, pass its key points). Produces a native
+// post per requested platform.
+const socialPostInput = z.object({
+  platforms: z.array(z.string()).default(["linkedin"]),
+  topic: z.string(),
+  tone: z.string().optional(),
+  key_points: z.array(z.string()).optional(),
+});
+
+const socialPostTask: TaskSpec<z.infer<typeof socialPostInput>, any> = {
+  name: "social_post",
+  description:
+    "Generate native social media posts (LinkedIn, X) for a topic, optionally from key points. Returns one post per requested platform with copy and hashtags.",
+  tier: "reasoning",
+  inputSchema: socialPostInput,
+  system: (input) =>
+    `You are an expert social media copywriter. Write ONE native post per requested platform, returning everything via the submit_social_posts tool. Match each platform's norms: LinkedIn = hook + value + soft CTA, professional; X = punchy, ≤ 280 chars, can be a short thread if needed. Use the tone "${(input as any).tone ?? "professional"}". 3-6 relevant hashtags per post. No emojis-spam, no filler. Platforms: ${JSON.stringify((input as any).platforms ?? [])}.`,
+  user: (input) =>
+    `## Source\n${JSON.stringify({
+      topic: (input as any).topic,
+      key_points: (input as any).key_points ?? [],
+    }, null, 2)}`,
+  tool: {
+    name: "submit_social_posts",
+    description: "Return the generated social posts",
+    parameters: {
+      type: "object",
+      properties: {
+        posts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              platform: { type: "string" },
+              content: { type: "string" },
+              hashtags: strList,
+            },
+            required: ["platform", "content"],
+          },
+        },
+      },
+      required: ["posts"],
+    },
+  },
+  options: { temperature: 0.7, max_tokens: 2048 },
+};
+
 // ─── Registry ───────────────────────────────────────────────────────────────
 export const TASKS: Record<string, TaskSpec<any, any>> = {
   score_candidate: scoreCandidateTask,
@@ -742,6 +793,7 @@ export const TASKS: Record<string, TaskSpec<any, any>> = {
   content_research: contentResearchTask,
   content_proposal: contentProposalTask,
   seo_content_brief: seoContentBriefTask,
+  social_post: socialPostTask,
 };
 
 export function listTasks() {
