@@ -121,4 +121,22 @@ export interface VoiceSettings {
   callbackWindowEnd?: string;
   /** Minuter mellan callback-luckor (default 15). */
   callbackSlotMinutes?: number;
+
+  // ── AI Receptionist (MVP) ──────────────────────────────────────────────────
+  /**
+   * Låt en realtids-AI (Gemini Live) svara när inga agenter är online.
+   * Av = dagens flöde (voicemail). På = WebSocket-bryggning mellan
+   * provider och Gemini Live, med tool-calling mot enabled moduler.
+   */
+  aiReceptionistEnabled?: boolean;
+  /** Provider för AI-receptionisten. MVP: gemini-live. */
+  aiReceptionistProvider?: 'gemini-live';
+  /** Första hälsningen AI:n säger (text → TTS). Tom = härleds från business_identity. */
+  aiReceptionistGreeting?: string;
+  /** Extra system-prompt-instruktioner utöver business_identity + KB. */
+  aiReceptionistSystemPromptExtra?: string;
+  /** Använd FlowPilots objectives som extra context om modulen är på. Default false. */
+  aiReceptionistUseFlowpilotContext?: boolean;
+  /** Röst-namn för Gemini Live TTS (t.ex. "Aoede", "Charon", "Fenrir", "Kore", "Puck"). */
+  aiReceptionistVoice?: string;
 }

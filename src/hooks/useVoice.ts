@@ -23,6 +23,12 @@ export const defaultVoiceSettings: VoiceSettings = {
   callbackWindowStart: '09:00',
   callbackWindowEnd: '17:00',
   callbackSlotMinutes: 15,
+  aiReceptionistEnabled: false,
+  aiReceptionistProvider: 'gemini-live',
+  aiReceptionistGreeting: '',
+  aiReceptionistSystemPromptExtra: '',
+  aiReceptionistUseFlowpilotContext: false,
+  aiReceptionistVoice: 'Aoede',
 };
 
 export function useVoiceSettings() {

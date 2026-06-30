@@ -13432,6 +13432,8 @@ export type Database = {
       voice_calls: {
         Row: {
           agent_id: string | null
+          ai_handled: boolean
+          ai_summary: string | null
           answered_at: string | null
           callback_completed_at: string | null
           callback_scheduled_at: string | null
@@ -13443,6 +13445,7 @@ export type Database = {
           ended_at: string | null
           from_number: string
           id: string
+          live_transcript: Json
           metadata: Json
           provider: string
           provider_call_id: string | null
@@ -13457,6 +13460,8 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          ai_handled?: boolean
+          ai_summary?: string | null
           answered_at?: string | null
           callback_completed_at?: string | null
           callback_scheduled_at?: string | null
@@ -13468,6 +13473,7 @@ export type Database = {
           ended_at?: string | null
           from_number: string
           id?: string
+          live_transcript?: Json
           metadata?: Json
           provider: string
           provider_call_id?: string | null
@@ -13482,6 +13488,8 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          ai_handled?: boolean
+          ai_summary?: string | null
           answered_at?: string | null
           callback_completed_at?: string | null
           callback_scheduled_at?: string | null
@@ -13493,6 +13501,7 @@ export type Database = {
           ended_at?: string | null
           from_number?: string
           id?: string
+          live_transcript?: Json
           metadata?: Json
           provider?: string
           provider_call_id?: string | null

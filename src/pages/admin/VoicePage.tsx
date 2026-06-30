@@ -387,6 +387,76 @@ function VoiceSettingsCard() {
           </div>
         )}
 
+        {/* AI Receptionist (MVP) */}
+        <div className="space-y-3 rounded-md border p-3">
+          <label className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-medium">AI receptionist when offline</div>
+              <div className="text-xs text-muted-foreground">
+                Realtime Gemini Live answers callers when no human agent is online.
+                Falls back to voicemail if Gemini is unavailable. Requires <code>GEMINI_API_KEY</code>.
+              </div>
+            </div>
+            <Switch
+              checked={settings.aiReceptionistEnabled ?? false}
+              onCheckedChange={(v) => set('aiReceptionistEnabled', v)}
+            />
+          </label>
+
+          {settings.aiReceptionistEnabled && (
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="ai-greeting">First greeting (optional)</Label>
+                <Input
+                  id="ai-greeting"
+                  placeholder="Hej, du har ringt … hur kan jag hjälpa dig?"
+                  value={settings.aiReceptionistGreeting ?? ''}
+                  onChange={(e) => set('aiReceptionistGreeting', e.target.value || undefined)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Empty = generated from business identity.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="ai-prompt">Extra system instructions (optional)</Label>
+                <textarea
+                  id="ai-prompt"
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
+                  placeholder="E.g. Always offer a callback if the caller mentions invoicing."
+                  value={settings.aiReceptionistSystemPromptExtra ?? ''}
+                  onChange={(e) => set('aiReceptionistSystemPromptExtra', e.target.value || undefined)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="ai-voice">Voice</Label>
+                  <Input
+                    id="ai-voice"
+                    placeholder="Aoede"
+                    value={settings.aiReceptionistVoice ?? 'Aoede'}
+                    onChange={(e) => set('aiReceptionistVoice', e.target.value || undefined)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Aoede · Charon · Fenrir · Kore · Puck
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 mt-7">
+                  <Switch
+                    checked={settings.aiReceptionistUseFlowpilotContext ?? false}
+                    onCheckedChange={(v) => set('aiReceptionistUseFlowpilotContext', v)}
+                  />
+                  <span className="text-sm">Use FlowPilot objectives if module is on</span>
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The AI calls MCP skills (bookings, lookup_customer_by_phone, escalate_to_human) filtered by enabled modules.
+                Full transcript + summary is saved on the call afterwards.
+              </p>
+            </div>
+          )}
+        </div>
+
+
         <div className="flex items-center justify-end gap-2 border-t pt-4">
           {dirty && (
             <Button variant="ghost" onClick={() => setDraft(null)} disabled={update.isPending}>
