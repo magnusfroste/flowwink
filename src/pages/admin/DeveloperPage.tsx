@@ -17,13 +17,10 @@ export default function DeveloperPage() {
     <AdminLayout>
       <AdminPageContainer>
         <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Developer</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                MCP, APIs, webhooks and integration tools — the platform's machine-readable surface.
-              </p>
-            </div>
+          <AdminPageHeader
+            title="Developer"
+            description="MCP, APIs, webhooks — the platform's machine-readable surface"
+          >
             <TabsList>
               <TabsTrigger value="mcp-skills" className="gap-1.5">
                 <Cpu className="h-3.5 w-3.5" />
@@ -46,7 +43,7 @@ export default function DeveloperPage() {
                 Dev Tools
               </TabsTrigger>
             </TabsList>
-          </div>
+          </AdminPageHeader>
 
           <TabsContent value="mcp-skills" className="mt-0">
             <McpSkillsPanel />

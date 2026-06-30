@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FileText, FolderOpen, Tag, Settings, Plus } from "lucide-react";
@@ -32,37 +33,34 @@ export default function BlogPage() {
     <AdminLayout>
       <AdminPageContainer>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Blog</h1>
-            <div className="flex items-center gap-3">
-              <TabsList>
-                <TabsTrigger value="posts" className="gap-1.5">
-                  <FileText className="h-3.5 w-3.5" />
-                  Posts
-                </TabsTrigger>
-                <TabsTrigger value="categories" className="gap-1.5">
-                  <FolderOpen className="h-3.5 w-3.5" />
-                  Categories
-                </TabsTrigger>
-                <TabsTrigger value="tags" className="gap-1.5">
-                  <Tag className="h-3.5 w-3.5" />
-                  Tags
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-1.5">
-                  <Settings className="h-3.5 w-3.5" />
-                  Settings
-                </TabsTrigger>
-              </TabsList>
-              {activeTab === 'posts' && (
-                <Button size="sm" asChild>
-                  <Link to="/admin/blog/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Post
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
+          <AdminPageHeader title="Blog">
+            <TabsList>
+              <TabsTrigger value="posts" className="gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Posts
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="gap-1.5">
+                <FolderOpen className="h-3.5 w-3.5" />
+                Categories
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="gap-1.5">
+                <Tag className="h-3.5 w-3.5" />
+                Tags
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-1.5">
+                <Settings className="h-3.5 w-3.5" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+            {activeTab === 'posts' && (
+              <Button size="sm" asChild>
+                <Link to="/admin/blog/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Post
+                </Link>
+              </Button>
+            )}
+          </AdminPageHeader>
 
           <TabsContent value="posts" className="mt-0">
             <BlogPostsTab />
