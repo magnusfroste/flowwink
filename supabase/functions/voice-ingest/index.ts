@@ -2,7 +2,7 @@
  * voice-ingest — provider-agnostisk callback-handler + AI-receptionist-brygga.
  *
  * 1) POST /  ← 46elks/Twilio call-webhook. Returnerar voice-action JSON.
- * 2) WS  /stream?call_id=...  ← 46elks media stream <-> Gemini Live.
+ * 2) WS  /stream?call_id=...  ← 46elks Realtime Voice <-> Gemini Live.
  *    Ingen separat edge function — håller voice-modulen i en fil.
  *
  * AI-receptionisten är default AV. Slås på i /admin/voice → Settings.
@@ -278,76 +278,20 @@ async function persistCall(
 }
 
 // ── AI Receptionist: Gemini Live bridge ──────────────────────────────────────
-// 46elks Media Streams sends µ-law 8kHz base64 audio frames in JSON envelopes.
-// Gemini Live wants 16-bit PCM 16kHz in. We do minimal MVP: pass µ-law through
-// after upsampling to 16kHz PCM with a naive linear interpolation. Good enough
-// for speech; we can swap to a proper resampler later.
+// 46elks Realtime Voice starts with a `hello` message and requires us to
+// negotiate both directions before any audio is exchanged. We ask 46elks for
+// caller audio as raw PCM16 16 kHz (exactly what Gemini Live wants) and tell
+// 46elks that we will send Gemini's native PCM16 24 kHz audio back.
 
-const GEMINI_LIVE_MODEL = "models/gemini-2.0-flash-live-001";
+const GEMINI_LIVE_MODEL = Deno.env.get("GEMINI_LIVE_MODEL") ?? "models/gemini-2.5-flash-native-audio-latest";
 const GEMINI_LIVE_WS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
-// µ-law decode table → PCM16
-function mulawToPcm16(byte: number): number {
-  byte = ~byte & 0xff;
-  const sign = byte & 0x80;
-  const exponent = (byte >> 4) & 0x07;
-  const mantissa = byte & 0x0f;
-  let sample = ((mantissa << 3) + 0x84) << exponent;
-  sample -= 0x84;
-  return sign ? -sample : sample;
-}
-
-function pcm16ToMulaw(sample: number): number {
-  const BIAS = 0x84;
-  const CLIP = 32635;
-  let sign = (sample >> 8) & 0x80;
-  if (sign) sample = -sample;
-  if (sample > CLIP) sample = CLIP;
-  sample += BIAS;
-  let exponent = 7;
-  for (let mask = 0x4000; (sample & mask) === 0 && exponent > 0; mask >>= 1) exponent--;
-  const mantissa = (sample >> (exponent + 3)) & 0x0f;
-  return (~(sign | (exponent << 4) | mantissa)) & 0xff;
-}
-
-function decodeBase64(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-function encodeBase64(bytes: Uint8Array): string {
-  let s = "";
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-  return btoa(s);
-}
-
-// µ-law 8kHz bytes → PCM16 16kHz bytes (LE). Naive linear upsample x2.
-function mulaw8kToPcm16k(mulaw: Uint8Array): Uint8Array {
-  const pcm8 = new Int16Array(mulaw.length);
-  for (let i = 0; i < mulaw.length; i++) pcm8[i] = mulawToPcm16(mulaw[i]);
-  const pcm16 = new Int16Array(pcm8.length * 2);
-  for (let i = 0; i < pcm8.length; i++) {
-    const a = pcm8[i];
-    const b = i + 1 < pcm8.length ? pcm8[i + 1] : a;
-    pcm16[i * 2] = a;
-    pcm16[i * 2 + 1] = (a + b) >> 1;
-  }
-  const out = new Uint8Array(pcm16.length * 2);
-  const view = new DataView(out.buffer);
-  for (let i = 0; i < pcm16.length; i++) view.setInt16(i * 2, pcm16[i], true);
-  return out;
-}
-
-// PCM16 24kHz LE (Gemini default output) → µ-law 8kHz (decimate by 3).
-function pcm16k24ToMulaw8k(pcm: Uint8Array): Uint8Array {
-  const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-  const sampleCount = Math.floor(pcm.byteLength / 2);
-  const outLen = Math.floor(sampleCount / 3);
-  const out = new Uint8Array(outLen);
-  for (let i = 0; i < outLen; i++) out[i] = pcm16ToMulaw(view.getInt16(i * 3 * 2, true));
-  return out;
+async function websocketDataToString(data: unknown): Promise<string> {
+  if (typeof data === "string") return data;
+  if (data instanceof Blob) return await data.text();
+  if (data instanceof ArrayBuffer) return new TextDecoder().decode(data);
+  if (ArrayBuffer.isView(data)) return new TextDecoder().decode(data);
+  return String(data ?? "");
 }
 
 async function buildSystemPrompt(
@@ -472,7 +416,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
 
   const url = new URL(req.url);
   const provider = (url.searchParams.get("provider") ?? "elks46") as ProviderId;
-  const providerCallId = url.searchParams.get("call_id") ?? "unknown";
+  let providerCallId = url.searchParams.get("call_id") ?? "unknown";
 
   const { socket: caller, response } = Deno.upgradeWebSocket(req);
   const supabase = createClient(
@@ -482,45 +426,93 @@ async function handleStreamSession(req: Request): Promise<Response> {
 
   let gemini: WebSocket | null = null;
   let fromNumber = "";
+  let toNumber = "";
+  let geminiSetupComplete = false;
+  const pendingCallerAudio: string[] = [];
   const transcript: Array<{ role: string; text: string; ts: string }> = [];
   let assistantBuffer = "";
   let userBuffer = "";
 
   const flushTranscript = async (final = false) => {
     if (transcript.length === 0 && !final) return;
+    if (!providerCallId || providerCallId === "unknown") return;
     await supabase.from("voice_calls").update({
       live_transcript: transcript as unknown as object,
       ...(final ? { ai_summary: assistantBuffer.slice(-500) || null } : {}),
     }).eq("provider", provider).eq("provider_call_id", providerCallId);
   };
 
+  const sendGeminiAudio = (pcm16kBase64: string) => {
+    if (!gemini || gemini.readyState !== WebSocket.OPEN || !geminiSetupComplete) {
+      pendingCallerAudio.push(pcm16kBase64);
+      // Do not let a caller speaking during setup create unbounded memory growth.
+      if (pendingCallerAudio.length > 200) pendingCallerAudio.shift();
+      return;
+    }
+    gemini.send(JSON.stringify({
+      realtimeInput: {
+        audio: { data: pcm16kBase64, mimeType: "audio/pcm;rate=16000" },
+      },
+    }));
+  };
+
+  const flushPendingCallerAudio = () => {
+    while (pendingCallerAudio.length) sendGeminiAudio(pendingCallerAudio.shift()!);
+  };
+
+  const upsertRealtimeCall = async () => {
+    if (!providerCallId || providerCallId === "unknown") return;
+    await supabase.from("voice_calls").upsert(
+      {
+        provider,
+        provider_call_id: providerCallId,
+        direction: "inbound",
+        status: "answered",
+        from_number: fromNumber || "unknown",
+        to_number: toNumber || "unknown",
+        answered_at: new Date().toISOString(),
+        ai_handled: true,
+        metadata: {
+          realtime_bridge: "46elks-gemini-live",
+          negotiated_input_format: "pcm_16000",
+          negotiated_output_format: "pcm_24000",
+        },
+      },
+      { onConflict: "provider,provider_call_id" },
+    );
+  };
+
   const connectGemini = async () => {
-    // Look up call row for from_number
-    const { data: callRow } = await supabase
-      .from("voice_calls").select("from_number").eq("provider", provider)
-      .eq("provider_call_id", providerCallId).maybeSingle();
-    fromNumber = (callRow?.from_number as string) ?? "";
+    // Prefer metadata from 46elks `hello`; fall back to a stored call row when
+    // the stream URL includes call_id (useful for local tests).
+    if (!fromNumber && providerCallId && providerCallId !== "unknown") {
+      const { data: callRow } = await supabase
+        .from("voice_calls").select("from_number").eq("provider", provider)
+        .eq("provider_call_id", providerCallId).maybeSingle();
+      fromNumber = (callRow?.from_number as string) ?? "";
+    }
 
     const settings = await loadVoiceSettings(supabase);
     const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber);
 
+    console.log("[voice-ai-bridge] connecting Gemini Live", { providerCallId, fromNumber });
     gemini = new WebSocket(`${GEMINI_LIVE_WS}?key=${apiKey}`);
     gemini.onopen = () => {
       const setup = {
         setup: {
           model: GEMINI_LIVE_MODEL,
-          generation_config: {
-            response_modalities: ["AUDIO"],
-            speech_config: {
-              voice_config: {
-                prebuilt_voice_config: { voice_name: settings.aiReceptionistVoice ?? "Aoede" },
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: settings.aiReceptionistVoice ?? "Aoede" },
               },
             },
           },
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          tools: [{ function_declarations: AI_TOOLS }],
-          input_audio_transcription: {},
-          output_audio_transcription: {},
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          tools: [{ functionDeclarations: AI_TOOLS }],
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
       };
       gemini!.send(JSON.stringify(setup));
@@ -528,7 +520,22 @@ async function handleStreamSession(req: Request): Promise<Response> {
 
     gemini.onmessage = async (ev) => {
       try {
-        const msg = JSON.parse(typeof ev.data === "string" ? ev.data : new TextDecoder().decode(ev.data as ArrayBuffer));
+        const msg = JSON.parse(await websocketDataToString(ev.data));
+
+        if (msg.setupComplete) {
+          geminiSetupComplete = true;
+          console.log("[voice-ai-bridge] Gemini setup complete", { providerCallId });
+          // Gemini does not always speak just because the system prompt contains
+          // a greeting. Trigger one short initial turn so the caller immediately
+          // hears the receptionist after the bridge is established.
+          gemini!.send(JSON.stringify({
+            realtimeInput: {
+              text: "The phone call is now connected. Greet the caller once and ask how you can help.",
+            },
+          }));
+          flushPendingCallerAudio();
+          return;
+        }
 
         // Tool call from model
         if (msg.toolCall?.functionCalls) {
@@ -543,7 +550,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
               setTimeout(() => { try { caller.close(); } catch { /* noop */ } }, 1500);
             }
           }
-          gemini!.send(JSON.stringify({ tool_response: { function_responses: results } }));
+          gemini!.send(JSON.stringify({ toolResponse: { functionResponses: results } }));
           return;
         }
 
@@ -572,10 +579,9 @@ async function handleStreamSession(req: Request): Promise<Response> {
         for (const p of parts) {
           const inlineData = p.inlineData ?? p.inline_data;
           if (inlineData?.data && (inlineData.mimeType ?? inlineData.mime_type ?? "").includes("audio")) {
-            const pcm = decodeBase64(inlineData.data as string);
-            const mulaw = pcm16k24ToMulaw8k(pcm);
-            // Send back to caller in 46elks media-stream envelope
-            caller.send(JSON.stringify({ audio: encodeBase64(mulaw) }));
+            // Gemini Live audio output is raw PCM16 24 kHz by default. We
+            // negotiated `sending: pcm_24000` with 46elks, so forward as-is.
+            caller.send(JSON.stringify({ t: "audio", data: inlineData.data }));
           }
         }
       } catch (e) {
@@ -584,24 +590,47 @@ async function handleStreamSession(req: Request): Promise<Response> {
     };
 
     gemini.onerror = (e) => console.error("[voice-ai-bridge] gemini ws error", e);
-    gemini.onclose = () => { try { caller.close(); } catch { /* noop */ } };
+    gemini.onclose = (e) => {
+      console.warn("[voice-ai-bridge] gemini ws closed", { code: e.code, reason: e.reason });
+      try { caller.close(); } catch { /* noop */ }
+    };
   };
 
-  caller.onopen = () => { connectGemini().catch((e) => console.error("[voice-ai-bridge] setup failed", e)); };
+  caller.onopen = () => {
+    console.log("[voice-ai-bridge] 46elks websocket connected");
+  };
 
-  caller.onmessage = (ev) => {
-    if (!gemini || gemini.readyState !== WebSocket.OPEN) return;
+  caller.onmessage = async (ev) => {
     try {
-      // 46elks sends JSON envelopes: { audio: "<base64 µ-law 8k>" } or control msgs.
       const data = typeof ev.data === "string" ? JSON.parse(ev.data) : null;
-      if (!data?.audio) return;
-      const mulaw = decodeBase64(data.audio as string);
-      const pcm16 = mulaw8kToPcm16k(mulaw);
-      gemini.send(JSON.stringify({
-        realtime_input: {
-          media_chunks: [{ mime_type: "audio/pcm;rate=16000", data: encodeBase64(pcm16) }],
-        },
-      }));
+      if (!data?.t) return;
+
+      if (data.t === "hello") {
+        providerCallId = typeof data.callid === "string" ? data.callid : providerCallId;
+        fromNumber = typeof data.from === "string" ? data.from : fromNumber;
+        toNumber = typeof data.to === "string" ? data.to : toNumber;
+        console.log("[voice-ai-bridge] 46elks hello", { providerCallId, fromNumber, toNumber });
+
+        caller.send(JSON.stringify({ t: "listening", format: "pcm_16000" }));
+        caller.send(JSON.stringify({ t: "sending", format: "pcm_24000" }));
+
+        await upsertRealtimeCall();
+        connectGemini().catch((e) => console.error("[voice-ai-bridge] setup failed", e));
+        return;
+      }
+
+      if (data.t === "audio" && typeof data.data === "string") {
+        // Because we negotiated `listening: pcm_16000`, this is already raw
+        // PCM16 16 kHz base64 and can be sent directly to Gemini Live.
+        sendGeminiAudio(data.data);
+        return;
+      }
+
+      if (data.t === "bye") {
+        console.log("[voice-ai-bridge] 46elks bye", { providerCallId, reason: data.reason, message: data.message });
+        try { gemini?.close(); } catch { /* noop */ }
+        return;
+      }
     } catch (e) {
       console.error("[voice-ai-bridge] caller msg parse error", e);
     }
@@ -610,10 +639,12 @@ async function handleStreamSession(req: Request): Promise<Response> {
   caller.onclose = async () => {
     try { gemini?.close(); } catch { /* noop */ }
     await flushTranscript(true);
-    await supabase.from("voice_calls").update({
-      status: "completed",
-      ended_at: new Date().toISOString(),
-    }).eq("provider", provider).eq("provider_call_id", providerCallId);
+    if (providerCallId && providerCallId !== "unknown") {
+      await supabase.from("voice_calls").update({
+        status: "completed",
+        ended_at: new Date().toISOString(),
+      }).eq("provider", provider).eq("provider_call_id", providerCallId);
+    }
   };
 
   caller.onerror = (e) => console.error("[voice-ai-bridge] caller ws error", e);

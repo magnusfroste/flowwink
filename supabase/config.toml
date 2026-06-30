@@ -74,6 +74,9 @@ verify_jwt = false
 [functions.docs-sync]
 verify_jwt = false
 
+[functions.elks46-ingest]
+verify_jwt = false
+
 [functions.enrich-company]
 verify_jwt = false
 
@@ -147,6 +150,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.unsplash-search]
+verify_jwt = false
+
+[functions.voice-ingest]
 verify_jwt = false
 
 [functions.web-scrape]
