@@ -111,9 +111,17 @@ assert generative-described skills don't sit on the generic-CRUD path. A pure
 static heuristic can't distinguish dedicated db: handlers (accounting_reports)
 from generic-CRUD ones without that registry.
 
+## Growth surface (OpenClaw battery, confirmed)
+- `prospect_research` ✅ (real research: contacts, web search, scrape, Hunter)
+- `seo_audit_page` ✅ (real SEO audit)
+- `generate_social_post`, `seo_content_brief` ⛔ dead handlers (see class above)
+- **NEW skill added:** `manage_survey_template` — create_survey_campaign needs a
+  template_id but there was no skill to create/list survey_templates, so the
+  survey flow was unusable via MCP (FK violation). Added db:survey_templates CRUD
+  (create/list/get). Needs sync-skills to go live on dev.
+
 ## Remaining untested surfaces
-growth (in progress via OpenClaw), federation, docs, media — sweep when
-OpenClaw's model is stable for adversarial runs.
+federation, docs, media — lower priority; sweep when OpenClaw's model is stable.
 
 ## Phase-3 hardening (not yet done)
 Turn the fixed classes into permanent guards: broaden the not-null guardrail to
