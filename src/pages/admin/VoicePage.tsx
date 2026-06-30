@@ -451,6 +451,32 @@ function AiReceptionistSection({
 
       {settings.aiReceptionistEnabled && (
         <div className="space-y-3">
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs space-y-1">
+            <div className="font-medium text-amber-700 dark:text-amber-400">46elks websocket-number required</div>
+            <p className="text-muted-foreground">
+              46elks Realtime Voice API uses a separate <strong>websocket-number</strong>. In the{' '}
+              <a href="https://46elks.com/numbers" target="_blank" rel="noreferrer" className="underline">
+                46elks dashboard
+              </a>{' '}
+              allocate a free websocket-number and set its <code>voice_start</code> to:
+            </p>
+            <pre className="overflow-x-auto rounded bg-muted px-2 py-1 text-[11px]">
+              wss://&lt;your-project&gt;.functions.supabase.co/voice-ingest/stream
+            </pre>
+            <p className="text-muted-foreground">
+              Then paste that WS-number below. Your public DID will bridge incoming calls to it via{' '}
+              <code>{'{connect: <ws-number>}'}</code>.
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="ai-ws-number">46elks websocket-number (E.164)</Label>
+            <Input
+              id="ai-ws-number"
+              placeholder="+46766860000"
+              value={settings.aiReceptionistWebsocketNumber ?? ''}
+              onChange={(e) => set('aiReceptionistWebsocketNumber', e.target.value.trim() || undefined)}
+            />
+          </div>
           <div>
             <Label htmlFor="ai-greeting">First greeting (optional)</Label>
             <Input
