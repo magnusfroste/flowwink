@@ -8046,9 +8046,11 @@ async function executeGenericCrud(
   // default 'list' and silently return rows instead of inserting (finding
   // 8e9fbd31). Only overrides when the caller did NOT pass an explicit action.
   if ((args as any).action === undefined) {
-    if (skillName.startsWith('create_')) action = 'create';
-    else if (skillName.startsWith('update_')) action = 'update';
-    else if (skillName.startsWith('delete_')) action = 'delete';
+    // Verb may be a prefix (create_campaign) or a suffix (ad_campaign_create) —
+    // handle both so e.g. ad_campaign_create inserts instead of listing.
+    if (skillName.startsWith('create_') || skillName.endsWith('_create')) action = 'create';
+    else if (skillName.startsWith('update_') || skillName.endsWith('_update')) action = 'update';
+    else if (skillName.startsWith('delete_') || skillName.endsWith('_delete')) action = 'delete';
   }
 
   // Action aliases — common natural variants like "list_pending" → list + filter

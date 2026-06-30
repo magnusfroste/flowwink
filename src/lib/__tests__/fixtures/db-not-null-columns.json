@@ -125,6 +125,12 @@
     ],
     "survey_templates": [
       "name"
+    ],
+    "ad_campaigns": [
+      "name"
+    ],
+    "crm_tasks": [
+      "title"
     ]
   },
   "_skill_auto_filled_columns": {

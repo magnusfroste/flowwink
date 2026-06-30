@@ -106,7 +106,9 @@ function collectManageSkills(): SkillSeed[] {
       // skills are excluded (an update needn't supply every NOT NULL column).
       const isDbCreateSkill =
         s.handler?.startsWith('db:') &&
-        (s.name?.startsWith('manage_') || s.name?.startsWith('create_'));
+        (s.name?.startsWith('manage_') ||
+          s.name?.startsWith('create_') ||
+          s.name?.endsWith('_create')); // verb suffix, e.g. ad_campaign_create
       if (isDbCreateSkill) {
         out.push(s);
       }
