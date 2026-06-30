@@ -34,7 +34,7 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
     name: 'list_flowtable_bases',
     description:
       'List all Flowtable bases the current user can access. Use when: agent needs to discover existing ad-hoc tables (call lists, prospecting sheets, content backlogs). NOT for: structured CRM data (use list_leads/list_companies instead).',
-    category: 'flowtable',
+    category: 'crm',
     handler: 'db:flowtable_bases',
     scope: 'internal',
     mcp_exposed: true,
@@ -59,7 +59,7 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
     name: 'list_flowtable_records',
     description:
       'List records inside a Flowtable table. Use when: reading rows from a user-owned ad-hoc table (call lists, prospect sheets). Each record has a free-form `values` JSONB matching the table\'s field keys.',
-    category: 'flowtable',
+    category: 'crm',
     handler: 'db:flowtable_records',
     scope: 'internal',
     mcp_exposed: true,
