@@ -95,7 +95,7 @@ export default function AccountingPage() {
             <SettingsTab />
           </TabsContent>
         </Tabs>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

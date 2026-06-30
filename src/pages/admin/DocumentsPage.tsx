@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,11 +35,8 @@ export default function DocumentsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Documents"
-          description="Central document archive with categories and tagging"
-        >
+      <AdminPageContainer>
+        <AdminPageHeader title="Documents">
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Add document
           </Button>
