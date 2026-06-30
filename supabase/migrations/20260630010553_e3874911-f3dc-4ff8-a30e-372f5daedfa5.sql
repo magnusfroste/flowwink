@@ -1,0 +1,1 @@
+UPDATE public.outbound_communications SET status='received' WHERE direction='inbound' AND status='sent';
