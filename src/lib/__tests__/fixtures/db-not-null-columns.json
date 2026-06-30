@@ -105,6 +105,23 @@
     ],
     "vendors": [
       "name"
+    ],
+    "manufacturing_orders": [
+      "mo_number",
+      "product_id",
+      "quantity"
+    ],
+    "purchase_orders": [
+      "po_number",
+      "vendor_id"
+    ],
+    "survey_campaigns": [
+      "name",
+      "template_id"
+    ],
+    "returns": [
+      "rma_number",
+      "order_id"
     ]
   },
   "_skill_auto_filled_columns": {

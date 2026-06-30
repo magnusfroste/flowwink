@@ -99,7 +99,15 @@ function collectManageSkills(): SkillSeed[] {
     if (!Array.isArray(seeds)) continue;
     for (const s of seeds) {
       if (!s || typeof s !== 'object') continue;
-      if (s.name?.startsWith('manage_') && s.handler?.startsWith('db:')) {
+      // Any db-backed CREATE skill: manage_* (action enum incl. create) plus the
+      // create_* verb skills that use the generic-CRUD engine. The verb skills
+      // were the blind spot that let create_manufacturing_order ship with an
+      // uncovered NOT NULL column (mo_number) — finding 8e9fbd31. update_* verb
+      // skills are excluded (an update needn't supply every NOT NULL column).
+      const isDbCreateSkill =
+        s.handler?.startsWith('db:') &&
+        (s.name?.startsWith('manage_') || s.name?.startsWith('create_'));
+      if (isDbCreateSkill) {
         out.push(s);
       }
     }
