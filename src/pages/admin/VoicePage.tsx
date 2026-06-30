@@ -390,20 +390,51 @@ function VoiceSettingsCard() {
         )}
 
         {/* AI Receptionist (MVP) */}
-        <div className="space-y-3 rounded-md border p-3">
-          <label className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-medium">AI receptionist when offline</div>
-              <div className="text-xs text-muted-foreground">
-                Realtime Gemini Live answers callers when no human agent is online.
-                Falls back to voicemail if Gemini is unavailable. Requires <code>GEMINI_API_KEY</code>.
-              </div>
+        <AiReceptionistSection settings={settings} set={set} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function AiReceptionistSection({
+  settings,
+  set,
+}: {
+  settings: VoiceSettings;
+  set: <K extends keyof VoiceSettings>(k: K, v: VoiceSettings[K]) => void;
+}) {
+  const geminiReady = useIsGeminiConfigured();
+  return (
+    <div className="space-y-3 rounded-md border p-3">
+      <label className="flex items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="font-medium">AI receptionist when offline</div>
+          <div className="text-xs text-muted-foreground">
+            Realtime Gemini Live answers callers when no human agent is online.
+            Falls back to voicemail if Gemini is unavailable.
+          </div>
+          {geminiReady ? (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Gemini API key configured</span>
             </div>
-            <Switch
-              checked={settings.aiReceptionistEnabled ?? false}
-              onCheckedChange={(v) => set('aiReceptionistEnabled', v)}
-            />
-          </label>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>Gemini not configured —</span>
+              <Link to="/admin/integrations" className="underline hover:no-underline">
+                set it up
+              </Link>
+            </div>
+          )}
+        </div>
+        <Switch
+          checked={settings.aiReceptionistEnabled ?? false}
+          onCheckedChange={(v) => set('aiReceptionistEnabled', v)}
+          disabled={!geminiReady}
+        />
+      </label>
+
 
           {settings.aiReceptionistEnabled && (
             <div className="space-y-3">
