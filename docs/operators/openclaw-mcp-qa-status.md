@@ -106,12 +106,17 @@ dedicated handler (real, cleared). Confirmed dead + fixed this session:
 - ✅ summarize_candidate_pipeline → rpc (built aggregation)
 - ✅ weekly_business_digest → rpc (built aggregation, tested live)
 
-Still dead (tracked debt — need ai-task or edge builds, some need infra):
-- `seo_content_brief` (db:content_research) → needs an ai-task (SEO brief)
-- `generate_social_post` (db:content_proposals) → needs ai-task / proposal read
+Also fixed + deployed + verified live (2026-06-30):
+- ✅ seo_content_brief → ai-task:seo_content_brief (real keyword/intent/outline brief)
+- ✅ generate_social_post → ai-task:social_post (native LinkedIn/X posts)
+- ✅ social_post_batch → internal:social_post_batch (fetches blog → social_post task)
+
+Still dead (tracked debt — ads/scrape, heavier, lower priority):
 - `ad_creative_generate` (db:ad_creatives) → needs ai-task (ad copy)
 - `ad_optimize` (db:ad_campaigns) → needs aggregation + AI recommendations
 - `competitor_monitor` (db:agent_memory) → needs web-scrape + AI analysis
+
+Class status: 7 of 9 fixed.
 
 Proper guard (follow-up): a "dedicated-handler registry" so a guardrail can
 assert generative-described skills don't sit on the generic-CRUD path. A pure
