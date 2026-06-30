@@ -375,7 +375,8 @@ serve(async (req) => {
       } else if (handler === 'internal:reply_to_ticket_via_email') {
         result = await executeReplyToTicketViaEmail(supabase, args);
 
-
+      } else if (handler === 'internal:social_post_batch') {
+        result = await executeSocialPostBatch(supabase, args, supabaseUrl, serviceKey);
 
       } else if (handler.startsWith('rpc:')) {
         const fnName = handler.replace('rpc:', '');
@@ -9482,6 +9483,41 @@ async function executeEmailToTicket(
 // Gmail threading by setting In-Reply-To/References to the last inbound
 // message-id header and passing the gmail thread_id.
 // ─────────────────────────────────────────────────────────────────────────────
+// social_post_batch — repurpose a published blog post into native social posts.
+// The ai-task hub is pass-through (no source fetch), so this fetches the blog's
+// title + excerpt, then calls the `social_post` task with them as topic/key
+// points. Replaces the dead db:content_proposals wiring (returned {items:[]}).
+async function executeSocialPostBatch(
+  supabase: any,
+  args: Record<string, unknown>,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<unknown> {
+  const a = args as any;
+  const blogPostId = String(a.blog_post_id || '').trim();
+  if (!blogPostId) return { error: 'blog_post_id is required', status: 'failed' };
+  const platforms = Array.isArray(a.platforms) && a.platforms.length ? a.platforms : ['linkedin', 'x'];
+  const tone = a.tone || 'professional';
+
+  const { data: post, error } = await supabase
+    .from('blog_posts')
+    .select('title, excerpt, slug')
+    .eq('id', blogPostId)
+    .maybeSingle();
+  if (error) return { error: `Lookup blog post failed: ${error.message}`, status: 'failed' };
+  if (!post) return { error: `Blog post ${blogPostId} not found`, status: 'failed' };
+
+  const keyPoints = post.excerpt ? [String(post.excerpt)] : [];
+  const resp = await fetch(`${supabaseUrl}/functions/v1/ai-task`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+    body: JSON.stringify({ task: 'social_post', input: { platforms, tone, topic: post.title, key_points: keyPoints } }),
+  });
+  const taskResult = await resp.json();
+  if (!resp.ok && !taskResult.error) taskResult.error = `ai-task 'social_post' returned HTTP ${resp.status}`;
+  return { source: { blog_post_id: blogPostId, title: post.title, slug: post.slug }, ...taskResult };
+}
+
 async function executeReplyToTicketViaEmail(
   supabase: any,
   args: Record<string, unknown>,

@@ -599,7 +599,9 @@ When generating social posts:
     name: 'social_post_batch',
     description: 'Creates social media posts for multiple platforms in batch. Use when: user wants posts for several platforms at once, bulk social content creation. NOT for: single platform post (use generate_social_post), blog writing (use write_blog_post).',
     category: 'content',
-    handler: 'db:content_proposals',
+    // Fetches the blog post (title + excerpt) then generates per-platform social
+    // posts via the social_post ai-task. Was db:content_proposals (dead list).
+    handler: 'internal:social_post_batch',
     scope: 'internal',
     tool_definition: {
       type: 'function',
