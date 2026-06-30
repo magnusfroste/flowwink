@@ -64,9 +64,33 @@ needs an edge deploy + a sync-skills. Forks (autoversio…) need per-ref
 - `ai-task` redeploy + sync-skills for the `content_proposal` handler flip
 - sync-skills for the 8+ instruction blocks + add_lead company_id
 
+## Surfaces swept in the autonomous stretch (mostly solo smoke — OpenClaw's
+## glm-5.2 model kept dropping mid-run, so adversarial coverage was limited)
+- **Communication / webinar / newsletter:** healthy. `manage_webinar` create
+  makes webinars `published` directly, so `publish_webinar` (draft-only) is
+  inapplicable on the agent path — lifecycle otherwise works
+  (create→register→start→complete). Minor cosmetic, logged not fixed.
+- **HR / recruitment:** `manage_employee`, `onboarding_checklist`,
+  `hire_application` (self-correct verified) OK. Two real fixes:
+  - `job_postings.slug` NOT NULL not generated → BEFORE INSERT slugify trigger
+    (migration 20260630120000). Also closed the guardrail fixture gap.
+  - `summarize_candidate_pipeline` was a dead db:applications list despite being
+    a "summarize" skill → built the aggregation RPC (totals_by_stage,
+    stuck_applications, top_unreviewed), flipped handler (migration 20260630130000).
+- **Expenses / POS / automation:** healthy. `generate_monthly_expense_report`
+  and `open_pos_session` "failures" were my own wrong param guesses — the
+  self-correcting RPC errors fired correctly. No platform bugs.
+
+## Phase-3 hardening shipped
+- **NOT-NULL guardrail broadened** to `create_*` generic-CRUD skills (was
+  `manage_*` only — the blind spot behind create_manufacturing_order/job_postings).
+  Added manufacturing_orders/purchase_orders/survey_campaigns/returns/job_postings
+  to the fixture. 46 → 52 tests, green. Future create-skill-on-generic-table with
+  an uncovered NOT NULL column now fails CI.
+
 ## Remaining untested surfaces
-communication (newsletter/webinars/chat), automation, HR/recruitment depth
-(hire_application → onboarding), analytics, growth, expenses, POS, federation.
+analytics, growth, federation, docs, media — lower business priority; sweep when
+OpenClaw's model is stable for adversarial runs.
 
 ## Phase-3 hardening (not yet done)
 Turn the fixed classes into permanent guards: broaden the not-null guardrail to
