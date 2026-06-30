@@ -743,7 +743,6 @@ async function handleIngest(req: Request): Promise<Response> {
       const target = connectTargetForAgent(agent);
       const selfUrl = `${supabaseUrl}/functions/v1/elks46-ingest`;
       const voice = await loadVoiceSettings(supabase);
-      const status = target ? "ringing" : "missed";
       // For 'both' mode: shorten first leg so the no-answer fallback to mobile
       // happens within the caller's patience window. ~15s softphone → mobile.
       const agentMode = (agent?.voice_routing_mode as string) || 'both';
@@ -754,6 +753,7 @@ async function handleIngest(req: Request): Promise<Response> {
       // callback (below) plays the greeting + records. No agent (phone off /
       // nobody online) → straight to greeting + voicemail.
       const aiReply = target ? null : aiReceptionistReply(voice);
+      const status = target ? "ringing" : aiReply ? "answered" : "missed";
       const reply = target
         ? {
             connect: target,
@@ -779,7 +779,8 @@ async function handleIngest(req: Request): Promise<Response> {
           agent_id: agent?.id ?? null,
           conversation_id: conversationId,
           started_at: new Date().toISOString(),
-          callback_status: target ? "none" : "pending",
+          answered_at: aiReply ? new Date().toISOString() : null,
+          callback_status: target || aiReply ? "none" : "pending",
           // No agent → AI receptionist when available, otherwise greeting+record.
           // With an agent, fallback is decided later on no-answer.
           metadata: {
