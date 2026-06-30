@@ -87,13 +87,13 @@ export default function CommunicationsPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Email Router"
-        description="Control plane for outbound + inbound mail. Route by intent: transactional via Resend, reply-expected via Composio/Gmail."
-      >
-        <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
-      </AdminPageHeader>
       <AdminPageContainer>
+        <AdminPageHeader
+          title="Email Router"
+          description="Outbound and inbound mail — route by intent"
+        >
+          <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
+        </AdminPageHeader>
         <Tabs defaultValue="log" className="space-y-6">
           <TabsList>
             <TabsTrigger value="log">Log</TabsTrigger>
