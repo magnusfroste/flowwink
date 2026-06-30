@@ -155,3 +155,19 @@ Findings 11 → 8 open; remaining 8 are pure frontend/UX or external-config.
 
 ## Dead-handler class: 9 of 9 fixed (deployed/verified); ad_campaign_create
 suffix-verb action-inference fix pending one more agent-execute redeploy.
+
+## 🏁 300+ MCP skills challenge — CLOSED (2026-06-30)
+Two-part complete sweep:
+- **Static (deterministic, all 343 skills):** dead-handler class 10/10 fixed
+  (incl. invoice_from_timesheets, which the domain batteries missed), 0 RPC
+  param mismatches, all internal/ai-task handlers wired. Clean.
+- **OpenClaw cross-domain live sweep:** 8 domains, one uncoached chain each —
+  revenue, CRM, content, growth, support, survey, manufacturing, analytics.
+  7/8 clean PASS; growth had one caveat (ad_creative_generate vs object-type
+  target_audience) — fixed (coerce jsonb→string, commit 0c1e6e06, pending one
+  agent-execute redeploy). OpenClaw verdict: "the platform is operator-ready."
+
+The FlowWink operator surface is usable by an autonomous agent across every
+business domain. Bug-classes fixed at the engine level + guarded in CI (56
+guardrail tests). Remaining: 8 frontend/UX findings (separate visitor-facing
+scope); the one pending agent-execute redeploy for the ad_creative coercion.
