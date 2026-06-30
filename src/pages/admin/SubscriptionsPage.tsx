@@ -16,6 +16,8 @@ import {
 import { format } from 'date-fns';
 import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -52,17 +54,13 @@ export default function SubscriptionsPage() {
 
   return (
     <AdminLayout>
-    <div className="container mx-auto py-8 space-y-8">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-          <p className="text-muted-foreground mt-1">
-            Recurring revenue lifecycle — Stripe-billed subs sync via webhook;
-            invoice-billed (manual) subs are billed nightly by the platform.
-          </p>
-        </div>
+    <AdminPageContainer>
+      <AdminPageHeader
+        title="Subscriptions"
+        description="Stripe subs sync via webhook; manual subs billed nightly"
+      >
         <NewManualSubscriptionButton />
-      </div>
+      </AdminPageHeader>
 
       {/* Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
