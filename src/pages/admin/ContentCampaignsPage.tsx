@@ -1,17 +1,18 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { CampaignsDashboard } from "@/components/admin/content-hub";
 
 export default function ContentCampaignsPage() {
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Content Campaigns"
-          description="Create once, publish everywhere. AI-powered multi-channel content."
+          description="Create once, publish everywhere"
         />
         <CampaignsDashboard />
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

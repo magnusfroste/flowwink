@@ -65,7 +65,7 @@ export default function PurchaseOrdersPage() {
             <PurchaseOrderEditor poId={editingId} onClose={closeEditor} />
           </TabsContent>
         </Tabs>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }
