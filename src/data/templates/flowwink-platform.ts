@@ -574,7 +574,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             heading: 'Ready to evaluate?',
             links: [
               { id: 'ql3-flowpilot', label: 'Deep Dive: FlowPilot', url: '/flowpilot' },
-              { id: 'ql3-github', label: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
+              { id: 'ql3-github', label: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
             ],
             variant: 'dark',
             layout: 'split',
