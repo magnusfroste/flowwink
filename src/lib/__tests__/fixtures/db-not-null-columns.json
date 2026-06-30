@@ -122,6 +122,9 @@
     "returns": [
       "rma_number",
       "order_id"
+    ],
+    "survey_templates": [
+      "name"
     ]
   },
   "_skill_auto_filled_columns": {

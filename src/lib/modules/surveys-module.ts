@@ -54,6 +54,40 @@ const SURVEY_SKILLS: SkillSeed[] = [
       'Default trigger is "manual" if not specified. Set delay_hours=24 for post-purchase surveys, delay_hours=0 for ticket.closed (strike while it is fresh).',
   },
   {
+    name: 'manage_survey_template',
+    description:
+      'Create, list, or get survey templates — the reusable question sets that a survey campaign attaches to. Use when: you need a template_id for create_survey_campaign but none exists yet; setting up an NPS/CSAT/CES question set. NOT for: campaigns (use create_survey_campaign) or sending (use send_survey).',
+    category: 'crm',
+    handler: 'db:survey_templates',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_survey_template',
+        description: 'CRUD for survey templates (reusable question sets).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list', 'get'] },
+            template_id: { type: 'string', description: 'UUID, for action=get' },
+            name: { type: 'string', description: 'Template name (required for create)' },
+            kind: { type: 'string', description: 'nps | csat | ces | custom (drives the response scale)' },
+            description: { type: 'string' },
+            questions: {
+              type: 'array',
+              description: 'Question objects, e.g. [{ "text": "How likely are you to recommend us?", "type": "scale", "scale": 10 }]',
+              items: { type: 'object' },
+            },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'] },
+        },
+      },
+    },
+    instructions:
+      'Create a template FIRST, then pass the returned id as template_id to create_survey_campaign (a campaign cannot be created without an existing template). `name` is required on create. `questions` is a JSON array of question definitions; `kind` selects the response scale (nps=0-10, csat=1-5, ces=1-7, custom=free-form).',
+  },
+  {
     name: 'send_survey',
     description:
       'Send an active survey campaign to one or more recipients via email. Each recipient gets a unique one-click token link. Use when: a triggering event fires (order delivered, ticket closed), running a manual feedback push, or following up on a specific customer interaction.',
