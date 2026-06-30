@@ -23,7 +23,7 @@ const SURVEY_SKILLS: SkillSeed[] = [
   {
     name: 'create_survey_campaign',
     description:
-      'Create a new survey campaign attached to a template. Use when: launching a new NPS/CSAT program, automating feedback after an event (order delivered, ticket closed, contract renewed). NOT for: editing an existing campaign (use generic update via manage_record).',
+      'Create a new survey campaign attached to a template. Requires an existing template_id — if none exists, call `manage_survey_template` with action=list first, and if empty, action=create to make one. Use when: launching a new NPS/CSAT program, automating feedback after an event (order delivered, ticket closed, contract renewed). NOT for: editing an existing campaign (use generic update via manage_record).',
     category: 'crm',
     handler: 'db:survey_campaigns',
     scope: 'internal',
