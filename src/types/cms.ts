@@ -111,6 +111,7 @@ export type ContentBlockType =
   | 'info-box'
   | 'accordion'
   | 'article-grid'
+  | 'latest-posts'
   | 'youtube'
   | 'quote'
   | 'separator'
@@ -609,6 +610,18 @@ export interface ArticleGridBlockData {
   title?: string;
   articles: { title: string; excerpt: string; image?: string; url: string }[];
   columns: 2 | 3 | 4;
+}
+
+export interface LatestPostsBlockData {
+  title?: string;
+  subtitle?: string;
+  count?: 1 | 2 | 3 | 4 | 5 | 6;
+  columns?: 1 | 2 | 3 | 4;
+  category?: string;
+  showExcerpt?: boolean;
+  showDate?: boolean;
+  ctaText?: string;
+  ctaUrl?: string;
 }
 
 export interface YouTubeBlockData {

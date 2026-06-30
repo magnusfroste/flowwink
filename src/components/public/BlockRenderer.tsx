@@ -33,6 +33,7 @@ import {
 const ContactBlock = lazy(() => import('./blocks/ContactBlock').then(m => ({ default: m.ContactBlock })));
 const AccordionBlock = lazy(() => import('./blocks/AccordionBlock').then(m => ({ default: m.AccordionBlock })));
 const ArticleGridBlock = lazy(() => import('./blocks/ArticleGridBlock').then(m => ({ default: m.ArticleGridBlock })));
+const LatestPostsBlock = lazy(() => import('./blocks/LatestPostsBlock').then(m => ({ default: m.LatestPostsBlock })));
 const YouTubeBlock = lazy(() => import('./blocks/YouTubeBlock').then(m => ({ default: m.YouTubeBlock })));
 const GalleryBlock = lazy(() => import('./blocks/GalleryBlock').then(m => ({ default: m.GalleryBlock })));
 const ChatBlock = lazy(() => import('./blocks/ChatBlock').then(m => ({ default: m.ChatBlock })));
@@ -83,6 +84,7 @@ import type {
   InfoBoxBlockData,
   AccordionBlockData,
   ArticleGridBlockData,
+  LatestPostsBlockData,
   YouTubeBlockData,
   QuoteBlockData,
   SeparatorBlockData,
@@ -219,6 +221,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <AccordionBlock data={block.data as unknown as AccordionBlockData} />;
       case 'article-grid':
         return <ArticleGridBlock data={block.data as unknown as ArticleGridBlockData} />;
+      case 'latest-posts':
+        return <LatestPostsBlock data={block.data as unknown as LatestPostsBlockData} />;
       case 'youtube':
         return <YouTubeBlock data={block.data as unknown as YouTubeBlockData} />;
       case 'quote':
