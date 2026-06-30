@@ -23,10 +23,19 @@ interface Body {
   public_base_url?: string; // optional override (e.g. https://demo.flowwink.com)
 }
 
-const NPS_BUTTONS = (token: string, base: string) => {
-  const link = (n: number) =>
-    `<a href="${base}/s/${token}?score=${n}" style="display:inline-block;width:36px;height:36px;line-height:36px;text-align:center;margin:2px;border:1px solid #d1d5db;border-radius:8px;color:#0f172a;text-decoration:none;font-weight:600;font-family:system-ui,sans-serif">${n}</a>`;
-  return Array.from({ length: 11 }, (_, i) => link(i)).join("");
+// Color ramp for NPS 0–10 (detractor red → passive amber → promoter green)
+const NPS_COLORS = [
+  "#dc2626", "#dc2626", "#ea580c", "#ea580c", "#f59e0b",
+  "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#16a34a", "#15803d",
+];
+
+const NPS_TABLE = (token: string, base: string) => {
+  const cell = (n: number) => {
+    const bg = NPS_COLORS[n];
+    return `<td align="center" style="padding:2px"><a href="${base}/s/${token}?score=${n}" style="display:block;width:38px;height:38px;line-height:38px;text-align:center;background:${bg};border-radius:8px;color:#ffffff;text-decoration:none;font-weight:700;font-family:system-ui,-apple-system,sans-serif;font-size:14px">${n}</a></td>`;
+  };
+  const cells = Array.from({ length: 11 }, (_, i) => cell(i)).join("");
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto"><tr>${cells}</tr></table>`;
 };
 
 const renderHtml = (args: {
@@ -39,20 +48,23 @@ const renderHtml = (args: {
 }) => {
   const buttons =
     args.kind === "nps"
-      ? NPS_BUTTONS(args.token, args.base)
+      ? NPS_TABLE(args.token, args.base)
       : `<a href="${args.base}/s/${args.token}" style="background:#0f172a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-family:system-ui,sans-serif">Give feedback</a>`;
 
   return `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 16px;color:#0f172a">
     <h2 style="margin:0 0 16px;font-size:20px">${args.campaign_name}</h2>
     <p style="margin:0 0 16px;color:#475569">${args.intro}</p>
-    <p style="margin:0 0 16px;font-weight:600">${args.question}</p>
+    <p style="margin:0 0 20px;font-weight:600">${args.question}</p>
     <div style="margin:16px 0;text-align:center">${buttons}</div>
     ${
       args.kind === "nps"
-        ? `<div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;max-width:430px;margin:0 auto"><span>Not at all likely</span><span>Extremely likely</span></div>`
+        ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 0;width:100%;max-width:460px"><tr>
+            <td align="left" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">Not at all likely</td>
+            <td align="right" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">Extremely likely</td>
+          </tr></table>`
         : ""
     }
-    <p style="margin:32px 0 0;font-size:12px;color:#94a3b8">If you can't see the buttons, <a href="${args.base}/s/${args.token}">open the survey</a>.</p>
+    <p style="margin:32px 0 0;font-size:12px;color:#94a3b8;text-align:center">Tap a number to submit. Or <a href="${args.base}/s/${args.token}" style="color:#475569">open the survey</a>.</p>
   </div>`;
 };
 
