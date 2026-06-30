@@ -139,4 +139,10 @@ export interface VoiceSettings {
   aiReceptionistUseFlowpilotContext?: boolean;
   /** Röst-namn för Gemini Live TTS (t.ex. "Aoede", "Charon", "Fenrir", "Kore", "Puck"). */
   aiReceptionistVoice?: string;
+  /**
+   * 46elks WebSocket-number (E.164) som det publika DID:t bryggas till när AI svarar.
+   * Måste vara ett separat 46elks-nummer som har `voice_start=wss://<project>.functions.supabase.co/voice-ingest/stream`
+   * konfigurerat i 46elks-dashboarden. Utan detta faller AI-flödet tillbaka till voicemail.
+   */
+  aiReceptionistWebsocketNumber?: string;
 }
