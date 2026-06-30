@@ -123,7 +123,10 @@ function serializeElks46(action: VoiceAction): { body: string; contentType: stri
       };
       break;
     case "stream":
-      // 46elks Media Streams: open a bidirectional websocket carrying µ-law 8kHz audio.
+      // 46elks Realtime Voice API: a `stream` action does NOT exist as JSON.
+      // We must bridge the public DID to a 46elks **websocket-number** which
+      // has its own `voice_start=wss://...` configured in the 46elks dashboard.
+      // The bridging itself is just a normal connect to that DID.
       payload = { connect: action.wsUrl };
       break;
     case "hangup":
