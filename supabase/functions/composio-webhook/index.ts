@@ -308,7 +308,7 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from('outbound_communications').insert({
         direction: 'inbound',
         channel: 'email',
-        status: 'sent',
+        status: 'received',
         provider: 'composio',
         simulated: false,
         recipient: toEmail,
@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from('outbound_communications').insert({
       direction: 'inbound',
       channel: 'email',
-      status: 'sent',
+      status: 'received',
       provider: 'composio',
       simulated: false,
       recipient: toEmail,

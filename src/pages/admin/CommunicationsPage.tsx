@@ -45,6 +45,7 @@ type Comm = {
 
 const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = {
   sent:      { label: "Sent",      variant: "default",     icon: CheckCircle2 },
+  received:  { label: "Received",  variant: "secondary",   icon: CheckCircle2 },
   simulated: { label: "Simulated", variant: "warning",     icon: FlaskConical },
   failed:    { label: "Failed",    variant: "destructive", icon: AlertCircle },
   skipped:   { label: "Skipped",   variant: "outline",     icon: AlertCircle },
