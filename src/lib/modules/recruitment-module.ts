@@ -253,7 +253,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     description:
       'Summarize current pipeline state: per-job counts by stage, candidates stuck >X days, top-scored unreviewed candidates. Use when: admin asks "how is recruiting going?" or for daily briefing. NOT for: detailed candidate data (use list/get).',
     category: 'analytics',
-    handler: 'db:applications',
+    handler: 'rpc:summarize_candidate_pipeline',
     scope: 'internal',
     tool_definition: {
       type: 'function',
