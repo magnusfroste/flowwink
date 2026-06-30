@@ -36,6 +36,7 @@ import {
   Network,
   UserRound,
   BookMarked,
+  Table2,
   Truck,
   FileSignature,
   FolderOpen,
