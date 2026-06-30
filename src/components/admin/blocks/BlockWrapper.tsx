@@ -21,6 +21,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'info-box': 'Fact Box',
   accordion: 'Accordion/FAQ',
   'article-grid': 'Article Grid',
+  'latest-posts': 'Latest Posts',
   youtube: 'YouTube',
   quote: 'Quote',
   separator: 'Separator',

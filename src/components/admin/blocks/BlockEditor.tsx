@@ -30,6 +30,8 @@ import { TwoColumnBlockEditor } from './TwoColumnBlockEditor';
 import { InfoBoxBlockEditor } from './InfoBoxBlockEditor';
 import { AccordionBlockEditor } from './AccordionBlockEditor';
 import { ArticleGridBlockEditor } from './ArticleGridBlockEditor';
+import { LatestPostsBlockEditor } from './LatestPostsBlockEditor';
+import type { LatestPostsBlockData } from '@/types/cms';
 import { YouTubeBlockEditor } from './YouTubeBlockEditor';
 import { QuoteBlockEditor } from './QuoteBlockEditor';
 import { SeparatorBlockEditor } from './SeparatorBlockEditor';
@@ -131,6 +133,7 @@ type BlockDataMap = {
   'info-box': InfoBoxBlockData;
   accordion: AccordionBlockData;
   'article-grid': ArticleGridBlockData;
+  'latest-posts': import('@/types/cms').LatestPostsBlockData;
   youtube: YouTubeBlockData;
   quote: QuoteBlockData;
   separator: SeparatorBlockData;
@@ -186,6 +189,7 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   'info-box': { title: 'Important information', content: '', variant: 'info' },
   accordion: { items: [] },
   'article-grid': { articles: [], columns: 3 },
+  'latest-posts': { title: 'From the blog', count: 3, columns: 3, showExcerpt: true, showDate: true, ctaText: 'View all posts', ctaUrl: '/blog' },
   youtube: { url: '' },
   quote: { text: '', variant: 'simple' },
   separator: { style: 'line', spacing: 'md' },
@@ -749,6 +753,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <ArticleGridBlockEditor
             data={block.data as unknown as ArticleGridBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            canEdit={isEditing}
+          />
+        );
+      case 'latest-posts':
+        return (
+          <LatestPostsBlockEditor
+            data={block.data as unknown as LatestPostsBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             canEdit={isEditing}
           />

@@ -205,6 +205,7 @@ const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string
   'announcement-bar': { required: [['message']] },
   'floating-cta':     { required: [['buttonText']] },
   'article-grid':     { required: [] },
+  'latest-posts':     { required: [] },
   'bento-grid':       { required: [['items']] },
   'notification-toast': { required: [['notifications']] },
 };

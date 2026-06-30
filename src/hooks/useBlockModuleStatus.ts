@@ -9,6 +9,7 @@ import { ContentBlockType } from '@/types/cms';
 export const BLOCK_TO_MODULE: Partial<Record<ContentBlockType, keyof ModulesSettings>> = {
   // Content modules
   'article-grid': 'blog',
+  'latest-posts': 'blog',
   
   // Communication modules
   'chat': 'chat',

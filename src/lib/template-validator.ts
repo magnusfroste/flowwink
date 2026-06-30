@@ -82,6 +82,7 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   'smart-booking': [],
   comparison: ['products', 'features'],
   'article-grid': [],
+  'latest-posts': [],
   'link-grid': ['links'],
   youtube: [], // videoId is optional - shows placeholder
   'info-box': [], // title is optional

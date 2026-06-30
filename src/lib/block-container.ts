@@ -94,6 +94,7 @@ export const BLOCK_CONTAINER_MAP: Record<string, ContainerWidth> = {
   'quote': 'content',
   'timeline': 'content',
   'article-grid': 'content',
+  'latest-posts': 'wide',
   'embed': 'content',
   
   // Focused blocks (attention-grabbing)

@@ -216,6 +216,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <Newspaper className="h-5 w-5" />,
         description: 'Grid of article cards',
       },
+      {
+        type: 'latest-posts',
+        label: 'Latest Posts',
+        icon: <Newspaper className="h-5 w-5" />,
+        description: 'Auto: latest published blog posts',
+      },
     ],
   },
   {
