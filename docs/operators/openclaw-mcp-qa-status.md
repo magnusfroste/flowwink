@@ -171,3 +171,40 @@ The FlowWink operator surface is usable by an autonomous agent across every
 business domain. Bug-classes fixed at the engine level + guarded in CI (56
 guardrail tests). Remaining: 8 frontend/UX findings (separate visitor-facing
 scope); the one pending agent-execute redeploy for the ad_creative coercion.
+
+## Frontend/UX findings triage (2026-06-30)
+Swept the remaining visitor-facing findings. Summary: 5 of 6 are NOT code bugs
+(false positives from headless QA, or external config); 1 was a real
+content/template fix.
+
+- **cbc0f26c — hero chat "never responds":** NOT a bug. `chat-completion`
+  streams real responses in all routing modes (verified via curl); useChat uses
+  the correct public-block auth; ChatBlock→ChatConversation→useChat chain is
+  correct. The only no-response path is `skipped:true`, i.e. the conversation
+  was routed to a live human agent and none was online — exactly the operator's
+  hypothesis ("chat works; live support didn't answer"). Resolved with a UX
+  note (show a confirmation when handing off to an offline agent).
+- **fdbab519 — cookie banner reappears after accept:** NOT a bug. CookieBanner
+  persists `cookie-consent` to localStorage and reads it on mount; it cannot
+  reappear unless storage is cleared between visits — which a headless QA
+  browser does on every page load. False positive.
+- **b9efdf2f — contact form no visible feedback:** NOT a bug. FormBlock has a
+  full success state (CheckCircle + message), an error toast, and a submitting
+  spinner. Note: the honeypot time-trap silently shows success for sub-800ms
+  submits (anti-bot) — an automated QA agent filling instantly sees success
+  without a row persisting. (ContactBlock is a static info display with no form.)
+- **32af7d3a — newsletter double opt-in:** Frontend is correct — NewsletterBlock
+  shows success/error/spinner and already renders double-opt-in copy ("Please
+  check your email to confirm"). Whether the confirmation email actually sends
+  is backend/email-provider config (ties to 7c69826a).
+- **26207310 — pricing CTA inconsistent GitHub URLs:** REAL content bug, FIXED.
+  flowwink-platform template's "Self-Host Free" quick link pointed to
+  github.com/flowwink/flowwink while all 15+ other refs use
+  github.com/magnusfroste/flowwink. Unified + regenerated template JSON
+  (commit 5206e8a3).
+- **7c69826a — Resend API key invalid:** External config, not code. The
+  email-send router supports smtp|resend|composio via site_settings; fix is a
+  valid key in settings, no code change.
+- **56a5d706 — "92 skills missing instructions":** NOT a bug. `instructions` is
+  optional per Law 2 (~27% of skills rely on a strong `description` alone). The
+  integrity check's count is informational, not a defect.
