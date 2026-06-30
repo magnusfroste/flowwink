@@ -48,6 +48,12 @@ interface VoiceSettings {
   aiReceptionistSystemPromptExtra?: string;
   aiReceptionistUseFlowpilotContext?: boolean;
   aiReceptionistVoice?: string;
+  /**
+   * 46elks WebSocket-number (E.164). Måste vara ett separat nummer som är
+   * konfigurerat i 46elks dashboard med `voice_start=wss://<project>.functions.supabase.co/voice-ingest/stream`.
+   * Det publika DID:t bryggar in samtalet hit via `{connect: <wsNum>}`.
+   */
+  aiReceptionistWebsocketNumber?: string;
 }
 
 // ── Provider adapters ────────────────────────────────────────────────────────
