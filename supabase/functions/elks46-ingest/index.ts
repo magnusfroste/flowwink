@@ -92,6 +92,8 @@ async function loadVoiceSettings(supabase: ReturnType<typeof getServiceClient>) 
     callbackWindowStart: (v.callbackWindowStart as string) || "09:00",
     callbackWindowEnd: (v.callbackWindowEnd as string) || "17:00",
     callbackSlotMinutes: Number(v.callbackSlotMinutes) > 0 ? Number(v.callbackSlotMinutes) : 15,
+    aiReceptionistEnabled: v.aiReceptionistEnabled === true,
+    aiReceptionistWebsocketNumber: (v.aiReceptionistWebsocketNumber as string) || "",
   };
 }
 
@@ -212,6 +214,20 @@ function voicemailReply(greetingUrl: string, selfUrl: string) {
     next: { record: selfUrl, silencedetection: "yes" },
     whenhangup: selfUrl,
   };
+}
+
+function aiReceptionistReply(voice: VoiceSettingsResolved): Record<string, unknown> | null {
+  if (!voice.aiReceptionistEnabled) return null;
+  if (!Deno.env.get("GEMINI_API_KEY")) {
+    console.warn("[elks46-ingest] AI receptionist enabled but GEMINI_API_KEY is missing — falling back to voicemail");
+    return null;
+  }
+  const wsNumber = normalizePhone(voice.aiReceptionistWebsocketNumber.trim());
+  if (!wsNumber) {
+    console.warn("[elks46-ingest] AI receptionist enabled but no 46elks websocket-number is configured — falling back to voicemail");
+    return null;
+  }
+  return { connect: wsNumber };
 }
 
 function hangupResponse(): Response {
@@ -624,7 +640,22 @@ async function handleIngest(req: Request): Promise<Response> {
             }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
           }
 
-          // (B) Agent's phone didn't pick up → play greeting + record voicemail.
+          // (B) Agent's phone didn't pick up → AI receptionist if configured,
+          // otherwise play greeting + record voicemail.
+          const aiReply = aiReceptionistReply(voice);
+          if (aiReply) {
+            await supabase.from("voice_calls").update({
+              status: "answered",
+              answered_at: new Date().toISOString(),
+              callback_status: "none",
+              metadata: { ...previousMetadata, ai_receptionist_offered: true, no_answer_event: { result, state } },
+            }).eq("provider", "elks46").eq("provider_call_id", callid);
+            return new Response(JSON.stringify(aiReply), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // No AI bridge available → voicemail.
           await supabase.from("voice_calls").update({
             status: "missed",
             callback_status: "pending",
@@ -722,6 +753,7 @@ async function handleIngest(req: Request): Promise<Response> {
       // Agent reachable → ring their phone; on no-answer the connect's `next`
       // callback (below) plays the greeting + records. No agent (phone off /
       // nobody online) → straight to greeting + voicemail.
+      const aiReply = target ? null : aiReceptionistReply(voice);
       const reply = target
         ? {
             connect: target,
@@ -734,7 +766,7 @@ async function handleIngest(req: Request): Promise<Response> {
             next: selfUrl,
             whenhangup: selfUrl,
           }
-        : voicemailReply(voice.voicemailGreetingUrl, selfUrl);
+        : aiReply ?? voicemailReply(voice.voicemailGreetingUrl, selfUrl);
 
       const { error: callErr } = await supabase.from("voice_calls").upsert(
         {
@@ -748,12 +780,13 @@ async function handleIngest(req: Request): Promise<Response> {
           conversation_id: conversationId,
           started_at: new Date().toISOString(),
           callback_status: target ? "none" : "pending",
-          // No agent → we go straight to greeting+record, so the voicemail was
-          // already offered. With an agent, it's only offered later on no-answer.
+          // No agent → AI receptionist when available, otherwise greeting+record.
+          // With an agent, fallback is decided later on no-answer.
           metadata: {
             initial_action: reply,
             raw,
-            voicemail_offered: !target,
+            voicemail_offered: !target && !aiReply,
+            ai_receptionist_offered: !!aiReply,
             routing_mode: agentMode,
             agent_mobile: agent?.voice_mobile_number ?? null,
             first_leg: target,
