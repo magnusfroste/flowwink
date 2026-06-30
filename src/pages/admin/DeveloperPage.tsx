@@ -1,6 +1,7 @@
 import { Code2, Webhook, Terminal, KeyRound, Cpu } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
 import { ContentApiContent } from '@/pages/admin/ContentApiPage';
