@@ -27,6 +27,8 @@ export const defaultVoiceSettings: VoiceSettings = {
   aiReceptionistSystemPromptExtra: '',
   aiReceptionistUseFlowpilotContext: false,
   aiReceptionistVoice: 'Aoede',
+  aiReceptionistMode: 'native-audio',
+
 };
 
 export function useVoiceSettings() {
