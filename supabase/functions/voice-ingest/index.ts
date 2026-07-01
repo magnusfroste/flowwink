@@ -301,7 +301,7 @@ async function persistCall(
 const GEMINI_LIVE_MODEL_NATIVE = Deno.env.get("GEMINI_LIVE_MODEL_NATIVE")
   ?? "models/gemini-2.5-flash-native-audio-latest";
 const GEMINI_LIVE_MODEL_CASCADE = Deno.env.get("GEMINI_LIVE_MODEL_CASCADE")
-  ?? "models/gemini-3.1-flash-live-preview";
+  ?? "models/gemini-2.5-flash-live-preview";
 const GEMINI_LIVE_WS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
 
