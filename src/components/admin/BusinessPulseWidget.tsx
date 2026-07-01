@@ -81,7 +81,7 @@ export function BusinessPulseWidget() {
           <div className="text-center py-6">
             <Bot className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No briefings yet</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">FlowPilot will generate your first daily briefing soon</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Your first daily briefing will be generated soon</p>
           </div>
         </CardContent>
       </Card>
