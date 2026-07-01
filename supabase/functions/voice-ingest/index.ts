@@ -283,7 +283,10 @@ async function persistCall(
 // caller audio as raw PCM16 16 kHz (exactly what Gemini Live wants) and tell
 // 46elks that we will send Gemini's native PCM16 24 kHz audio back.
 
-const GEMINI_LIVE_MODEL = Deno.env.get("GEMINI_LIVE_MODEL") ?? "models/gemini-2.5-flash-native-audio-latest";
+// Half-cascade live model — supports audio in/out + function calling reliably.
+// The `native-audio` preview models reject audio when tools are declared
+// (WS closes with code 1007 "CONTENT_TYPE_AUDIO not supported").
+const GEMINI_LIVE_MODEL = Deno.env.get("GEMINI_LIVE_MODEL") ?? "models/gemini-live-2.5-flash-preview";
 const GEMINI_LIVE_WS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
 async function websocketDataToString(data: unknown): Promise<string> {
