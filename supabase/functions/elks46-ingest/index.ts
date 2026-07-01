@@ -410,7 +410,9 @@ async function maybeAutoScheduleCallback(
 
     let smsNote = "";
     const dest = normalizePhone(opts.fromNumber || "");
-    if (s.autoScheduleSms && dest) {
+    // Global SMS gate: `smsReplyEnabled` off = never send outbound SMS to callers,
+    // regardless of the auto-schedule confirmation toggle.
+    if (s.autoScheduleSms && s.smsReplyEnabled && dest) {
       if (isLikelySwedishLandline(dest)) {
         smsNote = " · fast nummer, inget SMS";
       } else {
