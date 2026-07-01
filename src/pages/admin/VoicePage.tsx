@@ -497,6 +497,23 @@ function AiReceptionistSection({
               onChange={(e) => set('aiReceptionistSystemPromptExtra', e.target.value || undefined)}
             />
           </div>
+          <div>
+            <Label htmlFor="ai-mode">Model mode</Label>
+            <select
+              id="ai-mode"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={settings.aiReceptionistMode ?? 'native-audio'}
+              onChange={(e) => set('aiReceptionistMode', e.target.value as 'native-audio' | 'half-cascade')}
+            >
+              <option value="native-audio">Native audio — best voice, no tools</option>
+              <option value="half-cascade">Half-cascade — stable tool-calling, robotic voice</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {(settings.aiReceptionistMode ?? 'native-audio') === 'half-cascade'
+                ? 'Tools active: lookup_customer_by_phone, list_available_slots, book_appointment, escalate_to_human. The AI can actually complete bookings and CRM lookups during the call.'
+                : "Highest voice quality. Google's native-audio model drops the WebSocket (1007) when tools are declared, so tool-calling is off. The AI captures booking intent in the transcript and a human calls back to confirm."}
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="ai-voice">Voice</Label>
@@ -518,6 +535,7 @@ function AiReceptionistSection({
               <span className="text-sm">Use FlowPilot objectives if module is on</span>
             </label>
           </div>
+
           <p className="text-xs text-muted-foreground">
             The AI calls MCP skills (bookings, lookup_customer_by_phone, escalate_to_human) filtered by enabled modules.
             Full transcript + summary is saved on the call afterwards.
