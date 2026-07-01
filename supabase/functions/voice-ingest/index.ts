@@ -268,7 +268,11 @@ async function persistCall(
       status: finalStatus,
       ended_at: now,
       duration_seconds: call.recordingDurationSeconds,
-      callback_status: finalStatus === "missed" ? "pending" : "none",
+      // AI-handled calls always flag for callback so the agent's promise
+      // ("we'll call you back") surfaces in the Callbacks tab.
+      callback_status: existing?.ai_handled
+        ? "pending"
+        : finalStatus === "missed" ? "pending" : "none",
     }).eq("provider", call.provider).eq("provider_call_id", call.providerCallId);
     return;
   }
