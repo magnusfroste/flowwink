@@ -104,12 +104,16 @@ export interface VoiceCallRow {
   recording_url: string | null;
   recording_duration_seconds: number | null;
   transcript: string | null;
+  live_transcript: Array<{ role: string; text: string; ts: string }> | null;
+  ai_summary: string | null;
+  ai_handled: boolean | null;
   voicemail: boolean;
   callback_status: VoiceCallbackStatus;
   callback_scheduled_at: string | null;
   callback_completed_at: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
+
 }
 
 export interface VoiceCallFilters {

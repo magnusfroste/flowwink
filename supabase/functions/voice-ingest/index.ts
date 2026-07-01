@@ -335,9 +335,10 @@ async function buildSystemPrompt(
     `Open the conversation with: "${greeting}"`,
     `Keep responses short — this is a phone call. One or two sentences at a time.`,
     `The caller's phone number is ${fromNumber}. You may reference it if useful (e.g. for callbacks).`,
-    `If the caller asks to speak to a human, call the escalate_to_human tool.`,
-    `If the caller wants to book, change or cancel an appointment, use the booking tools.`,
-    `Never invent appointment times, prices, or policies. Use tools or say you'll have someone call back.`,
+    `If the caller asks to speak to a human, acknowledge it and say a colleague will call them back on ${fromNumber} shortly.`,
+    `IMPORTANT: You do NOT have access to the booking calendar right now. If the caller wants to book, change or cancel an appointment, do NOT try to check times or confirm slots. Instead: ask what the appointment is for and their preferred day/time, repeat it back so it's captured in the transcript, and tell them a colleague will call back to confirm the exact slot.`,
+    `Never invent appointment times, prices, or policies. If you don't know something, say you'll have a colleague call back with the answer.`,
+
     settings.aiReceptionistSystemPromptExtra ? `\nAdditional instructions:\n${settings.aiReceptionistSystemPromptExtra}` : "",
     pilotContext,
   ].filter(Boolean).join("\n");

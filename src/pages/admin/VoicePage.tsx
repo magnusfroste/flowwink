@@ -129,9 +129,27 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
           <div className="flex justify-between"><span className="text-muted-foreground">Started</span><span>{format(new Date(call.started_at), 'yyyy-MM-dd HH:mm')}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span>{formatDuration(call.duration_seconds)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Provider</span><span className="capitalize">{call.provider}</span></div>
+          {call.ai_summary && (
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
+              <div className="font-medium text-primary mb-1">AI summary</div>
+              <div className="whitespace-pre-wrap">{call.ai_summary}</div>
+            </div>
+          )}
+          {Array.isArray(call.live_transcript) && call.live_transcript.length > 0 && (
+            <div className="rounded-md bg-muted p-3 text-xs space-y-2 max-h-72 overflow-y-auto">
+              <div className="font-medium text-muted-foreground">AI conversation</div>
+              {call.live_transcript.map((t, i) => (
+                <div key={i} className={t.role === 'assistant' ? 'text-primary' : 'text-foreground'}>
+                  <span className="font-medium capitalize">{t.role === 'assistant' ? 'AI' : 'Caller'}:</span>{' '}
+                  <span className="whitespace-pre-wrap">{t.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {call.transcript && (
             <div className="rounded-md bg-muted p-3 text-xs whitespace-pre-wrap">{call.transcript}</div>
           )}
+
           {call.recording_url && (
             <audio
               src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${call.id}`}
