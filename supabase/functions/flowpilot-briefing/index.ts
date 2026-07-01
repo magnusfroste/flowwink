@@ -25,6 +25,38 @@ serve(async (req) => {
       const supabase = getServiceClient();
 
   try {
+    // ─── Idempotency guard ──────────────────────────────────────────
+    // Multiple triggers (pg_cron, agent_automations, manual, MCP) can all
+    // fire the briefing on the same UTC day. Without a guard we get 2-4
+    // duplicate rows per day. If a daily_digest already exists for today,
+    // short-circuit unless caller passes { force: true }.
+    let force = false;
+    try {
+      const body = req.method === "POST" ? await req.clone().json().catch(() => ({})) : {};
+      force = body?.force === true;
+    } catch (_) { /* no body */ }
+
+    if (!force) {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const { data: existing } = await supabase
+        .from("flowpilot_briefings")
+        .select("id, created_at, title")
+        .eq("type", "daily_digest")
+        .gte("created_at", todayStart.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        console.log(`[briefing] Skipped — already generated today (${existing.id} @ ${existing.created_at})`);
+        return new Response(
+          JSON.stringify({ skipped: true, reason: "already_generated_today", briefing: existing }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+    }
+
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
