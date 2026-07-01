@@ -514,7 +514,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
             },
           },
           systemInstruction: { parts: [{ text: systemPrompt }] },
-          tools: [{ functionDeclarations: AI_TOOLS }],
+          ...(ENABLE_AI_TOOLS ? { tools: [{ functionDeclarations: AI_TOOLS }] } : {}),
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
