@@ -317,6 +317,7 @@ async function buildSystemPrompt(
   supabase: ReturnType<typeof createClient>,
   settings: VoiceSettings,
   fromNumber: string,
+  effectiveMode?: "native-audio" | "half-cascade",
 ): Promise<string> {
   // Business identity (works whether FlowPilot is on or off).
   const { data: bi } = await supabase
@@ -344,10 +345,10 @@ async function buildSystemPrompt(
   const greeting = settings.aiReceptionistGreeting
     ?? `Hej, du har ringt ${name}. Alla våra medarbetare är upptagna just nu — hur kan jag hjälpa dig?`;
 
-  const toolsEnabled = (settings.aiReceptionistMode ?? "native-audio") === "half-cascade";
+  const toolsEnabled = (effectiveMode ?? settings.aiReceptionistMode ?? "native-audio") === "half-cascade";
   const capabilityBlock = toolsEnabled
     ? `You have tools available: lookup_customer_by_phone (call early to personalize), list_available_slots + book_appointment (for bookings), and escalate_to_human (transfer to a live agent). Use tools when the caller's request maps to one — do not ask them to hold; call the tool and speak the result.`
-    : `IMPORTANT: You do NOT have access to the booking calendar or CRM right now. If the caller wants to book, change or cancel an appointment, do NOT try to check times or confirm slots. Instead: ask what the appointment is for and their preferred day/time, repeat it back so it's captured in the transcript, and tell them a colleague will call back to confirm the exact slot.`;
+    : `IMPORTANT: You do NOT have access to the booking calendar, CRM, customer records, or any lookup tools right now. If the caller asks whether they are an existing customer, asks you to check their phone number, or wants to book/change/cancel an appointment, do NOT say you can check it live. Instead: confirm the phone number you have, ask for the needed details, repeat them back so they are captured in the transcript, and tell them a colleague will call back to confirm.`;
 
   return [
     `You are the AI receptionist for ${name}. Respond in the same language the caller speaks (Swedish or English).`,
@@ -522,8 +523,8 @@ async function handleStreamSession(req: Request): Promise<Response> {
     }
 
     const settings = await loadVoiceSettings(supabase);
-    const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber);
     const mode = forcedMode ?? settings.aiReceptionistMode ?? "native-audio";
+    const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber, mode);
     const modelId = mode === "half-cascade" ? GEMINI_LIVE_MODEL_CASCADE : GEMINI_LIVE_MODEL_NATIVE;
     const toolsEnabled = mode === "half-cascade";
 
@@ -690,6 +691,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
       await supabase.from("voice_calls").update({
         status: "completed",
         ended_at: new Date().toISOString(),
+        callback_status: "pending",
       }).eq("provider", provider).eq("provider_call_id", providerCallId);
     }
   };
