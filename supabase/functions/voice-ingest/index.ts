@@ -655,7 +655,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
     const settings = await loadVoiceSettings(supabase);
     const mode = forcedMode ?? settings.aiReceptionistMode ?? "native-audio";
     const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber, mode);
-    const modelId = mode === "half-cascade" ? GEMINI_LIVE_MODEL_CASCADE : GEMINI_LIVE_MODEL_NATIVE;
+    const modelId = mode === "half-cascade" ? getCascadeModelId() : GEMINI_LIVE_MODEL_NATIVE;
     const toolsEnabled = mode === "half-cascade";
     geminiSetupComplete = false;
 
