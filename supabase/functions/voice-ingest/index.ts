@@ -50,7 +50,7 @@ interface VoiceSettings {
   aiReceptionistVoice?: string;
   /**
    * `native-audio` = best voice, no tool-calling (WS 1007 bug on tools).
-   * `half-cascade` = stable tool-calling, slightly more robotic voice.
+   * `half-cascade` = current Live tool-calling model, slightly more robotic voice.
    * Default: native-audio (kept for backward compat with earlier deploys).
    */
   aiReceptionistMode?: "native-audio" | "half-cascade";
@@ -292,12 +292,12 @@ async function persistCall(
 
 // Two model families, selected per-call by voice settings (`aiReceptionistMode`):
 // - native-audio: best voice quality, but rejects tools with WS 1007. Tools OFF.
-// - half-cascade: audio → text tool-loop → TTS. Slightly more robotic voice, tools STABLE.
+// - half-cascade: audio → text tool-loop → TTS. Slightly more robotic voice, tools ON.
 // Env vars are optional overrides.
 const GEMINI_LIVE_MODEL_NATIVE = Deno.env.get("GEMINI_LIVE_MODEL_NATIVE")
   ?? "models/gemini-2.5-flash-native-audio-latest";
 const GEMINI_LIVE_MODEL_CASCADE = Deno.env.get("GEMINI_LIVE_MODEL_CASCADE")
-  ?? "models/gemini-2.0-flash-live-001";
+  ?? "models/gemini-3.1-flash-live-preview";
 const GEMINI_LIVE_WS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
 
@@ -450,6 +450,8 @@ async function handleStreamSession(req: Request): Promise<Response> {
   let fromNumber = "";
   let toNumber = "";
   let geminiSetupComplete = false;
+  let didFallbackToNative = false;
+  let callerClosed = false;
   const pendingCallerAudio: string[] = [];
   const transcript: Array<{ role: string; text: string; ts: string }> = [];
   let assistantBuffer = "";
@@ -504,7 +506,8 @@ async function handleStreamSession(req: Request): Promise<Response> {
     );
   };
 
-  const connectGemini = async () => {
+  const connectGemini = async (forcedMode?: "native-audio" | "half-cascade") => {
+    if (callerClosed) return;
     // Prefer metadata from 46elks `hello`; fall back to a stored call row when
     // the stream URL includes call_id (useful for local tests).
     if (!fromNumber && providerCallId && providerCallId !== "unknown") {
@@ -516,15 +519,16 @@ async function handleStreamSession(req: Request): Promise<Response> {
 
     const settings = await loadVoiceSettings(supabase);
     const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber);
-    const mode = settings.aiReceptionistMode ?? "native-audio";
+    const mode = forcedMode ?? settings.aiReceptionistMode ?? "native-audio";
     const modelId = mode === "half-cascade" ? GEMINI_LIVE_MODEL_CASCADE : GEMINI_LIVE_MODEL_NATIVE;
     const toolsEnabled = mode === "half-cascade";
 
     console.log("[voice-ai-bridge] connecting Gemini Live", {
       providerCallId, fromNumber, mode, modelId, toolsEnabled,
     });
-    gemini = new WebSocket(`${GEMINI_LIVE_WS}?key=${apiKey}`);
-    gemini.onopen = () => {
+    const ws = new WebSocket(`${GEMINI_LIVE_WS}?key=${apiKey}`);
+    gemini = ws;
+    ws.onopen = () => {
       const setup = {
         setup: {
           model: modelId,
@@ -542,11 +546,11 @@ async function handleStreamSession(req: Request): Promise<Response> {
           outputAudioTranscription: {},
         },
       };
-      gemini!.send(JSON.stringify(setup));
+      ws.send(JSON.stringify(setup));
     };
 
 
-    gemini.onmessage = async (ev) => {
+    ws.onmessage = async (ev) => {
       try {
         const msg = JSON.parse(await websocketDataToString(ev.data));
 
@@ -556,7 +560,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
           // Gemini does not always speak just because the system prompt contains
           // a greeting. Trigger one short initial turn so the caller immediately
           // hears the receptionist after the bridge is established.
-          gemini!.send(JSON.stringify({
+          ws.send(JSON.stringify({
             realtimeInput: {
               text: "The phone call is now connected. Greet the caller once and ask how you can help.",
             },
@@ -578,7 +582,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
               setTimeout(() => { try { caller.close(); } catch { /* noop */ } }, 1500);
             }
           }
-          gemini!.send(JSON.stringify({ toolResponse: { functionResponses: results } }));
+          ws.send(JSON.stringify({ toolResponse: { functionResponses: results } }));
           return;
         }
 
@@ -617,9 +621,19 @@ async function handleStreamSession(req: Request): Promise<Response> {
       }
     };
 
-    gemini.onerror = (e) => console.error("[voice-ai-bridge] gemini ws error", e);
-    gemini.onclose = (e) => {
-      console.warn("[voice-ai-bridge] gemini ws closed", { code: e.code, reason: e.reason });
+    ws.onerror = (e) => console.error("[voice-ai-bridge] gemini ws error", e);
+    ws.onclose = (e) => {
+      console.warn("[voice-ai-bridge] gemini ws closed", { code: e.code, reason: e.reason, mode, modelId });
+      if (gemini === ws) gemini = null;
+      if (!callerClosed && !geminiSetupComplete && mode === "half-cascade" && !didFallbackToNative) {
+        didFallbackToNative = true;
+        console.warn("[voice-ai-bridge] half-cascade failed before setup; falling back to native-audio without tools", {
+          providerCallId,
+          failedModelId: modelId,
+        });
+        connectGemini("native-audio").catch((err) => console.error("[voice-ai-bridge] native fallback failed", err));
+        return;
+      }
       try { caller.close(); } catch { /* noop */ }
     };
   };
@@ -665,6 +679,7 @@ async function handleStreamSession(req: Request): Promise<Response> {
   };
 
   caller.onclose = async () => {
+    callerClosed = true;
     try { gemini?.close(); } catch { /* noop */ }
     await flushTranscript(true);
     if (providerCallId && providerCallId !== "unknown") {
