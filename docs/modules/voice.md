@@ -8,8 +8,8 @@ Inbound + outbound voice calls via pluggable providers.
 |---|---|---|---|
 | 1 | Inloggad + voice_enabled | Ringer | WebRTC ringer i admin → agent svarar → samtal bryggas via SIP |
 | 2 | Inloggad men upptagen / svarar ej inom timeout | Ringer | Voicemail: greeting → record → missed-call-kö → manuell callback |
-| 3 | Utloggad (alla agenter offline) | Ringer | Samma som UC2 |
-| 4 | Utloggad + booking-IVR aktiverat | Ringer | Welcome → IVR föreslår nästa lediga slot från `booking_services` → schemalägger callback automatiskt |
+| 3 | Utloggad (alla agenter offline) + AI receptionist av | Ringer | Samma som UC2 |
+| 4 | Utloggad (alla agenter offline) + AI receptionist på | Ringer | Gemini Live svarar. Tools preview kan boka via booking-skills; om tools-modellen nekas faller samtalet tillbaka till native-audio och sparas som callback request. |
 
 ## Arkitektur
 
@@ -68,7 +68,7 @@ Alla MCP-exponerade och provider-agnostiska (skill-koden bryr sig inte om vilken
 **+1 ny:** `voice-ingest` — hanterar alla callbacks från alla providers (parsing, routing-beslut, persistence, serialisering).
 
 Återanvänder:
-- `chat-completion` — voicemail-transkription (Lovable AI eller direkt OpenAI/Gemini via `ai-call.ts`)
+- `chat-completion` — voicemail-transkription via OpenAI/Gemini/local provider through `ai-call.ts`
 - `event-dispatcher` — fan-out av `voice.call.received` / `voice.call.missed` events
 - `agent-execute` — generic CRUD för `voice_calls` via skills
 
@@ -88,15 +88,16 @@ Voice-modulen **importerar inte** live-support och vice versa. Kommunikation ske
 - 46elks-adapter (komplett), Twilio-stub
 - 3 MCP-skills (`list_voice_calls`, `schedule_voice_callback`, `mark_voice_callback_done`)
 - **Admin-UI `/admin/voice`** med 5 tabs: All / Missed / Voicemail / Callbacks / Settings
-- Provider-väljare, ring-timeout, voicemail-greeting, booking-IVR toggle
+- Provider-väljare, ring-timeout, voicemail-greeting, AI receptionist settings
 - Call-detalj-dialog: lyssna på recording/transkript, schemalägg callback, markera klar, `tel:` call-back
 
-**Fas 2:**
+**Fas 2 (pågår):**
 - Browser WebRTC-klient i admin (`jssip` mot 46elks WSS) — knapp i sidebar för agent som är voice_enabled
 - Voicemail-transkription via STT (chat-completion / ai-call.ts)
-- UC4 booking-IVR end-to-end: DTMF-input → `booking_services` slot-lookup → auto-schedule callback
+- AI receptionist callback queue + transcript/summering när tools inte kan användas
+- Gemini Live tools preview: `lookup_customer_by_phone`, `browse_services`, `check_availability`, `book_appointment`
 
 **Fas 3:**
-- Realtime AI voice agents (WebSocket-stream → OpenAI Realtime / Gemini Live)
+- Realtime AI voice agents (WebSocket-stream → OpenAI Realtime / Gemini Live) med stabil multi-provider tool-calling
 - Twilio adapter full implementation
 - Telnyx, Vonage adapters

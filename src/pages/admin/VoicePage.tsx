@@ -506,11 +506,11 @@ function AiReceptionistSection({
               onChange={(e) => set('aiReceptionistMode', e.target.value as 'native-audio' | 'half-cascade')}
             >
               <option value="native-audio">Native audio — best voice, no tools</option>
-              <option value="half-cascade">Live tools — tool-calling, fallback to native voice</option>
+              <option value="half-cascade">Live tools preview — bookings/CRM, fallback to native voice</option>
             </select>
             <p className="text-xs text-muted-foreground mt-1">
               {(settings.aiReceptionistMode ?? 'native-audio') === 'half-cascade'
-                ? 'Tools active on the current Gemini Live tool model: lookup_customer_by_phone, list_available_slots, book_appointment, escalate_to_human. If the model is rejected during setup, the call falls back to native audio without tools instead of dropping.'
+                ? 'Tools active on Gemini 3.1 Flash Live Preview: lookup_customer_by_phone, browse_services, check_availability, book_appointment, escalate_to_human. If the model is rejected during setup, the call falls back to native audio without tools instead of dropping.'
                 : "Highest voice quality. Google's native-audio model drops the WebSocket (1007) when tools are declared, so tool-calling is off. The AI captures booking intent in the transcript and a human calls back to confirm."}
             </p>
           </div>
@@ -537,7 +537,7 @@ function AiReceptionistSection({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            The AI calls MCP skills (bookings, lookup_customer_by_phone, escalate_to_human) filtered by enabled modules.
+            The AI calls booking and lookup tools when the Live tools preview model is accepted.
             Full transcript + summary is saved on the call afterwards.
           </p>
         </div>

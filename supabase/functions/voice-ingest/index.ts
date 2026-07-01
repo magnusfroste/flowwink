@@ -6,11 +6,12 @@
  *    Ingen separat edge function — håller voice-modulen i en fil.
  *
  * AI-receptionisten är default AV. Slås på i /admin/voice → Settings.
- * Faller alltid tillbaka till voicemail om Gemini misslyckas eller om
- * modulen är av.
+ * Falls back to native-audio without tools if Gemini rejects the tools model.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
+type DbClient = SupabaseClient<any, "public", any>;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -155,7 +156,7 @@ function serializeAction(provider: ProviderId, action: VoiceAction) {
 
 // ── Routing decision ─────────────────────────────────────────────────────────
 
-async function loadVoiceSettings(supabase: ReturnType<typeof createClient>): Promise<VoiceSettings> {
+async function loadVoiceSettings(supabase: DbClient): Promise<VoiceSettings> {
   const { data } = await supabase
     .from("site_settings")
     .select("value")
@@ -165,7 +166,7 @@ async function loadVoiceSettings(supabase: ReturnType<typeof createClient>): Pro
 }
 
 interface RoutingContext {
-  supabase: ReturnType<typeof createClient>;
+  supabase: DbClient;
   call: NormalizedCall;
   settings: VoiceSettings;
 }
@@ -187,7 +188,7 @@ async function decideAction(ctx: RoutingContext): Promise<VoiceAction> {
       return { type: "sip", target: `sip:${agent.voice_sip_uri}`, callerId: call.from, timeoutSeconds: 25 };
     }
     if (agent?.voice_mobile_number) {
-      return { type: "connect", target: agent.voice_mobile_number, callerId: call.from, timeoutSeconds: 25 };
+      return { type: "connect", target: String(agent.voice_mobile_number), callerId: call.from, timeoutSeconds: 25 };
     }
 
     // 2. No agent → AI receptionist if enabled and Gemini key + WS-number present
@@ -222,7 +223,7 @@ function buildSelfUrl(qs: string): string {
 // ── Persistence ──────────────────────────────────────────────────────────────
 
 async function persistCall(
-  supabase: ReturnType<typeof createClient>,
+  supabase: DbClient,
   call: NormalizedCall,
   action: VoiceAction,
 ) {
@@ -300,9 +301,17 @@ async function persistCall(
 // Env vars are optional overrides.
 const GEMINI_LIVE_MODEL_NATIVE = Deno.env.get("GEMINI_LIVE_MODEL_NATIVE")
   ?? "models/gemini-2.5-flash-native-audio-latest";
-const GEMINI_LIVE_MODEL_CASCADE = Deno.env.get("GEMINI_LIVE_MODEL_CASCADE")
-  ?? "models/gemini-2.5-flash-live-preview";
 const GEMINI_LIVE_WS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+
+function getCascadeModelId() {
+  const configured = Deno.env.get("GEMINI_LIVE_MODEL_CASCADE")?.trim();
+  // Older preview IDs have disappeared from v1beta and caused calls to fall
+  // back to native-audio immediately. Treat them as stale config.
+  if (!configured || configured === "models/gemini-2.5-flash-live-preview" || configured === "models/gemini-2.0-flash-live-001") {
+    return "models/gemini-3.1-flash-live-preview";
+  }
+  return configured;
+}
 
 
 async function websocketDataToString(data: unknown): Promise<string> {
@@ -314,7 +323,7 @@ async function websocketDataToString(data: unknown): Promise<string> {
 }
 
 async function buildSystemPrompt(
-  supabase: ReturnType<typeof createClient>,
+  supabase: DbClient,
   settings: VoiceSettings,
   fromNumber: string,
   effectiveMode?: "native-audio" | "half-cascade",
@@ -347,16 +356,16 @@ async function buildSystemPrompt(
 
   const toolsEnabled = (effectiveMode ?? settings.aiReceptionistMode ?? "native-audio") === "half-cascade";
   const capabilityBlock = toolsEnabled
-    ? `You have tools available: lookup_customer_by_phone (call early to personalize), list_available_slots + book_appointment (for bookings), and escalate_to_human (transfer to a live agent). Use tools when the caller's request maps to one — do not ask them to hold; call the tool and speak the result.`
-    : `IMPORTANT: You do NOT have access to the booking calendar, CRM, customer records, or any lookup tools right now. If the caller asks whether they are an existing customer, asks you to check their phone number, or wants to book/change/cancel an appointment, do NOT say you can check it live. Instead: confirm the phone number you have, ask for the needed details, repeat them back so they are captured in the transcript, and tell them a colleague will call back to confirm.`;
+    ? `You have tools available: lookup_customer_by_phone, browse_services, check_availability, book_appointment, and escalate_to_human. Use tools when the caller's request maps to one. For bookings: first identify service/date/time, ask for name and email, check availability, then call book_appointment. Only say an appointment is booked after the tool returns a booking_id. If a tool returns an error, missing_customer_email, slot_unavailable, or unavailable, say you captured a booking request and a colleague will call back to confirm — do not present it as a confirmed booking.`
+    : `IMPORTANT: You do NOT have access to the booking calendar, CRM, customer records, or any lookup tools right now. If the caller asks whether they are an existing customer, asks you to check their phone number, or wants to book/change/cancel an appointment, do NOT say you can check it live and do NOT present anything as a confirmed booking. Instead: capture the needed details, repeat them back so they are saved in the transcript, and say a colleague will call back to confirm the request.`;
 
   return [
     `You are the AI receptionist for ${name}. Respond in the same language the caller speaks (Swedish or English).`,
     `Tone: ${tone}.`,
     `Open the conversation with: "${greeting}"`,
     `Keep responses short — this is a phone call. One or two sentences at a time.`,
-    `The caller's phone number is ${fromNumber}. You may reference it if useful (e.g. for callbacks).`,
-    `If the caller asks to speak to a human, acknowledge it and ${toolsEnabled ? "call escalate_to_human." : `say a colleague will call them back on ${fromNumber} shortly.`}`,
+    `The caller's phone number is ${fromNumber}. Use it internally for callbacks and lookup. Do not read the full phone number aloud unless the caller asks; say "the number you are calling from" or use only the last four digits.`,
+    `If the caller asks to speak to a human, acknowledge it and ${toolsEnabled ? "call escalate_to_human." : "say a colleague will call back on the number they are calling from shortly."}`,
     capabilityBlock,
     `Never invent appointment times, prices, or policies. If you don't know something, say you'll have a colleague call back with the answer.`,
 
@@ -376,7 +385,7 @@ const AI_TOOLS = [
   },
   {
     name: "list_available_slots",
-    description: "List free booking slots for the next N days. Use when caller wants to book an appointment.",
+    description: "List booking availability for the next N days. Use when caller wants to book an appointment but has not picked a date yet.",
     parameters: {
       type: "object",
       properties: {
@@ -386,18 +395,38 @@ const AI_TOOLS = [
     },
   },
   {
+    name: "browse_services",
+    description: "List active booking services so the caller can choose what appointment type they need.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    name: "check_availability",
+    description: "Check booking availability for a specific date. Use before booking an appointment.",
+    parameters: {
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Date in YYYY-MM-DD format" },
+        service_id: { type: "string", description: "Optional booking_services UUID" },
+      },
+      required: ["date"],
+    },
+  },
+  {
     name: "book_appointment",
-    description: "Create a booking for the caller at a specific time slot.",
+    description: "Create a booking for the caller at a specific date and time. Requires customer email for confirmation.",
     parameters: {
       type: "object",
       properties: {
         service_id: { type: "string" },
-        starts_at: { type: "string", description: "ISO timestamp" },
+        starts_at: { type: "string", description: "ISO timestamp. Alternative to date + time." },
+        date: { type: "string", description: "Date in YYYY-MM-DD format" },
+        time: { type: "string", description: "Time in HH:MM format" },
         customer_name: { type: "string" },
+        customer_email: { type: "string" },
         customer_phone: { type: "string" },
         notes: { type: "string" },
       },
-      required: ["starts_at"],
+      required: ["customer_name", "customer_email"],
     },
   },
   {
@@ -412,13 +441,109 @@ const AI_TOOLS = [
 ];
 
 async function executeSkill(
-  supabase: ReturnType<typeof createClient>,
+  supabase: DbClient,
   name: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   if (name === "escalate_to_human") {
     return { escalated: true, message: "Connecting you to a human agent now." };
   }
+
+  if (name === "lookup_customer_by_phone") {
+    const phone = typeof args.phone === "string" ? args.phone.trim() : "";
+    const compact = phone.replace(/\D/g, "");
+    const suffix = compact.slice(-7);
+    if (!suffix) return { found: false, reason: "missing_phone" };
+
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("id, customer_name, customer_email, customer_phone, start_time, status")
+      .ilike("customer_phone", `%${suffix}%`)
+      .order("start_time", { ascending: false })
+      .limit(3);
+
+    if (bookings?.length) {
+      const latest = bookings[0] as Record<string, unknown>;
+      return {
+        found: true,
+        source: "bookings",
+        customer_name: latest.customer_name,
+        customer_email: latest.customer_email,
+        recent_booking_count: bookings.length,
+        latest_status: latest.status,
+      };
+    }
+
+    const { data: leads } = await supabase
+      .from("leads")
+      .select("id, name, email, phone, status")
+      .ilike("phone", `%${suffix}%`)
+      .limit(3);
+
+    if (leads?.length) {
+      const lead = leads[0] as Record<string, unknown>;
+      return {
+        found: true,
+        source: "leads",
+        customer_name: lead.name,
+        customer_email: lead.email,
+        status: lead.status,
+      };
+    }
+
+    return { found: false };
+  }
+
+  if (name === "list_available_slots") {
+    const daysAhead = Math.max(1, Math.min(Number(args.days_ahead ?? 7) || 7, 14));
+    const serviceId = typeof args.service_id === "string" ? args.service_id : undefined;
+    const days: unknown[] = [];
+    for (let i = 0; i < daysAhead; i += 1) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const date = d.toISOString().slice(0, 10);
+      days.push(await executeSkill(supabase, "check_availability", { date, service_id: serviceId }));
+    }
+    return { days };
+  }
+
+  if (name === "book_appointment") {
+    const customerName = typeof args.customer_name === "string" ? args.customer_name.trim() : "";
+    const customerEmail = typeof args.customer_email === "string" ? args.customer_email.trim() : "";
+    const customerPhone = typeof args.customer_phone === "string" ? args.customer_phone.trim() : undefined;
+    const notes = typeof args.notes === "string" ? args.notes.trim() : undefined;
+
+    if (!customerName) return { error: "missing_customer_name", booked: false };
+    if (!customerEmail) return { error: "missing_customer_email", booked: false, message: "Ask the caller for an email address before confirming the booking." };
+
+    let startsAt = typeof args.starts_at === "string" ? args.starts_at : "";
+    if (!startsAt && typeof args.date === "string" && typeof args.time === "string") {
+      startsAt = `${args.date}T${args.time}:00`;
+    }
+    if (!startsAt) return { error: "missing_start_time", booked: false };
+
+    let serviceId = typeof args.service_id === "string" ? args.service_id : "";
+    if (!serviceId) {
+      const { data: services } = await supabase
+        .from("booking_services")
+        .select("id")
+        .eq("is_active", true)
+        .order("sort_order")
+        .limit(1);
+      serviceId = (services?.[0] as { id?: string } | undefined)?.id ?? "";
+    }
+    if (!serviceId) return { error: "no_active_booking_service", booked: false };
+
+    return await executeSkill(supabase, "book_appointment_slot", {
+      p_service_id: serviceId,
+      p_customer_name: customerName,
+      p_customer_email: customerEmail,
+      p_start_time: startsAt,
+      p_customer_phone: customerPhone,
+      p_notes: notes,
+    });
+  }
+
   // Dispatch via agent-execute — it knows enabled modules + alias mapping.
   try {
     const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
@@ -465,9 +590,14 @@ async function handleStreamSession(req: Request): Promise<Response> {
   const flushTranscript = async (final = false) => {
     if (transcript.length === 0 && !final) return;
     if (!providerCallId || providerCallId === "unknown") return;
+    const summary = transcript
+      .slice(-8)
+      .map((t) => `${t.role}: ${t.text}`)
+      .join("\n")
+      .slice(-1200);
     await supabase.from("voice_calls").update({
       live_transcript: transcript as unknown as object,
-      ...(final ? { ai_summary: assistantBuffer.slice(-500) || null } : {}),
+      ...(final ? { ai_summary: summary || assistantBuffer.slice(-500) || null } : {}),
     }).eq("provider", provider).eq("provider_call_id", providerCallId);
   };
 
@@ -525,8 +655,9 @@ async function handleStreamSession(req: Request): Promise<Response> {
     const settings = await loadVoiceSettings(supabase);
     const mode = forcedMode ?? settings.aiReceptionistMode ?? "native-audio";
     const systemPrompt = await buildSystemPrompt(supabase, settings, fromNumber, mode);
-    const modelId = mode === "half-cascade" ? GEMINI_LIVE_MODEL_CASCADE : GEMINI_LIVE_MODEL_NATIVE;
+    const modelId = mode === "half-cascade" ? getCascadeModelId() : GEMINI_LIVE_MODEL_NATIVE;
     const toolsEnabled = mode === "half-cascade";
+    geminiSetupComplete = false;
 
     console.log("[voice-ai-bridge] connecting Gemini Live", {
       providerCallId, fromNumber, mode, modelId, toolsEnabled,
@@ -630,11 +761,13 @@ async function handleStreamSession(req: Request): Promise<Response> {
     ws.onclose = (e) => {
       console.warn("[voice-ai-bridge] gemini ws closed", { code: e.code, reason: e.reason, mode, modelId });
       if (gemini === ws) gemini = null;
-      if (!callerClosed && !geminiSetupComplete && mode === "half-cascade" && !didFallbackToNative) {
+      if (!callerClosed && mode === "half-cascade" && !didFallbackToNative) {
         didFallbackToNative = true;
-        console.warn("[voice-ai-bridge] half-cascade failed before setup; falling back to native-audio without tools", {
+        console.warn("[voice-ai-bridge] half-cascade closed; falling back to native-audio without tools", {
           providerCallId,
           failedModelId: modelId,
+          code: e.code,
+          reason: e.reason,
         });
         connectGemini("native-audio").catch((err) => console.error("[voice-ai-bridge] native fallback failed", err));
         return;
