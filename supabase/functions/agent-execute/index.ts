@@ -7908,6 +7908,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'survey_campaigns', 'survey_responses', 'survey_templates',
   // Point of Sale (registers/sessions/sales — read/list skills)
   'pos_registers', 'pos_sessions', 'pos_sales', 'pos_sale_lines',
+  // Subscriptions — win-back campaigns (list_winback_campaigns read/list)
+  'subscription_winback_campaigns',
   // Staged-operations approval queue (list/read; approve/reject via dedicated RPCs)
   'pending_operations',
   // Products + profiles + site_settings (read-skills; writes guarded by RLS)
