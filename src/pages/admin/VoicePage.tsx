@@ -356,10 +356,12 @@ function VoiceSettingsCard() {
                 <Label className="text-sm font-medium">Text the caller the booked time</Label>
                 <p className="text-xs text-muted-foreground">
                   SMS the caller their callback time (mobile numbers only). Off = book silently; staff call at the time.
+                  {!settings.smsReplyEnabled && ' Requires "Reply to voicemail by SMS" above to be on.'}
                 </p>
               </div>
               <Switch
-                checked={settings.autoScheduleSms ?? false}
+                checked={(settings.autoScheduleSms ?? false) && (settings.smsReplyEnabled ?? false)}
+                disabled={!settings.smsReplyEnabled}
                 onCheckedChange={(v) => set('autoScheduleSms', v)}
               />
             </div>
