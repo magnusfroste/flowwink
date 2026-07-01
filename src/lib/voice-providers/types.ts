@@ -142,7 +142,7 @@ export interface VoiceSettings {
   /**
    * Gemini Live model-familj:
    * - `native-audio` (default): högsta röstkvalitet. Tool-calling är instabil (WS 1007) — tools tvingas av.
-   * - `half-cascade`: audio-in → text-tool-loop → TTS-out. Något robotiskare röst men stabil tool-calling.
+   * - `half-cascade`: current Gemini Live tool-calling path. Falls back to native-audio if setup is rejected.
    */
   aiReceptionistMode?: 'native-audio' | 'half-cascade';
   /**
