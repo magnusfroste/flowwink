@@ -206,17 +206,39 @@ export default function FlowtablePage() {
     <AdminLayout>
       <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
         {/* Bases sidebar */}
-        <aside className="w-60 border-r bg-muted/30 flex flex-col">
-          <div className="p-3 border-b flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <Database className="h-4 w-4" /> Bases
-            </div>
+        <aside
+          className={`border-r bg-muted/30 flex flex-col transition-all duration-200 ${
+            basesMinimized ? 'w-14' : 'w-60'
+          }`}
+        >
+          <div className={`border-b flex items-center ${basesMinimized ? 'flex-col p-1.5 gap-1.5' : 'p-3 justify-between'}`}>
+            {!basesMinimized && (
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Database className="h-4 w-4" /> Bases
+              </div>
+            )}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                setBasesMinimized((v) => {
+                  const next = !v;
+                  try {
+                    localStorage.setItem('flowtable-bases-minimized', String(next));
+                  } catch {}
+                  return next;
+                });
+              }}
+              title={basesMinimized ? 'Expand bases panel' : 'Minimize bases panel'}
+            >
+              {basesMinimized ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+            </Button>
             <Button size="icon" variant="ghost" onClick={handleCreateBase} title="New base">
               <Plus className="h-4 w-4" />
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {bases.length === 0 && (
+            {bases.length === 0 && !basesMinimized && (
               <p className="text-xs text-muted-foreground px-2 py-4">
                 No bases yet. Create one to start.
               </p>
@@ -227,18 +249,25 @@ export default function FlowtablePage() {
                 <button
                   key={b.id}
                   onClick={() => navigate(`/admin/flowtable/${b.slug}`)}
-                  className={`w-full text-left px-2 py-2 rounded-md text-sm flex items-center gap-2 group ${
-                    isActive ? 'bg-background shadow-sm' : 'hover:bg-background/60'
-                  }`}
+                  title={b.name}
+                  className={`w-full rounded-md text-sm flex items-center gap-2 group ${
+                    basesMinimized ? 'justify-center px-1 py-1.5' : 'text-left px-2 py-2'
+                  } ${isActive ? 'bg-background shadow-sm' : 'hover:bg-background/60'}`}
                 >
                   <span
-                    className="h-6 w-6 rounded flex items-center justify-center text-[10px] font-bold text-white"
+                    className={`rounded flex items-center justify-center font-bold text-white shrink-0 ${
+                      basesMinimized ? 'h-8 w-8 text-[11px]' : 'h-6 w-6 text-[10px]'
+                    }`}
                     style={{ background: b.color }}
                   >
                     {b.name.slice(0, 2).toUpperCase()}
                   </span>
-                  <span className="flex-1 truncate">{b.name}</span>
-                  {b.workspace_shared && <Users className="h-3 w-3 text-muted-foreground" />}
+                  {!basesMinimized && (
+                    <>
+                      <span className="flex-1 truncate">{b.name}</span>
+                      {b.workspace_shared && <Users className="h-3 w-3 text-muted-foreground" />}
+                    </>
+                  )}
                 </button>
               );
             })}
