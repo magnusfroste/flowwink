@@ -8972,7 +8972,20 @@ async function executeUploadDocument(
   }
 
   if (!uploadedBy) {
-    return { error: 'Cannot determine uploader (no caller_user_id or resolvable api_key owner)', status: 'failed' };
+    // Fail-forward (Law 4): gateway/peer api_keys often have no created_by owner,
+    // so an MCP-driven upload would 500 with no recourse. Attribute it to an admin
+    // so the document is created + owned by a real user with a role.
+    const { data: adminRow } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin')
+      .limit(1)
+      .maybeSingle();
+    if (adminRow?.user_id) uploadedBy = adminRow.user_id;
+  }
+
+  if (!uploadedBy) {
+    return { error: 'Cannot determine uploader (no caller_user_id, api_key owner, or admin user on this site)', status: 'failed' };
   }
 
   // ── Auto-fill file_name for text mode ────────────────────────────────────
