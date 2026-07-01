@@ -121,7 +121,6 @@ export function FlowPilotDetails() {
           {[
             { name: 'flowpilot-heartbeat',      schedule: 'Configurable (default: twice daily)', desc: 'Objective management & site health' },
             { name: 'flowpilot-learn',          schedule: 'Daily 03:00',                          desc: 'Nightly learning & memory consolidation' },
-            { name: 'flowpilot-daily-briefing', schedule: 'Daily 07:00',                          desc: 'Morning summary & action items' },
           ].map(job => (
             <div key={job.name} className="flex items-start gap-2 py-1">
               <Hash className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
