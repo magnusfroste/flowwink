@@ -151,123 +151,182 @@ export function SettingsTab() {
         </CardContent>
       </Card>
 
-      {draft && (
+      {draft && (() => {
+        const fmtNumber = (n: number, d: AccountingPreferences) => {
+          const [intPart, decPart] = n.toFixed(d.decimals).split('.');
+          const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, d.thousandsSeparator || '');
+          return d.decimals > 0 ? `${grouped}${d.decimalSeparator}${decPart}` : grouped;
+        };
+        const fmtMoney = (n: number, d: AccountingPreferences) => {
+          const num = fmtNumber(n, d);
+          return d.currencyPosition === 'prefix' ? `${d.currency} ${num}` : `${num} ${d.currency}`;
+        };
+        const fmtDate = (d: AccountingPreferences) => {
+          const yyyy = '2026', mm = '07', dd = '02';
+          switch (d.dateFormat) {
+            case 'DD/MM/YYYY': return `${dd}/${mm}/${yyyy}`;
+            case 'MM/DD/YYYY': return `${mm}/${dd}/${yyyy}`;
+            case 'DD.MM.YYYY': return `${dd}.${mm}.${yyyy}`;
+            default: return `${yyyy}-${mm}-${dd}`;
+          }
+        };
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        return (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5" />
-              Number & Date Formatting
+              Display format
             </CardTitle>
             <CardDescription>
-              How amounts and dates are displayed across journal entries, ledger and reports.
-              Formatting is a display concern only — all amounts are stored as integer cents/öre.
+              Controls how amounts and dates appear in journal entries, ledgers and reports.
+              Amounts are always stored as integer öre/cents — this only changes display.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">Preview: </span>
-              <span className="font-mono font-medium">{previewAmount}</span>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency (ISO 4217)</Label>
-                <Input
-                  id="currency"
-                  value={draft.currency}
-                  maxLength={3}
-                  onChange={(e) => patch({ currency: e.target.value.toUpperCase() })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Currency position</Label>
-                <Select value={draft.currencyPosition} onValueChange={(v) => patch({ currencyPosition: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="suffix">After amount (1 234,56 SEK)</SelectItem>
-                    <SelectItem value="prefix">Before amount (SEK 1 234.56)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Decimal places</Label>
-                <Select value={String(draft.decimals)} onValueChange={(v) => patch({ decimals: Number(v) as 0 | 2 })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2 (1 234,56)</SelectItem>
-                    <SelectItem value="0">0 (1 235)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Rounding mode</Label>
-                <Select value={draft.rounding} onValueChange={(v) => patch({ rounding: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="half-up">Half up (standard)</SelectItem>
-                    <SelectItem value="half-even">Half even (banker's)</SelectItem>
-                    <SelectItem value="down">Down (truncate)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Decimal separator</Label>
-                <Select value={draft.decimalSeparator} onValueChange={(v) => patch({ decimalSeparator: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value=",">Comma ( , )</SelectItem>
-                    <SelectItem value=".">Period ( . )</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Thousands separator</Label>
-                <Select value={draft.thousandsSeparator} onValueChange={(v) => patch({ thousandsSeparator: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value=" ">Space (1 234 567)</SelectItem>
-                    <SelectItem value=",">Comma (1,234,567)</SelectItem>
-                    <SelectItem value=".">Period (1.234.567)</SelectItem>
-                    <SelectItem value="">None (1234567)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Date format</Label>
-                <Select value={draft.dateFormat} onValueChange={(v) => patch({ dateFormat: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YYYY-MM-DD">2026-07-02 (ISO)</SelectItem>
-                    <SelectItem value="DD/MM/YYYY">02/07/2026</SelectItem>
-                    <SelectItem value="MM/DD/YYYY">07/02/2026</SelectItem>
-                    <SelectItem value="DD.MM.YYYY">02.07.2026</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Fiscal year starts</Label>
-                <Select
-                  value={String(draft.fiscalYearStartMonth)}
-                  onValueChange={(v) => patch({ fiscalYearStartMonth: Number(v) })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
-                      <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Live preview */}
+            <div className="rounded-lg border bg-muted/40 p-4">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Live preview</div>
+              <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
+                <div>
+                  <div className="text-xs text-muted-foreground">Amount</div>
+                  <div className="text-2xl font-mono font-semibold">{fmtMoney(1234567.89, draft)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Small amount</div>
+                  <div className="text-lg font-mono">{fmtMoney(42.5, draft)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Entry date</div>
+                  <div className="text-lg font-mono">{fmtDate(draft)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Fiscal year</div>
+                  <div className="text-lg font-mono">Starts {months[draft.fiscalYearStartMonth - 1]}</div>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            {/* Currency */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Currency</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency code</Label>
+                  <Input
+                    id="currency"
+                    value={draft.currency}
+                    maxLength={3}
+                    onChange={(e) => patch({ currency: e.target.value.toUpperCase() })}
+                  />
+                  <p className="text-xs text-muted-foreground">ISO 4217 — e.g. SEK, EUR, USD, GBP.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Where to show it</Label>
+                  <Select value={draft.currencyPosition} onValueChange={(v) => patch({ currencyPosition: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="suffix">After the amount — {fmtNumber(1234.56, draft)} {draft.currency}</SelectItem>
+                      <SelectItem value="prefix">Before the amount — {draft.currency} {fmtNumber(1234.56, draft)}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Numbers */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Numbers</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Decimals shown</Label>
+                  <Select value={String(draft.decimals)} onValueChange={(v) => patch({ decimals: Number(v) as 0 | 2 })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 decimals — 1{draft.thousandsSeparator}234{draft.decimalSeparator}56</SelectItem>
+                      <SelectItem value="0">No decimals — 1{draft.thousandsSeparator}235</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Öre/cents are still stored — this only hides them.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Decimal separator</Label>
+                  <Select value={draft.decimalSeparator} onValueChange={(v) => patch({ decimalSeparator: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value=",">Comma — 1234,56 (Swedish / European)</SelectItem>
+                      <SelectItem value=".">Period — 1234.56 (US / UK)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Thousands separator</Label>
+                  <Select value={draft.thousandsSeparator} onValueChange={(v) => patch({ thousandsSeparator: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value=" ">Space — 1 234 567 (Swedish)</SelectItem>
+                      <SelectItem value=",">Comma — 1,234,567 (US / UK)</SelectItem>
+                      <SelectItem value=".">Period — 1.234.567 (German)</SelectItem>
+                      <SelectItem value="">None — 1234567</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Rounding</Label>
+                  <Select value={draft.rounding} onValueChange={(v) => patch({ rounding: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="half-up">Round half up — 0,5 → 1 (standard)</SelectItem>
+                      <SelectItem value="half-even">Banker's rounding — 0,5 → 0, 1,5 → 2</SelectItem>
+                      <SelectItem value="down">Always down — 0,9 → 0 (truncate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Used when VAT/percentage templates are expanded.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dates & fiscal year */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Dates & fiscal year</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Date format</Label>
+                  <Select value={draft.dateFormat} onValueChange={(v) => patch({ dateFormat: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YYYY-MM-DD">2026-07-02 — ISO / Swedish</SelectItem>
+                      <SelectItem value="DD/MM/YYYY">02/07/2026 — European</SelectItem>
+                      <SelectItem value="MM/DD/YYYY">07/02/2026 — US</SelectItem>
+                      <SelectItem value="DD.MM.YYYY">02.07.2026 — German</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Fiscal year starts in</Label>
+                  <Select
+                    value={String(draft.fiscalYearStartMonth)}
+                    onValueChange={(v) => patch({ fiscalYearStartMonth: Number(v) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {months.map((m, i) => (
+                        <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">January = calendar year. Change if your business runs on a broken fiscal year.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
               <Button
                 variant="ghost"
                 disabled={!dirty || updatePrefs.isPending}
@@ -284,7 +343,9 @@ export function SettingsTab() {
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
+
 
 
 
