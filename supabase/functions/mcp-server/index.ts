@@ -57,7 +57,8 @@ async function authenticateApiKey(
   if (!raw) return { valid: false };
 
   const hash = await sha256(raw);
-  console.log("Auth: key_prefix=", raw.substring(0, 12), "hash=", hash.substring(0, 16));
+  // Don't log key material (token prefix / hash) — logs are a secondary
+  // exposure surface for credentials.
   const sb = serviceClient();
 
   const { data, error } = await sb

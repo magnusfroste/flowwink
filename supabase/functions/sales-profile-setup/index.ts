@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient, resolveCaller } from '../_shared/supabase-clients.ts';
+import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,6 +52,16 @@ serve(async (req) => {
       });
     }
 
+    const supabase = getServiceClient();
+
+    // The COMPANY profile (ICP, value prop) is site-wide config — previously
+    // writable by anyone. Require service key or admin (the user path is gated
+    // above by resolveCaller).
+    if (type === 'company') {
+      const auth = await requireServiceOrRole(req, supabase);
+      if (!auth.authorized) return unauthorized(corsHeaders);
+    }
+
     const input: ProfileSetupInput = {
       type,
       data,
@@ -58,7 +69,6 @@ serve(async (req) => {
         ? caller?.user?.id
         : (raw.user_id as string | undefined),
     };
-    const supabase = getServiceClient();
 
     const userId = input.type === 'user' ? (input.user_id || null) : null;
 

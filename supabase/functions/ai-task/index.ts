@@ -23,6 +23,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
+import { requireServiceOrRole, unauthorized } from "../_shared/edge-auth.ts";
 import { TASKS, listTasks } from "./tasks.ts";
 
 const corsHeaders = {
@@ -51,6 +52,12 @@ serve(async (req) => {
   }
 
   try {
+    // Privileged: runs paid LLM tasks (some write to the DB) with the service
+    // client. Callers are agent-execute (service key) and admin UI (session JWT).
+    // Gate to stop anonymous LLM-cost abuse. GET discovery stays open above.
+    const gateAuth = await requireServiceOrRole(req, getServiceClient());
+    if (!gateAuth.authorized) return unauthorized(corsHeaders);
+
     const body = await req.json().catch(() => ({}));
     const taskName: string = body?.task;
     const input = body?.input ?? {};

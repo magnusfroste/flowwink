@@ -161,10 +161,11 @@ export function useDeleteProduct() {
 }
 
 export function formatPrice(cents: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+  // Show the real fractional price: 12995 → "129,95 kr", not "130" (the old
+  // maximumFractionDigits:0 rounded display prices away from the charged amount).
+  // Zero-decimal currencies (JPY) still render whole via their own default.
+  return new Intl.NumberFormat('sv-SE', {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
   }).format(cents / 100);
 }
