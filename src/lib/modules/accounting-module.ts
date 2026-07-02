@@ -193,7 +193,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
         description: 'CRUD for chart of accounts across locales',
         parameters: {
           type: 'object',
-          properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } },
+          properties: { action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] }, locale: { type: 'string' }, account_code: { type: 'string' }, account_name: { type: 'string' }, account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'revenue', 'expense'] }, account_category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] }, search: { type: 'string' } },
           required: ['action'],
           'x-action-required': {
             add: ['account_code', 'account_name', 'account_type', 'account_category', 'normal_balance'],
