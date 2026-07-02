@@ -27,6 +27,14 @@ export interface JournalEntry {
   journal_id: string | null;
   created_by: string | null;
   created_at: string;
+  voucher_series?: string | null;
+  voucher_number?: number | null;
+  voucher_year?: number | null;
+  // Enriched by useJournalEntries:
+  total_cents?: number;
+  line_count?: number;
+  is_balanced?: boolean;
+  account_codes?: string[];
   lines?: JournalEntryLine[];
 }
 
@@ -138,9 +146,39 @@ export function useJournalEntries(statusFilter?: string, journalId?: string) {
         query = query.eq('journal_id', journalId);
       }
 
-      const { data, error } = await query;
+      const { data: entries, error } = await query;
       if (error) throw error;
-      return data as JournalEntry[];
+
+      const ids = (entries || []).map((e) => e.id);
+      if (ids.length === 0) return entries as JournalEntry[];
+
+      const { data: lines } = await supabase
+        .from('journal_entry_lines')
+        .select('journal_entry_id, account_code, debit_cents, credit_cents')
+        .in('journal_entry_id', ids);
+
+      const agg = new Map<string, { debit: number; credit: number; count: number; codes: Set<string> }>();
+      for (const l of lines || []) {
+        const cur = agg.get(l.journal_entry_id) || { debit: 0, credit: 0, count: 0, codes: new Set<string>() };
+        cur.debit += Number(l.debit_cents || 0);
+        cur.credit += Number(l.credit_cents || 0);
+        cur.count += 1;
+        cur.codes.add(l.account_code);
+        agg.set(l.journal_entry_id, cur);
+      }
+
+      return (entries || []).map((e) => {
+        const a = agg.get(e.id);
+        const debit = a?.debit || 0;
+        const credit = a?.credit || 0;
+        return {
+          ...e,
+          total_cents: Math.max(debit, credit),
+          line_count: a?.count || 0,
+          is_balanced: debit === credit && (a?.count || 0) > 0,
+          account_codes: a ? Array.from(a.codes).sort() : [],
+        };
+      }) as JournalEntry[];
     },
   });
 }
