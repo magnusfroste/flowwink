@@ -124,6 +124,19 @@ export interface VoiceCallFilters {
 }
 
 export function useVoiceCalls(filters: VoiceCallFilters = {}) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel('voice-calls-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'voice_calls' },
+        () => { qc.invalidateQueries({ queryKey: ['voice-calls'] }); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   return useQuery({
     queryKey: ['voice-calls', filters],
     queryFn: async () => {
@@ -136,6 +149,7 @@ export function useVoiceCalls(filters: VoiceCallFilters = {}) {
       if (error) throw error;
       return (data ?? []) as unknown as VoiceCallRow[];
     },
+    refetchOnWindowFocus: true,
   });
 }
 
