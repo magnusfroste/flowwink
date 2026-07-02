@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookOpen, Search } from 'lucide-react';
-import { useAccountBalances } from '@/hooks/useAccounting';
+import { useAccountBalances, useAccountLedger } from '@/hooks/useAccounting';
 import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -196,6 +196,7 @@ function RenderGroup({
   subBalance: number;
   fmt: (c: number) => string;
 }) {
+  const [openCode, setOpenCode] = useState<string | null>(null);
   return (
     <>
       <tr className="bg-foreground text-background">
@@ -204,16 +205,18 @@ function RenderGroup({
         <td className="px-6 py-2.5 text-right font-mono font-semibold">{fmt(subCredit)}</td>
         <td className="px-6 py-2.5 text-right font-mono font-semibold">{fmt(subBalance)}</td>
       </tr>
-      {rows.map((account) => (
-        <tr key={account.account_code} className="odd:bg-muted/20">
-          <td className="px-6 py-1.5 pl-10 text-muted-foreground">
-            <span className="font-mono">{account.account_code}</span> - {account.account_name}
-          </td>
-          <td className="px-6 py-1.5 text-right font-mono">{fmt(account.debit_total)}</td>
-          <td className="px-6 py-1.5 text-right font-mono">{fmt(account.credit_total)}</td>
-          <td className="px-6 py-1.5 text-right font-mono font-medium">{fmt(account.balance)}</td>
-        </tr>
-      ))}
+      {rows.map((account) => {
+        const isOpen = openCode === account.account_code;
+        return (
+          <FragmentRow
+            key={account.account_code}
+            account={account}
+            isOpen={isOpen}
+            onToggle={() => setOpenCode(isOpen ? null : account.account_code)}
+            fmt={fmt}
+          />
+        );
+      })}
       <tr className="border-t">
         <td className="px-6 py-2 pl-10 font-semibold">Total {label.toLowerCase()}</td>
         <td className="px-6 py-2 text-right font-mono font-semibold">{fmt(subDebit)}</td>
@@ -223,3 +226,103 @@ function RenderGroup({
     </>
   );
 }
+
+function FragmentRow({
+  account, isOpen, onToggle, fmt,
+}: {
+  account: any;
+  isOpen: boolean;
+  onToggle: () => void;
+  fmt: (c: number) => string;
+}) {
+  return (
+    <>
+      <tr
+        className="odd:bg-muted/20 hover:bg-muted/40 cursor-pointer"
+        onClick={onToggle}
+      >
+        <td className="px-6 py-1.5 pl-10 text-muted-foreground">
+          <span className="inline-block w-3 text-xs">{isOpen ? '▾' : '▸'}</span>{' '}
+          <span className="font-mono">{account.account_code}</span> - {account.account_name}
+        </td>
+        <td className="px-6 py-1.5 text-right font-mono">{fmt(account.debit_total)}</td>
+        <td className="px-6 py-1.5 text-right font-mono">{fmt(account.credit_total)}</td>
+        <td className="px-6 py-1.5 text-right font-mono font-medium">{fmt(account.balance)}</td>
+      </tr>
+      {isOpen && (
+        <tr>
+          <td colSpan={4} className="px-6 pb-4 pt-1 bg-muted/10">
+            <AccountLedgerLines accountCode={account.account_code} fmt={fmt} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function AccountLedgerLines({ accountCode, fmt }: { accountCode: string; fmt: (c: number) => string }) {
+  const { data, isLoading } = useAccountLedger(accountCode);
+  if (isLoading) return <div className="text-xs text-muted-foreground pl-4 py-2">Loading transactions…</div>;
+  if (!data) return null;
+
+  const voucherLabel = (l: any) => {
+    if (l.voucher_series && l.voucher_number != null) {
+      return `${l.voucher_series}${l.voucher_number}${l.voucher_year ? `/${String(l.voucher_year).slice(-2)}` : ''}`;
+    }
+    return l.reference_number || '—';
+  };
+
+  // Running balance in normal-direction
+  let running = data.opening_cents;
+  const withRunning = data.lines.map((l) => {
+    const delta = data.normal_balance === 'debit'
+      ? l.debit_cents - l.credit_cents
+      : l.credit_cents - l.debit_cents;
+    running += delta;
+    return { ...l, running };
+  });
+
+  return (
+    <div className="border rounded-md overflow-hidden bg-background">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="text-left font-medium px-3 py-1.5 w-24">Voucher</th>
+            <th className="text-left font-medium px-3 py-1.5 w-24">Date</th>
+            <th className="text-left font-medium px-3 py-1.5">Description</th>
+            <th className="text-right font-medium px-3 py-1.5 w-28">Debit</th>
+            <th className="text-right font-medium px-3 py-1.5 w-28">Credit</th>
+            <th className="text-right font-medium px-3 py-1.5 w-32">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b bg-muted/20">
+            <td colSpan={5} className="px-3 py-1.5 italic text-muted-foreground">Opening balance</td>
+            <td className="px-3 py-1.5 text-right font-mono">{fmt(data.opening_cents)}</td>
+          </tr>
+          {withRunning.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="px-3 py-3 text-center text-muted-foreground">No transactions in period</td>
+            </tr>
+          ) : (
+            withRunning.map((l, i) => (
+              <tr key={l.entry_id + i} className="odd:bg-muted/10">
+                <td className="px-3 py-1 font-mono text-muted-foreground">{voucherLabel(l)}</td>
+                <td className="px-3 py-1 font-mono text-muted-foreground">{l.entry_date}</td>
+                <td className="px-3 py-1 truncate max-w-md">{l.description}</td>
+                <td className="px-3 py-1 text-right font-mono">{l.debit_cents ? fmt(l.debit_cents) : ''}</td>
+                <td className="px-3 py-1 text-right font-mono">{l.credit_cents ? fmt(l.credit_cents) : ''}</td>
+                <td className="px-3 py-1 text-right font-mono text-muted-foreground">{fmt(l.running)}</td>
+              </tr>
+            ))
+          )}
+          <tr className="border-t bg-muted/30 font-semibold">
+            <td colSpan={5} className="px-3 py-1.5">Closing balance</td>
+            <td className="px-3 py-1.5 text-right font-mono">{fmt(data.closing_cents)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
