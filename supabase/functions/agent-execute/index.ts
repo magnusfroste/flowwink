@@ -6339,7 +6339,8 @@ async function executeDbAction(
           description: description || 'FlowPilot transaction',
           reference_number: reference_number || null,
           status: 'posted',
-          source: 'flowpilot',
+          source: resolvedSource,
+
         }).select('id').single();
       if (entryErr) throw new Error(`Create entry failed: ${entryErr.message}`);
 
