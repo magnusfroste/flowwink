@@ -145,17 +145,12 @@ export function JournalTab() {
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
-          {/* Report header */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 px-6 pt-6 pb-4 border-b">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Journal</h2>
-              <div className="mt-3 text-sm font-semibold">{orgName}</div>
-            </div>
-            <div className="text-sm text-muted-foreground grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
-              <span>Entries</span><span className="text-foreground">{filtered.length}</span>
-              <span>Total amount</span><span className="text-foreground font-mono">{fmt(grandTotal)}</span>
-            </div>
+          <div className="flex items-center justify-between px-4 py-2 border-b text-xs text-muted-foreground">
+            <span>{filtered.length} entries</span>
+            <span className="font-mono">Total {fmt(grandTotal)}</span>
           </div>
+
+
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
