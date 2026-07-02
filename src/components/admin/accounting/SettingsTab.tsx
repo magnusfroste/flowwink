@@ -1,25 +1,53 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Globe, Check, Database, ExternalLink } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Settings, Globe, Check, Database, ExternalLink, Hash } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAccountingLocale, ACCOUNTING_LOCALES } from '@/hooks/useAccountingLocale';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
+import { useAccountingPreferences, useUpdateAccountingPreferences, type AccountingPreferences } from '@/hooks/useSiteSettings';
 import { IFRS_TEMPLATES } from '@/data/templates-ifrs';
 import { US_GAAP_TEMPLATES } from '@/data/templates-usgaap';
 import { IFRS_ACCOUNTS } from '@/data/accounts-ifrs';
 import { US_GAAP_ACCOUNTS } from '@/data/accounts-usgaap';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+
 
 export function SettingsTab() {
   const { locale, setLocale } = useAccountingLocale();
   const { data: accounts } = useChartOfAccounts();
+  const { data: prefs } = useAccountingPreferences();
+  const updatePrefs = useUpdateAccountingPreferences();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [seeding, setSeeding] = useState(false);
+  const [draft, setDraft] = useState<AccountingPreferences | null>(null);
+
+  useEffect(() => {
+    if (prefs && !draft) setDraft(prefs);
+  }, [prefs, draft]);
+
+  const patch = (p: Partial<AccountingPreferences>) =>
+    setDraft((d) => (d ? { ...d, ...p } : d));
+
+  const dirty = !!draft && !!prefs && JSON.stringify(draft) !== JSON.stringify(prefs);
+
+  const previewAmount = (() => {
+    if (!draft) return '';
+    const n = 1234567.89;
+    const [intPart, decPart] = n.toFixed(draft.decimals).split('.');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, draft.thousandsSeparator || '');
+    const num = draft.decimals > 0 ? `${grouped}${draft.decimalSeparator}${decPart}` : grouped;
+    return draft.currencyPosition === 'prefix' ? `${draft.currency} ${num}` : `${num} ${draft.currency}`;
+  })();
+
+
 
   const handleSeedLocale = async (targetLocale: string) => {
     setSeeding(true);
@@ -122,6 +150,143 @@ export function SettingsTab() {
           })}
         </CardContent>
       </Card>
+
+      {draft && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              Number & Date Formatting
+            </CardTitle>
+            <CardDescription>
+              How amounts and dates are displayed across journal entries, ledger and reports.
+              Formatting is a display concern only — all amounts are stored as integer cents/öre.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
+              <span className="text-muted-foreground">Preview: </span>
+              <span className="font-mono font-medium">{previewAmount}</span>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency (ISO 4217)</Label>
+                <Input
+                  id="currency"
+                  value={draft.currency}
+                  maxLength={3}
+                  onChange={(e) => patch({ currency: e.target.value.toUpperCase() })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Currency position</Label>
+                <Select value={draft.currencyPosition} onValueChange={(v) => patch({ currencyPosition: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="suffix">After amount (1 234,56 SEK)</SelectItem>
+                    <SelectItem value="prefix">Before amount (SEK 1 234.56)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Decimal places</Label>
+                <Select value={String(draft.decimals)} onValueChange={(v) => patch({ decimals: Number(v) as 0 | 2 })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2">2 (1 234,56)</SelectItem>
+                    <SelectItem value="0">0 (1 235)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Rounding mode</Label>
+                <Select value={draft.rounding} onValueChange={(v) => patch({ rounding: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="half-up">Half up (standard)</SelectItem>
+                    <SelectItem value="half-even">Half even (banker's)</SelectItem>
+                    <SelectItem value="down">Down (truncate)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Decimal separator</Label>
+                <Select value={draft.decimalSeparator} onValueChange={(v) => patch({ decimalSeparator: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=",">Comma ( , )</SelectItem>
+                    <SelectItem value=".">Period ( . )</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Thousands separator</Label>
+                <Select value={draft.thousandsSeparator} onValueChange={(v) => patch({ thousandsSeparator: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=" ">Space (1 234 567)</SelectItem>
+                    <SelectItem value=",">Comma (1,234,567)</SelectItem>
+                    <SelectItem value=".">Period (1.234.567)</SelectItem>
+                    <SelectItem value="">None (1234567)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Date format</Label>
+                <Select value={draft.dateFormat} onValueChange={(v) => patch({ dateFormat: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="YYYY-MM-DD">2026-07-02 (ISO)</SelectItem>
+                    <SelectItem value="DD/MM/YYYY">02/07/2026</SelectItem>
+                    <SelectItem value="MM/DD/YYYY">07/02/2026</SelectItem>
+                    <SelectItem value="DD.MM.YYYY">02.07.2026</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fiscal year starts</Label>
+                <Select
+                  value={String(draft.fiscalYearStartMonth)}
+                  onValueChange={(v) => patch({ fiscalYearStartMonth: Number(v) })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                disabled={!dirty || updatePrefs.isPending}
+                onClick={() => prefs && setDraft(prefs)}
+              >
+                Reset
+              </Button>
+              <Button
+                disabled={!dirty || updatePrefs.isPending}
+                onClick={() => draft && updatePrefs.mutate(draft)}
+              >
+                {updatePrefs.isPending ? 'Saving...' : 'Save preferences'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {selectedInfo && (
         <Card>
