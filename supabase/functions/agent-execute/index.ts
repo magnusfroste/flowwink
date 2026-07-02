@@ -81,8 +81,40 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
+    // ─── AUTH GATE ───────────────────────────────────────────────────────
+    // agent-execute runs any enabled skill with the service-role client (RLS
+    // off) and is deployed --no-verify-jwt, so it MUST authenticate in-body or
+    // it is an unauthenticated universal skill executor reachable from the
+    // internet. Legitimate callers are exactly two: internal edge functions
+    // (mcp-server, voice-ingest, a2a, automation-dispatcher, send-webhook,
+    // run-autonomy-tests) which send Bearer <service_role key>, and the admin
+    // UI which sends the logged-in admin's JWT via functions.invoke. Anyone
+    // else → 401. (Same gate as newsletter/send + create-user.)
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const bearer = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    let gateUserId: string | null = null;
+    let authorized = false;
+    if (bearer && serviceKey && bearer === serviceKey) {
+      authorized = true; // trusted internal edge caller
+    } else if (bearer) {
+      const { data: userData } = await supabase.auth.getUser(bearer);
+      if (userData?.user) {
+        const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: userData.user.id, _role: 'admin' });
+        if (isAdmin) { authorized = true; gateUserId = userData.user.id; }
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id, caller_api_key_id } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id } = body;
+    // A verified admin JWT is the authoritative caller identity — internal edge
+    // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
+    const caller_user_id = gateUserId ?? bodyCallerUserId;
 
     // ─── Argument normalization ──────────────────────────────────────────
     const _rawHasData = rawArgs && typeof rawArgs === 'object' && 'data' in (rawArgs as any);
