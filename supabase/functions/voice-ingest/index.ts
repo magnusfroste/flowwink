@@ -545,6 +545,7 @@ async function executeSkill(
   }
 
   // Dispatch via agent-execute — it knows enabled modules + alias mapping.
+  // NB: agent-execute's contract is `skill_name` — sending `skill` silently 400s.
   try {
     const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
     const res = await fetch(url, {
@@ -553,10 +554,11 @@ async function executeSkill(
         "Content-Type": "application/json",
         "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
       },
-      body: JSON.stringify({ skill: name, arguments: args, source: "voice-ai" }),
+      body: JSON.stringify({ skill_name: name, arguments: args, agent_type: "voice-ai" }),
     });
-    if (!res.ok) return { error: `Tool failed: ${res.status}` };
-    return await res.json();
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { error: `Tool failed: ${res.status}`, detail: body?.error ?? null };
+    return body;
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }

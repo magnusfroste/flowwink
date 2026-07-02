@@ -4250,7 +4250,10 @@ async function executeBookingAction(
   }
 
   // book_appointment — original handler
-  const { service_id, customer_name, customer_email, date, time } = args as any;
+  // Voice/agent callers may pass `starts_at` (ISO) instead of date+time, and a
+  // phone caller has no email — bookings.customer_email is NOT NULL, so derive
+  // a phone-based placeholder rather than failing the whole booking (Law 4).
+  const { service_id, customer_name, customer_email, customer_phone, notes, date, time, starts_at } = args as any;
   let svcId = service_id;
   if (!svcId) {
     const { data: services } = await supabase
@@ -4258,14 +4261,28 @@ async function executeBookingAction(
       .eq('is_active', true).order('sort_order').limit(1);
     if (services?.length) svcId = services[0].id;
   }
-  const startTime = new Date(`${date}T${time}:00`);
+  const startTime = starts_at ? new Date(String(starts_at)) : new Date(`${date}T${time}:00`);
+  if (isNaN(startTime.getTime())) {
+    return { error: 'book_appointment needs starts_at (ISO timestamp) or date (YYYY-MM-DD) + time (HH:MM)' };
+  }
   const { data: svc } = await supabase.from('booking_services')
     .select('duration_minutes').eq('id', svcId).single();
   const duration = svc?.duration_minutes || 60;
   const endTime = new Date(startTime.getTime() + duration * 60000);
 
+  const phoneDigits = String(customer_phone ?? '').replace(/[^\d+]/g, '');
+  const emailFinal = customer_email
+    || (phoneDigits ? `${phoneDigits.replace(/^\+/, '')}@voice.caller` : null);
+  if (!emailFinal) {
+    return { error: 'book_appointment needs customer_email (or customer_phone for phone bookings)' };
+  }
+
   const { data, error } = await supabase.from('bookings').insert({
-    service_id: svcId, customer_name, customer_email,
+    service_id: svcId,
+    customer_name: customer_name || (phoneDigits ? `Caller ${phoneDigits}` : 'Unknown caller'),
+    customer_email: emailFinal,
+    ...(phoneDigits ? { customer_phone: phoneDigits } : {}),
+    ...(notes ? { notes } : {}),
     start_time: startTime.toISOString(), end_time: endTime.toISOString(),
     status: 'pending',
   }).select().single();
@@ -7910,6 +7927,10 @@ const GENERIC_CRUD_TABLES = new Set([
   'pos_registers', 'pos_sessions', 'pos_sales', 'pos_sale_lines',
   // Subscriptions — win-back campaigns (list_winback_campaigns read/list)
   'subscription_winback_campaigns',
+  // Voice module — call log + callback scheduling (list/schedule/mark skills)
+  'voice_calls',
+  // FlowTable (user-defined tables)
+  'flowtable_bases', 'flowtable_records',
   // Staged-operations approval queue (list/read; approve/reject via dedicated RPCs)
   'pending_operations',
   // Products + profiles + site_settings (read-skills; writes guarded by RLS)
