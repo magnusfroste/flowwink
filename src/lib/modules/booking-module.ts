@@ -103,16 +103,20 @@ Creates a booking for a customer at a specific date and time.
     },
     instructions: `## check_availability
 ### What
-Checks booking availability for a specific date.
+Checks booking availability for a specific date and computes DISCRETE free slots.
 ### When to use
-- Visitor asks about available times in chat
-- Before calling book_appointment
+- Visitor asks about available times in chat/voice
+- Before calling book_appointment / book_appointment_slot
 - Calendar management
 ### Parameters
 - **date**: Required. Date in YYYY-MM-DD format.
-- **service_id**: Optional. Filter by specific service.
+- **service_id**: Optional. Slot grid follows the service's duration (else 30 min). Generic availability windows (service_id NULL) always apply.
+### Response
+- **free_slots**: ready-to-offer start times, e.g. ["09:00","09:30","10:00"] — already excludes existing bookings, blocked ranges and past times (today). Read these straight to the user; do not recompute from windows.
+- **slot_minutes**: the grid size used.
+- **booked_ranges** + **available_windows**: raw data for custom reasoning.
 ### Edge cases
-- Returns available time slots based on booking_availability hours minus existing bookings.
+- Empty free_slots + empty available_windows = no availability configured that weekday.
 - Respects blocked dates from booking_blocked_dates.`,
   },
   {

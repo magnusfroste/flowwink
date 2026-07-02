@@ -4164,11 +4164,15 @@ async function executeBookingAction(
     if (!date) throw new Error('date is required');
 
     const dayOfWeek = new Date(date).getDay();
+    // NB: availability rows with service_id NULL apply to ALL services — a
+    // plain .eq(service_id) filter silently excluded them, so any caller that
+    // passed a service_id got "no windows" (the voice receptionist's
+    // "couldn't find times" bug).
     let availQuery = supabase.from('booking_availability')
       .select('start_time, end_time, service_id')
       .eq('day_of_week', dayOfWeek)
       .eq('is_active', true);
-    if (service_id) availQuery = availQuery.eq('service_id', service_id);
+    if (service_id) availQuery = availQuery.or(`service_id.eq.${service_id},service_id.is.null`);
     const { data: availability } = await availQuery;
 
     // Check blocked dates
@@ -4186,6 +4190,42 @@ async function executeBookingAction(
 
     const isFullyBlocked = blocked?.some((b: any) => b.is_all_day);
 
+    // Slot duration: the service's duration when known, else 30 min grid.
+    let slotMinutes = 30;
+    if (service_id) {
+      const { data: svc } = await supabase.from('booking_services')
+        .select('duration_minutes').eq('id', service_id).maybeSingle();
+      if (svc?.duration_minutes) slotMinutes = svc.duration_minutes;
+    }
+
+    // Compute DISCRETE free slots the agent can read straight to the caller —
+    // windows minus existing bookings minus partial-day blocks, aligned to the
+    // slot grid, excluding past times when the date is today.
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const busy: Array<[number, number]> = (bookings || []).map((b: any) => {
+      const s = new Date(b.start_time); const e = new Date(b.end_time);
+      return [s.getUTCHours() * 60 + s.getUTCMinutes(), e.getUTCHours() * 60 + e.getUTCMinutes()];
+    });
+    for (const bl of blocked || []) {
+      if (!bl.is_all_day && bl.start_time && bl.end_time) busy.push([toMin(bl.start_time), toMin(bl.end_time)]);
+    }
+    const now = new Date();
+    const isToday = date === now.toISOString().slice(0, 10);
+    const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+
+    const freeSlots: string[] = [];
+    if (!isFullyBlocked) {
+      for (const w of availability || []) {
+        const wStart = toMin(w.start_time); const wEnd = toMin(w.end_time);
+        for (let t = wStart; t + slotMinutes <= wEnd && freeSlots.length < 24; t += slotMinutes) {
+          if (isToday && t <= nowMin) continue;
+          const overlaps = busy.some(([bs, be]) => t < be && t + slotMinutes > bs);
+          if (!overlaps) freeSlots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
+        }
+      }
+    }
+
     return {
       date,
       day_of_week: dayOfWeek,
@@ -4194,7 +4234,11 @@ async function executeBookingAction(
       available_windows: isFullyBlocked ? [] : (availability || []).map((a: any) => ({
         start: a.start_time, end: a.end_time, service_id: a.service_id,
       })),
+      // Ready-to-offer start times (slot grid = service duration, default 30 min).
+      free_slots: freeSlots,
+      slot_minutes: slotMinutes,
       existing_bookings: (bookings || []).length,
+      booked_ranges: (bookings || []).map((b: any) => ({ start: b.start_time, end: b.end_time })),
     };
   }
 
