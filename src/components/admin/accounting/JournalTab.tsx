@@ -173,23 +173,59 @@ export function JournalTab() {
                 </tr>
               </thead>
               <tbody>
-                {byMonth.map(([month, rows]) => {
-                  const monthTotal = rows.reduce((s, e) => s + (e.total_cents || 0), 0);
-                  const label = month
-                    ? new Date(month + '-01').toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
-                    : 'Undated';
+                {filtered.map((e) => {
+                  const journal = e.journal_id ? journalById.get(e.journal_id) : null;
+                  const codes = e.account_codes || [];
+                  const codesShown = codes.slice(0, 4);
+                  const extra = codes.length - codesShown.length;
                   return (
-                    <MonthGroup
-                      key={month}
-                      label={label}
-                      count={rows.length}
-                      total={fmt(monthTotal)}
-                      rows={rows}
-                      fmt={fmt}
-                      voucherLabel={voucherLabel}
-                      journalById={journalById}
-                      onSelect={setSelectedId}
-                    />
+                    <tr
+                      key={e.id}
+                      className="odd:bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors border-b last:border-b-0"
+                      onClick={() => setSelectedId(e.id)}
+                    >
+                      <td className="px-4 py-1.5 font-mono text-xs text-muted-foreground">{voucherLabel(e)}</td>
+                      <td className="px-4 py-1.5 font-mono text-xs text-muted-foreground">{e.entry_date}</td>
+                      <td className="px-4 py-1.5">
+                        <div className="truncate max-w-xs">{e.description}</div>
+                        {e.reference_number && (
+                          <div className="text-xs text-muted-foreground">Ref: {e.reference_number}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-1.5">
+                        {journal ? (
+                          <Badge variant="outline" className="text-xs font-mono">{journal.code}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-1.5">
+                        <div className="flex flex-wrap gap-1">
+                          {codesShown.map((c: string) => (
+                            <span key={c} className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{c}</span>
+                          ))}
+                          {extra > 0 && (
+                            <span className="text-[11px] text-muted-foreground">+{extra}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-1.5 text-right font-mono">{fmt(e.total_cents || 0)}</td>
+                      <td className="px-4 py-1.5 text-center">
+                        {e.is_balanced ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-600 inline" />
+                        ) : (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 inline" />
+                        )}
+                      </td>
+                      <td className="px-4 py-1.5">
+                        <Badge variant="outline" className="text-[10px]">{e.source}</Badge>
+                      </td>
+                      <td className="px-4 py-1.5">
+                        <Badge variant="secondary" className={cn('text-[10px]', STATUS_STYLES[e.status] || '')}>
+                          {e.status}
+                        </Badge>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
