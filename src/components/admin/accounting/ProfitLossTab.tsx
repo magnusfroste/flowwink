@@ -24,7 +24,7 @@ export function ProfitLossTab() {
   const report = useMemo(() => {
     if (!balances) return null;
     const revenue = balances
-      .filter((b) => b.account_type === 'income')
+      .filter((b) => b.account_type === 'revenue' || b.account_type === 'income')
       .filter((b) => b.balance !== 0)
       .sort((a, b) => a.account_code.localeCompare(b.account_code));
     const expenses = balances
