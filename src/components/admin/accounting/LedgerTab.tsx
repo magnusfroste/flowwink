@@ -1,29 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookOpen, Search } from 'lucide-react';
 import { useAccountBalances, useAccountLedger } from '@/hooks/useAccounting';
-import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSettings';
+import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type AccountType = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
-
-const TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'income', 'expense'];
-
-const TYPE_LABEL: Record<AccountType, string> = {
-  asset: 'Assets',
-  liability: 'Liabilities',
-  equity: 'Equity',
-  income: 'Income',
-  expense: 'Expenses',
-};
 
 export function LedgerTab() {
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | AccountType>('all');
   const { data: balances, isLoading } = useAccountBalances();
   const { data: prefs } = useAccountingPreferences();
-  const { data: branding } = useBrandingSettings();
 
   const fmt = (cents: number) => {
     const decimals = prefs?.decimals ?? 2;
@@ -39,77 +24,36 @@ export function LedgerTab() {
 
   const filtered = useMemo(
     () =>
-      (balances || []).filter((b) => {
-        const hasActivity = b.debit_total !== 0 || b.credit_total !== 0;
-        if (!hasActivity) return false;
-        const matchesSearch =
-          !search ||
-          b.account_code.includes(search) ||
-          b.account_name.toLowerCase().includes(search.toLowerCase());
-        const matchesType = filterType === 'all' || b.account_type === filterType;
-        return matchesSearch && matchesType;
-      }),
-    [balances, search, filterType],
+      (balances || [])
+        .filter((b) => b.debit_total !== 0 || b.credit_total !== 0)
+        .filter((b) => {
+          if (!search) return true;
+          const s = search.toLowerCase();
+          return b.account_code.includes(search) || b.account_name.toLowerCase().includes(s);
+        })
+        .sort((a, b) => a.account_code.localeCompare(b.account_code)),
+    [balances, search],
   );
-
-  const grouped = useMemo(() => {
-    const g: Record<AccountType, typeof filtered> = {
-      asset: [], liability: [], equity: [], income: [], expense: [],
-    };
-    for (const b of filtered) {
-      const t = (b.account_type as AccountType) ?? 'asset';
-      (g[t] ??= []).push(b);
-    }
-    for (const t of TYPE_ORDER) {
-      g[t]?.sort((a, b) => a.account_code.localeCompare(b.account_code));
-    }
-    return g;
-  }, [filtered]);
-
-  const totals = useMemo(() => {
-    let debit = 0, credit = 0;
-    for (const b of filtered) { debit += b.debit_total; credit += b.credit_total; }
-    return { debit, credit, diff: debit - credit };
-  }, [filtered]);
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Skeleton className="h-10" />
-        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
       </div>
     );
   }
 
-  const orgName = branding?.organizationName || 'Organization';
-  const today = new Date();
-  const fiscalYear = today.getFullYear();
-  const generated = today.toISOString().slice(0, 16).replace('T', ' ');
-
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search account code or name…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={filterType} onValueChange={(v) => setFilterType(v as any)}>
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {TYPE_ORDER.map((t) => (
-              <SelectItem key={t} value={t}>{TYPE_LABEL[t]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search account code or name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -121,150 +65,55 @@ export function LedgerTab() {
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          {/* Report header */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 px-6 pt-6 pb-4 border-b">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">General Ledger</h2>
-              <div className="mt-3 text-sm">
-                <div className="font-semibold">{orgName}</div>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
-              <span>Fiscal year</span><span className="text-foreground">{fiscalYear}</span>
-              <span>Report period</span><span className="text-foreground">{fiscalYear}-01-01 – {fiscalYear}-12-31</span>
-              <span>Generated</span><span className="text-foreground">{generated}</span>
-            </div>
-          </div>
-
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left font-semibold px-6 py-2 w-full">Account</th>
-                <th className="text-right font-semibold px-6 py-2 whitespace-nowrap w-36">Debit</th>
-                <th className="text-right font-semibold px-6 py-2 whitespace-nowrap w-36">Credit</th>
-                <th className="text-right font-semibold px-6 py-2 whitespace-nowrap w-40">Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TYPE_ORDER.map((type) => {
-                const rows = grouped[type];
-                if (!rows || rows.length === 0) return null;
-                const subDebit = rows.reduce((s, r) => s + r.debit_total, 0);
-                const subCredit = rows.reduce((s, r) => s + r.credit_total, 0);
-                const subBalance = rows.reduce((s, r) => s + r.balance, 0);
-
-                return (
-                  <RenderGroup
-                    key={type}
-                    label={TYPE_LABEL[type]}
-                    rows={rows}
-                    subDebit={subDebit}
-                    subCredit={subCredit}
-                    subBalance={subBalance}
-                    fmt={fmt}
-                  />
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="bg-foreground text-background">
-                <td className="px-6 py-3 font-semibold">
-                  {totals.diff === 0 ? 'Total (balanced)' : 'Total'}
-                </td>
-                <td className="px-6 py-3 text-right font-mono font-semibold">{fmt(totals.debit)}</td>
-                <td className="px-6 py-3 text-right font-mono font-semibold">{fmt(totals.credit)}</td>
-                <td className="px-6 py-3 text-right font-mono font-semibold">
-                  {totals.diff === 0 ? fmt(0) : `Δ ${fmt(totals.diff)}`}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+        <div className="space-y-4">
+          {filtered.map((account) => (
+            <AccountCard
+              key={account.account_code}
+              code={account.account_code}
+              name={account.account_name}
+              fmt={fmt}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function RenderGroup({
-  label, rows, subDebit, subCredit, subBalance, fmt,
+function AccountCard({
+  code, name, fmt,
 }: {
-  label: string;
-  rows: any[];
-  subDebit: number;
-  subCredit: number;
-  subBalance: number;
+  code: string;
+  name: string;
   fmt: (c: number) => string;
 }) {
-  const [openCode, setOpenCode] = useState<string | null>(null);
-  return (
-    <>
-      <tr className="bg-foreground text-background">
-        <td className="px-6 py-2.5 font-semibold">{label}</td>
-        <td className="px-6 py-2.5 text-right font-mono font-semibold">{fmt(subDebit)}</td>
-        <td className="px-6 py-2.5 text-right font-mono font-semibold">{fmt(subCredit)}</td>
-        <td className="px-6 py-2.5 text-right font-mono font-semibold">{fmt(subBalance)}</td>
-      </tr>
-      {rows.map((account) => {
-        const isOpen = openCode === account.account_code;
-        return (
-          <FragmentRow
-            key={account.account_code}
-            account={account}
-            isOpen={isOpen}
-            onToggle={() => setOpenCode(isOpen ? null : account.account_code)}
-            fmt={fmt}
-          />
-        );
-      })}
-      <tr className="border-t">
-        <td className="px-6 py-2 pl-10 font-semibold">Total {label.toLowerCase()}</td>
-        <td className="px-6 py-2 text-right font-mono font-semibold">{fmt(subDebit)}</td>
-        <td className="px-6 py-2 text-right font-mono font-semibold">{fmt(subCredit)}</td>
-        <td className="px-6 py-2 text-right font-mono font-semibold">{fmt(subBalance)}</td>
-      </tr>
-    </>
-  );
-}
+  const { data, isLoading } = useAccountLedger(code);
 
-function FragmentRow({
-  account, isOpen, onToggle, fmt,
-}: {
-  account: any;
-  isOpen: boolean;
-  onToggle: () => void;
-  fmt: (c: number) => string;
-}) {
   return (
-    <>
-      <tr
-        className="odd:bg-muted/20 hover:bg-muted/40 cursor-pointer"
-        onClick={onToggle}
-      >
-        <td className="px-6 py-1.5 pl-10 text-muted-foreground">
-          <span className="inline-block w-3 text-xs">{isOpen ? '▾' : '▸'}</span>{' '}
-          <span className="font-mono">{account.account_code}</span> - {account.account_name}
-        </td>
-        <td className="px-6 py-1.5 text-right font-mono">{fmt(account.debit_total)}</td>
-        <td className="px-6 py-1.5 text-right font-mono">{fmt(account.credit_total)}</td>
-        <td className="px-6 py-1.5 text-right font-mono font-medium">{fmt(account.balance)}</td>
-      </tr>
-      {isOpen && (
-        <tr>
-          <td colSpan={4} className="px-6 pb-4 pt-1 bg-muted/10">
-            <AccountLedgerLines accountCode={account.account_code} fmt={fmt} />
-          </td>
-        </tr>
+    <div className="rounded-lg border bg-card overflow-hidden">
+      <div className="flex items-baseline justify-between px-5 py-3 border-b bg-muted/30">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-base font-semibold">{code}</span>
+          <span className="text-sm text-muted-foreground">{name}</span>
+        </div>
+        <div className="text-right">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Current</div>
+          <div className="font-mono text-lg font-semibold">
+            {data ? fmt(data.closing_cents) : '—'}
+          </div>
+        </div>
+      </div>
+
+      {isLoading || !data ? (
+        <div className="px-5 py-4 text-sm text-muted-foreground">Loading…</div>
+      ) : (
+        <AccountRows data={data} fmt={fmt} />
       )}
-    </>
+    </div>
   );
 }
 
-function AccountLedgerLines({ accountCode, fmt }: { accountCode: string; fmt: (c: number) => string }) {
-  const { data, isLoading } = useAccountLedger(accountCode);
-  if (isLoading) return <div className="text-xs text-muted-foreground pl-4 py-2">Loading transactions…</div>;
-  if (!data) return null;
-
+function AccountRows({ data, fmt }: { data: any; fmt: (c: number) => string }) {
   const voucherLabel = (l: any) => {
     if (l.voucher_series && l.voucher_number != null) {
       return `${l.voucher_series}${l.voucher_number}${l.voucher_year ? `/${String(l.voucher_year).slice(-2)}` : ''}`;
@@ -272,57 +121,46 @@ function AccountLedgerLines({ accountCode, fmt }: { accountCode: string; fmt: (c
     return l.reference_number || '—';
   };
 
-  // Running balance in normal-direction
   let running = data.opening_cents;
-  const withRunning = data.lines.map((l) => {
+  const rows = data.lines.map((l: any) => {
     const delta = data.normal_balance === 'debit'
       ? l.debit_cents - l.credit_cents
       : l.credit_cents - l.debit_cents;
     running += delta;
-    return { ...l, running };
+    return { ...l, delta, running };
   });
 
   return (
-    <div className="border rounded-md overflow-hidden bg-background">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            <th className="text-left font-medium px-3 py-1.5 w-24">Voucher</th>
-            <th className="text-left font-medium px-3 py-1.5 w-24">Date</th>
-            <th className="text-left font-medium px-3 py-1.5">Description</th>
-            <th className="text-right font-medium px-3 py-1.5 w-28">Debit</th>
-            <th className="text-right font-medium px-3 py-1.5 w-28">Credit</th>
-            <th className="text-right font-medium px-3 py-1.5 w-32">Balance</th>
+    <table className="w-full text-sm">
+      <tbody>
+        <tr className="border-b bg-muted/10">
+          <td className="px-5 py-2 text-muted-foreground italic" colSpan={3}>Opening balance</td>
+          <td className="px-5 py-2 text-right font-mono">{fmt(data.opening_cents)}</td>
+        </tr>
+        {rows.length === 0 ? (
+          <tr>
+            <td colSpan={4} className="px-5 py-4 text-center text-sm text-muted-foreground">
+              No transactions
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b bg-muted/20">
-            <td colSpan={5} className="px-3 py-1.5 italic text-muted-foreground">Opening balance</td>
-            <td className="px-3 py-1.5 text-right font-mono">{fmt(data.opening_cents)}</td>
-          </tr>
-          {withRunning.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="px-3 py-3 text-center text-muted-foreground">No transactions in period</td>
+        ) : (
+          rows.map((l: any, i: number) => (
+            <tr key={l.entry_id + i} className="border-b last:border-b-0">
+              <td className="px-5 py-1.5 font-mono text-xs text-muted-foreground w-28">{voucherLabel(l)}</td>
+              <td className="px-5 py-1.5 font-mono text-xs text-muted-foreground w-24">{l.entry_date}</td>
+              <td className="px-5 py-1.5">
+                <span className="truncate">{l.description}</span>
+              </td>
+              <td className="px-5 py-1.5 text-right font-mono whitespace-nowrap w-40">
+                <span className={l.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}>
+                  {l.delta >= 0 ? '+' : '\u2212'}{fmt(Math.abs(l.delta))}
+                </span>
+                <span className="text-muted-foreground ml-3">{fmt(l.running)}</span>
+              </td>
             </tr>
-          ) : (
-            withRunning.map((l, i) => (
-              <tr key={l.entry_id + i} className="odd:bg-muted/10">
-                <td className="px-3 py-1 font-mono text-muted-foreground">{voucherLabel(l)}</td>
-                <td className="px-3 py-1 font-mono text-muted-foreground">{l.entry_date}</td>
-                <td className="px-3 py-1 truncate max-w-md">{l.description}</td>
-                <td className="px-3 py-1 text-right font-mono">{l.debit_cents ? fmt(l.debit_cents) : ''}</td>
-                <td className="px-3 py-1 text-right font-mono">{l.credit_cents ? fmt(l.credit_cents) : ''}</td>
-                <td className="px-3 py-1 text-right font-mono text-muted-foreground">{fmt(l.running)}</td>
-              </tr>
-            ))
-          )}
-          <tr className="border-t bg-muted/30 font-semibold">
-            <td colSpan={5} className="px-3 py-1.5">Closing balance</td>
-            <td className="px-3 py-1.5 text-right font-mono">{fmt(data.closing_cents)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 }
-
