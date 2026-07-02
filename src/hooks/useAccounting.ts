@@ -27,6 +27,14 @@ export interface JournalEntry {
   journal_id: string | null;
   created_by: string | null;
   created_at: string;
+  voucher_series?: string | null;
+  voucher_number?: number | null;
+  voucher_year?: number | null;
+  // Enriched by useJournalEntries:
+  total_cents?: number;
+  line_count?: number;
+  is_balanced?: boolean;
+  account_codes?: string[];
   lines?: JournalEntryLine[];
 }
 
