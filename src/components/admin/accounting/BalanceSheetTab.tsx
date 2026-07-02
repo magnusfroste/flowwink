@@ -1,212 +1,163 @@
-import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building, Banknote, Calculator, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { useMemo } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
+import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const formatCents = (cents: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SEK', minimumFractionDigits: 0 }).format(cents / 100);
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export function BalanceSheetTab() {
   const { data: balances, isLoading } = useAccountBalances();
-  const [expanded, setExpanded] = useState(new Set(['assets', 'liabilities', 'equity']));
+  const { data: prefs } = useAccountingPreferences();
+  const { data: branding } = useBrandingSettings();
+
+  const fmt = (cents: number) => {
+    const decimals = prefs?.decimals ?? 2;
+    const decSep = prefs?.decimalSeparator ?? ',';
+    const thouSep = prefs?.thousandsSeparator ?? ' ';
+    const neg = cents < 0;
+    const n = Math.abs(cents) / 100;
+    const [intPart, decPart] = n.toFixed(decimals).split('.');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
+    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
+    return neg ? `\u2212${body}` : body;
+  };
 
   const report = useMemo(() => {
     if (!balances) return null;
+    const nonZero = (b: { balance: number }) => b.balance !== 0;
+    const sort = <T extends { account_code: string }>(arr: T[]) =>
+      [...arr].sort((a, b) => a.account_code.localeCompare(b.account_code));
+    const assets = sort(balances.filter((b) => b.account_type === 'asset').filter(nonZero));
+    const liabilities = sort(balances.filter((b) => b.account_type === 'liability').filter(nonZero));
+    const equity = sort(balances.filter((b) => b.account_type === 'equity').filter(nonZero));
 
-    const assets = balances.filter((b) => b.account_type === 'asset');
-    const liabilities = balances.filter((b) => b.account_type === 'liability');
-    const equity = balances.filter((b) => b.account_type === 'equity');
-
-    const totalAssets = assets.reduce((s, a) => s + Math.abs(a.balance), 0);
-    const totalLiabilities = liabilities.reduce((s, l) => s + Math.abs(l.balance), 0);
-    const totalEquity = equity.reduce((s, e) => s + Math.abs(e.balance), 0);
-
-    const isBalanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 1;
-
-    return { assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity, isBalanced };
+    const totalAssets = assets.reduce((s, a) => s + a.balance, 0);
+    const totalLiabilities = liabilities.reduce((s, l) => s + l.balance, 0);
+    const totalEquity = equity.reduce((s, e) => s + e.balance, 0);
+    const diff = totalAssets - (totalLiabilities + totalEquity);
+    return { assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity, diff };
   }, [balances]);
 
-  const toggleSection = (section: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(section) ? next.delete(section) : next.add(section);
-      return next;
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-48" />
-        ))}
-      </div>
-    );
-  }
-
+  if (isLoading) return <Skeleton className="h-96" />;
   if (!report) return null;
 
-  const renderSection = (
-    title: string,
-    key: string,
-    accounts: typeof report.assets,
-    total: number,
-    icon: React.ReactNode,
-    color: string
-  ) => {
-    const isExpanded = expanded.has(key);
-    return (
-      <Card>
-        <CardHeader
-          className="cursor-pointer select-none"
-          onClick={() => toggleSection(key)}
-        >
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {icon}
-              <span>{title}</span>
-              <Badge variant="outline" className={color}>
-                {formatCents(total)}
-              </Badge>
-            </div>
-            {isExpanded ? (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        {isExpanded && (
-          <CardContent className="pt-0">
-            {accounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">No accounts in this category</p>
-            ) : (
-              <div className="space-y-2">
-                {accounts.map((account) => (
-                  <div
-                    key={account.account_code}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                  >
-                    <div>
-                      <span className="font-mono text-sm mr-2">{account.account_code}</span>
-                      <span className="text-sm">{account.account_name}</span>
-                    </div>
-                    <div className="font-semibold font-mono">
-                      {formatCents(Math.abs(account.balance))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
-    );
-  };
+  const orgName = branding?.organizationName || 'Organization';
+  const today = new Date();
+  const fiscalYear = today.getFullYear();
+  const generated = today.toISOString().slice(0, 16).replace('T', ' ');
+  const balanced = Math.abs(report.diff) < 1;
 
   return (
-    <div className="space-y-6">
-      {/* Balance check */}
-      <Card className={report.isBalanced ? 'border-green-200' : 'border-red-200'}>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {report.isBalanced ? (
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              ) : (
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              )}
-              <div>
-                <h3 className="font-semibold">
-                  {report.isBalanced ? 'Balanced' : 'Not Balanced'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Assets {report.isBalanced ? '=' : '≠'} Liabilities + Equity
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground">Difference</div>
-              <div
-                className={`font-semibold ${
-                  report.isBalanced ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {formatCents(
-                  Math.abs(report.totalAssets - (report.totalLiabilities + report.totalEquity))
-                )}
-              </div>
-            </div>
+    <div className="rounded-lg border bg-card">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 px-6 pt-6 pb-4 border-b">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Balance Sheet</h2>
+          <div className="mt-3 text-sm">
+            <div className="font-semibold">{orgName}</div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
-            <Building className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatCents(report.totalAssets)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Liabilities</CardTitle>
-            <Banknote className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCents(report.totalLiabilities)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Equity</CardTitle>
-            <Calculator className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {formatCents(report.totalEquity)}
-            </div>
-          </CardContent>
-        </Card>
+        </div>
+        <div className="text-sm text-muted-foreground grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
+          <span>Fiscal year</span><span className="text-foreground">{fiscalYear}</span>
+          <span>Report period</span><span className="text-foreground">{fiscalYear}-01-01 – {fiscalYear}-12-31</span>
+          <span>Generated</span><span className="text-foreground">{generated}</span>
+        </div>
       </div>
 
-      {/* Sections */}
-      {renderSection(
-        'Assets',
-        'assets',
-        report.assets,
-        report.totalAssets,
-        <Building className="h-5 w-5 text-blue-600" />,
-        'text-blue-600 border-blue-200'
-      )}
-      {renderSection(
-        'Liabilities',
-        'liabilities',
-        report.liabilities,
-        report.totalLiabilities,
-        <Banknote className="h-5 w-5 text-red-600" />,
-        'text-red-600 border-red-200'
-      )}
-      {renderSection(
-        'Equity',
-        'equity',
-        report.equity,
-        report.totalEquity,
-        <Calculator className="h-5 w-5 text-purple-600" />,
-        'text-purple-600 border-purple-200'
-      )}
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left font-semibold px-6 py-2 w-full">Account</th>
+            <th className="text-right font-semibold px-6 py-2 whitespace-nowrap">Closing balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <GroupHeader label="Assets" amount={fmt(report.totalAssets)} />
+          {report.assets.length === 0 && <EmptyRow />}
+          {report.assets.map((a) => (
+            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(a.balance)} />
+          ))}
+          <SubtotalRow label="Total assets" amount={fmt(report.totalAssets)} />
+
+          <GroupHeader
+            label="Equity & liabilities"
+            amount={fmt(report.totalEquity + report.totalLiabilities)}
+          />
+          <SubHeader label="Equity" amount={fmt(report.totalEquity)} />
+          {report.equity.length === 0 && <EmptyRow />}
+          {report.equity.map((a) => (
+            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(a.balance)} />
+          ))}
+          <SubHeader label="Liabilities" amount={fmt(report.totalLiabilities)} />
+          {report.liabilities.length === 0 && <EmptyRow />}
+          {report.liabilities.map((a) => (
+            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(a.balance)} />
+          ))}
+          <SubtotalRow
+            label="Total equity & liabilities"
+            amount={fmt(report.totalEquity + report.totalLiabilities)}
+          />
+        </tbody>
+        <tfoot>
+          <tr className="bg-foreground text-background">
+            <td className="px-6 py-3 font-semibold">
+              <div className="flex items-center gap-2">
+                {balanced ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                Calculated difference
+              </div>
+            </td>
+            <td className="px-6 py-3 text-right font-mono font-semibold">{fmt(report.diff)}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
+  );
+}
+
+function GroupHeader({ label, amount }: { label: string; amount: string }) {
+  return (
+    <tr className="bg-foreground text-background">
+      <td className="px-6 py-2.5 font-semibold">{label}</td>
+      <td className="px-6 py-2.5 text-right font-mono font-semibold">{amount}</td>
+    </tr>
+  );
+}
+
+function SubHeader({ label, amount }: { label: string; amount: string }) {
+  return (
+    <tr className="border-y bg-muted/60">
+      <td className="px-6 py-2 font-semibold">{label}</td>
+      <td className="px-6 py-2 text-right font-mono font-semibold">{amount}</td>
+    </tr>
+  );
+}
+
+function AccountRow({ code, name, amount }: { code: string; name: string; amount: string }) {
+  return (
+    <tr className="odd:bg-muted/20">
+      <td className="px-6 py-1.5 pl-10 text-muted-foreground">
+        <span className="font-mono">{code}</span> - {name}
+      </td>
+      <td className="px-6 py-1.5 text-right font-mono">{amount}</td>
+    </tr>
+  );
+}
+
+function SubtotalRow({ label, amount }: { label: string; amount: string }) {
+  return (
+    <tr className="border-t">
+      <td className="px-6 py-2 pl-10 font-semibold">{label}</td>
+      <td className="px-6 py-2 text-right font-mono font-semibold">{amount}</td>
+    </tr>
+  );
+}
+
+function EmptyRow() {
+  return (
+    <tr>
+      <td colSpan={2} className="px-6 py-3 pl-10 text-sm text-muted-foreground italic">No entries</td>
+    </tr>
   );
 }

@@ -1,169 +1,137 @@
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, FileText } from 'lucide-react';
 import { useAccountBalances } from '@/hooks/useAccounting';
+import { useAccountingPreferences } from '@/hooks/useSiteSettings';
+import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const formatCents = (cents: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SEK', minimumFractionDigits: 0 }).format(cents / 100);
 
 export function ProfitLossTab() {
   const { data: balances, isLoading } = useAccountBalances();
+  const { data: prefs } = useAccountingPreferences();
+  const { data: branding } = useBrandingSettings();
+
+  const fmt = (cents: number) => {
+    const decimals = prefs?.decimals ?? 2;
+    const decSep = prefs?.decimalSeparator ?? ',';
+    const thouSep = prefs?.thousandsSeparator ?? ' ';
+    const neg = cents < 0;
+    const n = Math.abs(cents) / 100;
+    const [intPart, decPart] = n.toFixed(decimals).split('.');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thouSep);
+    const body = decimals > 0 ? `${grouped}${decSep}${decPart}` : grouped;
+    return neg ? `\u2212${body}` : body;
+  };
 
   const report = useMemo(() => {
     if (!balances) return null;
-
     const revenue = balances
       .filter((b) => b.account_type === 'income')
-      .map((b) => ({ ...b, total: b.balance }));
+      .filter((b) => b.balance !== 0)
+      .sort((a, b) => a.account_code.localeCompare(b.account_code));
     const expenses = balances
       .filter((b) => b.account_type === 'expense')
-      .map((b) => ({ ...b, total: b.balance }));
-
-    const totalRevenue = revenue.reduce((s, r) => s + r.total, 0);
-    const totalExpenses = expenses.reduce((s, e) => s + e.total, 0);
+      .filter((b) => b.balance !== 0)
+      .sort((a, b) => a.account_code.localeCompare(b.account_code));
+    const totalRevenue = revenue.reduce((s, r) => s + r.balance, 0);
+    const totalExpenses = expenses.reduce((s, e) => s + e.balance, 0);
     const netResult = totalRevenue - totalExpenses;
-
     return { revenue, expenses, totalRevenue, totalExpenses, netResult };
   }, [balances]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-48" />
-        ))}
-      </div>
-    );
-  }
-
+  if (isLoading) return <Skeleton className="h-96" />;
   if (!report) return null;
 
+  const orgName = branding?.organizationName || 'Organization';
+  const today = new Date();
+  const fiscalYear = today.getFullYear();
+  const generated = today.toISOString().slice(0, 16).replace('T', ' ');
+
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCents(report.totalRevenue)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCents(report.totalExpenses)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Result</CardTitle>
-            <FileText className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div
-              className={`text-2xl font-bold ${
-                report.netResult >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              {formatCents(report.netResult)}
-            </div>
-            <Badge variant={report.netResult >= 0 ? 'default' : 'destructive'} className="mt-2">
-              {report.netResult >= 0 ? 'Profit' : 'Loss'}
-            </Badge>
-          </CardContent>
-        </Card>
+    <div className="rounded-lg border bg-card">
+      {/* Report header */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 px-6 pt-6 pb-4 border-b">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Profit &amp; Loss</h2>
+          <div className="mt-3 text-sm">
+            <div className="font-semibold">{orgName}</div>
+          </div>
+        </div>
+        <div className="text-sm text-muted-foreground grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
+          <span>Fiscal year</span><span className="text-foreground">{fiscalYear}</span>
+          <span>Report period</span><span className="text-foreground">{fiscalYear}-01-01 – {fiscalYear}-12-31</span>
+          <span>Generated</span><span className="text-foreground">{generated}</span>
+        </div>
       </div>
 
-      {/* Detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              Revenue
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {report.revenue.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No revenue recorded</p>
-              ) : (
-                report.revenue.map((item) => (
-                  <div
-                    key={item.account_code}
-                    className="flex items-center justify-between py-2 border-b border-border/20 last:border-0"
-                  >
-                    <div className="text-sm">
-                      <span className="font-mono mr-2">{item.account_code}</span>
-                      {item.account_name}
-                    </div>
-                    <div className="font-semibold text-green-600">
-                      {formatCents(item.total)}
-                    </div>
-                  </div>
-                ))
-              )}
-              {report.revenue.length > 0 && (
-                <div className="flex justify-between pt-3 border-t font-semibold">
-                  <span>Total</span>
-                  <span className="text-green-600">{formatCents(report.totalRevenue)}</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Report table */}
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left font-semibold px-6 py-2 w-full">Account</th>
+            <th className="text-right font-semibold px-6 py-2 whitespace-nowrap">Accumulated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <GroupHeader label="Operating income" amount={fmt(report.totalRevenue)} />
+          <SubHeader label="Net revenue" amount={fmt(report.totalRevenue)} />
+          {report.revenue.length === 0 && <EmptyRow />}
+          {report.revenue.map((a) => (
+            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(a.balance)} />
+          ))}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-red-600" />
-              Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {report.expenses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No expenses recorded</p>
-              ) : (
-                report.expenses.map((item) => (
-                  <div
-                    key={item.account_code}
-                    className="flex items-center justify-between py-2 border-b border-border/20 last:border-0"
-                  >
-                    <div className="text-sm">
-                      <span className="font-mono mr-2">{item.account_code}</span>
-                      {item.account_name}
-                    </div>
-                    <div className="font-semibold text-red-600">
-                      {formatCents(item.total)}
-                    </div>
-                  </div>
-                ))
-              )}
-              {report.expenses.length > 0 && (
-                <div className="flex justify-between pt-3 border-t font-semibold">
-                  <span>Total</span>
-                  <span className="text-red-600">{formatCents(report.totalExpenses)}</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <GroupHeader label="Operating expenses" amount={fmt(-report.totalExpenses)} />
+          <SubHeader label="Other external expenses" amount={fmt(-report.totalExpenses)} />
+          {report.expenses.length === 0 && <EmptyRow />}
+          {report.expenses.map((a) => (
+            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(-a.balance)} />
+          ))}
+
+          <GroupHeader label="Net result" amount={fmt(report.netResult)} />
+          <SubHeader label="Result for the year" amount={fmt(report.netResult)} />
+        </tbody>
+        <tfoot>
+          <tr className="bg-foreground text-background">
+            <td className="px-6 py-3 font-semibold">Calculated result</td>
+            <td className="px-6 py-3 text-right font-mono font-semibold">{fmt(report.netResult)}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
+  );
+}
+
+function GroupHeader({ label, amount }: { label: string; amount: string }) {
+  return (
+    <tr className="bg-foreground text-background">
+      <td className="px-6 py-2.5 font-semibold">{label}</td>
+      <td className="px-6 py-2.5 text-right font-mono font-semibold">{amount}</td>
+    </tr>
+  );
+}
+
+function SubHeader({ label, amount }: { label: string; amount: string }) {
+  return (
+    <tr className="border-y bg-muted/60">
+      <td className="px-6 py-2 font-semibold">{label}</td>
+      <td className="px-6 py-2 text-right font-mono font-semibold">{amount}</td>
+    </tr>
+  );
+}
+
+function AccountRow({ code, name, amount }: { code: string; name: string; amount: string }) {
+  return (
+    <tr className="odd:bg-muted/20">
+      <td className="px-6 py-1.5 pl-10 text-muted-foreground">
+        <span className="font-mono">{code}</span> - {name}
+      </td>
+      <td className="px-6 py-1.5 text-right font-mono">{amount}</td>
+    </tr>
+  );
+}
+
+function EmptyRow() {
+  return (
+    <tr>
+      <td colSpan={2} className="px-6 py-3 pl-10 text-sm text-muted-foreground italic">No entries</td>
+    </tr>
   );
 }
