@@ -1,8 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import {
+  BookOpen,
+  Scale,
+  FileBarChart,
+  BarChart3,
+  Layers,
+  Receipt,
+  Percent,
+  FileText,
+  ShieldCheck,
+  History,
+  CalendarCheck,
+  Inbox,
+  Download,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JournalTab } from '@/components/admin/accounting/JournalTab';
 import { LedgerTab } from '@/components/admin/accounting/LedgerTab';
 import { OpeningBalancesTab } from '@/components/admin/accounting/OpeningBalancesTab';
@@ -18,9 +34,87 @@ import { ExportTab } from '@/components/admin/accounting/ExportTab';
 import { VoucherIntegrityTab } from '@/components/admin/accounting/VoucherIntegrityTab';
 import { YearEndTab } from '@/components/admin/accounting/YearEndTab';
 import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
+import { cn } from '@/lib/utils';
+
+type SectionId =
+  | 'journal'
+  | 'ledger'
+  | 'opening'
+  | 'pnl'
+  | 'balance'
+  | 'analytic'
+  | 'vat'
+  | 'tax'
+  | 'yearend'
+  | 'audit'
+  | 'voucher'
+  | 'pending'
+  | 'templates'
+  | 'export'
+  | 'settings';
+
+type NavItem = { id: SectionId; label: string; icon: LucideIcon };
+type NavGroup = { label: string; items: NavItem[] };
+
+const NAV: NavGroup[] = [
+  {
+    label: 'Books',
+    items: [
+      { id: 'journal', label: 'Journal', icon: BookOpen },
+      { id: 'ledger', label: 'General Ledger', icon: Layers },
+      { id: 'opening', label: 'Opening Balances', icon: Scale },
+    ],
+  },
+  {
+    label: 'Reports',
+    items: [
+      { id: 'pnl', label: 'Profit & Loss', icon: FileBarChart },
+      { id: 'balance', label: 'Balance Sheet', icon: BarChart3 },
+      { id: 'analytic', label: 'Analytic', icon: Receipt },
+    ],
+  },
+  {
+    label: 'Compliance',
+    items: [
+      { id: 'vat', label: 'VAT Report', icon: Percent },
+      { id: 'tax', label: 'Tax', icon: FileText },
+      { id: 'yearend', label: 'Year-End', icon: CalendarCheck },
+      { id: 'audit', label: 'Audit Trail', icon: History },
+      { id: 'voucher', label: 'Voucher Integrity', icon: ShieldCheck },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { id: 'pending', label: 'Approvals', icon: Inbox },
+      { id: 'templates', label: 'Templates', icon: FileText },
+      { id: 'export', label: 'Export', icon: Download },
+      { id: 'settings', label: 'Settings', icon: Settings },
+    ],
+  },
+];
+
+const CONTENT: Record<SectionId, () => JSX.Element> = {
+  journal: () => <JournalTab />,
+  ledger: () => <LedgerTab />,
+  opening: () => <OpeningBalancesTab />,
+  pnl: () => <ProfitLossTab />,
+  balance: () => <BalanceSheetTab />,
+  analytic: () => <AnalyticAccountingTab />,
+  vat: () => <VatReportTab />,
+  tax: () => <TaxTab />,
+  yearend: () => <YearEndTab />,
+  audit: () => <AuditTrailTab />,
+  voucher: () => <VoucherIntegrityTab />,
+  pending: () => <PendingOperationsList />,
+  templates: () => <TemplatesTab />,
+  export: () => <ExportTab />,
+  settings: () => <SettingsTab />,
+};
 
 export default function AccountingPage() {
-  const [tab, setTab] = useState('journal');
+  const [section, setSection] = useState<SectionId>('journal');
+  const Active = CONTENT[section];
 
   return (
     <AdminLayout>
@@ -30,71 +124,46 @@ export default function AccountingPage() {
           description="Double-entry bookkeeping, ledgers and financial reports"
         />
 
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="journal">Journal</TabsTrigger>
-            <TabsTrigger value="opening">Opening Balances</TabsTrigger>
-            <TabsTrigger value="ledger">General Ledger</TabsTrigger>
-            <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
-            <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
-            <TabsTrigger value="tax">Tax</TabsTrigger>
-            <TabsTrigger value="vat">VAT Report</TabsTrigger>
-            <TabsTrigger value="analytic">Analytic</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-            <TabsTrigger value="voucher">Voucher Integrity</TabsTrigger>
-            <TabsTrigger value="yearend">Year-End</TabsTrigger>
-            <TabsTrigger value="pending">Pending Ops</TabsTrigger>
-            <TabsTrigger value="export">Export</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+        <div className="flex gap-6 items-start">
+          <aside className="w-56 shrink-0 sticky top-4">
+            <nav className="space-y-5">
+              {NAV.map((group) => (
+                <div key={group.label}>
+                  <div className="px-2 mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {group.label}
+                  </div>
+                  <ul className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = section === item.id;
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSection(item.id)}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-left transition-colors',
+                              active
+                                ? 'bg-accent text-accent-foreground font-medium'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                            )}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </aside>
 
-          <TabsContent value="journal">
-            <JournalTab />
-          </TabsContent>
-          <TabsContent value="opening">
-            <OpeningBalancesTab />
-          </TabsContent>
-          <TabsContent value="ledger">
-            <LedgerTab />
-          </TabsContent>
-          <TabsContent value="pnl">
-            <ProfitLossTab />
-          </TabsContent>
-          <TabsContent value="balance">
-            <BalanceSheetTab />
-          </TabsContent>
-          <TabsContent value="tax">
-            <TaxTab />
-          </TabsContent>
-          <TabsContent value="vat">
-            <VatReportTab />
-          </TabsContent>
-          <TabsContent value="analytic">
-            <AnalyticAccountingTab />
-          </TabsContent>
-          <TabsContent value="templates">
-            <TemplatesTab />
-          </TabsContent>
-          <TabsContent value="audit">
-            <AuditTrailTab />
-          </TabsContent>
-          <TabsContent value="voucher">
-            <VoucherIntegrityTab />
-          </TabsContent>
-          <TabsContent value="yearend">
-            <YearEndTab />
-          </TabsContent>
-          <TabsContent value="pending">
-            <PendingOperationsList />
-          </TabsContent>
-          <TabsContent value="export">
-            <ExportTab />
-          </TabsContent>
-          <TabsContent value="settings">
-            <SettingsTab />
-          </TabsContent>
-        </Tabs>
+          <div className="flex-1 min-w-0">
+            <Active />
+          </div>
+        </div>
       </AdminPageContainer>
     </AdminLayout>
   );
