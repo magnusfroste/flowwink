@@ -20,6 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function JournalTab() {
+  useAccountingRealtime();
   const [statusFilter, setStatusFilter] = useState('all');
   const [journalFilter, setJournalFilter] = useState('all');
   const [search, setSearch] = useState('');
