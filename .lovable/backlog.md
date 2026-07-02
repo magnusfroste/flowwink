@@ -25,3 +25,17 @@
 - **Fas 4:** Nya kanaler (WhatsApp, Slack, email) byggs adapter-first. Heartbeat-dashboard i `/admin/integrations`.
 
 **Beslut:** Inte refaktorera idag — kontraktet är dokumenterat så vi inte uppfinner nya one-off-kanaler. Plockas upp när vi lägger till WhatsApp/Slack eller behöver heartbeat-vy.
+
+## Accounting
+
+### Restrict journal entry deletion to last entry only
+**Status:** TBD (relevant när accounting går i produktion)
+**Context:** Just nu tillåter `manage_journal_entry action=delete` att vilken `draft`-entry som helst raderas (posted kräver `void`). För en riktig bokförare/redovisningsbyrå är detta för öppet — audit-trail och verifikationsnummer-sekvenser förutsätter att man bara kan ångra den *senaste* posten.
+
+**Regel att införa:**
+- Delete tillåts endast om entry_id = senaste `journal_entries` (per journal/serie, sorterat på `reference_number` eller `created_at`).
+- Alternativt: delete endast tillåten inom X minuter efter create (undo-fönster).
+- Posted entries: fortsatt bara `void` (reversal), aldrig delete.
+- UI: "Delete" knapp visas bara på sista raden; äldre entries visar bara "Void".
+
+**Beslut:** Avvakta tills accounting används skarpt av en kund. Under utveckling/demo är fri delete praktiskt för städning.
