@@ -56,7 +56,7 @@ function generate(payload: AccountingExportPayload, opts: AccountingExportOption
     const sieType =
       acc.account_type === 'asset' ? 'T'
       : acc.account_type === 'liability' || acc.account_type === 'equity' ? 'S'
-      : acc.account_type === 'income' ? 'I'
+      : acc.account_type === 'revenue' || acc.account_type === 'income' ? 'I'
       : 'K';
     lines.push(`#KTYP ${acc.account_code} ${sieType}`);
   }
