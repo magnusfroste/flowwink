@@ -4390,6 +4390,27 @@ export type Database = {
         }
         Relationships: []
       }
+      document_number_counters: {
+        Row: {
+          kind: string
+          last_value: number
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          kind: string
+          last_value?: number
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          kind?: string
+          last_value?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           category: string
@@ -15520,6 +15541,10 @@ export type Database = {
         Returns: Json
       }
       mrp_reorder_run: { Args: { p_dry_run?: boolean }; Returns: Json }
+      next_document_number: {
+        Args: { p_kind: string; p_prefix: string }
+        Returns: string
+      }
       next_mo_number: { Args: never; Returns: string }
       normalize_email: { Args: { p_email: string }; Returns: string }
       open_pos_session: {

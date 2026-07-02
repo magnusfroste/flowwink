@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
 import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSettings';
+import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export function BalanceSheetTab() {
+  useAccountingRealtime();
   const { data: balances, isLoading } = useAccountBalances();
   const { data: prefs } = useAccountingPreferences();
   const { data: branding } = useBrandingSettings();

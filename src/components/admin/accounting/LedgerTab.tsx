@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { BookOpen, Search } from 'lucide-react';
 import { useAccountBalances, useAccountLedger } from '@/hooks/useAccounting';
+import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LedgerTab() {
+  useAccountingRealtime();
   const [search, setSearch] = useState('');
   const { data: balances, isLoading } = useAccountBalances();
   const { data: prefs } = useAccountingPreferences();
