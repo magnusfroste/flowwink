@@ -749,6 +749,49 @@ export function useUpdateCustomerPortalSettings() {
   return useUpdateSiteSettings<CustomerPortalSettings>('customer_portal', 'Customer portal settings have been updated.');
 }
 
+// Accounting preferences — number & date formatting, fiscal year, rounding.
+// Locale/chart-of-accounts is stored separately in `accounting_locale`
+// (see useAccountingLocale) so users can switch COA without losing formatting.
+export interface AccountingPreferences {
+  /** ISO 4217 currency code (e.g. SEK, EUR, USD). Locale pack default is used
+   *  as the seed but this override wins for display. */
+  currency: string;
+  /** Currency symbol/position for display. */
+  currencyPosition: 'prefix' | 'suffix';
+  /** Number of decimal places shown in reports and amount fields. */
+  decimals: 0 | 2;
+  /** Decimal separator character. */
+  decimalSeparator: '.' | ',';
+  /** Thousands grouping separator. `space` = non-breaking space (Swedish style). */
+  thousandsSeparator: ' ' | ',' | '.' | '';
+  /** Date format for journal entries and reports. */
+  dateFormat: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'DD.MM.YYYY';
+  /** Fiscal year start month (1 = January). */
+  fiscalYearStartMonth: number;
+  /** Rounding mode for VAT / template expansion. */
+  rounding: 'half-up' | 'half-even' | 'down';
+}
+
+export const defaultAccountingPreferences: AccountingPreferences = {
+  currency: 'SEK',
+  currencyPosition: 'suffix',
+  decimals: 2,
+  decimalSeparator: ',',
+  thousandsSeparator: ' ',
+  dateFormat: 'YYYY-MM-DD',
+  fiscalYearStartMonth: 1,
+  rounding: 'half-up',
+};
+
+export function useAccountingPreferences() {
+  return useSiteSettings<AccountingPreferences>('accounting_preferences', defaultAccountingPreferences);
+}
+
+export function useUpdateAccountingPreferences() {
+  return useUpdateSiteSettings<AccountingPreferences>('accounting_preferences', 'Accounting preferences have been updated.');
+}
+
 // Re-export modules hooks for convenience
 export { useModules, useUpdateModules, useIsModuleEnabled, useEnabledModules } from './useModules';
 export type { ModulesSettings, ModuleConfig } from './useModules';
+
