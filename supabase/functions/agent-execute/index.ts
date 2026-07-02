@@ -6022,17 +6022,19 @@ async function executeDbAction(
       const { action = 'create' } = args as any;
 
       // Resolve `source` for journal_entries.source column from the actual
-      // channel that invoked us. agent_type is 'flowpilot' | 'chat' | 'mcp'
+      // channel that invoked us. auditCtx.agent_type is 'flowpilot' | 'chat' | 'mcp'
       // — chat means Flowchat (visitor uploads a receipt, admin asks in chat),
       // mcp means an external agent (OpenClaw, Claude Code, Copilot).
       // Caller may override via args.source (e.g. 'manual' from admin UI).
+      const _callerAgent = auditCtx?.agent_type;
       const resolvedSource: string =
         ((args as any).source && typeof (args as any).source === 'string')
           ? (args as any).source
-          : (agent_type === 'chat' ? 'chat'
-            : agent_type === 'mcp' ? 'mcp'
-            : agent_type === 'flowpilot' ? 'flowpilot'
+          : (_callerAgent === 'chat' ? 'chat'
+            : _callerAgent === 'mcp' ? 'mcp'
+            : _callerAgent === 'flowpilot' ? 'flowpilot'
             : 'agent');
+
 
 
       if (action === 'list') {
