@@ -50,6 +50,188 @@ Scheduled daily 07:00 UTC via the "Daily Briefing" automation in /admin/automati
 - System message in the admin FlowChat
 - Email to the owner if Resend is configured`,
   },
+  {
+    name: 'search_web',
+    description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+    category: 'search',
+    handler: 'edge:web-search',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_web',
+        description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max results (default 5)',
+            },
+            preferred_provider: {
+              type: 'string',
+              enum: [
+                'auto',
+                'firecrawl',
+                'jina',
+              ],
+              description: 'Provider selection: auto (free first), firecrawl (paid, deep), jina (fast, free)',
+            },
+          },
+          required: [
+            'query',
+          ],
+        },
+      },
+    },
+    instructions: `# Web Search — Provider Knowledge
+
+## Providers Available
+- **Firecrawl** (paid): Premium search quality, includes scraped content from results, best for deep research where you need full page content alongside results. Costs credits per search.
+- **Jina Search** (free tier available): Fast, lightweight web search. Free tier has rate limits. Good for quick lookups, trend checks, and simple queries.
+
+## When to Use Which
+| Scenario | Provider | Why |
+|----------|----------|-----|
+| Quick fact check | jina | Free, fast, sufficient |
+| Prospect/company research | firecrawl | Richer results with scraped content |
+| Content trend research | jina | Volume of searches, cost-efficient |
+| Deep competitive analysis | firecrawl | Needs full page content |
+| General knowledge lookup | auto | Let the system decide |
+
+## Decision Framework
+1. **Default to auto** — the system tries free providers first, then paid
+2. **Use preferred_provider='jina'** when you want speed and cost savings
+3. **Use preferred_provider='firecrawl'** when result quality and depth matter more than cost
+4. If a free search returns poor/empty results, retry with firecrawl before giving up
+
+## Parameters
+- query: Search query (required)
+- limit: Max results (default 5)
+- preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
+  },
+  {
+    name: 'scrape_url',
+    description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+    category: 'search',
+    handler: 'edge:web-scrape',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'scrape_url',
+        description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'URL to scrape',
+            },
+            max_length: {
+              type: 'number',
+              description: 'Max content chars (default 10000)',
+            },
+            preferred_provider: {
+              type: 'string',
+              enum: [
+                'auto',
+                'firecrawl',
+                'jina',
+              ],
+              description: 'Provider: auto (free first), firecrawl (JS rendering, paid), jina (fast, free)',
+            },
+          },
+          required: [
+            'url',
+          ],
+        },
+      },
+    },
+    instructions: `# Web Scrape — Provider Knowledge
+
+## Providers Available
+- **Firecrawl** (paid): Full JS rendering, handles SPAs, dynamic content, anti-bot bypassing. Best for modern web apps, LinkedIn pages, JS-heavy sites. Costs credits per scrape.
+- **Jina Reader** (free tier available): Converts URLs to clean markdown. Works great for static content, blogs, documentation, news articles. Free tier has rate limits.
+
+## When to Use Which
+| Scenario | Provider | Why |
+|----------|----------|-----|
+| Blog post / article | jina | Free, clean markdown output |
+| LinkedIn page | firecrawl | Needs JS rendering + anti-bot |
+| Documentation page | jina | Static content, free is fine |
+| SPA / dynamic web app | firecrawl | JS rendering required |
+| Company about page | auto | Try free first |
+| Landing page analysis | firecrawl | Better at extracting full layout |
+
+## Decision Framework
+1. **Default to auto** — tries free first, falls back to paid
+2. **Use preferred_provider='jina'** for static content (blogs, docs, news)
+3. **Use preferred_provider='firecrawl'** for JS-heavy sites, SPAs, LinkedIn, or when jina returns empty/garbage
+4. If content looks truncated or broken, retry with firecrawl
+
+## Parameters
+- url: URL to scrape (required)
+- max_length: Max content length in chars (default 10000)
+- preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
+  },
+  {
+    name: 'manage_site_settings',
+    description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+    category: 'system',
+    handler: 'db:site_settings',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_site_settings',
+        description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: [
+                'get',
+                'get_all',
+                'update',
+              ],
+            },
+            key: {
+              type: 'string',
+              description: 'Settings key to read/update',
+            },
+            value: {
+              type: 'object',
+              description: 'New value (for update)',
+            },
+          },
+          required: [
+            'action',
+          ],
+        },
+      },
+    },
+    instructions: `## manage_site_settings
+### What
+Reads and updates site settings including module configuration, site name, theme, AI config, chat config.
+### When to use
+- Admin asks to change site settings
+- System configuration queries
+- Module enable/disable
+### Parameters
+- **action**: Required. get, get_all, update.
+- **key**: Settings key (modules, site_name, theme, ai_config, chat_config, etc.).
+- **value**: New value for update.
+### Edge cases
+- Some settings changes require page reload to take effect.
+- ai_config controls which AI provider FlowPilot uses.
+- Be careful with module toggles — disabling a module hides its UI.`,
+  },
 ];
 
 export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [

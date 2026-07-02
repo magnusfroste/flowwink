@@ -37,6 +37,16 @@ for (const exported of Object.values(modules)) {
   out.push({ moduleId: m.id, skills: m.skillSeeds });
   total += m.skillSeeds.length;
 }
+
+// Platform-level skills (src/lib/platform-seeds.ts) are not owned by any module —
+// they must exist on every instance regardless of module toggles. Emit them as
+// the pseudo-module `platform` so sync-skills / fleet drift detection cover them
+// (previously they were invisible to the CLI sync path — a drift hole).
+const platformSeeds = await import(join(ROOT, 'src', 'lib', 'platform-seeds.ts')) as { PLATFORM_SKILLS?: unknown[] };
+if (Array.isArray(platformSeeds.PLATFORM_SKILLS) && platformSeeds.PLATFORM_SKILLS.length > 0) {
+  out.push({ moduleId: 'platform', skills: platformSeeds.PLATFORM_SKILLS });
+  total += platformSeeds.PLATFORM_SKILLS.length;
+}
 out.sort((a, b) => a.moduleId.localeCompare(b.moduleId));
 
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });

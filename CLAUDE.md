@@ -384,6 +384,26 @@ MCP skill surface usable by an autonomous operator (OpenClaw):
   arg names read as "missing function/column"). Only a live call or `pg_proc` is
   authoritative.
 
+## Naming & skill-homing policy (FlowWink vs FlowPilot)
+
+**FlowWink is the platform (the BOS/SaaS). FlowPilot is one module** — the
+autonomous operator that consumes the platform's skills. Consequences:
+
+- **Platform primitives must NOT live in flowpilot-module.** A skill used
+  across modules or by external operators (search_web, scrape_url,
+  manage_site_settings, run_daily_briefing, weekly_business_digest…) belongs
+  in `src/lib/platform-seeds.ts` (always seeded, module-toggle-independent —
+  emitted as pseudo-module `platform` in the skills artifact) or in the owning
+  domain module — never gated behind the FlowPilot toggle. This class caused
+  real drift twice (weekly_business_digest, the platform-seeds move).
+- **Name new platform components for what they do, not for FlowPilot**
+  (same rule as the Skill Relevance Engine note above).
+- **Runtime identifiers stay stable even where legacy-named.** Edge function
+  names (`flowpilot-heartbeat`, `flowpilot-learn`), DB values
+  (`flowpilot_to_openclaw`), cron jobnames, and `agent_type` strings are
+  deployed per-instance across the fleet — renaming them is a multi-instance
+  lockstep with zero user value. Fix the STORY (docs/UI copy), not the wire.
+
 ## FlowPilot Development Laws
 
 These are inviolable architectural laws for FlowPilot agent development:

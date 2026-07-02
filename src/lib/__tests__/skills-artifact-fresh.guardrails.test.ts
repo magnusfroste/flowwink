@@ -12,6 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import * as modules from '@/lib/modules';
+import { PLATFORM_SKILLS } from '@/lib/platform-seeds';
 import artifact from '../../../supabase/seed/module-skills.json';
 
 interface ModuleLike { id?: string; skillSeeds?: unknown[] }
@@ -22,6 +23,11 @@ function buildModulesFromCode(): Array<{ moduleId: string; skills: unknown[] }> 
     const m = exported as ModuleLike;
     if (!m || typeof m !== 'object' || !m.id || !Array.isArray(m.skillSeeds) || m.skillSeeds.length === 0) continue;
     out.push({ moduleId: m.id, skills: m.skillSeeds });
+  }
+  // Platform-level skills are emitted as the pseudo-module `platform`
+  // (mirrors scripts/skills-to-json.ts).
+  if (PLATFORM_SKILLS.length > 0) {
+    out.push({ moduleId: 'platform', skills: PLATFORM_SKILLS as unknown[] });
   }
   out.sort((a, b) => a.moduleId.localeCompare(b.moduleId));
   return out;

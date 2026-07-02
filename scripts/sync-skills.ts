@@ -35,7 +35,9 @@ await c.connect();
 // Enabled modules on this instance.
 const ss = await c.query(`select value from site_settings where key = 'modules' limit 1`);
 const enabledMap: Record<string, { enabled?: boolean }> = ss.rows[0]?.value ?? {};
-const isEnabled = (id: string) => enabledMap[id]?.enabled === true;
+// `platform` is the pseudo-module for src/lib/platform-seeds.ts — those skills
+// exist on every instance regardless of module toggles, so it is always synced.
+const isEnabled = (id: string) => id === 'platform' || enabledMap[id]?.enabled === true;
 
 // Current skill rows (the fields bootstrap manages).
 const existing = new Map<string, any>();
