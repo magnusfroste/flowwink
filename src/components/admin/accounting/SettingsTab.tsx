@@ -290,15 +290,19 @@ export function SettingsTab() {
 
                 <div className="space-y-2">
                   <Label>Thousands separator</Label>
-                  <Select value={draft.thousandsSeparator} onValueChange={(v) => patch({ thousandsSeparator: v as any })}>
+                  <Select
+                    value={draft.thousandsSeparator === '' ? 'none' : draft.thousandsSeparator}
+                    onValueChange={(v) => patch({ thousandsSeparator: (v === 'none' ? '' : v) as any })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value=" ">Space — 1 234 567 (Swedish)</SelectItem>
                       <SelectItem value=",">Comma — 1,234,567 (US / UK)</SelectItem>
                       <SelectItem value=".">Period — 1.234.567 (German)</SelectItem>
-                      <SelectItem value="">None — 1234567</SelectItem>
+                      <SelectItem value="none">None — 1234567</SelectItem>
                     </SelectContent>
                   </Select>
+
                 </div>
 
                 <div className="space-y-2">
