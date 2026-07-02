@@ -6030,7 +6030,38 @@ async function executeDbAction(
         return { entries: data, count: (data || []).length };
       }
 
+      if (action === 'delete') {
+        const { entry_id } = args as any;
+        if (!entry_id) throw new Error('entry_id is required for delete action');
+
+        const { data: existing, error: exErr } = await supabase.from('journal_entries')
+          .select('id, status, description, reference_number').eq('id', entry_id).maybeSingle();
+        if (exErr) throw new Error(`Lookup failed: ${exErr.message}`);
+        if (!existing) return { deleted: false, entry_id, error: 'Journal entry not found (already deleted?)' };
+        if (existing.status === 'posted') {
+          return {
+            deleted: false,
+            entry_id,
+            status: existing.status,
+            error: 'Cannot delete a posted journal entry — use action=void to create a reversal instead.',
+          };
+        }
+
+        // Delete child rows first (in case FK cascade isn't configured)
+        await supabase.from('journal_entry_line_taxes')
+          .delete()
+          .in('journal_entry_line_id',
+            (await supabase.from('journal_entry_lines').select('id').eq('journal_entry_id', entry_id)).data?.map((r: any) => r.id) || []
+          );
+        await supabase.from('journal_entry_lines').delete().eq('journal_entry_id', entry_id);
+        const { error: delErr } = await supabase.from('journal_entries').delete().eq('id', entry_id);
+        if (delErr) throw new Error(`Delete failed: ${delErr.message}`);
+
+        return { deleted: true, entry_id, previous_status: existing.status, description: existing.description };
+      }
+
       if (action === 'void') {
+
         const { entry_id } = args as any;
         if (!entry_id) throw new Error('entry_id is required for void action');
 

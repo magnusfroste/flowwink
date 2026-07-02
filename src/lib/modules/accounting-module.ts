@@ -90,15 +90,17 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'list', 'void'] },
+            action: { type: 'string', enum: ['create', 'list', 'void', 'delete'] },
             description: { type: 'string' },
             entry_date: { type: 'string' },
+            entry_id: { type: 'string', description: 'Journal entry id — required for action=void and action=delete.' },
             lines: { type: 'array', items: { type: 'object', properties: { account_code: { type: 'string' }, account_name: { type: 'string' }, debit_cents: { type: 'number' }, credit_cents: { type: 'number' } } } },
             amount_cents: { type: 'number', description: 'NET base amount in cents/öre for percentage-based templates — the template lines (debit_pct/credit_pct) are expanded from this. E.g. a 25%-VAT sale with amount_cents=100000 books 125000/100000/25000. Required for one-call template booking.' },
             invoice_id: { type: 'string' },
             vendor_id: { type: 'string', description: 'Link to vendor — required when booking a supplier transaction so vendor learning fires.' },
             template_id: { type: 'string', description: 'Book directly from this accounting_template: its percentage lines are expanded using amount_cents (usage_count auto-increments). Preferred one-call flow: {action:create, template_id, amount_cents, description}.' },
             reference_number: { type: 'string' },
+
           },
           required: ['action'],
           'x-action-required': {
