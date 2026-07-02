@@ -75,6 +75,12 @@ serve(async (req) => {
   const startTime = Date.now();
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// PostgREST .or() uses ',' to separate conditions and '()' to group. Strip those
+// (and backslash) from user-supplied search terms so a value like
+// "foo,role.eq.admin" can't inject an extra OR condition (filter injection).
+const sanitizeOrTerm = (v: unknown): string => String(v ?? '').replace(/[,()\\]/g, ' ').trim();
+
   // NOTE: kept inline createClient here because downstream handler plugins
   // capture `supabase` and `serviceKey` from this scope. When we extract
   // handlers/* in phase 2b, swap to getServiceClient() from _shared/supabase-clients.
@@ -959,7 +965,7 @@ async function executeModuleAction(
       if (a.category) q = q.eq('category', a.category);
       if (a.query && a.query.trim()) {
         const term = a.query.trim().replace(/[%_]/g, '\\$&');
-        q = q.or(`title.ilike.%${term}%,content.ilike.%${term}%`);
+        q = q.or(`title.ilike.%${sanitizeOrTerm(term)}%,content.ilike.%${sanitizeOrTerm(term)}%`);
       }
 
       const { data, error } = await q;
@@ -1437,7 +1443,7 @@ async function executeHandbookAction(
 
   if (query) {
     // Search across chapters
-    const q = `%${query}%`;
+    const q = `%${sanitizeOrTerm(query)}%`;
     const { data, error } = await supabase
       .from('handbook_chapters')
       .select('title, slug, content, sort_order')
@@ -3123,7 +3129,7 @@ async function executeWikiAction(
     const { data, error } = await supabase
       .from('wiki_pages')
       .select('slug, title, updated_at, content_md')
-      .or(`title.ilike.%${query}%,content_md.ilike.%${query}%`)
+      .or(`title.ilike.%${sanitizeOrTerm(query)}%,content_md.ilike.%${sanitizeOrTerm(query)}%`)
       .limit(limit);
     if (error) throw new Error(`search_wiki failed: ${error.message}`);
     return {
@@ -4204,7 +4210,7 @@ async function executeBookingAction(
       .select('start_time, end_time, service_id')
       .eq('day_of_week', dayOfWeek)
       .eq('is_active', true);
-    if (service_id) availQuery = availQuery.or(`service_id.eq.${service_id},service_id.is.null`);
+    if (service_id) availQuery = availQuery.or(`service_id.eq.${sanitizeOrTerm(service_id)},service_id.is.null`);
     const { data: availability } = await availQuery;
 
     // Check blocked dates
@@ -4382,7 +4388,7 @@ async function executeNewsletterAction(
         .select('id, email, name, status, created_at, confirmed_at')
         .order('created_at', { ascending: false }).limit(limit);
       if (status) query = query.eq('status', status);
-      if (search) query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
+      if (search) query = query.or(`email.ilike.%${sanitizeOrTerm(search)}%,name.ilike.%${sanitizeOrTerm(search)}%`);
       const { data, error } = await query;
       if (error) throw new Error(`List subscribers failed: ${error.message}`);
       return { subscribers: data || [] };
@@ -4960,7 +4966,7 @@ async function executeLeadsAction(
       .select('id, email, name, phone, status, score, source, ai_summary, created_at, updated_at')
       .order('updated_at', { ascending: false }).limit(limit);
     if (normalizedStatus) query = query.eq('status', normalizedStatus);
-    if (search) query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
+    if (search) query = query.or(`email.ilike.%${sanitizeOrTerm(search)}%,name.ilike.%${sanitizeOrTerm(search)}%`);
     const { data, error } = await query;
     if (error) throw new Error(`List leads failed: ${error.message}`);
     return { leads: data || [], status_filter: normalizedStatus };
@@ -6523,7 +6529,7 @@ async function executeDbAction(
           .order('account_code');
         if (locale) query = query.eq('locale', locale);
         if (account_type) query = query.eq('account_type', account_type);
-        if (search) query = query.or(`account_code.ilike.%${search}%,account_name.ilike.%${search}%`);
+        if (search) query = query.or(`account_code.ilike.%${sanitizeOrTerm(search)}%,account_name.ilike.%${sanitizeOrTerm(search)}%`);
         const { data, error } = await query.limit(500);
         if (error) throw new Error(`List accounts failed: ${error.message}`);
         return { accounts: data, count: (data || []).length };
@@ -6581,7 +6587,7 @@ async function executeDbAction(
           .select('*')
           .order('usage_count', { ascending: false });
         if (search) {
-          query = query.or(`template_name.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
+          query = query.or(`template_name.ilike.%${sanitizeOrTerm(search)}%,description.ilike.%${sanitizeOrTerm(search)}%,category.ilike.%${sanitizeOrTerm(search)}%`);
         }
         const { data, error } = await query.limit(50);
         if (error) throw new Error(`List templates failed: ${error.message}`);
@@ -7181,7 +7187,7 @@ async function executeDbAction(
           .select('id, name, email, phone, payment_terms, currency, is_active, created_at')
           .order('name').limit(limit);
         if (is_active !== undefined) query = query.eq('is_active', is_active);
-        if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+        if (search) query = query.or(`name.ilike.%${sanitizeOrTerm(search)}%,email.ilike.%${sanitizeOrTerm(search)}%`);
         const { data, error } = await query;
         if (error) throw new Error(`List vendors failed: ${error.message}`);
         return { vendors: data || [], count: (data || []).length };
@@ -7684,7 +7690,7 @@ async function executeDbAction(
       if (skillName === 'search_contracts') {
         const { query, limit = 10, status } = args as any;
         if (!query || typeof query !== 'string') throw new Error('query is required');
-        const pattern = `%${query}%`;
+        const pattern = `%${sanitizeOrTerm(query)}%`;
         let q = supabase.from('contracts')
           .select('id, title, counterparty_name, counterparty_email, status, value_cents, currency, end_date, body_markdown')
           .or(`title.ilike.${pattern},counterparty_name.ilike.${pattern},body_markdown.ilike.${pattern}`)
