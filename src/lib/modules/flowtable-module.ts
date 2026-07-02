@@ -85,6 +85,8 @@ export const flowtableModule = defineModule<Input, Output>({
   id: 'flowtable' as never,
   name: 'Flowtable',
   version: '0.1.0',
+  processes: [],
+  maturity: 'L1',
   description:
     'Airtable-style flexible tables for lists, prospect sheets, content backlogs. CSV import/export + push-to-CRM bridge.',
   capabilities: [],

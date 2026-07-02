@@ -55,13 +55,13 @@ describe('autonomy-cron targets are verify_jwt = false', () => {
   const targets = autonomyCronTargets();
 
   it('finds the expected autonomy-cron targets', () => {
-    // Sanity: the writer must reference the three known loop functions. If this
+    // Sanity: the writer must reference the known loop functions. If this
     // breaks, the extraction regex (or the writer) changed — revisit before
-    // trusting the assertion below.
+    // trusting the assertion below. (The daily briefing moved off direct cron
+    // to automation-dispatcher in 2026-07, so it is no longer a target here.)
     expect(targets).toEqual(
       expect.arrayContaining([
         'flowpilot-heartbeat',
-        'flowpilot-briefing',
         'flowpilot-learn',
       ]),
     );
