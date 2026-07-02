@@ -392,6 +392,106 @@ export function useAccountBalances() {
 }
 
 // ============================================================
+// Ledger lines for a single account (with opening balance)
+// ============================================================
+
+export interface LedgerLine {
+  entry_id: string;
+  entry_date: string;
+  voucher_series: string | null;
+  voucher_number: number | null;
+  voucher_year: number | null;
+  reference_number: string | null;
+  description: string;
+  debit_cents: number;
+  credit_cents: number;
+}
+
+export interface AccountLedger {
+  account_code: string;
+  account_name: string;
+  normal_balance: 'debit' | 'credit';
+  opening_cents: number; // signed in account's normal direction
+  lines: LedgerLine[];
+  closing_cents: number;
+}
+
+export function useAccountLedger(accountCode: string | null) {
+  return useQuery({
+    queryKey: ['account-ledger', accountCode],
+    enabled: !!accountCode,
+    queryFn: async (): Promise<AccountLedger | null> => {
+      if (!accountCode) return null;
+      const currentYear = new Date().getFullYear();
+
+      const { data: chart } = await supabase
+        .from('chart_of_accounts')
+        .select('account_code, account_name, normal_balance')
+        .eq('account_code', accountCode)
+        .maybeSingle();
+
+      const normalBalance: 'debit' | 'credit' =
+        (chart?.normal_balance as 'debit' | 'credit') || 'debit';
+
+      const { data: opening } = await supabase
+        .from('opening_balances')
+        .select('amount_cents, balance_type, account_name')
+        .eq('fiscal_year', currentYear)
+        .eq('account_code', accountCode)
+        .maybeSingle();
+
+      let opening_cents = 0;
+      if (opening) {
+        const amt = Number((opening as any).amount_cents || 0);
+        const t = ((opening as any).balance_type || 'debit') as 'debit' | 'credit';
+        opening_cents = t === normalBalance ? amt : -amt;
+      }
+
+      const { data: rows, error } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          debit_cents,
+          credit_cents,
+          journal_entries!inner(
+            id, entry_date, description, reference_number, status,
+            voucher_series, voucher_number, voucher_year
+          )
+        `)
+        .eq('account_code', accountCode)
+        .eq('journal_entries.status', 'posted')
+        .order('entry_date', { foreignTable: 'journal_entries', ascending: true });
+
+      if (error) throw error;
+
+      const lines: LedgerLine[] = (rows || []).map((r: any) => ({
+        entry_id: r.journal_entries.id,
+        entry_date: r.journal_entries.entry_date,
+        voucher_series: r.journal_entries.voucher_series,
+        voucher_number: r.journal_entries.voucher_number,
+        voucher_year: r.journal_entries.voucher_year,
+        reference_number: r.journal_entries.reference_number,
+        description: r.journal_entries.description,
+        debit_cents: Number(r.debit_cents || 0),
+        credit_cents: Number(r.credit_cents || 0),
+      }));
+
+      const debitSum = lines.reduce((s, l) => s + l.debit_cents, 0);
+      const creditSum = lines.reduce((s, l) => s + l.credit_cents, 0);
+      const netMovement =
+        normalBalance === 'debit' ? debitSum - creditSum : creditSum - debitSum;
+
+      return {
+        account_code: accountCode,
+        account_name: chart?.account_name || (opening as any)?.account_name || accountCode,
+        normal_balance: normalBalance,
+        opening_cents,
+        lines,
+        closing_cents: opening_cents + netMovement,
+      };
+    },
+  });
+
+// ============================================================
 // Accounting Templates
 // ============================================================
 
