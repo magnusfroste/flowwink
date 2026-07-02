@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { useBrandingSettings } from '@/hooks/useSiteSettings';
+import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function ProfitLossTab() {
+  useAccountingRealtime();
   const { data: balances, isLoading } = useAccountBalances();
   const { data: prefs } = useAccountingPreferences();
   const { data: branding } = useBrandingSettings();
