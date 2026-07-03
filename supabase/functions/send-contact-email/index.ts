@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { to, toName, subject, body } = await req.json();
+    const { to, toName, subject, body, sentBy } = await req.json();
 
     if (!to || !subject || !body) {
       throw new Error('Missing required fields: to, subject, body');
@@ -33,7 +33,11 @@ serve(async (req) => {
         to: toName ? `${toName} <${to}>` : to,
         subject,
         html: htmlBody,
-        tags: { source: 'send-contact-email' },
+        tags: {
+          source: 'send-contact-email',
+          // Actor visibility: which human triggered this manual send
+          ...(sentBy ? { sent_by: String(sentBy) } : {}),
+        },
       },
     });
 

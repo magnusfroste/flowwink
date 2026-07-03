@@ -21,6 +21,7 @@ import { DealSection } from '@/components/admin/DealSection';
 import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
+import { LeadCommunicationsCard } from '@/components/admin/crm/LeadCommunicationsCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -301,6 +302,9 @@ export default function LeadDetailPage() {
 
           {/* Tasks */}
           <CrmTasksCard leadId={lead.id} />
+
+          {/* Email communication linked via related_entity (DB trigger) + open quotes */}
+          <LeadCommunicationsCard leadId={lead.id} />
 
           {/* Add Note */}
           <Card>

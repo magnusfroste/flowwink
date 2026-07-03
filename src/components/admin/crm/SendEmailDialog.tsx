@@ -15,6 +15,7 @@ import { Mail, Send, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface LeadComposeContext {
   name?: string | null;
@@ -45,6 +46,7 @@ export function SendEmailDialog({ open, onOpenChange, recipientEmail, recipientN
   const [body, setBody] = useState(initialBody ?? '');
   const [sending, setSending] = useState(false);
   const [drafting, setDrafting] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -192,12 +194,15 @@ Return ONLY a JSON object: {"subject": "...", "body": "..."}. No code fences, no
 
     setSending(true);
     try {
+      // Record the acting human on the comms log row (titthål: agent vs manual)
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: {
           to: recipientEmail,
           toName: recipientName || undefined,
           subject: subject.trim(),
           body: body.trim(),
+          sentBy: user?.email || undefined,
         },
       });
 
@@ -208,6 +213,7 @@ Return ONLY a JSON object: {"subject": "...", "body": "..."}. No code fences, no
       setSubject('');
       setBody('');
       onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ['lead-communications'] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send email');
     } finally {

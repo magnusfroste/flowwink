@@ -10,10 +10,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CommunicationDetailDialog, type Comm } from "@/components/admin/communications/CommunicationDetailDialog";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
@@ -22,26 +20,6 @@ import { EmailRouterSettings } from "@/components/admin/EmailRouterSettings";
 import { Mail, AlertCircle, CheckCircle2, FlaskConical, Eye, Settings, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
-
-type Comm = {
-  id: string;
-  channel: string;
-  status: string;
-  direction: "inbound" | "outbound";
-  provider: string | null;
-  simulated: boolean;
-  recipient: string;
-  sender: string | null;
-  subject: string | null;
-  body_html: string | null;
-  body_text: string | null;
-  source: string | null;
-  thread_id: string | null;
-  error_message: string | null;
-  metadata: any;
-  created_at: string;
-  sent_at: string | null;
-};
 
 const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = {
   sent:      { label: "Sent",      variant: "default",     icon: CheckCircle2 },
@@ -217,42 +195,7 @@ export default function CommunicationsPage() {
       </AdminPageContainer>
 
 
-      <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selected?.subject ?? "Message"}</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <Field label="Direction" value={selected.direction} />
-                <Field label="Channel" value={selected.channel} />
-                <Field label="From" value={selected.sender ?? (selected.direction === "outbound" ? "(this mailbox)" : "—")} />
-                <Field label="To" value={selected.recipient} />
-                <Field label="Status" value={selected.status} />
-                <Field label="Provider" value={selected.simulated ? "simulated" : (selected.provider ?? "—")} />
-                <Field label="Source" value={selected.source ?? "—"} />
-                <Field label="When" value={new Date(selected.created_at).toLocaleString()} />
-              </div>
-              {selected.error_message && (
-                <div className="rounded-md bg-destructive/10 text-destructive p-3 text-sm">
-                  {selected.error_message}
-                </div>
-              )}
-              {selected.body_html && (
-                <div>
-                  <div className="text-xs uppercase text-muted-foreground mb-1">Preview</div>
-                  <div className="border rounded-md p-4 bg-card max-h-96 overflow-y-auto"
-                       dangerouslySetInnerHTML={{ __html: selected.body_html }} />
-                </div>
-              )}
-              {!selected.body_html && selected.body_text && (
-                <pre className="border rounded-md p-4 bg-muted text-sm whitespace-pre-wrap">{selected.body_text}</pre>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CommunicationDetailDialog comm={selected} onOpenChange={(v) => !v && setSelected(null)} />
     </AdminLayout>
   );
 }
@@ -288,15 +231,6 @@ function SimModeBanner() {
         to connect Resend, SMTP, or Composio.
       </AlertDescription>
     </Alert>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-xs uppercase text-muted-foreground">{label}</div>
-      <div className="font-medium">{value}</div>
-    </div>
   );
 }
 
