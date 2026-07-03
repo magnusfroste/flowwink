@@ -141,6 +141,7 @@
       "newsletter"
     ],
     "quotes": [
+      "quote-expiry-reminders",
       "quote-sign",
       "send-quote-email"
     ],

@@ -15,11 +15,27 @@
 
     { "id": "esignature", "name": "True e-signature integration", "odoo": true, "status": "missing", "weight": 2, "verify": "e-signature provider integration" },
     { "id": "einvoice_formats", "name": "E-invoice formats (UBL/Peppol)", "odoo": true, "status": "missing", "weight": 2, "verify": "UBL/Peppol e-invoice export" },
-    { "id": "expiry_reminders", "name": "Expiry reminder automation", "odoo": true, "status": "missing", "weight": 1, "verify": "automated quote expiry reminders" },
+    {
+      "id": "expiry_reminders",
+      "name": "Expiry reminder automation",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "supabase/functions/quote-expiry-reminders/index.ts scans status='sent' quotes with valid_until in [now-3d, now+48h] and expiry_reminder_sent_at IS NULL, emails via send-quote-email, stamps quotes.expiry_reminder_sent_at (migration 20260703130500_quote-expiry-reminders.sql); send_quote_expiry_reminders skill (handler edge:quote-expiry-reminders) registered in src/lib/modules/quotes-module.ts and inserted directly into agent_skills by the migration; 'Quote Expiry Reminders' agent_automations row (trigger_type=cron, executor=platform, every 6h) picked up by the existing automation-dispatcher (baseline, runs every minute) — no new pg_cron wiring needed",
+      "notes": "Not yet runtime-verified against a live Supabase project (no DB access in this session) — logic and wiring reasoned from code/migration only, so capped at partial per the Stage-3 done rule. No admin UI to view/trigger the sweep or see reminder history; only the underlying single-quote 'Send Reminder' button (useSendQuoteReminder) has UI."
+    },
     { "id": "recurring_quotes", "name": "Recurring quotes/retainers", "odoo": true, "status": "missing", "weight": 1, "verify": "recurring quote/retainer support" },
     { "id": "attachments", "name": "Quote attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "file attachments on quotes" },
     { "id": "customer_portal", "name": "Customer portal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "customer portal quote tracking" },
-    { "id": "line_discounts", "name": "Line-level discounts", "odoo": true, "status": "missing", "weight": 1, "verify": "per-line discount on quote items" },
+    {
+      "id": "line_discounts",
+      "name": "Line-level discounts",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "Two line-item surfaces both support discount_pct now: (1) quotes.line_items (jsonb, the human-editor path) — src/hooks/useInvoices.ts:67 computeInvoiceTotals applies InvoiceLineItem.discount_pct (0-100) before tax per line, wired into the quote editor at src/components/admin/quotes/QuoteDetailSheet.tsx (Disc % input per row), range-guarded by a CHECK constraint (quotes_line_items_discount_pct_range, migration 20260703130000_line-discounts.sql); (2) quote_items table (the agent/skill path) — pre-existing discount_pct column now range-checked (quote_items_discount_pct_range), and agent-execute's 'quotes' case (handler db:quotes behind manage_quote) already threads discount_pct through create/update (insertQuoteItems) plus the add_item action (supabase/functions/agent-execute/index.ts, previously missing — fixed here); manage_quote's tool_definition/instructions in src/lib/modules/quotes-module.ts document discount_pct for add_item",
+      "notes": "The two surfaces are separate storage (jsonb column vs. table) and are not reconciled/merged — a discount set via one path does not show up in the other. This is a pre-existing architectural split in the codebase (send-quote-email reads quote_items; the human editor reads quotes.line_items), not introduced or fixed here. Capped at partial: not runtime-verified against a live DB in this session, and the two representations remain unmerged."
+    },
     { "id": "amendment_workflow", "name": "Quote amendment workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "quote amendment workflow" },
     {
       "id": "approval_chain_routing",
