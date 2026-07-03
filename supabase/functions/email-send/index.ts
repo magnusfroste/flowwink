@@ -157,11 +157,12 @@ serve(async (req: Request) => {
         subject: body?.subject ?? null,
         body_html: body?.html ?? null,
         body_text: body?.text ?? null,
-        source: body?.tags?.source ?? null,
-        related_entity_type: body?.tags?.entity_type ?? null,
-        related_entity_id: body?.tags?.entity_id ?? null,
+        // Top-level logging hints (declared in SendBody) win over legacy tags.*
+        source: body?.source ?? body?.tags?.source ?? null,
+        related_entity_type: body?.related_entity_type ?? body?.tags?.entity_type ?? null,
+        related_entity_id: body?.related_entity_id ?? body?.tags?.entity_id ?? null,
         error_message: row.error_message ?? null,
-        metadata: { tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null, sender_user_id: body?.sender_user_id ?? null },
+        metadata: { ...(body?.extra_metadata ?? {}), tags: body?.tags ?? {}, from_override: body?.fromOverride ?? null, sender_user_id: body?.sender_user_id ?? null },
         sent_at: row.sent_at ?? null,
       });
     } catch (e) {
