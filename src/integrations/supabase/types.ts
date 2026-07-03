@@ -15555,8 +15555,20 @@ export type Database = {
         }
         Returns: string
       }
+      pay_vendor_invoice: {
+        Args: {
+          p_bank_account?: string
+          p_pay_date?: string
+          p_vendor_invoice_id: string
+        }
+        Returns: Json
+      }
       post_to_cowork_chat: {
         Args: { p_author_name?: string; p_content: string; p_metadata?: Json }
+        Returns: Json
+      }
+      prepare_vat_return: {
+        Args: { p_from: string; p_to: string }
         Returns: Json
       }
       preview_payroll_period: {
