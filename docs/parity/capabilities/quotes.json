@@ -20,6 +20,16 @@
     { "id": "attachments", "name": "Quote attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "file attachments on quotes" },
     { "id": "customer_portal", "name": "Customer portal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "customer portal quote tracking" },
     { "id": "line_discounts", "name": "Line-level discounts", "odoo": true, "status": "missing", "weight": 1, "verify": "per-line discount on quote items" },
-    { "id": "amendment_workflow", "name": "Quote amendment workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "quote amendment workflow" }
+    { "id": "amendment_workflow", "name": "Quote amendment workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "quote amendment workflow" },
+    {
+      "id": "approval_chain_routing",
+      "name": "Multi-step approval chain routing (EPIC-04 consumption)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "epic": "EPIC-04",
+      "verify": "quotes-module.ts request_approval still calls evaluate_approval_required + inserts approval_requests directly with a single rule_id (no chain_id/current_step); no request_entity_approval call or DB send-gate exists for entity_type='quote'",
+      "notes": "Checked for a rumored EPIC-04 quotes integration: not shipped. Migration 20260611210000 (EPIC-04.6) only wires DB gates for purchase_order and expense_report; docs/parity/epics/EPIC-04-approval-chains.md's Definition of Done lists purchasing+expenses as the only required consumer modules, and no commit touches quotes-module.ts or quotes.json for chains. The existing 'approval_threshold' capability (done) is the older single-rule evaluate_approval_required path, unchanged."
+    }
   ]
 }

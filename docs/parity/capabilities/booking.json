@@ -90,8 +90,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "book_appointment_slot RPC/skill derives end_time from booking_services.duration_minutes + rejects same-service overlap (tstzrange) (migration 20260614050000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: 45-min service 10:00\u219210:45, overlapping 10:30 rejected (slot_unavailable), adjacent 10:45 allowed, cancelled frees slot. Pending: slot-generator in check_availability + UI before done."
+      "verify": "book_appointment_slot RPC/skill derives end_time from booking_services.duration_minutes + rejects same-service overlap (tstzrange) (migration 20260614050000); check_availability (agent-execute/index.ts ~L4231-4277) now also aligns its free_slots grid to the service's duration_minutes instead of a fixed 30-min grid (commit fd480a83, 2026-07-02)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: 45-min service 10:00\u219210:45, overlapping 10:30 rejected (slot_unavailable), adjacent 10:45 allowed, cancelled frees slot. The previously-pending slot-generator + UI have since shipped in code: check_availability now returns duration-aligned free_slots (fd480a83), and SmartBookingBlock.tsx, CreateBookingDialog.tsx and BookingServicesTab.tsx all read/display duration_minutes end-to-end. Pending: Stage-3 runtime sign-off only before flipping to done."
     },
     {
       "id": "staff_assignment",

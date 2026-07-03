@@ -67,8 +67,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "emit_service_order_event trigger emits stock.movement (negative qty) per material line on completion (migration 20260614010000); stock module listener decrements",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: completing an order emits one stock.movement per material line (-2, -5), labor lines none, no double-deduct on re-save. Pending: Stage-3 runtime verify (listener decrements quant) before done."
+      "verify": "emit_service_order_event trigger emits stock.movement (negative qty) per material line on completion (migration 20260614010000); consumed by the existing trg_agent_events_stock_movement trigger -> handle_stock_movement_event() -> apply_stock_movement_event() (baseline migration, same generic agent_events listener pos.stock_movement_events already relies on)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: completing an order emits one stock.movement per material line (-2, -5), labor lines none, no double-deduct on re-save. Confirmed by code read that the consuming trigger (trg_agent_events_stock_movement) is real, generic infrastructure already in the schema baseline and is the identical mechanism used by pos.stock_movement_events (status: done) — no bespoke field-service listener needed. Pending: Stage-3 runtime verify (actual quant decrement on a live instance) before done."
     },
     {
       "id": "visit_time_tracking",
