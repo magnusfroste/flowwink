@@ -38,6 +38,7 @@ const quotesInputSchema = z.object({
   quantity: z.number().optional(),
   unit_price_cents: z.number().int().optional(),
   tax_rate_pct: z.number().optional(),
+  discount_pct: z.number().min(0).max(100).optional(),
   status: z.string().optional(),
 });
 
@@ -88,6 +89,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
             quantity: { type: 'number', description: 'For add_item' },
             unit_price_cents: { type: 'number', description: 'For add_item' },
             tax_rate_pct: { type: 'number', description: 'For add_item — defaults to 25' },
+            discount_pct: { type: 'number', description: 'For add_item — per-line discount percent (0-100), applied to the line before tax. Defaults to 0' },
             status: { type: 'string' },
           },
           required: ['action'],
@@ -96,6 +98,27 @@ const QUOTES_SKILLS: SkillSeed[] = [
     },
     instructions:
       'Workflow: 1) create with lead_id (and optionally deal_id to link to a CRM opportunity) → returns draft quote. 2) add_item one or more times. 3) request_approval to check whether the quote requires sign-off (above 25k SEK by default). 4) Once approved (or if not required), send to generate the public accept_token and email the customer the link. 5) convert_to_invoice once the customer accepts.',
+  },
+  {
+    name: 'send_quote_expiry_reminders',
+    description:
+      'Scan sent quotes whose valid_until is within the next 48 hours or up to 3 days past (grace window) and email the customer a reminder, reusing the existing quote reminder email pipeline (send-quote-email). Skips quotes already reminded (expiry_reminder_sent_at set) or not in status=sent. Use when: running the periodic quote-expiry sweep (cron). NOT for: sending an ad-hoc reminder for a single quote (use the quote\'s Send Reminder action / manage_quote) or invoice dunning (use dunning-processor).',
+    category: 'commerce',
+    handler: 'edge:quote-expiry-reminders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_quote_expiry_reminders',
+        description: 'Send expiry reminder emails for quotes nearing or just past their valid_until date',
+        parameters: {
+          type: 'object',
+          properties: {},
+        },
+      },
+    },
+    instructions:
+      'Runs as a scheduled sweep, no arguments needed. Finds quotes with status=sent, valid_until within [now-3d, now+48h], and expiry_reminder_sent_at IS NULL. Sends one reminder email per quote via send-quote-email (reminder=true) and stamps expiry_reminder_sent_at so it is never sent twice. Scheduled via the "Quote Expiry Reminders" cron automation (every 6 hours) — see migration 20260703130500_quote-expiry-reminders.sql.',
   },
 ];
 
@@ -111,7 +134,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
   tier: 'standard',
   inputSchema: quotesInputSchema,
   outputSchema: quotesOutputSchema,
-  skills: ['manage_quote'],
+  skills: ['manage_quote', 'send_quote_expiry_reminders'],
   data: {
     tables: ['quote_items', 'quote_signatures', 'quote_versions', 'quotes', 'quote_templates'],
   },
@@ -223,6 +246,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
         quantity: v.quantity ?? 1,
         unit_price_cents: v.unit_price_cents ?? 0,
         tax_rate_pct: v.tax_rate_pct ?? 25,
+        discount_pct: v.discount_pct ?? 0,
       } as never);
       if (error) return { success: false, error: error.message };
       return { success: true, quote_id: v.id, message: 'Item added' };

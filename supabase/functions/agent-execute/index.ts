@@ -6784,6 +6784,7 @@ async function executeDbAction(
         const inserted = await insertQuoteItems(qid, [{
           description: a.description, quantity: a.quantity, unit: a.unit,
           unit_price_cents: a.unit_price_cents, tax_rate_pct: a.tax_rate_pct,
+          discount_pct: a.discount_pct,
           product_id: a.product_id,
         }]);
         return { added: true, quote_id: qid, items_inserted: inserted };

@@ -65,7 +65,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'llms-txt', 'mcp-server', 'migrate-page', 'newsletter',
   'openai-account', 'openclaw-responses', 'parse-resume', 'process-image',
   'process-job-application', 'prospect-fit-analysis', 'prospect-research', 'qualify-lead',
-  'quote-sign', 'reconciliation', 'resume-match', 'run-autonomy-tests',
+  'quote-expiry-reminders', 'quote-sign', 'reconciliation', 'resume-match', 'run-autonomy-tests',
   'run-platform-tests', 'sales-profile-setup', 'send-booking-confirmation',
   'send-contact-email', 'send-invoice-email', 'send-order-confirmation', 'send-quote-email',
   'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
@@ -114,7 +114,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── Commerce / finance ───────────────────────────────────────────────────
   ecommerce: ['create-checkout', 'send-order-confirmation'],
   invoicing: ['send-invoice-email', 'generate-invoice-pdf', 'create-invoice-payment'],
-  quotes: ['quote-sign', 'send-quote-email'],
+  quotes: ['quote-sign', 'send-quote-email', 'quote-expiry-reminders'],
   contracts: ['contract-sign'],
   bookings: ['send-booking-confirmation'],
   subscriptions: ['subscriptions', 'subscription-billing-cron', 'dunning-processor'],

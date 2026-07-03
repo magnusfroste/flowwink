@@ -18,6 +18,8 @@ export interface InvoiceLineItem {
   pricelist_id?: string | null;
   /** Audit: 'pricelist' | 'product_base' | 'manual' */
   price_source?: 'pricelist' | 'product_base' | 'manual' | null;
+  /** Per-line discount percent (0-100), applied to this line before tax. Mirrors quote_items.discount_pct. */
+  discount_pct?: number;
 }
 
 export interface InvoiceLead {
@@ -65,7 +67,11 @@ export function getInvoiceCompanyName(inv: Invoice): string | null {
 }
 
 export function computeInvoiceTotals(lineItems: InvoiceLineItem[], taxRate: number) {
-  const subtotal_cents = lineItems.reduce((sum, item) => sum + item.qty * item.unit_price_cents, 0);
+  const subtotal_cents = Math.round(lineItems.reduce((sum, item) => {
+    const discountPct = Math.min(100, Math.max(0, item.discount_pct || 0));
+    const gross = item.qty * item.unit_price_cents;
+    return sum + gross * (1 - discountPct / 100);
+  }, 0));
   const tax_cents = Math.round(subtotal_cents * taxRate);
   const total_cents = subtotal_cents + tax_cents;
   return { subtotal_cents, tax_cents, total_cents };

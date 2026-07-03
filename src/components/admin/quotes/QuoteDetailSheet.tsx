@@ -187,6 +187,27 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   onFocus={(e) => e.target.select()}
                   className="w-32"
                 />
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  max={100}
+                  step="1"
+                  placeholder="Disc %"
+                  value={!item.discount_pct ? '' : item.discount_pct}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') {
+                      updateLineItem(i, 'discount_pct', 0);
+                    } else {
+                      const num = Number(v);
+                      updateLineItem(i, 'discount_pct', Number.isFinite(num) ? Math.min(100, Math.max(0, num)) : 0);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  className="w-20"
+                  title="Line discount %"
+                />
                 <Button variant="ghost" size="icon" onClick={() => removeLineItem(i)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
