@@ -15003,6 +15003,13 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_recent_migrations: {
+        Args: { p_limit?: number }
+        Returns: {
+          name: string
+          version: string
+        }[]
+      }
       get_support_agent_user_id: {
         Args: { p_agent_id: string }
         Returns: string
