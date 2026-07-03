@@ -5628,7 +5628,7 @@ async function executeBookingsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', booking_id, status, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
+  const { action = 'list', booking_id, status, assigned_employee_id, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
 
   if (action === 'list') {
     const since = new Date();
@@ -5637,7 +5637,7 @@ async function executeBookingsManagement(
     else since.setMonth(since.getMonth() - 1);
 
     let query = supabase.from('bookings')
-      .select('id, customer_name, customer_email, customer_phone, start_time, end_time, status, service_id, created_at')
+      .select('id, customer_name, customer_email, customer_phone, start_time, end_time, status, service_id, assigned_employee_id, created_at')
       .gte('start_time', since.toISOString())
       .order('start_time', { ascending: true }).limit(limit);
     if (status) query = query.eq('status', status);
@@ -5666,6 +5666,14 @@ async function executeBookingsManagement(
       .update(updates).eq('id', booking_id).select('id, status').single();
     if (error) throw new Error(`Update booking failed: ${error.message}`);
     return { booking_id: data.id, status: data.status };
+  }
+
+  if (action === 'assign_staff' && booking_id) {
+    const { data, error } = await supabase.from('bookings')
+      .update({ assigned_employee_id: assigned_employee_id || null, updated_at: new Date().toISOString() })
+      .eq('id', booking_id).select('id, assigned_employee_id').single();
+    if (error) throw new Error(`Assign staff failed: ${error.message}`);
+    return { booking_id: data.id, assigned_employee_id: data.assigned_employee_id };
   }
 
   if (action === 'cancel' && booking_id) {

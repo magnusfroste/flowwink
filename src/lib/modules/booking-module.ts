@@ -212,7 +212,7 @@ Manages booking hours and blocked dates for the scheduling system.
   },
   {
     name: 'manage_bookings',
-    description: 'List, view, update status or cancel EXISTING bookings — find a customer\'s booking by email or phone ("when is my appointment?", "cancel my booking"). Use when: a customer asks about/cancels their booking; admin reviews the calendar; confirming bookings. NOT for: creating bookings (book_appointment_slot); availability settings (manage_booking_availability); free times (check_availability).',
+    description: 'List, view, update status/no-show, assign staff, or cancel EXISTING bookings — find a customer\'s booking by email or phone ("when is my appointment?", "cancel my booking"). Use when: a customer asks about/cancels their booking; admin reviews the calendar; confirming bookings; assigning a staff member; marking a past booking as no-show. NOT for: creating bookings (book_appointment_slot); availability settings (manage_booking_availability); free times (check_availability).',
     category: 'crm',
     handler: 'module:booking',
     scope: 'internal',
@@ -220,7 +220,7 @@ Manages booking hours and blocked dates for the scheduling system.
       type: 'function',
       function: {
         name: 'manage_bookings',
-        description: 'List, view, update status or cancel existing bookings. Find a customer\'s booking via customer_email or customer_phone. NOT for creating bookings (book_appointment_slot).',
+        description: 'List, view, update status (including no_show), assign staff, or cancel existing bookings. Find a customer\'s booking via customer_email or customer_phone. NOT for creating bookings (book_appointment_slot).',
         parameters: {
           type: 'object',
           properties: {
@@ -230,6 +230,7 @@ Manages booking hours and blocked dates for the scheduling system.
                 'list',
                 'get',
                 'update_status',
+                'assign_staff',
                 'cancel',
               ],
             },
@@ -238,6 +239,11 @@ Manages booking hours and blocked dates for the scheduling system.
             },
             status: {
               type: 'string',
+              description: 'For action=update_status: pending, confirmed, completed, cancelled, or no_show (customer confirmed but did not attend a past appointment).',
+            },
+            assigned_employee_id: {
+              type: 'string',
+              description: 'For action=assign_staff: employee UUID to assign as staff for this booking (look up via manage_employee search/list_employees), or null/omit to unassign.',
             },
             period: {
               type: 'string',
@@ -267,21 +273,26 @@ Manages booking hours and blocked dates for the scheduling system.
     },
     instructions: `## manage_bookings
 ### What
-Lists, views, updates, or cancels EXISTING bookings.
+Lists, views, updates, assigns staff to, or cancels EXISTING bookings.
 ### When to use
 - Customer asks "when is my appointment?" → action=list + customer_email OR customer_phone
 - Customer wants to cancel → find via list, then action=cancel with booking_id
 - Admin calendar overview / confirming bookings
+- Assign a staff member → action=assign_staff with booking_id + assigned_employee_id (find the employee via manage_employee first)
+- Booking's time has passed and the customer never showed → action=update_status with status=no_show
 ### Parameters
-- **action**: Required. list, get, update_status, cancel.
-- **booking_id**: For get/update_status/cancel.
+- **action**: Required. list, get, update_status, assign_staff, cancel.
+- **booking_id**: For get/update_status/assign_staff/cancel.
+- **status**: For update_status — pending, confirmed, completed, cancelled, no_show.
+- **assigned_employee_id**: For assign_staff — employee UUID, or omit/null to unassign.
 - **customer_email** / **customer_phone**: Filter list to a customer's own bookings (phone matches on the last 7 digits — perfect for voice callers).
 - **period**: Filter: today, week, month.
 ### RESCHEDULE ("flytta min tid")
 There is no move action — do: (1) find the booking (list + customer filter), (2) action=cancel, (3) book the new time with book_appointment_slot. Tell the customer both steps happened.
 ### Edge cases
 - Cancel sends a cancellation email to the customer.
-- Cancelled bookings free up the time slot immediately.`,
+- Cancelled bookings free up the time slot immediately.
+- no_show is only meaningful for a booking whose start_time is in the past and was confirmed — don't mark future bookings no_show.`,
   },
   {
     name: 'book_appointment_slot',

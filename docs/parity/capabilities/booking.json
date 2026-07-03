@@ -97,9 +97,10 @@
       "id": "staff_assignment",
       "name": "Staff assignment",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 2,
-      "verify": "Staff assigned to bookings"
+      "verify": "bookings.assigned_employee_id uuid REFERENCES employees(id) ON DELETE SET NULL (migration 20260703150000_booking-staff-assignment.sql); staff Select in CreateBookingDialog.tsx and the booking detail dialog in BookingsPage.tsx (src/pages/admin/BookingsPage.tsx); manage_bookings action=assign_staff in agent-execute/index.ts executeBookingsManagement() + skill schema in booking-module.ts",
+      "notes": "Built 2026-07-03, not yet live-DB verified (no Supabase creds in this session) — schema/UI/skill wired end-to-end by code inspection but the migration has not been run against a live instance. employees (general HR/staff table) confirmed as the correct FK target over consultant_profiles (niche consultant-marketplace table with hourly_rate_cents/portfolio_url/embedding fields, unrelated concept) by reading both table definitions in baseline.sql."
     },
     {
       "id": "capacity_overbooking",
@@ -129,17 +130,19 @@
       "id": "reminders",
       "name": "Appointment reminders",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "Appointment reminder notifications"
+      "verify": "supabase/functions/send-booking-reminders/index.ts sweeps confirmed bookings with start_time within 24h and reminder_sent_at IS NULL, emails via email-send, stamps reminder_sent_at; wired as a 7th job ('booking-reminders', every 15 min) in register_flowpilot_cron() (migration 20260703152000_booking-reminders-cron.sql), the same cron.schedule+net.http_post mechanism as every other FlowPilot periodic job",
+      "notes": "Built 2026-07-03, not yet live-DB/live-cron verified in this session (no Supabase creds) — finally wires the previously dead bookings.reminder_sent_at column. Mirrors send-booking-confirmation's settings lookup + email-send dispatch pattern closely (new file, same class of transactional email). Edge function needs `supabase functions deploy send-booking-reminders --no-verify-jwt` per the deploy runbook before the cron job it registers can succeed."
     },
     {
       "id": "no_show",
       "name": "No-show tracking",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "No-show tracking on bookings"
+      "verify": "bookings_status_check CHECK constraint extended with 'no_show' (migration 20260703151000_booking-no-show-status.sql, drop+recreate pattern matching 20260629142430_outbound_communications_direction_check); 'Mark No-show' action in BookingsPage.tsx booking-list dropdown (gated by canMarkNoShow: status=confirmed and start_time in the past) and as a status option in the detail dialog; manage_bookings action=update_status accepts status=no_show via the existing status-update path (agent-execute/index.ts, booking-module.ts)",
+      "notes": "Built 2026-07-03, not yet live-DB verified in this session (no Supabase creds) — CHECK constraint change + UI + skill metadata wired by code inspection; agent-execute's executeBookingsManagement() update_status branch was already generic over any status string, so no handler code change was needed there beyond the CHECK constraint and skill description."
     },
     {
       "id": "video_integration",

@@ -9,6 +9,7 @@ import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
   confirmed: 'Confirmed',
   cancelled: 'Cancelled',
   completed: 'Completed',
+  no_show: 'No-show',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -33,7 +35,13 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-success/10 text-success dark:bg-success/20',
   cancelled: 'bg-destructive/10 text-destructive dark:bg-destructive/20',
   completed: 'bg-primary/10 text-primary dark:bg-primary/20',
+  no_show: 'bg-muted text-muted-foreground',
 };
+
+/** No-show only makes sense for a past, confirmed booking the customer never attended. */
+function canMarkNoShow(booking: Booking): boolean {
+  return booking.status === 'confirmed' && new Date(booking.start_time) < new Date();
+}
 
 export default function BookingsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -66,8 +74,14 @@ export default function BookingsPage() {
   const { data: services } = useBookingServices();
   const { data: availability } = useAvailability();
   const { data: blockedDates } = useBlockedDates();
+  const { data: employees } = useEmployees();
   const updateBooking = useUpdateBooking();
   const deleteBooking = useDeleteBooking();
+
+  const employeeName = useCallback(
+    (employeeId: string | null) => employees?.find((e) => e.id === employeeId)?.name,
+    [employees]
+  );
 
   // Minimum slot duration based on active services (fallback 60 min)
   const minSlotDuration = useMemo(() => {
@@ -143,6 +157,11 @@ export default function BookingsPage() {
       ...(newStatus === 'cancelled' ? { cancelled_at: new Date().toISOString() } : {}),
     });
     setSelectedBooking(null);
+  };
+
+  const handleAssignStaff = async (booking: Booking, employeeId: string | null) => {
+    await updateBooking.mutateAsync({ id: booking.id, assigned_employee_id: employeeId });
+    setSelectedBooking({ ...booking, assigned_employee_id: employeeId });
   };
 
   const handleDelete = async (id: string) => {
@@ -379,6 +398,12 @@ export default function BookingsPage() {
                         {booking.service && (
                           <span>{booking.service.name}</span>
                         )}
+                        {employeeName(booking.assigned_employee_id) && (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {employeeName(booking.assigned_employee_id)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <DropdownMenu>
@@ -395,7 +420,12 @@ export default function BookingsPage() {
                         <DropdownMenuItem onClick={() => handleStatusChange(booking, 'completed')}>
                           Mark Completed
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        {canMarkNoShow(booking) && (
+                          <DropdownMenuItem onClick={() => handleStatusChange(booking, 'no_show')}>
+                            Mark No-show
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
                           onClick={() => handleStatusChange(booking, 'cancelled')}
                           className="text-destructive"
                         >
@@ -540,6 +570,9 @@ export default function BookingsPage() {
                       <SelectItem value="confirmed">Confirmed</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {(canMarkNoShow(selectedBooking) || selectedBooking.status === 'no_show') && (
+                        <SelectItem value="no_show">No-show</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -562,9 +595,30 @@ export default function BookingsPage() {
                   </p>
                 </div>
                 {selectedBooking.service && (
-                  <div className="col-span-2">
+                  <div>
                     <Label className="text-muted-foreground">Service</Label>
                     <p>{selectedBooking.service.name}</p>
+                  </div>
+                )}
+                {employees && employees.length > 0 && (
+                  <div>
+                    <Label className="text-muted-foreground">Staff</Label>
+                    <Select
+                      value={selectedBooking.assigned_employee_id || 'none'}
+                      onValueChange={(v) => handleAssignStaff(selectedBooking, v === 'none' ? null : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Unassigned</SelectItem>
+                        {employees.filter((e) => e.status === 'active').map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>

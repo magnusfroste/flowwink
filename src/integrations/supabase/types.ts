@@ -2692,6 +2692,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          assigned_employee_id: string | null
           cancelled_at: string | null
           cancelled_reason: string | null
           confirmation_sent_at: string | null
@@ -2711,6 +2712,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_employee_id?: string | null
           cancelled_at?: string | null
           cancelled_reason?: string | null
           confirmation_sent_at?: string | null
@@ -2730,6 +2732,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_employee_id?: string | null
           cancelled_at?: string | null
           cancelled_reason?: string | null
           confirmation_sent_at?: string | null
@@ -2749,6 +2752,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_service_id_fkey"
             columns: ["service_id"]

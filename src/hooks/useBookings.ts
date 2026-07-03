@@ -39,11 +39,12 @@ export interface Booking {
   customer_phone: string | null;
   start_time: string;
   end_time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   notes: string | null;
   internal_notes: string | null;
   confirmation_sent_at: string | null;
   reminder_sent_at: string | null;
+  assigned_employee_id: string | null;
   metadata: Json | null;
   created_at: string;
   updated_at: string;
@@ -296,6 +297,7 @@ export function useCreateBooking() {
       end_time: string;
       notes?: string | null;
       status?: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+      assigned_employee_id?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('bookings')
@@ -332,9 +334,10 @@ export function useUpdateBooking() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<{
-      status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+      status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
       internal_notes: string | null;
       cancelled_at: string | null;
+      assigned_employee_id: string | null;
     }>) => {
       const { data, error } = await supabase
         .from('bookings')
