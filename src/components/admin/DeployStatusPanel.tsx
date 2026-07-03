@@ -1,26 +1,33 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { GitBranch, GitCommit, Boxes, Database, Clock, ExternalLink } from 'lucide-react';
+import {
+  GitBranch, GitCommit, Boxes, Database, Clock, ExternalLink,
+  CheckCircle2, AlertTriangle, HelpCircle,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeployedEdgeFunctions } from '@/hooks/useDeployedEdgeFunctions';
+import { useRequiredEdgeFunctions } from '@/hooks/useRequiredEdgeFunctions';
 
 /**
- * Deploy Status panel — single-glance answer to "what version of FlowWink is
- * running on this instance?". Three layers:
+ * Deploy Status panel — the drift dashboard.
  *
- *   1. Frontend      — git commit + branch injected at build time via
- *                      vite.config.ts `define`, plus build timestamp.
- *   2. Edge functions — list of functions last deployed by
- *                      `flowwink.sh /update-funcs`, read from
- *                      `site_settings.edge_functions_deployed`. Supabase does
- *                      not expose per-function version hashes to our anon key,
- *                      so this is the closest deploy-truth we have client-side.
- *   3. Database      — most recent migrations from the Supabase migrations
- *                      ledger, exposed via `get_recent_migrations()` RPC.
+ * Supabase Studio already lists every deployed function with its version and
+ * timestamp; duplicating that is low-value. What Supabase *cannot* show is
+ * "does the deployed set match what this repo/DB says should be deployed?".
+ * That's the gap this panel fills.
  *
- * Purpose: catch the classic 4-layer drift (schema / skills / edge / frontend)
- * without needing SSH or the Supabase dashboard.
+ * Three sections:
+ *   1. Frontend   — git commit + branch injected at build time.
+ *   2. Edge drift — compares functions required by enabled `agent_skills`
+ *                   (source of truth for what the instance expects) against
+ *                   the last deploy manifest written by `flowwink.sh
+ *                   /update-funcs` into `site_settings.edge_functions_deployed`.
+ *                   Missing = deploy is stale; skill hash drift is a separate
+ *                   signal covered by the Instance Health card above.
+ *   3. Migrations — last 10 rows from the Supabase migrations ledger via
+ *                   `get_recent_migrations()` RPC.
  */
 export function DeployStatusPanel() {
   const gitCommit = typeof __GIT_COMMIT__ !== 'undefined' ? __GIT_COMMIT__ : 'unknown';
@@ -29,7 +36,22 @@ export function DeployStatusPanel() {
   const gitDate = typeof __GIT_COMMIT_DATE__ !== 'undefined' ? __GIT_COMMIT_DATE__ : '';
   const buildTime = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '';
 
-  const { data: deployed } = useDeployedEdgeFunctions();
+  const deployedQ = useDeployedEdgeFunctions();
+  const requiredQ = useRequiredEdgeFunctions();
+
+  const drift = useMemo(() => {
+    const required = requiredQ.data ?? [];
+    const deployed = deployedQ.data?.functions;
+    if (!deployed) return { state: 'unknown' as const, required, missing: [] as string[], extra: [] as string[] };
+    const deployedSet = new Set(deployed);
+    const requiredSet = new Set(required);
+    return {
+      state: 'known' as const,
+      required,
+      missing: required.filter((fn) => !deployedSet.has(fn)),
+      extra: deployed.filter((fn) => !requiredSet.has(fn)),
+    };
+  }, [requiredQ.data, deployedQ.data]);
 
   const migrationsQuery = useQuery({
     queryKey: ['deploy-status', 'recent-migrations'],
@@ -41,17 +63,13 @@ export function DeployStatusPanel() {
     staleTime: 60_000,
   });
 
-  const commitHref = gitCommitFull && gitCommitFull !== 'unknown'
-    ? `https://github.com/${gitBranch === 'unknown' ? '' : ''}/commit/${gitCommitFull}`
-    : null;
-
   return (
     <div className="rounded-lg border bg-card">
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
         <Boxes className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-semibold">Deploy Status</h2>
         <span className="text-xs text-muted-foreground ml-2">
-          What's actually running on this instance right now.
+          Drift check — where the running instance diverges from the repo.
         </span>
       </div>
 
@@ -72,71 +90,89 @@ export function DeployStatusPanel() {
           {gitDate && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              committed {(() => { try { return formatDistanceToNow(parseISO(gitDate), { addSuffix: true }); } catch { return gitDate; } })()}
+              committed {safeRelative(gitDate)}
             </p>
           )}
           {buildTime && (
             <p className="text-[10px] text-muted-foreground">
-              built {(() => { try { return formatDistanceToNow(parseISO(buildTime), { addSuffix: true }); } catch { return buildTime; } })()}
+              built {safeRelative(buildTime)}
             </p>
           )}
-          {commitHref && (
-            <a
-              href={commitHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-primary inline-flex items-center gap-1 hover:underline"
-            >
-              open on GitHub <ExternalLink className="h-2.5 w-2.5" />
-            </a>
+          {gitCommitFull && gitCommitFull !== 'unknown' && (
+            <p className="text-[10px] text-muted-foreground font-mono truncate" title={gitCommitFull}>
+              {gitCommitFull}
+            </p>
           )}
         </div>
 
-        {/* ── 2. Edge functions ── */}
+        {/* ── 2. Edge functions drift ── */}
         <div className="rounded-md border bg-muted/20 p-3 space-y-2">
           <div className="flex items-center gap-2 text-xs font-medium">
             <Boxes className="h-3.5 w-3.5 text-primary" />
             Edge functions
-            {deployed?.functions && (
-              <Badge variant="secondary" className="text-[10px]">
-                {deployed.functions.length} deployed
-              </Badge>
-            )}
+            <EdgeStatusBadge drift={drift} />
           </div>
-          {deployed?.functions === null || deployed === undefined ? (
+
+          {(requiredQ.isLoading || deployedQ.isLoading) && (
+            <p className="text-[11px] text-muted-foreground">Loading…</p>
+          )}
+
+          {drift.state === 'unknown' && !requiredQ.isLoading && (
             <p className="text-[11px] text-muted-foreground">
-              No deploy record. Run <code className="text-[10px] bg-muted px-1 rounded">flowwink.sh /update-funcs</code> to
-              populate — until then this instance's edge-function version is unknown.
+              No deploy manifest recorded. On self-hosted instances,
+              <code className="text-[10px] bg-muted px-1 rounded mx-0.5">flowwink.sh /update-funcs</code>
+              writes to <code className="text-[10px] bg-muted px-1 rounded">site_settings.edge_functions_deployed</code>
+              after each deploy. Until it runs, drift can't be detected — use the Supabase Functions view for the source of truth.
             </p>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                {deployed.functions.slice(0, 40).map((fn) => (
+          )}
+
+          {drift.state === 'known' && drift.missing.length === 0 && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+              All {drift.required.length} required functions are in the last deploy.
+            </p>
+          )}
+
+          {drift.state === 'known' && drift.missing.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-warning flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {drift.missing.length} required function{drift.missing.length === 1 ? '' : 's'} missing from last deploy
+              </p>
+              <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                {drift.missing.map((fn) => (
                   <span
                     key={fn}
-                    className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/40"
+                    className="font-mono text-[10px] bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded"
                   >
                     {fn}
                   </span>
                 ))}
-                {deployed.functions.length > 40 && (
-                  <span className="text-[10px] text-muted-foreground self-center">
-                    +{deployed.functions.length - 40} more
-                  </span>
-                )}
               </div>
-              {deployed.updatedAt && (
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  last synced {(() => { try { return formatDistanceToNow(parseISO(deployed.updatedAt), { addSuffix: true }); } catch { return deployed.updatedAt; } })()}
-                </p>
-              )}
-              <p className="text-[10px] text-muted-foreground/70">
-                Per-function version hashes aren't exposed to the client — this list is the deploy
-                script's declared set.
+              <p className="text-[10px] text-muted-foreground">
+                Run <code className="bg-muted px-1 rounded">flowwink.sh /update-funcs</code> to deploy the current repo.
               </p>
-            </>
+            </div>
           )}
+
+          {drift.state === 'known' && (
+            <p className="text-[10px] text-muted-foreground">
+              {drift.required.length} required · {deployedQ.data?.functions?.length ?? 0} deployed
+              {deployedQ.data?.updatedAt && <> · last sync {safeRelative(deployedQ.data.updatedAt)}</>}
+            </p>
+          )}
+
+          <p className="text-[10px] text-muted-foreground/70">
+            Per-function version + timestamp lives in the Supabase Functions view.
+            <a
+              href="https://supabase.com/dashboard/project/_/functions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary inline-flex items-center gap-0.5 hover:underline ml-1"
+            >
+              Open <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          </p>
         </div>
 
         {/* ── 3. Database migrations ── */}
@@ -185,6 +221,39 @@ export function DeployStatusPanel() {
       </div>
     </div>
   );
+}
+
+function EdgeStatusBadge({
+  drift,
+}: {
+  drift:
+    | { state: 'unknown'; missing: string[] }
+    | { state: 'known'; missing: string[] };
+}) {
+  if (drift.state === 'unknown') {
+    return (
+      <Badge variant="secondary" className="text-[10px]">
+        <HelpCircle className="h-3 w-3 mr-1" /> unknown
+      </Badge>
+    );
+  }
+  if (drift.missing.length === 0) {
+    return (
+      <Badge variant="default" className="text-[10px]">
+        <CheckCircle2 className="h-3 w-3 mr-1" /> in sync
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="destructive" className="text-[10px]">
+      <AlertTriangle className="h-3 w-3 mr-1" /> {drift.missing.length} missing
+    </Badge>
+  );
+}
+
+function safeRelative(iso: string): string {
+  try { return formatDistanceToNow(parseISO(iso), { addSuffix: true }); }
+  catch { return iso; }
 }
 
 /**
