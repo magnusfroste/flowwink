@@ -44,6 +44,7 @@ import { DealKanban } from '@/components/admin/DealKanban';
 import { StaleDealsCard } from '@/components/admin/deals/StaleDealsCard';
 import { PipelineSummary } from '@/components/admin/deals/PipelineSummary';
 import { ScheduleNextActivityDialog } from '@/components/admin/deals/ScheduleNextActivityDialog';
+import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -58,6 +59,7 @@ export default function DealsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [scheduleFor, setScheduleFor] = useState<{ deal: any; stage: DealStage } | null>(null);
+  const [lostFor, setLostFor] = useState<string | null>(null);
 
   const maybePromptScheduler = (dealId: string, newStage: DealStage) => {
     if (newStage !== 'closed_won' && newStage !== 'closed_lost') return;
@@ -68,6 +70,12 @@ export default function DealsPage() {
   };
 
   const handleStageChange = (dealId: string, stage: DealStage) => {
+    const deal = deals.find(d => d.id === dealId);
+    if (stage === 'closed_lost' && deal && deal.stage !== 'closed_lost') {
+      // Lost discipline: capture the reason before committing the transition.
+      setLostFor(dealId);
+      return;
+    }
     maybePromptScheduler(dealId, stage);
     updateDeal.mutate({ id: dealId, stage });
   };
@@ -311,6 +319,22 @@ export default function DealsPage() {
           deal={scheduleFor?.deal ?? null}
           closedAs={scheduleFor?.stage ?? null}
           onOpenChange={(o) => { if (!o) setScheduleFor(null); }}
+        />
+
+        {/* Lost reason prompt for the table-view stage select (Odoo lost discipline) */}
+        <LostReasonDialog
+          open={!!lostFor}
+          entityLabel="deal"
+          isPending={updateDeal.isPending}
+          onCancel={() => setLostFor(null)}
+          onConfirm={(reason, note) => {
+            if (!lostFor) return;
+            updateDeal.mutate(
+              { id: lostFor, stage: 'closed_lost', lost_reason: reason, lost_note: note || null },
+              { onSettled: () => setLostFor(null) },
+            );
+            maybePromptScheduler(lostFor, 'closed_lost');
+          }}
         />
       </AdminPageContainer>
     </AdminLayout>

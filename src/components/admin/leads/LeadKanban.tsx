@@ -20,6 +20,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePipelineStages, getStageColor, type PipelineStage } from '@/hooks/usePipelineStages';
 import type { LeadWithCompany } from '@/hooks/useLeads';
+import { NextStepChip } from '@/components/admin/crm/NextStepChip';
+import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
 
 interface Props {
   leads: LeadWithCompany[];
@@ -31,6 +33,8 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
   const { data: stages = [], isLoading: stagesLoading } = usePipelineStages('lead');
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Pending drop onto a lost stage — held until the reason dialog resolves.
+  const [pendingLost, setPendingLost] = useState<{ id: string; stage_id: string; status: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -48,15 +52,27 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
   };
 
   const updateStage = useMutation({
-    mutationFn: async (input: { id: string; stage_id: string; status: string }) => {
+    mutationFn: async (input: {
+      id: string; stage_id: string; status: string;
+      lost_reason?: string | null; lost_note?: string | null;
+    }) => {
+      const isLost = stageById.get(input.stage_id)?.is_lost || input.status === 'lost';
       const { error } = await supabase
         .from('leads')
-        .update({ stage_id: input.stage_id, status: input.status as never })
+        .update({
+          stage_id: input.stage_id,
+          status: input.status as never,
+          // Lost discipline: store reason+note on the lost transition,
+          // clear them whenever the lead moves to a non-lost stage (re-open).
+          lost_reason: isLost ? (input.lost_reason ?? null) : null,
+          lost_note: isLost ? (input.lost_note ?? null) : null,
+        })
         .eq('id', input.id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leads'] });
+      qc.invalidateQueries({ queryKey: ['lead'] });
       qc.invalidateQueries({ queryKey: ['leadStats'] });
     },
     onError: (e: Error) => toast.error(`Failed to update stage: ${e.message}`),
@@ -88,6 +104,12 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
     if (!target) return;
     const current = leadStageId(lead);
     if (current === target.id) return;
+    const currentIsLost = current ? stageById.get(current)?.is_lost : lead.status === 'lost';
+    if (target.is_lost && !currentIsLost) {
+      // Ask for a lost reason before committing the move (Odoo lost discipline).
+      setPendingLost({ id: lead.id, stage_id: target.id, status: target.key });
+      return;
+    }
     updateStage.mutate({ id: lead.id, stage_id: target.id, status: target.key });
   };
 
@@ -133,6 +155,19 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
           </Card>
         )}
       </DragOverlay>
+      <LostReasonDialog
+        open={!!pendingLost}
+        entityLabel="contact"
+        isPending={updateStage.isPending}
+        onCancel={() => setPendingLost(null)}
+        onConfirm={(reason, note) => {
+          if (!pendingLost) return;
+          updateStage.mutate(
+            { ...pendingLost, lost_reason: reason, lost_note: note || null },
+            { onSettled: () => setPendingLost(null) },
+          );
+        }}
+      />
     </DndContext>
   );
 }
@@ -187,6 +222,7 @@ function LeadCardDraggable({ lead, onClick }: { lead: LeadWithCompany; onClick?:
         {lead.score != null && (
           <p className="text-xs text-muted-foreground">Score {lead.score}</p>
         )}
+        <NextStepChip leadId={lead.id} />
       </CardContent>
     </Card>
   );

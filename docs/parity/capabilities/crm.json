@@ -18,7 +18,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "crm_task_* skills, manage_activities"
+      "verify": "crm_task_* skills, manage_activities",
+      "notes": "2026-07-04 (crm-odoo.md §2): closed the two gaps 'done' was hiding — (1) pipeline-level next-activity surfacing: NextStepChip on LeadKanban+DealKanban cards with Odoo state colors (green planned / amber today / red overdue) and an explicit muted 'No next step' flag, one batched query via useNextTasksIndex; (2) done-with-feedback: crm_tasks.completion_note (migration 20260704110000) captured in CrmTasksCard popover and via crm_task_update, posted to lead_activities type task_completed → UnifiedTimeline. Code-level; Stage-3 live verification pending."
     },
     {
       "id": "email_1to1",
@@ -77,9 +78,10 @@
       "id": "lost_reasons",
       "name": "Lost reasons + win-rate analytics",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "lost_reason codes; win-rate report"
+      "verify": "leads.lost_reason/lost_note (migration 20260704110000); LostReasonDialog prompts on the lost transition (LeadDetailPage select + LeadKanban drop onto is_lost stage); re-open clears fields; manage_leads accepts lost_reason/lost_note (agent-execute executeLeadsAction); win-rate + lost-reason rollup in lead_pipeline_review (win_loss block)",
+      "notes": "Built 2026-07-04 per crm-odoo.md §3 (taxonomy: price/timing/competitor/no_response/other + free-text note, Odoo crm.lost.reason pattern). partial until Stage-3: no live-DB runtime verification yet; Odoo's archive/Restore semantics approximated by status=lost + clear-on-reopen rather than active=False."
     },
     {
       "id": "sms_channels",

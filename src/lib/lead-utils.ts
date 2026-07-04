@@ -21,6 +21,9 @@ export interface Lead {
   needs_review: boolean;
   assigned_to: string | null;
   converted_at: string | null;
+  /** Why the contact was lost (price/timing/competitor/no_response/other). Set on lost, cleared on re-open. */
+  lost_reason: string | null;
+  lost_note: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;

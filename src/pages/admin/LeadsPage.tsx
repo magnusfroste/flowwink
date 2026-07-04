@@ -54,7 +54,12 @@ export default function LeadsPage() {
   const bulkUpdateStatus = useMutation({
     mutationFn: async (status: LeadStatus) => {
       const ids = Array.from(selectedIds);
-      const { error } = await supabase.from('leads').update({ status }).in('id', ids);
+      // Bulk lost skips the per-record reason prompt (reason stays unspecified);
+      // bulk re-open clears any stored lost reason, same as single-record paths.
+      const updates = status === 'lost'
+        ? { status }
+        : { status, lost_reason: null, lost_note: null };
+      const { error } = await supabase.from('leads').update(updates).in('id', ids);
       if (error) throw error;
       return ids.length;
     },

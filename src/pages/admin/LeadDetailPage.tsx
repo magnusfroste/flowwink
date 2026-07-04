@@ -22,6 +22,7 @@ import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { LeadCommunicationsCard } from '@/components/admin/crm/LeadCommunicationsCard';
+import { LostReasonDialog, lostReasonLabel } from '@/components/admin/crm/LostReasonDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -66,6 +67,7 @@ export default function LeadDetailPage() {
   const [isEnrichingInline, setIsEnrichingInline] = useState(false);
   const [showEnrichedFields, setShowEnrichedFields] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showLostDialog, setShowLostDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -170,7 +172,18 @@ export default function LeadDetailPage() {
   };
 
   const handleStatusChange = (newStatus: LeadStatus) => {
-    updateLead.mutate({ id: lead.id, status: newStatus, needs_review: false });
+    if (newStatus === 'lost' && lead.status !== 'lost') {
+      // Lost discipline: capture the reason before committing the transition.
+      setShowLostDialog(true);
+      return;
+    }
+    updateLead.mutate({
+      id: lead.id,
+      status: newStatus,
+      needs_review: false,
+      // Re-open clears the lost reason so win-rate reporting stays honest.
+      ...(newStatus !== 'lost' ? { lost_reason: null, lost_note: null } : {}),
+    });
   };
 
   const handleAddNote = () => {
@@ -276,6 +289,26 @@ export default function LeadDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Lost reason (Odoo lost discipline) — shown while the contact is lost */}
+          {lead.status === 'lost' && (lead.lost_reason || lead.lost_note) && (
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Lost</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {lead.lost_reason && (
+                  <Badge variant="secondary">{lostReasonLabel(lead.lost_reason)}</Badge>
+                )}
+                {lead.lost_note && (
+                  <p className="text-sm text-muted-foreground">{lead.lost_note}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Re-opening (any other status) clears the lost reason.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* AI Summary */}
           {lead.ai_summary && (
@@ -546,6 +579,26 @@ export default function LeadDetailPage() {
           company_name: lead.companies?.name,
           industry: (lead.companies as any)?.industry,
           role: (lead as any).title || (lead as any).role,
+        }}
+      />
+
+      {/* Lost reason prompt (Odoo lost discipline) */}
+      <LostReasonDialog
+        open={showLostDialog}
+        entityLabel="contact"
+        isPending={updateLead.isPending}
+        onCancel={() => setShowLostDialog(false)}
+        onConfirm={(reason, lostNote) => {
+          updateLead.mutate(
+            {
+              id: lead.id,
+              status: 'lost',
+              needs_review: false,
+              lost_reason: reason,
+              lost_note: lostNote || null,
+            },
+            { onSettled: () => setShowLostDialog(false) },
+          );
         }}
       />
 

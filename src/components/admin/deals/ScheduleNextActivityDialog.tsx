@@ -20,8 +20,9 @@ const PRESETS_WON = [
   { label: '30-day check-in', days: 30, priority: 'medium' },
 ];
 
+// Loss reason itself is captured by LostReasonDialog on the transition;
+// these presets are about what happens NEXT.
 const PRESETS_LOST = [
-  { label: 'Log loss reason', days: 0, priority: 'medium' },
   { label: 'Re-engage in 90 days', days: 90, priority: 'low' },
   { label: 'Ask for referral', days: 7, priority: 'low' },
 ];

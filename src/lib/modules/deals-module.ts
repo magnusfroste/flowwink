@@ -66,6 +66,14 @@ const DEALS_SKILLS: SkillSeed[] = [
             notes: {
               type: 'string',
             },
+            lost_reason: {
+              type: 'string',
+              description: 'Why the deal was lost (with stage=closed_lost). One of: price, timing, competitor, no_response, other.',
+            },
+            lost_note: {
+              type: 'string',
+              description: 'Optional free-text closing note stored alongside lost_reason.',
+            },
           },
           required: [
             'action',
@@ -85,8 +93,11 @@ Manages sales deals: list, create, update, move between stages.
 - **lead_id**: Required for create.
 - **stage**: Deal stage (for create/update/move_stage).
 - **value_cents**: Deal value in cents.
+- **lost_reason** / **lost_note**: Pass together with stage=closed_lost to record WHY the deal was lost (Odoo lost discipline). lost_reason is one of price, timing, competitor, no_response, other; lost_note is free text.
 ### Edge cases
 - Moving to 'won' or 'lost' sets closed_at automatically.
+- Re-opening a lost deal (moving to any active stage) clears closed_at, lost_reason and lost_note automatically.
+- Deals are never deleted — close as closed_lost with a lost_reason instead; it keeps history and feeds win-rate reporting.
 - Deals link to leads and optionally to products.`,
   },
   {

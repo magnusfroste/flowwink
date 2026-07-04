@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Plus, CheckCircle2, Clock, AlertTriangle, Trash2, Calendar
 } from 'lucide-react';
@@ -143,7 +144,7 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
                   <TaskItem
                     key={task.id}
                     task={task}
-                    onComplete={() => completeTask.mutate(task.id)}
+                    onComplete={(note) => completeTask.mutate({ id: task.id, note })}
                     onDelete={() => deleteTask.mutate(task.id)}
                     isOverdue
                   />
@@ -157,7 +158,7 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
                   <TaskItem
                     key={task.id}
                     task={task}
-                    onComplete={() => completeTask.mutate(task.id)}
+                    onComplete={(note) => completeTask.mutate({ id: task.id, note })}
                     onDelete={() => deleteTask.mutate(task.id)}
                   />
                 ))}
@@ -172,7 +173,7 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
                   <TaskItem
                     key={task.id}
                     task={task}
-                    onComplete={() => completeTask.mutate(task.id)}
+                    onComplete={(note) => completeTask.mutate({ id: task.id, note })}
                     onDelete={() => deleteTask.mutate(task.id)}
                   />
                 ))}
@@ -185,28 +186,62 @@ export function CrmTasksCard({ leadId, dealId }: CrmTasksCardProps) {
   );
 }
 
-function TaskItem({ 
-  task, 
-  onComplete, 
+function TaskItem({
+  task,
+  onComplete,
   onDelete,
   isOverdue = false,
-}: { 
-  task: CrmTask; 
-  onComplete: () => void; 
+}: {
+  task: CrmTask;
+  onComplete: (note?: string) => void;
   onDelete: () => void;
   isOverdue?: boolean;
 }) {
   const priorityConfig = PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.medium;
+  // Done-with-feedback (Odoo pattern): checking the box opens a small popover
+  // for an optional note; the note lands on the record's timeline.
+  const [completing, setCompleting] = useState(false);
+  const [note, setNote] = useState('');
+
+  const confirmComplete = () => {
+    onComplete(note.trim() || undefined);
+    setCompleting(false);
+    setNote('');
+  };
 
   return (
     <div className={cn(
       "flex items-start gap-3 p-3 rounded-lg border transition-colors hover:bg-muted/50",
       isOverdue && "border-red-500/30 bg-red-500/5"
     )}>
-      <Checkbox
-        className="mt-0.5"
-        onCheckedChange={() => onComplete()}
-      />
+      <Popover open={completing} onOpenChange={setCompleting}>
+        <PopoverTrigger asChild>
+          <Checkbox
+            className="mt-0.5"
+            checked={completing}
+            onCheckedChange={(checked) => setCompleting(checked === true)}
+          />
+        </PopoverTrigger>
+        <PopoverContent className="w-72 space-y-2" align="start">
+          <p className="text-sm font-medium">Mark task done</p>
+          <Textarea
+            placeholder="What happened? (optional — posted to the timeline)"
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { setCompleting(false); setNote(''); }}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={confirmComplete}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+              Done
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{task.title}</p>
         {task.description && (

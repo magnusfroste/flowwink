@@ -25,6 +25,7 @@ import { useUpdateDeal, type Deal, type DealStage } from '@/hooks/useDeals';
 import { usePipelineStages, getStageColor, type PipelineStage } from '@/hooks/usePipelineStages';
 import { formatPrice } from '@/hooks/useProducts';
 import { cn } from '@/lib/utils';
+import { LostReasonDialog } from './crm/LostReasonDialog';
 
 interface DealKanbanProps {
   deals: Deal[];
@@ -117,6 +118,8 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
   const updateDeal = useUpdateDeal();
   const { data: stages = [], isLoading: stagesLoading } = usePipelineStages('deal');
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Drop onto a lost stage is held here until the reason dialog resolves.
+  const [pendingLost, setPendingLost] = useState<{ deal: Deal; stage: PipelineStage } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -168,6 +171,15 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
     if (!targetStage) return;
     const currentSid = dealStageId(deal);
     if (currentSid === targetStage.id) return;
+
+    const currentIsLost = currentSid
+      ? stageById.get(currentSid)?.is_lost
+      : deal.stage === 'closed_lost';
+    if (targetStage.is_lost && !currentIsLost) {
+      // Ask for a lost reason before committing the move (Odoo lost discipline).
+      setPendingLost({ deal, stage: targetStage });
+      return;
+    }
 
     // Write stage_id; sync_deal_stage trigger keeps the enum column in sync.
     // We also pass `stage` so useUpdateDeal's closed_at + lead-bump logic fires.
@@ -234,6 +246,28 @@ export function DealKanban({ deals, isLoading, onStageChanged }: DealKanbanProps
           </Card>
         ) : null}
       </DragOverlay>
+
+      <LostReasonDialog
+        open={!!pendingLost}
+        entityLabel="deal"
+        isPending={updateDeal.isPending}
+        onCancel={() => setPendingLost(null)}
+        onConfirm={(reason, note) => {
+          if (!pendingLost) return;
+          const { deal, stage } = pendingLost;
+          updateDeal.mutate(
+            {
+              id: deal.id,
+              stage_id: stage.id,
+              stage: stage.key as DealStage,
+              lost_reason: reason,
+              lost_note: note || null,
+            } as Partial<Deal> & { id: string; stage_id: string },
+            { onSettled: () => setPendingLost(null) },
+          );
+          onStageChanged?.(deal, stage.key as DealStage);
+        }}
+      />
     </DndContext>
   );
 }
