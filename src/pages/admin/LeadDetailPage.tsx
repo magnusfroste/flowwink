@@ -340,6 +340,9 @@ export default function LeadDetailPage() {
           {/* Email communication linked via related_entity (DB trigger) + open quotes */}
           <LeadCommunicationsCard leadId={lead.id} />
 
+          {/* Visitor Intelligence — behavioral timeline (module: visitorIntelligence) */}
+          <VisitorTimelineWidget leadId={lead.id} />
+
           {/* Add Note */}
           <Card>
             <CardHeader>
