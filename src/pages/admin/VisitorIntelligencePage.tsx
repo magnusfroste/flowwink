@@ -80,7 +80,7 @@ export default function VisitorIntelligencePage() {
     setSaving(true);
     const { error } = await supabase
       .from('site_settings')
-      .upsert({ key: 'visitor_intelligence_rules', value: config as unknown as Record<string, unknown> }, { onConflict: 'key' });
+      .upsert([{ key: 'visitor_intelligence_rules', value: config as unknown as Record<string, unknown> }], { onConflict: 'key' });
     setSaving(false);
     if (error) return toast.error('Save failed: ' + error.message);
     toast.success('Settings saved');
