@@ -3,6 +3,8 @@
 > From "I'd like an appointment" to a completed meeting: check availability,
 > book a slot, confirm, remind, staff it, and record the outcome.
 
+**Problem it solves:** Appointments live in phone tag — double bookings, forgotten reminders, no-shows nobody recorded — this process books overlap-safe slots around the clock (web, chat or phone), then confirms and reminds by itself.
+
 **Maturity level:** L3 — Operational (agent-run booking path Stage-3-verified live 2026-07-04)
 **Status:** ✅ Happy path + overlap-protected agent booking live · reminder sweep, staff assignment and no-show tracking shipped 2026-07-03 (code-complete, not yet fleet-verified)
 
@@ -23,27 +25,26 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Booking request — public block, chat, voice IVR or MCP operator"]
+    A --> B["Pick a service — duration + price<br/>browse_services"]
+    B --> C["Check availability — free slots on the duration grid<br/>check_availability"]
+    C --> D["Slot booked — double-booking rejected<br/>book_appointment_slot"]
+    D --> E["Booking created (pending) + confirmation email"]
+    E --> F["Confirmed<br/>manage_bookings update_status"]
+    F --> G["Reminder sweep — cron every 15 min, one email, starts within 24h<br/>send-booking-reminders"]
+    G --> H["Staff assigned<br/>manage_bookings assign_staff"]
+    H --> I["Meeting happens"]
+    I -->|attended| J["completed"]
+    I -->|did not attend| K["no_show"]
+    I -->|called off| L["cancelled — slot freed"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,D,E,F,G,H,J,K,L agent
 ```
-[Public booking block / chat / voice IVR / MCP operator]
-       ↓
-browse_services (pick service → duration + price)
-       ↓
-check_availability (date, service_id)
-       ↓  returns free_slots on the service-duration grid
-book_appointment_slot (end_time derived from duration,
-       ↓  overlapping non-cancelled booking → slot_unavailable)
-Booking created (status: pending)
-       ↓  confirmation email (public block path)
-Confirmed (manage_bookings update_status)
-       ↓
-Reminder sweep (booking-reminders cron, every 15 min:
-       ↓  confirmed + starts <24h + never reminded → email, stamp reminder_sent_at)
-Staff assigned (manage_bookings assign_staff → employee)
-       ↓
-Meeting happens
-       ↓
-completed ─ or ─ no_show (past confirmed booking) ─ or ─ cancelled (slot freed)
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

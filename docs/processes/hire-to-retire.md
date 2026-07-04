@@ -2,6 +2,8 @@
 
 > The full employee lifecycle — from hire to offboarding.
 
+**Problem it solves:** A new hire means re-typing the same person into five places — contract, checklist, HR record, all by hand — this process turns an accepted offer into employee record, draft contract and onboarding checklist in one call, and keeps leave and expenses tidy afterwards.
+
 **Maturity level:** L3 — Operational (auto-hire bridge live; payroll & performance still manual)
 **Status:** ✅ Hire-to-Onboard automated; ⚠️ lacks payroll and performance management
 
@@ -22,31 +24,25 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Candidate applies (Recruitment)"] --> B["AI screening — score + matching skills<br/>score_candidate"]
+    B --> C["Stage advances → offer sent → offer accepted"]
+    C --> D["One-call hire bridge<br/>hire_application"]
+    D --> D1["Employee record created"]
+    D --> D2["Draft contract from template<br/>tokens + probation auto-set"]
+    D --> D3["Onboarding checklist seeded<br/>best-matching template"]
+    D --> D4["Application marked hired, employee linked"]
+    D2 --> E["Contract signed by both parties<br/>sign_employment_contract"]
+    E --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
+    F --> G["Contract renewals (annual)<br/>contract_renewal_check"]
+    G --> H["Offboarding — contracts terminated, access revoked"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,D,D1,D2,D3,D4,E,F,G agent
 ```
-Candidate applies (Recruitment) → application row
-       ↓
-AI screening (score_candidate) → ai_score, matching_skills
-       ↓
-Stage advances → offer_sent → offer accepted
-       ↓
-🤖 hire_application(application_id)  ← ONE-CALL HIRE BRIDGE
-       │
-       ├─→ employees row created (name, email, title, dept, start_date)
-       ├─→ employment_contracts (draft) generated from template
-       │     • Token substitution: {{employee_name}}, {{title}}, {{start_date}}, {{monthly_salary}}
-       │     • Probation period auto-set from template
-       ├─→ onboarding_checklists seeded from best-matching template
-       │     (matched by department + employment_type, falls back to default)
-       └─→ application.stage = 'hired', employee_id linked
-       ↓
-Contract signed by employer + employee (sign_employment_contract)
-       ↓
-[Ongoing] Leave requests, expense claims, attendance
-       ↓
-[Ongoing] Contract renewals (annually)
-       ↓
-Offboarding → contracts terminated, access revoked
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

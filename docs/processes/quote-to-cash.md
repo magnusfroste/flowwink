@@ -2,6 +2,8 @@
 
 > From won deal to paid invoice. The bread and butter of consultancies.
 
+**Problem it solves:** The offer is a PDF, the acceptance is an email, the invoice is re-typed by hand, and payment status is "check the bank account" — this process carries one set of data from signed quote to money in the bank, with reminders that send themselves.
+
 **Maturity level:** L3 — Operational (parts L4)
 **Status:** ✅ Works end-to-end for service businesses
 
@@ -24,31 +26,26 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Quote drafted — above threshold: approval request<br/>manage_quote"]
+    A --> B["Quote sent → customer views, signs → accepted"]
+    B --> C["Draft invoice auto-created + Pay now (Stripe, optional deposit)"]
+    C --> D["Deal won"]
+    D --> E["Project created<br/>manage_project"]
+    E --> F["Tasks defined<br/>manage_project_task"]
+    F --> G["Consultants log time<br/>log_time"]
+    G --> H["Month-end invoicing<br/>invoice_from_timesheets"]
+    H --> I["Invoice created"]
+    I --> J["Booking<br/>suggest_accounting_template"]
+    J --> K["Payment → reconciliation"]
+    K --> L["Overdue check → reminders<br/>invoice_overdue_check"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class E,F,G,H,I,J,L agent
 ```
-Quote drafted (Quotes) — above threshold → approval request
-       ↓
-Quote sent → customer views, signs (draw/type) → accepted
-       ↓
-Draft invoice auto-created + "Pay now" (Stripe, optionally prepayment % deposit)
-       ↓
-Deal won (Deals)
-       ↓
-Project created (Projects) — manually or via automation
-       ↓
-Tasks defined
-       ↓
-Consultants log time (Timesheets)
-       ↓
-Month-end → invoice_from_timesheets
-       ↓
-Invoice created (Invoicing)
-       ↓
-Booking happens (Accounting via suggest_accounting_template)
-       ↓
-Payment → reconciliation
-       ↓
-Overdue check → reminders
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

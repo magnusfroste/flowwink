@@ -4,6 +4,8 @@
 > follow up. Every registration is a scored lead; every completed webinar can
 > become content.
 
+**Problem it solves:** Event signups sit in a form export that never reaches the CRM — this process turns every registration into a scored lead, reminds attendees automatically, and closes the loop from webinar to follow-up to content.
+
 **Maturity level:** L3 — Operational (lifecycle + lead-loop live; reminders/follow-up are event-emission only)
 **Status:** ✅ Core loop live · webinars scores 78% parity (5th highest module)
 
@@ -22,25 +24,22 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Webinar created (draft)<br/>manage_webinar"]
+    A --> B["Published — registrations open<br/>publish_webinar"]
+    B --> C["Visitors register — lead linked or created, +15 score, dedup per email<br/>register_webinar"]
+    C --> D["Reminder tick — confirm / 24h / 1h / post events, deduplicated<br/>webinar_reminder_tick cron"]
+    D --> E["Live — or automatic when the date passes<br/>start_webinar"]
+    E --> F["Completed + recording attached<br/>complete_webinar"]
+    F --> G["Attendance marked — lead +10<br/>mark_webinar_attendance"]
+    G --> H["Follow-up + blog draft from the webinar<br/>generate_blog_from_webinar"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class A,B,C,D,E,F,G,H agent
 ```
-Webinar created (manage_webinar → status: draft)
-       ↓
-publish_webinar (draft → published, emits webinar.published)
-       ↓
-Visitors register (WebinarBlock / register_webinar RPC)
-       ↓  only published/live accept registrations;
-       ↓  lead auto-linked or created (+15 score), dedup on (webinar_id, email)
-Reminder tick (webinar_reminder_tick, cron every 15 min):
-       ↓  emits webinar.reminder.confirm / .t24 / .t1 / .post
-       ↓  (dedup'd via reminder_*_sent_at markers per registration)
-start_webinar (→ live, emits webinar.live — or automatic when date passes)
-       ↓
-complete_webinar (→ completed, attach recording_url, emits webinar.completed)
-       ↓
-mark_webinar_attendance (attended=true → lead +10, emits webinar.attended)
-       ↓
-Follow-up (follow_up_sent flag) + generate_blog_from_webinar (content loop)
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 `cancel_webinar` exits the flow from any non-terminal status and emits
 `webinar.cancelled` so automations can notify registrants.

@@ -3,20 +3,27 @@
 > The reverse-logistics mirror of Order-to-Delivery: request → approve → receive →
 > inspect → restock → refund.
 
+**Problem it solves:** Returns are handled ad hoc — nobody knows what came back, restocking is guesswork, and refund amounts are worked out on a pocket calculator — this process tracks every RMA from request to refund with the math enforced.
+
 **Maturity level:** L3 — Operational (full RMA lifecycle incl. QC + partial refunds)
 **Status:** ✅ Core loop live · F2 depth (reasons/fees/partials) shipped 2026-06-12
 
 ## Flow
 
+```mermaid
+flowchart TD
+    A["Customer return request"] --> B["RMA drafted with reason code<br/>create_return"]
+    B --> C["Approved<br/>approve_return"]
+    C --> D["Goods received — restock lines back into inventory<br/>receive_return"]
+    D --> E["QC inspection — notes + restocking fee<br/>inspect_return"]
+    E --> F["Refund — partial ok, over-refund rejected<br/>refund_return"]
+    F --> G["Reason analytics — counts + refunded per reason<br/>return_reason_report"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,D,E,F,G agent
 ```
-Customer return request
-   └─► create_return (reason_code, draft RMA) ─► approve_return
-         └─► receive_return (restock=true items emit stock.movement → layers)
-               └─► inspect_return (QC notes + restocking fee)
-                     └─► refund_return (PARTIAL ok: Σ items − fee enforced,
-                          over-refund rejected; closes on completion/p_final)
-Analytics: return_reason_report (counts + refunded per reason, N days)
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ## Participating modules & skills
 

@@ -2,6 +2,8 @@
 
 > From transaction to financial report. Bookkeeping + period-end close.
 
+**Problem it solves:** The books live with an external accountant and the owner learns the numbers months later — this process keeps double-entry bookkeeping, reconciliation and reports in-house and current, with balanced vouchers posted automatically.
+
 **Maturity level:** L3 — Operational (period lock + reconciliation live)
 **Status:** ✅ Double-entry bookkeeping, period lock, bank file/image OCR import; ⚠️ no tax filings
 
@@ -22,23 +24,22 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Business event — invoice, expense, payroll run"]
+    A --> B["Booking template matched<br/>suggest_accounting_template"]
+    B --> C["Journal entry created<br/>manage_journal_entry"]
+    C --> D["Review (manual)"]
+    D --> E["Booking saved"]
+    E --> F["Periodic: reconciliations"]
+    F --> G["Periodic: period-end close<br/>close_accounting_period"]
+    G --> H["Reports — balance sheet, P&L, general ledger<br/>accounting_reports"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,G,H agent
 ```
-Business event (invoice, expense, payroll run)
-       ↓
-suggest_accounting_template → matches against template
-       ↓
-Journal entry created (manage_journal_entry)
-       ↓
-Review (manual)
-       ↓
-Booking saved
-       ↓
-[Periodic] Reconciliations
-       ↓
-[Periodic] Period-end close
-       ↓
-accounting_reports (BS, P&L, general ledger)
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

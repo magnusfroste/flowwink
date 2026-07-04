@@ -2,6 +2,8 @@
 
 > From customer question to resolved case. Self-service + human handoff.
 
+**Problem it solves:** The same questions arrive over and over, answers depend on who happens to reply, and urgent cases drown in the inbox — this process answers instantly from the knowledge base and escalates only what truly needs a human.
+
 **Maturity level:** L3 — Operational
 **Status:** ✅ AI Chat + KB + ticketing work; SLA monitor warns on escalation
 
@@ -21,23 +23,23 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Visitor asks (chat widget)"] --> B["FlowPilot answers with KB grounding"]
+    B -->|resolved| C["Conversation closes"]
+    B -->|complex| D["Case created<br/>ticket_triage"]
+    B -->|urgent| E["Escalated<br/>support_assign_conversation"]
+    D --> F["Human agent takes over (Live Support)"]
+    E --> F
+    F --> G["Resolution → response back to customer"]
+    G --> H["SLA monitor measures response + resolution time"]
+    H --> I["Feedback → KB gap analysis<br/>analyze_chat_feedback"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,D,E,H,I agent
 ```
-Visitor asks (chat widget)
-       ↓
-FlowPilot answers with KB grounding
-       ↓
-   ├── Resolved → conversation closes
-   ├── Complex → ticket_triage creates a case
-   └── Urgent → escalate via support_assign_conversation
-       ↓
-Human agent takes over (Live Support)
-       ↓
-Resolution → response back to customer
-       ↓
-SLA monitor measures response time + resolution time
-       ↓
-analyze_chat_feedback → KB gap analysis
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

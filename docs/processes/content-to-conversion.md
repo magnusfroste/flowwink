@@ -2,6 +2,8 @@
 
 > From idea to published article to measurable outcome. FlowWink's "agent-shines" process.
 
+**Problem it solves:** Content marketing dies of "no time to write" — research, drafting, distribution and measurement each need hours nobody has — this process lets the agent run the whole pipeline while a human only approves the ideas.
+
 **Maturity level:** L4 — Agent-augmented
 **Status:** ✅ FlowPilot's strongest autonomous flow
 
@@ -23,19 +25,20 @@
 
 ## Step-by-step flow (Content Pipeline — 5 steps)
 
+```mermaid
+flowchart TD
+    A["1. Research<br/>research_content, competitor_monitor"] --> B["2. Proposal<br/>generate_content_proposal"]
+    B --> C["Human approve"]
+    C --> D["3. Generate<br/>write_blog_post, landing_page_compose"]
+    D --> E["4. Distribute<br/>send_newsletter, social_post_batch"]
+    E --> F["5. Measure<br/>analyze_analytics, seo_audit_page"]
+    F --> A
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class A,B,D,E,F agent
 ```
-1. Research (research_content + competitor_monitor)
-       ↓
-2. Proposal (generate_content_proposal) → Human approve
-       ↓
-3. Generate (write_blog_post + landing_page_compose)
-       ↓
-4. Distribute (send_newsletter + social_post_batch)
-       ↓
-5. Measure (analyze_analytics + seo_audit_page)
-       ↓
-   → Loop back to Research
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

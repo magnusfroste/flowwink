@@ -2,6 +2,8 @@
 
 > From customer order to delivered product. The core e-commerce flow.
 
+**Problem it solves:** Orders arrive faster than the back office can track them — paid-but-never-picked slips through and stock counts drift — this process keeps every order's status honest from checkout to doorstep and warns when a step gets stuck.
+
 **Maturity level:** L3 — Operational
 **Status:** ✅ Happy path works; SLA monitor covers manual steps
 
@@ -22,25 +24,22 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Customer checkout (Stripe)"] --> B["Order created — status: unfulfilled"]
+    B --> C["Stripe webhook → order.paid"]
+    C --> D["Stock reservation (Inventory)<br/>check_stock"]
+    D --> E["Picking (manual) — status: picked"]
+    E --> F["Packing (manual) — status: packed"]
+    F --> G["Shipping (manual) — status: shipped + tracking"]
+    G --> H["Delivery — status: delivered<br/>manage_orders"]
+    H --> I["SLA monitor warns if a step gets stuck"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,D,H,I agent
 ```
-Customer checkout (Stripe integration)
-       ↓
-Order created — status: unfulfilled (E-commerce)
-       ↓
-Stripe webhook → order.paid
-       ↓
-Stock reservation (Inventory)
-       ↓
-[Manual] Picking → status: picked
-       ↓
-[Manual] Packing → status: packed
-       ↓
-[Manual] Shipping → status: shipped + tracking
-       ↓
-Delivery → status: delivered
-       ↓
-SLA monitor warns if a step gets stuck
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

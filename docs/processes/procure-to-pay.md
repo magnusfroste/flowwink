@@ -2,6 +2,8 @@
 
 > From need identification to paid vendor invoice.
 
+**Problem it solves:** Receipts in a shoebox, vendor invoices matched by hand, and nobody knows what has actually been ordered — this process makes purchases and expenses flow to the ledger without manual bookkeeping.
+
 **Maturity level:** L3 — Operational (3-way match auto-approve live)
 **Status:** ✅ Happy path + auto-approve match works; lacks tiered approval thresholds
 
@@ -22,25 +24,22 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Low stock / manual need"] --> B["Reorder check — auto or manual<br/>purchase_reorder_check"]
+    B --> C["Purchase order created<br/>create_purchase_order"]
+    C --> D["PO sent to vendor<br/>send_purchase_order"]
+    D --> E["Delivery → goods receipt<br/>receive_goods"]
+    E --> F["Stock updated (Inventory)"]
+    F --> G["Vendor invoice in → 3-way match against PO + GR<br/>match_invoice_to_receipt"]
+    G --> H["Booking (Accounting)"]
+    H --> I["Payment"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,D,E,F,G agent
 ```
-[Low stock / Manual need]
-       ↓
-purchase_reorder_check (auto or manual)
-       ↓
-Purchase Order created (Purchasing)
-       ↓
-PO sent to vendor (send_purchase_order)
-       ↓
-Delivery → Goods Receipt (receive_goods)
-       ↓
-Stock updated (Inventory)
-       ↓
-Vendor invoice in → matched against PO + GR
-       ↓
-Booking (Accounting)
-       ↓
-Payment
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 

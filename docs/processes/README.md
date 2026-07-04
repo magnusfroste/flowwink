@@ -6,7 +6,40 @@
 
 ---
 
-## Maturity Scale (5 levels)
+## Core Processes
+
+Thirteen processes, one platform. Each links to its own doc — one page per process, all following the same anatomy (explained in the next section).
+
+| Process | Maturity | Business lever | Modules | Doc |
+|---------|----------|----------------|---------|-----|
+| **Lead-to-Customer** | L4 | **More deals** | Forms, Leads/CRM, Sales Intelligence, Companies, Deals, Newsletter | [lead-to-customer.md](./lead-to-customer.md) |
+| **Quote-to-Cash** | L3 | **Faster cash** | Quotes, Deals, Projects, Timesheets, Invoicing, Accounting, Reconciliation, Contracts | [quote-to-cash.md](./quote-to-cash.md) |
+| **Procure-to-Pay** | L3 | **Lower admin cost** | Purchasing (3-way match), Inventory, Expenses (full P2P), Invoicing, Accounting | [procure-to-pay.md](./procure-to-pay.md) |
+| **Order-to-Delivery** | L3 | **Lower ops cost** | Products, Inventory, POS, SLA, Documents | [order-to-delivery.md](./order-to-delivery.md) |
+| **Hire-to-Retire** | L3 | **Lower HR admin** | Recruitment, HR, Contracts, Documents, Expenses, Resume | [hire-to-retire.md](./hire-to-retire.md) |
+| **Content-to-Conversion** | L4 | **Cheaper marketing** | Pages, Blog, KB, Newsletter, Growth (Paid), Analytics, Sales Intelligence | [content-to-conversion.md](./content-to-conversion.md) |
+| **Record-to-Report** | L3 | **Lower accounting cost** | Accounting (period lock + SIE/SAF-T), Reconciliation, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
+| **Support-to-Resolution** | L3 | **Lower support cost** | Chat, Tickets, Live Support, Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
+| **Subscribe-to-Renew** | L3 | **Safer cash** | Subscriptions, Invoicing, Reconciliation, CRM | [subscribe-to-renew.md](./subscribe-to-renew.md) |
+| **Return-to-Refund** | L3 | **Lower ops cost** | Returns, Inventory, Invoicing, Shipping | [return-to-refund.md](./return-to-refund.md) |
+| **Acquire-to-Retire** | L3 | **Lower accounting cost** | Fixed Assets, Accounting, Purchasing | [acquire-to-retire.md](./acquire-to-retire.md) |
+| **Book-to-Meet** | L3 | **More deals** | Booking, Email, Voice (IVR), Calendar, SLA, HR (staff) | [book-to-meet.md](./book-to-meet.md) |
+| **Register-to-Attend** | L3 | **More pipeline** | Webinars, Leads/CRM, Blog (content loop), Automations | [register-to-attend.md](./register-to-attend.md) |
+
+---
+
+## How to read a process doc
+
+Every process doc follows the same anatomy, top to bottom:
+
+1. **Tagline + "Problem it solves"** — what the process is, and the pain it removes, in one line each.
+2. **Maturity line** — how far along the process is, on the 5-level scale below.
+3. **Flow diagram** — the happy path, step by step. Steps highlighted in indigo (🟦) are agent-runnable; the rest are human steps.
+4. **"How it works in practice"** — the adopter layer: work story, state machines, who-does-what, and a coming-from-spreadsheets mapping (detailed in the next section).
+5. **Agent coverage** — the honest per-step table of who can run what, using the actor legend below.
+6. **Known gaps** — what is missing for the next maturity level. No marketing fog.
+
+### Maturity Scale (5 levels)
 
 | Level | Name | Meaning |
 |-------|------|---------|
@@ -21,9 +54,7 @@
 - L4 = "Yes, and the agent can run parts autonomously"
 - L5 = "Yes, even for complex cases" (few processes are here today)
 
----
-
-## Agent Coverage
+### Agent Coverage
 
 For each process we mark **who does what**:
 
@@ -32,26 +63,6 @@ For each process we mark **who does what**:
 | 👤 **Manual** | Human via admin UI |
 | 🤖 **FlowPilot** | The platform's built-in agent |
 | 🔗 **External agent** | Federated peer (e.g. ClawThree, OpenClaw) via A2A/MCP |
-
----
-
-## Core Processes
-
-| Process | Maturity | Modules | Doc |
-|---------|----------|---------|-----|
-| **Lead-to-Customer** | L4 | Forms, Leads/CRM, Sales Intelligence, Companies, Deals, Newsletter | [lead-to-customer.md](./lead-to-customer.md) |
-| **Quote-to-Cash** | L3 | Quotes, Deals, Projects, Timesheets, Invoicing, Accounting, Reconciliation, Contracts | [quote-to-cash.md](./quote-to-cash.md) |
-| **Procure-to-Pay** | L3 | Purchasing (3-way match), Inventory, Expenses (full P2P), Invoicing, Accounting | [procure-to-pay.md](./procure-to-pay.md) |
-| **Order-to-Delivery** | L3 | Products, Inventory, POS, SLA, Documents | [order-to-delivery.md](./order-to-delivery.md) |
-| **Hire-to-Retire** | L3 | Recruitment, HR, Contracts, Documents, Expenses, Resume | [hire-to-retire.md](./hire-to-retire.md) |
-| **Content-to-Conversion** | L4 | Pages, Blog, KB, Newsletter, Growth (Paid), Analytics, Sales Intelligence | [content-to-conversion.md](./content-to-conversion.md) |
-| **Record-to-Report** | L3 | Accounting (period lock + SIE/SAF-T), Reconciliation, Invoicing, Expenses, Analytics | [record-to-report.md](./record-to-report.md) |
-| **Support-to-Resolution** | L3 | Chat, Tickets, Live Support, Knowledge Base, SLA, Analytics | [support-to-resolution.md](./support-to-resolution.md) |
-| **Subscribe-to-Renew** | L3 | Subscriptions, Invoicing, Reconciliation, CRM | [subscribe-to-renew.md](./subscribe-to-renew.md) |
-| **Return-to-Refund** | L3 | Returns, Inventory, Invoicing, Shipping | [return-to-refund.md](./return-to-refund.md) |
-| **Acquire-to-Retire** | L3 | Fixed Assets, Accounting, Purchasing | [acquire-to-retire.md](./acquire-to-retire.md) |
-| **Book-to-Meet** | L3 | Booking, Email, Voice (IVR), Calendar, SLA, HR (staff) | [book-to-meet.md](./book-to-meet.md) |
-| **Register-to-Attend** | L3 | Webinars, Leads/CRM, Blog (content loop), Automations | [register-to-attend.md](./register-to-attend.md) |
 
 ---
 

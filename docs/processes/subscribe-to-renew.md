@@ -3,25 +3,30 @@
 > From signup to recurring revenue: bill on cycle, handle changes with proration,
 > chase failures, win back churn. The recurring-revenue mirror of Quote-to-Cash.
 
+**Problem it solves:** Recurring revenue leaks silently — invoice dates in an Excel, failed cards nobody chases, churn nobody explains — this process bills every cycle on time, escalates failed payments by itself, and records why customers leave.
+
 **Maturity level:** L3 — Operational (manual/invoice-billed subs end-to-end; card subs via Stripe webhooks)
 **Status:** ✅ Core loop live · proration shipped 2026-06-12
 
 ## Flow
 
+```mermaid
+flowchart TD
+    A["Signup"] --> B["Subscription created — stripe or manual<br/>create_manual_subscription / Stripe checkout"]
+    B --> C["Bill each cycle<br/>billing cron → generate_subscription_invoice"]
+    C --> D["Renewal"]
+    B --> E["Mid-cycle change with proration<br/>change_subscription: upgrade → adjustment invoice, downgrade → credit"]
+    E --> C
+    C --> F["Dunning on failed payment<br/>flag_at_risk_subscriptions, send_dunning_reminders"]
+    F --> G["Churn — reason + NPS recorded<br/>record_churn_reason"]
+    G --> H["Win-back campaigns<br/>manage_winback_campaign"]
+    H --> D
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,E,F,G,H agent
 ```
-Signup ──► Subscription (stripe | manual) ──► bill each cycle ──────► Renewal
-              │                                  │                        │
-              │ manual: create_manual_subscription│ subscription-billing- │
-              │ card:   Stripe checkout/webhooks  │ cron → generate_      │
-              │                                   │ subscription_invoice  │
-   Mid-cycle change ◄──────────────────────────┐  │                       │
-   change_subscription (PRORATION):            │  └─ dunning: flag_at_   │
-     upgrade   → prorated adjustment invoice   │     risk_subscriptions, │
-     downgrade → credit (next cycle)           │     send_dunning_       │
-                                               │     reminders (invoices)│
-   Churn ◄─────────────────────────────────────┘                         │
-     record_churn_reason (+NPS) → winback campaigns ─────────────────────┘
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ## Participating modules & skills
 

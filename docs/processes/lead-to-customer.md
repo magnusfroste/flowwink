@@ -2,6 +2,8 @@
 
 > From first touch to closed-won. The full top-of-funnel + CRM pipeline.
 
+**Problem it solves:** Inbound leads land in an inbox, get answered days later, and nobody remembers who was promised what — this process captures, enriches, scores and follows up every lead within minutes, automatically.
+
 **Maturity level:** L4 — Agent-augmented
 **Status:** ✅ Production-ready for SMB
 
@@ -22,22 +24,21 @@
 
 ## Step-by-step flow
 
+```mermaid
+flowchart TD
+    A["Form submit / manual entry"] --> B["Lead created<br/>process_signal"]
+    B --> C["Auto-enrichment<br/>enrich_company, prospect_research"]
+    C --> D["Lead scoring + qualification<br/>qualify_lead"]
+    D --> E["Convert to deal<br/>manage_deal"]
+    E --> F["Pipeline progression<br/>lead_pipeline_review"]
+    F -->|won| G["Handover to Quote-to-Cash"]
+    F -->|lost| H["Back to Newsletter nurture<br/>lead_nurture_sequence"]
+
+    classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
+    class B,C,D,E,F,H agent
 ```
-[Form submit / Manual entry]
-       ↓
-   Lead created (Leads)
-       ↓
-   Auto-enrichment (Sales Intelligence + Companies)
-       ↓
-   Lead scoring + qualification
-       ↓
-   Convert to Deal (Deals)
-       ↓
-   Pipeline progression
-       ↓
-   Won → handover to Quote-to-Cash
-   Lost → back to Newsletter nurture
-```
+
+*🟦 = agent-runnable step (see Agent coverage below)*
 
 ---
 
