@@ -124,6 +124,7 @@ export interface ModulesSettings {
   voice: ModuleConfig;
   webmeet: ModuleConfig;
   flowtable: ModuleConfig;
+  visitorIntelligence: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -362,6 +363,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
     optionalIntegrations: ['firecrawl'],
+  },
+  visitorIntelligence: {
+    enabled: false,
+    name: 'Visitor Intelligence',
+    description: 'Behavioral signals from anonymous browsing — identity stitching, rule-based scoring, and a per-lead visitor timeline in the CRM.',
+    icon: 'Radar',
+    category: 'insights',
+    autonomy: 'agent-capable',
+    adminUI: false,
   },
   flowpilot: {
     enabled: false,
