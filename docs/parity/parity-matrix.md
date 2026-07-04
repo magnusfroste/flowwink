@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 60%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 3
+**Benchmarked modules:** 55  ·  **Mean parity:** 60%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
@@ -90,7 +90,7 @@ category: reference
 
 > Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
 
-`flowtable` · `voice` · `webmeet`
+`flowtable` · `visitor-intelligence` · `voice` · `webmeet`
 
 ## Foundational gaps (weight 3, still open)
 
