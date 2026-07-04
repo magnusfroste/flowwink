@@ -48,6 +48,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
   const [validUntil, setValidUntil] = useState('');
+  const [prepaymentPct, setPrepaymentPct] = useState('');
 
   useEffect(() => {
     if (quote) {
@@ -55,6 +56,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
       setTaxRate(quote.tax_rate);
       setNotes(quote.notes || '');
       setValidUntil(quote.valid_until || '');
+      setPrepaymentPct(quote.prepayment_pct != null ? String(quote.prepayment_pct) : '');
     }
   }, [quote]);
 
@@ -67,15 +69,21 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
 
   const handleSave = useCallback(() => {
     if (!quote) return;
+    const pct = prepaymentPct.trim() === '' ? null : Number(prepaymentPct);
+    if (pct !== null && (!Number.isFinite(pct) || pct < 1 || pct > 100)) {
+      toast.error('Prepayment % must be between 1 and 100 (leave empty for full amount)');
+      return;
+    }
     updateQuote.mutate({
       id: quote.id,
       line_items: lineItems,
       tax_rate: taxRate,
       notes: notes || null,
       valid_until: validUntil || null,
+      prepayment_pct: pct,
       ...totals,
     } as any);
-  }, [quote, lineItems, taxRate, notes, validUntil, totals, updateQuote]);
+  }, [quote, lineItems, taxRate, notes, validUntil, prepaymentPct, totals, updateQuote]);
 
   const handleStatusChange = (next: QuoteStatus) => {
     if (!quote) return;
@@ -255,6 +263,26 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             />
           </div>
 
+          {/* Prepayment % (sign-and-pay) */}
+          <div className="space-y-2">
+            <Label>Prepayment %</Label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              step="1"
+              placeholder="Full amount"
+              value={prepaymentPct}
+              onChange={(e) => setPrepaymentPct(e.target.value)}
+              className="w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              When set, the customer's "Pay now" after accepting charges only this share as a deposit — the
+              invoice stays partially paid with the balance open. Leave empty to charge the full amount.
+            </p>
+          </div>
+
           {/* Notes */}
           <div className="space-y-2">
             <Label>Notes</Label>
@@ -270,6 +298,11 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             <div className="rounded-md border p-3 text-sm flex items-center gap-2 bg-muted/50">
               <FileCheck className="h-4 w-4 text-green-600" />
               <span>Invoice created from this quote</span>
+              {quote.paid_at && (
+                <Badge variant="outline" className="ml-auto">
+                  Paid online {new Date(quote.paid_at).toISOString().slice(0, 10)}
+                </Badge>
+              )}
             </div>
           )}
 

@@ -33,6 +33,7 @@ const quotesInputSchema = z.object({
   notes: z.string().optional(),
   currency: z.string().optional(),
   valid_until: z.string().optional(),
+  prepayment_pct: z.number().min(1).max(100).optional(),
   // add_item
   description: z.string().optional(),
   quantity: z.number().optional(),
@@ -85,6 +86,11 @@ const QUOTES_SKILLS: SkillSeed[] = [
             notes: { type: 'string' },
             currency: { type: 'string', description: 'Defaults to SEK' },
             valid_until: { type: 'string', description: 'YYYY-MM-DD' },
+            prepayment_pct: {
+              type: 'number',
+              description:
+                'Optional prepayment percentage (1-100) for the sign-and-pay flow: after the customer accepts online, "Pay now" charges only this share of the auto-created invoice as a deposit (invoice stays partially paid, balance open). Omit/null = Pay now charges the full amount. Settable on create and update.',
+            },
             description: { type: 'string', description: 'For add_item' },
             quantity: { type: 'number', description: 'For add_item' },
             unit_price_cents: { type: 'number', description: 'For add_item' },
@@ -97,7 +103,7 @@ const QUOTES_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Workflow: 1) create with lead_id (and optionally deal_id to link to a CRM opportunity) → returns draft quote. 2) add_item one or more times. 3) request_approval to check whether the quote requires sign-off (above 25k SEK by default). 4) Once approved (or if not required), send to generate the public accept_token and email the customer the link. 5) convert_to_invoice once the customer accepts. EXPIRY: the public signing endpoint (quote-sign) rejects acceptance after valid_until with HTTP 410 code=quote_expired — an expired quote can no longer be accepted online (declining still works). To revive an expired offer, update valid_until to a future date (or create a new version) and send again. EVIDENCE: on accept/decline the signer, timestamp, IP, user-agent, optional drawn signature image, and a SHA-256 content_hash of the quote body are stored in quote_signatures; a printable signature certificate is available at /quote/{accept_token}/certificate.',
+      'Workflow: 1) create with lead_id (and optionally deal_id to link to a CRM opportunity) → returns draft quote. 2) add_item one or more times. 3) request_approval to check whether the quote requires sign-off (above 25k SEK by default). 4) Once approved (or if not required), send to generate the public accept_token and email the customer the link. 5) convert_to_invoice once the customer accepts. EXPIRY: the public signing endpoint (quote-sign) rejects acceptance after valid_until with HTTP 410 code=quote_expired — an expired quote can no longer be accepted online (declining still works). To revive an expired offer, update valid_until to a future date (or create a new version) and send again. EVIDENCE: on accept/decline the signer, timestamp, IP, user-agent, optional drawn signature image, and a SHA-256 content_hash of the quote body are stored in quote_signatures; a printable signature certificate is available at /quote/{accept_token}/certificate. SIGN-AND-PAY: accepting auto-creates a draft invoice, and the public quote page then offers "Pay now" (Stripe Checkout via the quote-pay edge function, resolved from the accept_token — no invoice id is ever taken from the client). Payment is confirmed by stripe-webhook through record_invoice_payment (partial-payment semantics: paid_amount_cents accumulates, status flips to paid only at full balance) and stamps quotes.paid_at. PREPAYMENT: set prepayment_pct (1-100, nullable) on create/update to charge only that share as a deposit — e.g. prepayment_pct=20 means the customer confirms with a 20% down payment and the invoice stays partially paid with the balance visible; NULL means Pay now charges the full amount. If Stripe is not configured on the instance, the page shows a graceful "payment not configured" notice and the invoice is handled manually — explain this to customers when relevant.',
   },
   {
     name: 'send_quote_expiry_reminders',
@@ -185,6 +191,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
           notes: v.notes ?? null,
           currency: v.currency ?? templateData?.currency ?? 'SEK',
           valid_until: v.valid_until ?? null,
+          prepayment_pct: v.prepayment_pct ?? null,
           template_id: v.template_id ?? null,
           line_items: [] as never,
           tax_rate: 0.25,

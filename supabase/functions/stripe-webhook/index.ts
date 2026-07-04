@@ -341,29 +341,70 @@ serve(async (req: Request) => {
         const orderId = session.metadata?.order_id;
         const invoiceId = session.metadata?.invoice_id;
 
-        // Handle invoice payment via public payment link
+        // Handle invoice payment via public payment link (full invoice link or
+        // quote sign-and-pay, incl. prepayment deposits). Payments are recorded
+        // through record_invoice_payment — the canonical paid-marking path —
+        // which increments paid_amount_cents and flips status to paid only when
+        // the balance is settled (partial prepayments stay partially paid).
         if (invoiceId) {
-          console.log("Marking invoice as paid:", invoiceId);
-          const { error: invErr } = await supabase
-            .from("invoices")
-            .update({
-              status: "paid",
-              paid_at: new Date().toISOString(),
-            })
-            .eq("id", invoiceId);
-          if (invErr) {
-            console.error("Error updating invoice:", invErr);
+          // Dedupe webhook retries: each checkout session is recorded once.
+          const { data: priorPayment } = await supabase
+            .from("audit_logs")
+            .select("id")
+            .eq("action", "invoice.paid_via_stripe")
+            .eq("entity_id", invoiceId)
+            .contains("metadata", { stripe_session_id: session.id })
+            .limit(1)
+            .maybeSingle();
+
+          if (priorPayment) {
+            console.log("Invoice payment already recorded for session:", session.id);
           } else {
-            await supabase.from("audit_logs").insert({
-              action: "invoice.paid_via_stripe",
-              entity_type: "invoice",
-              entity_id: invoiceId,
-              metadata: {
-                stripe_session_id: session.id,
-                payment_intent: session.payment_intent,
-                amount_total: session.amount_total,
-              },
+            const amountCents = session.amount_total ?? 0;
+            console.log("Recording invoice payment:", invoiceId, amountCents);
+            const { data: payRes, error: payErr } = await supabase.rpc("record_invoice_payment", {
+              p_invoice_id: invoiceId,
+              p_amount_cents: amountCents,
+              p_method: "stripe",
             });
+            if (payErr) {
+              console.error("Error recording invoice payment:", payErr);
+            } else {
+              await supabase.from("audit_logs").insert({
+                action: "invoice.paid_via_stripe",
+                entity_type: "invoice",
+                entity_id: invoiceId,
+                metadata: {
+                  stripe_session_id: session.id,
+                  payment_intent: session.payment_intent,
+                  amount_total: session.amount_total,
+                  fully_paid: (payRes as any)?.fully_paid ?? null,
+                  quote_id: session.metadata?.quote_id ?? null,
+                },
+              });
+
+              // Sign-and-pay: payment confirms the quote flow — stamp paid-at.
+              const quoteId = session.metadata?.quote_id;
+              if (quoteId) {
+                const { error: qErr } = await supabase
+                  .from("quotes")
+                  .update({ paid_at: new Date().toISOString() })
+                  .eq("id", quoteId)
+                  .is("paid_at", null);
+                if (qErr) console.error("Error stamping quote paid_at:", qErr);
+                await supabase.from("audit_logs").insert({
+                  action: "quote.payment_received",
+                  entity_type: "quote",
+                  entity_id: quoteId,
+                  metadata: {
+                    invoice_id: invoiceId,
+                    amount_cents: amountCents,
+                    fully_paid: (payRes as any)?.fully_paid ?? null,
+                    stripe_session_id: session.id,
+                  },
+                });
+              }
+            }
           }
         }
 

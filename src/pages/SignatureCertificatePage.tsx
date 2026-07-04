@@ -28,6 +28,15 @@ interface CertificateSignature {
   signed_at: string;
 }
 
+interface CertificatePayment {
+  invoice_number: string;
+  invoice_status: string;
+  total_cents: number;
+  paid_amount_cents: number;
+  prepayment_pct: number | null;
+  quote_paid_at: string | null;
+}
+
 interface CertificateData {
   kind: 'quote' | 'contract';
   reference: string;
@@ -41,6 +50,8 @@ interface CertificateData {
   valid_until?: string | null;
   decided_at: string | null;
   signature: CertificateSignature | null;
+  /** Quote sign-and-pay: payment state of the auto-created invoice (null for contracts / no invoice). */
+  payment?: CertificatePayment | null;
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -98,6 +109,10 @@ export default function SignatureCertificatePage() {
   const fmtAmount = (cents: number) =>
     new Intl.NumberFormat('sv-SE', { style: 'currency', currency: cert.currency || 'SEK' }).format(cents / 100);
   const docLabel = cert.kind === 'quote' ? 'Quote' : 'Contract';
+  const payment = cert.payment ?? null;
+  const paidCents = payment?.paid_amount_cents ?? 0;
+  const fullyPaid = !!payment && paidCents >= payment.total_cents && payment.total_cents > 0;
+  const partiallyPaid = !!payment && paidCents > 0 && !fullyPaid;
 
   return (
     <div className="min-h-screen bg-muted/20 print:bg-background py-8 px-4">
@@ -129,9 +144,13 @@ export default function SignatureCertificatePage() {
                   </p>
                 </div>
               </div>
-              <Badge variant={accepted ? 'default' : 'secondary'} className="mt-1">
-                {accepted ? 'Accepted' : 'Declined'}
-              </Badge>
+              <div className="flex flex-col items-end gap-1 mt-1">
+                <Badge variant={accepted ? 'default' : 'secondary'}>
+                  {accepted ? 'Accepted' : 'Declined'}
+                </Badge>
+                {fullyPaid && <Badge variant="outline">Paid</Badge>}
+                {partiallyPaid && <Badge variant="outline">Deposit paid</Badge>}
+              </div>
             </div>
 
             <dl>
@@ -146,6 +165,16 @@ export default function SignatureCertificatePage() {
                 <Row label="Amount">{fmtAmount(amountCents)}</Row>
               )}
               {cert.valid_until && <Row label="Valid until">{cert.valid_until}</Row>}
+              {payment && paidCents > 0 && (
+                <Row label="Payment">
+                  {fmtAmount(paidCents)} of {fmtAmount(payment.total_cents)} paid
+                  {partiallyPaid && payment.prepayment_pct ? ` (${payment.prepayment_pct}% prepayment)` : ''} on
+                  invoice <span className="font-mono">{payment.invoice_number}</span>
+                  {payment.quote_paid_at
+                    ? ` — first payment ${format(new Date(payment.quote_paid_at), 'yyyy-MM-dd HH:mm')}`
+                    : ''}
+                </Row>
+              )}
             </dl>
 
             {sig ? (
