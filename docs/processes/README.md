@@ -89,6 +89,27 @@ above. Exemplar: [procure-to-pay.md](./procure-to-pay.md) § Expenses.
 
 ---
 
+## Gaps are an invitation (community)
+
+Every process doc ends with an honest "Known gaps (missing for L5)" list, and
+the adopter sections flag statuses that exist in schema but have no wired
+transition. That transparency is deliberate and does double duty:
+
+- **Adopters** see exactly what they get today (L3 = run it in production)
+  and what to expect next — no marketing fog.
+- **Contributors** see a concrete, scoped backlog with business value
+  attached: close a gap, and you've built something real businesses run on —
+  and something you can build a business around yourself (hosting, services,
+  verticals). The gap lists ARE the contribution funnel; pick one, see
+  [contributing](../contributing/contributing.md).
+
+Also usable as training material: the "How it works in practice" sections
+teach the standard process itself (what a quote lifecycle or an expense
+month-end IS), not just FlowWink's buttons — useful for onboarding staff who
+have never worked with system support before.
+
+---
+
 ## How we use this in sales
 
 1. **Discovery:** "Which processes do you run today?" → match against the list above
