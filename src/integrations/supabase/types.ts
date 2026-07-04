@@ -14807,6 +14807,7 @@ export type Database = {
         Args: { p_series: string; p_voucher_number: number; p_year: number }
         Returns: Json
       }
+      extract_email_address: { Args: { raw: string }; Returns: string }
       find_duplicate_companies: {
         Args: { p_limit?: number; p_threshold?: number }
         Returns: Json
