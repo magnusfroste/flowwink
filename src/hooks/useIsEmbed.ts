@@ -1,9 +1,32 @@
 import { useLocation } from 'react-router-dom';
 
-/** Returns true when URL has ?embed=1 — used to hide public chrome inside admin previews. */
+const STORAGE_KEY = 'flowwink:embed';
+
+/**
+ * Returns true when URL has ?embed=1 OR when embed mode was previously set
+ * in this browsing context (sessionStorage). This keeps public-site chrome
+ * hidden even after clicking internal links inside an admin preview iframe.
+ */
 export function useIsEmbed(): boolean {
   const { search } = useLocation();
-  return new URLSearchParams(search).get('embed') === '1';
+  const fromQuery = new URLSearchParams(search).get('embed') === '1';
+
+  if (typeof window === 'undefined') return fromQuery;
+
+  // Only enable sticky embed when we're actually inside an iframe — never on
+  // the top-level public site.
+  const inIframe = window.self !== window.top;
+  if (!inIframe) return fromQuery;
+
+  try {
+    if (fromQuery) {
+      window.sessionStorage.setItem(STORAGE_KEY, '1');
+      return true;
+    }
+    return window.sessionStorage.getItem(STORAGE_KEY) === '1';
+  } catch {
+    return fromQuery;
+  }
 }
 
 /** Append ?embed=1 to an internal path, preserving existing query. */
