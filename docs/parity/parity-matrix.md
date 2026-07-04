@@ -54,8 +54,8 @@ category: reference
 | **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | EPIC-08 |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███████░░░` 66% | 6/3/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `███████░░░` 67% | 8/3/3 | EPIC-05 |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███████░░░` 69% | 7/2/3 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **pages** | Website (website.page) | L4 → L4 | `███████░░░` 70% | 5/0/3 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
