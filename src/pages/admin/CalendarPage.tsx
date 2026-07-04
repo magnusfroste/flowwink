@@ -100,7 +100,29 @@ export default function CalendarPage() {
         </div>
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4">
+          {/* Calendar */}
+          <Card className="p-4 calendar-host">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                left: 'prev,next',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+              }}
+              height="auto"
+              events={fcEvents}
+              datesSet={handleDatesSet}
+              eventClick={handleEventClick}
+              firstDay={1}
+              nowIndicator
+              dayMaxEvents={4}
+              eventDisplay="block"
+            />
+          </Card>
+
           {/* Source toggles */}
           <Card className="p-4 h-fit">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -144,28 +166,6 @@ export default function CalendarPage() {
                 Loading…
               </div>
             )}
-          </Card>
-
-          {/* Calendar */}
-          <Card className="p-4 calendar-host">
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              headerToolbar={{
-                left: 'prev,next',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-              }}
-              height="auto"
-              events={fcEvents}
-              datesSet={handleDatesSet}
-              eventClick={handleEventClick}
-              firstDay={1}
-              nowIndicator
-              dayMaxEvents={4}
-              eventDisplay="block"
-            />
           </Card>
         </div>
       </div>
