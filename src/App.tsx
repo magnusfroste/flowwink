@@ -43,6 +43,7 @@ const BlogPage = lazy(() => import("./pages/admin/BlogPage"));
 const BlogPostEditorPage = lazy(() => import("./pages/admin/BlogPostEditorPage"));
 const ModulesPage = lazy(() => import("./pages/admin/ModulesPage"));
 const AutomationsPage = lazy(() => import("./pages/admin/AutomationsPage"));
+const VisitorIntelligencePage = lazy(() => import("./pages/admin/VisitorIntelligencePage"));
 const WebhooksPage = lazy(() => import("./pages/admin/WebhooksPage"));
 const LeadsPage = lazy(() => import("./pages/admin/LeadsPage"));
 const LeadDetailPage = lazy(() => import("./pages/admin/LeadDetailPage"));
@@ -319,6 +320,7 @@ const router = createBrowserRouter([
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
       { path: "/admin/modules", element: <ModulesPage /> },
       { path: "/admin/automations", element: <AutomationsPage /> },
+      { path: "/admin/visitor-intelligence", element: <VisitorIntelligencePage /> },
       { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
       { path: "/admin/webhooks", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },

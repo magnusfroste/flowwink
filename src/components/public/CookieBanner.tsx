@@ -2,160 +2,195 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { X, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { CookieBannerSettings } from '@/hooks/useSiteSettings';
+import { getConsent, setConsent, acceptAll, rejectAll } from '@/lib/visitor-consent';
 
-type CookieConsent = 'accepted' | 'rejected' | 'pending';
+interface ConsentCategoryConfig {
+  label: string;
+  description: string;
+  required?: boolean;
+}
 
-const COOKIE_CONSENT_KEY = 'cookie-consent';
+interface CookieConsentV2Settings {
+  enabled: boolean;
+  categories: {
+    essential: ConsentCategoryConfig;
+    analytics: ConsentCategoryConfig;
+    marketing: ConsentCategoryConfig;
+  };
+}
 
-const defaultSettings: CookieBannerSettings = {
+const defaults: CookieConsentV2Settings = {
   enabled: true,
-  title: 'We use cookies',
-  description: 'We use cookies to improve your experience on the website, analyze traffic and personalize content. By clicking "Accept all" you consent to our use of cookies.',
-  policyLinkText: 'Read more about our privacy policy',
-  policyLinkUrl: '/privacy-policy',
-  acceptButtonText: 'Accept all',
-  rejectButtonText: 'Essential only',
+  categories: {
+    essential: { label: 'Essential', description: 'Required for the site to work.', required: true },
+    analytics: { label: 'Analytics', description: 'Anonymous measurement of page visits.', required: false },
+    marketing: { label: 'Marketing', description: 'Personalization and signals for the sales team.', required: false },
+  },
 };
 
 export function CookieBanner() {
-  const [consent, setConsent] = useState<CookieConsent>('pending');
   const [isVisible, setIsVisible] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
+  const [marketing, setMarketing] = useState(false);
 
-  const { data: settings } = useQuery({
-    queryKey: ['site-settings', 'cookie_banner'],
+  const { data } = useQuery({
+    queryKey: ['site-settings', 'cookie_consent_v2'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'cookie_banner')
-        .maybeSingle();
-
-      if (error) throw error;
-      return (data?.value as unknown as CookieBannerSettings) || defaultSettings;
+      const { data } = await supabase
+        .from('site_settings').select('value').eq('key', 'cookie_consent_v2').maybeSingle();
+      return (data?.value as unknown as CookieConsentV2Settings) || defaults;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const bannerSettings = settings || defaultSettings;
+  const settings = data ?? defaults;
 
   useEffect(() => {
-    const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (stored === 'accepted' || stored === 'rejected') {
-      setConsent(stored);
-    } else {
-      // Small delay to prevent flash on page load
-      const timer = setTimeout(() => setIsVisible(true), 500);
-      return () => clearTimeout(timer);
-    }
+    if (getConsent()) return; // already decided
+    const t = setTimeout(() => setIsVisible(true), 500);
+    return () => clearTimeout(t);
   }, []);
 
-  const handleAccept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
-    setConsent('accepted');
-    setIsVisible(false);
-    window.dispatchEvent(new CustomEvent('cookie-consent-changed', { detail: 'accepted' }));
-  };
+  if (!settings.enabled || !isVisible) return null;
 
-  const handleReject = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
-    setConsent('rejected');
-    setIsVisible(false);
-    window.dispatchEvent(new CustomEvent('cookie-consent-changed', { detail: 'rejected' }));
-  };
-
-  // Don't show if disabled in settings
-  if (!bannerSettings.enabled) {
-    return null;
-  }
-
-  if (consent !== 'pending' || !isVisible) {
-    return null;
-  }
+  const handleAcceptAll = () => { acceptAll(); setIsVisible(false); };
+  const handleReject = () => { rejectAll(); setIsVisible(false); };
+  const handleSave = () => { setConsent({ analytics, marketing }); setIsVisible(false); };
 
   return (
-    <div 
+    <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6',
-        'bg-card border-t shadow-lg',
-        'animate-fade-in'
+        'fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 bg-card border-t shadow-lg animate-fade-in'
       )}
       role="dialog"
       aria-label="Cookie consent"
     >
       <div className="container mx-auto max-w-4xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div className="flex-1 space-y-2">
-            <h3 className="font-serif font-semibold text-lg">{bannerSettings.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {bannerSettings.description}
-            </p>
-            {bannerSettings.policyLinkUrl && bannerSettings.policyLinkText && (
-              <a 
-                href={bannerSettings.policyLinkUrl} 
-                className="text-sm text-primary hover:underline inline-block"
+        {!showDetails ? (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex-1 space-y-2">
+              <h3 className="font-serif font-semibold text-lg">We use cookies</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We use cookies for essential site functions, anonymous analytics, and — when you allow it —
+                to help our sales team understand your interests. You choose what to allow.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowDetails(true)}
+                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
               >
-                {bannerSettings.policyLinkText}
-              </a>
-            )}
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
-            <Button
-              variant="outline"
+                <Settings2 className="h-3.5 w-3.5" /> Customize
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+              <Button variant="outline" onClick={handleReject} className="w-full sm:w-auto">
+                Essential only
+              </Button>
+              <Button onClick={handleAcceptAll} className="w-full sm:w-auto">
+                Accept all
+              </Button>
+            </div>
+            <button
               onClick={handleReject}
-              className="w-full sm:w-auto"
+              className="absolute top-4 right-4 md:relative md:top-0 md:right-0 p-2 rounded-md hover:bg-muted transition-colors"
+              aria-label="Close"
             >
-              {bannerSettings.rejectButtonText}
-            </Button>
-            <Button
-              onClick={handleAccept}
-              className="w-full sm:w-auto"
-            >
-              {bannerSettings.acceptButtonText}
-            </Button>
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
-          
-          <button
-            onClick={handleReject}
-            className="absolute top-4 right-4 md:relative md:top-0 md:right-0 p-2 rounded-md hover:bg-muted transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif font-semibold text-lg">Cookie preferences</h3>
+              <button onClick={() => setShowDetails(false)} className="text-sm text-muted-foreground hover:text-foreground">
+                Back
+              </button>
+            </div>
+
+            <CategoryRow
+              id="essential"
+              label={settings.categories.essential.label}
+              description={settings.categories.essential.description}
+              checked={true}
+              disabled
+              onChange={() => {}}
+            />
+            <CategoryRow
+              id="analytics"
+              label={settings.categories.analytics.label}
+              description={settings.categories.analytics.description}
+              checked={analytics}
+              onChange={setAnalytics}
+            />
+            <CategoryRow
+              id="marketing"
+              label={settings.categories.marketing.label}
+              description={settings.categories.marketing.description}
+              checked={marketing}
+              onChange={setMarketing}
+            />
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={handleReject} className="w-full sm:w-auto">
+                Essential only
+              </Button>
+              <Button variant="outline" onClick={handleSave} className="w-full sm:w-auto">
+                Save selection
+              </Button>
+              <Button onClick={handleAcceptAll} className="w-full sm:w-auto sm:ml-auto">
+                Accept all
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Hook to check cookie consent status (reactive across the app)
-export function useCookieConsent() {
-  const [consent, setConsent] = useState<CookieConsent>('pending');
+function CategoryRow({
+  id, label, description, checked, disabled, onChange,
+}: {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start gap-4 py-2">
+      <Switch id={id} checked={checked} disabled={disabled} onCheckedChange={onChange} />
+      <div className="flex-1 min-w-0">
+        <Label htmlFor={id} className="font-medium">{label}</Label>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
 
+/** Legacy hook — kept so callers still work. Returns 'accepted' if any non-essential category is on. */
+export function useCookieConsent() {
+  const [status, setStatus] = useState<'accepted' | 'rejected' | 'pending'>('pending');
   useEffect(() => {
     const read = () => {
-      const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
-      setConsent(stored === 'accepted' || stored === 'rejected' ? stored : 'pending');
+      const c = getConsent();
+      if (!c) return setStatus('pending');
+      setStatus(c.analytics || c.marketing ? 'accepted' : 'rejected');
     };
     read();
-    const onCustom = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail === 'accepted' || detail === 'rejected') setConsent(detail);
-      else read();
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === COOKIE_CONSENT_KEY) read();
-    };
-    window.addEventListener('cookie-consent-changed', onCustom);
-    window.addEventListener('storage', onStorage);
+    const onChange = () => read();
+    window.addEventListener('cookie-consent-changed', onChange);
+    window.addEventListener('storage', onChange);
     return () => {
-      window.removeEventListener('cookie-consent-changed', onCustom);
-      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('cookie-consent-changed', onChange);
+      window.removeEventListener('storage', onChange);
     };
   }, []);
-
-  return consent;
+  return status;
 }

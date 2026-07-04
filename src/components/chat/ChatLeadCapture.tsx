@@ -68,17 +68,20 @@ export function ChatLeadCapture({ conversationId, className }: ChatLeadCapturePr
     setError(null);
     setIsSubmitting(true);
     try {
-      let sessionId: string | null = null;
+      // Pass the persistent pez_visitor_id so stitch_visitor_to_lead can
+      // backfill this browser's entire page-view history onto the new lead.
+      let visitorId: string | null = null;
       try {
-        sessionId = localStorage.getItem('chat-session-id');
+        visitorId = localStorage.getItem('pez_visitor_id')
+          ?? localStorage.getItem('chat-session-id');
       } catch {
-        // ignore — RPC still creates the lead, just can't link the conversation
+        // ignore — RPC still creates the lead, just can't link browsing history
       }
 
       const { data, error: rpcError } = await supabase.rpc('capture_chat_lead', {
         p_email: trimmed,
         p_conversation_id: conversationId ?? undefined,
-        p_session_id: sessionId ?? undefined,
+        p_session_id: visitorId ?? undefined,
       });
 
       if (rpcError) throw rpcError;

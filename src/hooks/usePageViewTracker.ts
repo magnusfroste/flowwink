@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useEffect, useRef } from 'react';
+import { hasConsent } from '@/lib/visitor-consent';
 
 interface PageViewData {
   pageId?: string;
@@ -58,8 +59,11 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
     // Don't track in development or for authenticated admin users
     const isAdmin = window.location.pathname.startsWith('/admin');
     const isPreview = window.location.pathname.startsWith('/preview');
-    
+
     if (isAdmin || isPreview) return;
+
+    // Respect analytics consent — no tracking if the visitor hasn't opted in.
+    if (!hasConsent('analytics')) return;
 
     const trackPageView = async () => {
       try {

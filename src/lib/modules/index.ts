@@ -45,6 +45,7 @@ export { posModule } from './pos-module';
 // ── Insights ──
 export { analyticsModule } from './analytics-module';
 export { companyInsightsModule } from './company-insights-module';
+export { visitorIntelligenceModule } from './visitor-intelligence-module';
 
 // ── Operations ──
 export { invoicingModule } from './invoicing-module';
