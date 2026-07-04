@@ -11,7 +11,8 @@
       "status": "partial",
       "weight": 3,
       "verify": "route_conversation_to_agent RPC + support-router edge function (migration 20260616170000); scratch-Postgres verified 2026-06-16 (least-loaded assignment, idempotent re-route, channel filter, queue fallback, escalation row, unknown-conv guard). Fixes the chat handoff that POSTed to a non-existent support-router (404).",
-      "notes": "Fas 0. Single routing primitive shared by chat handoff and future channel adapters (Law 1). Stage-3: live runtime verify + admin UI sign-off pending."
+      "notes": "Fas 0. Single routing primitive shared by chat handoff and future channel adapters (Law 1). Stage-3: live runtime verify + admin UI sign-off pending.",
+      "epic": "EPIC-07"
     },
     {
       "id": "omnichannel_schema",
@@ -20,7 +21,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "chat_conversations.channel/.channel_thread_id/.contact_phone/.contact_id + support_agents.supported_channels (migration 20260616170000). Unified Inbox UI (already merged) reads these.",
-      "notes": "Fas 0. Lays the contract the merged Lovable UI is hardcoded against."
+      "notes": "Fas 0. Lays the contract the merged Lovable UI is hardcoded against.",
+      "epic": "EPIC-07"
     },
     {
       "id": "voicemail_store",
@@ -29,7 +31,8 @@
       "status": "partial",
       "weight": 1,
       "verify": "voicemail_messages table (migration 20260616170000); VoicemailPanel reads it. Transcription + analysis skill is Fas 2.",
-      "notes": "Fas 0 lays the table; handle_voicemail skill lands in Fas 2."
+      "notes": "Fas 0 lays the table; handle_voicemail skill lands in Fas 2.",
+      "epic": "EPIC-07"
     },
     {
       "id": "telegram_channel",
@@ -38,7 +41,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "telegram-ingest webhook (inbound → conversation hub → FlowPilot reply) + contact-center skill manage_channel (getMe/setWebhook) + send_channel_message (outbound). Fas 1. Stage-3: live bot-token end-to-end test pending (needs a Telegram bot token); agent→Telegram outbound trigger on chat_messages role='agent' is the remaining wire.",
-      "notes": "Fas 1 differentiator. Inbound + FlowPilot round-trip built; live verify needs credentials."
+      "notes": "Fas 1 differentiator. Inbound + FlowPilot round-trip built; live verify needs credentials.",
+      "epic": "EPIC-07"
     },
     {
       "id": "callback_offer",
@@ -47,7 +51,8 @@
       "status": "partial",
       "weight": 1,
       "verify": "request_callback RPC + skill (create/mark_attempted/list) riding bookings.metadata.kind='callback'; scratch-Postgres verified 2026-06-16. CallbacksPanel UI reads it. Fas 1.",
-      "notes": "Stage-3: live runtime verify pending."
+      "notes": "Stage-3: live runtime verify pending.",
+      "epic": "EPIC-07"
     },
     {
       "id": "voicemail_transcription",
@@ -56,7 +61,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "handle_voicemail skill (contact-center fn): structured AI extraction of summary/intent/sentiment/callback_requested from a transcript via resolveAiConfig+callAiCompletion. Fas 1. Audio→transcript step lands with the voice channel (Fas 3).",
-      "notes": "Analysis of an existing transcript is done; speech-to-text needs the PSTN/voice channel."
+      "notes": "Analysis of an existing transcript is done; speech-to-text needs the PSTN/voice channel.",
+      "epic": "EPIC-07"
     },
     {
       "id": "live_voice",

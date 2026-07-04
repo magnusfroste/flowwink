@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { useCreateBooking, type BookingService } from '@/hooks/useBookings';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,11 +22,13 @@ interface CreateBookingDialogProps {
 
 export function CreateBookingDialog({ open, onOpenChange, services, initialDate }: CreateBookingDialogProps) {
   const createBooking = useCreateBooking();
+  const { data: employees } = useEmployees();
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
     customer_phone: '',
     service_id: '',
+    assigned_employee_id: '',
     date: initialDate || new Date(),
     start_time: '09:00',
     notes: '',
@@ -59,6 +62,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
       customer_email: formData.customer_email,
       customer_phone: formData.customer_phone || null,
       service_id: formData.service_id || null,
+      assigned_employee_id: formData.assigned_employee_id || null,
       start_time: startDateTime.toISOString(),
       end_time: endDateTime.toISOString(),
       notes: formData.notes || null,
@@ -71,6 +75,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
       customer_email: '',
       customer_phone: '',
       service_id: '',
+      assigned_employee_id: '',
       date: new Date(),
       start_time: '09:00',
       notes: '',
@@ -136,6 +141,28 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
                   {services.filter((s) => s.is_active).map((service) => (
                     <SelectItem key={service.id} value={service.id}>
                       {service.name} ({service.duration_minutes} min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {employees && employees.length > 0 && (
+            <div className="space-y-2">
+              <Label>Staff</Label>
+              <Select
+                value={formData.assigned_employee_id || 'none'}
+                onValueChange={(v) => setFormData({ ...formData, assigned_employee_id: v === 'none' ? '' : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {employees.filter((e) => e.status === 'active').map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

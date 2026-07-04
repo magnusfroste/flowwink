@@ -51,7 +51,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "multiple pricelist_items.min_quantity tiers per product; resolve_pricelist_price picks the deepest qualifying break (ORDER BY specificity, qty_break DESC) (migration 20260613020000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-13 (qty 5\u219210000, 12\u21929000@10%, 80\u21927500@25%). Reused current ambiguity-fixed fn (avoided regressing the price_cents bug). Pending: tier-row admin UI affordance + Stage-3 before done."
+      "notes": "Built + scratch-Postgres verified 2026-06-13 (qty 5→10000, 12→9000@10%, 80→7500@25%). Reused current ambiguity-fixed fn (avoided regressing the price_cents bug). Pending: tier-row admin UI affordance + Stage-3 before done.",
+      "epic": "EPIC-05"
     },
     {
       "id": "dynamic_pricing",

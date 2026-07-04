@@ -813,6 +813,23 @@ export default function ChatSettingsPage() {
                     )}
                   </div>
 
+                  {/* Lead capture — dismissible email prompt after first visitor message */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <h4 className="font-medium">Lead Capture</h4>
+                      <p className="text-sm text-muted-foreground">
+                        After a visitor&apos;s first message, show a dismissible email prompt
+                        that creates a lead in the CRM and links it to the conversation
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.leadCaptureEnabled ?? false}
+                      onCheckedChange={(leadCaptureEnabled) =>
+                        setFormData({ ...formData, leadCaptureEnabled })
+                      }
+                    />
+                  </div>
+
                   {/* Routing Mode — channel-agnostic policy for web/telegram/voice */}
                   <div className="space-y-2 p-4 rounded-lg border">
                     <div>

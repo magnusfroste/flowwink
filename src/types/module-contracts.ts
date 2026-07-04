@@ -398,10 +398,12 @@ export const globalBlockModuleInputSchema = z.object({
   
   // Content
   data: z.record(z.unknown()),
-  
+
   // Optional
   is_active: z.boolean().default(true),
-  
+  /** Free-text category label for organizing blocks (no fixed taxonomy) */
+  category: z.string().nullish(),
+
   // Metadata
   meta: moduleMetaSchema.optional(),
 });

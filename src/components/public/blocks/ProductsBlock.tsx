@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/hooks/useProducts';
+import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { ShoppingCart, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ function formatPrice(cents: number, currency: string) {
 
 export function ProductsBlock({ data }: ProductsBlockProps) {
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
+  const { data: variantProductIds } = useVariantProductIds();
   const { data: categories = [] } = useProductCategories({ activeOnly: true });
   const { addItem, items } = useCart();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -141,7 +143,8 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
           <div className={cn('grid gap-6', gridCols[columns])}>
             {filteredProducts.map(product => {
               const inCart = isInCart(product.id);
-              
+              const hasVariants = variantProductIds?.has(product.id) ?? false;
+
               return (
                 <Card
                   key={product.id}
@@ -174,17 +177,32 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
 
                       {/* Quick add button overlay */}
                       {data.buttonStyle === 'icon-only' && (
-                        <Button
-                          size="icon"
-                          className={cn(
-                            'absolute bottom-3 right-3 rounded-full shadow-lg',
-                            'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200',
-                            inCart && 'bg-green-600 hover:bg-green-700'
-                          )}
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          {inCart ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </Button>
+                        hasVariants ? (
+                          <Button
+                            size="icon"
+                            asChild
+                            className={cn(
+                              'absolute bottom-3 right-3 rounded-full shadow-lg',
+                              'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200'
+                            )}
+                          >
+                            <Link to={`/shop/${product.id}`}>
+                              <Plus className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="icon"
+                            className={cn(
+                              'absolute bottom-3 right-3 rounded-full shadow-lg',
+                              'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200',
+                              inCart && 'bg-green-600 hover:bg-green-700'
+                            )}
+                            onClick={() => handleAddToCart(product)}
+                          >
+                            {inCart ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                          </Button>
+                        )
                       )}
                     </div>
                   )}
@@ -214,24 +232,32 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                       </span>
 
                       {data.buttonStyle !== 'icon-only' && (
-                        <Button
-                          size="sm"
-                          variant={inCart ? 'outline' : 'default'}
-                          onClick={() => handleAddToCart(product)}
-                          className="gap-1.5"
-                        >
-                          {inCart ? (
-                            <>
-                              <Check className="h-4 w-4" />
-                              In cart
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4" />
-                              {buttonText}
-                            </>
-                          )}
-                        </Button>
+                        hasVariants ? (
+                          <Button size="sm" asChild className="gap-1.5">
+                            <Link to={`/shop/${product.id}`}>
+                              Choose options
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant={inCart ? 'outline' : 'default'}
+                            onClick={() => handleAddToCart(product)}
+                            className="gap-1.5"
+                          >
+                            {inCart ? (
+                              <>
+                                <Check className="h-4 w-4" />
+                                In cart
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4" />
+                                {buttonText}
+                              </>
+                            )}
+                          </Button>
+                        )
                       )}
                     </div>
                   </div>

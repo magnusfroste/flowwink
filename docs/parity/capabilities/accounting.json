@@ -83,8 +83,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "budgets table (annual/monthly per account) + manage_budget + budget_vs_actual RPC/skill (variance vs \u03a3 debit\u2212credit, draft excluded) (migration 20260614030000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: annual budget 120000 vs actual 35000 (draft excluded) variance 85000; Jan 10000 vs 30000 = -20000; upsert idempotent. Pending: budget admin UI + Stage-3 before done."
+      "verify": "budgets table (annual/monthly per account) + manage_budget + budget_vs_actual RPC/skill (variance vs Σ debit−credit, draft excluded) (migration 20260614030000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: annual budget 120000 vs actual 35000 (draft excluded) variance 85000; Jan 10000 vs 30000 = -20000; upsert idempotent. Pending: budget admin UI + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "consolidation",

@@ -6,7 +6,7 @@
   "capabilities": [
     {
       "id": "lifecycle",
-      "name": "Invoice lifecycle draft\u2192sent\u2192paid",
+      "name": "Invoice lifecycle draft→sent→paid",
       "odoo": true,
       "status": "done",
       "weight": 1,
@@ -66,8 +66,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 3,
-      "verify": "subscription-billing-cron (due manual subs \u2192 invoice) + generate_subscription_invoice skill + subscriptions.next_invoice_date/billing_interval",
-      "notes": "Verify-first 2026-06-12: engine already exists for invoice-billed (manual) subscriptions \u2014 audit 'missing' was stale. Remaining: proration (P1.1), card-provider recurring is Stripe-native."
+      "verify": "subscription-billing-cron (due manual subs → invoice) + generate_subscription_invoice skill + subscriptions.next_invoice_date/billing_interval",
+      "notes": "Verify-first 2026-06-12: engine already exists for invoice-billed (manual) subscriptions — audit 'missing' was stale. Remaining: proration (P1.1), card-provider recurring is Stripe-native."
     },
     {
       "id": "credit_notes",
@@ -75,8 +75,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "invoices.invoice_type + credited_invoice_id + create_credit_note RPC/skill (full negates original, partial = -amount, over-credit rejected) (migration 20260614090000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: full credit -12500, partial -5000, CN-<inv>-n numbering, over-credit + credit-a-credit-note rejected. Pending: credit-note UI + ledger reversal posting + Stage-3 before done."
+      "verify": "invoices.invoice_type + credited_invoice_id + create_credit_note RPC/skill (full negates original, partial = -amount, over-credit rejected) (migration 20260614090000) + admin UI: CreditNoteDialog (full/partial + reason) launched from InvoiceDetailSheet 'Issue Credit Note', linked credit notes listed on the originating invoice's detail view",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: full credit -12500, partial -5000, CN-<inv>-n numbering, over-credit + credit-a-credit-note rejected. UI shipped 2026-07-03 (src/components/admin/invoices/CreditNoteDialog.tsx). Pending: ledger reversal posting + Stage-3 runtime sign-off before done.",
+      "epic": "EPIC-05"
     },
     {
       "id": "partial_payment",
@@ -84,8 +85,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "invoices.paid_amount_cents tracked by reconcile_invoice_payments (bank path) + record_invoice_payment RPC/skill (manual partial payments, overpay rejected, status\u2192paid when settled) (migration 20260614100000)",
-      "notes": "Bank-rec partial/over/under already existed; added manual payment path. Scratch-Postgres verified 2026-06-14: 5000 then 7500 on a 12500 invoice \u2192 remaining 7500 then 0/status paid/paid_at set; overpay rejected. Pending: payments UI + Stage-3 before done."
+      "verify": "invoices.paid_amount_cents tracked by reconcile_invoice_payments (bank path) + record_invoice_payment RPC/skill (manual partial payments, overpay rejected, status→paid when settled) (migration 20260614100000) + admin UI: RecordPaymentDialog (prefilled outstanding balance, client-side overpay guard) launched from InvoiceDetailSheet 'Record Payment', paid/total progress shown on invoice detail",
+      "notes": "Bank-rec partial/over/under already existed; added manual payment path. Scratch-Postgres verified 2026-06-14: 5000 then 7500 on a 12500 invoice → remaining 7500 then 0/status paid/paid_at set; overpay rejected. UI shipped 2026-07-03 (src/components/admin/invoices/RecordPaymentDialog.tsx). Pending: Stage-3 runtime sign-off before done.",
+      "epic": "EPIC-05"
     },
     {
       "id": "invoice_templates",
@@ -107,9 +109,11 @@
       "id": "aging_report",
       "name": "AR aging report",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "accounts receivable aging report"
+      "verify": "ar_aging_report RPC/skill (migration 20260703140000) buckets open invoices (total_cents - paid_amount_cents > 0, invoice_type='invoice', status<>cancelled) per customer into current/1-30/31-60/61-90/90+ days overdue vs due_date; admin UI: 'Aging Report' tab on /admin/invoices (src/components/admin/invoices/ArAgingReportTab.tsx) showing bucket totals + per-customer table",
+      "notes": "Built 2026-07-03, no live DB access this session to run a Stage-3 scratch-Postgres check — reasoned through the bucket SQL and admin/approver auth guard by inspection only. Pending: Stage-3 runtime sign-off before done.",
+      "epic": "EPIC-05"
     },
     {
       "id": "advance_deposit",

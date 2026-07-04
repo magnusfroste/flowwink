@@ -30,7 +30,13 @@ export const globalBlocksModule = defineModule<GlobalBlockModuleInput, GlobalBlo
 
       const { data, error } = await supabase
         .from('global_blocks')
-        .insert({ slot: validated.slot, type: validated.type, data: validated.data as Json, is_active: validated.is_active })
+        .insert({
+          slot: validated.slot,
+          type: validated.type,
+          data: validated.data as Json,
+          is_active: validated.is_active,
+          category: validated.category ?? null,
+        })
         .select('id, slot, type')
         .single();
 

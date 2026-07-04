@@ -72,7 +72,7 @@ export function CartBlock({ data }: CartBlockProps) {
           <div className="divide-y">
             {items.map(item => (
               <div
-                key={item.productId}
+                key={`${item.productId}:${item.variantId ?? ''}`}
                 className={cn(
                   'flex items-center gap-4 p-4',
                   variant === 'compact' && 'py-3'
@@ -96,6 +96,11 @@ export function CartBlock({ data }: CartBlockProps) {
                 {/* Product Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate">{item.productName}</h3>
+                  {item.variantLabel && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {item.variantLabel}
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     {formatPrice(item.priceCents, item.currency)} st
                   </p>
@@ -107,7 +112,7 @@ export function CartBlock({ data }: CartBlockProps) {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -116,7 +121,7 @@ export function CartBlock({ data }: CartBlockProps) {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -132,7 +137,7 @@ export function CartBlock({ data }: CartBlockProps) {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => removeItem(item.productId)}
+                  onClick={() => removeItem(item.productId, item.variantId)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

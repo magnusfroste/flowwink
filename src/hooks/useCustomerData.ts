@@ -104,6 +104,14 @@ export interface CustomerOrder {
   customer_email: string;
   customer_name: string | null;
   created_at: string;
+  shipping_name: string | null;
+  shipping_address_line1: string | null;
+  shipping_address_line2: string | null;
+  shipping_postal_code: string | null;
+  shipping_city: string | null;
+  shipping_country: string | null;
+  shipping_method: string | null;
+  shipping_cost_cents: number | null;
 }
 
 export interface CustomerOrderItem {
@@ -121,10 +129,10 @@ export function useCustomerOrders() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, status, total_cents, currency, customer_email, customer_name, created_at')
+        .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as CustomerOrder[];
+      return data as unknown as CustomerOrder[];
     },
   });
 }

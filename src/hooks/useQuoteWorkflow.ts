@@ -216,6 +216,8 @@ export function useSignQuote() {
       signer_name: string;
       signer_email: string;
       signature_data?: string;
+      /** Optional drawn signature — data:image/png data-URL from SignaturePad. */
+      signature_image?: string;
       comment?: string;
     }) => {
       const res = await fetch(
@@ -232,6 +234,7 @@ export function useSignQuote() {
             signer_name: input.signer_name,
             signer_email: input.signer_email,
             signature_data: input.signature_data,
+            signature_image: input.signature_image,
             comment: input.comment,
             user_agent: navigator.userAgent,
           }),

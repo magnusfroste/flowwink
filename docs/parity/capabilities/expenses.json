@@ -38,7 +38,7 @@
     },
     {
       "id": "report_workflow",
-      "name": "Monthly report draft\u2192booked\u2192paid",
+      "name": "Monthly report draft→booked→paid",
       "odoo": true,
       "status": "done",
       "weight": 1,
@@ -75,7 +75,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "expense_policies (per-category caps/receipt/approval threshold) + evaluate_expense_policy + manage_expense_policy (migration 20260614080000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: travel cap 50000/receipt/approval>20000; 30k+receipt allowed (approval), 60k over_limit blocked, no-receipt blocked, '*' catch-all fallback. Pending: policy admin UI + wire into expense create + Stage-3 before done."
+      "notes": "Built + scratch-Postgres verified 2026-06-14: travel cap 50000/receipt/approval>20000; 30k+receipt allowed (approval), 60k over_limit blocked, no-receipt blocked, '*' catch-all fallback. Pending: policy admin UI + wire into expense create + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "mileage_perdiem",

@@ -91,7 +91,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "payroll_lines.pension_employer/employee_cents + payroll_runs totals + apply_pension RPC/skill (draft-only, idempotent) (migration 20260613060000)",
-      "notes": "Verified on LOCAL Supabase 2026-06-13: 4.5%/2% on 7,000,000 gross \u2192 employer 315000, employee 140000, net 4,900,000\u21924,760,000; re-run idempotent (no compounding). Pending: pension UI + wire into approve posting + Stage-3 before done."
+      "notes": "Verified on LOCAL Supabase 2026-06-13: 4.5%/2% on 7,000,000 gross → employer 315000, employee 140000, net 4,900,000→4,760,000; re-run idempotent (no compounding). Pending: pension UI + wire into approve posting + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "sick_pay",
@@ -99,8 +100,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "calc_sick_pay RPC/skill \u2014 80% \u00d7 daily \u00d7 min(days,14) \u2212 karensavdrag (migration 20260613060000)",
-      "notes": "Verified on LOCAL Supabase: 30000/mo, 5 sick days \u2192 net 457143 (gross 571429, karens 114286); 20 days capped at 14; 0 days \u2192 0. Pending: wire into payroll run as an adjustment line + UI + Stage-3 before done."
+      "verify": "calc_sick_pay RPC/skill — 80% × daily × min(days,14) − karensavdrag (migration 20260613060000)",
+      "notes": "Verified on LOCAL Supabase: 30000/mo, 5 sick days → net 457143 (gross 571429, karens 114286); 20 days capped at 14; 0 days → 0. Pending: wire into payroll run as an adjustment line + UI + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "multi_country",

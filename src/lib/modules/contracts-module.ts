@@ -198,7 +198,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Verify contract.body_markdown is non-empty (refuse if blank — "write the agreement first"). Snapshot to contract_versions, generate accept_token if missing, set status=pending_signature, sent_at=now(). Return { url, token, version }. The URL pattern is {site_origin}/contract/{token}.',
+    instructions: 'Verify contract.body_markdown is non-empty (refuse if blank — "write the agreement first"). Snapshot to contract_versions, generate accept_token if missing, set status=pending_signature, sent_at=now(). Return { url, token, version }. The URL pattern is {site_origin}/contract/{token}. SIGNING EVIDENCE: when the counterparty accepts or declines on the public page (typed name or drawn signature), contract-sign records signer, timestamp, IP, user-agent, optional signature_image, and a SHA-256 content_hash of the agreement body in contract_signatures; a printable signature certificate is available at {site_origin}/contract/{token}/certificate once the contract is active or terminated.',
   },
   {
     name: 'list_contract_documents',

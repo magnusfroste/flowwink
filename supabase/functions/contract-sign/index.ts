@@ -3,6 +3,7 @@
 // Bypasses JWT verification — auth is by accept_token + status check.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { sha256Hex } from '../_shared/agent-audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,8 +17,18 @@ interface Body {
   signer_name: string;
   signer_email: string;
   signature_data?: string;
+  /** Optional drawn signature — data:image/png base64 data-URL from the public sign page. */
+  signature_image?: string;
   comment?: string;
   user_agent?: string;
+}
+
+/** Accept only reasonably-sized PNG/JPEG data-URLs; anything else is dropped (typed name still recorded). */
+function sanitizeSignatureImage(img: string | undefined): string | null {
+  if (!img) return null;
+  if (img.length > 300_000) return null; // ~220KB binary — far above any real signature stroke
+  if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(img)) return null;
+  return img;
 }
 
 function escapeHtml(s: string) {
@@ -54,10 +65,24 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // NOTE: contracts have no signing-deadline field (end_date is the contract term,
+    // not an offer expiry), so unlike quote-sign there is no expiry gate here.
+
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       null;
+
+    // Content hash: SHA-256 of the canonical agreement content at signing time —
+    // durable tamper-evidence stored on the signature row and shown on the certificate.
+    const contentHash = await sha256Hex(JSON.stringify({
+      title: contract.title,
+      counterparty_name: contract.counterparty_name,
+      body_markdown: contract.body_markdown ?? null,
+      value_cents: contract.value_cents ?? 0,
+      currency: contract.currency,
+      version: contract.version ?? 1,
+    }));
 
     // Record signature
     const { error: sigErr } = await supabase.from('contract_signatures').insert({
@@ -66,6 +91,8 @@ Deno.serve(async (req: Request) => {
       signer_name: body.signer_name,
       signer_email: body.signer_email,
       signature_data: body.signature_data ?? body.signer_name,
+      signature_image: sanitizeSignatureImage(body.signature_image),
+      content_hash: contentHash,
       comment: body.comment ?? null,
       ip_address: ip,
       user_agent: body.user_agent ?? req.headers.get('user-agent') ?? null,
@@ -115,6 +142,7 @@ Deno.serve(async (req: Request) => {
         signer_name: body.signer_name,
         signer_email: body.signer_email,
         counterparty: contract.counterparty_name,
+        content_hash: contentHash,
       },
     });
 

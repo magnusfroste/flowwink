@@ -101,7 +101,8 @@
       "odoo": true,
       "status": "missing",
       "weight": 1,
-      "verify": "Canned response templates"
+      "verify": "Canned response templates",
+      "epic": "EPIC-07"
     },
     {
       "id": "time_tracking",

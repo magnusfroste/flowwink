@@ -12,7 +12,15 @@
     { "id": "search", "name": "Full-text search", "odoo": true, "status": "done", "weight": 1, "verify": "full-text search exists" },
     { "id": "document_storage", "name": "Document storage", "odoo": true, "status": "done", "weight": 1, "verify": "document storage exists" },
 
-    { "id": "esignature_integration", "name": "True e-signature (Scrive/DocuSign)", "odoo": true, "status": "missing", "weight": 2, "verify": "true e-signature integration (Scrive/DocuSign) exists" },
+    {
+      "id": "esignature_integration",
+      "name": "Native e-signature (capture + evidence)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "Reframed per docs/parity/references/quotes-contracts-sign-odoo.md — the SMB gap was capture UI + evidence artifact, not a provider. Built 2026-07-04: (1) draw-signature capture on src/pages/PublicContractPage.tsx via shared src/components/public/SignaturePad.tsx (plain canvas, undo/clear, no new deps), Type/Draw tabs, drawn PNG data-URL sent as signature_image and stored in contract_signatures.signature_image (migration 20260704100000_esign-hardening.sql; sanitized server-side in supabase/functions/contract-sign/index.ts); typed-name path unchanged; (2) evidence artifact — contract-sign stores content_hash (SHA-256 of canonical agreement content: title/counterparty/body_markdown/value/version) on the signature row and in audit_logs metadata; printable certificate page (src/pages/SignatureCertificatePage.tsx, route /contract/:token/certificate) renders signer, signature image or typed name, timestamp, IP, user-agent, hash via token-gated SECURITY DEFINER RPC get_contract_certificate; linked from the public confirmation and from ContractEditorPage. send_contract_for_signature skill instructions document the evidence trail and certificate URL. NOTE: no signing-deadline enforcement for contracts — the contracts table has no offer-expiry field (end_date is the contract term), deliberately not added this round.",
+      "notes": "Capped at partial: not runtime-verified against a live Supabase instance in this session (Stage-3 rule), single external signer only (no company countersign yet — two-party flow is the remaining SMB gap per the reference card), and no signed-PDF attached to the record (print-to-PDF from the certificate covers the need this round). Provider integrations (Scrive/DocuSign/BankID) remain integration-only per the card — never build in-house."
+    },
     { "id": "auto_invoicing", "name": "Auto-invoicing from contract", "odoo": true, "status": "missing", "weight": 2, "verify": "auto-invoicing from contract exists" },
     { "id": "milestone_tracking", "name": "Milestone/obligation tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "milestone/obligation tracking exists" },
     { "id": "payment_reminders", "name": "Payment reminders", "odoo": true, "status": "missing", "weight": 1, "verify": "payment reminders exist" },

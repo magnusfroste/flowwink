@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Send, ExternalLink, Copy, Clock } from 'lucide-react';
+import { ArrowLeft, Send, ExternalLink, Copy, Clock, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -103,6 +103,13 @@ export default function ContractEditorPage() {
                     <ExternalLink className="h-4 w-4 mr-1" /> Open
                   </a>
                 </Button>
+                {(contract.status === 'active' || contract.status === 'terminated') && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`${publicUrl}/certificate`} target="_blank" rel="noreferrer">
+                      <ShieldCheck className="h-4 w-4 mr-1" /> Certificate
+                    </a>
+                  </Button>
+                )}
               </>
             )}
             {!isLocked && (

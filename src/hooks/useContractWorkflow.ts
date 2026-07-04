@@ -176,6 +176,9 @@ export function useSignContract() {
       action: 'accept' | 'reject';
       signer_name: string;
       signer_email: string;
+      signature_data?: string;
+      /** Optional drawn signature — data:image/png data-URL from SignaturePad. */
+      signature_image?: string;
       comment?: string;
     }) => {
       const res = await fetch(

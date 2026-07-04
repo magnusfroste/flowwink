@@ -75,7 +75,8 @@
       "status": "partial",
       "weight": 3,
       "verify": "work_centers + routing_operations tables + manage_work_center/manage_routing_operation skills (migration 20260613040000)",
-      "notes": "Built + verified on LOCAL Supabase 2026-06-13 (2 WOs: Cut 150min/15000, Assemble 300min/45000; idempotent). Pending: shop-floor/work-order admin UI + Stage-3 fleet deploy before done."
+      "notes": "Built + verified on LOCAL Supabase 2026-06-13 (2 WOs: Cut 150min/15000, Assemble 300min/45000; idempotent). Pending: shop-floor/work-order admin UI + Stage-3 fleet deploy before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "work_orders",
@@ -84,7 +85,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "mo_work_orders + generate_mo_work_orders (materialises a MO's work orders from BOM routing) (migration 20260613040000)",
-      "notes": "Built + verified on LOCAL Supabase 2026-06-13 (2 WOs: Cut 150min/15000, Assemble 300min/45000; idempotent). Pending: shop-floor/work-order admin UI + Stage-3 fleet deploy before done."
+      "notes": "Built + verified on LOCAL Supabase 2026-06-13 (2 WOs: Cut 150min/15000, Assemble 300min/45000; idempotent). Pending: shop-floor/work-order admin UI + Stage-3 fleet deploy before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "capacity_scheduling",
@@ -100,8 +102,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 2,
-      "verify": "mrp_reorder_run(dry_run) \u2014 draft MOs for active-BOM products below reorder point with no open MO (migration 20260614070000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: 1 candidate (on_hand 2 \u2264 reorder 10, has BOM), live created MO qty 8 draft/reorder; bought item + above-reorder skipped; rerun=0 (open-MO guard). Pending: MRP UI + Stage-3 before done."
+      "verify": "mrp_reorder_run(dry_run) — draft MOs for active-BOM products below reorder point with no open MO (migration 20260614070000)",
+      "notes": "Built + scratch-Postgres verified 2026-06-14: 1 candidate (on_hand 2 ≤ reorder 10, has BOM), live created MO qty 8 draft/reorder; bought item + above-reorder skipped; rerun=0 (open-MO guard). Pending: MRP UI + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "alternative_boms_eco",
@@ -141,7 +144,7 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "work_centers.cost_per_hour_cents \u2192 mo_work_orders.planned_labor_cost_cents via generate_mo_work_orders",
+      "verify": "work_centers.cost_per_hour_cents → mo_work_orders.planned_labor_cost_cents via generate_mo_work_orders",
       "notes": "Built + verified on LOCAL Supabase 2026-06-13 (2 WOs: Cut 150min/15000, Assemble 300min/45000; idempotent). Pending: shop-floor/work-order admin UI + Stage-3 fleet deploy before done."
     },
     {

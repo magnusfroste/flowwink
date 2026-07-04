@@ -759,6 +759,62 @@ export function ModuleDetailSheet({
                     </div>
                   </div>
                 </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">VAT Display</h4>
+                  <div className="rounded-lg border p-4 bg-muted/20 space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <Label htmlFor="vat-rate" className="text-sm font-medium">
+                          VAT rate (%)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          0 = no VAT labels on the storefront. Display and order
+                          provenance only — prices are never recalculated.
+                        </p>
+                      </div>
+                      <Input
+                        id="vat-rate"
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="w-24"
+                        value={moduleConfig.vatRatePct ?? 0}
+                        onChange={(e) => {
+                          if (!modules) return;
+                          const val = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                          updateModules.mutate({
+                            ...modules,
+                            ecommerce: { ...modules.ecommerce, vatRatePct: val },
+                          });
+                        }}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <Label htmlFor="vat-inclusive" className="text-sm font-medium">
+                          Prices include VAT
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {(moduleConfig.pricesIncludeVat ?? true)
+                            ? 'B2C: prices shown "inkl. moms" on product page, cart and checkout.'
+                            : 'B2B: prices labeled "exkl. moms" — VAT is added downstream on the invoice.'}
+                        </p>
+                      </div>
+                      <Switch
+                        id="vat-inclusive"
+                        checked={moduleConfig.pricesIncludeVat ?? true}
+                        onCheckedChange={(v) => {
+                          if (!modules) return;
+                          updateModules.mutate({
+                            ...modules,
+                            ecommerce: { ...modules.ecommerce, pricesIncludeVat: v },
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 

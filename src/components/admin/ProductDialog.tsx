@@ -46,6 +46,7 @@ interface FormData {
   allow_backorder: boolean;
   available_in_pos: boolean;
   barcode: string;
+  weight_grams: string;
 }
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
@@ -67,6 +68,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       allow_backorder: false,
       available_in_pos: false,
       barcode: '',
+      weight_grams: '',
     },
   });
 
@@ -92,6 +94,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         allow_backorder: product.allow_backorder,
         available_in_pos: product.available_in_pos ?? false,
         barcode: product.barcode ?? '',
+        weight_grams: product.weight_grams != null ? product.weight_grams.toString() : '',
       });
     } else {
       reset({
@@ -108,6 +111,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         allow_backorder: false,
         available_in_pos: false,
         barcode: '',
+        weight_grams: '',
       });
     }
   }, [product, reset]);
@@ -130,6 +134,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       allow_backorder: data.allow_backorder,
       available_in_pos: data.available_in_pos,
       barcode: data.barcode?.trim() || null,
+      // Empty = non-shippable service/digital product (NULL in the DB).
+      weight_grams: data.weight_grams.trim() !== '' ? Math.max(0, parseInt(data.weight_grams, 10) || 0) : null,
     };
 
     if (product) {
@@ -318,6 +324,22 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Shipping */}
+          <div className="space-y-2 rounded-lg border p-4">
+            <Label htmlFor="weight_grams">Weight (grams)</Label>
+            <Input
+              id="weight_grams"
+              type="number"
+              min="0"
+              {...register('weight_grams')}
+              placeholder="e.g. 500"
+            />
+            <p className="text-xs text-muted-foreground">
+              Used to calculate shipping at checkout. Leave empty for services and
+              digital products — they are treated as non-shippable.
+            </p>
           </div>
 
           {/* Point of Sale */}

@@ -75,7 +75,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "reconciliation_rules table + apply_reconciliation_rules (priority match on counterparty/reference/description, contains|equals|regex) + manage_reconciliation_rule (migration 20260614060000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: Spotify\u21926540 (contains), El\u21925020 (regex), first-priority-wins, idempotent. Pending: rule admin UI + Stage-3 before done."
+      "notes": "Built + scratch-Postgres verified 2026-06-14: Spotify→6540 (contains), El→5020 (regex), first-priority-wins, idempotent. Pending: rule admin UI + Stage-3 before done.",
+      "epic": "EPIC-08"
     },
     {
       "id": "variance_investigation",
@@ -107,8 +108,9 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "reconciliation_report(from,to) \u2014 matched/unmatched count+cents + rule_suggested_count (migration 20260614060000)",
-      "notes": "Built + verified 2026-06-14 (3 tx: 1 matched 2500, 2 unmatched, 2 rule-suggested). Pending: report UI + Stage-3 before done."
+      "verify": "reconciliation_report(from,to) — matched/unmatched count+cents + rule_suggested_count (migration 20260614060000)",
+      "notes": "Built + verified 2026-06-14 (3 tx: 1 matched 2500, 2 unmatched, 2 rule-suggested). Pending: report UI + Stage-3 before done.",
+      "epic": "EPIC-08"
     }
   ]
 }

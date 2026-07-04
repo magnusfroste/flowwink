@@ -18,6 +18,8 @@ export interface InvoiceLineItem {
   pricelist_id?: string | null;
   /** Audit: 'pricelist' | 'product_base' | 'manual' */
   price_source?: 'pricelist' | 'product_base' | 'manual' | null;
+  /** Per-line discount percent (0-100), applied to this line before tax. Mirrors quote_items.discount_pct. */
+  discount_pct?: number;
 }
 
 export interface InvoiceLead {
@@ -44,11 +46,52 @@ export interface Invoice {
   currency: string;
   due_date: string | null;
   paid_at: string | null;
+  paid_amount_cents: number;
+  invoice_type: 'invoice' | 'credit_note';
+  credited_invoice_id: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
   leads: InvoiceLead | null;
+}
+
+export interface CreditNote {
+  id: string;
+  invoice_number: string;
+  total_cents: number;
+  currency: string;
+  notes: string | null;
+  issue_date: string;
+  created_at: string;
+}
+
+export interface ArAgingCustomer {
+  customer_name: string;
+  customer_email: string;
+  lead_id: string | null;
+  currency: string;
+  current_cents: number;
+  overdue_1_30_cents: number;
+  overdue_31_60_cents: number;
+  overdue_61_90_cents: number;
+  overdue_90_plus_cents: number;
+  total_outstanding_cents: number;
+  invoice_count: number;
+}
+
+export interface ArAgingReport {
+  success: boolean;
+  as_of: string;
+  buckets: {
+    current_cents: number;
+    overdue_1_30_cents: number;
+    overdue_31_60_cents: number;
+    overdue_61_90_cents: number;
+    overdue_90_plus_cents: number;
+    total_outstanding_cents: number;
+  };
+  customers: ArAgingCustomer[];
 }
 
 /** Resolve display name: lead name > override > fallback */
@@ -65,7 +108,11 @@ export function getInvoiceCompanyName(inv: Invoice): string | null {
 }
 
 export function computeInvoiceTotals(lineItems: InvoiceLineItem[], taxRate: number) {
-  const subtotal_cents = lineItems.reduce((sum, item) => sum + item.qty * item.unit_price_cents, 0);
+  const subtotal_cents = Math.round(lineItems.reduce((sum, item) => {
+    const discountPct = Math.min(100, Math.max(0, item.discount_pct || 0));
+    const gross = item.qty * item.unit_price_cents;
+    return sum + gross * (1 - discountPct / 100);
+  }, 0));
   const tax_cents = Math.round(subtotal_cents * taxRate);
   const total_cents = subtotal_cents + tax_cents;
   return { subtotal_cents, tax_cents, total_cents };
@@ -80,6 +127,9 @@ export function useInvoices(statusFilter?: InvoiceStatus) {
       let query = supabase
         .from('invoices')
         .select(INVOICE_SELECT)
+        // Credit notes are their own document type — shown on the originating
+        // invoice's detail view, not mixed into the main invoice list.
+        .eq('invoice_type', 'invoice')
         .order('created_at', { ascending: false });
 
       if (statusFilter) {
@@ -254,6 +304,84 @@ export function useLeadsForPicker() {
         .order('name');
       if (error) throw error;
       return (data || []) as unknown as InvoiceLead[];
+    },
+  });
+}
+
+/** Credit notes already issued against a given invoice (credited_invoice_id = invoiceId) */
+export function useCreditNotesForInvoice(invoiceId: string | undefined) {
+  return useQuery({
+    queryKey: ['credit-notes', invoiceId],
+    queryFn: async () => {
+      if (!invoiceId) return [];
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total_cents, currency, notes, issue_date, created_at')
+        .eq('credited_invoice_id', invoiceId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as CreditNote[];
+    },
+    enabled: !!invoiceId,
+  });
+}
+
+/** Issue a credit note (full or partial) against an invoice via the create_credit_note RPC */
+export function useCreateCreditNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { invoice_id: string; reason?: string; amount_cents?: number }) => {
+      const { data, error } = await supabase.rpc('create_credit_note', {
+        p_invoice_id: input.invoice_id,
+        p_reason: input.reason || null,
+        p_amount_cents: input.amount_cents ?? null,
+      });
+      if (error) throw error;
+      return data as { success: boolean; credit_note_id: string; credit_note_number: string; kind: 'full' | 'partial' };
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', variables.invoice_id] });
+      queryClient.invalidateQueries({ queryKey: ['credit-notes', variables.invoice_id] });
+      toast.success(`Credit note ${data.credit_note_number} issued`);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** Record a manual payment (cash/Swish/card, no bank transaction) via record_invoice_payment RPC */
+export function useRecordInvoicePayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { invoice_id: string; amount_cents: number; method?: string; paid_at?: string }) => {
+      const { data, error } = await supabase.rpc('record_invoice_payment', {
+        p_invoice_id: input.invoice_id,
+        p_amount_cents: input.amount_cents,
+        p_method: input.method || 'manual',
+        p_paid_at: input.paid_at || new Date().toISOString(),
+      });
+      if (error) throw error;
+      return data as { success: boolean; paid_amount_cents: number; remaining_cents: number; fully_paid: boolean; status: string };
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', variables.invoice_id] });
+      toast.success(data.fully_paid ? 'Payment recorded — invoice fully paid' : 'Payment recorded');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** AR aging report: open invoices bucketed per customer by days overdue */
+export function useArAgingReport(asOf?: string) {
+  return useQuery({
+    queryKey: ['ar-aging-report', asOf],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('ar_aging_report' as any, { p_as_of: asOf || null });
+      if (error) throw error;
+      return data as unknown as ArAgingReport;
     },
   });
 }

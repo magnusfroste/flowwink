@@ -25,6 +25,9 @@ export interface Product {
   barcode?: string | null;
   pos_category_id?: string | null;
   cost_cents?: number | null;
+  /** Weight in grams. null = non-shippable (service/digital) — the product
+   *  does not participate in the checkout shipping calculation. */
+  weight_grams?: number | null;
   created_at: string;
   updated_at: string;
 }

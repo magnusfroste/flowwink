@@ -233,3 +233,62 @@ export function useUpdateFooterBlock() {
 export function useUpdateHeaderBlock() {
   return useUpdateGlobalBlock<HeaderBlockData>('header');
 }
+
+// Lightweight row for the block library (no data payload)
+export interface GlobalBlockSummary {
+  id: string;
+  slot: string;
+  type: string;
+  category: string | null;
+  is_active: boolean;
+  updated_at: string;
+}
+
+// Hook to list all global blocks (library view)
+export function useGlobalBlocksLibrary() {
+  return useQuery({
+    queryKey: ['global-blocks', 'library'],
+    queryFn: async (): Promise<GlobalBlockSummary[]> => {
+      const { data, error } = await supabase
+        .from('global_blocks')
+        .select('id, slot, type, category, is_active, updated_at')
+        .order('slot', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as GlobalBlockSummary[];
+    },
+    staleTime: 1000 * 60,
+  });
+}
+
+// Hook to set a global block's category (free text; empty clears it)
+export function useSetGlobalBlockCategory() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, category }: { id: string; category: string }) => {
+      const { error } = await supabase
+        .from('global_blocks')
+        .update({ category: category.trim() || null })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['global-blocks', 'library'] });
+      toast({
+        title: 'Saved',
+        description: 'Block category updated.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update block category.',
+        variant: 'destructive',
+      });
+      logger.error('Failed to update global block category:', error);
+    },
+  });
+}

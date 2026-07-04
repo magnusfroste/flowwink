@@ -75,7 +75,8 @@
       "status": "partial",
       "weight": 2,
       "verify": "business_hours + business_holidays tables + business_minutes_between(start,end) working-hours function + manage_business_hours skill (migration 20260614020000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: within-day 240, 08\u201318 clipped to 480, Fri16\u2192Mon10 weekend-skip 120, holiday/Saturday/reverse=0. Pending: wire sla-check sweep to use business minutes + admin UI before done."
+      "notes": "Built + scratch-Postgres verified 2026-06-14: within-day 240, 08–18 clipped to 480, Fri16→Mon10 weekend-skip 120, holiday/Saturday/reverse=0. Pending: wire sla-check sweep to use business minutes + admin UI before done.",
+      "epic": "EPIC-07"
     },
     {
       "id": "performance_dashboards",

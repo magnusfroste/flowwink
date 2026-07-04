@@ -3,17 +3,19 @@
  * Mirrors PublicQuotePage but renders a markdown body instead of line items.
  */
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { CheckCircle2, XCircle, FileSignature } from 'lucide-react';
+import { CheckCircle2, XCircle, FileSignature, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SignaturePad } from '@/components/public/SignaturePad';
 import { usePublicContract, useSignContract, markContractViewed } from '@/hooks/useContractWorkflow';
 
 export default function PublicContractPage() {
@@ -25,6 +27,7 @@ export default function PublicContractPage() {
   const [signerEmail, setSignerEmail] = useState('');
   const [comment, setComment] = useState('');
   const [mode, setMode] = useState<'view' | 'accept' | 'reject'>('view');
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (contract?.id) markContractViewed(contract.id).catch(() => {});
@@ -52,7 +55,8 @@ export default function PublicContractPage() {
     body_markdown: string | null;
     signed_at: string | null;
   };
-  const isFinal = c.status === 'active' || c.signed_at != null;
+  const isDeclined = c.status === 'terminated';
+  const isFinal = c.status === 'active' || c.signed_at != null || isDeclined;
 
   const handleSubmit = async () => {
     if (!signerName.trim() || !signerEmail.trim() || !token) return;
@@ -61,6 +65,8 @@ export default function PublicContractPage() {
       action: mode === 'accept' ? 'accept' : 'reject',
       signer_name: signerName,
       signer_email: signerEmail,
+      signature_data: signerName, // typed signature (always recorded)
+      signature_image: signatureImage ?? undefined, // drawn signature (optional)
       comment,
     });
     setMode('view');
@@ -124,8 +130,27 @@ export default function PublicContractPage() {
                   <Label>Comment (optional)</Label>
                   <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={2} />
                 </div>
+                {mode === 'accept' && (
+                  <div className="space-y-1">
+                    <Label>Signature</Label>
+                    <Tabs defaultValue="type" onValueChange={(v) => { if (v === 'type') setSignatureImage(null); }}>
+                      <TabsList>
+                        <TabsTrigger value="type">Type name</TabsTrigger>
+                        <TabsTrigger value="draw">Draw</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="type">
+                        <p className="font-serif italic text-2xl border rounded-md px-4 py-3 min-h-[3.5rem] text-foreground/80">
+                          {signerName || <span className="text-sm not-italic font-sans text-muted-foreground">Your typed name is used as your signature</span>}
+                        </p>
+                      </TabsContent>
+                      <TabsContent value="draw">
+                        <SignaturePad onChange={setSignatureImage} />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  By typing your name and clicking {mode === 'accept' ? 'Accept' : 'Decline'} you create a binding electronic signature.
+                  By {mode === 'accept' ? 'signing' : 'typing your name'} and clicking {mode === 'accept' ? 'Accept' : 'Decline'} you create a binding electronic signature.
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -141,11 +166,23 @@ export default function PublicContractPage() {
             )}
 
             {isFinal && (
-              <div className="border-t pt-4">
-                <div className="flex items-center gap-2 text-primary">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">This contract is signed and active. Thank you!</span>
-                </div>
+              <div className="border-t pt-4 space-y-3">
+                {isDeclined ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <XCircle className="h-5 w-5" />
+                    <span>This contract has been declined and is no longer open for signing.</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-primary">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="font-medium">This contract is signed and active. Thank you!</span>
+                  </div>
+                )}
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/contract/${token}/certificate`}>
+                    <ShieldCheck className="h-4 w-4 mr-1" /> View signature certificate
+                  </Link>
+                </Button>
               </div>
             )}
           </CardContent>

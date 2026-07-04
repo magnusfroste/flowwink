@@ -4,11 +4,64 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "widget", "name": "Visitor chat widget", "odoo": true, "status": "partial", "weight": 2, "verify": "public chat widget + /chat page; ChatSettingsPage.tsx", "notes": "Skill surface missing — chat-module.ts has empty skillSeeds (uses chat-completion directly by design)." },
-    { "id": "handoff", "name": "Handoff to human", "odoo": true, "status": "partial", "weight": 1, "verify": "Live Agent Banner settings in ChatSettingsPage; support_assign_conversation skill", "notes": "Skill lives in live-support-module.ts, not chat-module.ts skillSeeds." },
-    { "id": "transcripts", "name": "Transcript history", "odoo": true, "status": "partial", "weight": 1, "verify": "src/components/admin/chat/VisitorSessionsTab.tsx", "notes": "Admin UI only — no transcript skill in chat-module.ts skillSeeds." },
-    { "id": "feedback", "name": "Chat feedback", "odoo": true, "status": "partial", "weight": 1, "verify": "ChatFeedback.tsx (public) + ChatFeedbackDashboardWidget.tsx (admin)", "notes": "Skill surface missing in chat module — support_get_feedback lives in live-support-module.ts." },
-    { "id": "lead_capture", "name": "Lead capture from chat", "odoo": true, "status": "missing", "weight": 1, "verify": "no lead-capture skill or chat-to-lead flow found in chat-completion or chat module" },
-    { "id": "ai_kb_answers", "name": "AI answers from KB/site context", "odoo": false, "status": "partial", "weight": 2, "verify": "chat-completion edge fn injects kb_articles/site context into the widget", "notes": "Implemented directly in chat-completion (not a registered skill); works for anonymous visitors." }
+    {
+      "id": "widget",
+      "name": "Visitor chat widget",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "public chat widget + /chat page; ChatSettingsPage.tsx",
+      "notes": "Skill surface missing — chat-module.ts has empty skillSeeds (uses chat-completion directly by design).",
+      "epic": "EPIC-06"
+    },
+    {
+      "id": "handoff",
+      "name": "Handoff to human",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "Live Agent Banner settings in ChatSettingsPage; support_assign_conversation skill",
+      "notes": "Skill lives in live-support-module.ts, not chat-module.ts skillSeeds.",
+      "epic": "EPIC-07"
+    },
+    {
+      "id": "transcripts",
+      "name": "Transcript history",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "src/components/admin/chat/VisitorSessionsTab.tsx",
+      "notes": "Admin UI only — no transcript skill in chat-module.ts skillSeeds.",
+      "epic": "EPIC-07"
+    },
+    {
+      "id": "feedback",
+      "name": "Chat feedback",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "ChatFeedback.tsx (public) + ChatFeedbackDashboardWidget.tsx (admin)",
+      "notes": "Skill surface missing in chat module — support_get_feedback lives in live-support-module.ts.",
+      "epic": "EPIC-07"
+    },
+    {
+      "id": "lead_capture",
+      "name": "Lead capture from chat",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "ChatLeadCapture.tsx (dismissible email prompt after first visitor message, gated by chat settings leadCaptureEnabled, default OFF); capture_chat_lead RPC in 20260704150000 migration upserts lead by email (source 'chat-widget') and links chat_conversations.lead_id (session-ownership guarded, anon-safe SECURITY DEFINER)",
+      "notes": "Built 2026-07-04: settings toggle in ChatSettingsPage, prompt rendered via ChatConversation for visitor chat (widget/landing/block), never blocks the conversation. Dedupe via leads_email_unique (existing lead gets name backfill + score bump). Pending live verification + admin surfacing of the lead link before done.",
+      "epic": "EPIC-06"
+    },
+    {
+      "id": "ai_kb_answers",
+      "name": "AI answers from KB/site context",
+      "odoo": false,
+      "status": "partial",
+      "weight": 2,
+      "verify": "chat-completion edge fn injects kb_articles/site context into the widget",
+      "notes": "Implemented directly in chat-completion (not a registered skill); works for anonymous visitors."
+    }
   ]
 }

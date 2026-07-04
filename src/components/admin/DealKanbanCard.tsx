@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { formatPrice } from '@/hooks/useProducts';
 import type { Deal } from '@/hooks/useDeals';
 import { cn } from '@/lib/utils';
-import { NextActivityBadge } from './deals/NextActivityBadge';
+import { NextStepChip } from './crm/NextStepChip';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 
 interface DealKanbanCardProps {
@@ -80,7 +80,7 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
           </p>
         )}
 
-        <NextActivityBadge dealId={deal.id} />
+        <NextStepChip dealId={deal.id} />
 
         <Link
           to={`/admin/deals/${deal.id}`}

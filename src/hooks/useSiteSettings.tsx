@@ -246,7 +246,11 @@ export interface ChatSettings {
   widgetSize: ChatWidgetSize;
   widgetMaxPrompts: number;
   widgetShowOnMobile: boolean;
-  
+
+  /** Lead capture: after the visitor's first message, show a dismissible
+   *  email prompt that creates/associates a CRM lead (source 'chat-widget'). */
+  leadCaptureEnabled: boolean;
+
   // Landing page
   landingPageEnabled: boolean;
   
@@ -328,6 +332,7 @@ export const defaultChatSettings: ChatSettings = {
   widgetSize: 'md',
   widgetMaxPrompts: 3,
   widgetShowOnMobile: true,
+  leadCaptureEnabled: false,
   landingPageEnabled: false,
   blockEnabled: true,
   saveConversations: true,

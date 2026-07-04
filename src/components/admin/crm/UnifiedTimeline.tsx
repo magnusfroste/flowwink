@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Phone, Mail, Users, MessageSquare, FileText, MailOpen,
   MousePointer, RefreshCw, Trophy, XCircle, Calendar,
-  ShoppingCart, Video, Activity
+  ShoppingCart, Video, Activity, CheckCircle2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ import { useUnifiedTimeline, type TimelineEvent } from '@/hooks/useUnifiedTimeli
 const ICON_MAP: Record<string, React.ElementType> = {
   Phone, Mail, Users, MessageSquare, FileText, MailOpen,
   MousePointer, RefreshCw, Trophy, XCircle, Calendar,
-  ShoppingCart, Video, Activity,
+  ShoppingCart, Video, Activity, CheckCircle2,
 };
 
 interface UnifiedTimelineProps {

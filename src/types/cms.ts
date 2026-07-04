@@ -221,6 +221,8 @@ export interface GlobalBlock {
   slot: GlobalBlockSlot;
   type: ContentBlockType;
   data: Record<string, unknown>;
+  /** Free-text category label for organizing blocks (no fixed taxonomy) */
+  category?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

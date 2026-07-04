@@ -4,22 +4,157 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "lifecycle", "name": "Quote lifecycle", "odoo": true, "status": "done", "weight": 1, "verify": "quote status lifecycle (draft/sent/accepted/etc.)" },
-    { "id": "versioning", "name": "Quote versioning", "odoo": true, "status": "done", "weight": 1, "verify": "quote version records" },
-    { "id": "public_accept_token", "name": "Public accept link", "odoo": true, "status": "done", "weight": 1, "verify": "public accept token on quotes" },
-    { "id": "approval_threshold", "name": "Threshold approval", "odoo": true, "status": "done", "weight": 1, "verify": "threshold-based approval workflow" },
-    { "id": "templates", "name": "Quote templates", "odoo": true, "status": "done", "weight": 1, "verify": "quote template records" },
-    { "id": "tax", "name": "Tax", "odoo": true, "status": "done", "weight": 1, "verify": "tax calculation on quotes" },
-    { "id": "line_items", "name": "Line items", "odoo": true, "status": "done", "weight": 1, "verify": "quote line items" },
-    { "id": "convert_to_invoice", "name": "Convert to invoice", "odoo": true, "status": "done", "weight": 1, "verify": "quote→invoice conversion" },
-
-    { "id": "esignature", "name": "True e-signature integration", "odoo": true, "status": "missing", "weight": 2, "verify": "e-signature provider integration" },
-    { "id": "einvoice_formats", "name": "E-invoice formats (UBL/Peppol)", "odoo": true, "status": "missing", "weight": 2, "verify": "UBL/Peppol e-invoice export" },
-    { "id": "expiry_reminders", "name": "Expiry reminder automation", "odoo": true, "status": "missing", "weight": 1, "verify": "automated quote expiry reminders" },
-    { "id": "recurring_quotes", "name": "Recurring quotes/retainers", "odoo": true, "status": "missing", "weight": 1, "verify": "recurring quote/retainer support" },
-    { "id": "attachments", "name": "Quote attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "file attachments on quotes" },
-    { "id": "customer_portal", "name": "Customer portal tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "customer portal quote tracking" },
-    { "id": "line_discounts", "name": "Line-level discounts", "odoo": true, "status": "missing", "weight": 1, "verify": "per-line discount on quote items" },
-    { "id": "amendment_workflow", "name": "Quote amendment workflow", "odoo": true, "status": "missing", "weight": 1, "verify": "quote amendment workflow" }
+    {
+      "id": "lifecycle",
+      "name": "Quote lifecycle",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "quote status lifecycle (draft/sent/accepted/etc.)"
+    },
+    {
+      "id": "versioning",
+      "name": "Quote versioning",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "quote version records"
+    },
+    {
+      "id": "public_accept_token",
+      "name": "Public accept link",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "public accept token on quotes"
+    },
+    {
+      "id": "approval_threshold",
+      "name": "Threshold approval",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "threshold-based approval workflow"
+    },
+    {
+      "id": "templates",
+      "name": "Quote templates",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "quote template records"
+    },
+    {
+      "id": "tax",
+      "name": "Tax",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "tax calculation on quotes"
+    },
+    {
+      "id": "line_items",
+      "name": "Line items",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "quote line items"
+    },
+    {
+      "id": "convert_to_invoice",
+      "name": "Convert to invoice",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "quote→invoice conversion"
+    },
+    {
+      "id": "esignature",
+      "name": "Native e-signature (capture + evidence)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "Reframed per docs/parity/references/quotes-contracts-sign-odoo.md (Odoo's own SMB baseline is the free portal sign flow, not an external provider): native signing now covers (1) expiry enforcement at signing time — supabase/functions/quote-sign/index.ts rejects action=accept with HTTP 410 code=quote_expired when valid_until < today, mirroring Odoo is_expired; src/pages/PublicQuotePage.tsx shows the expired banner and disables Accept; (2) draw-signature capture — src/components/public/SignaturePad.tsx (plain canvas, pointer events, undo/clear, no new deps) with Type/Draw tabs on the public sign page, drawn PNG data-URL stored in quote_signatures.signature_image (migration 20260704100000_esign-hardening.sql; server-side sanitized: PNG/JPEG data-URL, <=300k chars); typed-name path unchanged; (3) evidence artifact — quote-sign stores content_hash (SHA-256 of canonical quote content: items/totals/terms/version, via _shared/agent-audit.ts sha256Hex) on the signature row and in audit_logs metadata, and a printable certificate page (src/pages/SignatureCertificatePage.tsx, route /quote/:token/certificate) renders reference+version, signer, signature image or typed name, timestamp, IP, user-agent, hash via token-gated SECURITY DEFINER RPC get_quote_certificate (same migration); linked from the public confirmation and from QuoteDetailSheet. manage_quote skill instructions document the 410 expiry failure mode and the certificate URL.",
+      "notes": "Capped at partial: not runtime-verified against a live Supabase instance in this session (no DB access — Stage-3 rule), and no signed-PDF artifact attached to the record (print-to-PDF from the certificate page is the deliberate SMB scope this round; PDF generation deferred). Provider integrations (Scrive/DocuSign/BankID) remain integration-only per the reference card — never build in-house. R3 addendum: the certificate now also shows the payment state (Paid / Deposit paid badges + payment row) via the extended get_quote_certificate RPC — see sign_and_pay."
+    },
+    {
+      "id": "sign_and_pay",
+      "name": "Sign-and-pay portal confirmation (online payment + prepayment %)",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "verify": "Odoo baseline per docs/parity/references/quotes-contracts-sign-odoo.md section 2 (_has_to_be_paid, prepayment_percent: portal confirms a quotation with signature AND payment, optionally a prepayment share). FlowWink R3 build (2026-07-04): (1) Pay-now on the acceptance confirmation — src/pages/PublicQuotePage.tsx shows 'Pay now — {amount}' for accepted quotes with an open invoice balance (payment state via token-gated anon RPC get_quote_payment_status, migration 20260704140000_quote-sign-and-pay.sql, since anon cannot read invoices), and calls the new anon-safe edge function supabase/functions/quote-pay/index.ts (publishable-key fetch pattern, never functions.invoke); quote-pay resolves quote→invoice server-side from accept_token only — client-sent invoice ids are never accepted — and creates a Stripe Checkout session with success/cancel URLs returning to /quote/{token}?payment=success|cancelled (status banners on the page). (2) Payment confirms the flow — supabase/functions/stripe-webhook/index.ts checkout.session.completed invoice branch now records via the canonical record_invoice_payment RPC (paid_amount_cents accumulates; status flips to paid only at full balance; June partial-payment semantics reused, no parallel paid-marking; per-session dedupe against audit_logs guards webhook retries) and stamps quotes.paid_at + audit_logs quote.payment_received when metadata.quote_id is present. (3) Prepayment % — quotes.prepayment_pct (nullable numeric, CHECK 1-100, same migration): first payment charges round(total × pct/100) clamped to the open balance, later payments the remainder; admin field in src/components/admin/quotes/QuoteDetailSheet.tsx; manage_quote tool_definition + instructions document the flow and prepayment_pct (src/lib/modules/quotes-module.ts, artifact regenerated via skills:json). (4) Unconfigured instances degrade gracefully: quote-pay returns HTTP 200 {configured:false} when STRIPE_SECRET_KEY is absent and the page shows a 'payment not configured' notice (mirrors create-checkout's no-hard-fail stance).",
+      "notes": "Capped at partial: not runtime-verified against a live Supabase/Stripe pair in this session (Stage-3 rule — the webhook leg needs real Stripe events). Deliberate scope cuts vs Odoo: payment does not gate acceptance (FlowWink signs first, then pays — Odoo can require payment before confirmation), no payment-method chooser beyond Stripe Checkout's own, and no sandbox auto-paid simulation for invoices (unlike create-checkout's e-commerce sandbox, simulating invoice payments would falsify AR — unconfigured instances show a notice instead, decided 2026-07-04)."
+    },
+    {
+      "id": "einvoice_formats",
+      "name": "E-invoice formats (UBL/Peppol)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "UBL/Peppol e-invoice export"
+    },
+    {
+      "id": "expiry_reminders",
+      "name": "Expiry reminder automation",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "supabase/functions/quote-expiry-reminders/index.ts scans status='sent' quotes with valid_until in [now-3d, now+48h] and expiry_reminder_sent_at IS NULL, emails via send-quote-email, stamps quotes.expiry_reminder_sent_at (migration 20260703130500_quote-expiry-reminders.sql); send_quote_expiry_reminders skill (handler edge:quote-expiry-reminders) registered in src/lib/modules/quotes-module.ts and inserted directly into agent_skills by the migration; 'Quote Expiry Reminders' agent_automations row (trigger_type=cron, executor=platform, every 6h) picked up by the existing automation-dispatcher (baseline, runs every minute) — no new pg_cron wiring needed",
+      "notes": "Not yet runtime-verified against a live Supabase project (no DB access in this session) — logic and wiring reasoned from code/migration only, so capped at partial per the Stage-3 done rule. No admin UI to view/trigger the sweep or see reminder history; only the underlying single-quote 'Send Reminder' button (useSendQuoteReminder) has UI.",
+      "epic": "EPIC-05"
+    },
+    {
+      "id": "recurring_quotes",
+      "name": "Recurring quotes/retainers",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "recurring quote/retainer support"
+    },
+    {
+      "id": "attachments",
+      "name": "Quote attachments",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "file attachments on quotes"
+    },
+    {
+      "id": "customer_portal",
+      "name": "Customer portal tracking",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "customer portal quote tracking"
+    },
+    {
+      "id": "line_discounts",
+      "name": "Line-level discounts",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "Two line-item surfaces both support discount_pct now: (1) quotes.line_items (jsonb, the human-editor path) — src/hooks/useInvoices.ts:67 computeInvoiceTotals applies InvoiceLineItem.discount_pct (0-100) before tax per line, wired into the quote editor at src/components/admin/quotes/QuoteDetailSheet.tsx (Disc % input per row), range-guarded by a CHECK constraint (quotes_line_items_discount_pct_range, migration 20260703130000_line-discounts.sql); (2) quote_items table (the agent/skill path) — pre-existing discount_pct column now range-checked (quote_items_discount_pct_range), and agent-execute's 'quotes' case (handler db:quotes behind manage_quote) already threads discount_pct through create/update (insertQuoteItems) plus the add_item action (supabase/functions/agent-execute/index.ts, previously missing — fixed here); manage_quote's tool_definition/instructions in src/lib/modules/quotes-module.ts document discount_pct for add_item",
+      "notes": "The two surfaces are separate storage (jsonb column vs. table) and are not reconciled/merged — a discount set via one path does not show up in the other. This is a pre-existing architectural split in the codebase (send-quote-email reads quote_items; the human editor reads quotes.line_items), not introduced or fixed here. Capped at partial: not runtime-verified against a live DB in this session, and the two representations remain unmerged.",
+      "epic": "EPIC-05"
+    },
+    {
+      "id": "amendment_workflow",
+      "name": "Quote amendment workflow",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "quote amendment workflow"
+    },
+    {
+      "id": "approval_chain_routing",
+      "name": "Multi-step approval chain routing (EPIC-04 consumption)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "epic": "EPIC-04",
+      "verify": "quotes-module.ts request_approval still calls evaluate_approval_required + inserts approval_requests directly with a single rule_id (no chain_id/current_step); no request_entity_approval call or DB send-gate exists for entity_type='quote'",
+      "notes": "Checked for a rumored EPIC-04 quotes integration: not shipped. Migration 20260611210000 (EPIC-04.6) only wires DB gates for purchase_order and expense_report; docs/parity/epics/EPIC-04-approval-chains.md's Definition of Done lists purchasing+expenses as the only required consumer modules, and no commit touches quotes-module.ts or quotes.json for chains. The existing 'approval_threshold' capability (done) is the older single-rule evaluate_approval_required path, unchanged."
+    }
   ]
 }

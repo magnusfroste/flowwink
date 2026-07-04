@@ -3340,11 +3340,15 @@ async function executeGlobalBlocksAction(
   _skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', slot, block_data } = args as any;
+  const { action = 'list', slot, block_data, category } = args as any;
 
   if (action === 'list') {
-    const { data, error } = await supabase.from('global_blocks')
-      .select('id, slot, type, data, is_active, updated_at');
+    let query = supabase.from('global_blocks')
+      .select('id, slot, type, data, category, is_active, updated_at');
+    if (typeof category === 'string' && category.trim()) {
+      query = query.eq('category', category.trim());
+    }
+    const { data, error } = await query;
     if (error) throw new Error(`List global blocks failed: ${error.message}`);
     return { global_blocks: data || [] };
   }
@@ -3357,21 +3361,25 @@ async function executeGlobalBlocksAction(
   }
 
   if (action === 'update' && slot) {
-    if (!block_data) throw new Error('block_data is required');
+    const hasCategory = typeof category === 'string';
+    if (!block_data && !hasCategory) throw new Error('block_data or category is required');
     const { data: existing } = await supabase.from('global_blocks')
       .select('id, data').eq('slot', slot).maybeSingle();
 
     if (existing) {
-      const mergedData = { ...existing.data, ...block_data };
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (block_data) updates.data = { ...existing.data, ...block_data };
+      if (hasCategory) updates.category = category.trim() || null;
       const { data, error } = await supabase.from('global_blocks')
-        .update({ data: mergedData, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq('id', existing.id).select('id, slot, type').single();
       if (error) throw new Error(`Update global block failed: ${error.message}`);
       return { id: data.id, slot: data.slot, status: 'updated' };
     } else {
       const { block_type = slot === 'header' ? 'header' : 'footer' } = args as any;
       const { data, error } = await supabase.from('global_blocks').insert({
-        slot, type: block_type, data: block_data, is_active: true,
+        slot, type: block_type, data: block_data || {}, is_active: true,
+        category: hasCategory ? (category.trim() || null) : null,
       }).select('id, slot, type').single();
       if (error) throw new Error(`Create global block failed: ${error.message}`);
       return { id: data.id, slot: data.slot, status: 'created' };
@@ -3551,11 +3559,25 @@ async function executeDealsAction(
     return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents, lead_id: data.lead_id, auto_created_lead };
   }
 
+  // Lost discipline (Odoo pattern): when a deal transitions to closed_lost,
+  // lost_reason/lost_note are stored; any transition to a non-lost stage
+  // clears them (re-open). Shared by update + move_stage below.
+  const applyLostDiscipline = (updateData: Record<string, unknown>, stage: unknown, rest: any) => {
+    if (stage === undefined) return;
+    if (stage === 'closed_lost') {
+      if (rest.lost_reason !== undefined) updateData.lost_reason = rest.lost_reason;
+      if (rest.lost_note !== undefined) updateData.lost_note = rest.lost_note;
+    } else {
+      updateData.lost_reason = null;
+      updateData.lost_note = null;
+    }
+  };
+
   if (action === 'update') {
     const { deal_id, ...rest } = args as any;
     if (!deal_id) throw new Error('deal_id is required');
     // Strip injected/system fields and unknown keys — only allow real columns
-    const allowed = ['value_cents', 'currency', 'stage', 'product_id', 'expected_close', 'notes', 'closed_at'];
+    const allowed = ['value_cents', 'currency', 'stage', 'product_id', 'expected_close', 'notes', 'closed_at', 'lost_reason', 'lost_note'];
     const updateData: Record<string, unknown> = {};
     for (const k of allowed) {
       if (rest[k] !== undefined) updateData[k] = rest[k];
@@ -3563,23 +3585,31 @@ async function executeDealsAction(
     if (Object.keys(updateData).length === 0) {
       throw new Error('No updatable fields provided');
     }
+    if (rest.stage !== undefined && rest.closed_at === undefined) {
+      // Keep closed_at consistent with the stage transition (mirrors the admin UI).
+      updateData.closed_at = ['closed_won', 'closed_lost'].includes(rest.stage)
+        ? new Date().toISOString() : null;
+    }
+    applyLostDiscipline(updateData, rest.stage, rest);
     updateData.updated_at = new Date().toISOString();
     const { data, error } = await supabase.from('deals')
       .update(updateData)
-      .eq('id', deal_id).select('id, stage').single();
+      .eq('id', deal_id).select('id, stage, lost_reason').single();
     if (error) throw new Error(`Update deal failed: ${error.message}`);
-    return { deal_id: data.id, stage: data.stage, status: 'updated' };
+    return { deal_id: data.id, stage: data.stage, status: 'updated', ...(data.lost_reason ? { lost_reason: data.lost_reason } : {}) };
   }
 
   if (action === 'move_stage') {
-    const { deal_id, stage } = args as any;
+    const { deal_id, stage, ...rest } = args as any;
     if (!deal_id || !stage) throw new Error('deal_id and stage required');
     const closed_at = ['closed_won', 'closed_lost'].includes(stage) ? new Date().toISOString() : null;
+    const updateData: Record<string, unknown> = { stage, closed_at, updated_at: new Date().toISOString() };
+    applyLostDiscipline(updateData, stage, rest);
     const { data, error } = await supabase.from('deals')
-      .update({ stage, closed_at, updated_at: new Date().toISOString() })
-      .eq('id', deal_id).select('id, stage').single();
+      .update(updateData)
+      .eq('id', deal_id).select('id, stage, lost_reason').single();
     if (error) throw new Error(`Move stage failed: ${error.message}`);
-    return { deal_id: data.id, new_stage: data.stage };
+    return { deal_id: data.id, new_stage: data.stage, ...(data.lost_reason ? { lost_reason: data.lost_reason } : {}) };
   }
 
   if (action === 'delete') {
@@ -3671,7 +3701,7 @@ async function executeProductsAction(
   if (action === 'list') {
     const { is_active } = args as any;
     let query = supabase.from('products')
-      .select('id, name, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, image_url, created_at')
+      .select('id, name, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, image_url, weight_grams, created_at')
       .order('created_at', { ascending: false }).limit(50);
     if (is_active !== undefined) query = query.eq('is_active', is_active);
     const { data, error } = await query;
@@ -3680,11 +3710,13 @@ async function executeProductsAction(
   }
 
   if (action === 'create') {
-    const { name, description, price_cents, currency = 'SEK', type = 'one_time', image_url, stripe_price_id } = args as any;
+    const { name, description, price_cents, currency = 'SEK', type = 'one_time', image_url, stripe_price_id, weight_grams } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const { data, error } = await supabase.from('products').insert({
       name, description, price_cents, currency, type,
       image_url, stripe_price_id, is_active: true,
+      // null/undefined = non-shippable service/digital product
+      weight_grams: weight_grams ?? null,
     }).select('id, name, price_cents').single();
     if (error) throw new Error(`Create product failed: ${error.message}`);
     return { product_id: data.id, name: data.name, price_cents: data.price_cents };
@@ -4899,6 +4931,42 @@ async function executeLeadPipelineReview(
     }
   }
 
+  // Win/lost discipline rollup (Odoo "group by Lost Reason" report, SMB-sized):
+  // closed-deal win rate + lost-reason distribution across leads and deals.
+  let win_loss: Record<string, unknown> | null = null;
+  const { data: closed } = await supabase
+    .from('deals')
+    .select('stage, lost_reason')
+    .in('stage', ['closed_won', 'closed_lost'])
+    .limit(1000);
+  const { data: lostLeads } = await supabase
+    .from('leads')
+    .select('lost_reason')
+    .eq('status', 'lost')
+    .limit(1000);
+  if (closed) {
+    const won = closed.filter((d: any) => d.stage === 'closed_won').length;
+    const lost = closed.length - won;
+    const reasons: Record<string, number> = {};
+    for (const d of closed as any[]) {
+      if (d.stage !== 'closed_lost') continue;
+      const r = d.lost_reason || 'unspecified';
+      reasons[r] = (reasons[r] || 0) + 1;
+    }
+    const leadReasons: Record<string, number> = {};
+    for (const l of (lostLeads || []) as any[]) {
+      const r = l.lost_reason || 'unspecified';
+      leadReasons[r] = (leadReasons[r] || 0) + 1;
+    }
+    win_loss = {
+      deals_won: won,
+      deals_lost: lost,
+      win_rate: (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) / 100 : null,
+      lost_reasons_deals: reasons,
+      lost_reasons_leads: leadReasons,
+    };
+  }
+
   return {
     total: all.length,
     by_status: byStatus,
@@ -4906,6 +4974,7 @@ async function executeLeadPipelineReview(
     high_score_leads: highScore.slice(0, 10),
     neglected_leads: neglected.slice(0, 10),
     forecast,
+    win_loss,
     suggestions,
   };
 }
@@ -4960,7 +5029,7 @@ async function executeLeadsAction(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', lead_id, status, score, search, limit = 50 } = args as any;
+  const { action = 'list', lead_id, status, score, search, limit = 50, lost_reason, lost_note } = args as any;
   const normalizedStatus = normalizeLeadStatus(status);
 
   if (action === 'list') {
@@ -5003,13 +5072,27 @@ async function executeLeadsAction(
       }
     }
     if (score !== undefined) updates.score = score;
+    // Lost discipline (Odoo pattern): store reason+note on the lost transition,
+    // clear them on any transition to a non-lost status (re-open).
+    if (normalizedStatus === 'lost') {
+      if (lost_reason !== undefined) updates.lost_reason = lost_reason;
+      if (lost_note !== undefined) updates.lost_note = lost_note;
+    } else if (normalizedStatus) {
+      updates.lost_reason = null;
+      updates.lost_note = null;
+    } else if (lost_reason !== undefined || lost_note !== undefined) {
+      // Annotating an already-lost lead without changing status.
+      if (lost_reason !== undefined) updates.lost_reason = lost_reason;
+      if (lost_note !== undefined) updates.lost_note = lost_note;
+    }
     const { data, error } = await supabase.from('leads')
-      .update(updates).eq('id', lead_id).select('id, email, status, score').single();
+      .update(updates).eq('id', lead_id).select('id, email, status, score, lost_reason').single();
     if (error) throw new Error(`Update lead failed: ${error.message}`);
     return {
       lead_id: data.id,
       status: data.status,
       score: data.score,
+      ...(data.lost_reason ? { lost_reason: data.lost_reason } : {}),
       ...(statusNote ? { requested_status: status, note: statusNote } : {}),
     };
   }
@@ -5630,7 +5713,7 @@ async function executeBookingsManagement(
   supabase: any,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const { action = 'list', booking_id, status, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
+  const { action = 'list', booking_id, status, assigned_employee_id, period = 'month', limit = 50, customer_email, customer_phone } = args as any;
 
   if (action === 'list') {
     const since = new Date();
@@ -5639,7 +5722,7 @@ async function executeBookingsManagement(
     else since.setMonth(since.getMonth() - 1);
 
     let query = supabase.from('bookings')
-      .select('id, customer_name, customer_email, customer_phone, start_time, end_time, status, service_id, created_at')
+      .select('id, customer_name, customer_email, customer_phone, start_time, end_time, status, service_id, assigned_employee_id, created_at')
       .gte('start_time', since.toISOString())
       .order('start_time', { ascending: true }).limit(limit);
     if (status) query = query.eq('status', status);
@@ -5668,6 +5751,14 @@ async function executeBookingsManagement(
       .update(updates).eq('id', booking_id).select('id, status').single();
     if (error) throw new Error(`Update booking failed: ${error.message}`);
     return { booking_id: data.id, status: data.status };
+  }
+
+  if (action === 'assign_staff' && booking_id) {
+    const { data, error } = await supabase.from('bookings')
+      .update({ assigned_employee_id: assigned_employee_id || null, updated_at: new Date().toISOString() })
+      .eq('id', booking_id).select('id, assigned_employee_id').single();
+    if (error) throw new Error(`Assign staff failed: ${error.message}`);
+    return { booking_id: data.id, assigned_employee_id: data.assigned_employee_id };
   }
 
   if (action === 'cancel' && booking_id) {
@@ -5839,7 +5930,7 @@ async function executeDbAction(
         return { tasks: data || [], count: (data || []).length };
       }
       if (skillName === 'crm_task_update') {
-        const { id, title, description, due_date, priority, completed_at } = args as any;
+        const { id, title, description, due_date, priority, completed_at, completion_note } = args as any;
         if (!id) throw new Error('id is required');
         const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
         if (title !== undefined) updates.title = title;
@@ -5847,9 +5938,40 @@ async function executeDbAction(
         if (due_date !== undefined) updates.due_date = due_date;
         if (priority !== undefined) updates.priority = priority;
         if (completed_at !== undefined) updates.completed_at = completed_at;
-        const { error } = await supabase.from('crm_tasks').update(updates).eq('id', id);
+        if (completion_note !== undefined) updates.completion_note = completion_note;
+        if (completed_at === null) updates.completion_note = null; // reopen clears feedback
+        const { data: updated, error } = await supabase.from('crm_tasks')
+          .update(updates).eq('id', id)
+          .select('id, title, lead_id, deal_id, completed_at, completion_note')
+          .single();
         if (error) throw new Error(`Update task failed: ${error.message}`);
-        return { task_id: id, updated: true };
+
+        // Done-with-feedback (Odoo action_feedback pattern): completing a task
+        // posts it (+ note) to the record's timeline as permanent history.
+        let timelinePosted = false;
+        if (completed_at) {
+          let timelineLeadId = updated.lead_id as string | null;
+          if (!timelineLeadId && updated.deal_id) {
+            const { data: deal } = await supabase.from('deals')
+              .select('lead_id').eq('id', updated.deal_id).maybeSingle();
+            timelineLeadId = deal?.lead_id ?? null;
+          }
+          if (timelineLeadId) {
+            const { error: actError } = await supabase.from('lead_activities').insert({
+              lead_id: timelineLeadId,
+              type: 'task_completed',
+              metadata: {
+                task_id: updated.id,
+                task_title: updated.title,
+                ...(updated.deal_id ? { deal_id: updated.deal_id } : {}),
+                ...(updated.completion_note ? { note: updated.completion_note } : {}),
+              },
+              points: 0,
+            });
+            timelinePosted = !actError;
+          }
+        }
+        return { task_id: id, updated: true, ...(completed_at ? { completed: true, timeline_posted: timelinePosted } : {}) };
       }
       return { error: `Unknown crm_tasks skill: ${skillName}` };
     }
@@ -6786,6 +6908,7 @@ async function executeDbAction(
         const inserted = await insertQuoteItems(qid, [{
           description: a.description, quantity: a.quantity, unit: a.unit,
           unit_price_cents: a.unit_price_cents, tax_rate_pct: a.tax_rate_pct,
+          discount_pct: a.discount_pct,
           product_id: a.product_id,
         }]);
         return { added: true, quote_id: qid, items_inserted: inserted };

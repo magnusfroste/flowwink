@@ -43,6 +43,10 @@ export interface ModuleConfig {
   enhancedByFlowPilot?: boolean;
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
   sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
+  // E-commerce VAT display (display + provenance only — no tax engine).
+  // vatRatePct unset/0 = feature off (no price labels, no order metadata stamp).
+  vatRatePct?: number; // e.g. 25 for Swedish standard VAT
+  pricesIncludeVat?: boolean; // true (default) = B2C "inkl. moms"; false = "exkl. moms"
   // Booking-specific settings
   confirmationEmailEnabled?: boolean; // Send confirmation email on new booking
   bookingEmailProvider?: BookingEmailProvider; // Which provider to use for booking emails

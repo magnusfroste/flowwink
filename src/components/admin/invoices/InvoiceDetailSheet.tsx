@@ -5,13 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, Building2, Download, Loader2, Send, Link as LinkIcon } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Trash2, Plus, Building2, Download, Loader2, Send, Link as LinkIcon, Receipt, CreditCard } from 'lucide-react';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import {
   useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals,
   getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName,
+  useCreditNotesForInvoice,
   type InvoiceLineItem, type InvoiceStatus,
 } from '@/hooks/useInvoices';
+import { CreditNoteDialog } from './CreditNoteDialog';
+import { RecordPaymentDialog } from './RecordPaymentDialog';
 
 interface Props {
   invoiceId: string | null;
@@ -47,6 +52,10 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const [dueDate, setDueDate] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
+  const [creditNoteOpen, setCreditNoteOpen] = useState(false);
+  const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+
+  const { data: creditNotes = [] } = useCreditNotesForInvoice(invoice?.id);
 
   useEffect(() => {
     if (invoice) {
@@ -186,6 +195,12 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const customerEmail = getInvoiceCustomerEmail(invoice);
   const companyName = getInvoiceCompanyName(invoice);
   const actions = STATUS_ACTIONS[invoice.status] || [];
+  const isCreditNote = invoice.invoice_type === 'credit_note';
+  const paidAmountCents = invoice.paid_amount_cents || 0;
+  const remainingCents = Math.max(0, invoice.total_cents - paidAmountCents);
+  const paidProgress = invoice.total_cents > 0 ? Math.min(100, (paidAmountCents / invoice.total_cents) * 100) : 0;
+  const canRecordPayment = !isCreditNote && invoice.status !== 'cancelled' && remainingCents > 0;
+  const canIssueCreditNote = !isCreditNote && invoice.status !== 'cancelled' && invoice.status !== 'draft';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -279,6 +294,47 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
             </div>
           </div>
 
+          {/* Payment progress */}
+          {!isCreditNote && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Paid</span>
+                <span className="font-mono">
+                  {formatAmount(paidAmountCents)} / {formatAmount(invoice.total_cents)}
+                </span>
+              </div>
+              <Progress value={paidProgress} />
+              {remainingCents > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {formatAmount(remainingCents)} outstanding
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Credit notes issued against this invoice */}
+          {!isCreditNote && creditNotes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Credit Notes</Label>
+              <div className="rounded-md border divide-y">
+                {creditNotes.map((cn) => (
+                  <div key={cn.id} className="flex items-center justify-between p-2 text-sm">
+                    <div>
+                      <span className="font-mono">{cn.invoice_number}</span>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(cn.issue_date), 'yyyy-MM-dd')}
+                        {cn.notes ? ` — ${cn.notes}` : ''}
+                      </p>
+                    </div>
+                    <span className="font-mono text-destructive">
+                      {new Intl.NumberFormat('sv-SE', { style: 'currency', currency: cn.currency }).format(cn.total_cents / 100)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Due date */}
           <div className="space-y-2">
             <Label>Due Date</Label>
@@ -315,6 +371,16 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
             <Button variant="outline" onClick={handleCopyLink}>
               <LinkIcon className="h-4 w-4 mr-1" /> Link
             </Button>
+            {canRecordPayment && (
+              <Button variant="outline" onClick={() => setRecordPaymentOpen(true)}>
+                <CreditCard className="h-4 w-4 mr-1" /> Record Payment
+              </Button>
+            )}
+            {canIssueCreditNote && (
+              <Button variant="outline" onClick={() => setCreditNoteOpen(true)}>
+                <Receipt className="h-4 w-4 mr-1" /> Issue Credit Note
+              </Button>
+            )}
             {actions.map((action) => (
               <Button
                 key={action.next}
@@ -331,6 +397,9 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
           </div>
         </div>
       </SheetContent>
+
+      <CreditNoteDialog invoice={invoice} open={creditNoteOpen} onOpenChange={setCreditNoteOpen} />
+      <RecordPaymentDialog invoice={invoice} open={recordPaymentOpen} onOpenChange={setRecordPaymentOpen} />
     </Sheet>
   );
 }

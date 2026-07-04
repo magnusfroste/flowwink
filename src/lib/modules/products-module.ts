@@ -92,6 +92,10 @@ Browse products in the catalog (visitor-facing, read-only).
             description: {
               type: 'string',
             },
+            weight_grams: {
+              type: 'number',
+              description: 'Product weight in grams. Omit/null = non-shippable (service/digital). A weighted product participates in the checkout shipping calculation.',
+            },
           },
           required: [
             'action',
@@ -110,8 +114,10 @@ Manages products in the catalog: create, update, delete, manage variants.
 - **name**: Product name (create/update).
 - **price_cents**: Price in cents (create/update).
 - **description**: Product description.
+- **weight_grams**: Weight in grams (create/update). null/omitted = non-shippable service or digital product; set it for physical goods so checkout can offer weight-based delivery options.
 ### Edge cases
 - Price is in cents (e.g., 9900 = $99.00 or 99 SEK).
+- weight_grams drives shipping at checkout: carts with any weighted product require a delivery address and get carrier options from the shipping_rates weight bands.
 - Use manage_inventory for stock levels.`,
   },
   {
@@ -576,6 +582,57 @@ Checks the current status of an order via the order-status edge function.
     },
     instructions: 'Accumulates order_items.qty_fulfilled (clamped to quantity). Omitting p_qty fulfills the line\'s remaining quantity. When no line has remaining quantity, the order is set to fulfillment_status=shipped with shipped_at. Admin/service-role only.',
   },
+  {
+    name: 'manage_discount_code',
+    description:
+      'Manage checkout discount codes: list, get, create, update, deactivate. Codes give a percent or fixed-amount discount at checkout, with optional validity window, usage limit and minimum order. Use when: setting up a promotion or campaign code; deactivating an expired code; checking how often a code was used. NOT for: product pricing (manage_product); per-line quote/invoice discounts; loyalty programs.',
+    category: 'commerce',
+    handler: 'rpc:manage_discount_code',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_discount_code',
+        description:
+          'Manage discount codes redeemable at checkout: list, get, create, update, deactivate.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_action: {
+              type: 'string',
+              enum: ['list', 'get', 'create', 'update', 'deactivate'],
+            },
+            p_code_id: { type: 'string', description: 'Discount code UUID (get/update/deactivate)' },
+            p_code: { type: 'string', description: 'The code customers type, e.g. SUMMER10 (create; also accepted for get)' },
+            p_type: { type: 'string', enum: ['percent', 'fixed'], description: 'percent = value is a whole percent (10 = 10%); fixed = value is an amount in cents' },
+            p_value: { type: 'number', description: 'Percent (1-100) for percent codes, amount in cents for fixed codes' },
+            p_currency: { type: 'string', description: 'ISO currency for fixed codes, e.g. SEK (required for type=fixed)' },
+            p_active: { type: 'boolean' },
+            p_valid_from: { type: 'string', description: 'ISO timestamp the code becomes valid' },
+            p_valid_until: { type: 'string', description: 'ISO timestamp the code expires' },
+            p_max_uses: { type: 'number', description: 'Total redemption cap; omit for unlimited' },
+            p_min_order_cents: { type: 'number', description: 'Minimum order subtotal in cents' },
+          },
+          required: ['p_action'],
+        },
+      },
+    },
+    instructions: `## manage_discount_code
+### What
+Manages discount codes for the storefront checkout (discount_codes table).
+### When to use
+- Setting up a promotion: action=create with p_code, p_type, p_value
+- Ending a promotion: action=deactivate with p_code_id
+- Reviewing usage: action=list (includes use_count per code)
+### Parameters
+- **p_action**: Required. list, get, create, update, deactivate.
+- **p_type/p_value**: percent → p_value is a whole percent (10 = 10%); fixed → p_value is cents (5000 = 50.00) and p_currency is required.
+- **p_max_uses / p_min_order_cents / p_valid_from / p_valid_until**: optional constraints, all enforced server-side at checkout.
+### Edge cases
+- Codes are case-insensitive and unique (SUMMER10 == summer10).
+- use_count increments automatically when an order with the code is placed (sandbox) or paid (Stripe webhook) — never set it manually.
+- Deactivate instead of delete so use history stays intact.`,
+  },
 ];
 
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
@@ -602,6 +659,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     'cart_recovery_check',
     'inventory_report',
     'fulfill_order_line',
+    'manage_discount_code',
   ],
   data: {
     // children first (FK-safe order)
@@ -613,6 +671,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
       'product_stock',
       'products',
       'product_categories',
+      'discount_codes',
     ],
   },
   skillSeeds: PRODUCTS_SKILLS,

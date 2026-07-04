@@ -128,7 +128,13 @@ verify_jwt = false
 [functions.qualify-lead]
 verify_jwt = false
 
+[functions.quote-expiry-reminders]
+verify_jwt = false
+
 [functions.send-booking-confirmation]
+verify_jwt = false
+
+[functions.send-booking-reminders]
 verify_jwt = false
 
 [functions.send-contact-email]

@@ -39,6 +39,34 @@ Breadth track (community)  ──────────────►  contin
 | **S3** | Breadth wave 1 | — | Scaffold `attendance`, `maintenance` modules (see breadth backlog) at L2 |
 | **S3+** | Community track | — | Open issues for carrier integrations, country payroll, MRP work centers |
 
+> **Program charter:** [program-80.md](program-80.md) — SMB weighting (P1: CMS/CRM/
+> e-comm/quote→contract→sign), the grounding rule (Odoo docs + community source,
+> no guessing), the non-goal rule for enterprise-heavy capabilities, and the
+> round loop that drives every round below.
+
+## Round R1 (2026-07) — Verify & Surface
+
+EPIC-01/03/04 are substantially shipped and the 2026-07-03 audit corrected the
+scorecards to match reality. The dominant pattern in the matrix now is not
+"missing engine" but **"engine shipped, capped at partial"** — pending either
+Stage-3 runtime verification or a human-facing surface (the dual-surface law).
+R1 exploits that: one round, four epics, ~85% verification/UI work and ~15%
+small builds, projected **mean parity 60% → ~66%** with every flip tied to a
+business process. Epic tags on the affected capabilities make the matrix's
+"Open epics" column the live burndown.
+
+| Epic | Theme | Process served | Biggest movers (projected) |
+|---|---|---|---|
+| **EPIC-05** | Stage-3 verification sweep — flip 13 code-complete partials on live evidence, zero new code | quote-to-cash, booking, order-to-delivery | email 40→60, invoicing 61→75, booking 55→68 |
+| **EPIC-06** | Content & website cluster — verify + close the front-door editing loop | content-marketing / campaign-to-lead | global-blocks 42→92, templates 50→90, media 57→86 |
+| **EPIC-07** | Support-to-resolution — verify contact-center threads, chat handoff, wire business-hours SLA, shared canned responses | support-to-resolution | contact-center 41→82, chat 42→92, live-support 71→93 |
+| **EPIC-08** | Ops backends get their UI — admin surfaces for the June engine wave (work centers, cycle counts, recon rules, rate cards, budgets, policies, pension/sick pay) | order-to-delivery, plan-to-produce, record-to-report | manufacturing 52→67, payroll 45→55, reconciliation 53→62 |
+
+Sequencing inside R1: EPIC-05 first (it is pure verification and de-risks the
+other three — anything that fails verification becomes a defect issue instead
+of a silent lie in the matrix), then 06/07/08 in parallel. EPIC-02 (inventory
+valuation) stays the next *structural* epic after R1.
+
 ## Sprint 0 — must happen first
 
 S0 is the smallest sprint and the highest leverage: it makes every later sprint

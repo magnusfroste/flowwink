@@ -6,6 +6,7 @@
 // Bypasses JWT verification — auth is by accept_token + quote.status check.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { sha256Hex } from '../_shared/agent-audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,8 +20,18 @@ interface Body {
   signer_name: string;
   signer_email: string;
   signature_data?: string;
+  /** Optional drawn signature — data:image/png base64 data-URL from the public sign page. */
+  signature_image?: string;
   comment?: string;
   user_agent?: string;
+}
+
+/** Accept only reasonably-sized PNG/JPEG data-URLs; anything else is dropped (typed name still recorded). */
+function sanitizeSignatureImage(img: string | undefined): string | null {
+  if (!img) return null;
+  if (img.length > 300_000) return null; // ~220KB binary — far above any real signature stroke
+  if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(img)) return null;
+  return img;
 }
 
 function fmtMoney(cents: number, currency: string) {
@@ -66,10 +77,40 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Expiry gate (Odoo parity: an expired quote can no longer be signed).
+    // valid_until is a DATE — the quote is valid through that day, expired the day after.
+    const today = new Date().toISOString().slice(0, 10);
+    if (body.action === 'accept' && quote.valid_until && quote.valid_until < today) {
+      return new Response(
+        JSON.stringify({
+          error: `This quote expired on ${quote.valid_until} — contact us for a renewed offer`,
+          code: 'quote_expired',
+          expired_on: quote.valid_until,
+        }),
+        { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       null;
+
+    // Content hash: SHA-256 of the canonical quote content at signing time —
+    // durable tamper-evidence stored on the signature row and shown on the certificate.
+    const contentHash = await sha256Hex(JSON.stringify({
+      quote_number: quote.quote_number,
+      title: quote.title ?? null,
+      intro_text: quote.intro_text ?? null,
+      terms_text: quote.terms_text ?? null,
+      line_items: quote.line_items ?? [],
+      subtotal_cents: quote.subtotal_cents,
+      tax_cents: quote.tax_cents,
+      total_cents: quote.total_cents,
+      currency: quote.currency,
+      valid_until: quote.valid_until ?? null,
+      version: quote.version ?? 1,
+    }));
 
     // 2) Record signature
     const { error: sigErr } = await supabase.from('quote_signatures').insert({
@@ -78,6 +119,8 @@ Deno.serve(async (req: Request) => {
       signer_name: body.signer_name,
       signer_email: body.signer_email,
       signature_data: body.signature_data ?? body.signer_name,
+      signature_image: sanitizeSignatureImage(body.signature_image),
+      content_hash: contentHash,
       comment: body.comment ?? null,
       ip_address: ip,
       user_agent: body.user_agent ?? req.headers.get('user-agent') ?? null,
@@ -108,6 +151,7 @@ Deno.serve(async (req: Request) => {
         signer_email: body.signer_email,
         total_cents: quote.total_cents,
         currency: quote.currency,
+        content_hash: contentHash,
       },
     });
 

@@ -226,6 +226,27 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     },
     instructions: 'Parameters: p_invoice_id (uuid), p_amount_cents (integer cents), p_method (one of cash|swish|card|manual), p_paid_at (optional ISO timestamp). There is NO p_payment_method or p_reference param — use p_method. Partial payments accumulate in paid_amount_cents; the invoice flips to paid only when fully settled. Overpayment is rejected (use create_credit_note for corrections). Complements the bank-reconciliation payment path. Admin/approver/service-role only.',
   },
+  {
+    name: 'ar_aging_report',
+    description: 'Accounts-receivable aging: open (not fully paid) invoices bucketed per customer into current / 1-30 / 31-60 / 61-90 / 90+ days overdue. Use when: "who owes us money", collections review, month-end AR review. NOT for: a single invoice balance (invoice_outstanding via manage_invoice get) or bank reconciliation status (reconciliation_report).',
+    category: 'commerce',
+    handler: 'rpc:ar_aging_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ar_aging_report',
+        description: 'Buckets outstanding (total_cents - paid_amount_cents) of open invoices per customer by days overdue vs p_as_of. Returns { buckets: totals across all customers, customers: [{customer_name, customer_email, lead_id, current_cents, overdue_1_30_cents, overdue_31_60_cents, overdue_61_90_cents, overdue_90_plus_cents, total_outstanding_cents, invoice_count}] }.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_as_of: { type: 'string', description: 'YYYY-MM-DD, default today' },
+          },
+        },
+      },
+    },
+    instructions: 'Omit p_as_of for a report computed against today. Cancelled invoices and credit notes are excluded; fully-paid invoices (outstanding <= 0) are excluded. Sorted by total_outstanding_cents descending. Admin/approver/service-role only.',
+  },
 ];
 
 const INVOICING_AUTOMATIONS: AutomationSeed[] = [
@@ -251,7 +272,7 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
   inputSchema: invoicingInputSchema,
   outputSchema: invoicingOutputSchema,
 
-  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid', 'create_credit_note', 'record_invoice_payment'],
+  skills: ['manage_invoice', 'invoice_from_timesheets', 'invoice_overdue_check', 'bulk_invoice_from_timesheets', 'send_dunning_reminders', 'auto_mark_invoice_paid', 'create_credit_note', 'record_invoice_payment', 'ar_aging_report'],
   data: {
     tables: ['dunning_actions', 'dunning_sequences', 'invoices'],
   },

@@ -187,6 +187,14 @@ Enriches a company record with industry, size, website info via domain scraping 
             search: {
               type: 'string',
             },
+            lost_reason: {
+              type: 'string',
+              description: 'Why the lead was lost (with action=update status=lost). One of: price, timing, competitor, no_response, other.',
+            },
+            lost_note: {
+              type: 'string',
+              description: 'Optional free-text closing note stored alongside lost_reason.',
+            },
             limit: {
               type: 'number',
               description: 'Max results (default 50)',
@@ -211,10 +219,12 @@ Full lead management: list, get, update status/score, delete.
 - **status**: Filter (list) or set (update).
 - **score**: Set lead score (update).
 - **search**: Text search across name/email.
+- **lost_reason** / **lost_note**: Pass together with status=lost to record WHY (Odoo lost discipline). lost_reason is one of price, timing, competitor, no_response, other; lost_note is free text.
 ### Edge cases
 - Use add_lead to CREATE new leads. This skill manages EXISTING leads.
-- Delete is permanent. Consider archiving instead.
-- Status is normalized to the pipeline's canonical stages: setting status to "qualified" persists as "opportunity" (synonyms map to the nearest canonical stage). The update succeeds — re-read the lead to see the canonical value; this is expected, not a failure.`,
+- Delete is permanent. Consider archiving instead — setting status=lost with a lost_reason keeps history and feeds win-rate reporting.
+- Status is normalized to the pipeline's canonical stages: setting status to "qualified" persists as "opportunity" (synonyms map to the nearest canonical stage). The update succeeds — re-read the lead to see the canonical value; this is expected, not a failure.
+- Re-opening a lost lead (setting any non-lost status) automatically clears lost_reason and lost_note.`,
   },
   {
     name: 'crm_task_list',
@@ -387,6 +397,10 @@ Creates a new CRM task with title, description, due date, and priority.
               type: 'string',
               description: 'ISO timestamp to mark complete, or null to reopen',
             },
+            completion_note: {
+              type: 'string',
+              description: 'Optional feedback when marking done — what was accomplished. Posted to the linked record\'s timeline as permanent history.',
+            },
           },
           required: [
             'id',
@@ -404,10 +418,12 @@ Updates an existing CRM task — change title, priority, due date, or mark as co
 ### Parameters
 - **id**: Required. Task UUID.
 - **completed_at**: ISO timestamp to mark complete. Set to null to reopen.
+- **completion_note**: Optional, with completed_at — a short note on the outcome. It is stored on the task AND posted to the lead's timeline (type task_completed), so ALWAYS include one when you finish work: it is how the human verifies what you did.
 - **priority**, **title**, **description**, **due_date**: Fields to update.
 ### Edge cases
 - Setting completed_at marks the task as done.
-- Setting completed_at to null reopens the task.`,
+- Setting completed_at to null reopens the task (completion_note is cleared).
+- After completing a task, schedule the NEXT follow-up with crm_task_create so the record never sits without a next step.`,
   },
   {
     name: 'competitor_monitor',

@@ -21,6 +21,10 @@ export interface Quote {
   total_cents: number;
   currency: string;
   valid_until: string | null;
+  /** Prepayment percentage (1-100) for sign-and-pay: public Pay-now charges only this share. NULL = full amount. */
+  prepayment_pct?: number | null;
+  /** Stamped when the quote's invoice received its first online payment (sign-and-pay). */
+  paid_at?: string | null;
   notes: string | null;
   sent_at: string | null;
   accepted_at: string | null;

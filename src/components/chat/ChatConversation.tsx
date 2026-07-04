@@ -3,6 +3,7 @@ import { useChat } from '@/hooks/useChat';
 import { useChatSettings } from '@/hooks/useSiteSettings';
 import { UnifiedChat } from './UnifiedChat';
 import { LiveAgentIndicator } from './LiveAgentIndicator';
+import { ChatLeadCapture } from './ChatLeadCapture';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import type { AgentSkill } from '@/types/agent';
@@ -43,6 +44,7 @@ export function ChatConversation({
     messages,
     isLoading,
     error,
+    conversationId: activeConversationId,
     isWithLiveAgent,
     isClosed,
     agentInfo,
@@ -75,6 +77,13 @@ export function ChatConversation({
 
   const showLiveAgentBanner = (settings?.showLiveAgentBanner ?? true) && isWithLiveAgent;
 
+  // Lead capture: optional, settings-gated, only after the visitor has sent a
+  // message, never in check-in mode. Dismissal/submission handled internally.
+  const showLeadCapture =
+    (settings?.leadCaptureEnabled ?? false) &&
+    !checkinId &&
+    messages.some((m) => m.role === 'user');
+
   // Limit prompts if needed
   const suggestedPrompts = maxPrompts 
     ? settings?.suggestedPrompts?.slice(0, maxPrompts) 
@@ -87,7 +96,9 @@ export function ChatConversation({
       className
     )}>
       {showLiveAgentBanner && <LiveAgentIndicator />}
-      
+
+      {showLeadCapture && <ChatLeadCapture conversationId={activeConversationId} />}
+
       <UnifiedChat
         scope="visitor"
         skills={visitorSkills}

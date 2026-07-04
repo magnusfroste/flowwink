@@ -9,59 +9,60 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 54  ·  **Mean parity:** 59%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 2
+**Benchmarked modules:** 55  ·  **Mean parity:** 60%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 3
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
-| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | — |
-| **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 38% | 2/1/4 | — |
-| **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | — |
+| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `███░░░░░░░` 31% | 4/2/9 | EPIC-08 |
+| **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 40% | 2/2/4 | EPIC-05 |
+| **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `████░░░░░░` 41% | 5/2/6 | — |
-| **chat** | Livechat + chatbot | L3 → L4 | `████░░░░░░` 42% | 0/4/1 | — |
-| **global-blocks** | Website building blocks/snippets | L3 → L4 | `████░░░░░░` 42% | 0/3/1 | — |
-| **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 44% | 5/3/6 | — |
+| **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 44% | 5/3/6 | EPIC-05 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `████░░░░░░` 44% | 7/2/7 | — |
-| **quotes** | Sales (sale.order quotation) | L3 → L4 | `████░░░░░░` 44% | 8/0/8 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
-| **booking** | Appointments (calendar.appointment) | L3 → L4 | `█████░░░░░` 45% | 9/1/9 | — |
-| **payroll** | Payroll (hr.payslip) | L2 → L4 | `█████░░░░░` 45% | 8/2/7 | — |
-| **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `█████░░░░░` 46% | 5/1/6 | — |
-| **sla** | Helpdesk SLA policies | L3 → L4 | `█████░░░░░` 47% | 7/1/7 | — |
+| **payroll** | Payroll (hr.payslip) | L2 → L4 | `█████░░░░░` 45% | 8/2/7 | EPIC-08 |
+| **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `█████░░░░░` 46% | 5/1/6 | EPIC-05 |
+| **sla** | Helpdesk SLA policies | L3 → L4 | `█████░░░░░` 47% | 7/1/7 | EPIC-07 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `█████░░░░░` 47% | 7/0/7 | — |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | — |
-| **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 50% | 8/2/6 | — |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | EPIC-07 |
+| **accounting** | Accounting (account.move, account.account) | L3 → L4 | `█████░░░░░` 50% | 8/2/6 | EPIC-08 |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████░░░░░` 50% | 2/0/3 | — |
-| **contracts** | Sign + contract management | L3 → L4 | `█████░░░░░` 50% | 7/0/5 | — |
+| **chat** | Livechat + chatbot | L3 → L4 | `█████░░░░░` 50% | 0/5/0 | EPIC-06, EPIC-07 |
+| **global-blocks** | Website building blocks/snippets | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | EPIC-06 |
+| **quotes** | Sales (sale.order quotation) | L3 → L4 | `█████░░░░░` 50% | 8/4/6 | EPIC-05, EPIC-04 |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
-| **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | — |
-| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `█████░░░░░` 52% | 8/4/6 | — |
-| **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 53% | 8/1/6 | — |
-| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████░░░░░` 53% | 7/2/4 | — |
+| **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | EPIC-06 |
+| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `█████░░░░░` 52% | 8/4/6 | EPIC-08 |
+| **expenses** | Expenses (hr.expense) | L4 → L4 | `█████░░░░░` 53% | 8/1/6 | EPIC-08 |
+| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████░░░░░` 53% | 7/2/4 | EPIC-08 |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
-| **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | — |
+| **contracts** | Sign + contract management | L3 → L4 | `██████░░░░` 57% | 7/1/4 | — |
+| **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | EPIC-06 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `██████░░░░` 57% | 6/0/4 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
-| **invoicing** | Invoicing (account.move) | L4 → L4 | `██████░░░░` 58% | 7/3/4 | — |
+| **booking** | Appointments (calendar.appointment) | L3 → L4 | `██████░░░░` 59% | 10/3/6 | EPIC-05 |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
-| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████░░░░` 61% | 5/1/5 | — |
+| **invoicing** | Invoicing (account.move) | L4 → L4 | `██████░░░░` 61% | 7/4/3 | EPIC-05 |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `██████░░░░` 63% | 6/2/4 | — |
+| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████░░░░` 64% | 5/2/4 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
-| **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | — |
-| **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | — |
+| **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | EPIC-08 |
+| **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███████░░░` 66% | 6/3/3 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **pages** | Website (website.page) | L4 → L4 | `███████░░░` 70% | 5/0/3 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
-| **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | — |
+| **live-support** | Livechat (im_livechat) | L3 → L4 | `███████░░░` 71% | 3/2/1 | EPIC-07 |
+| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `███████░░░` 72% | 7/10/1 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `███████░░░` 74% | 14/1/5 | — |
-| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L3 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
+| **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 75% | 9/2/4 | EPIC-01 |
 | **webinars** | Events (event.event) | L3 → L4 | `████████░░` 78% | 4/2/1 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
@@ -89,14 +90,14 @@ category: reference
 
 > Create `docs/parity/capabilities/<module>.json` for each — see `_schema.md`.
 
-`voice` · `webmeet`
+`flowtable` · `voice` · `webmeet`
 
 ## Foundational gaps (weight 3, still open)
 
 | Module | Capability | Status | Epic |
 |---|---|---|---|
-| contact-center | Presence-aware routing → queue → escalation | partial | — |
+| contact-center | Presence-aware routing → queue → escalation | partial | EPIC-07 |
 | invoicing | Recurring/subscription invoices | partial | — |
-| manufacturing | Work centers + routing operations | partial | — |
+| manufacturing | Work centers + routing operations | partial | EPIC-08 |
 | reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
 

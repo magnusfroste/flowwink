@@ -169,6 +169,9 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
 }
 
 function getActivityTitle(type: string, meta: Record<string, unknown> | null): string {
+  if (type === 'task_completed') {
+    return meta?.task_title ? `Task done: ${meta.task_title}` : 'Task completed';
+  }
   const titles: Record<string, string> = {
     call: 'Phone call',
     email: 'Email sent',
@@ -198,6 +201,7 @@ function getActivityIcon(type: string): string {
     deal_closed_won: 'Trophy',
     deal_closed_lost: 'XCircle',
     webinar_register: 'Video',
+    task_completed: 'CheckCircle2',
   };
   return icons[type] || 'Activity';
 }
@@ -215,6 +219,7 @@ function getActivityColor(type: string): string {
     deal_closed_won: 'text-green-500',
     deal_closed_lost: 'text-red-500',
     webinar_register: 'text-indigo-500',
+    task_completed: 'text-green-500',
   };
   return colors[type] || 'text-muted-foreground';
 }

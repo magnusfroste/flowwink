@@ -77,9 +77,10 @@
       "id": "lost_reasons",
       "name": "Lost-reason codes",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "lost_reason codes on closed deals"
+      "verify": "deals.lost_reason/lost_note (migration 20260704110000); LostReasonDialog prompts on closed_lost (DealKanban drop, DealsPage table select, DealDetailPage select); useUpdateDeal clears closed_at+lost fields on re-open to an active stage; manage_deal update/move_stage accept lost_reason/lost_note with clear-on-reopen (agent-execute executeDealsAction); reason shown on DealDetailPage; feeds lead_pipeline_review win_loss rollup",
+      "notes": "Built 2026-07-04 per crm-odoo.md §3. partial until Stage-3: no live-DB runtime verification yet."
     },
     {
       "id": "deal_history",

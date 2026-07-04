@@ -53,6 +53,40 @@ For each process we mark **who does what**:
 
 ---
 
+## The adopter layer — "How it works in practice"
+
+The sections above serve the **program lens** (what we cover, at which maturity).
+Each process doc also carries an **adopter lens**: the working understanding
+someone needs when moving from spreadsheets to system support. That layer is a
+standard section per process doc, titled **"How it works in practice"**, with
+four fixed parts:
+
+1. **The work story** — the happy path as a short narrative with named actors
+   ("an employee photographs a receipt … at month end the report …"). No
+   feature lists; a month in the life.
+2. **State machines** — one table **per entity that carries a status**, because
+   processes usually couple several (expenses have statuses on both the expense
+   AND the monthly report). Columns: `Status · Meaning · Who/what moves it
+   forward · What the transition does`. The transition-effect column is the
+   important one — "book" is not a label change, it posts Dt cost+VAT / Cr 2890.
+   **This is the canonical home for status documentation.** Module docs are
+   generated and must never restate state tables — they already link here.
+   If a status exists in the schema but no transition is implemented, say so
+   explicitly (e.g. `rejected — in schema, transition not yet wired`).
+3. **Who does what** — employee / manager / agent split, reusing the existing
+   Agent-coverage table where possible rather than adding a second table.
+4. **Coming from spreadsheets** — 3–5 bullets mapping the old manual artifacts
+   to their new home ("the Excel column 'OK?' is the report status; the
+   end-of-month email is `submit_expense_report`").
+
+Anti-duplication rules: statuses live **only** here (schema CHECK constraints
+are the machine truth, this section is the human truth — if they disagree, the
+doc is wrong); module composition lives only in the generated
+`docs/modules/*.md`; program status (maturity/gaps) stays in the sections
+above. Exemplar: [procure-to-pay.md](./procure-to-pay.md) § Expenses.
+
+---
+
 ## How we use this in sales
 
 1. **Discovery:** "Which processes do you run today?" → match against the list above

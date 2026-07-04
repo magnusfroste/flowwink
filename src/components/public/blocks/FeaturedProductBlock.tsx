@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct, formatPrice } from '@/hooks/useProducts';
+import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { ShoppingCart, Plus, Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,11 +22,13 @@ interface FeaturedProductBlockProps {
 
 export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
   const { data: product, isLoading } = useProduct(data.productId);
+  const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
 
   const layout = data.layout || 'image-left';
   const ctaText = data.ctaText || 'Add to cart';
   const inCart = product ? items.some(i => i.productId === product.id) : false;
+  const hasVariants = product ? (variantProductIds?.has(product.id) ?? false) : false;
 
   const handleAdd = () => {
     if (!product) return;
@@ -134,24 +137,33 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button
-                size="lg"
-                variant={inCart ? 'outline' : 'default'}
-                onClick={handleAdd}
-                className="gap-2"
-              >
-                {inCart ? (
-                  <>
-                    <Check className="h-5 w-5" />
-                    In cart
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-5 w-5" />
-                    {ctaText}
-                  </>
-                )}
-              </Button>
+              {hasVariants ? (
+                <Button size="lg" asChild className="gap-2">
+                  <Link to={`/shop/${product.id}`}>
+                    Choose options
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  variant={inCart ? 'outline' : 'default'}
+                  onClick={handleAdd}
+                  className="gap-2"
+                >
+                  {inCart ? (
+                    <>
+                      <Check className="h-5 w-5" />
+                      In cart
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5" />
+                      {ctaText}
+                    </>
+                  )}
+                </Button>
+              )}
               <Button size="lg" variant="ghost" asChild>
                 <Link to={`/products/${product.id}`}>
                   View details

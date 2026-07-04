@@ -40,6 +40,9 @@ export interface Deal {
   expected_close: string | null;
   notes: string | null;
   closed_at: string | null;
+  /** Why the deal was lost (price/timing/competitor/no_response/other). Set on closed_lost, cleared on re-open. */
+  lost_reason: string | null;
+  lost_note: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -150,6 +153,18 @@ export function useUpdateDeal() {
       if (updates.stage === 'closed_won' || updates.stage === 'closed_lost') {
         updateData.closed_at = new Date().toISOString();
       }
+      // Won deals never carry a lost reason.
+      if (updates.stage === 'closed_won') {
+        updateData.lost_reason = null;
+        updateData.lost_note = null;
+      }
+      // Re-open: moving back to an active stage clears closed_at and the
+      // lost reason/note, so win-rate reporting stays honest (Odoo Restore).
+      if (updates.stage && ACTIVE_STAGES.includes(updates.stage)) {
+        updateData.closed_at = null;
+        updateData.lost_reason = null;
+        updateData.lost_note = null;
+      }
 
       const { data, error } = await supabase
         .from('deals')
@@ -177,12 +192,17 @@ export function useUpdateDeal() {
         });
       }
 
-      // If closed_lost, add activity via contract
+      // If closed_lost, add activity via contract (reason included for the timeline)
       if (updates.stage === 'closed_lost' && data) {
         await addLeadActivity({
           leadId: data.lead_id,
           type: 'deal_closed_lost',
-          metadata: { deal_id: data.id, value_cents: data.value_cents },
+          metadata: {
+            deal_id: data.id,
+            value_cents: data.value_cents,
+            ...(updates.lost_reason ? { lost_reason: updates.lost_reason } : {}),
+            ...(updates.lost_note ? { note: updates.lost_note } : {}),
+          },
         });
       }
 

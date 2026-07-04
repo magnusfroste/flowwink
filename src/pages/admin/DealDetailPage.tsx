@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -13,6 +14,7 @@ import { EntityActivityTimeline } from '@/components/admin/EntityActivityTimelin
 import { EntityTags } from '@/components/admin/EntityTags';
 import { EntityFollowers } from '@/components/admin/EntityFollowers';
 import { DealQuotesCard } from '@/components/admin/deals/DealQuotesCard';
+import { LostReasonDialog, lostReasonLabel } from '@/components/admin/crm/LostReasonDialog';
 import { ArrowLeft, Calendar, DollarSign, User, Package, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -26,6 +28,7 @@ export default function DealDetailPage() {
   const updateDeal = useUpdateDeal();
   const addActivity = useAddDealActivity();
   const updateActivity = useUpdateDealActivity();
+  const [showLostDialog, setShowLostDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -58,6 +61,11 @@ export default function DealDetailPage() {
   }).format(deal.value_cents / 100);
 
   const handleStageChange = (newStage: DealStage) => {
+    if (newStage === 'closed_lost' && deal.stage !== 'closed_lost') {
+      // Lost discipline: capture the reason before committing the transition.
+      setShowLostDialog(true);
+      return;
+    }
     updateDeal.mutate({ id: deal.id, stage: newStage });
   };
 
@@ -139,6 +147,24 @@ export default function DealDetailPage() {
                 <p className="text-sm text-muted-foreground mt-4 border-t pt-4">
                   {deal.notes}
                 </p>
+              )}
+
+              {/* Lost reason (Odoo lost discipline) — shown while the deal is lost */}
+              {deal.stage === 'closed_lost' && (deal.lost_reason || deal.lost_note) && (
+                <div className="mt-4 border-t pt-4 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Lost reason:</span>
+                    {deal.lost_reason && (
+                      <Badge variant="secondary">{lostReasonLabel(deal.lost_reason)}</Badge>
+                    )}
+                  </div>
+                  {deal.lost_note && (
+                    <p className="text-sm text-muted-foreground">{deal.lost_note}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Re-opening (moving to an active stage) clears the lost reason.
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -233,6 +259,25 @@ export default function DealDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Lost reason prompt (Odoo lost discipline) */}
+      <LostReasonDialog
+        open={showLostDialog}
+        entityLabel="deal"
+        isPending={updateDeal.isPending}
+        onCancel={() => setShowLostDialog(false)}
+        onConfirm={(reason, note) => {
+          updateDeal.mutate(
+            {
+              id: deal.id,
+              stage: 'closed_lost',
+              lost_reason: reason,
+              lost_note: note || null,
+            },
+            { onSettled: () => setShowLostDialog(false) },
+          );
+        }}
+      />
     </AdminLayout>
   );
 }

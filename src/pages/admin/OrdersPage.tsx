@@ -48,6 +48,20 @@ import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
 
+/** Shipping columns added in migration 20260704130000 (not yet in the
+ *  generated types — regenerate to drop this). */
+interface OrderShippingFields {
+  shipping_name: string | null;
+  shipping_address_line1: string | null;
+  shipping_address_line2: string | null;
+  shipping_postal_code: string | null;
+  shipping_city: string | null;
+  shipping_country: string | null;
+  shipping_phone: string | null;
+  shipping_method: string | null;
+  shipping_cost_cents: number | null;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
   paid: 'Paid',
@@ -490,6 +504,48 @@ export default function OrdersPage() {
                   </Select>
                 </div>
               </div>
+
+              {/* Delivery address + chosen method (only for shippable orders) */}
+              {(() => {
+                const so = selectedOrder as unknown as OrderShippingFields;
+                if (!so.shipping_address_line1 && !so.shipping_method) return null;
+                return (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-3">Delivery</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {so.shipping_address_line1 && (
+                          <div className="text-sm">
+                            <p className="text-muted-foreground mb-1">Shipping address</p>
+                            <p className="font-medium">{so.shipping_name || selectedOrder.customer_name}</p>
+                            <p>{so.shipping_address_line1}</p>
+                            {so.shipping_address_line2 && <p>{so.shipping_address_line2}</p>}
+                            <p>
+                              {so.shipping_postal_code} {so.shipping_city}
+                            </p>
+                            <p>{so.shipping_country}</p>
+                            {so.shipping_phone && (
+                              <p className="text-muted-foreground mt-1">{so.shipping_phone}</p>
+                            )}
+                          </div>
+                        )}
+                        {so.shipping_method && (
+                          <div className="text-sm">
+                            <p className="text-muted-foreground mb-1">Delivery method</p>
+                            <p className="font-medium">{so.shipping_method}</p>
+                            {so.shipping_cost_cents != null && (
+                              <p className="text-muted-foreground">
+                                {formatPrice(so.shipping_cost_cents, selectedOrder.currency)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               <Separator />
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useCustomerOrders, useCustomerOrderItems } from '@/hooks/useCustomerData';
+import { useCustomerOrders, useCustomerOrderItems, type CustomerOrder } from '@/hooks/useCustomerData';
 import { formatPrice } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   refunded: 'outline',
 };
 
-function OrderRow({ order }: { order: { id: string; status: string; total_cents: number; currency: string; created_at: string } }) {
+function OrderRow({ order }: { order: CustomerOrder }) {
   const [expanded, setExpanded] = useState(false);
   const { data: items = [] } = useCustomerOrderItems(expanded ? order.id : null);
 
@@ -56,6 +56,25 @@ function OrderRow({ order }: { order: { id: string; status: string; total_cents:
                 <span>{formatPrice(item.price_cents * item.quantity, order.currency)}</span>
               </div>
             ))}
+            {order.shipping_method && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{order.shipping_method}</span>
+                <span>{formatPrice(order.shipping_cost_cents ?? 0, order.currency)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {expanded && order.shipping_address_line1 && (
+          <div className="mt-4 pt-4 border-t text-sm">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Delivery address</p>
+            <p>{order.shipping_name}</p>
+            <p>{order.shipping_address_line1}</p>
+            {order.shipping_address_line2 && <p>{order.shipping_address_line2}</p>}
+            <p>
+              {order.shipping_postal_code} {order.shipping_city}
+              {order.shipping_country ? `, ${order.shipping_country}` : ''}
+            </p>
           </div>
         )}
       </CardContent>
