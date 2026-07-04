@@ -1,5 +1,5 @@
 import { defineModule } from '@/lib/module-def';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { z } from 'zod';
 
 // ── Visitor Intelligence Module ──────────────────────────────────────────────
