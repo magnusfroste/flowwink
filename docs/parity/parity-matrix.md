@@ -41,7 +41,6 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `██████░░░░` 57% | 7/1/4 | — |
-| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `██████░░░░` 57% | 7/5/6 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | EPIC-06 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `██████░░░░` 57% | 6/0/4 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
@@ -53,6 +52,7 @@ category: reference
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `██████░░░░` 61% | 7/4/3 | EPIC-05 |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `██████░░░░` 63% | 6/2/4 | — |
+| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `██████░░░░` 63% | 7/7/4 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `██████░░░░` 64% | 9/2/5 | EPIC-08 |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
