@@ -18,6 +18,11 @@ export const PROCESS_IDS = [
   'content-to-conversion',
   'record-to-report',
   'support-to-resolution',
+  'subscribe-to-renew',
+  'return-to-refund',
+  'acquire-to-retire',
+  'book-to-meet',
+  'register-to-attend',
 ] as const;
 
 export type ProcessId = typeof PROCESS_IDS[number];
@@ -31,6 +36,11 @@ export const PROCESS_LABELS: Record<ProcessId, string> = {
   'content-to-conversion': 'Content-to-Conversion',
   'record-to-report': 'Record-to-Report',
   'support-to-resolution': 'Support-to-Resolution',
+  'subscribe-to-renew': 'Subscribe-to-Renew',
+  'return-to-refund': 'Return-to-Refund',
+  'acquire-to-retire': 'Acquire-to-Retire',
+  'book-to-meet': 'Book-to-Meet',
+  'register-to-attend': 'Register-to-Attend',
 };
 
 /**

@@ -132,7 +132,7 @@ export const fixedAssetsModule = defineModule<Input, Output>({
   id: 'fixedAssets',
   name: 'Fixed Assets',
   version: '1.0.0',
-  processes: ['record-to-report'],
+  processes: ['record-to-report', 'acquire-to-retire'],
   maturity: 'L3',
   description:
     'Capitalize equipment, run monthly depreciation, and post disposals — all to BAS 2024 accounts (1210/1219/7832 + 3970/7970).',

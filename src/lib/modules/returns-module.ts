@@ -200,7 +200,7 @@ export const returnsModule = defineModule<Input, Output>({
   id: 'returns' as any,
   name: 'Returns / RMA',
   version: '1.0.0',
-  processes: ['order-to-delivery'],
+  processes: ['order-to-delivery', 'return-to-refund'],
   maturity: 'L2',
   description:
     'Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. Customers see their own returns; staff manages all.',

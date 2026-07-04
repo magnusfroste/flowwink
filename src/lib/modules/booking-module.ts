@@ -339,7 +339,7 @@ export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutpu
   id: 'bookings',
   name: 'Booking',
   version: '1.0.0',
-  processes: ['lead-to-customer'],
+  processes: ['lead-to-customer', 'book-to-meet'],
   maturity: 'L3',
   description: 'Create and manage bookings/appointments',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
