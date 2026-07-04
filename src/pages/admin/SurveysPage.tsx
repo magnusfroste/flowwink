@@ -123,12 +123,25 @@ export default function SurveysPage() {
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-4 mt-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setTemplateEdit({ name: '', kind: 'nps', description: '', questions: [{ id: 'q1', type: 'score', label: 'How likely are you to recommend us?', required: true }], is_active: true })}>
+                <Plus className="h-4 w-4 mr-1.5" />New template
+              </Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(templates ?? []).map(t => (
                 <Card key={t.id}>
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">{t.name}<Badge variant="outline" className="uppercase text-[10px]">{t.kind}</Badge></CardTitle>
-                    <CardDescription>{t.description}</CardDescription>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-base flex items-center gap-2">{t.name}<Badge variant="outline" className="uppercase text-[10px]">{t.kind}</Badge></CardTitle>
+                        <CardDescription>{t.description}</CardDescription>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setTemplateEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => { if (confirm(`Delete template "${t.name}"?`)) deleteTemplate.mutate(t.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <ul className="text-sm text-muted-foreground space-y-1">
