@@ -89,6 +89,38 @@ above. Exemplar: [procure-to-pay.md](./procure-to-pay.md) § Expenses.
 
 ---
 
+## The CEO/CFO question — where does agentic AI work today?
+
+For readers arriving from the agentic-AI handbook ([clawable.org](https://clawable.org)):
+the honest answer to *"which business processes does agentic AI actually work
+for?"* is this catalog. Each doc's **Agent coverage** table shows exactly which
+steps an agent runs today (🤖 FlowPilot / 🔗 external operator) versus a human
+(👤), and the maturity level says how much you can lean on it. The business
+lever, per process:
+
+| Process | What the agent runs today | Business lever |
+|---|---|---|
+| Lead-to-Customer (L4) | Qualifies, scores, dedupes leads; drafts follow-ups | **More deals** — minutes-not-days response time |
+| Book-to-Meet (L3) | Books/checks availability via chat & voice, sends reminders | **More deals** — 24/7 booking without a receptionist |
+| Quote-to-Cash (L3) | Creates & sends quotes, chases expiry, records payments | **Faster cash** — shorter quote→paid cycle |
+| Subscribe-to-Renew (L3) | Bills, runs the dunning ladder, flags churn risk | **Safer cash** — fewer silently lost renewals |
+| Content-to-Conversion (L4) | Drafts/publishes content, answers from the KB | **Cheaper marketing** — output without headcount |
+| Support-to-Resolution (L3) | First-line answers, routing, KB deflection | **Lower support cost** per ticket |
+| Procure-to-Pay (L3) | 3-way match auto-approve, expense month-end loop | **Lower admin cost** — no invoice-matching hours |
+| Record-to-Report (L3) | Posts expenses/payroll/depreciation, reconciles bank | **Lower accounting cost** — balanced vouchers, automatically |
+| Return-to-Refund (L3) | RMA intake, QC stamps, partial refunds with guardrails | **Lower ops cost** — returns without escalation |
+| Order-to-Delivery (L3) | Stock checks, fulfillment steps, order status | **Lower ops cost**, fewer stockout surprises |
+| Register-to-Attend (L3) | Registrations, lifecycle, attendance scoring | **More pipeline** from events |
+| Hire-to-Retire (L3) | Screening assist, contracts, expense loop | **Lower HR admin** |
+| Acquire-to-Retire (L3) | Depreciation runs, disposal postings | **Lower accounting cost** |
+
+Everything a human sees, the agent did through the same skills — and every
+agent action is verifiable in the record's timeline (the "titthål" principle).
+That is what makes the CEO/CFO delegation safe: you don't trust the agent,
+you *verify* it — at a glance.
+
+---
+
 ## Gaps are an invitation (community)
 
 Every process doc ends with an honest "Known gaps (missing for L5)" list, and
