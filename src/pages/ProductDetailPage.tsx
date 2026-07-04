@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingCart, ArrowLeft, Check, Heart, ChevronRight } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProduct, useProducts, formatPrice } from '@/hooks/useProducts';
+import { useProductVariants, resolveVariant } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,27 +75,68 @@ function RelatedProducts({ currentId, currentType }: { currentId: string; curren
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
+  const { data: variantData } = useProductVariants(id);
   const { addItem, items } = useCart();
   const { user } = useAuth();
   const { data: wishlistItems = [] } = useWishlist();
   const toggleWishlist = useToggleWishlist();
 
-  const isInCart = product ? items.some((i) => i.productId === product.id) : false;
+  // Variant selection: attributeId → attributeValueId
+  const [selection, setSelection] = useState<Record<string, string>>({});
+
+  const variants = useMemo(() => variantData?.variants ?? [], [variantData]);
+  const attributes = useMemo(() => variantData?.attributes ?? [], [variantData]);
+  const hasVariants = variants.length > 0 && attributes.length > 0;
+
+  const selectedVariant = useMemo(
+    () => (hasVariants ? resolveVariant(variants, attributes, selection) : null),
+    [hasVariants, variants, attributes, selection]
+  );
+
+  const isInCart = product
+    ? items.some((i) =>
+        i.productId === product.id &&
+        (!hasVariants || (i.variantId ?? null) === (selectedVariant?.id ?? null)))
+    : false;
   const isInWishlist = product ? wishlistItems.some((w) => w.product_id === product.id) : false;
 
   const canPurchase = product ? isProductPurchasable(product) : false;
   const stockStatus = product ? getStockStatus(product) : 'untracked';
 
+  // Variant-level stock: null = untracked at variant level.
+  const variantOutOfStock =
+    selectedVariant !== null &&
+    selectedVariant.stockQuantity !== null &&
+    selectedVariant.stockQuantity <= 0 &&
+    !product?.allow_backorder;
+
+  const effectivePriceCents = product
+    ? product.price_cents + (selectedVariant?.priceDeltaCents ?? 0)
+    : 0;
+
+  const displayImageUrl = selectedVariant?.imageUrl || product?.image_url || null;
+
   const handleAdd = () => {
     if (!product || isInCart || !canPurchase) return;
+    if (hasVariants && !selectedVariant) {
+      toast.info('Please select your options first');
+      return;
+    }
+    if (variantOutOfStock) return;
     addItem({
       productId: product.id,
       productName: product.name,
-      priceCents: product.price_cents,
+      priceCents: effectivePriceCents,
       currency: product.currency,
-      imageUrl: product.image_url,
+      imageUrl: displayImageUrl,
+      variantId: selectedVariant?.id ?? null,
+      variantLabel: selectedVariant?.label ?? null,
     });
-    toast.success(`${product.name} added to cart`);
+    toast.success(
+      selectedVariant
+        ? `${product.name} (${selectedVariant.label}) added to cart`
+        : `${product.name} added to cart`
+    );
   };
 
   if (isLoading) {
@@ -153,9 +196,9 @@ export default function ProductDetailPage() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-6xl">
             {/* Image — large, clean */}
             <div className="aspect-[4/5] md:aspect-square bg-muted rounded-2xl overflow-hidden sticky top-24">
-              {product.image_url ? (
+              {displayImageUrl ? (
                 <img
-                  src={product.image_url}
+                  src={displayImageUrl}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -188,12 +231,68 @@ export default function ProductDetailPage() {
                 {/* Price — prominent */}
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl md:text-3xl font-semibold tracking-tight">
-                    {formatPrice(product.price_cents, product.currency)}
+                    {formatPrice(effectivePriceCents, product.currency)}
                   </span>
                   {product.type === 'recurring' && (
                     <span className="text-base text-muted-foreground">/month</span>
                   )}
                 </div>
+
+                {/* Variant selectors — attribute pills */}
+                {hasVariants && (
+                  <div className="space-y-4">
+                    {attributes.map((attribute) => (
+                      <div key={attribute.id} className="space-y-2">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-medium">{attribute.name}</span>
+                          {selection[attribute.id] && (
+                            <span className="text-xs text-muted-foreground">
+                              {attribute.values.find(v => v.id === selection[attribute.id])?.value}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {attribute.values.map((value) => {
+                            const isSelected = selection[attribute.id] === value.id;
+                            return (
+                              <button
+                                key={value.id}
+                                type="button"
+                                aria-pressed={isSelected}
+                                onClick={() =>
+                                  setSelection(prev => ({ ...prev, [attribute.id]: value.id }))
+                                }
+                                className={cn(
+                                  'px-4 py-2 rounded-full border text-sm font-medium transition-all',
+                                  isSelected
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-background text-foreground hover:border-primary/50'
+                                )}
+                              >
+                                {value.value}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    {selectedVariant?.sku && (
+                      <p className="text-xs text-muted-foreground">
+                        SKU: {selectedVariant.sku}
+                      </p>
+                    )}
+                    {selectedVariant &&
+                      selectedVariant.stockQuantity !== null &&
+                      selectedVariant.stockQuantity <= 0 && (
+                        <p className="text-sm text-destructive">
+                          {product.allow_backorder
+                            ? 'This option is on backorder'
+                            : 'This option is out of stock'}
+                        </p>
+                      )}
+                  </div>
+                )}
 
                 {/* Description */}
                 {product.description && (
@@ -219,12 +318,27 @@ export default function ProductDetailPage() {
                         )}
                         variant={isInCart ? 'secondary' : 'default'}
                         onClick={handleAdd}
-                        disabled={isInCart || !canPurchase}
+                        disabled={
+                          isInCart ||
+                          !canPurchase ||
+                          (hasVariants && !selectedVariant) ||
+                          variantOutOfStock
+                        }
                       >
                         {isInCart ? (
                           <>
                             <Check className="h-5 w-5 mr-2" />
                             Added to cart
+                          </>
+                        ) : hasVariants && !selectedVariant ? (
+                          <>
+                            <ShoppingCart className="h-5 w-5 mr-2" />
+                            Select options
+                          </>
+                        ) : variantOutOfStock ? (
+                          <>
+                            <ShoppingCart className="h-5 w-5 mr-2" />
+                            Out of stock
                           </>
                         ) : stockStatus === 'out_of_stock' && product.allow_backorder ? (
                           <>

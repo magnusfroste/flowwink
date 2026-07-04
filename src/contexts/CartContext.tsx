@@ -7,13 +7,23 @@ export interface CartItem {
   currency: string;
   quantity: number;
   imageUrl?: string | null;
+  /** Selected product variant (size/color combination). Absent for simple
+   *  products and for carts persisted before variants shipped. */
+  variantId?: string | null;
+  /** Human-readable variant label, e.g. "Red / M". */
+  variantLabel?: string | null;
+}
+
+/** Two cart lines are the same when both product AND variant match. */
+function sameLine(item: CartItem, productId: string, variantId?: string | null) {
+  return item.productId === productId && (item.variantId ?? null) === (variantId ?? null);
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, variantId?: string | null) => void;
+  updateQuantity: (productId: string, quantity: number, variantId?: string | null) => void;
   clearCart: () => void;
   totalItems: number;
   totalPriceCents: number;
@@ -51,10 +61,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>, quantity = 1) => {
     setItems(current => {
-      const existing = current.find(i => i.productId === item.productId);
+      const existing = current.find(i => sameLine(i, item.productId, item.variantId));
       if (existing) {
         return current.map(i =>
-          i.productId === item.productId
+          sameLine(i, item.productId, item.variantId)
             ? { ...i, quantity: i.quantity + quantity }
             : i
         );
@@ -65,18 +75,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsOpen(true);
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems(current => current.filter(i => i.productId !== productId));
+  const removeItem = useCallback((productId: string, variantId?: string | null) => {
+    setItems(current => current.filter(i => !sameLine(i, productId, variantId)));
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string | null) => {
     if (quantity <= 0) {
-      removeItem(productId);
+      removeItem(productId, variantId);
       return;
     }
     setItems(current =>
       current.map(i =>
-        i.productId === productId ? { ...i, quantity } : i
+        sameLine(i, productId, variantId) ? { ...i, quantity } : i
       )
     );
   }, [removeItem]);

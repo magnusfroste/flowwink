@@ -13,6 +13,7 @@ interface CartItem {
   productName: string;
   priceCents: number;
   quantity: number;
+  variantId?: string | null;
 }
 
 interface CheckoutRequest {
@@ -24,6 +25,9 @@ interface CheckoutRequest {
   successUrl: string;
   cancelUrl: string;
   bookingId?: string | null;
+  discountCode?: string | null;
+  /** snake_case alias for agent/REST callers */
+  discount_code?: string | null;
 }
 
 interface Product {
@@ -37,10 +41,114 @@ interface Product {
   stripe_price_id: string | null;
 }
 
+interface Variant {
+  id: string;
+  product_id: string;
+  sku: string | null;
+  price_delta_cents: number;
+  is_active: boolean;
+}
+
+interface ResolvedDiscount {
+  codeId: string;
+  code: string;
+  type: string;
+  value: number;
+  discountCents: number;
+}
+
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[create-checkout] ${step}${detailsStr}`);
 };
+
+/**
+ * Server-side price resolution for variant items. Any item carrying a
+ * variantId gets its priceCents overridden with the DB truth
+ * (product.price_cents + variant.price_delta_cents) so client-tampered or
+ * stale cart prices can never set what a variant costs. Non-variant items
+ * are left as-is here (live mode prices those from Stripe price ids).
+ * Throws when a variant is missing, inactive, or belongs to another product.
+ */
+// deno-lint-ignore no-explicit-any
+async function resolveVariantPrices(supabase: any, items: CartItem[]): Promise<Map<string, Variant>> {
+  const variantIds = items.map((i) => i.variantId).filter(Boolean) as string[];
+  const variantMap = new Map<string, Variant>();
+  if (variantIds.length === 0) return variantMap;
+
+  const { data: variants, error: variantsError } = await supabase
+    .from("product_variants")
+    .select("id, product_id, sku, price_delta_cents, is_active")
+    .in("id", variantIds);
+  if (variantsError) {
+    logStep("Error fetching variants", variantsError);
+    throw new Error("Could not fetch product variants");
+  }
+  for (const v of variants || []) variantMap.set(v.id, v as Variant);
+
+  const productIds = [...new Set(items.filter((i) => i.variantId).map((i) => i.productId))];
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, price_cents")
+    .in("id", productIds);
+  if (productsError) {
+    logStep("Error fetching products for variants", productsError);
+    throw new Error("Could not fetch product details");
+  }
+  const basePrices = new Map<string, number>();
+  for (const p of products || []) basePrices.set(p.id, p.price_cents);
+
+  for (const item of items) {
+    if (!item.variantId) continue;
+    const variant = variantMap.get(item.variantId);
+    if (!variant || !variant.is_active) {
+      throw new Error(`Variant ${item.variantId} not found or inactive`);
+    }
+    if (variant.product_id !== item.productId) {
+      throw new Error(`Variant ${item.variantId} does not belong to product ${item.productId}`);
+    }
+    const base = basePrices.get(item.productId);
+    if (base === undefined) {
+      throw new Error(`Product ${item.productId} not found`);
+    }
+    item.priceCents = base + (variant.price_delta_cents ?? 0);
+  }
+  return variantMap;
+}
+
+/**
+ * Validate a discount code server-side via the validate_discount_code RPC
+ * (single source of truth shared with the public checkout UI). Throws on an
+ * invalid code so the order is never created with a discount that no longer
+ * applies — the UI surfaces the reason and lets the visitor retry.
+ */
+// deno-lint-ignore no-explicit-any
+async function resolveDiscount(
+  supabase: any,
+  rawCode: string,
+  subtotalCents: number,
+  currency: string,
+): Promise<ResolvedDiscount> {
+  const { data, error } = await supabase.rpc("validate_discount_code", {
+    p_code: rawCode,
+    p_order_cents: subtotalCents,
+    p_currency: currency,
+  });
+  if (error) {
+    logStep("Discount validation error", error);
+    throw new Error("Could not validate discount code");
+  }
+  if (!data?.valid) {
+    throw new Error(data?.reason ? `Discount code rejected: ${data.reason}` : "Invalid discount code");
+  }
+  return {
+    codeId: data.code_id,
+    code: data.code,
+    type: data.type,
+    value: Number(data.value),
+    discountCents: Math.min(Number(data.discount_cents ?? 0), subtotalCents),
+  };
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -72,6 +180,7 @@ serve(async (req: Request) => {
 
     logStep("Mode check", { stripeEnabled, sandboxMode, sandboxAutoPayDays });
 
+    const body: CheckoutRequest = await req.json();
     const {
       items,
       customerName,
@@ -81,7 +190,8 @@ serve(async (req: Request) => {
       successUrl,
       cancelUrl,
       bookingId,
-    }: CheckoutRequest = await req.json();
+    } = body;
+    const discountCode = (body.discountCode ?? body.discount_code ?? "").trim() || null;
 
     // The storefront passes a real successUrl (its own confirmation page), but
     // autonomous/MCP callers (e.g. place_order via an agent) don't — which made
@@ -103,19 +213,29 @@ serve(async (req: Request) => {
     if (!items || items.length === 0) {
       throw new Error("No items in cart");
     }
-    logStep("Starting checkout", { customerEmail, itemCount: items.length });
+    logStep("Starting checkout", { customerEmail, itemCount: items.length, discountCode });
 
     if (!customerEmail) {
       throw new Error("Customer email is required");
     }
 
+    // Variant items always get DB-truth prices (also validates ownership).
+    const variantMap = await resolveVariantPrices(supabase, items);
+
     // ── SANDBOX MODE: Skip Stripe entirely ──
     if (sandboxMode) {
       logStep("Sandbox mode — creating order without payment");
 
-      const totalCents = items.reduce(
+      const subtotalCents = items.reduce(
         (sum, item) => sum + item.priceCents * item.quantity, 0
       );
+
+      let discount: ResolvedDiscount | null = null;
+      if (discountCode) {
+        discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency || 'SEK');
+        logStep("Discount applied (sandbox)", discount);
+      }
+      const totalCents = subtotalCents - (discount?.discountCents ?? 0);
 
       const orderStatus = sandboxAutoPayDays === 0 ? "paid" : "pending";
 
@@ -128,6 +248,9 @@ serve(async (req: Request) => {
           currency: (currency || 'SEK').toUpperCase(),
           status: orderStatus,
           user_id: userId || null,
+          discount_code: discount?.code ?? null,
+          discount_cents: discount?.discountCents ?? null,
+          discount_code_id: discount?.codeId ?? null,
           metadata: {
             sandbox: true,
             sandbox_auto_pay_days: sandboxAutoPayDays,
@@ -135,6 +258,7 @@ serve(async (req: Request) => {
               ? new Date(Date.now() + sandboxAutoPayDays * 86400000).toISOString()
               : null,
             booking_id: bookingId || null,
+            ...(discount ? { discount: { code: discount.code, type: discount.type, value: discount.value, discount_cents: discount.discountCents } } : {}),
           },
         })
         .select()
@@ -155,6 +279,14 @@ serve(async (req: Request) => {
         quantity: item.quantity,
       }));
       await supabase.from("order_items").insert(orderItems);
+
+      // Sandbox orders exist in the DB immediately — count the redemption now.
+      if (discount) {
+        const { error: redeemError } = await supabase.rpc("redeem_discount_code", {
+          p_code_id: discount.codeId,
+        });
+        if (redeemError) logStep("Discount redeem error (sandbox)", redeemError);
+      }
 
       logStep("Sandbox order created", { orderId: order.id, status: orderStatus });
 
@@ -250,6 +382,33 @@ serve(async (req: Request) => {
         throw new Error(`Product ${item.productId} not found`);
       }
 
+      // Variant items: charge the variant's server-resolved price via inline
+      // price_data (the product's stripe_price_id knows nothing about deltas).
+      if (item.variantId) {
+        const variant = variantMap.get(item.variantId)!;
+        const priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData = {
+          currency: product.currency.toLowerCase(),
+          unit_amount: item.priceCents,
+          product_data: {
+            name: item.productName || product.name,
+            metadata: {
+              flowwink_product_id: product.id,
+              flowwink_variant_id: variant.id,
+              ...(variant.sku ? { sku: variant.sku } : {}),
+            },
+          },
+        };
+        if (product.type === "recurring") {
+          priceData.recurring = { interval: "month" };
+        }
+        lineItems.push({ price_data: priceData, quantity: item.quantity });
+        continue;
+      }
+
+      // Keep the order row honest: non-variant items are charged at the DB
+      // price (via the Stripe price id), so the order total must use it too.
+      item.priceCents = product.price_cents;
+
       let stripePriceId = product.stripe_price_id;
 
       // If no Stripe price ID, create product and price in Stripe
@@ -308,13 +467,22 @@ serve(async (req: Request) => {
       }
     }
 
-    // Calculate total for order
-    const totalCents = items.reduce(
+    // Calculate total for order (server-resolved prices)
+    const subtotalCents = items.reduce(
       (sum, item) => sum + item.priceCents * item.quantity,
       0
     );
 
-    // Create order in database
+    // Validate + price the discount against the server-side subtotal
+    let discount: ResolvedDiscount | null = null;
+    if (discountCode) {
+      discount = await resolveDiscount(supabase, discountCode, subtotalCents, currency || 'SEK');
+      logStep("Discount applied (live)", discount);
+    }
+    const totalCents = subtotalCents - (discount?.discountCents ?? 0);
+
+    // Create order in database. total_cents is net of discount; use_count is
+    // incremented by stripe-webhook when the payment actually completes.
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -324,7 +492,16 @@ serve(async (req: Request) => {
         currency: currency.toUpperCase(),
         status: "pending",
         user_id: userId || null,
-        metadata: { mode, hasRecurring, hasOneTime, booking_id: bookingId || null },
+        discount_code: discount?.code ?? null,
+        discount_cents: discount?.discountCents ?? null,
+        discount_code_id: discount?.codeId ?? null,
+        metadata: {
+          mode,
+          hasRecurring,
+          hasOneTime,
+          booking_id: bookingId || null,
+          ...(discount ? { discount: { code: discount.code, type: discount.type, value: discount.value, discount_cents: discount.discountCents } } : {}),
+        },
       })
       .select()
       .single();
@@ -378,6 +555,21 @@ serve(async (req: Request) => {
         booking_id: bookingId || undefined,
       },
     };
+
+    // Apply the discount as a one-off Stripe coupon. Always amount_off (even
+    // for percent codes) so the Stripe charge matches the discounted
+    // total_cents we stored on the order to the cent — percent_off would let
+    // Stripe do its own rounding.
+    if (discount && discount.discountCents > 0) {
+      const coupon = await stripe.coupons.create({
+        name: discount.code,
+        duration: "once",
+        amount_off: discount.discountCents,
+        currency: currency.toLowerCase(),
+      });
+      sessionParams.discounts = [{ coupon: coupon.id }];
+      logStep("Created Stripe coupon", { couponId: coupon.id });
+    }
 
     // Add customer info
     if (customerId) {

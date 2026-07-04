@@ -49,7 +49,7 @@ export default function CartPage() {
             {/* Items */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
-                <Card key={item.productId} className="overflow-hidden">
+                <Card key={`${item.productId}:${item.variantId ?? ''}`} className="overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* Thumbnail */}
@@ -76,6 +76,11 @@ export default function CartPage() {
                             {item.productName}
                           </h3>
                         </Link>
+                        {item.variantLabel && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {item.variantLabel}
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground mt-0.5">
                           {formatPrice(item.priceCents, item.currency)} each
                         </p>
@@ -87,7 +92,7 @@ export default function CartPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
@@ -98,7 +103,7 @@ export default function CartPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -112,7 +117,7 @@ export default function CartPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => removeItem(item.productId)}
+                              onClick={() => removeItem(item.productId, item.variantId)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

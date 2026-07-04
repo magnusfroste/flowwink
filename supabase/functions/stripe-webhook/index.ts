@@ -369,7 +369,15 @@ serve(async (req: Request) => {
 
         if (orderId) {
           console.log("Updating order to paid:", orderId);
-          
+
+          // Snapshot pre-update state so a webhook retry can't double-count
+          // a discount redemption (only the pending→paid transition redeems).
+          const { data: priorOrder } = await supabase
+            .from("orders")
+            .select("status, discount_code_id")
+            .eq("id", orderId)
+            .maybeSingle();
+
           const { data: order, error } = await supabase
             .from("orders")
             .update({
@@ -384,6 +392,19 @@ serve(async (req: Request) => {
             console.error("Error updating order:", error);
           } else {
             console.log("Order marked as paid:", orderId);
+
+            // Discount codes are redeemed on successful payment (live mode).
+            if (priorOrder?.discount_code_id && priorOrder.status !== "paid") {
+              const { error: redeemError } = await supabase.rpc("redeem_discount_code", {
+                p_code_id: priorOrder.discount_code_id,
+              });
+              if (redeemError) {
+                console.error("Failed to redeem discount code:", redeemError);
+              } else {
+                console.log("Discount code redeemed for order:", orderId);
+              }
+            }
+
             // Trigger order.paid webhook
             await triggerOrderWebhook(supabase, "order.paid", order);
             

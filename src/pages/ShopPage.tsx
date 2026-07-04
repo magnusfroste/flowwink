@@ -9,12 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 
 export default function ShopPage() {
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
+  const { data: variantProductIds } = useVariantProductIds();
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
@@ -150,18 +152,27 @@ export default function ShopPage() {
                       <span className="text-lg font-bold">
                         {formatPrice(product.price_cents, product.currency)}
                       </span>
-                      <Button
-                        size="sm"
-                        variant={isInCart(product.id) ? 'secondary' : 'default'}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleAdd(product);
-                        }}
-                        disabled={isInCart(product.id)}
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-1.5" />
-                        {isInCart(product.id) ? 'In cart' : 'Add'}
-                      </Button>
+                      {variantProductIds?.has(product.id) ? (
+                        // Variant products: options are picked on the product page
+                        <Button size="sm" asChild>
+                          <Link to={`/shop/${product.id}`}>
+                            Choose options
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant={isInCart(product.id) ? 'secondary' : 'default'}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleAdd(product);
+                          }}
+                          disabled={isInCart(product.id)}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1.5" />
+                          {isInCart(product.id) ? 'In cart' : 'Add'}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -69,7 +69,7 @@ export function CartSidebar() {
           <>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {items.map((item) => (
-                <div key={item.productId} className="flex gap-3">
+                <div key={`${item.productId}:${item.variantId ?? ''}`} className="flex gap-3">
                   {/* Image */}
                   {item.imageUrl ? (
                     <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
@@ -88,6 +88,11 @@ export function CartSidebar() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm truncate">{item.productName}</h4>
+                    {item.variantLabel && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.variantLabel}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {formatPrice(item.priceCents, item.currency)}
                     </p>
@@ -98,7 +103,7 @@ export function CartSidebar() {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -109,7 +114,7 @@ export function CartSidebar() {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -125,7 +130,7 @@ export function CartSidebar() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeItem(item.productId)}
+                      onClick={() => removeItem(item.productId, item.variantId)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
