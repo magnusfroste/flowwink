@@ -76,11 +76,6 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// PostgREST .or() uses ',' to separate conditions and '()' to group. Strip those
-// (and backslash) from user-supplied search terms so a value like
-// "foo,role.eq.admin" can't inject an extra OR condition (filter injection).
-const sanitizeOrTerm = (v: unknown): string => String(v ?? '').replace(/[,()\\]/g, ' ').trim();
-
   // NOTE: kept inline createClient here because downstream handler plugins
   // capture `supabase` and `serviceKey` from this scope. When we extract
   // handlers/* in phase 2b, swap to getServiceClient() from _shared/supabase-clients.
