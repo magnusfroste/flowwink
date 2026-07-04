@@ -19,6 +19,7 @@
 | **Newsletter** | Distribution to subscribers |
 | **Paid Growth** | Ad campaigns to amplify reach |
 | **Analytics** | Tracking traffic, conversion, SEO |
+| **Visitor Intelligence** | Consent-based visitor journey (cookie + page views); hands the browsing history to [Lead-to-Customer](./lead-to-customer.md) as scoring signals the moment a visitor identifies |
 | **Sales Intelligence** | Competitor and topic research |
 
 ---
