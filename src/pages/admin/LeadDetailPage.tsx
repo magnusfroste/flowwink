@@ -22,6 +22,7 @@ import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
 import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { LeadCommunicationsCard } from '@/components/admin/crm/LeadCommunicationsCard';
+import { VisitorTimelineWidget } from '@/components/admin/crm/VisitorTimelineWidget';
 import { LostReasonDialog, lostReasonLabel } from '@/components/admin/crm/LostReasonDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
