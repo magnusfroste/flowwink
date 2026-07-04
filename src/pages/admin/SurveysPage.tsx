@@ -11,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSurveyTemplates, useSurveyCampaigns, useSurveyResponses, useNpsStats, useCreateCampaign, useSendSurvey } from '@/hooks/useSurveys';
-import { Smile, Frown, Meh, Plus, Send, Loader2, MessageSquare } from 'lucide-react';
+import { useSurveyTemplates, useSurveyCampaigns, useSurveyResponses, useNpsStats, useCreateCampaign, useSendSurvey, useSaveTemplate, useDeleteTemplate, type SurveyTemplate } from '@/hooks/useSurveys';
+import { Smile, Frown, Meh, Plus, Send, Loader2, MessageSquare, Pencil, Trash2, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -26,9 +26,12 @@ export default function SurveysPage() {
   const { data: responses } = useSurveyResponses(selectedCampaign);
   const createCampaign = useCreateCampaign();
   const sendSurvey = useSendSurvey();
+  const saveTemplate = useSaveTemplate();
+  const deleteTemplate = useDeleteTemplate();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState<string | null>(null);
+  const [templateEdit, setTemplateEdit] = useState<Partial<SurveyTemplate> | null>(null);
   const [form, setForm] = useState({ name: '', template_id: '', trigger: 'manual', email_subject: 'How was your experience?', email_intro: 'We would love your feedback. It takes 10 seconds.' });
   const [recipients, setRecipients] = useState('');
 
@@ -120,12 +123,25 @@ export default function SurveysPage() {
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-4 mt-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setTemplateEdit({ name: '', kind: 'nps', description: '', questions: [{ id: 'q1', type: 'score', label: 'How likely are you to recommend us?', required: true }], is_active: true })}>
+                <Plus className="h-4 w-4 mr-1.5" />New template
+              </Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(templates ?? []).map(t => (
                 <Card key={t.id}>
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">{t.name}<Badge variant="outline" className="uppercase text-[10px]">{t.kind}</Badge></CardTitle>
-                    <CardDescription>{t.description}</CardDescription>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <CardTitle className="text-base flex items-center gap-2">{t.name}<Badge variant="outline" className="uppercase text-[10px]">{t.kind}</Badge></CardTitle>
+                        <CardDescription>{t.description}</CardDescription>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setTemplateEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => { if (confirm(`Delete template "${t.name}"?`)) deleteTemplate.mutate(t.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -177,6 +193,75 @@ export default function SurveysPage() {
                 sendSurvey.mutate({ campaign_id: sendOpen, recipients: list }, { onSuccess: () => { setSendOpen(null); setRecipients(''); } });
               }}>
                 {sendSurvey.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}Send
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Template editor dialog */}
+        <Dialog open={!!templateEdit} onOpenChange={(o) => !o && setTemplateEdit(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader><DialogTitle>{templateEdit?.id ? 'Edit template' : 'New template'}</DialogTitle></DialogHeader>
+            {templateEdit && (
+              <div className="space-y-3">
+                <Input placeholder="Template name" value={templateEdit.name ?? ''} onChange={e => setTemplateEdit({ ...templateEdit, name: e.target.value })} />
+                <Select value={templateEdit.kind ?? 'nps'} onValueChange={v => setTemplateEdit({ ...templateEdit, kind: v as SurveyTemplate['kind'] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nps">NPS — 0–10 recommendation</SelectItem>
+                    <SelectItem value="csat">CSAT — 1–5 satisfaction</SelectItem>
+                    <SelectItem value="ces">CES — customer effort</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Textarea placeholder="Description (internal)" value={templateEdit.description ?? ''} onChange={e => setTemplateEdit({ ...templateEdit, description: e.target.value })} rows={2} />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Questions</label>
+                    <Button size="sm" variant="ghost" onClick={() => setTemplateEdit({ ...templateEdit, questions: [...(templateEdit.questions ?? []), { id: `q${Date.now()}`, type: 'text', label: '', required: false }] })}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />Add question
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {(templateEdit.questions ?? []).map((q, i) => (
+                      <div key={q.id ?? i} className="flex gap-2 items-start">
+                        <Select value={q.type} onValueChange={v => {
+                          const next = [...(templateEdit.questions ?? [])];
+                          next[i] = { ...q, type: v };
+                          setTemplateEdit({ ...templateEdit, questions: next });
+                        }}>
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="score">Score</SelectItem>
+                            <SelectItem value="text">Comment</SelectItem>
+                            <SelectItem value="choice">Choice</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input placeholder="Question label" value={q.label} onChange={e => {
+                          const next = [...(templateEdit.questions ?? [])];
+                          next[i] = { ...q, label: e.target.value };
+                          setTemplateEdit({ ...templateEdit, questions: next });
+                        }} />
+                        <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => {
+                          const next = (templateEdit.questions ?? []).filter((_, j) => j !== i);
+                          setTemplateEdit({ ...templateEdit, questions: next });
+                        }}><X className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    ))}
+                    {!templateEdit.questions?.length && <p className="text-xs text-muted-foreground italic">No questions yet — click "Add question" above.</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setTemplateEdit(null)}>Cancel</Button>
+              <Button
+                disabled={!templateEdit?.name || !templateEdit?.questions?.length || saveTemplate.isPending}
+                onClick={() => {
+                  if (!templateEdit) return;
+                  saveTemplate.mutate(templateEdit as SurveyTemplate, { onSuccess: () => setTemplateEdit(null) });
+                }}>
+                {saveTemplate.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}Save
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -121,6 +121,49 @@ export function useCreateCampaign() {
   });
 }
 
+export function useSaveTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<SurveyTemplate> & { name: string; kind: SurveyTemplate['kind']; questions: SurveyTemplate['questions'] }) => {
+      const { id, ...rest } = input as SurveyTemplate;
+      if (id) {
+        const { data, error } = await supabase.from('survey_templates' as never).update(rest as never).eq('id', id).select().single();
+        if (error) throw error;
+        return data;
+      }
+      const { data, error } = await supabase.from('survey_templates' as never).insert(rest as never).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['survey-templates'] });
+      toast.success('Template saved');
+    },
+    onError: (e: Error) => {
+      logger.error('Save template error:', e);
+      toast.error(e.message);
+    },
+  });
+}
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('survey_templates' as never).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['survey-templates'] });
+      toast.success('Template deleted');
+    },
+    onError: (e: Error) => {
+      logger.error('Delete template error:', e);
+      toast.error(e.message);
+    },
+  });
+}
+
 export function useSendSurvey() {
   const qc = useQueryClient();
   return useMutation({
