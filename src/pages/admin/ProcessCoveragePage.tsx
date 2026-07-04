@@ -44,6 +44,11 @@ const PROCESS_DESCRIPTIONS: Record<ProcessId, string> = {
   'content-to-conversion': 'Idea → publish → distribute → convert.',
   'record-to-report': 'Journal → reconcile → close → report.',
   'support-to-resolution': 'Ticket/chat → triage → resolution → CSAT.',
+  'acquire-to-retire': 'Acquire asset → depreciate → maintain → retire.',
+  'book-to-meet': 'Availability → booking → confirmation → meeting.',
+  'register-to-attend': 'Registration → reminders → attendance → follow-up.',
+  'return-to-refund': 'RMA request → receive → inspect → refund.',
+  'subscribe-to-renew': 'Trial → subscribe → bill → renew or churn.',
 };
 
 export default function ProcessCoveragePage() {
