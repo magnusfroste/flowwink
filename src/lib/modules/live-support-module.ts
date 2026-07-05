@@ -68,6 +68,30 @@ Lists support conversations filtered by status.
 - Returns customer name, email, priority, and sentiment score.`,
   },
   {
+    name: 'list_support_agents',
+    description: 'List support agents with their availability: status (online/away/busy/offline), current load and max capacity. Use when: checking who is available before assigning/transferring a conversation; monitoring support coverage. NOT for: assigning conversations (support_assign_conversation); listing conversations (support_list_conversations).',
+    category: 'communication',
+    handler: 'db:support_agents',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_support_agents',
+        description: 'List support agents with status, current_conversations and max_conversations — the availability picture used to pick a transfer target.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get'] },
+            id: { type: 'string', description: 'support_agents UUID (get)' },
+            status: { type: 'string', enum: ['online', 'away', 'busy', 'offline'], description: 'Filter list by presence status' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Availability = status + free slots (max_conversations - current_conversations). Use action=list (optionally status=online) to find a target, then support_assign_conversation with that agent id. Presence is heartbeat-based: last_seen_at shows how fresh the status is.',
+  },
+  {
     name: 'support_assign_conversation',
     description: 'Assign or reassign a support conversation to an agent. Use when: a customer query needs agent attention; re-routing a conversation to a specialist; ensuring no support ticket is unassigned. NOT for: listing conversations (support_list_conversations); getting feedback (support_get_feedback).',
     category: 'communication',
@@ -307,6 +331,7 @@ export const liveSupportModule = defineModule<Input, Output>({
 
   skills: [
     'support_list_conversations',
+    'list_support_agents',
     'support_assign_conversation',
     // Contact Center (omnichannel) — Fas 1
     'route_conversation',

@@ -54,7 +54,7 @@
       "status": "partial",
       "weight": 1,
       "verify": "useSupportPresence.tsx realtime presence + status dropdown in LiveSupportPage",
-      "notes": "Skill surface missing: no presence/availability skill in live-support-module skillSeeds",
+      "notes": "Skill surface BUILT 2026-07-05 (was the remaining dual-surface gap — UI presence existed): list_support_agents skill (db:support_agents via the generic CRUD engine, table whitelisted) returns status + current/max load per agent, with instructions to pair with support_assign_conversation for transfer decisions; artifact regenerated (358 skills). Stays partial pending deploy (agent-execute whitelist) + skills sync + a Stage-3 live list run.",
       "epic": "EPIC-07"
     }
   ]

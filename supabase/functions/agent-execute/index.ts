@@ -8285,6 +8285,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'bank_transactions',
   // Chat (conversations + feedback used by support skills)
   'chat_conversations', 'chat_feedback',
+  // Support agents (availability/presence read for transfer decisions)
+  'support_agents',
   // Manufacturing
   'manufacturing_orders',
   // Analytics
