@@ -2971,8 +2971,8 @@ async function executeKbAction(
     const term = sanitizeOrTerm(String(q ?? search ?? '').trim());
     if (!term) throw new Error('query is required for search');
     let query = supabase.from('kb_articles')
-      .select('id, title, slug, question, answer, category_id, is_published, is_featured, views_count, helpful_count, updated_at')
-      .or(`title.ilike.%${term}%,question.ilike.%${term}%,answer.ilike.%${term}%`)
+      .select('id, title, slug, question, answer_text, category_id, is_published, is_featured, views_count, helpful_count, updated_at')
+      .or(`title.ilike.%${term}%,question.ilike.%${term}%,answer_text.ilike.%${term}%`)
       .order('is_featured', { ascending: false })
       .order('views_count', { ascending: false })
       .limit(limit);
