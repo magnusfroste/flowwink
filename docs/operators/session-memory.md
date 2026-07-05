@@ -27,8 +27,21 @@ Modules ≥80%: **products 80, ecommerce 81, invoicing 83, live-support 86,
 webinars 89, companies 93, approvals/customer360/docs/forms/sales-intelligence
 100**. Mean parity ~62%. 767+ vitest green, 56+ guardrail tests.
 
-In flight: **PR #108** (draft) — products#uom flip + kb#search notes + this
-memory doc + the kb search `answer_text` column fix in agent-execute.
+In flight: **PR #108** (draft) — after reconciliation vs main, effectively
+just this memory doc (the code fix and flips landed on main via the local
+session, see update below).
+
+**UPDATE (late 2026-07-05/06):** a LOCAL Claude Code session took over the
+Lovable-MCP-dependent work (local CLI connects to mcp.lovable.dev directly
+and reliably; cloud-session connector enablement is flaky). It independently
+found and fixed the same `kb_articles.answer` → `answer_text` bug (4c9b9ad0),
+redeployed agent-execute, flipped **kb#search → done** (8201f2b8, kb now 79%)
+and **products#uom → done** (0c4f3817, products 80%) directly on main, plus
+fleet-tooling fixes (3d6930e7). The cloud session verified the redeploy live
+from the outside (search_kb returns clean results via the gateway) and
+reconciled PR #108 down to this memory doc. **Coordination convention:
+whoever does substantive work updates THIS doc; the other session watches
+git (`git ls-remote` polling) and the live gateway surface.**
 
 ## The fleet & who deploys what
 
@@ -119,10 +132,8 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
-1. **agent-execute redeploy** to rzhj with the kb search `answer_text` fix
-   (commit on PR #108) — then live-run `search_kb` (expect results, not a
-   column error) and flip `kb#search` (kb 71% → ~79%, +feedback surface gets it
-   over 80).
+1. ~~agent-execute redeploy + kb#search flip~~ **DONE** (local session,
+   2026-07-06). Next kb step: article_feedback surface gets kb over 80.
 2. **Revoke/rotate** the temp `fwk_d0911…` gateway key (Magnus, in admin).
 3. Data-quality: `support_agents` row with `current_conversations=24` vs
    `max_conversations=5` — stale counter, needs a reconcile (skill or cron).
