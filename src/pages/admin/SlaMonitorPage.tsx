@@ -14,8 +14,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Shield, AlertTriangle, CheckCircle2, Clock, Plus, Trash2, Activity, TrendingUp,
+  Shield, AlertTriangle, CheckCircle2, Clock, Plus, Trash2, Activity, TrendingUp, CalendarClock,
 } from 'lucide-react';
+import { BusinessHoursTab } from '@/components/admin/sla/BusinessHoursTab';
 import { formatDistanceToNow } from 'date-fns';
 import {
   useSlaPolicies, useSlaViolations, useSlaStats,
@@ -417,6 +418,10 @@ export default function SlaMonitorPage() {
                 <Clock className="h-3.5 w-3.5" />
                 Policies
               </TabsTrigger>
+              <TabsTrigger value="business-hours" className="gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5" />
+                Business Hours
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="violations" className="mt-4">
@@ -425,6 +430,10 @@ export default function SlaMonitorPage() {
 
             <TabsContent value="policies" className="mt-4">
               <PoliciesTab />
+            </TabsContent>
+
+            <TabsContent value="business-hours" className="mt-4">
+              <BusinessHoursTab />
             </TabsContent>
           </Tabs>
         </div>
