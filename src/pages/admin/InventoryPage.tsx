@@ -15,6 +15,7 @@ import { useProductStock, useStockMoves, useAdjustStock, useSetReorderPoint, use
 import { ReorderMrpPanel, LocationsPanel } from '@/components/admin/inventory/InventoryV2Panels';
 import { PickPackPanel } from '@/components/admin/inventory/PickPackPanel';
 import { ReceivingPanel } from '@/components/admin/inventory/ReceivingPanel';
+import { CycleCountPanel } from '@/components/admin/inventory/CycleCountPanel';
 import { InventoryValuationPanel } from '@/components/admin/inventory/InventoryValuationPanel';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
