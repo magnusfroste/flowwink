@@ -14,6 +14,31 @@ import {
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const KB_SKILLS: SkillSeed[] = [
   {
+    name: 'search_kb',
+    description: 'Search the knowledge base across title, question and answer text — the same reach as the public KB search box, server-side. Returns published articles ranked featured-first then by views. Use when: answering a visitor/customer question from the KB; checking whether an article already covers a topic before writing a new one. NOT for: creating/updating articles (manage_kb_article).',
+    category: 'content',
+    handler: 'module:kb',
+    scope: 'both',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_kb',
+        description: 'Search KB articles by text across title/question/answer. Published-only by default.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['search'], description: 'Always "search"' },
+            query: { type: 'string', description: 'Search text' },
+            include_unpublished: { type: 'boolean', description: 'Admins only: include drafts (default false)' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: ['action', 'query'],
+        },
+      },
+    },
+    instructions: 'Call with action="search" and query. Matches title, question and answer (case-insensitive substring), published articles only unless include_unpublished. Results are ranked featured-first, then by views_count. Use manage_kb_article action=get with the returned slug to fetch full content.',
+  },
+  {
     name: 'manage_kb_article',
     description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
     category: 'content',
@@ -101,6 +126,7 @@ export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput
 
   skills: [
     'manage_kb_article',
+    'search_kb',
   ],
   data: {
     tables: ['kb_articles', 'kb_categories'],
