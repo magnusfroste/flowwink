@@ -15,6 +15,7 @@ import { useProductStock, useStockMoves, useAdjustStock, useSetReorderPoint, use
 import { ReorderMrpPanel, LocationsPanel } from '@/components/admin/inventory/InventoryV2Panels';
 import { PickPackPanel } from '@/components/admin/inventory/PickPackPanel';
 import { ReceivingPanel } from '@/components/admin/inventory/ReceivingPanel';
+import { CycleCountPanel } from '@/components/admin/inventory/CycleCountPanel';
 import { InventoryValuationPanel } from '@/components/admin/inventory/InventoryValuationPanel';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -148,6 +149,7 @@ export default function InventoryPage() {
           <TabsTrigger value="pickpack">Pick & Pack</TabsTrigger>
           <TabsTrigger value="receiving">Receiving</TabsTrigger>
           <TabsTrigger value="moves">Movements</TabsTrigger>
+          <TabsTrigger value="cyclecount">Cycle Count</TabsTrigger>
           <TabsTrigger value="reorder">Reorder & MRP</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="untracked">Untracked ({untrackedProducts.length})</TabsTrigger>
@@ -224,6 +226,10 @@ export default function InventoryPage() {
 
         <TabsContent value="receiving">
           <ReceivingPanel />
+        </TabsContent>
+
+        <TabsContent value="cyclecount">
+          <CycleCountPanel />
         </TabsContent>
 
         <TabsContent value="moves">
