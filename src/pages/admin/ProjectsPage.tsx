@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useProjects, useCreateProject, useProjectTasks, useCreateProjectTask, useUpdateProjectTask, useUpdateProject, useDeleteProject, useDeleteProjectTask, type Project } from "@/hooks/useProjects";
+import { ProjectMilestonesPanel } from "@/components/admin/projects/ProjectMilestonesPanel";
 import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 
@@ -266,12 +267,15 @@ export default function ProjectsPage() {
                 />
               ))}
             </div>
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-4">
               {selectedId ? (
-                <Card>
-                  <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
-                  <CardContent><TaskBoard projectId={selectedId} /></CardContent>
-                </Card>
+                <>
+                  <ProjectMilestonesPanel projectId={selectedId} />
+                  <Card>
+                    <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+                    <CardContent><TaskBoard projectId={selectedId} /></CardContent>
+                  </Card>
+                </>
               ) : (
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
               )}
