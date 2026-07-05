@@ -27,12 +27,13 @@ import { AuditTrailTab } from '@/components/admin/accounting/AuditTrailTab';
 import { ExportTab } from '@/components/admin/accounting/ExportTab';
 import { VoucherIntegrityTab } from '@/components/admin/accounting/VoucherIntegrityTab';
 import { YearEndTab } from '@/components/admin/accounting/YearEndTab';
+import { BudgetsTab } from '@/components/admin/accounting/BudgetsTab';
 import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
 
 type TabId =
   | 'journal' | 'ledger' | 'pnl' | 'balance'
   | 'vat' | 'tax'
-  | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher'
+  | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
   | 'pending' | 'templates' | 'export' | 'settings';
 
 const PRIMARY: { id: TabId; label: string }[] = [
@@ -50,6 +51,7 @@ const MORE: { group: string; items: { id: TabId; label: string }[] }[] = [
     items: [
       { id: 'opening', label: 'Opening Balances' },
       { id: 'analytic', label: 'Analytic' },
+      { id: 'budgets', label: 'Budgets' },
     ],
   },
   {
@@ -142,6 +144,7 @@ export default function AccountingPage() {
           <TabsContent value="yearend"><YearEndTab /></TabsContent>
           <TabsContent value="audit"><AuditTrailTab /></TabsContent>
           <TabsContent value="voucher"><VoucherIntegrityTab /></TabsContent>
+          <TabsContent value="budgets"><BudgetsTab /></TabsContent>
           <TabsContent value="pending"><PendingOperationsList /></TabsContent>
           <TabsContent value="templates"><TemplatesTab /></TabsContent>
           <TabsContent value="export"><ExportTab /></TabsContent>
