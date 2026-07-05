@@ -266,12 +266,15 @@ export default function ProjectsPage() {
                 />
               ))}
             </div>
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-4">
               {selectedId ? (
-                <Card>
-                  <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
-                  <CardContent><TaskBoard projectId={selectedId} /></CardContent>
-                </Card>
+                <>
+                  <ProjectMilestonesPanel projectId={selectedId} />
+                  <Card>
+                    <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+                    <CardContent><TaskBoard projectId={selectedId} /></CardContent>
+                  </Card>
+                </>
               ) : (
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
               )}
