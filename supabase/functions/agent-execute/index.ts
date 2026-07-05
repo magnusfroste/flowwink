@@ -5044,9 +5044,15 @@ async function executeLeadsAction(
   }
 
   if (action === 'get' && lead_id) {
+    // maybeSingle: a missing lead (e.g. deleted or merged away) must return a
+    // clean not-found, not a "Cannot coerce the result to a single JSON object"
+    // crash — operators hit this right after merge_leads deletes the duplicate.
     const { data, error } = await supabase.from('leads')
-      .select('*').eq('id', lead_id).single();
+      .select('*').eq('id', lead_id).maybeSingle();
     if (error) throw new Error(`Get lead failed: ${error.message}`);
+    if (!data) {
+      return { found: false, error: `Lead ${lead_id} not found (it may have been deleted or merged into another lead — use action=list with a search to locate the surviving record)` };
+    }
     // Get activities
     const { data: activities } = await supabase.from('lead_activities')
       .select('id, type, metadata, points, created_at')
