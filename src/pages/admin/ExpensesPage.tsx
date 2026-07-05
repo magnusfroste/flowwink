@@ -22,6 +22,7 @@ export default function ExpensesPage() {
           <TabsList>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="reports">Monthly Reports</TabsTrigger>
+            <TabsTrigger value="policies">Policies</TabsTrigger>
           </TabsList>
 
           <TabsContent value="expenses">
@@ -29,6 +30,9 @@ export default function ExpensesPage() {
           </TabsContent>
           <TabsContent value="reports">
             <ExpenseReportsTab />
+          </TabsContent>
+          <TabsContent value="policies">
+            <ExpensePoliciesTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
