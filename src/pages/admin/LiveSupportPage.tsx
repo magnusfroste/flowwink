@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Headphones,
   Circle,
@@ -31,6 +32,7 @@ import {
   RotateCcw,
   PhoneCall,
   Voicemail as VoicemailIcon,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -87,6 +89,8 @@ export default function LiveSupportPage() {
     claimConversation,
     closeConversation,
     reopenConversation,
+    transferConversation,
+    transferTargets,
   } = useSupportConversations();
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -366,6 +370,39 @@ export default function LiveSupportPage() {
                               <AlertTriangle className="h-3 w-3" />
                               Frustrated
                             </Badge>
+                          )}
+                          {transferTargets.length > 0 && (
+                            <Select
+                              value=""
+                              onValueChange={(agentId) =>
+                                transferConversation.mutate({ conversationId: selectedConversation.id, agentId })
+                              }
+                            >
+                              <SelectTrigger className="h-9 w-[150px]" disabled={transferConversation.isPending}>
+                                <span className="flex items-center gap-1 text-sm">
+                                  <ArrowRightLeft className="h-4 w-4" />
+                                  Transfer
+                                </span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {transferTargets.map((a) => (
+                                  <SelectItem key={a.id} value={a.id}>
+                                    <span className="flex items-center gap-2">
+                                      <Circle
+                                        className={cn(
+                                          'h-2 w-2 fill-current',
+                                          a.status === 'online' ? 'text-green-500'
+                                            : a.status === 'away' ? 'text-yellow-500'
+                                            : a.status === 'busy' ? 'text-red-500'
+                                            : 'text-muted-foreground',
+                                        )}
+                                      />
+                                      Agent {a.user_id.slice(0, 8)} · {a.current_conversations}/{a.max_conversations}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
                           <Button 
                             variant="outline" 

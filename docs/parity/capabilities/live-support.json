@@ -33,10 +33,10 @@
       "id": "transfer",
       "name": "Transfer between agents",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "support_assign_conversation skill accepts agent_id for reassign",
-      "notes": "Admin UI missing: LiveSupportPage only supports take-to-self and close, no reassign-to-another-agent control",
+      "verify": "Dual-surface complete 2026-07-05: (1) skill surface — support_assign_conversation (db:chat_conversations) accepts agent_id for reassign; (2) admin UI — LiveSupportPage now has a Transfer control (Select next to Close) listing other support_agents with status dot + load (current/max), wired to a new transferConversation mutation in useSupportConversations (reassigns assigned_agent_id, keeps with_agent, increments target's counter and decrements the previous agent's). support_assign_conversation skill accepts agent_id for reassign",
+      "notes": "Was partial solely for the missing admin reassign control (skill existed). UI ships via Vercel on merge; targets are listed as 'Agent <id-prefix> · load' since support_agents carries no display name — joining a profile name is a cosmetic follow-up.",
       "epic": "EPIC-07"
     },
     {
