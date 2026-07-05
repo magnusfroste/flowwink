@@ -84,7 +84,7 @@
       "status": "partial",
       "weight": 2,
       "verify": "budgets table (annual/monthly per account) + manage_budget + budget_vs_actual RPC/skill (variance vs Σ debit−credit, draft excluded) (migration 20260614030000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: annual budget 120000 vs actual 35000 (draft excluded) variance 85000; Jan 10000 vs 30000 = -20000; upsert idempotent. Pending: budget admin UI + Stage-3 before done.",
+      "notes": "Admin UI BUILT 2026-07-06 (Budgets tab + budget_vs_actual, commit f92d4fc8). BLOCKED: manage_budget upsert fails live — 'no unique or exclusion constraint matching the ON CONFLICT' (RPC bug; the save path errors). Fix the RPC's ON CONFLICT target before done.",
       "epic": "EPIC-08"
     },
     {

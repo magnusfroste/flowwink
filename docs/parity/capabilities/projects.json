@@ -48,10 +48,10 @@
       "id": "milestones",
       "name": "Milestones",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "project_milestones table + manage_project_milestone RPC/skill (list/create/update/reach/reopen/delete) + task progress rollup (migration 20260613010000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-13 (progress rollup 3 tasks/1 done, reach/reopen, cascade). Pending: admin UI + Stage-3 runtime verify before done."
+      "verify": "Dual-surface DONE 2026-07-06. Skill: manage_project_milestone create live over gateway (Phase 1 milestone with due_date → milestone_id). UI: Milestones section in ProjectsPage + useProjectMilestones hook (list/create/update/reach/reopen/delete + progress bar).",
+      "notes": "Backend verified 2026-06-13; admin UI built + Stage-3 live 2026-07-06."
     },
     {
       "id": "gantt",

@@ -72,10 +72,10 @@
       "id": "policy_limits",
       "name": "Policy limits/category rules",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "expense_policies (per-category caps/receipt/approval threshold) + evaluate_expense_policy + manage_expense_policy (migration 20260614080000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: travel cap 50000/receipt/approval>20000; 30k+receipt allowed (approval), 60k over_limit blocked, no-receipt blocked, '*' catch-all fallback. Pending: policy admin UI + wire into expense create + Stage-3 before done.",
+      "verify": "Dual-surface DONE 2026-07-06. Skill: manage_expense_policy upsert live over gateway (baseline '*' cap 50000/receipt/approval>20000 → policy_id). UI: Policies tab in ExpensesPage + useExpensePolicies hook (list/upsert/delete, cap/receipt/approval-threshold). evaluate_expense_policy consumer verified 2026-06-14.",
+      "notes": "Backend verified 2026-06-14; admin UI built + Stage-3 live 2026-07-06.",
       "epic": "EPIC-08"
     },
     {

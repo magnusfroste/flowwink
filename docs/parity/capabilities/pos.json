@@ -95,11 +95,11 @@
     },
     {
       "id": "invoice_linking",
-      "name": "Receipt\u2192invoice linking",
+      "name": "Receipt→invoice linking",
       "odoo": true,
       "status": "missing",
       "weight": 1,
-      "verify": "receipt\u2192invoice linking"
+      "verify": "receipt→invoice linking"
     },
     {
       "id": "refund_workflow",
@@ -121,10 +121,10 @@
       "id": "gift_card_balance",
       "name": "Gift-card balance",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "gift_cards balance ledger + manage_gift_card (issue/get/list/deactivate) + redeem_gift_card (row-locked, guards insufficient/inactive) (migration 20260613050000)",
-      "notes": "Verified on LOCAL Supabase: issue 50000 \u2192 redeem 12000 \u2192 38000, overspend blocked. Pending: gift-card UI + tie redeem to pos gift_card payment + Stage-3 before done."
+      "verify": "Dual-surface DONE 2026-07-06. Skill: manage_gift_card issue live over gateway (GC-TEST-001, 500 kr → gift_card_id, balance_cents 50000). UI: Gift Cards tab in POSPage + useGiftCards hook (issue/get/list/deactivate).",
+      "notes": "Admin UI built + Stage-3 live 2026-07-06. redeem at checkout via redeem_gift_card (separate)."
     },
     {
       "id": "table_management",
