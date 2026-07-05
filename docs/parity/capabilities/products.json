@@ -87,11 +87,11 @@
       "id": "uom",
       "name": "Multiple units of measure",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "epic": "EPIC-01",
-      "verify": "uom_categories + uoms (factor-to-reference) tables, products.sales_uom_id, convert_uom() (migration 20260610170000); admin UI = SalesUomSelect.tsx wired into ProductDialog.tsx (per-product sales-unit picker, save button calls products.sales_uom_id update)",
-      "notes": "LIVE RE-VERIFY 2026-07-05 FOUND DEEPER DRIFT: manage_uom (new skill) works but returned an EMPTY uoms table, and convert_uom failed with 'function not found in schema cache' — the entire UoM foundation (seed categories/units + convert_uom function) from back-dated migration 20260610170000 never reached rzhj (same ledger-skip class as the July-4 batch; the tables exist but function + seeds are missing). Fix: forward-dated re-emit 20260705170000_reemit-uom-foundation.sql (convert_uom + idempotent seeds). Agent surface (manage_uom + convert_uom skills, generic-CRUD whitelist) is deployed and confirmed reachable. Stays partial pending the re-emit migration applying + a live conversion run."
+      "verify": "Stage-3 live 2026-07-06 over the MCP REST gateway on rzhj as an external agent: manage_uom action=list returned the seeded Units+Weight categories (unit/kg/g/t), convert_uom(2500, g, kg) → 2.5. Foundation re-emitted 2026-07-05 (migration 20260705170000 re-run via Lovable in-sandbox after the backdated original was skipped by the ledger). uom_categories + uoms tables, products.sales_uom_id; admin UI = SalesUomSelect.tsx in ProductDialog.tsx.",
+      "notes": "Depth vs Odoo: no per-line purchase-UoM on POs and no UoM on BoM lines yet — tracked separately; core conversion + product sales-unit works both surfaces."
     },
     {
       "id": "partial_shipments",
