@@ -30,6 +30,7 @@ const DEALS_SKILLS: SkillSeed[] = [
               type: 'string',
               enum: [
                 'list',
+                'get',
                 'create',
                 'update',
                 'move_stage',
@@ -89,7 +90,7 @@ Manages sales deals: list, create, update, move between stages.
 - Moving deals through the pipeline (lead → proposal → negotiation → won/lost)
 - After lead qualification suggests a deal
 ### Parameters
-- **action**: Required. list, create, update, move_stage.
+- **action**: Required. list, get, create, update, move_stage.
 - **lead_id**: Required for create.
 - **stage**: Deal stage (for create/update/move_stage).
 - **value_cents**: Deal value in cents.

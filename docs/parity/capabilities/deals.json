@@ -79,8 +79,8 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "deals.lost_reason/lost_note (migration 20260704110000); LostReasonDialog prompts on closed_lost (DealKanban drop, DealsPage table select, DealDetailPage select); useUpdateDeal clears closed_at+lost fields on re-open to an active stage; manage_deal update/move_stage accept lost_reason/lost_note with clear-on-reopen (agent-execute executeDealsAction); reason shown on DealDetailPage; feeds lead_pipeline_review win_loss rollup",
-      "notes": "Built 2026-07-04 per crm-odoo.md §3. partial until Stage-3: no live-DB runtime verification yet."
+      "verify": "WRITE PATH LIVE-VERIFIED on rzhj 2026-07-05 (Stage-3): manage_deal update stage=lost normalized to closed_lost and stored lost_reason='price' (echoed in the response); move_stage closed_lost with lost_reason='other' also worked. deals.lost_reason/lost_note (migration 20260704110000); LostReasonDialog prompts on closed_lost (DealKanban drop, DealsPage table select, DealDetailPage select); useUpdateDeal clears closed_at+lost fields on re-open to an active stage; manage_deal update/move_stage accept lost_reason/lost_note with clear-on-reopen (agent-execute executeDealsAction); reason shown on DealDetailPage; feeds lead_pipeline_review win_loss rollup",
+      "notes": "LIVE VERIFICATION FOUND A READ-PATH BUG 2026-07-05: the list response omitted lost_reason/lost_note entirely (missing from the select) and manage_deal had no get action — so lost data was accepted but INVISIBLE to operators/reports, and clear-on-reopen could not be observed. Fixed in agent-execute (list select now includes lost_reason/lost_note/closed_at; new get action with clean not-found) + manage_deal tool_definition/instructions gained 'get' (artifact regenerated). Stays partial pending deploy + live re-verify of the read path. Built 2026-07-04 per crm-odoo.md §3. partial until Stage-3: no live-DB runtime verification yet."
     },
     {
       "id": "deal_history",

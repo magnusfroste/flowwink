@@ -3502,13 +3502,25 @@ async function executeDealsAction(
   if (action === 'list') {
     const { stage, lead_id } = args as any;
     let query = supabase.from('deals')
-      .select('id, value_cents, currency, stage, lead_id, product_id, expected_close, notes, created_at, updated_at')
+      .select('id, value_cents, currency, stage, lead_id, product_id, expected_close, notes, closed_at, lost_reason, lost_note, created_at, updated_at')
       .order('updated_at', { ascending: false }).limit(50);
     if (stage) query = query.eq('stage', stage);
     if (lead_id) query = query.eq('lead_id', lead_id);
     const { data, error } = await query;
     if (error) throw new Error(`List deals failed: ${error.message}`);
     return { deals: data || [] };
+  }
+
+  if (action === 'get') {
+    const { deal_id } = args as any;
+    if (!deal_id) throw new Error('deal_id is required for get');
+    const { data, error } = await supabase.from('deals')
+      .select('*').eq('id', deal_id).maybeSingle();
+    if (error) throw new Error(`Get deal failed: ${error.message}`);
+    if (!data) {
+      return { found: false, error: `Deal ${deal_id} not found` };
+    }
+    return data;
   }
 
   if (action === 'create') {
