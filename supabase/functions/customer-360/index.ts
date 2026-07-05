@@ -238,9 +238,9 @@ serve(async (req) => {
         id: `deal-${d.id}`,
         ts: d.created_at,
         kind: "deal",
-        title: d.title,
-        amount: d.amount,
-        status: d.stage || d.status,
+        title: `Deal ${d.id.slice(0, 8)}`,
+        amount: (d.value_cents ?? 0) / 100,
+        status: d.stage,
         href: `/admin/deals`,
       });
     }
@@ -250,7 +250,7 @@ serve(async (req) => {
         ts: o.created_at,
         kind: "order",
         title: `Order ${o.order_number || o.id.slice(0, 8)}`,
-        amount: o.total,
+        amount: (o.total_cents ?? 0) / 100,
         status: o.status,
         href: `/admin/orders`,
       });
@@ -261,7 +261,7 @@ serve(async (req) => {
         ts: i.created_at,
         kind: "invoice",
         title: `Invoice ${i.invoice_number || i.id.slice(0, 8)}`,
-        amount: i.total,
+        amount: (i.total_cents ?? 0) / 100,
         status: i.status,
         href: `/admin/invoicing`,
       });
@@ -272,7 +272,7 @@ serve(async (req) => {
         ts: q.created_at,
         kind: "quote",
         title: `Quote ${q.quote_number || q.id.slice(0, 8)}`,
-        amount: q.total,
+        amount: (q.total_cents ?? 0) / 100,
         status: q.status,
         href: `/admin/quotes`,
       });
@@ -302,7 +302,7 @@ serve(async (req) => {
         id: `sub-${s.id}`,
         ts: s.created_at,
         kind: "subscription",
-        title: s.plan_name || "Subscription",
+        title: s.product_name || "Subscription",
         status: s.status,
         href: `/admin/subscriptions`,
       });
