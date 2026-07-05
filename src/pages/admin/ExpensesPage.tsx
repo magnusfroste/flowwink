@@ -5,6 +5,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpensesListTab } from '@/components/admin/expenses/ExpensesListTab';
 import { ExpenseReportsTab } from '@/components/admin/expenses/ExpenseReportsTab';
+import { ExpensePoliciesTab } from '@/components/admin/expenses/ExpensePoliciesTab';
 
 export default function ExpensesPage() {
   const [tab, setTab] = useState('expenses');
@@ -21,6 +22,7 @@ export default function ExpensesPage() {
           <TabsList>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="reports">Monthly Reports</TabsTrigger>
+            <TabsTrigger value="policies">Policies</TabsTrigger>
           </TabsList>
 
           <TabsContent value="expenses">
@@ -28,6 +30,9 @@ export default function ExpensesPage() {
           </TabsContent>
           <TabsContent value="reports">
             <ExpenseReportsTab />
+          </TabsContent>
+          <TabsContent value="policies">
+            <ExpensePoliciesTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
