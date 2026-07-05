@@ -88,7 +88,32 @@ Deno.serve(async (req) => {
     const { data: policies, error: polErr } = await policyQuery;
     if (polErr) throw new Error(`Failed to load SLA policies: ${polErr.message}`);
 
+    // If a working-hours schedule is configured (any row in business_hours), the
+    // SLA clock ticks on business minutes only — nights/weekends/holidays don't
+    // count. With no schedule, fall back to wall-clock (fail-forward: don't
+    // break instances that never configured business hours).
+    const { count: bhCount } = await supabase
+      .from('business_hours')
+      .select('*', { count: 'exact', head: true });
+    const useBusinessHours = (bhCount ?? 0) > 0;
+
+    async function elapsedMinutes(startIso: string, nowIso: string): Promise<number> {
+      if (!useBusinessHours) {
+        return Math.floor((new Date(nowIso).getTime() - new Date(startIso).getTime()) / 60_000);
+      }
+      const { data, error } = await supabase.rpc('business_minutes_between', {
+        p_start: startIso,
+        p_end: nowIso,
+      });
+      if (error) {
+        // Fail-forward: fall back to wall-clock on RPC failure rather than skip.
+        return Math.floor((new Date(nowIso).getTime() - new Date(startIso).getTime()) / 60_000);
+      }
+      return Math.max(0, Math.floor(Number(data ?? 0)));
+    }
+
     const now = Date.now();
+    const nowIso = new Date(now).toISOString();
     const counts: Record<string, { checked: number; open_violations: number; resolved: number }> = {};
     const fresh: FreshViolation[] = [];
 
@@ -100,7 +125,9 @@ Deno.serve(async (req) => {
       const cutoffIso = new Date(now - policy.threshold_minutes * 60_000).toISOString();
       const severity = policy.priority || 'medium';
 
-      // 1) Open new violations for entities past threshold and still unhandled.
+      // Wall-clock cutoff selects a superset of true breachers when business
+      // hours are in effect (business minutes ≤ wall minutes); we then
+      // re-verify each candidate against the business-hours clock below.
       let breachQuery = supabase.from(cfg.table).select(`id, ${cfg.startColumn}`).lt(cfg.startColumn, cutoffIso);
       breachQuery = cfg.openFilter(breachQuery);
       const { data: breaching, error: breachErr } = await breachQuery.limit(500);
@@ -109,8 +136,12 @@ Deno.serve(async (req) => {
       for (const ent of breaching ?? []) {
         bucket.checked++;
         const entityId = String((ent as any).id);
-        const startedAt = new Date((ent as any)[cfg.startColumn]).getTime();
-        const actualMinutes = Math.floor((now - startedAt) / 60_000);
+        const startedAtIso = (ent as any)[cfg.startColumn] as string;
+        const actualMinutes = await elapsedMinutes(startedAtIso, nowIso);
+
+        // With a business-hours schedule the wall-clock cutoff over-selects:
+        // re-verify against the working-hours clock before opening a breach.
+        if (actualMinutes < policy.threshold_minutes) continue;
 
         // Skip if an unresolved violation already exists for this (policy, entity).
         const { data: existing } = await supabase
