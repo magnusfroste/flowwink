@@ -5461,7 +5461,9 @@ The body_html should be clean HTML with inline styles, no <html>/<body> wrapper.
     lead_email: lead.email,
     lead_name: lead.name,
     subject,
-    message_id: resendData?.id,
+    message_id: routerData?.message_id ?? routerData?.id ?? null,
+    provider: routerData?.provider ?? 'unknown',
+    simulated: routerData?.simulated === true,
     purpose,
   };
 }

@@ -262,7 +262,7 @@ const INVENTORY_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            p_picking_order_id: { type: 'string' },
+            p_picking_order_id: { type: 'string', format: 'uuid' },
             p_tracking_number: { type: 'string' },
             p_carrier: { type: 'string' },
           },
