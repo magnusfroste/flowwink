@@ -101,10 +101,10 @@
       "id": "cycle_count",
       "name": "Cycle counts / physical inventory variance",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "inventory_counts + inventory_count_lines (generated variance) + manage_inventory_count RPC/skill; post applies variance via adjust_quant (migration 20260614040000)",
-      "notes": "Built + scratch-Postgres verified 2026-06-14: snapshot system_qty, count A 100→95/B 50→60, post applied 2 cycle_count adjustments, on-hand updated, double-post guarded. Pending: count admin UI + Stage-3 before done.",
+      "verify": "Dual-surface DONE 2026-07-06. Skill: Stage-3 live over the MCP gateway on rzhj as an external agent — create → add_line (system_qty snapshot) → set_count(7) → post returned adjustments_applied=1 (variance applied via adjust_quant), get shows status=posted. UI: CycleCountPanel.tsx (new 'Cycle Count' tab in InventoryPage) + useInventoryCounts.ts hook drive the same manage_inventory_count RPC — new count, per-line counted-qty entry with color-coded variance, Post locks the count. Tables inventory_counts + inventory_count_lines; RPC manage_inventory_count (migration 20260614040000).",
+      "notes": "Backend verified 2026-06-14 (scratch-Postgres); admin UI built + Stage-3 live-verified 2026-07-06 (commit 293104df). Both surfaces present.",
       "epic": "EPIC-08"
     },
     {
