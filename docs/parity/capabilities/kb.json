@@ -24,10 +24,10 @@
       "id": "search",
       "name": "Search",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "public search in src/pages/KnowledgeBasePage.tsx",
-      "notes": "Skill surface BUILT 2026-07-05 (was the gap): search_kb skill (module:kb, action=search) matches title/question/answer server-side with the same reach as the public KnowledgeBasePage search box — published-only by default, featured-then-views ranking; new 'search' action in the KB handler in agent-execute. Stays partial pending deploy (agent-execute) + skills sync + a Stage-3 live search run. Public UI search remains client-side substring (server FTS is the remaining depth item)."
+      "verify": "Stage-3 live 2026-07-06: search_kb over the MCP REST gateway on rzhj returned ranked published articles (first run caught+fixed a schema bug — the action queried kb_articles.answer; columns are answer_text/answer_json, fixed in 4c9b9ad0, agent-execute redeployed, re-run green). Public search in src/pages/KnowledgeBasePage.tsx.",
+      "notes": "search_kb skill (module:kb, action=search) matches title/question/answer_text server-side — published-only by default, featured-then-views ranking. Public UI search remains client-side substring (server FTS is the remaining depth item)."
     },
     {
       "id": "public_portal",
