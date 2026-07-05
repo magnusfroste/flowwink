@@ -132,10 +132,10 @@
       "id": "reminders",
       "name": "Appointment reminders",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "supabase/functions/send-booking-reminders/index.ts sweeps confirmed bookings with start_time within 24h and reminder_sent_at IS NULL, emails via email-send, stamps reminder_sent_at; wired as a 7th job ('booking-reminders', every 15 min) in register_flowpilot_cron() (migration 20260703152000_booking-reminders-cron.sql), the same cron.schedule+net.http_post mechanism as every other FlowPilot periodic job",
-      "notes": "Built 2026-07-03, not yet live-DB/live-cron verified in this session (no Supabase creds) — finally wires the previously dead bookings.reminder_sent_at column. Mirrors send-booking-confirmation's settings lookup + email-send dispatch pattern closely (new file, same class of transactional email). Edge function needs `supabase functions deploy send-booking-reminders --no-verify-jwt` per the deploy runbook before the cron job it registers can succeed.",
+      "verify": "LIVE E2E VERIFIED on rzhj 2026-07-05 (Stage-3): confirmed booking starting <24h ahead → send-booking-reminders returned {checked:1, sent:1, failed:0}; an immediate second run returned {checked:0} — reminder_sent_at stamped and deduped. supabase/functions/send-booking-reminders/index.ts sweeps confirmed bookings with start_time within 24h and reminder_sent_at IS NULL, emails via email-send, stamps reminder_sent_at; wired as a 7th job ('booking-reminders', every 15 min) in register_flowpilot_cron() (migration 20260703152000_booking-reminders-cron.sql), the same cron.schedule+net.http_post mechanism as every other FlowPilot periodic job",
+      "notes": "Delivery verified through the real email-send pipeline; fixture booking cancelled after the run. The cron leg is the 7th job in register_flowpilot_cron — ensure it is registered per instance during provisioning (same runbook step as the visitor-intent trigger).",
       "epic": "EPIC-05"
     },
     {

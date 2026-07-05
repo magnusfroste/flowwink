@@ -44,7 +44,7 @@
       "status": "partial",
       "weight": 1,
       "notes": "Activity+recency only; Odoo has predictive scoring",
-      "verify": "qualify_lead, score column"
+      "verify": "LIVE VERIFIED on rzhj 2026-07-05 (Stage-3): qualify_lead returned score/engagement_level (cold, activity_count=0) and stamped leads.ai_qualified_at + updated_at on the row. Mechanism: qualify_lead skill + leads.score column. qualify_lead, score column"
     },
     {
       "id": "custom_stages",

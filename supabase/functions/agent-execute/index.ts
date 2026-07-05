@@ -2963,6 +2963,25 @@ async function executeKbAction(
     return { articles: data || [] };
   }
 
+  if (action === 'search') {
+    // Full KB search over title/question/answer (the fields the public
+    // KnowledgeBasePage filters on client-side) — gives agents the same
+    // reach as the visitor search box, server-side.
+    const { query: q, search, include_unpublished, limit = 20 } = args as any;
+    const term = sanitizeOrTerm(String(q ?? search ?? '').trim());
+    if (!term) throw new Error('query is required for search');
+    let query = supabase.from('kb_articles')
+      .select('id, title, slug, question, answer, category_id, is_published, is_featured, views_count, helpful_count, updated_at')
+      .or(`title.ilike.%${term}%,question.ilike.%${term}%,answer.ilike.%${term}%`)
+      .order('is_featured', { ascending: false })
+      .order('views_count', { ascending: false })
+      .limit(limit);
+    if (!include_unpublished) query = query.eq('is_published', true);
+    const { data, error } = await query;
+    if (error) throw new Error(`KB search failed: ${error.message}`);
+    return { results: data || [], count: (data || []).length, query: term };
+  }
+
   if (action === 'get') {
     const { article_id, slug, title } = args as any;
     let query = supabase.from('kb_articles')
