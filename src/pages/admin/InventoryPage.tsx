@@ -228,6 +228,10 @@ export default function InventoryPage() {
           <ReceivingPanel />
         </TabsContent>
 
+        <TabsContent value="cyclecount">
+          <CycleCountPanel />
+        </TabsContent>
+
         <TabsContent value="moves">
           <Card>
             <CardContent className="p-0">
