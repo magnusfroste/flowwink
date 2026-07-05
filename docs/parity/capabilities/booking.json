@@ -98,9 +98,9 @@
       "id": "staff_assignment",
       "name": "Staff assignment",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "bookings.assigned_employee_id uuid REFERENCES employees(id) ON DELETE SET NULL (migration 20260703150000_booking-staff-assignment.sql); staff Select in CreateBookingDialog.tsx and the booking detail dialog in BookingsPage.tsx (src/pages/admin/BookingsPage.tsx); manage_bookings action=assign_staff in agent-execute/index.ts executeBookingsManagement() + skill schema in booking-module.ts",
+      "verify": "LIVE E2E VERIFIED on rzhj 2026-07-05 (Stage-3): created a test booking via book_appointment, then manage_bookings assign_staff set assigned_employee_id to a live employee (QA Hire, 2a610ac5-...), confirmed via get; test booking cancelled after. bookings.assigned_employee_id uuid REFERENCES employees(id) ON DELETE SET NULL (migration 20260703150000_booking-staff-assignment.sql); staff Select in CreateBookingDialog.tsx and the booking detail dialog in BookingsPage.tsx (src/pages/admin/BookingsPage.tsx); manage_bookings action=assign_staff in agent-execute/index.ts executeBookingsManagement() + skill schema in booking-module.ts",
       "notes": "Built 2026-07-03, not yet live-DB verified (no Supabase creds in this session) — schema/UI/skill wired end-to-end by code inspection but the migration has not been run against a live instance. employees (general HR/staff table) confirmed as the correct FK target over consultant_profiles (niche consultant-marketplace table with hourly_rate_cents/portfolio_url/embedding fields, unrelated concept) by reading both table definitions in baseline.sql.",
       "epic": "EPIC-05"
     },
@@ -142,9 +142,9 @@
       "id": "no_show",
       "name": "No-show tracking",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "bookings_status_check CHECK constraint extended with 'no_show' (migration 20260703151000_booking-no-show-status.sql, drop+recreate pattern matching 20260629142430_outbound_communications_direction_check); 'Mark No-show' action in BookingsPage.tsx booking-list dropdown (gated by canMarkNoShow: status=confirmed and start_time in the past) and as a status option in the detail dialog; manage_bookings action=update_status accepts status=no_show via the existing status-update path (agent-execute/index.ts, booking-module.ts)",
+      "verify": "LIVE E2E VERIFIED on rzhj 2026-07-05 (Stage-3): manage_bookings update_status set a booking to 'no_show' and it was ACCEPTED (the bookings_status_check CHECK constraint allows no_show), confirmed via get. bookings_status_check CHECK constraint extended with 'no_show' (migration 20260703151000_booking-no-show-status.sql, drop+recreate pattern matching 20260629142430_outbound_communications_direction_check); 'Mark No-show' action in BookingsPage.tsx booking-list dropdown (gated by canMarkNoShow: status=confirmed and start_time in the past) and as a status option in the detail dialog; manage_bookings action=update_status accepts status=no_show via the existing status-update path (agent-execute/index.ts, booking-module.ts)",
       "notes": "Built 2026-07-03, not yet live-DB verified in this session (no Supabase creds) — CHECK constraint change + UI + skill metadata wired by code inspection; agent-execute's executeBookingsManagement() update_status branch was already generic over any status string, so no handler code change was needed there beyond the CHECK constraint and skill description.",
       "epic": "EPIC-05"
     },

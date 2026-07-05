@@ -3502,13 +3502,25 @@ async function executeDealsAction(
   if (action === 'list') {
     const { stage, lead_id } = args as any;
     let query = supabase.from('deals')
-      .select('id, value_cents, currency, stage, lead_id, product_id, expected_close, notes, created_at, updated_at')
+      .select('id, value_cents, currency, stage, lead_id, product_id, expected_close, notes, closed_at, lost_reason, lost_note, created_at, updated_at')
       .order('updated_at', { ascending: false }).limit(50);
     if (stage) query = query.eq('stage', stage);
     if (lead_id) query = query.eq('lead_id', lead_id);
     const { data, error } = await query;
     if (error) throw new Error(`List deals failed: ${error.message}`);
     return { deals: data || [] };
+  }
+
+  if (action === 'get') {
+    const { deal_id } = args as any;
+    if (!deal_id) throw new Error('deal_id is required for get');
+    const { data, error } = await supabase.from('deals')
+      .select('*').eq('id', deal_id).maybeSingle();
+    if (error) throw new Error(`Get deal failed: ${error.message}`);
+    if (!data) {
+      return { found: false, error: `Deal ${deal_id} not found` };
+    }
+    return data;
   }
 
   if (action === 'create') {
@@ -3890,8 +3902,9 @@ async function executeFormsAction(
     const { submission_id } = args as any;
     if (!submission_id) throw new Error('submission_id is required');
     const { data, error } = await supabase.from('form_submissions')
-      .select('*').eq('id', submission_id).single();
+      .select('*').eq('id', submission_id).maybeSingle();
     if (error) throw new Error(`Get submission failed: ${error.message}`);
+    if (!data) return { found: false, error: `Submission ${submission_id} not found` };
     return data;
   }
 
@@ -4461,8 +4474,9 @@ async function executeNewsletterAction(
       const id = newsletter_id;
       if (!id) throw new Error('newsletter_id required for get');
       const { data, error } = await supabase.from('newsletters')
-        .select('*').eq('id', id).single();
+        .select('*').eq('id', id).maybeSingle();
       if (error) throw new Error(`Get newsletter failed: ${error.message}`);
+      if (!data) return { found: false, error: `Newsletter ${id} not found` };
       return data;
     }
 
@@ -4743,8 +4757,9 @@ async function executeOrdersAction(
 
     if (action === 'get' && order_id) {
       const { data: order, error } = await supabase.from('orders')
-        .select('*').eq('id', order_id).single();
+        .select('*').eq('id', order_id).maybeSingle();
       if (error) throw new Error(`Get order failed: ${error.message}`);
+      if (!order) return { found: false, error: `Order ${order_id} not found` };
       const { data: items } = await supabase.from('order_items')
         .select('id, product_name, quantity, price_cents').eq('order_id', order_id);
       return { ...order, items: items || [] };
@@ -5044,9 +5059,15 @@ async function executeLeadsAction(
   }
 
   if (action === 'get' && lead_id) {
+    // maybeSingle: a missing lead (e.g. deleted or merged away) must return a
+    // clean not-found, not a "Cannot coerce the result to a single JSON object"
+    // crash — operators hit this right after merge_leads deletes the duplicate.
     const { data, error } = await supabase.from('leads')
-      .select('*').eq('id', lead_id).single();
+      .select('*').eq('id', lead_id).maybeSingle();
     if (error) throw new Error(`Get lead failed: ${error.message}`);
+    if (!data) {
+      return { found: false, error: `Lead ${lead_id} not found (it may have been deleted or merged into another lead — use action=list with a search to locate the surviving record)` };
+    }
     // Get activities
     const { data: activities } = await supabase.from('lead_activities')
       .select('id, type, metadata, points, created_at')
@@ -5639,8 +5660,9 @@ async function executeBlogPostsManagement(
     if (post_id) query = query.eq('id', post_id);
     else if (slug) query = query.eq('slug', slug);
     else throw new Error('post_id or slug required');
-    const { data, error } = await query.single();
+    const { data, error } = await query.maybeSingle();
     if (error) throw new Error(`Get post failed: ${error.message}`);
+    if (!data) return { found: false, error: `Blog post not found (${post_id ? 'id ' + post_id : 'slug ' + slug})` };
     return data;
   }
 
@@ -5739,8 +5761,9 @@ async function executeBookingsManagement(
 
   if (action === 'get' && booking_id) {
     const { data, error } = await supabase.from('bookings')
-      .select('*').eq('id', booking_id).single();
+      .select('*').eq('id', booking_id).maybeSingle();
     if (error) throw new Error(`Get booking failed: ${error.message}`);
+    if (!data) return { found: false, error: `Booking ${booking_id} not found` };
     return data;
   }
 
@@ -7492,8 +7515,9 @@ async function executeDbAction(
         const { purchase_order_id } = args as any;
         if (!purchase_order_id) throw new Error('purchase_order_id required');
         const { data: po, error } = await supabase.from('purchase_orders')
-          .select('*, vendors(name, email), purchase_order_lines(*)').eq('id', purchase_order_id).single();
+          .select('*, vendors(name, email), purchase_order_lines(*)').eq('id', purchase_order_id).maybeSingle();
         if (error) throw new Error(`Get PO failed: ${error.message}`);
+        if (!po) return { found: false, error: `Purchase order ${purchase_order_id} not found` };
         return po;
       }
 
@@ -8247,6 +8271,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'quotes',
   // Pricelists (Odoo-style versioned pricing)
   'pricelists', 'pricelist_items',
+  // Units of measure (per-category, factor-to-reference; conversion via convert_uom RPC)
+  'uoms', 'uom_categories',
   // P2P tolerance policies
   'tolerance_policies',
   // O2D — carriers, shipments, returns/RMA
@@ -8259,6 +8285,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'bank_transactions',
   // Chat (conversations + feedback used by support skills)
   'chat_conversations', 'chat_feedback',
+  // Support agents (availability/presence read for transfer decisions)
+  'support_agents',
   // Manufacturing
   'manufacturing_orders',
   // Analytics

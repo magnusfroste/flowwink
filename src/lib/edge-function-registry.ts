@@ -68,6 +68,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'resume-match', 'run-autonomy-tests',
   'run-platform-tests', 'sales-profile-setup', 'score-visitor-intent', 'send-booking-confirmation',
   'send-booking-reminders',
+  'send-webinar-reminders',
   'send-contact-email', 'send-invoice-email', 'send-order-confirmation', 'send-quote-email',
   'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
   'sla-check', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions',
@@ -128,6 +129,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   visitorIntelligence: ['score-visitor-intent'],
   sla: ['sla-check'],
   surveys: ['survey-send'],
+  webinars: ['send-webinar-reminders'],
 
   // ── Content / docs / knowledge ───────────────────────────────────────────
   blog: ['blog-rss'],

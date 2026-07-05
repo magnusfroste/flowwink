@@ -60,6 +60,22 @@ Manages webinars and registrations.
 - Registrations are linked to leads when email matches.`,
   },
   {
+    name: 'send_webinar_reminders',
+    description: 'Sweep webinar registrations and send the due reminder emails: registration confirmation, T-24h, T-1h, and post-webinar follow-up (thanks vs missed-you, with recording link when set). Each reminder is sent at most once per registration. Use when: running the periodic webinar-reminder sweep (cron). NOT for: registering attendees (register_webinar) or the webinar lifecycle (publish/start/complete_webinar).',
+    category: 'communication',
+    handler: 'edge:send-webinar-reminders',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_webinar_reminders',
+        description: 'Send due webinar reminder emails (confirm, T-24h, T-1h, post) and stamp the per-registration markers',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Runs as a scheduled sweep, no arguments needed. Four reminder kinds, each deduped via its marker column on webinar_registrations: confirm (unconfirmed registration, non-cancelled webinar), t24 (starts in 23-25h), t1 (starts in 40-90 min), post (completed, 30+ min after end; thanks/missed_you variant based on attended, includes recording_url when set). Scheduled via the "Webinar Reminders" cron automation (every 15 min) — see migration 20260705160000.',
+  },
+  {
     name: 'register_webinar',
     description: 'Register a visitor for an upcoming webinar. Auto-links to existing lead by email or creates a new lead with source=webinar (+15 score). Use when: visitor wants to sign up for a webinar. NOT for: managing webinars (use manage_webinar).',
     category: 'communication',
@@ -222,6 +238,7 @@ export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutp
   outputSchema: webinarModuleOutputSchema,
 
   skills: [
+    'send_webinar_reminders',
     'manage_webinar',
     'register_webinar',
     'publish_webinar',

@@ -4,21 +4,136 @@
   "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "crud", "name": "Product CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "manage_product skill list/create/update/delete" },
-    { "id": "base_price", "name": "Base price per product", "odoo": true, "status": "done", "weight": 1, "verify": "price_cents on products" },
-    { "id": "stock_tracking", "name": "Stock tracking flag + low-stock threshold", "odoo": true, "status": "done", "weight": 1, "verify": "track_inventory, low_stock_threshold" },
-    { "id": "pos_flag", "name": "POS availability flag + POS category", "odoo": true, "status": "done", "weight": 1, "verify": "available_in_pos, pos_category_id" },
-    { "id": "barcode", "name": "Barcode field", "odoo": true, "status": "done", "weight": 1, "verify": "barcode column" },
-    { "id": "category_single", "name": "Single product category", "odoo": true, "status": "partial", "weight": 1, "notes": "Only one category_id; Odoo has a category tree + multiple e-commerce categories", "verify": "category_id" },
-
-    { "id": "variants", "name": "Product variants (attributes → SKUs)", "odoo": true, "status": "done", "weight": 3, "epic": "EPIC-01", "verify": "product_variants table + manage_variant skill (rpc:manage_product_variant)", "notes": "Stage-3 verified 2026-06-11: manage_variant generate via agent-execute created 2 variants in DB; UI = ProductVariantsPanel + ProductDialog." },
-    { "id": "attribute_templates", "name": "Attribute templates (color/size/material)", "odoo": true, "status": "done", "weight": 2, "epic": "EPIC-01", "verify": "product_attributes + product_attribute_values tables; generate action upserts them", "notes": "Stage-3 verified 2026-06-11: generate upserts attributes+values (Color×Size); UI in ProductVariantsPanel." },
-    { "id": "order_lines_normalized", "name": "Normalized order lines (not JSONB)", "odoo": true, "status": "done", "weight": 3, "epic": "EPIC-01", "verify": "order_items table exists + populated by create-checkout (sandbox+Stripe); variant_id + tax_rate_pct FK added (migration 20260610150000)", "notes": "Lines already normalized in order_items; variant_id link added + verified on real schema 2026-06-11. Optional later: legacy metadata-only backfill. Re: 01.4 'POS sells variants' — correction: this is skill-only today. record_pos_sale (src/lib/modules/pos-module.ts ~L151) accepts variant_id and resolves SKU/price, but the human cashier UI (POSPage.tsx / usePOS.ts) has no variant picker at all — no product_variant reference anywhere in that UI. Per the dual-surface law this caps at partial, not done; tracked here as a note since there is no dedicated pos.json capability id for it." },
-    { "id": "uom", "name": "Multiple units of measure", "odoo": true, "status": "partial", "weight": 2, "epic": "EPIC-01", "verify": "uom_categories + uoms (factor-to-reference) tables, products.sales_uom_id, convert_uom() (migration 20260610170000); admin UI = SalesUomSelect.tsx wired into ProductDialog.tsx (per-product sales-unit picker, save button calls products.sales_uom_id update)", "notes": "Foundation + conversion shipped (verified g/kg/t conversions + cross-category guard). A minimal admin UI has since landed (SalesUomSelect lets an admin pick a product's sales unit from the uoms table) but there is still no manage_uom skill (no agent-callable CRUD for UoM master data) and no price-per-uom on sales lines / purchase UoM — dual-surface law not yet satisfied, stays partial." },
-    { "id": "partial_shipments", "name": "Partial shipment / partial fulfillment", "odoo": true, "status": "done", "weight": 2, "epic": "EPIC-01", "verify": "order_items.qty_fulfilled + fulfill_order_line RPC/skill (migration 20260610180000); order ships only when all lines complete", "notes": "Stage-3 verified 2026-06-11: fulfill_order_line via agent-execute (3/5 → qty_fulfilled=3, order ships when all lines complete); UI = OrderLineFulfillment." },
-    { "id": "backorder", "name": "Backorder auto-creation on stockout", "odoo": true, "status": "missing", "weight": 1, "verify": "backorder records created when reserved > on-hand" },
-    { "id": "supplier_links", "name": "Supplier(s) + supplier price at product level", "odoo": true, "status": "missing", "weight": 1, "verify": "product_suppliers linking products to vendors" },
-    { "id": "product_media", "name": "Product image gallery + attachments", "odoo": true, "status": "missing", "weight": 1, "verify": "product_media table; today only single image_url" },
-    { "id": "dropship", "name": "Drop-ship / consignment routes", "odoo": true, "status": "missing", "weight": 1, "verify": "route config on product" }
+    {
+      "id": "crud",
+      "name": "Product CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "manage_product skill list/create/update/delete"
+    },
+    {
+      "id": "base_price",
+      "name": "Base price per product",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "price_cents on products"
+    },
+    {
+      "id": "stock_tracking",
+      "name": "Stock tracking flag + low-stock threshold",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "track_inventory, low_stock_threshold"
+    },
+    {
+      "id": "pos_flag",
+      "name": "POS availability flag + POS category",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "available_in_pos, pos_category_id"
+    },
+    {
+      "id": "barcode",
+      "name": "Barcode field",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "barcode column"
+    },
+    {
+      "id": "category_single",
+      "name": "Single product category",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "notes": "Only one category_id; Odoo has a category tree + multiple e-commerce categories",
+      "verify": "category_id"
+    },
+    {
+      "id": "variants",
+      "name": "Product variants (attributes → SKUs)",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "epic": "EPIC-01",
+      "verify": "product_variants table + manage_variant skill (rpc:manage_product_variant)",
+      "notes": "Stage-3 verified 2026-06-11: manage_variant generate via agent-execute created 2 variants in DB; UI = ProductVariantsPanel + ProductDialog."
+    },
+    {
+      "id": "attribute_templates",
+      "name": "Attribute templates (color/size/material)",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-01",
+      "verify": "product_attributes + product_attribute_values tables; generate action upserts them",
+      "notes": "Stage-3 verified 2026-06-11: generate upserts attributes+values (Color×Size); UI in ProductVariantsPanel."
+    },
+    {
+      "id": "order_lines_normalized",
+      "name": "Normalized order lines (not JSONB)",
+      "odoo": true,
+      "status": "done",
+      "weight": 3,
+      "epic": "EPIC-01",
+      "verify": "order_items table exists + populated by create-checkout (sandbox+Stripe); variant_id + tax_rate_pct FK added (migration 20260610150000)",
+      "notes": "Lines already normalized in order_items; variant_id link added + verified on real schema 2026-06-11. Optional later: legacy metadata-only backfill. Re: 01.4 'POS sells variants' — correction: this is skill-only today. record_pos_sale (src/lib/modules/pos-module.ts ~L151) accepts variant_id and resolves SKU/price, but the human cashier UI (POSPage.tsx / usePOS.ts) has no variant picker at all — no product_variant reference anywhere in that UI. Per the dual-surface law this caps at partial, not done; tracked here as a note since there is no dedicated pos.json capability id for it."
+    },
+    {
+      "id": "uom",
+      "name": "Multiple units of measure",
+      "odoo": true,
+      "status": "partial",
+      "weight": 2,
+      "epic": "EPIC-01",
+      "verify": "uom_categories + uoms (factor-to-reference) tables, products.sales_uom_id, convert_uom() (migration 20260610170000); admin UI = SalesUomSelect.tsx wired into ProductDialog.tsx (per-product sales-unit picker, save button calls products.sales_uom_id update)",
+      "notes": "Agent surface BUILT 2026-07-05 (was the remaining dual-surface gap): manage_uom skill (db:uoms via the generic CRUD engine — uoms + uom_categories whitelisted in GENERIC_CRUD_TABLES) + convert_uom skill (rpc:convert_uom) registered in products-module skillSeeds with discover-then-convert instructions; artifact regenerated. Earlier state: conversion + cross-category guard scratch-verified (g/kg/t), SalesUomSelect admin UI shipped. Stays partial pending deploy (agent-execute redeploy for the whitelist + skills sync) and a Stage-3 live conversion run through the new skills."
+    },
+    {
+      "id": "partial_shipments",
+      "name": "Partial shipment / partial fulfillment",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "epic": "EPIC-01",
+      "verify": "order_items.qty_fulfilled + fulfill_order_line RPC/skill (migration 20260610180000); order ships only when all lines complete",
+      "notes": "Stage-3 verified 2026-06-11: fulfill_order_line via agent-execute (3/5 → qty_fulfilled=3, order ships when all lines complete); UI = OrderLineFulfillment."
+    },
+    {
+      "id": "backorder",
+      "name": "Backorder auto-creation on stockout",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "backorder records created when reserved > on-hand"
+    },
+    {
+      "id": "supplier_links",
+      "name": "Supplier(s) + supplier price at product level",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "product_suppliers linking products to vendors"
+    },
+    {
+      "id": "product_media",
+      "name": "Product image gallery + attachments",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "product_media table; today only single image_url"
+    },
+    {
+      "id": "dropship",
+      "name": "Drop-ship / consignment routes",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "route config on product"
+    }
   ]
 }

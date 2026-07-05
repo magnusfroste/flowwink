@@ -14,6 +14,7 @@
 | Module | Role in the process |
 |--------|---------------------|
 | **Forms** | Captures inbound leads from web forms |
+| **Visitor Intelligence** | Consent-based page-view tracking of anonymous visitors; when a visitor identifies (form/chat), their browsing history becomes scoring signals |
 | **Leads** | Lead records, scoring, pipeline stages |
 | **Companies** | B2B company registry with firmographic data |
 | **Sales Intelligence** | Prospect research, enrichment, fit analysis |
@@ -26,8 +27,10 @@
 
 ```mermaid
 flowchart TD
+    V["Anonymous visitor browses<br/>(consent-based page views)"] -.-> A
     A["Form submit / manual entry"] --> B["Lead created<br/>process_signal"]
-    B --> C["Auto-enrichment<br/>enrich_company, prospect_research"]
+    B --> B2["Visitor history → intent signals<br/>score_visitor_intent"]
+    B2 --> C["Auto-enrichment<br/>enrich_company, prospect_research"]
     C --> D["Lead scoring + qualification<br/>qualify_lead"]
     D --> E["Convert to deal<br/>manage_deal"]
     E --> F["Pipeline progression<br/>lead_pipeline_review"]
@@ -35,7 +38,7 @@ flowchart TD
     F -->|lost| H["Back to Newsletter nurture<br/>lead_nurture_sequence"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class B,C,D,E,F,H agent
+    class B,B2,C,D,E,F,H agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -47,6 +50,7 @@ flowchart TD
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
 | Form capture | ✅ | ✅ (`process_signal`) | — |
+| Visitor intent scoring | — | ✅ (`score_visitor_intent` — auto: DB trigger on lead identify + 15-min cron; `get_visitor_timeline` for the per-lead journey) | — |
 | Enrichment | ✅ | ✅ (`enrich_company`, `prospect_research`) | ✅ via A2A |
 | Lead scoring | ✅ | ✅ (`qualify_lead`) | — |
 | Pipeline review | ✅ | ✅ (`lead_pipeline_review`) | — |

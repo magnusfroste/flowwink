@@ -184,6 +184,68 @@ Manages product variants — attribute combinations (size, color, material) with
 - Deactivate instead of delete to preserve order history.`,
   },
   {
+    name: 'manage_uom',
+    description: 'Manage units of measure: list/get/create/update UoMs and their categories (Weight, Length, Unit, …). Each UoM converts to its category reference unit via a factor (kg=1, g=0.001). Use when: setting up sales units; checking which units exist before converting or assigning products.sales_uom_id. NOT for: converting a quantity between units (convert_uom); product details (manage_product).',
+    category: 'commerce',
+    handler: 'db:uoms',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_uom',
+        description: 'CRUD for units of measure (uoms table). list returns all units with their category_id and factor-to-reference.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update'] },
+            id: { type: 'string', description: 'UoM UUID (get/update)' },
+            name: { type: 'string', description: 'Unit name, e.g. "kg", "hour", "box of 12"' },
+            category_id: { type: 'string', description: 'uom_categories UUID the unit belongs to (create)' },
+            factor: { type: 'number', description: 'Multiplier to the category reference unit (reference itself = 1; g in Weight = 0.001)' },
+            is_reference: { type: 'boolean', description: 'True for the category reference unit (exactly one per category)' },
+          },
+          required: ['action'],
+          'x-action-required': {
+            create: ['name', 'category_id'],
+          },
+        },
+      },
+    },
+    instructions: `## manage_uom
+### What
+CRUD over the uoms table (units of measure). Categories live in uom_categories; every unit stores a factor to its category's reference unit.
+### When to use
+- action=list first to discover unit UUIDs before calling convert_uom or setting products.sales_uom_id
+- Adding a purchasing/sales unit (e.g. "box of 12" with factor 12 in the Unit category)
+### Edge cases
+- Conversion only works within one category — cross-category (kg → meter) is rejected by convert_uom.
+- Do not create a second is_reference unit in a category.`,
+  },
+  {
+    name: 'convert_uom',
+    description: 'Convert a quantity between two units of measure in the same category (e.g. 2500 g → 2.5 kg). Use when: normalizing quantities for stock, pricing or shipping weight. NOT for: listing/creating units (manage_uom).',
+    category: 'commerce',
+    handler: 'rpc:convert_uom',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'convert_uom',
+        description: 'Convert a quantity between two UoMs in the same category via their factor-to-reference.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_quantity: { type: 'number', description: 'Quantity to convert' },
+            p_from_uom_id: { type: 'string', description: 'Source UoM UUID' },
+            p_to_uom_id: { type: 'string', description: 'Target UoM UUID' },
+          },
+          required: ['p_quantity', 'p_from_uom_id', 'p_to_uom_id'],
+        },
+      },
+    },
+    instructions: 'Both units must belong to the same uom_categories row — cross-category conversion raises an error. Get unit UUIDs via manage_uom action=list first.',
+  },
+  {
     name: 'manage_inventory',
     description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
     category: 'commerce',
@@ -651,6 +713,8 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     'browse_products',
     'manage_product',
     'manage_variant',
+    'manage_uom',
+    'convert_uom',
     'manage_inventory',
     'manage_orders',
     'lookup_order',

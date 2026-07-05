@@ -1,0 +1,110 @@
+name: Supabase Deploy (migrations + edge functions)
+
+# WHY THIS EXISTS
+# ---------------
+# Frontend already auto-deploys on push (GitHub → Vercel). But database
+# migrations and edge functions do NOT — Lovable reflects git changes in its GUI
+# yet never applies migrations or deploys functions from a git push, so every
+# backend change needed a manual "nudge". This workflow makes git the single
+# deploy trigger for ALL layers: on push to main it applies pending migrations
+# (`supabase db push`) and deploys changed edge functions (`supabase functions
+# deploy`, which respects the per-function verify_jwt flags in supabase/config.toml).
+#
+# SAFETY
+# ------
+# - Migrations must be idempotent (CREATE OR REPLACE / IF NOT EXISTS) — enforced
+#   in review and forward-dated by the CI guard (check-migration-forward-dated.ts).
+#   `db push` only applies migrations not already in the ledger; re-applying an
+#   idempotent one (e.g. if Lovable re-stamped its version) is harmless.
+# - Runs only when supabase/** actually changed.
+# - If the required secrets are not configured yet, the job SKIPS with a notice
+#   instead of failing — so merging this workflow never red-fails main. It
+#   activates the moment the secrets are added.
+#
+# REQUIRED SECRETS (Settings → Secrets and variables → Actions)
+#   SUPABASE_ACCESS_TOKEN   Supabase account access token (Dashboard → Account → Access Tokens)
+#   SUPABASE_DB_PASSWORD    Database password for the target project
+# OPTIONAL VARIABLE (Settings → Secrets and variables → Actions → Variables)
+#   SUPABASE_PROJECT_REF    Target project ref (defaults to the dev instance below)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Apply migrations + deploy edge functions
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # Non-sensitive (the ref appears in the anon JWT). Override per fork via the
+      # SUPABASE_PROJECT_REF repository variable.
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'rzhjotxffjfsdlhrdkpj' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need the previous SHA to diff changed functions
+
+      - name: Skip if secrets are not configured
+        id: gate
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::notice title=Supabase deploy skipped::Set SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD secrets to enable automatic backend deploys."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Supabase CLI
+        if: steps.gate.outputs.ready == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        if: steps.gate.outputs.ready == 'true'
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Apply pending migrations (db push)
+        if: steps.gate.outputs.ready == 'true'
+        run: supabase db push
+
+      - name: Deploy changed edge functions
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          BEFORE='${{ github.event.before }}'
+          # Determine changed function dirs; fall back to all functions on the
+          # first push / force-push / manual dispatch (no valid before SHA).
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$BEFORE" ] && ! echo "$BEFORE" | grep -qE '^0+$'; then
+            CHANGED=$(git diff --name-only "$BEFORE" "${{ github.sha }}" -- 'supabase/functions/**' \
+              | sed -n 's#^supabase/functions/\([^/]*\)/.*#\1#p' | sort -u | grep -Ev '^_' || true)
+          else
+            CHANGED=$(ls -1 supabase/functions | grep -Ev '^_' | grep -vE '^(tests|shared)$' || true)
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            echo "No edge functions changed — nothing to deploy."
+            exit 0
+          fi
+
+          echo "Deploying functions:"; echo "$CHANGED"
+          # verify_jwt per function comes from supabase/config.toml — no per-call flag needed.
+          for fn in $CHANGED; do
+            if [ -f "supabase/functions/$fn/index.ts" ]; then
+              echo "▶ deploy $fn"
+              supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+            fi
+          done

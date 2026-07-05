@@ -4,26 +4,102 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "contract_crud", "name": "Contract CRUD", "odoo": true, "status": "done", "weight": 1, "verify": "contract CRUD exists" },
-    { "id": "templates_tokens", "name": "Templates w/ token substitution", "odoo": true, "status": "done", "weight": 1, "verify": "templates with token substitution exist" },
-    { "id": "renewal_check", "name": "Renewal bevakning", "odoo": true, "status": "done", "weight": 1, "verify": "renewal bevakning (monitoring) exists" },
-    { "id": "public_signing", "name": "Public signing link", "odoo": true, "status": "done", "weight": 1, "verify": "public signing link exists" },
-    { "id": "versioning", "name": "Contract versioning", "odoo": true, "status": "done", "weight": 1, "verify": "contract versioning exists" },
-    { "id": "search", "name": "Full-text search", "odoo": true, "status": "done", "weight": 1, "verify": "full-text search exists" },
-    { "id": "document_storage", "name": "Document storage", "odoo": true, "status": "done", "weight": 1, "verify": "document storage exists" },
-
+    {
+      "id": "contract_crud",
+      "name": "Contract CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "contract CRUD exists"
+    },
+    {
+      "id": "templates_tokens",
+      "name": "Templates w/ token substitution",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "templates with token substitution exist"
+    },
+    {
+      "id": "renewal_check",
+      "name": "Renewal bevakning",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "renewal bevakning (monitoring) exists"
+    },
+    {
+      "id": "public_signing",
+      "name": "Public signing link",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "public signing link exists"
+    },
+    {
+      "id": "versioning",
+      "name": "Contract versioning",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "contract versioning exists"
+    },
+    {
+      "id": "search",
+      "name": "Full-text search",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "full-text search exists"
+    },
+    {
+      "id": "document_storage",
+      "name": "Document storage",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "document storage exists"
+    },
     {
       "id": "esignature_integration",
       "name": "Native e-signature (capture + evidence)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "Reframed per docs/parity/references/quotes-contracts-sign-odoo.md — the SMB gap was capture UI + evidence artifact, not a provider. Built 2026-07-04: (1) draw-signature capture on src/pages/PublicContractPage.tsx via shared src/components/public/SignaturePad.tsx (plain canvas, undo/clear, no new deps), Type/Draw tabs, drawn PNG data-URL sent as signature_image and stored in contract_signatures.signature_image (migration 20260704100000_esign-hardening.sql; sanitized server-side in supabase/functions/contract-sign/index.ts); typed-name path unchanged; (2) evidence artifact — contract-sign stores content_hash (SHA-256 of canonical agreement content: title/counterparty/body_markdown/value/version) on the signature row and in audit_logs metadata; printable certificate page (src/pages/SignatureCertificatePage.tsx, route /contract/:token/certificate) renders signer, signature image or typed name, timestamp, IP, user-agent, hash via token-gated SECURITY DEFINER RPC get_contract_certificate; linked from the public confirmation and from ContractEditorPage. send_contract_for_signature skill instructions document the evidence trail and certificate URL. NOTE: no signing-deadline enforcement for contracts — the contracts table has no offer-expiry field (end_date is the contract term), deliberately not added this round.",
-      "notes": "Capped at partial: not runtime-verified against a live Supabase instance in this session (Stage-3 rule), single external signer only (no company countersign yet — two-party flow is the remaining SMB gap per the reference card), and no signed-PDF attached to the record (print-to-PDF from the certificate covers the need this round). Provider integrations (Scrive/DocuSign/BankID) remain integration-only per the card — never build in-house."
+      "verify": "LIVE E2E VERIFIED on rzhj 2026-07-05 (Stage-3): manage_contract create (service, 50000 SEK, body_markdown) → send_contract_for_signature returned token + public URL and status pending_signature → public contract-sign accept with a signature_image PNG data-URL → contract status active; get_contract_certificate returned signer name/email, signature_image, content_hash c43c72a5285a96b3…, ip_address, signed_at. Reframed per docs/parity/references/quotes-contracts-sign-odoo.md — the SMB gap was capture UI + evidence artifact, not a provider. Built 2026-07-04: (1) draw-signature capture on src/pages/PublicContractPage.tsx via shared src/components/public/SignaturePad.tsx (plain canvas, undo/clear, no new deps), Type/Draw tabs, drawn PNG data-URL sent as signature_image and stored in contract_signatures.signature_image (migration 20260704100000_esign-hardening.sql; sanitized server-side in supabase/functions/contract-sign/index.ts); typed-name path unchanged; (2) evidence artifact — contract-sign stores content_hash (SHA-256 of canonical agreement content: title/counterparty/body_markdown/value/version) on the signature row and in audit_logs metadata; printable certificate page (src/pages/SignatureCertificatePage.tsx, route /contract/:token/certificate) renders signer, signature image or typed name, timestamp, IP, user-agent, hash via token-gated SECURITY DEFINER RPC get_contract_certificate; linked from the public confirmation and from ContractEditorPage. send_contract_for_signature skill instructions document the evidence trail and certificate URL. NOTE: no signing-deadline enforcement for contracts — the contracts table has no offer-expiry field (end_date is the contract term), deliberately not added this round.",
+      "notes": "Verified scope: SINGLE external signer (counterparty) with full capture+evidence — which is what this capability names. Known gaps, not blocking done but tracked: no company countersign (two-party flow is the remaining SMB depth item per the reference card) and no signed-PDF artifact (print-to-PDF from the certificate page is the deliberate scope, same as quotes). Provider integrations (Scrive/DocuSign/BankID) remain integration-only per the reference card. Test contract terminated after the run."
     },
-    { "id": "auto_invoicing", "name": "Auto-invoicing from contract", "odoo": true, "status": "missing", "weight": 2, "verify": "auto-invoicing from contract exists" },
-    { "id": "milestone_tracking", "name": "Milestone/obligation tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "milestone/obligation tracking exists" },
-    { "id": "payment_reminders", "name": "Payment reminders", "odoo": true, "status": "missing", "weight": 1, "verify": "payment reminders exist" },
-    { "id": "obligation_tracking", "name": "Obligation tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "obligation tracking exists" }
+    {
+      "id": "auto_invoicing",
+      "name": "Auto-invoicing from contract",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "auto-invoicing from contract exists"
+    },
+    {
+      "id": "milestone_tracking",
+      "name": "Milestone/obligation tracking",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "milestone/obligation tracking exists"
+    },
+    {
+      "id": "payment_reminders",
+      "name": "Payment reminders",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "payment reminders exist"
+    },
+    {
+      "id": "obligation_tracking",
+      "name": "Obligation tracking",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "obligation tracking exists"
+    }
   ]
 }

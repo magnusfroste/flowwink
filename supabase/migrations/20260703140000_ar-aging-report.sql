@@ -65,16 +65,20 @@ BEGIN
   INTO v_customers
   FROM per_customer;
 
+  -- Totals: aggregate the per-customer array already computed above. A second
+  -- reference to the per_customer CTE would be out of scope here — a WITH clause
+  -- only covers the single statement it prefixes (this was the 'relation
+  -- "per_customer" does not exist' bug, caught by live verification 2026-07-04).
   SELECT jsonb_build_object(
-      'current_cents', COALESCE(SUM(current_cents), 0),
-      'overdue_1_30_cents', COALESCE(SUM(overdue_1_30_cents), 0),
-      'overdue_31_60_cents', COALESCE(SUM(overdue_31_60_cents), 0),
-      'overdue_61_90_cents', COALESCE(SUM(overdue_61_90_cents), 0),
-      'overdue_90_plus_cents', COALESCE(SUM(overdue_90_plus_cents), 0),
-      'total_outstanding_cents', COALESCE(SUM(total_outstanding_cents), 0)
+      'current_cents', COALESCE(SUM((e->>'current_cents')::bigint), 0),
+      'overdue_1_30_cents', COALESCE(SUM((e->>'overdue_1_30_cents')::bigint), 0),
+      'overdue_31_60_cents', COALESCE(SUM((e->>'overdue_31_60_cents')::bigint), 0),
+      'overdue_61_90_cents', COALESCE(SUM((e->>'overdue_61_90_cents')::bigint), 0),
+      'overdue_90_plus_cents', COALESCE(SUM((e->>'overdue_90_plus_cents')::bigint), 0),
+      'total_outstanding_cents', COALESCE(SUM((e->>'total_outstanding_cents')::bigint), 0)
     )
   INTO v_buckets
-  FROM per_customer;
+  FROM jsonb_array_elements(v_customers) AS e;
 
   RETURN jsonb_build_object(
     'success', true,

@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Full history so the migration forward-dating guard can compute the
+          # merge-base with origin/main.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -59,6 +63,14 @@ jobs:
       # hand-edited or stale scores. Pure-fs script, no deps, safe to block on.
       - name: Parity matrix freshness (Stage 2 gate — BLOCKING)
         run: npx -y bun run scripts/parity-report.ts --check
+
+      # Root cause of the mid-2026 function-drift class: a migration whose
+      # timestamp is below the ledger HEAD is SILENTLY SKIPPED on any instance
+      # already past it, shipping stale bodies. This gate rejects any new
+      # migration that is not forward-dated relative to the merge-base with main,
+      # making the back-dated-skip impossible by construction.
+      - name: Migration forward-dating guard (BLOCKING)
+        run: git fetch origin main --quiet || true; npx -y bun run scripts/check-migration-forward-dated.ts
 
       # MCP live regression runs in dedicated workflow (.github/workflows/mcp-regression.yml)
       # — triggered on module changes + daily cron. Kept out of PR CI to avoid

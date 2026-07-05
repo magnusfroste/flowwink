@@ -4,13 +4,72 @@
   "current_maturity": "L3",
   "target_maturity": "L4",
   "capabilities": [
-    { "id": "event_crud", "name": "Webinar/event CRUD", "odoo": true, "status": "done", "weight": 2, "verify": "manage_webinar + publish/start/complete/cancel lifecycle skills; WebinarsPage.tsx" },
-    { "id": "registration", "name": "Registration", "odoo": true, "status": "done", "weight": 2, "verify": "register_webinar skill (rpc:register_for_webinar, scope external); registrations view in WebinarsPage" },
-    { "id": "reminders", "name": "Reminder emails", "odoo": true, "status": "partial", "weight": 1, "verify": "reminder_confirm/t24/t1/post_sent_at columns + webinar.reminder.* event emission in baseline migration", "notes": "Runtime DB/automation pipeline only — no reminder skill in skillSeeds and no admin UI control." },
-    { "id": "attendance", "name": "Attendance tracking", "odoo": true, "status": "done", "weight": 1, "verify": "mark_webinar_attendance skill; attendance handling in WebinarsPage" },
-    { "id": "recordings", "name": "Recording links", "odoo": true, "status": "done", "weight": 1, "verify": "complete_webinar skill accepts p_recording_url; recording shown in WebinarsPage" },
-    { "id": "followup", "name": "Follow-up emails", "odoo": true, "status": "partial", "weight": 1, "verify": "follow_up_sent flag rendered as badge in WebinarsPage (line 583)", "notes": "Skill surface missing — no follow-up send skill in skillSeeds." },
-    { "id": "paid_tickets", "name": "Paid tickets", "odoo": true, "status": "missing", "weight": 1, "verify": "no price/ticket fields in webinars schema or WebinarsPage" },
-    { "id": "content_repurposing", "name": "Blog draft from completed webinar", "odoo": false, "status": "done", "weight": 1, "verify": "generate_blog_from_webinar skill (edge:ai-task)", "notes": "Added: AI content-loop differentiator." }
+    {
+      "id": "event_crud",
+      "name": "Webinar/event CRUD",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "manage_webinar + publish/start/complete/cancel lifecycle skills; WebinarsPage.tsx"
+    },
+    {
+      "id": "registration",
+      "name": "Registration",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "register_webinar skill (rpc:register_for_webinar, scope external); registrations view in WebinarsPage"
+    },
+    {
+      "id": "reminders",
+      "name": "Reminder emails",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "reminder_confirm/t24/t1/post_sent_at columns + webinar.reminder.* event emission in baseline migration",
+      "notes": "DELIVERY BUILT 2026-07-05 (was 'in schema, not wired': webinar_reminder_tick existed but nothing called it and nothing turned its events into emails). New send-webinar-reminders edge function sweeps the same four windows (confirm / T-24h / T-1h / post), emails via email-send, and stamps the per-registration markers; 'Webinar Reminders' cron automation (every 15 min, agent_automations via migration 20260705160000) drives it through automation-dispatcher; send_webinar_reminders skill registered (module seed + migration). Tick remains as the event-emitting alternative — both dedupe on the same markers. Stays partial pending deploy + a Stage-3 live sweep run."
+    },
+    {
+      "id": "attendance",
+      "name": "Attendance tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "mark_webinar_attendance skill; attendance handling in WebinarsPage"
+    },
+    {
+      "id": "recordings",
+      "name": "Recording links",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "complete_webinar skill accepts p_recording_url; recording shown in WebinarsPage"
+    },
+    {
+      "id": "followup",
+      "name": "Follow-up emails",
+      "odoo": true,
+      "status": "partial",
+      "weight": 1,
+      "verify": "follow_up_sent flag rendered as badge in WebinarsPage (line 583)",
+      "notes": "DELIVERY BUILT 2026-07-05: the post-webinar email in send-webinar-reminders IS the follow-up (thanks vs missed_you variant by attended, recording link when set) and it stamps webinar_registrations.follow_up_sent=true alongside the dedupe marker — the flag the WebinarsPage badge renders. Stays partial pending deploy + live run."
+    },
+    {
+      "id": "paid_tickets",
+      "name": "Paid tickets",
+      "odoo": true,
+      "status": "missing",
+      "weight": 1,
+      "verify": "no price/ticket fields in webinars schema or WebinarsPage"
+    },
+    {
+      "id": "content_repurposing",
+      "name": "Blog draft from completed webinar",
+      "odoo": false,
+      "status": "done",
+      "weight": 1,
+      "verify": "generate_blog_from_webinar skill (edge:ai-task)",
+      "notes": "Added: AI content-loop differentiator."
+    }
   ]
 }

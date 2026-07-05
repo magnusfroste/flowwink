@@ -10,6 +10,9 @@
       "entity_id",
       "entity_type"
     ],
+    "ad_campaigns": [
+      "name"
+    ],
     "addresses": [
       "owner_id",
       "owner_type"
@@ -31,6 +34,9 @@
     ],
     "contracts": [
       "counterparty_name",
+      "title"
+    ],
+    "crm_tasks": [
       "title"
     ],
     "documents": [
@@ -59,6 +65,11 @@
       "end_date",
       "start_date"
     ],
+    "manufacturing_orders": [
+      "mo_number",
+      "product_id",
+      "quantity"
+    ],
     "opening_balances": [
       "account_code",
       "account_name"
@@ -76,11 +87,19 @@
     "projects": [
       "name"
     ],
+    "purchase_orders": [
+      "po_number",
+      "vendor_id"
+    ],
     "quotes": [
       "quote_number"
     ],
     "return_items": [
       "return_id"
+    ],
+    "returns": [
+      "rma_number",
+      "order_id"
     ],
     "saved_views": [
       "name",
@@ -99,43 +118,31 @@
       "name",
       "threshold_minutes"
     ],
-    "tags": [
-      "name",
-      "slug"
-    ],
-    "vendors": [
+    "subscription_winback_campaigns": [
       "name"
-    ],
-    "manufacturing_orders": [
-      "mo_number",
-      "product_id",
-      "quantity"
-    ],
-    "purchase_orders": [
-      "po_number",
-      "vendor_id"
     ],
     "survey_campaigns": [
       "name",
       "template_id"
     ],
-    "returns": [
-      "rma_number",
-      "order_id"
-    ],
     "survey_templates": [
       "name"
     ],
-    "ad_campaigns": [
-      "name"
-    ],
-    "crm_tasks": [
-      "title"
+    "tags": [
+      "name",
+      "slug"
     ],
     "tickets": [
       "subject"
     ],
-    "subscription_winback_campaigns": [
+    "uom_categories": [
+      "name"
+    ],
+    "uoms": [
+      "category_id",
+      "name"
+    ],
+    "vendors": [
       "name"
     ]
   },

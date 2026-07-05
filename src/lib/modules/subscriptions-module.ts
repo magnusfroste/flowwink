@@ -218,15 +218,17 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'generate_subscription_invoice',
-    description: 'Force-generate the next invoice for a manual subscription. Use when: ad-hoc billing run, customer requested immediate invoice, testing. NOT for: stripe-billed subscriptions (Stripe handles those). Normally the daily cron handles this automatically.',
+    description: 'Generate the next due invoice for a manual subscription. Use when: ad-hoc billing run, customer requested immediate invoice, testing. NOT for: stripe-billed subscriptions (Stripe handles those). Normally the daily cron handles this automatically.',
     category: 'commerce',
     handler: 'rpc:generate_subscription_invoice',
     scope: 'internal',
+    instructions:
+      'IDEMPOTENT PER PERIOD: the RPC refuses with "not due: next invoice date is <date>" when the subscription has already been invoiced through the current period (next_invoice_date in the future) — this is the double-billing guard, not an error to retry. One call per billing period. On success it creates the invoice (draft, or sent when auto_finalize) and advances next_invoice_date from the DUE date (billing anniversary preserved even when run late). To bill again immediately for testing, cancel and recreate the subscription instead of forcing a second call.',
     tool_definition: {
       type: 'function',
       function: {
         name: 'generate_subscription_invoice',
-        description: 'Create a draft invoice from a manual subscription and advance next_invoice_date.',
+        description: 'Create the next due invoice from a manual subscription and advance next_invoice_date. Refuses when the current period is already invoiced (next_invoice_date in the future).',
         parameters: {
           type: 'object',
           properties: {

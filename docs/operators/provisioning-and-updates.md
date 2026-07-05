@@ -36,8 +36,18 @@ all and freeze at whatever the migration wrote — bugs included. See
 | www.liteit.se | `cdwpqcevbcbqxhycsqhm` | Separate Supabase account — deploy with that account's token |
 
 - **Pushing to `main`** auto-deploys the *frontend* to flowwink.com + demo only.
-- **Edge functions and DB migrations are never deployed by a git push** — they
-  go out per instance via the steps below.
+- **Backend auto-deploy (dev instance):** `.github/workflows/supabase-deploy.yml`
+  runs `supabase db push` + `supabase functions deploy` on every push to `main`
+  that touches `supabase/**`, targeting the `SUPABASE_PROJECT_REF` variable
+  (default: the dev instance `rzhjotxffjfsdlhrdkpj`). This closes the historical
+  gap where Lovable reflected git changes in its GUI but never applied migrations
+  or deployed functions — so backend changes no longer need a manual nudge.
+  Requires the `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` secrets; without
+  them the job skips (never red-fails main). Per-function `verify_jwt` comes from
+  `supabase/config.toml`, so public functions stay anon-reachable automatically.
+- **The production fleet is still deployed per instance** (the steps below) —
+  the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
+  matrix, only deliberately.
 - **Forks (autoversio.ai)** need a manual fork-sync + redeploy. Always flag when
   a change needs to reach a fork.
 

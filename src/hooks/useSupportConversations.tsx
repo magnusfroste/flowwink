@@ -258,6 +258,88 @@ export function useSupportConversations() {
     },
   });
 
+  // Other agents available as transfer targets (everyone but me, any status —
+  // the picker shows status/load so the human makes the call).
+  const { data: transferTargets } = useQuery({
+    queryKey: ['support-transfer-targets', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('support_agents')
+        .select('id, user_id, status, current_conversations, max_conversations')
+        .neq('user_id', user.id)
+        .order('status');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Transfer a conversation to another agent (the reassign path the
+  // support_assign_conversation skill uses — same columns, human surface).
+  const transferConversation = useMutation({
+    mutationFn: async ({ conversationId, agentId }: { conversationId: string; agentId: string }) => {
+      if (!user?.id) throw new Error('No user');
+
+      const { data: target, error: targetError } = await supabase
+        .from('support_agents')
+        .select('id, current_conversations')
+        .eq('id', agentId)
+        .maybeSingle();
+      if (targetError) throw targetError;
+      if (!target) throw new Error('Target agent not found');
+
+      // Was it assigned to me? Then my counter should go down.
+      const { data: conv, error: convFetchError } = await supabase
+        .from('chat_conversations')
+        .select('assigned_agent_id')
+        .eq('id', conversationId)
+        .maybeSingle();
+      if (convFetchError) throw convFetchError;
+
+      const { error: convError } = await supabase
+        .from('chat_conversations')
+        .update({
+          assigned_agent_id: target.id,
+          conversation_status: 'with_agent',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', conversationId);
+      if (convError) throw convError;
+
+      await supabase
+        .from('support_agents')
+        .update({
+          current_conversations: target.current_conversations + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', target.id);
+
+      if (conv?.assigned_agent_id && conv.assigned_agent_id !== target.id) {
+        const { data: prev } = await supabase
+          .from('support_agents')
+          .select('id, current_conversations')
+          .eq('id', conv.assigned_agent_id)
+          .maybeSingle();
+        if (prev && prev.current_conversations > 0) {
+          await supabase
+            .from('support_agents')
+            .update({
+              current_conversations: prev.current_conversations - 1,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', prev.id);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-assigned-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['support-waiting-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['support-agent'] });
+      queryClient.invalidateQueries({ queryKey: ['support-transfer-targets'] });
+    },
+  });
+
   // Reopen a previously-closed conversation → back to waiting queue, unassigned.
   const reopenConversation = useMutation({
     mutationFn: async (conversationId: string) => {
@@ -286,6 +368,8 @@ export function useSupportConversations() {
     claimConversation,
     closeConversation,
     reopenConversation,
+    transferConversation,
+    transferTargets: transferTargets || [],
   };
 }
 
