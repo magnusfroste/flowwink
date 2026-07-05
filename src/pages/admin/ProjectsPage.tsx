@@ -111,65 +111,243 @@ function EditProjectDialog({ project, open, onOpenChange }: { project: Project; 
   );
 }
 
+function TaskRow({
+  task,
+  projectId,
+  depth,
+  subtasks,
+  onAddSubtask,
+}: {
+  task: import("@/hooks/useProjects").ProjectTask;
+  projectId: string;
+  depth: number;
+  subtasks: import("@/hooks/useProjects").ProjectTask[];
+  onAddSubtask: (parentId: string) => void;
+}) {
+  const updateTask = useUpdateProjectTask();
+  const deleteTask = useDeleteProjectTask();
+  const doneCount = subtasks.filter((s) => s.status === "done").length;
+
+  return (
+    <Card
+      className="group hover:shadow-sm transition-shadow"
+      style={depth > 0 ? { marginLeft: depth * 16 } : undefined}
+    >
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
+          <button
+            onClick={() => {
+              const next =
+                task.status === "todo"
+                  ? "in_progress"
+                  : task.status === "in_progress"
+                    ? "done"
+                    : "todo";
+              updateTask.mutate({ id: task.id, project_id: projectId, status: next });
+            }}
+            aria-label="Toggle status"
+          >
+            {STATUS_ICONS[task.status] ?? STATUS_ICONS.todo}
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{task.title}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              {task.due_date && (
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(task.due_date), "MMM d")}
+                </p>
+              )}
+              {depth === 0 && subtasks.length > 0 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                  {doneCount}/{subtasks.length} subtasks
+                </Badge>
+              )}
+            </div>
+          </div>
+          {depth === 0 && (
+            <button
+              onClick={() => onAddSubtask(task.id)}
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-opacity"
+              aria-label="Add subtask"
+              title="Add subtask"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => deleteTask.mutate({ id: task.id, project_id: projectId })}
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+            aria-label="Delete task"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AddSubtaskDialog({
+  projectId,
+  parentTaskId,
+  onOpenChange,
+}: {
+  projectId: string;
+  parentTaskId: string;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const create = useCreateProjectTask();
+  const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    create.mutate(
+      {
+        project_id: projectId,
+        parent_task_id: parentTaskId,
+        title: title.trim(),
+        status: "todo",
+        priority: "medium",
+        due_date: dueDate || null,
+      },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add subtask</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <Label>Title *</Label>
+            <Input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label>Due date</Label>
+            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={create.isPending || !title.trim()}>
+              {create.isPending ? "Adding…" : "Add subtask"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TaskBoard({ projectId }: { projectId: string }) {
   const { data: tasks, isLoading } = useProjectTasks(projectId);
-  const updateTask = useUpdateProjectTask();
   const createTask = useCreateProjectTask();
-  const deleteTask = useDeleteProjectTask();
   const [newTitle, setNewTitle] = useState("");
+  const [subtaskParent, setSubtaskParent] = useState<string | null>(null);
 
   const handleAddTask = () => {
     if (!newTitle.trim()) return;
-    createTask.mutate({ project_id: projectId, title: newTitle, status: "todo", priority: "medium", sort_order: (tasks?.length || 0) + 1 });
+    createTask.mutate({
+      project_id: projectId,
+      title: newTitle,
+      status: "todo",
+      priority: "medium",
+      sort_order: (tasks?.length || 0) + 1,
+    });
     setNewTitle("");
   };
 
   if (isLoading) return <Skeleton className="h-24 w-full" />;
 
   const columns = ["todo", "in_progress", "done"];
-  const columnLabels: Record<string, string> = { todo: "To Do", in_progress: "In Progress", done: "Done" };
+  const columnLabels: Record<string, string> = {
+    todo: "To Do",
+    in_progress: "In Progress",
+    done: "Done",
+  };
+
+  const allTasks = tasks ?? [];
+  const subtasksByParent = new Map<string, typeof allTasks>();
+  for (const t of allTasks) {
+    if (t.parent_task_id) {
+      const arr = subtasksByParent.get(t.parent_task_id) ?? [];
+      arr.push(t);
+      subtasksByParent.set(t.parent_task_id, arr);
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <Input placeholder="Add a task…" value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddTask()} />
-        <Button onClick={handleAddTask} disabled={!newTitle.trim()}>Add</Button>
+        <Input
+          placeholder="Add a task…"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+        />
+        <Button onClick={handleAddTask} disabled={!newTitle.trim()}>
+          Add
+        </Button>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        {columns.map(col => (
-          <div key={col} className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">{columnLabels[col]}</h4>
-            {tasks?.filter(t => t.status === col).map(task => (
-              <Card key={task.id} className="group hover:shadow-sm transition-shadow">
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-2">
-                    <button onClick={() => {
-                      const next = col === "todo" ? "in_progress" : col === "in_progress" ? "done" : "todo";
-                      updateTask.mutate({ id: task.id, project_id: projectId, status: next });
-                    }}>
-                      {STATUS_ICONS[col]}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{task.title}</p>
-                      {task.due_date && <p className="text-xs text-muted-foreground">{format(new Date(task.due_date), "MMM d")}</p>}
-                    </div>
-                    <button
-                      onClick={() => deleteTask.mutate({ id: task.id, project_id: projectId })}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                      aria-label="Delete task"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {columns.map((col) => {
+          const topLevel = allTasks.filter(
+            (t) => t.status === col && !t.parent_task_id,
+          );
+          return (
+            <div key={col} className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">
+                {columnLabels[col]}
+              </h4>
+              {topLevel.map((task) => {
+                const subs = subtasksByParent.get(task.id) ?? [];
+                return (
+                  <div key={task.id} className="space-y-2">
+                    <TaskRow
+                      task={task}
+                      projectId={projectId}
+                      depth={0}
+                      subtasks={subs}
+                      onAddSubtask={setSubtaskParent}
+                    />
+                    {subs.map((s) => (
+                      <TaskRow
+                        key={s.id}
+                        task={s}
+                        projectId={projectId}
+                        depth={1}
+                        subtasks={[]}
+                        onAddSubtask={setSubtaskParent}
+                      />
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-            {!tasks?.filter(t => t.status === col).length && (
-              <p className="text-xs text-muted-foreground text-center py-4">No tasks</p>
-            )}
-          </div>
-        ))}
+                );
+              })}
+              {!topLevel.length && (
+                <p className="text-xs text-muted-foreground text-center py-4">No tasks</p>
+              )}
+            </div>
+          );
+        })}
       </div>
+      {subtaskParent && (
+        <AddSubtaskDialog
+          projectId={projectId}
+          parentTaskId={subtaskParent}
+          onOpenChange={(o) => !o && setSubtaskParent(null)}
+        />
+      )}
     </div>
   );
 }
