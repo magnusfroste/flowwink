@@ -30,6 +30,7 @@ export type ProjectTask = {
   estimated_hours: number | null;
   sort_order: number;
   completed_at: string | null;
+  parent_task_id: string | null;
   created_at: string;
 };
 
