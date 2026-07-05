@@ -5,6 +5,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpensesListTab } from '@/components/admin/expenses/ExpensesListTab';
 import { ExpenseReportsTab } from '@/components/admin/expenses/ExpenseReportsTab';
+import { ExpensePoliciesTab } from '@/components/admin/expenses/ExpensePoliciesTab';
 
 export default function ExpensesPage() {
   const [tab, setTab] = useState('expenses');
