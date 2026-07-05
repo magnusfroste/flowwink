@@ -724,6 +724,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     'inventory_report',
     'fulfill_order_line',
     'manage_discount_code',
+    'send_invoice_for_order',
   ],
   data: {
     // children first (FK-safe order)
