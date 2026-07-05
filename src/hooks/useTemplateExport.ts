@@ -125,8 +125,12 @@ export function useTemplateExport() {
         })),
       };
     } catch (error) {
+      // Surface the real error (e.g. a missing column from schema drift, or an
+      // RLS denial) instead of a generic message — otherwise "export failed"
+      // is undiagnosable.
+      const msg = error instanceof Error ? error.message : String(error);
       logger.error('Failed to fetch site data:', error);
-      toast.error('Failed to fetch site data');
+      toast.error(`Failed to fetch site data: ${msg}`);
       return null;
     }
   };
@@ -167,8 +171,9 @@ export function useTemplateExport() {
 
       return result;
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
       logger.error('Template export failed:', error);
-      toast.error('Failed to export template');
+      toast.error(`Failed to export template: ${msg}`);
       return null;
     } finally {
       setIsExporting(false);
@@ -225,13 +230,25 @@ export function useTemplateExport() {
       
       if (result.success && result.blob) {
         downloadZipBlob(result.blob, `${template.id}-template.zip`);
-        toast.success(`Template exported with ${result.imageCount} images`);
+        const failed = result.failedImages?.length ?? 0;
+        if (failed > 0) {
+          // Partial success — the ZIP downloaded but some images could not be
+          // fetched. Tell the user exactly how many, instead of silently
+          // shipping an incomplete bundle.
+          toast.warning(
+            `Template exported with ${result.imageCount} of ${result.totalImages} images — ${failed} could not be downloaded and were skipped.`
+          );
+          logger.error('ZIP export skipped images:', result.failedImages);
+        } else {
+          toast.success(`Template exported with ${result.imageCount} images`);
+        }
       } else {
         toast.error(result.error || 'Failed to create ZIP');
       }
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
       logger.error('ZIP export failed:', error);
-      toast.error('Failed to export as ZIP');
+      toast.error(`Failed to export as ZIP: ${msg}`);
     } finally {
       setZipState({ isExporting: false, progress: null });
     }

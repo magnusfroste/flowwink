@@ -29,6 +29,10 @@ export interface ZipExportResult {
   blob?: Blob;
   error?: string;
   imageCount: number;
+  /** URLs whose download failed (skipped from the ZIP but not fatal). */
+  failedImages?: string[];
+  /** Total image URLs referenced by the template. */
+  totalImages?: number;
 }
 
 export interface ZipImportResult {
@@ -94,24 +98,34 @@ export async function exportTemplateAsZip(
     
     // Stage 2: Download images
     const imagesFolder = zip.folder('images');
-    let downloadedCount = 0;
+    if (!imagesFolder) {
+      // JSZip failed to create the folder — cannot bundle images.
+      throw new Error('Could not create images folder in the ZIP');
+    }
+    let processed = 0;
     const successfulImages: ExtractedImage[] = [];
-    
+    const failedImages: string[] = [];
+
     for (const image of images) {
       onProgress?.({
         stage: 'downloading',
-        current: downloadedCount,
+        current: processed,
         total: images.length,
-        message: `Downloading image ${downloadedCount + 1} of ${images.length}...`,
+        message: `Downloading image ${processed + 1} of ${images.length}...`,
       });
-      
+      processed++;
+
       const imageData = await downloadImage(image.url);
-      
-      if (imageData && imagesFolder) {
+
+      if (imageData) {
         const fileName = image.localPath.replace('images/', '');
         imagesFolder.file(fileName, imageData);
         successfulImages.push(image);
-        downloadedCount++;
+      } else {
+        // Download failed for this image — skip it but keep going, and record
+        // it so the caller can surface exactly which images were dropped
+        // (previously these vanished silently, making a partial export look OK).
+        failedImages.push(image.url);
       }
     }
     
@@ -144,20 +158,32 @@ export async function exportTemplateAsZip(
     };
     zip.file('manifest.json', JSON.stringify(manifest, null, 2));
     
-    // Generate ZIP
-    const blob = await zip.generateAsync({ type: 'blob' });
-    
+    // Generate ZIP. Guarded separately so an out-of-memory / packaging failure
+    // on an image-heavy site surfaces a clear message instead of a generic one.
+    let blob: Blob;
+    try {
+      blob = await zip.generateAsync({ type: 'blob' });
+    } catch (genErr) {
+      logger.error('ZIP packaging failed:', genErr);
+      throw new Error(
+        `Packaging the ZIP failed (site may have too many/too-large images: ${successfulImages.length} bundled). ` +
+        (genErr instanceof Error ? genErr.message : 'unknown packaging error')
+      );
+    }
+
     onProgress?.({
       stage: 'complete',
       current: 1,
       total: 1,
       message: 'Export complete!',
     });
-    
+
     return {
       success: true,
       blob,
       imageCount: successfulImages.length,
+      totalImages: images.length,
+      failedImages,
     };
   } catch (err) {
     logger.error('ZIP export failed:', err);
