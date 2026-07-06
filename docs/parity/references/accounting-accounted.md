@@ -57,6 +57,24 @@ Extension system.
 Each of these becomes a capability spec (skill + admin UI) under the parity program. Related:
 docs/processes/record-to-report.md (the accounting process this feeds).
 
+## Backlog from the competitor sweep (what to add later)
+
+Distilled from Accounted (feature set + SE standards — borrow features, never AGPL code), Bokio, Dooer:
+
+- **BankID / e-legitimation integration — "a Composio for BankID"** (Magnus, 2026-07-06). Accounted uses
+  BankID; we take it LATER. Concept: an aggregator/provider layer for Swedish e-legitimation (candidate
+  provider: **e-identitet.se**), the way Composio aggregates tool integrations. Uses: **digital signing
+  of the ÅR** (board signs → Bolagsverket), signing/auth for INK2 submission, and general auth/identity.
+  Fits the "authority/submission = opt-in plugin" model — not core, layered on the year-end flow.
+- **PSD2 live bank feed** (Accounted: Enable Banking, 4-pass auto-matching; Bokio/Dooer: bank feeds).
+  Complements SIE/CSV/OCR import. P2 — the on-ramp works via SIE first.
+- **Document archive compliance** (Accounted: SHA-256 integrity + 7-year retention + full-archive ZIP).
+  Bokföringslagen. Pairs with the deferred immutability. P1.
+- **Extension/plugin system** (Accounted's opt-in extensions: AI categorization, receipt OCR, email,
+  calendar) — validates FlowWink's module/skill architecture; nothing to build, just confirms direction.
+- **Aktiebok / shareholder register** (Dooer + Bokio have it) — small, expected by ABs. Cheap add.
+- Full **SIE 4 ledger export + import** (we export; import is the on-ramp — see the SIE section above).
+
 ## Competitor: Dooer (dooer.com / go.dooer.com) — the closest overlap
 
 Reviewed 2026-07-06 (public site + Magnus's logged-in Liteit account, structure only).
