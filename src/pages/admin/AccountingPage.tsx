@@ -32,6 +32,8 @@ import { YearEndTab } from '@/components/admin/accounting/YearEndTab';
 import { BudgetsTab } from '@/components/admin/accounting/BudgetsTab';
 import { PendingOperationsList } from '@/components/admin/PendingOperationsList';
 import { OverviewTab } from '@/components/admin/accounting/dashboard/OverviewTab';
+import { FiscalYearProvider } from '@/components/admin/accounting/FiscalYearContext';
+import { FiscalYearSelector } from '@/components/admin/accounting/FiscalYearSelector';
 
 type TabId =
   | 'overview'
