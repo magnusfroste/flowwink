@@ -145,3 +145,26 @@ movements; Not värdepapper from the 13xx holdings); the narrative parts come fr
 
 **Build shape:** `sie4-in → K2-ÅR-template → signable ÅR (PDF/iXBRL)`. Decoupled, testable against any
 SIE4 — including a SIE4 exported from Liteit 2025.
+
+### GTM: the ÅR/year-end IS the adoption magnet (scope decision, 2026-07-06)
+
+The strategic question — is a basic "årsredovisning online" in scope? **Yes — it's likely the single
+best top-of-funnel wedge for the SE market.** Reasoning:
+- **The job is painful, recurring, deadline-driven, and byrå-priced** (a tiny AB like Liteit pays
+  5–15k SEK for something that's ~automatable from 26 transactions). That's the ideal wedge shape.
+- **Zero-switching-cost entry:** because the input is **SIE4**, the free tool is "upload your SIE4 →
+  get your Årsredovisning + tax files." They keep booking wherever they are — no commitment. Lowest
+  possible friction to first value.
+- **It proves the agentic thesis in one demo:** an agent produces what a byrå charges thousands for.
+  That story pulls them toward "book directly in FlowWink next year" → and into CRM, invoicing, all
+  modules. The magnet isn't a feature; it's **"the year-end that does itself."**
+
+Scope discipline for the MVP:
+- **MVP = generate + present transparently + export PDF.** A human reviews and **signs**; FlowWink is
+  the tool, not the filer. This is both the safe posture (an incorrect filing has real consequences)
+  and why "free" works — the human stays in the loop.
+- **Online submission is a country+authority-specific PLUGIN** (Bolagsverket digital filing / iXBRL;
+  Skatteverket SRU filöverföring). Opt-in, layered later. Do NOT gate the MVP on the submission API.
+- Positioning stays **horizontal**: generic engine + SE locale pack (chart, VAT, SRU, ÅR template);
+  the Bolagsverket/Skatteverket submission adapters are the only truly authority-specific pieces, and
+  they're opt-in plugins — not the core.
