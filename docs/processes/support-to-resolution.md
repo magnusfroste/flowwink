@@ -60,10 +60,11 @@ flowchart TD
 
 ## Known gaps (missing for L5)
 
-- ❌ Multi-channel inbox (email, WhatsApp, Slack in one view)
-- ❌ Customer satisfaction (CSAT) surveys after a case
+- ✅ Email channel — `email_to_ticket` turns inbound email into cases (verified E2E: email → SLA policy → `sla_check` → triage → assign); WhatsApp/Slack still missing for a true multi-channel inbox
+- ✅ Conversation transfer — live conversations can be handed between agents (transfer target picker in LiveSupportPage, `current_conversations` load surfaced via `list_support_agents`)
+- ⚠️ CSAT — chat feedback capture + `analyze_chat_feedback`/`support_get_feedback` exist; a per-case post-resolution survey (Odoo-style rating email) is not wired, though the `surveys` module could carry it
 - ❌ Macros / canned responses for human agents
-- ❌ Skill-based routing to specific agents
+- ❌ Skill-based routing to specific agents (assignment is load/availability-based)
 - ❌ Internal knowledge base (separate from public KB)
 
 ---

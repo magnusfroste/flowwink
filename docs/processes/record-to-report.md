@@ -62,12 +62,55 @@ flowchart TD
 ## Known gaps (missing for L4+)
 
 - ✅ **Period-end close workflow** — `close_accounting_period` locks JE + JE-lines + time_entries via guard triggers
-- ❌ Tax reporting (VAT, employer reports, K10)
+- ❌ Tax reporting (VAT, employer reports, K10) — see § The Swedish statutory tail below for the full map + borrow plan
+- ❌ **Correction flow for posted vouchers (storno)** — today a mistake is fixed by reopening the period and editing, which breaks the immutability principle Swedish law expects (BFL: posted vouchers are never edited — you post a reversal or a correction entry). Needed: `reverse_journal_entry` / `correct_journal_entry` skills + UI, and with them the period-reopen path becomes the exception instead of the correction mechanism
 - ✅ SIE export — pluggable adapters per locale pack (SE → SIE 4, generic → SAF-T + CSV)
-- ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`
+- ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`; ❌ live PSD2 bank connection (Odoo and Accounted both have feed-level sync)
+- ❌ Cash-flow statement (kassaflödesanalys) — we report balance sheet + P&L + GL; the third statement is missing
+- ❌ Document retention enforcement — the archive stores vouchers' documents, but nothing enforces the 7-year rule or provides the BFL-required *systemdokumentation* and *arkivplan* artifacts
 - ❌ Multi-currency revaluation
 - ⚠️ Cost center / project-level — `manage_analytic_account` + `tag_journal_entry_analytics` exist; reporting limited
 - ❌ Consolidation (multi-entity)
+
+---
+
+## The Swedish statutory tail — the calendar the SE locale pack must serve
+
+*Added 2026-07-06 after reviewing [erp-mafia/accounted](https://github.com/erp-mafia/accounted)
+(open-source Swedish bookkeeping, BAS 2026, AGPL) — the reference for what
+"complete" looks like for a Swedish SMB. The SE plugin work borrows from it;
+this section maps the rhythm so the process doc tells the whole truth. The
+ranked gap list (P0–P2, incl. live findings on the dev instance) lives in
+[docs/parity/references/accounting-accounted.md](../parity/references/accounting-accounted.md)
+— this section is the calendar, that card is the build order.*
+
+A Swedish SMB's accounting year is a fixed sequence of statutory events on top
+of the operational loop above. Status per step:
+
+| Rhythm | Obligation | FlowWink today | Borrow/learn from Accounted |
+|---|---|---|---|
+| Continuous | Löpande bokföring, sequential vouchers, gap explanations (BFNAR 2013:2) | ✅ `assign_voucher_number` + `list_voucher_gaps`/`explain_voucher_gap` | Their draft→commit split with atomic voucher RPC matches ours; parity |
+| Continuous | Voucher immutability — storno, never edit | ❌ (gap above) | `reverseEntry()`/`correctEntry()` pattern (storno-service) |
+| Monthly/quarterly | **Momsdeklaration** — SKV 4700 ruta mapping, per-rate breakdown, EU/export handling | ❌ | Their VAT engine maps accounts → rutor declaratively; the ruta map is spec knowledge, not code — borrow freely |
+| Monthly (with employees) | **AGI** employer declaration | ❌ (payroll runs exist; no filing) | Their salary-journal report feeds it |
+| Quarterly (EU B2B sales) | **Periodisk sammanställning** (EU sales list) | ❌ | They export it as CSV per SKV format |
+| Yearly | **Bokslut** (K2/K3), year-end dispositions | ⚠️ `year_end_readiness` + `propose_accruals`/`propose_annual_depreciation` + `run_year_end` cover the mechanics; no K2/K3 statement pack | Their `dev_docs/bokslut` carries worked K2 examples + Bolagsverket's XBRL taxonomy for årsredovisning |
+| Yearly (AB) | **Årsredovisning** to Bolagsverket (XBRL), **INK2 + SRU** to Skatteverket | ❌ | INK2/SRU encoders exist as libs (`lib/reports/ink2`, `sru-encoding`) |
+| Yearly (EF) | **NE-bilaga** | ❌ | Ditto (`lib/reports/ne-bilaga`) |
+| Always | 7-year archive, systemdokumentation + arkivplan (BFL 7 kap) | ❌ enforcement | They enforce retention on delete, hash documents (SHA-256), and ship template docs for both artifacts |
+| Always | Deadline awareness (moms/AGI/INK2 dates) | ❌ | A deadlines status engine — pairs naturally with FlowPilot's briefing ("moms due in 5 days, here's the draft") |
+
+**Positioning consequence:** "operational finance, filings via your accountant"
+remains true today — but each ❌ above is a concrete SE-plugin milestone, and
+the deadline engine + VAT draft is the highest-leverage first slice: it turns
+FlowPilot into the assistant that *prepares* filings even while a human still
+submits them.
+
+**License note for the borrow mandate:** Accounted is AGPL-3.0. Specs,
+ruta-mappings, report layouts and process knowledge are free to learn from;
+copying code verbatim into FlowWink pulls AGPL obligations — keep borrowed
+material at the pattern/spec level (or in a separately-licensed plugin) unless
+a deliberate licensing decision is made.
 
 ---
 

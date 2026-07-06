@@ -50,7 +50,8 @@ flowchart TD
 | Order intake | — | ✅ Auto (Stripe webhook) | — |
 | Stock check | ✅ | ✅ (`check_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
-| Pick/pack/ship | ✅ | — | — |
+| Pick/pack/ship | ✅ | ✅ (`allocate_picking`, `confirm_pick`, `ship_picking`) | ✅ over MCP |
+| Partial fulfillment | ✅ (OrderLineFulfillment) | ✅ (`fulfill_order_line` — order ships when all lines complete) | — |
 | Order status updates | ✅ | ✅ (`manage_orders`) | — |
 | Customer notifications | ✅ | ✅ (Newsletter automation) | — |
 | SLA escalation | — | ✅ (SLA module) | — |
@@ -59,11 +60,13 @@ flowchart TD
 
 ## Known gaps (missing for L5)
 
-- ❌ Integrations with WMS / carriers (Postnord, DHL APIs)
-- ❌ Returns / RMA flow
+- ✅ Returns / RMA — full reverse flow lives in [Return-to-Refund](./return-to-refund.md) (request → approve → receive → inspect → partial refund)
+- ✅ Partial shipments — `order_items.qty_fulfilled` + `fulfill_order_line`; ships only when all lines complete
+- ✅ Cycle counting — `inventory#cycle_count` (skill + admin UI, Stage-3 verified 2026-07-06)
+- ❌ Integrations with WMS / carriers (Postnord, DHL APIs) — the `shipping` module tracks shipments but has no carrier API adapters
 - ❌ Multi-warehouse fulfillment routing
-- ❌ Pre-orders / backorder handling (partly via `back_in_stock_requests`)
-- ❌ Picklists / pack stations in the UI
+- ❌ Pre-orders / backorder auto-creation on stockout (partly via `back_in_stock_requests`)
+- ❌ Picklists / pack-station UI (skills exist; warehouse-floor UI does not)
 
 ---
 

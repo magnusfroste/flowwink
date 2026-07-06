@@ -59,13 +59,17 @@ flowchart TD
 | **Year-end vacation allocation** | ✅ | ✅ (`auto_allocate_vacation`) | ✅ MCP-exposed |
 | Contract renewal check | — | ✅ (`contract_renewal_check`) | — |
 | Performance reviews | ❌ Missing | — | — |
-| Payroll | ❌ Missing | — | — |
+| Payroll runs | ✅ | ✅ (`create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid`; `calc_sick_pay`, `apply_pension`, `list_payroll_lines`) | ✅ (admin functions, service-role verified) |
 
 ---
 
 ## Known gaps (missing for L3+)
 
-- ❌ **Payroll integration** (Fortnox Payroll, Visma, Hogia)
+- ✅ **Payroll runs** — the `payroll` module runs the internal cycle
+  (create → approve → mark paid, with sick-pay calculation and pension
+  application per line). What is still missing is the **statutory tail**:
+  AGI/employer declarations to Skatteverket, payslip distribution, and
+  export/integration to Fortnox Lön / Visma / Hogia for firms that file there
 - ❌ Performance management / PDP / 1:1 notes
 - ❌ Compensation planning
 - ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee

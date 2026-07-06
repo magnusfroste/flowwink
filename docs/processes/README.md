@@ -8,7 +8,7 @@
 
 ## Core Processes
 
-Thirteen processes, one platform. Each links to its own doc — one page per process, all following the same anatomy (explained in the next section).
+Fourteen processes, one platform. Each links to its own doc — one page per process, all following the same anatomy (explained in the next section).
 
 | Process | Maturity | Business lever | Modules | Doc |
 |---------|----------|----------------|---------|-----|
@@ -24,7 +24,8 @@ Thirteen processes, one platform. Each links to its own doc — one page per pro
 | **Return-to-Refund** | L3 | **Lower ops cost** | Returns, Inventory, Invoicing, Shipping | [return-to-refund.md](./return-to-refund.md) |
 | **Acquire-to-Retire** | L3 | **Lower accounting cost** | Fixed Assets, Accounting, Purchasing | [acquire-to-retire.md](./acquire-to-retire.md) |
 | **Book-to-Meet** | L3 | **More deals** | Booking, Email, Voice (IVR), Calendar, SLA, HR (staff) | [book-to-meet.md](./book-to-meet.md) |
-| **Register-to-Attend** | L3 | **More pipeline** | Webinars, Leads/CRM, Blog (content loop), Automations | [register-to-attend.md](./register-to-attend.md) |
+| **Register-to-Attend** | L4 | **More pipeline** | Webinars, Leads/CRM, Blog (content loop), Automations | [register-to-attend.md](./register-to-attend.md) |
+| **Plan-to-Produce** | L3 | **Lower ops cost** | Manufacturing, Products, Inventory, Purchasing | [plan-to-produce.md](./plan-to-produce.md) |
 
 ---
 
@@ -121,7 +122,8 @@ lever, per process:
 | Record-to-Report (L3) | Posts expenses/payroll/depreciation, reconciles bank | **Lower accounting cost** — balanced vouchers, automatically |
 | Return-to-Refund (L3) | RMA intake, QC stamps, partial refunds with guardrails | **Lower ops cost** — returns without escalation |
 | Order-to-Delivery (L3) | Stock checks, fulfillment steps, order status | **Lower ops cost**, fewer stockout surprises |
-| Register-to-Attend (L3) | Registrations, lifecycle, attendance scoring | **More pipeline** from events |
+| Register-to-Attend (L4) | Registrations, lifecycle, attendance scoring, reminder + follow-up delivery | **More pipeline** from events |
+| Plan-to-Produce (L3) | Availability checks, MO lifecycle, MRP reorder + procurement | **Lower ops cost** — components and finished goods always in sync |
 | Hire-to-Retire (L3) | Screening assist, contracts, expense loop | **Lower HR admin** |
 | Acquire-to-Retire (L3) | Depreciation runs, disposal postings | **Lower accounting cost** |
 

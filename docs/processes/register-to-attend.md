@@ -6,8 +6,8 @@
 
 **Problem it solves:** Event signups sit in a form export that never reaches the CRM — this process turns every registration into a scored lead, reminds attendees automatically, and closes the loop from webinar to follow-up to content.
 
-**Maturity level:** L3 — Operational (lifecycle + lead-loop live; reminders/follow-up are event-emission only)
-**Status:** ✅ Core loop live · webinars scores 78% parity (5th highest module)
+**Maturity level:** L4 — Agent-augmented (lifecycle + lead-loop + reminder/follow-up delivery all run without a human)
+**Status:** ✅ Core loop live · webinars scores 89% parity (highest non-100 module)
 
 ---
 
@@ -89,8 +89,8 @@ completed / cancelled`)
 |---|---|---|---|
 | (created) | Person is registered | visitor (WebinarBlock) / agent (`register_webinar`) | Lead auto-linked by email or created (`source=webinar`, +15 score); upsert on `(webinar_id, email)` — re-registering never duplicates; emits `webinar.registered` |
 | `attended` | Showed up (default false) | admin / agent (`mark_webinar_attendance`) | On `attended=true` with a linked lead: +10 lead score; emits `webinar.attended` |
-| `reminder_confirm/t24/t1/post_sent_at` | Reminder markers | `webinar_reminder_tick()` cron (every 15 min) | Emits `webinar.reminder.{confirm,t24,t1,post}` platform events, one per registration per stage — **event emission only; an automation rule must send the actual email** |
-| `follow_up_sent` | Follow-up done (default false) | ⚠️ flag in schema + admin badge; **no send skill or transition wired** | — |
+| `reminder_confirm/t24/t1/post_sent_at` | Reminder markers | `send-webinar-reminders` sweep ('Webinar Reminders' automation, every 15 min) | **Sends the email** (confirm / T-24h / T-1h / post via `email-send`) and stamps the marker — one send per registration per stage, never re-sent. The `webinar.reminder.*` platform events also fire for custom rules |
+| `follow_up_sent` | Follow-up done (default false) | the post window of the same sweep | Sends thanks (attended) or missed-you (absent), including the recording link when set, and stamps the flag |
 
 ### Who does what
 
@@ -126,11 +126,15 @@ visitors, chat and MCP operators all use the same RPC.
 
 ## Known gaps (missing for L4/L5)
 
-- ⚠️ Reminders are **event emission only** — `webinar.reminder.*` fires on the
-  cron tick, but no built-in email template/automation ships; a rule must be
-  wired per instance (scorecard: partial)
-- ⚠️ Follow-up: `follow_up_sent` flag + admin badge exist, but no send skill —
-  the transition is not wired (scorecard: partial)
+- ✅ Reminder **delivery** shipped 2026-07-05 — `send-webinar-reminders` edge
+  function sweeps all four windows (confirm / T-24h / T-1h / post) and sends
+  the emails itself via `email-send`, stamped once per registration; runs as
+  the built-in 'Webinar Reminders' automation every 15 min (skill:
+  `send_webinar_reminders`). Live-verified incl. dedupe proof (second run
+  sent 0). The `webinar.reminder.*` platform events still fire for custom
+  automation rules.
+- ✅ Follow-up: the post-webinar sweep sends thanks/missed-you (with recording
+  link when set) and stamps `follow_up_sent = true`
 - ❌ Paid tickets (no price/ticket fields in the schema)
 - ❌ Multi-session events, tracks, physical-event features (Odoo Events breadth)
 
