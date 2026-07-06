@@ -43,6 +43,68 @@ export function PendingOperationsList() {
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>;
 
+  const sekFmt = new Intl.NumberFormat('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtSek = (cents: number) => {
+    const v = (cents ?? 0) / 100;
+    return `${v < 0 ? '−' : ''}${sekFmt.format(Math.abs(v))} kr`;
+  };
+
+  const renderJournalEntry = (op: any) => {
+    const a = op.args ?? op.preview ?? {};
+    const lines: Array<{ account_code?: string; account_name?: string; debit_cents?: number; credit_cents?: number }> =
+      Array.isArray(a.lines) ? a.lines : [];
+    return (
+      <div className="space-y-3">
+        <div>
+          <div className="text-sm font-medium text-foreground">
+            {a.description || 'Journal entry'}
+            {a.reference_number && (
+              <span className="text-muted-foreground font-normal"> · {a.reference_number}</span>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {typeof a.amount_cents === 'number' && (
+              <span>Amount: <span className="tabular-nums text-foreground">{fmtSek(a.amount_cents)}</span></span>
+            )}
+            {a.template_id && <span>Template: <span className="text-foreground">{a.template_id}</span></span>}
+            {a.action && <span>Action: {a.action}</span>}
+          </div>
+        </div>
+        {lines.length > 0 && (
+          <div className="rounded-md border border-border overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <th className="text-left font-normal px-3 py-1.5">Account</th>
+                  <th className="text-right font-normal px-3 py-1.5 w-24">Debit</th>
+                  <th className="text-right font-normal px-3 py-1.5 w-24">Credit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lines.map((l, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-1.5">
+                      {l.account_code && (
+                        <span className="tabular-nums text-muted-foreground mr-2">{l.account_code}</span>
+                      )}
+                      <span className="text-foreground">{l.account_name ?? ''}</span>
+                    </td>
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-foreground">
+                      {l.debit_cents ? fmtSek(l.debit_cents) : ''}
+                    </td>
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-foreground">
+                      {l.credit_cents ? fmtSek(l.credit_cents) : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
