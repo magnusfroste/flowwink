@@ -485,7 +485,8 @@ function ProposalDetail({
   const isEscalate = p.status === 'escalate';
 
   return (
-    <div className="p-6 md:p-8 h-full flex flex-col">
+    <div className="p-6 md:p-8">
+
       <div className="mb-6">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
           {new Date(p.transaction_date).toLocaleDateString('sv-SE', {
