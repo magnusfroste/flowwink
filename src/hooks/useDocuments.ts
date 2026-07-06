@@ -67,6 +67,26 @@ export function useCreateDocument() {
   });
 }
 
+export function useUpdateDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Document> }) => {
+      const { data, error } = await supabase
+        .from("documents")
+        .update(patch as any)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documents"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 /**
  * Get document counts grouped by related_entity_id for a given entity type.
  * Used to render badges like "📎 3" on contract/project cards.
