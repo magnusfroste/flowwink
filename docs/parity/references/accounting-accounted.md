@@ -257,6 +257,37 @@ architecture to lift/adapt (React/TS/Supabase, same stack):
 intent→match→propose→confirm→book pipeline onto FlowWink's native ledger + skills. Biggest de-risk in
 the whole accounting roadmap.
 
+### DECISIVE architecture: DON'T build the conversational layer — be the ledger + MCP surface (Magnus, 2026-07-06)
+
+Magnus's journey: **aircount** (SIE4 import/export, Dooer-like, MVP) → **airledger** (talk-in-the-mobile,
+simple RR/BR, financial overview, MVP) → now folding those lessons into **FlowWink BoS**, where the
+**agents are the main attraction** and **FlowWink SaaS is the ledger for the whole company's data.**
+
+**The key lesson from airledger's STT struggle:** do NOT rebuild the conversational/voice layer inside
+FlowWink. **The horizontal/frontier agents (Claude, ChatGPT, Gemini, the hyperscalers') already own
+conversational + multimodal + voice** — and improve weekly. Building your own chat/STT is fighting the
+frontier and losing. That was airledger's trap.
+
+**The correct split:**
+- **The agent is BYO / horizontal** — any frontier agent, connected over **MCP**. It handles the
+  conversation, the voice, the "vi höll stämma…", the presentation. FlowPilot is *one* such agent, but
+  the point is ANY agent works.
+- **FlowWink is the LEDGER + the MCP skill surface** — the system of record for the whole company's
+  data, exposing bookkeeping as clean, well-described skills (classify/suggest_template, book, close,
+  VAT, tax, ÅR, SRU) with the guardrails (staged→approve→posted, double-entry) so a horizontal agent
+  **can't book wrong.** FlowWink's moat is the ledger + guardrails + skill quality, not the chat UI.
+
+**So what to reuse from airledger = the DOMAIN LOGIC, not the chat/STT UI.** The intent→template
+matcher, confidence scoring, and the booking/close/VAT/tax skills become **MCP skills**; the
+conversational wrapper is the horizontal agent's job. This is already FlowWink's core thesis
+("operable by any agent, ships with one") — and **already proven**: OpenClaw (an external agent) books
+correctly through FlowWink's MCP today (create→staged→approve→posted, books stay balanced).
+
+**Business consequence:** FlowWink **rides the hyperscalers' agent adoption** instead of competing with
+their conversational UX — a far stronger position than airledger (which had to build + defend its own
+chat/STT). The job is: make FlowWink's MCP ledger surface *excellent* for horizontal agents to operate.
+Horizontal agent + horizontal BOS ledger — never a vertical agent.
+
 ## SRU / NE-bilaga / INK2 — deliverable format (reference: srumaker.se)
 
 The concrete deliverable for the Skatteverket statutory reports is **the SRU file-transfer format**,
