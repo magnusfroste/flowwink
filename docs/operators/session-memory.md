@@ -21,11 +21,31 @@ Loop: **find → fix → deploy → re-verify live → flip scorecard**. Scoreca
 string); regenerate with `bun run scripts/parity-report.ts` before every push
 (CI has a `--check` gate).
 
-## Current standings (2026-07-05)
+## Current standings (2026-07-06 morning)
 
-Modules ≥80%: **products 80, ecommerce 81, invoicing 83, live-support 86,
-webinars 89, companies 93, approvals/customer360/docs/forms/sales-intelligence
-100**. Mean parity ~62%. 767+ vitest green, 56+ guardrail tests.
+**Mean parity 64%** (61 → 62 → 64 over three days). **11 modules ≥80%:**
+approvals/customer360/docs/forms/sales-intelligence 100, companies 93,
+webinars 89, live-support 86, ecommerce 84, invoicing 83, products 80.
+On the doorstep: kb 79 (article_feedback flips it), hr 76, crm 72, pages 70.
+Tail to lift: shipping 39, email 40, contact-center 41,
+field-service/fixed-assets/timesheets 44, payroll 45.
+
+**Overnight sprint (local session, ~75 commits on main):**
+- **SE momsdeklaration BUILT + FLIPPED** — `accounting#tax_vat` done
+  (SKV 4700 ruta map as locale-pack spec `vat-return-2026.ts`, edge fn
+  `accounting-vat-return-se`, `MomsdeklarationTab`; accounting 50 → 58).
+  First ❌ in the statutory-tail calendar is now ✅. SRU two-file format +
+  AB year-end sequence researched into `accounting-accounted.md`.
+- **Approval-system convergence** — staged operations now surface as
+  `approval_requests` (one review queue, no parallel UX); journal staging
+  flow fixed; trust_level synced to staging.
+- **Autonomous booking milestone** — 14 events booked with HIL off,
+  threshold lanes held.
+- **Drift sweep** — CRITICAL double-booking filter + 4 HIGH seam fixes +
+  dual-axis guardrails; agent-execute redeployed.
+- UI wave (evening): reconciliation rules, SLA business hours, expense
+  policies, project milestones+subtasks, budgets, gift cards, shipping
+  rates, document tags — each flipped dual-surface capabilities.
 
 In flight: **PR #108** (draft) — after reconciliation vs main, effectively
 just this memory doc (the code fix and flips landed on main via the local
@@ -132,9 +152,17 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
-1. ~~agent-execute redeploy + kb#search flip~~ **DONE** (local session,
-   2026-07-06). Next kb step: article_feedback surface gets kb over 80.
-2. **Revoke/rotate** the temp `fwk_d0911…` gateway key (Magnus, in admin).
+1. ~~agent-execute redeploy + kb#search flip~~ **DONE**. Next kb step:
+   article_feedback surface gets kb over 80 (one flip from the 12th module).
+2. **Revoke/rotate** the temp `fwk_d0911…` gateway key (Magnus, in admin —
+   still unconfirmed as of 2026-07-06).
+2b. **Stale open PR #85** (2026-06-17, verify_jwt=false for contact-center
+   webhooks — config-only): merge or close; it predates the current program.
+2c. **SE statutory next per the ranked card** (`accounting-accounted.md`):
+   momsdeklaration ✅ → next P1s: NE-bilaga/INK2/SRU, full SIE 4 ledger
+   export/import, BFL document retention (7-year lock + SHA-256 + archive
+   ZIP). Then P2 PSD2 feed. Storno correction flow tracked in
+   record-to-report.md gaps.
 3. Data-quality: `support_agents` row with `current_conversations=24` vs
    `max_conversations=5` — stale counter, needs a reconcile (skill or cron).
 4. UI-build backlog for remaining partials: reconciliation rule admin,
