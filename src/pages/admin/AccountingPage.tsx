@@ -141,6 +141,10 @@ export default function AccountingPage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <div className="ml-auto">
+              <FiscalYearSelector />
+            </div>
           </div>
 
           <TabsContent value="overview"><OverviewTab onNavigate={(id) => ALL_IDS.has(id as TabId) && setTab(id as TabId)} /></TabsContent>
