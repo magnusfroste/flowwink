@@ -217,6 +217,60 @@ export default function OrdersPage() {
     },
   });
 
+  // Map: order_id -> { id, invoice_number } for orders that already have invoices.
+  // Linkage is done through the "order:<uuid>" marker in invoice.notes (see
+  // send_invoice_for_order handler).
+  const orderIds = (orders ?? []).map((o) => o.id);
+  const { data: invoiceByOrder } = useQuery({
+    queryKey: ['orders-invoice-map', orderIds.join(',')],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, notes')
+        .ilike('notes', '%order:%');
+      if (error) throw error;
+      const map: Record<string, { id: string; invoice_number: string }> = {};
+      const idSet = new Set(orderIds);
+      for (const inv of data ?? []) {
+        const m = /order:([0-9a-f-]{36})/i.exec(inv.notes ?? '');
+        if (m && idSet.has(m[1])) {
+          map[m[1]] = { id: inv.id, invoice_number: inv.invoice_number };
+        }
+      }
+      return map;
+    },
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data, error } = await supabase.functions.invoke('agent-execute', {
+        body: {
+          skill_name: 'send_invoice_for_order',
+          arguments: { order_id: orderId },
+          agent_type: 'flowpilot',
+        },
+      });
+      if (error) throw error;
+      const result = (data?.result ?? data) as {
+        invoice_id: string;
+        invoice_number: string;
+      };
+      if (!result?.invoice_id) throw new Error('No invoice returned');
+      return result;
+    },
+    onSuccess: (result) => {
+      toast.success(`Invoice ${result.invoice_number} ready`, {
+        action: {
+          label: 'Open',
+          onClick: () => navigate('/admin/invoicing'),
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: ['orders-invoice-map'] });
+    },
+    onError: (e: Error) => toast.error(`Could not create invoice: ${e.message}`),
+  });
+
   const formatPrice = (cents: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
