@@ -110,7 +110,7 @@ export function EventsToBookTab() {
   const bookMutation = useMutation({
     mutationFn: async (p: Proposal) => {
       const templateId = templateOverrides[p.bank_transaction_id] ?? p.suggested_template_id;
-      return invokeSkill<{ created: boolean; entry_id: string }>('manage_journal_entry', {
+      const args: Record<string, unknown> = {
         action: 'create',
         template_id: templateId,
         amount_cents: p.suggested_amount_cents,
@@ -118,7 +118,28 @@ export function EventsToBookTab() {
         reference_number: p.counterparty,
         bank_transaction_id: p.bank_transaction_id,
         auto_confirm: true,
-      });
+      };
+      const first = await invokeSkill<any>('manage_journal_entry', args);
+      // If the skill is staged, the human click here IS the approval.
+      // Approve the pending op and re-invoke with _approved_operation_id.
+      if (first?.staged && first?.operation_id) {
+        const { error: approveErr } = await supabase.rpc('approve_pending_operation', {
+          p_id: first.operation_id,
+        });
+        if (approveErr) throw approveErr;
+        const finalRes = await invokeSkill<any>('manage_journal_entry', {
+          ...args,
+          _approved_operation_id: first.operation_id,
+        });
+        if (!finalRes?.created) {
+          throw new Error('Booking did not complete after approval');
+        }
+        return finalRes as { created: boolean; entry_id: string };
+      }
+      if (!first?.created) {
+        throw new Error('Booking did not complete');
+      }
+      return first as { created: boolean; entry_id: string };
     },
     onSuccess: () => {
       toast.success('Booked');
