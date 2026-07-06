@@ -103,6 +103,7 @@ export default function AccountingPage() {
         />
 
         <Tabs value={tab} onValueChange={(v) => ALL_IDS.has(v as TabId) && setTab(v as TabId)}>
+          <FiscalYearProvider>
           <div className="flex items-center gap-2 flex-wrap">
             <TabsList>
               {PRIMARY.map((t) => (
