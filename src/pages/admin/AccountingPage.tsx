@@ -140,6 +140,7 @@ export default function AccountingPage() {
           <TabsContent value="pnl"><ProfitLossTab /></TabsContent>
           <TabsContent value="balance"><BalanceSheetTab /></TabsContent>
           <TabsContent value="vat"><VatReportTab /></TabsContent>
+          <TabsContent value="momsdekl"><MomsdeklarationTab /></TabsContent>
           <TabsContent value="tax"><TaxTab /></TabsContent>
           <TabsContent value="opening"><OpeningBalancesTab /></TabsContent>
           <TabsContent value="analytic"><AnalyticAccountingTab /></TabsContent>
