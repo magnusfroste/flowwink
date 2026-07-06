@@ -169,6 +169,32 @@ export const BAS_2024_TEMPLATES = [
     ],
   },
   {
+    template_name: 'El & energi',
+    description: 'El, värme och energi för kontor eller lokal, 25% moms',
+    category: 'expense',
+    keywords: ['el', 'elräkning', 'energi', 'värme', 'electricity', 'elbolag', 'elavtal'],
+    is_system: true,
+    locale: 'se-bas2024',
+    template_lines: [
+      { account_code: '5020', account_name: 'Elkostnad', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+    ],
+  },
+  {
+    template_name: 'Kontorsfika & frukt',
+    description: 'Fika, frukt och enklare förtäring till personalen på kontoret, 12% moms (livsmedel)',
+    category: 'expense',
+    keywords: ['fika', 'frukt', 'fruktkorg', 'kaffe', 'förtäring', 'personalfika', 'kontorsfika'],
+    is_system: true,
+    locale: 'se-bas2024',
+    template_lines: [
+      { account_code: '7290', account_name: 'Övriga personalkostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2640', account_name: 'Ingående moms', debit_pct: 12, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 112 },
+    ],
+  },
+  {
     template_name: 'IT-tjänster & hosting',
     description: 'SaaS, hosting, domäner och IT-konsulter',
     category: 'expense',
@@ -315,6 +341,18 @@ export const BAS_2024_TEMPLATES = [
   },
 
   // ── Tax ────────────────────────────────────────────────────
+  {
+    template_name: 'Insättning till skattekonto',
+    description: 'Överföring från företagskontot till skattekontot hos Skatteverket (ingen moms)',
+    category: 'tax',
+    keywords: ['skattekonto', 'insättning', 'skatteverket', 'skatteinbetalning', 'tax account deposit'],
+    is_system: true,
+    locale: 'se-bas2024',
+    template_lines: [
+      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+    ],
+  },
   {
     template_name: 'Momsredovisning (betalning)',
     description: 'Inbetalning av moms till Skatteverket',
