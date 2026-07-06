@@ -1217,3 +1217,27 @@ f(accounting_periods): Open (any period open) / Closed (all 12 closed + year-end
 periods). Reopening a year = reopening its periods via the existing admin-gated
 `reopen_accounting_period`. Dispatched to Lovable as a contained frontend build (FiscalYearContext +
 header selector + tab defaults).
+
+### Bank intake: agent-first, not Bokio's wizard page (decision, 2026-07-07)
+
+Magnus's question: Bokio has a dedicated bank-connections page (per account: plusgiro, affärskonto…;
+connect real-time or upload a period CSV). Do we copy it — or think agentically ("tell the agent what
+it is, and it happens")? Bokio was built for an era when the owner sat in a UI.
+
+**Decision — invert Bokio's priority. Separate three things Bokio bakes together:**
+1. **Data structure — KEEP** (it's bookkeeping, not UI legacy): bank accounts are real (affärskonto
+   1930, plusgiro 1920, kreditkort, skattekonto 1630); every transaction belongs to a `bank_account_id`
+   mapping to a BAS account. Already in the model.
+2. **The intake act — AGENT-FIRST**: the user *tells the agent what it is* ("här är affärskontots fil
+   för 2025") — chat, email to the company inbox, or external agent over MCP. The agent does what the
+   wizard did: identify format, pick/create the right bank account, import, dedup, propose bookings.
+   **The conversation is the interface.** The litmus test proved it live: raw CSV + "book the year" →
+   OpenClaw found import_bank_file unaided and imported 17/17.
+   Gap exposed by the litmus: imports got no `bank_account_id` — with multiple accounts the agent must
+   be told/ask which account a file belongs to (conversational metadata, not a form field). Add to
+   import_bank_file instructions: resolve/confirm the target bank account.
+3. **The control view — thin page for trust**: list accounts, connection status, last import, mapped
+   GL account. A *view* for visibility, not the workflow. (Real-time = PSD2/open-banking connector
+   feeding the signals framework — already on the backlog with BankID.)
+
+Same law as everywhere: agents do the work; the UI exists to see and steer.
