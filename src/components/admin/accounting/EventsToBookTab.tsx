@@ -177,9 +177,12 @@ export function EventsToBookTab() {
       }
       return first as { created: boolean; entry_id: string };
     },
-    onSuccess: () => {
-      toast.success('Booked');
+    onSuccess: (res: any) => {
+      const v = res?.entry?.voucher_number ?? res?.voucher_number;
+      toast.success(v ? `Booked — V${v}` : 'Booked');
       qc.invalidateQueries({ queryKey: ['events-to-book'] });
+      qc.invalidateQueries({ queryKey: ['events-booked'] });
+      qc.invalidateQueries({ queryKey: ['events-booked-count'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
