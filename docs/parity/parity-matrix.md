@@ -36,7 +36,6 @@ category: reference
 | **sla** | Helpdesk SLA policies | L3 → L4 | `█████░░░░░` 53% | 8/0/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `█████░░░░░` 54% | 6/0/6 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 55% | 9/1/6 | — |
-| **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 56% | 2/1/3 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | EPIC-06 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `██████░░░░` 57% | 6/0/4 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
@@ -46,6 +45,7 @@ category: reference
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `██████░░░░` 59% | 11/1/6 | EPIC-04 |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
+| **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 63% | 3/0/3 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `██████░░░░` 63% | 9/0/4 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `██████░░░░` 64% | 8/0/4 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
