@@ -165,6 +165,24 @@ generator rewrite. Support **SIE4 now** (reach the installed base), **be SIE5-re
 legacy interop wants **CP437/PC8** on export; import should accept both. Worth aligning with aircount's
 proven impl when porting.
 
+### SIE exists ONLY for interoperability — it is not the internal contract (Magnus, 2026-07-06)
+
+Sharpening: **the internal contract is FlowWink's native ledger, not SIE.** SIE's only reason to
+exist is compatibility with other systems, with exactly two purposes:
+1. **Import = the on-ramp (capture).** "Bring your SIE4/SIE5 from wherever you book — we take it from
+   here." This is how the adoption magnet ingests users who book elsewhere.
+2. **Export = the off-ramp (anti-lock-in / trust).** "Your data is never trapped — export complete SIE
+   anytime." This lowers perceived switching risk and is itself a GTM asset.
+
+Consequences:
+- The **ÅR / skatteuträkning / INK2 / SRU / reports generators run on the NATIVE ledger** (primary,
+  fast path). SIE-import feeds the native ledger; the generators never depend on a SIE file.
+- **Investment discipline:** SIE must be *complete and correct* (a lossy import breaks the magnet; a
+  broken export breaks the no-lock-in promise) — but **not gold-plated**. Engineering investment goes
+  into the native agentic year-end stack, not SIE feature-creep.
+- So: earlier "the ÅR generator's input = SIE4" is only true for the *external-source* path. For a
+  FlowWink-booked company it's ledger-direct; SIE is the bridge for everyone else.
+
 ### GTM: the ÅR/year-end IS the adoption magnet (scope decision, 2026-07-06)
 
 The strategic question — is a basic "årsredovisning online" in scope? **Yes — it's likely the single
