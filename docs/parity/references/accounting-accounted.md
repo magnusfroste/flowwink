@@ -774,3 +774,43 @@ the agent makes autonomously; the GUI is the trust/control surface over the exac
   "explain verification V5"), **manual override (Redigera verifikat)** before commit.
 - Voucher numbering is assigned at commit (V-series), sequential — Bokföringslagen requirement, already
   in our model.
+
+---
+
+## Inventory verdict (2026-07-06): the core exists — round 1 is a thin batch layer
+
+Full read of the FlowWink accounting infra (Explore agent, 45 tool calls). Mapped against the 6 Bokio
+stages, **most of the pipeline already ships**:
+
+| Bokio stage | FlowWink status | Reuse (do NOT rebuild) |
+|---|---|---|
+| 1. Classify intent | **PARTIAL** | keyword+vendor-default inference in `manage_journal_entry`; no explicit classifier/batch |
+| 2. Template-match | **DONE (single tx)** | `manage_accounting_template` list + keyword×usage scoring; 80+ `BAS_2024_TEMPLATES`; **batch scoring missing** |
+| 3. Parameter-extract | **DONE (structured)** | `{template_id, amount_cents}` → scaled `template_lines`; no OCR for unstructured |
+| 4. Propose double-entry | **DONE** | template % expansion, balance-validated, multi-line |
+| 5. Post / commit | **DONE** | `pending_operations` staged → `approve_pending_operation` → posted; period locks |
+| 6. Voucher number + audit | **DONE** | `assign_voucher_number()` trigger, `list_voucher_gaps`/`explain_voucher_gap`, audit_logs |
+
+**Canonical pieces to build on (all already there):** `manage_journal_entry` (the posting skill, template +
+vendor learning built in), `manage_accounting_template`, `accounting_reports` (P&L/balance/trial/unbooked),
+`suggest_accounting_template`, `record_accounting_correction` (learning feed), `manage_vendor_defaults`
+(`default_account_code`/`last_used_template_id`), the SE pack (`BAS_2024_ACCOUNTS`, `BAS_2024_TEMPLATES`,
+VAT rates, `sie4-adapter`, `vat-return-2026`), and the existing `/admin/accounting` tabs incl. **Approvals**
+(`PendingOperationsList.tsx`), Journal, Templates, VoucherIntegrity, Year-End.
+
+**The real gap = batch orchestration + a review queue (the "Granska" control surface).** Concretely, and
+strictly reusing `agent-execute` (no new edge functions per policy):
+1. **Batch intake → classify+match+propose** — take N raw events (bank rows / uploaded), for each run the
+   existing template scorer + vendor default, emit a *proposed* verification with a **confidence** and the
+   chosen template. This is agent reasoning over existing skills, looped/batched via `agent-execute`; the
+   staged proposals land in `pending_operations` (already the staging store).
+2. **Review queue UI** — Bokio's "Granska" as a *list*: one row per source event → proposed double-entry +
+   confidence + template, with **accept / edit (Redigera) / reject**, and **approve-all / filter-by-category**
+   (the batch affordances the single-item Approvals tab lacks). This IS the trust/control layer. Lovable
+   build, Bokio look (serif/paper/one-card/sparse-purple, graceful at low volume).
+3. **Batch approve → post** — commit accepted rows through the existing `approve_pending_operation` → posted
+   path; vouchers auto-number on commit.
+
+Fixture: **Liteit 2025, 17 bank events** (documented above). Round 1 = the **batch lane**; the
+natural-language→verification lane (single "book my Slack invoice") is lane 2, layered after. Nothing here
+requires touching the mature core — it's additive orchestration + one new UI surface.
