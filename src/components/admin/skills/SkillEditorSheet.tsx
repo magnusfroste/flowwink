@@ -243,6 +243,11 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
                 <SelectItem value="approve">Approve — requires admin approval before running</SelectItem>
               </SelectContent>
             </Select>
+            {form.watch('trust_level') === 'approve' && (
+              <p className="text-[11px] text-muted-foreground">
+                Approve = agent actions are staged and require human approval before executing.
+              </p>
+            )}
           </div>
 
           {/* Tool definition JSON */}
