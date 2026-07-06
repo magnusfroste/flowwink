@@ -4,6 +4,7 @@ import { useAccountingPreferences, useBrandingSettings } from '@/hooks/useSiteSe
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { useFiscalYear } from './FiscalYearContext';
 
 export function BalanceSheetTab() {
   useAccountingRealtime();
