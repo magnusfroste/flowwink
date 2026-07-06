@@ -151,6 +151,7 @@ export default function AccountingPage() {
           <TabsContent value="voucher"><VoucherIntegrityTab /></TabsContent>
           <TabsContent value="budgets"><BudgetsTab /></TabsContent>
           <TabsContent value="pending"><PendingOperationsList /></TabsContent>
+          <TabsContent value="events_to_book"><EventsToBookTab /></TabsContent>
           <TabsContent value="templates"><TemplatesTab /></TabsContent>
           <TabsContent value="export"><ExportTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
