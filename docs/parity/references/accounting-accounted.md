@@ -316,6 +316,26 @@ Design consequence for the propose→confirm loop: the **staged→approve→post
 (the `approve_pending_operation` staging already works this way, verified). Build the year-end skills
 with agent-friendly propose/confirm semantics and they work identically across all three.
 
+### Be SPARING with edge functions — reuse + router pattern (hard constraint, Magnus, 2026-07-06)
+
+Edge functions cost deploy/cold-start/maintenance (and must be deployed per instance). **Do NOT spawn
+one edge function per skill/deliverable.** Reuse; a **router** (one function, action-based dispatch)
+is welcome. Precedent in-repo: the newsletter refactor consolidated **6 edge functions → 1 router**;
+`agent-execute` already routes most accounting skills; SUBROUTE_FNS (a2a, agent-execute, content-api,
+docs-sync, reconciliation) are established routers.
+
+**Applied to the accounting/year-end build:**
+- The year-end engine pieces (skatteuträkning, SRU export, ÅR generation, year-end close) must **NOT**
+  each become a new edge function. Route them through **`agent-execute`** (where most accounting skills
+  already live) OR **one SE-accounting router** with action dispatch:
+  `{ action: 'vat-return' | 'tax-calc' | 'sru-export' | 'ar-generate' | 'close-year', period, … }`,
+  all reading the year-versioned SE pack data.
+- **Note:** `accounting-vat-return-se` was just built as a standalone function. Per this constraint,
+  the next pieces should **join a router rather than proliferate** — and `accounting-vat-return-se` is a
+  candidate to fold in as the first action of an `accounting-se` router (or move under agent-execute)
+  when the tax/SRU/ÅR actions land. Don't churn it now; consolidate when the sibling actions arrive.
+- Same discipline platform-wide, not just accounting: prefer reuse/router over a new function.
+
 ## SRU / NE-bilaga / INK2 — deliverable format (reference: srumaker.se)
 
 The concrete deliverable for the Skatteverket statutory reports is **the SRU file-transfer format**,
