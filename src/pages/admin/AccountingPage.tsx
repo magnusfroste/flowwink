@@ -21,6 +21,7 @@ import { BalanceSheetTab } from '@/components/admin/accounting/BalanceSheetTab';
 import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
 import { TaxTab } from '@/components/admin/accounting/TaxTab';
 import { VatReportTab } from '@/components/admin/accounting/VatReportTab';
+import { MomsdeklarationTab } from '@/components/admin/accounting/MomsdeklarationTab';
 import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 import { AnalyticAccountingTab } from '@/components/admin/accounting/AnalyticAccountingTab';
 import { AuditTrailTab } from '@/components/admin/accounting/AuditTrailTab';
@@ -32,7 +33,7 @@ import { PendingOperationsList } from '@/components/admin/PendingOperationsList'
 
 type TabId =
   | 'journal' | 'ledger' | 'pnl' | 'balance'
-  | 'vat' | 'tax'
+  | 'vat' | 'momsdekl' | 'tax'
   | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
   | 'pending' | 'templates' | 'export' | 'settings';
 
@@ -42,6 +43,7 @@ const PRIMARY: { id: TabId; label: string }[] = [
   { id: 'pnl', label: 'Profit & Loss' },
   { id: 'balance', label: 'Balance Sheet' },
   { id: 'vat', label: 'VAT' },
+  { id: 'momsdekl', label: 'Momsdeklaration' },
   { id: 'tax', label: 'Tax' },
 ];
 
@@ -138,6 +140,7 @@ export default function AccountingPage() {
           <TabsContent value="pnl"><ProfitLossTab /></TabsContent>
           <TabsContent value="balance"><BalanceSheetTab /></TabsContent>
           <TabsContent value="vat"><VatReportTab /></TabsContent>
+          <TabsContent value="momsdekl"><MomsdeklarationTab /></TabsContent>
           <TabsContent value="tax"><TaxTab /></TabsContent>
           <TabsContent value="opening"><OpeningBalancesTab /></TabsContent>
           <TabsContent value="analytic"><AnalyticAccountingTab /></TabsContent>
