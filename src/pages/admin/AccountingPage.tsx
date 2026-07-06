@@ -34,6 +34,7 @@ import { PendingOperationsList } from '@/components/admin/PendingOperationsList'
 import { OverviewTab } from '@/components/admin/accounting/dashboard/OverviewTab';
 
 type TabId =
+  | 'overview'
   | 'journal' | 'ledger' | 'pnl' | 'balance'
   | 'vat' | 'momsdekl' | 'tax'
   | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
