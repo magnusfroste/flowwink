@@ -657,3 +657,25 @@ Scope discipline for the MVP:
 - Positioning stays **horizontal**: generic engine + SE locale pack (chart, VAT, SRU, ÅR template);
   the Bolagsverket/Skatteverket submission adapters are the only truly authority-specific pieces, and
   they're opt-in plugins — not the core.
+
+### UI design language: the Resultatrapport reference (Magnus, 2026-07-06)
+
+Magnus shared a live Resultatrapport screen with the note **"enkelt och clean — minimalistiskt"** as the
+concrete visual north star (complements the Bokio "north star, polish last" decision above — Bokio =
+structure/flow; this = the actual look). The design DNA to reproduce in the final polish pass:
+
+- **Editorial serif display heading** (e.g. "Resultatrapport") on a warm off-white *paper* background —
+  deliberately NOT default SaaS-sans. Signals calm/premium.
+- **Single card**, soft border + rounded corners, minimal chrome.
+- **Minimal control row**: year selector + a couple of quiet checkboxes ("Visa decimaler", "Visa inaktiva").
+  Nothing else competing for attention.
+- **Section groups** (Rörelsens intäkter / kostnader / resultat, …) with a muted, right-aligned year label
+  acting as the column header.
+- **Expandable account tree**: chevrons, `konto­nummer  Kontonamn`, indented children.
+- **Right-aligned figures**; **bold only on summary/total rows**; thin hairline dividers.
+- **Accent colour (purple) used sparingly** — only as a left-edge marker on the active/expanded group.
+  Everything else is black/grey.
+- **Whitespace-heavy, zero visual noise.**
+
+This is the target aesthetic for ALL accounting reports (Resultatrapport, Balansräkning, the tax-calc
+presentation, the review queue). Still the last-mile Lovable pass — captured now so it's not lost.
