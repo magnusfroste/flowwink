@@ -2008,6 +2008,7 @@ export type Database = {
           description: string | null
           external_id: string | null
           id: string
+          journal_entry_id: string | null
           matched_amount_cents: number
           matched_rule_id: string | null
           raw_data: Json
@@ -2029,6 +2030,7 @@ export type Database = {
           description?: string | null
           external_id?: string | null
           id?: string
+          journal_entry_id?: string | null
           matched_amount_cents?: number
           matched_rule_id?: string | null
           raw_data?: Json
@@ -2050,6 +2052,7 @@ export type Database = {
           description?: string | null
           external_id?: string | null
           id?: string
+          journal_entry_id?: string | null
           matched_amount_cents?: number
           matched_rule_id?: string | null
           raw_data?: Json
@@ -2074,6 +2077,13 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "bank_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
           {
