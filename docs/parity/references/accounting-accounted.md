@@ -814,3 +814,71 @@ strictly reusing `agent-execute` (no new edge functions per policy):
 Fixture: **Liteit 2025, 17 bank events** (documented above). Round 1 = the **batch lane**; the
 natural-language→verification lane (single "book my Slack invoice") is lane 2, layered after. Nothing here
 requires touching the mature core — it's additive orchestration + one new UI surface.
+
+---
+
+## Bokio VAT-close ("stäng momsrapport") + report catalogue — captured live (2026-07-06)
+
+Magnus set the test company to **annual VAT (årsmoms)** — the flow is identical to monthly/quarterly,
+just a longer period. Captured on the LiteIT test company.
+
+### The 10 reports Bokio offers (Rapporter menu)
+For our report parity — FlowWink should cover this set:
+1. **Resultatanalys** — result analysis / KPIs
+2. **Resultatrapport** — income statement (P&L) *(have: `accounting_reports` income_statement + UI tab)*
+3. **Huvudbok** — general ledger *(have: general_ledger)*
+4. **Balansrapport** — balance sheet (3-col IB/Resultat/UB) *(have: balance_sheet + UI tab)*
+5. **Momsrapport** — VAT report / SKV 4700 *(have: `accounting-vat-return-se` + MomsdeklarationTab)*
+6. **Fakturarapporter** — invoice reports
+7. **Kundreskontra** — accounts-receivable ledger (aged) *(gap? verify)*
+8. **Leverantörsreskontra** — accounts-payable ledger (aged) *(gap? verify)*
+9. **Lönerapporter** — payroll reports
+10. **Taggrapport** — tag/analytic report *(have: analytic accounting)*
+
+Likely FlowWink gaps to confirm: **Resultatanalys**, **Kund-/Leverantörsreskontra (aged AR/AP)**,
+**Fakturarapporter**. These are report *views*, not new ledger — cheap to add on the existing data.
+
+### The VAT-close flow is a guided 5-step wizard (`/reports/vat` → period)
+Landing page **Momsrapporter**: table of periods with `Period | Status | Skatt senast | Skatt senast
+utan EU-handel | Moms att betala`. Current period tagged "Nuvarande period". Opening a period gives a
+big **"Moms att få tillbaka / betala"** headline + banner "Rapporten kan ännu inte sparas — vänta till
+periodens sista dag" (can't close a period that hasn't ended — a natural guard).
+
+The 5 steps (accordion, each gated on the previous):
+1. **Avstämning** (reconciliation gate) — a **checklist** the operator confirms before anything:
+   all income/expense booked · unpaid invoices year-end-adjusted (if kontantmetoden) · all Bokio
+   invoices booked · previous period's VAT booked · payment accounts reconciled to bank statements ·
+   all entries mapped to the correct VAT box. CTA **Bekräfta och fortsätt**.
+   → For us: a `vat_period_readiness` check (mirror of `year_end_readiness`) — the agent runs this
+   checklist automatically and reports exceptions before proposing a close.
+2. **Granska rapport och stäng perioden** — renders the full **SKV 4700 momsdeklaration box grid**
+   (see below) for review, then **Stäng perioden och fortsätt** (locks the period).
+   → = our `close_accounting_period` + the `accounting-vat-return-se` box output rendered.
+3. **Deklarera moms till Skatteverket** — the filing hand-off (gated until closed; shows the
+   **deadline**, here 2027-02-26 / 2027-08-17 without EU-trade). This is the authority-specific
+   submission step → our SRU/Skatteverket plugin, opt-in, layered later (do NOT gate MVP on it).
+4. **Betala moms** — payment step.
+5. **Bokför moms på skattekontot** — book the VAT settlement onto the tax account (skattekonto).
+   → = a settlement journal entry (2650 redovisningskonto moms → 1630 skattekonto); a template.
+
+### The SKV 4700 box grid Bokio renders (confirms our `vat-return-2026.ts` 1:1)
+- **Momspliktig försäljning:** 05, 06 (uttag), 07 (vinstmarginalbeskattning), 08 (hyresinkomster) →
+  output VAT **10 (25%), 11 (12%), 12 (6%)**
+- **Momspliktiga inköp vid omvänd skattskyldighet:** 20 (varor EU), 21 (tjänster EU), 22 (tjänster
+  utanför EU), 23 (varor Sverige), 24 (övriga tjänster) → output VAT **30 (25%), 31, 32**
+- **Import:** 50 (beskattningsunderlag) → **60 (25%), 61, 62**
+- **Övrig försäljning/omsättning:** 35, 36, 37, 38, 39, 40, 41, 42 (EU/export/trepartshandel/reverse)
+- **Moms att dra av:** Summa utgående moms + **48 (ingående moms att dra av)**
+- **49 (net)**: "Moms att betala / att få tillbaka" (here **3 016 kr refund** = box 48 input VAT, no output)
+
+Our `accounting-vat-return-se` already computes exactly these boxes (05,10,11,12,20,21,22,30,31,32,35,
+39,41,48,49) — the live Bokio grid confirms the box set and the section groupings. Remaining boxes to
+verify we emit: **06,07,08 (uttag/vinstmarginal/hyra), 23,24, 36,37,38,40,42, 50,60,61,62** — mostly
+zero for a simple SMB but needed for full-form parity.
+
+### Build implication
+VAT-close is its own guided wizard (later round, not build round 1), but it **reuses** the existing
+`close_accounting_period`, `accounting-vat-return-se`, and a settlement template. The agentic version:
+the agent runs step 1 (readiness) autonomously, presents steps 2 (box grid) for human/auditor sign-off,
+closes, and books the step-5 settlement — with step 3 (Skatteverket filing) as the opt-in SRU plugin.
+Same "human wizard = agent decision tree" pattern as the bookkeeping flow.
