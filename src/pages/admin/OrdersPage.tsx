@@ -497,6 +497,38 @@ export default function OrdersPage() {
                             <UserSearch className="h-4 w-4" />
                           </Button>
                         )}
+                        {(() => {
+                          const existing = invoiceByOrder?.[order.id];
+                          const pending = createInvoiceMutation.isPending && createInvoiceMutation.variables === order.id;
+                          if (existing) {
+                            return (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate('/admin/invoicing')}
+                                title={`View invoice ${existing.invoice_number}`}
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                <span className="text-xs">{existing.invoice_number}</span>
+                              </Button>
+                            );
+                          }
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => createInvoiceMutation.mutate(order.id)}
+                              disabled={pending || !order.customer_email}
+                              title="Create invoice from order"
+                            >
+                              {pending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <FileText className="h-4 w-4" />
+                              )}
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                   </TableRow>
