@@ -57,6 +57,39 @@ Extension system.
 Each of these becomes a capability spec (skill + admin UI) under the parity program. Related:
 docs/processes/record-to-report.md (the accounting process this feeds).
 
+## Competitor: Dooer (dooer.com / go.dooer.com) — the closest overlap
+
+Reviewed 2026-07-06 (public site + Magnus's logged-in Liteit account, structure only).
+
+**Dooer has PIVOTED to almost exactly FlowWink's positioning:** a "Finansiellt operativsystem" — a
+**layer on top of existing systems** ("Integrera – migrera inte" / integrate-don't-migrate), with an
+**AI-CFO chat**, bank feeds (2000+ banks via PSD2), document OCR, multi-company. New Financial OS is
+**closed beta**; they also run **free bokföring / fakturering / lön** as the adoption magnet, and have
+a public GitHub. This is the nearest competitor in the "agent/AI + financial ops" space.
+
+**Their accounting product (go.dooer.com) — feature/workflow map (from nav):**
+inbox (doc/txn intake) · documents · verification-list (bookkeeping; entries are bank-fed
+"EXTERNAL-V*") · **SIE4 import (`#import-sie4i`) right in the verification list** · vat-overview
+(momsöversikt) · reports: ledger / vouchers / balance (BR) / pnl (RR) · fiscal-years · salaries ·
+billing (fakturering) · purchases/invoices (leverantörsfakturor) · payments · **shareholder register
+(aktiebok)** · "+ Ny bokning" (manual entry).
+
+**What Dooer VALIDATES for us:** SIE4-import-as-on-ramp (it's front-and-center in their bookkeeping
+view), free-bookkeeping-as-magnet, "integrate not migrate", AI-assisted finance. Our bets are sound.
+
+**Where FlowWink can DIFFERENTIATE (the honest read):**
+1. **Different core bet.** Dooer = a *layer on top* that reads/writes your existing systems. FlowWink =
+   *the system of record itself*, a full **agent-operated BOS** (CRM, commerce, HR, …), not just a
+   financial layer. Be clear which bet we're making — ours is "be the BOS, agent-native", not "overlay".
+2. **The full agentic YEAR-END deliverable is our sharper wedge.** Dooer's nav shows bookkeeping +
+   reports + fiscal-years, but the **årsredovisning + INK2/SRU file generation** (book → close → tax
+   calc → ÅR → submission files) is NOT front-and-center. That end-to-end "året som gör sig självt" is
+   exactly our MVP — and a cleaner, more complete magnet than "AI chat over your finances".
+3. **External-agent operability (MCP).** Dooer is AI-*chat*-assisted inside their app; FlowWink is
+   operable by ANY external agent over MCP. Different, more open surface.
+4. Nice-to-note feature they have that we don't: **aktiebok (shareholder register)** — small, cheap,
+   expected by ABs.
+
 ## THE MVP: prove the integrated year, end to end (Magnus, 2026-07-06)
 
 **Priority decision:** the MVP is proving the **whole integrated process on one company for one year**,
