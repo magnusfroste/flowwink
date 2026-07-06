@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DashCard, BigFigure, Subline, QuietEmpty, fmtSek } from './_shared';
+import { useFiscalYear } from '../FiscalYearContext';
 
 interface PnLResult {
   net_result_cents: number;
