@@ -121,7 +121,7 @@ export function EventsToBookTab() {
       });
     },
     onSuccess: () => {
-      toast.success('Bokförd');
+      toast.success('Booked');
       qc.invalidateQueries({ queryKey: ['events-to-book'] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -140,7 +140,7 @@ export function EventsToBookTab() {
         /* toast handled */
       }
     }
-    toast.success(`Bokförde ${ok}/${targets.length}`);
+    toast.success(`Booked ${ok}/${targets.length}`);
     setChecked({});
     refetch();
   }
@@ -169,12 +169,12 @@ export function EventsToBookTab() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-foreground">
-          Händelser att bokföra
+          Events to book
         </h1>
         {summary && (
           <p className="mt-2 text-sm text-muted-foreground">
-            {summary.total} händelser · {summary.auto} auto · {summary.propose} att granska ·{' '}
-            {summary.escalate} kräver mall
+            {summary.total} events · {summary.auto} auto · {summary.propose} to review ·{' '}
+            {summary.escalate} need template
           </p>
         )}
       </div>
@@ -188,7 +188,7 @@ export function EventsToBookTab() {
             onCheckedChange={(v) => setBatchMode(v)}
           />
           <Label htmlFor="batch-mode" className="text-sm text-muted-foreground">
-            Bokför flera
+            Batch book
           </Label>
         </div>
         {batchMode && autoCount > 0 && (
@@ -198,7 +198,7 @@ export function EventsToBookTab() {
             disabled={bookMutation.isPending || batchTargets === 0}
           >
             {bookMutation.isPending && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
-            Bokför markerade ({batchTargets})
+            Book selected ({batchTargets})
           </Button>
         )}
       </div>
@@ -206,16 +206,16 @@ export function EventsToBookTab() {
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         {isLoading ? (
           <div className="p-12 flex items-center justify-center text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Laddar…
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading…
           </div>
         ) : isError ? (
           <div className="p-12 text-center text-sm text-destructive">
-            Kunde inte hämta händelser.
+            Could not load events.
           </div>
         ) : proposals.length === 0 ? (
           <div className="p-16 text-center">
             <Inbox className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground">Inga händelser att bokföra just nu.</p>
+            <p className="text-sm text-muted-foreground">Nothing to book right now.</p>
           </div>
         ) : (
           <ResizablePanelGroup direction="horizontal" className="min-h-[520px]">
@@ -296,7 +296,7 @@ export function EventsToBookTab() {
                 />
               ) : (
                 <div className="p-12 text-center text-sm text-muted-foreground">
-                  Välj en händelse
+                  Select an event
                 </div>
               )}
             </ResizablePanel>
@@ -353,16 +353,16 @@ function ProposalDetail({
 
       <div className="mb-6">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
-          Så här bokförs den
+          How it will be booked
         </div>
         {p.proposed_lines.length > 0 ? (
           <div className="rounded-md border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <th className="text-left font-normal px-4 py-2">Konto</th>
-                  <th className="text-right font-normal px-4 py-2 w-28">Debet</th>
-                  <th className="text-right font-normal px-4 py-2 w-28">Kredit</th>
+                  <th className="text-left font-normal px-4 py-2">Account</th>
+                  <th className="text-right font-normal px-4 py-2 w-28">Debit</th>
+                  <th className="text-right font-normal px-4 py-2 w-28">Credit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -387,7 +387,7 @@ function ProposalDetail({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground italic">
-            Ingen förslagen bokföring — välj mall nedan.
+            No proposed booking — pick a template below.
           </p>
         )}
       </div>
@@ -395,13 +395,13 @@ function ProposalDetail({
       <div className="mb-6">
         {isEscalate ? (
           <p className="text-sm text-foreground">
-            Ingen mall matchade — välj mall manuellt.
+            No template matched — pick one manually.
           </p>
         ) : (
           <div className="text-sm">
-            <span className="text-muted-foreground">Mall: </span>
+            <span className="text-muted-foreground">Template: </span>
             <span className="text-foreground">{effectiveTemplateName}</span>
-            <span className="text-muted-foreground"> · {p.confidence}% säkerhet</span>
+            <span className="text-muted-foreground"> · {p.confidence}% confidence</span>
           </div>
         )}
       </div>
@@ -409,7 +409,7 @@ function ProposalDetail({
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-4 border-t border-border">
         <Button onClick={onBook} disabled={isBooking || !effectiveTemplateId}>
           {isBooking && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
-          Bokför
+          Book
         </Button>
 
         {p.top_candidates.length > 0 && (
