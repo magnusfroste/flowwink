@@ -1033,3 +1033,36 @@ authority filing is real engineering. Handle it right, not by pretending it's th
 > **Country = data + adapters behind a stable interface. The engine never has `if (country === 'SE')`.**
 Keep the Swedish stuff in the pack; clear the `-se` leak early. Follow this and it scales; break it —
 one `-se` function here, one SE rule in a shared handler there — and we silently Sweden-ify the core.
+
+---
+
+## Market model: multi-market generic core + variable localization depth (Magnus, 2026-07-06)
+
+The positioning that follows from the localization law: **FlowWink is multi-market/generic, but certain
+countries have significantly broader support for certain modules — because someone invested in that
+localization.** This is not a compromise; it's the proven model (cf. Odoo's `l10n_*` packs — generic ERP,
+per-country packs of varying depth, many partner/community-contributed).
+
+- **Depth-by-country is a function of who invested, not an architecture limit.** The architecture *permits*
+  full depth everywhere; realized depth follows the work. Sweden is deep because we build it deep. Germany
+  becomes deep when a German expert invests in its pack.
+- **The agentic core works everywhere from day one.** A new country inherits the agent + ledger + review
+  queue for free and only supplies local data. The bar is not "re-engineer the pipeline" — it's
+  "understand the fine print" (the accounting domain), encoded as pack data, implemented against a defined
+  interface without touching the engine.
+
+**Localization depth ladder (how to talk about "broader support"):**
+| Level | What | Effort |
+|---|---|---|
+| 0 | Generic ledger (chart + manual booking) | Day 1, every country |
+| 1 | Agentic bookkeeping (pack: chart, VAT rates, templates, box-map, bank adapter) | **Easy — the 80%** |
+| 2 | Statutory reporting (year-end, tax forms) | Plugin, real work |
+| 3 | Authority e-submission + bank/identity (SRU/MTD, BankID/PSD2) | Deepest |
+
+Sweden climbs toward level 3; a fresh country starts easily at level 1 and climbs as expertise invests.
+"Certain modules have broader support for certain countries" = certain countries climbed higher.
+
+**Ecosystem consequence:** packs are contributable (partner/community/certified/monetized). Sweden is the
+flagship depth (proves the model + serves Liteit); Germany is open to anyone who knows the fine print.
+The only thing that keeps this true is the same law: **the interface must be clean enough that a German
+accountant-dev fills the pack without touching the engine.**
