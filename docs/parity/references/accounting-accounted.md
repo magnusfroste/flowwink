@@ -381,6 +381,28 @@ Horizontal agent + horizontal BOS ledger — never a vertical agent.
    operator (FlowPilot) directly — a supported convenience, NOT the moat. Don't over-invest there; the
    frontier agents carry the conversational load. Keep STT working, keep building the ledger + skills.
 
+### The human GUI is the TRUST + CONTROL layer (hard requirement, Magnus, 2026-07-06)
+
+**Priority is agentic bookkeeping — but a supporting human GUI is required**, and it is the **trust +
+control layer**, not a nice-to-have. Two rules:
+1. **GUI parity:** *everything the agent does must also be doable by a human in the GUI* (book manually,
+   set opening balances, close the year, run the VAT/tax/ÅR). Agent and human operate the same ledger.
+2. **Full visibility + editability:** the GUI must show *everything the agent did* — which entries,
+   from which event, which **template**, what **confidence**, and let the human **change it** (edit →
+   rättelse genom ombokning; reverse + re-book, never silent edit).
+
+**Positioning line:** *"Let the agent book, or do it yourself — either way you see everything the agent
+did and can change it."* Three modes on one ledger: **full-agent · manual · hybrid.**
+
+**Why this is non-negotiable:** we will meet **oceans of skepticism** initially — always the case with
+a new way of working. It releases when **someone who has actually done bookkeeping sees it works** and
+sees they stay in control. So the GUI must make the agent's work **fully auditable** (what/why/which
+template/confidence/source event — the existing Journal / General Ledger / Audit Trail / Voucher
+Integrity tabs are where it lands) and **fully correctable**. Transparency + reversibility = the bridge
+across the skepticism. The "händelser att bokföra" queue is agent-filled but human-inspectable
+(accept / edit / reject each proposal). This is the FOURTH surface (human GUI) alongside MCP /
+FlowChat / FlowPilot — and the one that earns trust.
+
 ### ONE skill layer, THREE surfaces (hard requirement, Magnus, 2026-07-06)
 
 When exposing the **whole package** as MCP skills — the full process **bokföring → bokslut → ÅR →
