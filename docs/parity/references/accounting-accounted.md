@@ -57,6 +57,34 @@ Extension system.
 Each of these becomes a capability spec (skill + admin UI) under the parity program. Related:
 docs/processes/record-to-report.md (the accounting process this feeds).
 
+## THE MVP: prove the integrated year, end to end (Magnus, 2026-07-06)
+
+**Priority decision:** the MVP is proving the **whole integrated process on one company for one year**,
+NOT building interop or controls first. **SIE4 import/export = saved for LAST. Transaction
+immutability / period-lock = deferred to AFTER the MVP.** Before MVP the point is to *prove the chain*.
+
+**The MVP chain (in order):**
+1. **Löpande bokföring** — book a full year of transactions. ✅ *have it* (manage_journal_entry,
+   agent-verified: create → staged → approve → posted, books stay balanced).
+2. **Årsmomsdeklaration** — run the VAT for the year → know the **skuld or fordran**. ✅ *have it*
+   (SKV 4700, agent-run). Then **book the VAT settlement** (moms → 2650 → betalning) as part of close.
+3. **Årsbokslut / close the year** — the **last transaction(s) that balance the year**: settle VAT,
+   then move **årets resultat** to equity (close P&L → result). Skills exist (run_year_end,
+   close_accounting_period) — verify the closing mechanics produce a balanced year.
+4. **BR + RR** — check the balance sheet + income statement. ✅ *have it* (accounting_reports, balanced).
+5. **Skatteuträkning (INK2 input)** — feed RR/BR into the tax calc: **identify the non-deductible
+   transactions (ej avdragsgilla)** → adjust resultat före skatt → beskattningsbar inkomst → bolagsskatt.
+   *This is the calculation Skatteverket's forms perform.* NEW — the core new engine.
+6. **SRU files** — generate INFO.SRU + BLANKETTER.SRU from (5). NEW.
+7. **Årsredovisning (K2)** — the presentable/signable ÅR from RR/BR + notes. NEW.
+
+**What's NEW to build for the MVP:** (3) year-end closing entries (VAT settlement + move årets
+resultat), (5) skatteuträkning engine (non-deductible flagging + corp tax, year-versioned rate),
+(6) SRU file generator, (7) K2 ÅR generator. Everything else we already have and it's agent-run.
+
+**The proof:** one company (Liteit 2025 fixture) goes book → close → VAT → tax → ÅR → SRU as one
+**agentic** flow — "året som gör sig självt." That demo IS the adoption magnet.
+
 ## SRU / NE-bilaga / INK2 — deliverable format (reference: srumaker.se)
 
 The concrete deliverable for the Skatteverket statutory reports is **the SRU file-transfer format**,
