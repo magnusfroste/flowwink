@@ -25,8 +25,14 @@ export function JournalTab() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [journalFilter, setJournalFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const { year, fromDate, toDate } = useFiscalYear();
+  const [dateFrom, setDateFrom] = useState(fromDate);
+  const [dateTo, setDateTo] = useState(toDate);
+  useEffect(() => {
+    setDateFrom(fromDate);
+    setDateTo(toDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
