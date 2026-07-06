@@ -6251,6 +6251,17 @@ async function executeDbAction(
           const assets = balances.filter(b => b.account_type === 'asset' && b.balance !== 0);
           const liabilities = balances.filter(b => b.account_type === 'liability' && b.balance !== 0);
           const equity = balances.filter(b => b.account_type === 'equity' && b.balance !== 0);
+          // Orphaned accounts: referenced by posted journal_entry_lines but
+          // missing (or wrongly typed) in chart_of_accounts. Without surfacing
+          // these, the report would silently drop them and appear unbalanced.
+          const unclassified = balances.filter(b =>
+            b.account_type !== 'asset' &&
+            b.account_type !== 'liability' &&
+            b.account_type !== 'equity' &&
+            b.account_type !== 'revenue' &&
+            b.account_type !== 'income' &&
+            b.account_type !== 'expense' &&
+            b.balance !== 0);
           const totalAssets = assets.reduce((s, a) => s + a.balance, 0);
           const totalLiabilities = liabilities.reduce((s, a) => s + a.balance, 0);
           // Current-period net result (revenue − expense) sits in equity as
@@ -6260,14 +6271,23 @@ async function executeDbAction(
             (b.account_type === 'revenue' || b.account_type === 'income') ? s + b.balance
               : b.account_type === 'expense' ? s - b.balance : s, 0);
           const totalEquity = equity.reduce((s, a) => s + a.balance, 0) + currentYearResult;
+          const unclassifiedCents = unclassified.reduce((s, a) => s + a.balance, 0);
+          if (unclassified.length > 0) {
+            console.warn(
+              `[balance_sheet] ${unclassified.length} orphan account(s) not classified in chart_of_accounts:`,
+              unclassified.map(u => `${u.account_code} (${u.balance} cents)`).join(', ')
+            );
+          }
           return {
             report_type: 'balance_sheet', period,
             assets, liabilities, equity,
+            unclassified,
+            unclassified_cents: unclassifiedCents,
             current_year_result_cents: currentYearResult,
             total_assets_cents: totalAssets,
             total_liabilities_cents: totalLiabilities,
             total_equity_cents: totalEquity,
-            balanced: totalAssets === totalLiabilities + totalEquity,
+            balanced: totalAssets === totalLiabilities + totalEquity + unclassifiedCents,
           };
         }
 
