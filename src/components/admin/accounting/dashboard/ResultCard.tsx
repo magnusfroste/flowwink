@@ -10,10 +10,11 @@ interface PnLResult {
 }
 
 export function useIncomeStatementYTD() {
+  const { year } = useFiscalYear();
   const now = new Date();
-  const year = now.getFullYear();
+  const currentYear = now.getFullYear();
   const from = `${year}-01-01`;
-  const to = now.toISOString().slice(0, 10);
+  const to = year === currentYear ? now.toISOString().slice(0, 10) : `${year}-12-31`;
 
   return useQuery({
     queryKey: ['dash', 'income-statement-ytd', year],
