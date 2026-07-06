@@ -1204,3 +1204,16 @@ parallel UX systems. Cancelled.
    over 50k SEK require CFO role"). One policy engine, one inbox; /admin/approvals becomes THE page.
    Same reuse-the-framework move as bookkeeping intake reusing signals.
 3. "Gated" badge/filter in the skills panel = config visibility, orthogonal, still wanted.
+
+### Fiscal-year selector + derived year status (decision, 2026-07-07)
+
+Borrowing Bokio's year principle but smarter (Magnus): **a fiscal-year selector in the Accounting page
+header; the selected year is the default period context for every report tab** (Journal, RR, BR, ledger,
+VAT, dashboard cards). Tabs keep finer-grained controls within the year. One selector, everything follows.
+
+**Discipline rule (dual-axis lesson applied): year status is DERIVED, never stored.** No `fiscal_years`
+table with its own status column (would drift against `accounting_periods`). Year status =
+f(accounting_periods): Open (any period open) / Closed (all 12 closed + year-end run) / Upcoming (no
+periods). Reopening a year = reopening its periods via the existing admin-gated
+`reopen_accounting_period`. Dispatched to Lovable as a contained frontend build (FiscalYearContext +
+header selector + tab defaults).
