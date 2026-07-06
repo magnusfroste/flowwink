@@ -19,8 +19,10 @@ function formatSek(cents: number) {
 
 export function VatReportTab() {
   const now = new Date();
-  const [year, setYear] = useState<number>(now.getFullYear());
-  const [startMonth, setStartMonth] = useState<number>(now.getMonth() + 1);
+  const { year: ctxYear } = useFiscalYear();
+  const [year, setYear] = useState<number>(ctxYear);
+  const [startMonth, setStartMonth] = useState<number>(1);
+  useEffect(() => { setYear(ctxYear); setStartMonth(1); setEndMonth(12); }, [ctxYear]);
   const [endMonth, setEndMonth] = useState<number>(now.getMonth() + 1);
   const { data: rows = [], isLoading } = useVatReport(year, startMonth, endMonth);
 
