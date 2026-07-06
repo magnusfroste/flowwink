@@ -44,8 +44,8 @@ export function ProfitLossTab() {
   if (!report) return null;
 
   const orgName = branding?.organizationName || 'Organization';
+  const { year: fiscalYear } = useFiscalYear();
   const today = new Date();
-  const fiscalYear = today.getFullYear();
   const generated = today.toISOString().slice(0, 16).replace('T', ' ');
 
   return (
