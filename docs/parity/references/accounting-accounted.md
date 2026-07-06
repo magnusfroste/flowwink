@@ -77,3 +77,29 @@ The two files:
 **FlowWink's edge over srumaker.se:** srumaker makes the user *type in* the figures. FlowWink already
 **has the booked ledger** — the SRU files fall out of the existing journal automatically, and an
 **agent** can generate + file them. Book the year → get the two SRU files. That's the agentic record-to-report payoff.
+
+## The real deliverable: transparent tax calc + ready-to-submit files (forms are a byproduct)
+
+Refined vision (Magnus, 2026-07-06): **the blanketter are an intermediate stage, not the goal.** Once
+you have a balance sheet + P&L, the value is:
+1. **The tax calculation happens automatically** (skatteuträkning) — resultat före skatt +
+   skattemässiga justeringar → beskattningsbar inkomst → bolagsskatt (20.6% for 2025) → årets skatt.
+2. **A transparent presentation of how the calc arrives at the number** (not a form to fill).
+3. **"Here are your files to submit"** — INK2 + SRU for Skatteverket (filöverföring), and the
+   **K2 Årsredovisning** for Bolagsverket.
+
+The **Årsredovisning is itself a first-class deliverable** (K2, → Bolagsverket), and highly
+templatable: förvaltningsberättelse (verksamhet, flerårsjämförelse, vinstdisposition) + resultaträkning
++ balansräkning + noter (redovisningsprinciper, eget kapital) + underskrifter. Structure is fixed;
+only the figures change.
+
+### Canonical test fixture: Liteit Svenska AB 2025 (minimal holding AB)
+Real example (Magnus's own): 26 bank transactions/year — monthly Skatteverket debits, bank fees, one
+related-party interest cost (−14 700), one tax refund. Nettoomsättning 0, resultat −16 344 (loss →
+0 tax), balansomslutning 274 443. This is the **long tail of tiny ABs + enskild firma** where an
+agent should do the *entire* year-end: 26 transactions → book → BS/P&L → K2 ÅR → skatteuträkning →
+INK2/SRU files. If FlowWink nails this end-to-end for Liteit, it nails it for a huge SMB segment.
+
+**Build shape:** a `skatteuträkning` engine (small, on top of resultat före skatt + year-versioned
+tax rate + justeringar) → transparent calc view → INK2/SRU + ÅR generators. All year-versioned data
+in the SE pack; the presentation + file export is the product, the forms are the wire format.
