@@ -994,3 +994,42 @@ Principles (so it doesn't become a mess of special cases):
 
 Sequencing: **later** (after build rounds 1–2 — the batch bookkeeping + review queue). Captured so it
 isn't lost. Relates to the two-lane intake above and the existing signals framework.
+
+---
+
+## Does this scale? Localization discipline (self-critical, Magnus asked 2026-07-06)
+
+The honest verdict: **the engine is genuinely country-agnostic and scales; Sweden is a pack, not a fork.
+We only dig a hole if country logic leaks into the engine.** The "many ifs-and-buts" of Swedish
+accounting must live as **data in the locale pack**, never as **branches in the engine**.
+
+**Generic (no country in it — must stay that way):** the ledger (journal_entries/lines, double-entry,
+staged→post, voucher numbering, periods), the pipeline (classify → match → propose → post), templates
+as data (`template_lines` = %/accounts — structure generic, content packed), chart + VAT rates (generic
+table + locale data), and crucially the **declarative VAT-return box map** (`vat-return-2026.ts`:
+ledger account → form box). The engine reads the map; it hardcodes no boxes. UK VAT100 (9 boxes) is just
+another declarative map. **Double down on this pattern everywhere.**
+
+**The leak to fix (smell):** `accounting-vat-return-se` — a country-suffixed edge function with inline
+box logic. If every country gets its own `-xx` function, that's the hole. **Refactor to a generic
+`accounting-vat-return` that loads the locale pack's declarative map.** The `-se` suffix is the warning
+sign; kill it early.
+
+**The genuinely deep part (be honest — not a data swap):** statutory year-end filing. ÅR (K2) + INK2/SRU
++ iXBRL to Bolagsverket vs UK's Companies House accounts + CT600 + Making Tax Digital — each country's
+authority filing is real engineering. Handle it right, not by pretending it's thin:
+- A clean **plugin interface**: `StatutoryReportGenerator` + `AuthoritySubmissionAdapter`. A UK dev
+  *implements an interface*, never hacks the core.
+- **Opt-in; does NOT gate the generic product.** Generic BOS = ledger + VAT + reports. Year-end/filing =
+  a country plugin on top.
+
+**Can another dev easily build England?**
+- Bookkeeping + VAT + reports: **yes, easily** — a new pack (chart, rates, templates, box-map, bank-format
+  adapter). The 80%.
+- Statutory filing: **not trivial, but clean** — implement the defined plugin interface. The effort is
+  inherent to the domain, not imposed by our design — *as long as the engine never branches on country*.
+
+**The one discipline rule that keeps us out of the hole:**
+> **Country = data + adapters behind a stable interface. The engine never has `if (country === 'SE')`.**
+Keep the Swedish stuff in the pack; clear the `-se` leak early. Follow this and it scales; break it —
+one `-se` function here, one SE rule in a shared handler there — and we silently Sweden-ify the core.
