@@ -36,7 +36,7 @@ type TabId =
   | 'journal' | 'ledger' | 'pnl' | 'balance'
   | 'vat' | 'momsdekl' | 'tax'
   | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
-  | 'pending' | 'templates' | 'export' | 'settings';
+  | 'pending' | 'events_to_book' | 'templates' | 'export' | 'settings';
 
 const PRIMARY: { id: TabId; label: string }[] = [
   { id: 'journal', label: 'Journal' },
