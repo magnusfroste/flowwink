@@ -22,6 +22,7 @@ import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
 import { TaxTab } from '@/components/admin/accounting/TaxTab';
 import { VatReportTab } from '@/components/admin/accounting/VatReportTab';
 import { MomsdeklarationTab } from '@/components/admin/accounting/MomsdeklarationTab';
+import { EventsToBookTab } from '@/components/admin/accounting/EventsToBookTab';
 import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 import { AnalyticAccountingTab } from '@/components/admin/accounting/AnalyticAccountingTab';
 import { AuditTrailTab } from '@/components/admin/accounting/AuditTrailTab';
