@@ -416,7 +416,7 @@ function ProposalDetail({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                Byt mall <ChevronDown className="h-3 w-3 ml-1" />
+                Change template <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-72">
@@ -437,7 +437,7 @@ function ProposalDetail({
         )}
 
         <Button variant="ghost" size="sm" onClick={onSkip} className="ml-auto text-muted-foreground">
-          Hoppa över
+          Skip
         </Button>
       </div>
     </div>
