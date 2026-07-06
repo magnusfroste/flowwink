@@ -33,7 +33,7 @@ import { PendingOperationsList } from '@/components/admin/PendingOperationsList'
 
 type TabId =
   | 'journal' | 'ledger' | 'pnl' | 'balance'
-  | 'vat' | 'tax'
+  | 'vat' | 'momsdekl' | 'tax'
   | 'opening' | 'analytic' | 'yearend' | 'audit' | 'voucher' | 'budgets'
   | 'pending' | 'templates' | 'export' | 'settings';
 
