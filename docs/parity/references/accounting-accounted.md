@@ -679,3 +679,17 @@ structure/flow; this = the actual look). The design DNA to reproduce in the fina
 
 This is the target aesthetic for ALL accounting reports (Resultatrapport, Balansräkning, the tax-calc
 presentation, the review queue). Still the last-mile Lovable pass — captured now so it's not lost.
+
+**Structural specs from the live Bokio reference (2026-07-06, "bokför endast två saker"):**
+
+1. **Balansrapport is 3-column** — `Ing. balans 2026-01-01` | `Resultat` | `Utg. balans 2026-12-31`
+   (opening balance → period movement → closing balance, the standard SE presentation). The
+   **Resultatrapport is 1-column** (the year only). Same shell, different column set — build the report
+   frame once, parameterise the columns.
+2. **Graceful at sparse data** — with only two vouchers booked, the report still renders zero-rows
+   (Anläggningstillgångar 0, Långfristiga skulder 0) and reads as calm/finished, not empty/broken. This
+   is a hard requirement, not just polish: the first-run experience (agent has booked 1–2 things) must
+   already look like a real, complete report. Design and test the low-volume state first, not last.
+3. Both reports share identical chrome: serif heading, year selector + "Visa decimaler"/"Visa inaktiva"
+   checkboxes, single card, expandable account tree with chevrons, purple left-edge accent on the active
+   group, subtle grey highlight on the focused leaf row, right-aligned figures, bold on summary rows.
