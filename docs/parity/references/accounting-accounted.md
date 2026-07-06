@@ -693,3 +693,84 @@ presentation, the review queue). Still the last-mile Lovable pass — captured n
 3. Both reports share identical chrome: serif heading, year selector + "Visa decimaler"/"Visa inaktiva"
    checkboxes, single card, expandable account tree with chevrons, purple left-edge accent on the active
    group, subtle grey highlight on the focused leaf row, right-aligned figures, bold on summary rows.
+
+---
+
+## Bokio bookkeeping flow — captured live (2026-07-06, LiteIT Svenska AB test company)
+
+Walked the full "book a transaction" wizard on Bokio's own test account (Magnus logged in, explicit
+"prova att bokför"). This is the reference flow to replicate — and it maps 1:1 onto our agentic
+pipeline. **The human wizard IS the agent's decision tree made visible** — every step is a decision
+the agent makes autonomously; the GUI is the trust/control surface over the exact same steps.
+
+### The 6 steps (each = a pipeline stage)
+
+1. **Skapa ny → Bokföring** — entry menu. Options: *Ladda upp underlag* (receipt→auto-suggest),
+   *Utan underlag* (manual). Plus *Import: från bank / från fil* and *Skapa: Faktura / Lön*.
+   → Our equivalent: an event arrives (bank feed, uploaded receipt, or agent-initiated).
+
+2. **Välj kategori** (intent capture) — coarse event class:
+   - *Standardhändelser:* **Leverantörsfaktura** ("faktura du betalar senare")
+   - *Specialhändelser:* **Inköp från annat konto** (kreditkort/privat/osynkat) · **Övrig inkomst**
+     (privat konto/kontant) · **Övrigt / Justering** (interna överföringar, skattebetalningar)
+   - Right pane throughout: persistent **"Lägg till underlag"** dropzone (.jpeg/.jpg/.pdf/.png) +
+     "Välj från uppladdat".
+   → **= intent classification.** The agent picks this class from the source event automatically.
+
+3. **Välj mall** (template match) — tabs **Sök | Alla mallar | Manuell**. Natural-language search box
+   **"Vad betalade du för?"** + **"Dina vanligaste mallar"** (usage-ranked): *Insättning till
+   skattekonto, Fruktkorg 6% moms, IT-produkter Inrikes 25% moms, Inköp förbrukningsmaterial 25% moms*.
+   Each template name encodes **VAT rate + account family**.
+   → **= our template confidence-cascade / Skill-Relevance-style scoring.** "Vad betalade du för?" is
+   literally intent→template ranking exposed as UI. The agent scores templates on the event
+   description; the human search box is the same ranking, typed.
+
+4. **Fyll i detaljer** (parameter capture) — the human enters ONLY:
+   - **Summa (SEK inkl. moms)** — gross amount
+   - **Betaldatum** — date (**can be future-dated → scheduled verification**)
+   - **Konto** — payment/counter account (default **1930 Företagskonto**)
+   - Titel (prefilled from template), Kommentar (optional), **+ Lägg till mall** (multi-line: several
+     template rows in one verification)
+   → **= parameter extraction.** Template supplies the expense + VAT accounts and the split rule; the
+   agent fills amount/date/account from the source event — exactly what the human does here.
+
+5. **Granska** (the proposal) — "Så här kommer ditt verifikat se ut". Generated double-entry table,
+   e.g. 1 000 kr on *IT-produkter Inrikes 25% moms*:
+   | Konto | Debet | Kredit |
+   |---|---|---|
+   | 1930 Företagskonto | 0,00 | 1 000,00 |
+   | 2640 Ingående moms | 200,00 | 0,00 |
+   | 6230 Datakommunikation | 800,00 | 0,00 |
+   Note the template booked to **6230** with 25% VAT auto-split (800 net + 200 VAT). Also present:
+   **"Bokio AI kan förklara denna bokföring"** (AI-explain link) and **"Redigera verifikat"** (manual
+   override). Primary action **Bokför**.
+   → **= our `propose` / staged verification.** This is the review screen the control-UI must render;
+   the agent produces exactly this object, a human (or auditor's agent) approves it.
+
+6. **Klar** (committed) — success seal, **"Verifikation bokförd!"**, voucher number (**V5**), date,
+   template. Follow-ups: **Lägg till tagg(ar)**, **Skapa periodisering** (accrual), **Bokför en till**,
+   **Klar**.
+   → **= our `approve → posted` (staged→post commit).** Voucher gets its sequential number here.
+
+### Design/layout of the wizard (for the Lovable polish pass)
+- **Two-pane wizard:** left = the step form (narrow, ~460px), right = persistent "Lägg till underlag"
+  dropzone. Same shell every step.
+- **Serif step title** (Välj kategori / Välj mall / Fyll i detaljer / Granska / Klar) with a **back
+  chevron**, a top-right **"Avbryt"** and an **"…"** overflow. A thin **purple progress bar** under
+  the title fills across the 5 steps.
+- Radio-card lists for choices; usage-ranked "Dina vanligaste mallar"; inline "Fyll i nu" affordances;
+  disabled primary button until required fields are set; big black primary CTA (Nästa / Bokför).
+- Same calm/minimal/editorial system as the reports (serif, paper bg, one card, sparse accent).
+
+### What this locks in for build round 1
+- Our pipeline **classify → template-match → extract → propose → post** is confirmed correct — it is
+  literally Bokio's wizard, and therefore "works with an agent as with a human bookkeeper" (Magnus's
+  bar). Same skill layer; the agent runs steps 2–5 autonomously and batches, the human/auditor reviews
+  step 5 via the control UI.
+- **Templates are the unit of correctness** (VAT rate + account family baked in). Port aircount/airledger
+  template families into `accounting_templates`; the SE locale pack owns the BAS accounts they map to.
+- Features to carry: **future-dated/scheduled verifications**, **multi-line (+ Lägg till mall)**,
+  **periodisering (accruals)**, **tags**, **AI-explain-this-entry** (a natural FlowPilot/MCP skill:
+  "explain verification V5"), **manual override (Redigera verifikat)** before commit.
+- Voucher numbering is assigned at commit (V-series), sequential — Bokföringslagen requirement, already
+  in our model.
