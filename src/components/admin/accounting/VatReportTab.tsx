@@ -22,8 +22,8 @@ export function VatReportTab() {
   const { year: ctxYear } = useFiscalYear();
   const [year, setYear] = useState<number>(ctxYear);
   const [startMonth, setStartMonth] = useState<number>(1);
+  const [endMonth, setEndMonth] = useState<number>(12);
   useEffect(() => { setYear(ctxYear); setStartMonth(1); setEndMonth(12); }, [ctxYear]);
-  const [endMonth, setEndMonth] = useState<number>(now.getMonth() + 1);
   const { data: rows = [], isLoading } = useVatReport(year, startMonth, endMonth);
 
   const totalOutput = rows.filter(r => r.category === 'output').reduce((s, r) => s + Number(r.amount_cents), 0);
