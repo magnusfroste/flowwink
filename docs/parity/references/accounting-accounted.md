@@ -122,3 +122,26 @@ Implications for the build:
   Bolagsverket) → INK2/SRU (Skatteverket, before Aug 1). This is the L4/L5 record-to-report UX.
 - The stämma needs a **presentable ÅR** (K2 layout) generated straight from the booked RR/BR — that's
   the artefact the board signs; everything downstream (Bolagsverket filing, INK2/SRU) hangs off it.
+
+### The ÅR generator's INPUT contract = SIE4 (reference: arsredovisning-online.se)
+
+arsredovisning-online.se takes a **SIE4 file as input** — the universal export format every Swedish
+bookkeeping program produces — and layers a **template** for the parts that aren't in the raw numbers
+(the notes etc. you see in Liteit's ÅR). Then you submit.
+
+This is the right input contract for FlowWink's ÅR/tax generators, and FlowWink is uniquely placed:
+- **FlowWink already EXPORTS full SIE4** (`src/lib/locale-packs/se/sie4-adapter.ts` — `#RAR` + `#KONTO`
+  + `#VER`/`#TRANS`, chart + balances + all verifications).
+- So the chain is one flow for FlowWink customers: **ledger → SIE4 → ÅR / skatteuträkning / INK2 / SRU.**
+- And because the generator's input is **SIE4, not FlowWink's own schema**, the SAME ÅR/tax stack works
+  for a business that books in Fortnox/Visma/anything — **import their SIE4 → get the ÅR + files.** That
+  is a massive horizontal reach (the whole SE market), not a vertical.
+
+**The ÅR = financial statements + a template layer.** The RR/BR come straight from the SIE4/ledger.
+The template layer adds what's NOT in the raw numbers: förvaltningsberättelse (verksamhet,
+flerårsjämförelse, vinstdisposition), noter (redovisningsprinciper, Not eget kapital, Not
+värdepapper, …), underskrifter. Some notes **auto-derive** (Not eget kapital from equity-account
+movements; Not värdepapper from the 13xx holdings); the narrative parts come from a small form/template.
+
+**Build shape:** `sie4-in → K2-ÅR-template → signable ÅR (PDF/iXBRL)`. Decoupled, testable against any
+SIE4 — including a SIE4 exported from Liteit 2025.
