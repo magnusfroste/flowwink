@@ -1241,3 +1241,32 @@ it is, and it happens")? Bokio was built for an era when the owner sat in a UI.
    feeding the signals framework — already on the backlog with BankID.)
 
 Same law as everywhere: agents do the work; the UI exists to see and steer.
+
+---
+
+## LITMUS TEST: cold agent books the year from raw CSV (2026-07-07)
+
+Magnus's test ("ett bra lackmustest"): wipe the fixture ledger, hand OpenClaw the raw Liteit 2025 bank
+CSV with MINIMAL context ("You are the bookkeeper… book the year") — no skill names, no workflow hints.
+Measures whether the skill surface alone carries a cold external agent (Law 2 at system level).
+
+**Verdict: the surface carries — every stumble was a PLATFORM gap, not an agent gap, and each became
+a permanent guard:**
+
+| Finding | Root cause | Fix (platform, not agent) |
+|---|---|---|
+| Found `import_bank_file` unaided ✓ but reported *intent as result* ("importing…", nothing landed) | agent self-reports are narrative | "verify before reporting" in mission protocol; skills return verified outcomes |
+| Verified import: **17/17, batch id, correct totals** ✓ | — | — |
+| Assembled the pipeline unaided: `list_unmatched → propose_bookkeeping → manage_journal_entry`, correct accounts incl. the 3 new templates ✓ | — | Law 2 confirmed |
+| Booked WITHOUT `bank_transaction_id` → events never left the queue | propose's instructions mention the link; manage_journal_entry's own did NOT | instruction fix on manage_journal_entry (seed + dev) |
+| Transport death mid-run → retry created a **duplicate entry** | no idempotency | **guard: linked event ⇒ `already_booked`, never a duplicate** — the link IS the idempotency key |
+
+**The meta-lesson became the core product principle** (saved to memory as "agent-safe by construction"):
+an unreliable agent transport became SAFE for bookkeeping because correctness lives in the platform —
+idempotency, verify-don't-trust, dials, incident→guardrail. The system gets safer for agents as it ages.
+
+**Operational notes:** OpenClaw's /v1/responses is synchronous; Cloudflare kills ~100s connections and
+its runtime aborts work on client disconnect (no `background` mode — improvement request for OpenClaw).
+Long missions must be phased/bite-sized; with the idempotency guard, retries are harmless by design.
+Completion state: 17 events re-imported and sitting safely unmatched in the queue — bookable any time
+(agent rerun, FlowPilot, or one "Batch book" click in the UI).
