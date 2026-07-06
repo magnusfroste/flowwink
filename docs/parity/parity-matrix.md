@@ -60,8 +60,8 @@ category: reference
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `████████░░` 76% | 15/0/5 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `████████░░` 79% | 4/1/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 80% | 10/1/4 | — |
-| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 81% | 10/7/1 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
+| **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 86% | 5/0/1 | EPIC-07 |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
