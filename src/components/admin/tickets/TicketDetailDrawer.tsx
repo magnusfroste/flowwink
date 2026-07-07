@@ -285,7 +285,41 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddComment();
             }}
           />
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" disabled={cannedResponses.length === 0}>
+                  <MessageSquareQuote className="h-3.5 w-3.5" />
+                  Canned
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search canned responses…" />
+                  <CommandList>
+                    <CommandEmpty>No responses.</CommandEmpty>
+                    <CommandGroup>
+                      {cannedResponses.map((r) => (
+                        <CommandItem
+                          key={r.id}
+                          value={`${r.title} ${r.shortcut ?? ""} ${r.category ?? ""}`}
+                          onSelect={() => insertCanned(r.id, r.body_md)}
+                          className="flex flex-col items-start gap-0.5"
+                        >
+                          <div className="flex w-full items-center justify-between gap-2">
+                            <span className="font-medium text-sm truncate">{r.title}</span>
+                            {r.category && (
+                              <Badge variant="outline" className="text-[10px]">{r.category}</Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground line-clamp-2">{r.body_md}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Button
               size="sm"
               onClick={handleAddComment}
@@ -296,6 +330,7 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
             </Button>
           </div>
         </div>
+
       </SheetContent>
     </Sheet>
   );
