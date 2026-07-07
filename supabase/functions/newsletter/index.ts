@@ -50,6 +50,9 @@ serve(async (req) => {
       return handleGdpr(req);
     case "export":
       return handleExport(req);
+    case "dispatch-scheduled":
+      return handleDispatchScheduled(req);
+
     default:
       return new Response(
         JSON.stringify({ error: `Unknown newsletter route: ${route}` }),
