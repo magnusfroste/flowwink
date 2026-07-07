@@ -2136,6 +2136,48 @@ export type Database = {
           },
         ]
       }
+      benefit_plans: {
+        Row: {
+          benefit_type: string
+          created_at: string
+          currency: string
+          description: string | null
+          employee_cost_cents: number
+          employer_cost_cents: number
+          id: string
+          is_active: boolean
+          name: string
+          provider: string | null
+          updated_at: string
+        }
+        Insert: {
+          benefit_type?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          employee_cost_cents?: number
+          employer_cost_cents?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          provider?: string | null
+          updated_at?: string
+        }
+        Update: {
+          benefit_type?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          employee_cost_cents?: number
+          employer_cost_cents?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          provider?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       beta_test_exchanges: {
         Row: {
           content: string
@@ -3837,6 +3879,42 @@ export type Database = {
           },
         ]
       }
+      contact_consents: {
+        Row: {
+          actor: string | null
+          consent_type: string
+          created_at: string
+          email: string
+          id: string
+          note: string | null
+          occurred_at: string
+          source: string | null
+          status: string
+        }
+        Insert: {
+          actor?: string | null
+          consent_type?: string
+          created_at?: string
+          email: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          source?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string | null
+          consent_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          source?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       content_proposals: {
         Row: {
           approved_at: string | null
@@ -4632,6 +4710,68 @@ export type Database = {
           },
         ]
       }
+      disciplinary_actions: {
+        Row: {
+          acknowledged_at: string | null
+          action_type: string
+          created_at: string
+          description: string | null
+          employee_id: string
+          follow_up_date: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          severity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          action_type: string
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          follow_up_date?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          follow_up_date?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_actions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_codes: {
         Row: {
           active: boolean
@@ -4995,6 +5135,54 @@ export type Database = {
           },
         ]
       }
+      employee_benefits: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          plan_id: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          plan_id: string
+          start_date?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_benefits_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_benefits_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "benefit_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_documents: {
         Row: {
           category: string
@@ -5103,6 +5291,7 @@ export type Database = {
           payroll_country: string
           personal_number: string | null
           phone: string | null
+          salary_grade_id: string | null
           salary_structure_id: string | null
           start_date: string | null
           status: string
@@ -5129,6 +5318,7 @@ export type Database = {
           payroll_country?: string
           personal_number?: string | null
           phone?: string | null
+          salary_grade_id?: string | null
           salary_structure_id?: string | null
           start_date?: string | null
           status?: string
@@ -5155,6 +5345,7 @@ export type Database = {
           payroll_country?: string
           personal_number?: string | null
           phone?: string | null
+          salary_grade_id?: string | null
           salary_structure_id?: string | null
           start_date?: string | null
           status?: string
@@ -5177,6 +5368,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payroll_country_profiles"
             referencedColumns: ["country_code"]
+          },
+          {
+            foreignKeyName: "employees_salary_grade_id_fkey"
+            columns: ["salary_grade_id"]
+            isOneToOne: false
+            referencedRelation: "salary_grades"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "employees_salary_structure_id_fkey"
@@ -7280,6 +7478,51 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_article_revisions: {
+        Row: {
+          action: string
+          answer_json: Json
+          answer_text: string | null
+          article_id: string
+          category_id: string | null
+          edited_by: string | null
+          id: string
+          question: string
+          revised_at: string
+          revision_no: number
+          slug: string
+          title: string
+        }
+        Insert: {
+          action?: string
+          answer_json?: Json
+          answer_text?: string | null
+          article_id: string
+          category_id?: string | null
+          edited_by?: string | null
+          id?: string
+          question: string
+          revised_at?: string
+          revision_no: number
+          slug: string
+          title: string
+        }
+        Update: {
+          action?: string
+          answer_json?: Json
+          answer_text?: string | null
+          article_id?: string
+          category_id?: string | null
+          edited_by?: string | null
+          id?: string
+          question?: string
+          revised_at?: string
+          revision_no?: number
+          slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
       kb_articles: {
         Row: {
           answer_json: Json | null
@@ -7483,6 +7726,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_email_blast_recipients: {
+        Row: {
+          blast_id: string
+          created_at: string
+          email: string
+          exclusion_reason: string | null
+          id: number
+          lead_id: string | null
+          status: string
+        }
+        Insert: {
+          blast_id: string
+          created_at?: string
+          email: string
+          exclusion_reason?: string | null
+          id?: never
+          lead_id?: string | null
+          status?: string
+        }
+        Update: {
+          blast_id?: string
+          created_at?: string
+          email?: string
+          exclusion_reason?: string | null
+          id?: never
+          lead_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_email_blast_recipients_blast_id_fkey"
+            columns: ["blast_id"]
+            isOneToOne: false
+            referencedRelation: "lead_email_blasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_email_blasts: {
+        Row: {
+          body_html: string
+          created_at: string
+          created_by: string | null
+          excluded_revoked: number
+          excluded_unsubscribed: number
+          id: string
+          segment: Json
+          sent_count: number
+          status: string
+          subject: string
+          targeted_count: number
+        }
+        Insert: {
+          body_html: string
+          created_at?: string
+          created_by?: string | null
+          excluded_revoked?: number
+          excluded_unsubscribed?: number
+          id?: string
+          segment?: Json
+          sent_count?: number
+          status?: string
+          subject: string
+          targeted_count?: number
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          created_by?: string | null
+          excluded_revoked?: number
+          excluded_unsubscribed?: number
+          id?: string
+          segment?: Json
+          sent_count?: number
+          status?: string
+          subject?: string
+          targeted_count?: number
+        }
+        Relationships: []
       }
       leads: {
         Row: {
@@ -8748,6 +9071,146 @@ export type Database = {
         }
         Relationships: []
       }
+      page_experiment_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          experiment_id: string
+          id: number
+          variant: string
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          experiment_id: string
+          id?: never
+          variant: string
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          experiment_id?: string
+          id?: never
+          variant?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_experiment_events_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "page_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_experiments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          goal: string | null
+          id: string
+          name: string
+          page_id: string
+          started_at: string | null
+          status: string
+          stopped_at: string | null
+          traffic_split: number
+          updated_at: string
+          variant_page_id: string
+          winner: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          name: string
+          page_id: string
+          started_at?: string | null
+          status?: string
+          stopped_at?: string | null
+          traffic_split?: number
+          updated_at?: string
+          variant_page_id: string
+          winner?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          name?: string
+          page_id?: string
+          started_at?: string | null
+          status?: string
+          stopped_at?: string | null
+          traffic_split?: number
+          updated_at?: string
+          variant_page_id?: string
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_experiments_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_experiments_variant_page_id_fkey"
+            columns: ["variant_page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_redirects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_path: string
+          hit_count: number
+          id: string
+          is_active: boolean
+          last_hit_at: string | null
+          note: string | null
+          status_code: number
+          to_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_path: string
+          hit_count?: number
+          id?: string
+          is_active?: boolean
+          last_hit_at?: string | null
+          note?: string | null
+          status_code?: number
+          to_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_path?: string
+          hit_count?: number
+          id?: string
+          is_active?: boolean
+          last_hit_at?: string | null
+          note?: string | null
+          status_code?: number
+          to_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_versions: {
         Row: {
           content_json: Json
@@ -8863,6 +9326,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           id: string
+          locale: string
           menu_order: number
           meta_json: Json | null
           scheduled_at: string | null
@@ -8870,6 +9334,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["page_status"]
           title: string
+          translation_group_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -8880,6 +9345,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
+          locale?: string
           menu_order?: number
           meta_json?: Json | null
           scheduled_at?: string | null
@@ -8887,6 +9353,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["page_status"]
           title: string
+          translation_group_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -8897,6 +9364,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
+          locale?: string
           menu_order?: number
           meta_json?: Json | null
           scheduled_at?: string | null
@@ -8904,6 +9372,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["page_status"]
           title?: string
+          translation_group_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -12481,6 +12950,51 @@ export type Database = {
           },
         ]
       }
+      salary_grades: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          level: number
+          max_cents: number
+          mid_cents: number | null
+          min_cents: number
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          level?: number
+          max_cents: number
+          mid_cents?: number | null
+          min_cents: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          level?: number
+          max_cents?: number
+          mid_cents?: number | null
+          min_cents?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       salary_structure_components: {
         Row: {
           amount_cents: number
@@ -12938,6 +13452,62 @@ export type Database = {
             columns: ["service_order_id"]
             isOneToOne: false
             referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          break_minutes: number
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          role: string | null
+          shift_date: string
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          break_minutes?: number
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          role?: string | null
+          shift_date: string
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          break_minutes?: number
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          role?: string | null
+          shift_date?: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -14996,6 +15566,108 @@ export type Database = {
         }
         Relationships: []
       }
+      training_courses: {
+        Row: {
+          category: string | null
+          cost_cents: number
+          created_at: string
+          currency: string
+          description: string | null
+          duration_hours: number | null
+          id: string
+          is_active: boolean
+          mandatory: boolean
+          provider: string | null
+          title: string
+          updated_at: string
+          url: string | null
+          valid_months: number | null
+        }
+        Insert: {
+          category?: string | null
+          cost_cents?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean
+          mandatory?: boolean
+          provider?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          valid_months?: number | null
+        }
+        Update: {
+          category?: string | null
+          cost_cents?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean
+          mandatory?: boolean
+          provider?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          valid_months?: number | null
+        }
+        Relationships: []
+      }
+      training_enrollments: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          due_date: string | null
+          employee_id: string
+          enrolled_at: string
+          id: string
+          notes: string | null
+          score: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          due_date?: string | null
+          employee_id: string
+          enrolled_at?: string
+          id?: string
+          notes?: string | null
+          score?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          due_date?: string | null
+          employee_id?: string
+          enrolled_at?: string
+          id?: string
+          notes?: string | null
+          score?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_enrollments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uom_categories: {
         Row: {
           created_at: string
@@ -16797,6 +17469,22 @@ export type Database = {
         Args: { p_line_id: string; p_qty?: number }
         Returns: Json
       }
+      fw_consent_state: {
+        Args: { p_email: string; p_type: string }
+        Returns: string
+      }
+      fw_edge_credentials: {
+        Args: never
+        Returns: {
+          base_url: string
+          token: string
+        }[]
+      }
+      fw_experiment_variant_for: {
+        Args: { p_experiment_id: string; p_split: number; p_visitor_id: string }
+        Returns: string
+      }
+      fw_normalize_path: { Args: { p: string }; Returns: string }
       fx_rate_at: {
         Args: { p_at?: string; p_from: string; p_to: string }
         Returns: number
@@ -16897,6 +17585,10 @@ export type Database = {
         Args: { p_base: string; p_date?: string; p_quote: string }
         Returns: number
       }
+      get_experiment_variant: {
+        Args: { p_slug: string; p_visitor_id: string }
+        Returns: Json
+      }
       get_invoice_by_token: {
         Args: { p_token: string }
         Returns: {
@@ -16957,6 +17649,7 @@ export type Database = {
         Args: { p_email?: string; p_id: string }
         Returns: Json
       }
+      get_page_translations: { Args: { p_slug: string }; Returns: Json }
       get_payslip: {
         Args: { p_employee_id?: string; p_run_id?: string }
         Returns: Json
@@ -17106,6 +17799,20 @@ export type Database = {
         Returns: boolean
       }
       is_period_closed: { Args: { p_date: string }; Returns: boolean }
+      kb_article_history: {
+        Args: {
+          p_action: string
+          p_article_id?: string
+          p_limit?: number
+          p_revision_id?: string
+          p_slug?: string
+        }
+        Returns: Json
+      }
+      kb_feedback_report: {
+        Args: { p_action?: string; p_limit?: number; p_slug?: string }
+        Returns: Json
+      }
       link_employee_to_auth_user: {
         Args: { p_employee_id: string }
         Returns: string
@@ -17302,6 +18009,24 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_benefits: {
+        Args: {
+          p_action: string
+          p_benefit_type?: string
+          p_description?: string
+          p_employee_cost_cents?: number
+          p_employee_id?: string
+          p_employer_cost_cents?: number
+          p_end_date?: string
+          p_is_active?: boolean
+          p_name?: string
+          p_notes?: string
+          p_plan_id?: string
+          p_provider?: string
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       manage_budget: {
         Args: {
           p_account_code?: string
@@ -17393,6 +18118,17 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_consent: {
+        Args: {
+          p_action: string
+          p_consent_type?: string
+          p_email?: string
+          p_limit?: number
+          p_note?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
       manage_consultant_assignment: {
         Args: {
           p_action: string
@@ -17422,6 +18158,21 @@ export type Database = {
           p_hourly_rate_cents?: number
           p_level?: string
           p_skill?: string
+        }
+        Returns: Json
+      }
+      manage_disciplinary: {
+        Args: {
+          p_action: string
+          p_action_type?: string
+          p_description?: string
+          p_employee_id?: string
+          p_follow_up_date?: string
+          p_limit?: number
+          p_reason?: string
+          p_record_id?: string
+          p_resolution?: string
+          p_severity?: number
         }
         Returns: Json
       }
@@ -17561,6 +18312,29 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_page_experiment: {
+        Args: {
+          p_action: string
+          p_experiment_id?: string
+          p_goal?: string
+          p_name?: string
+          p_page_slug?: string
+          p_traffic_split?: number
+          p_variant_slug?: string
+          p_winner?: string
+        }
+        Returns: Json
+      }
+      manage_page_translation: {
+        Args: {
+          p_action: string
+          p_locale?: string
+          p_slug?: string
+          p_target_slug?: string
+          p_title?: string
+        }
+        Returns: Json
+      }
       manage_payroll_country: {
         Args: {
           p_action: string
@@ -17677,6 +18451,19 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_redirect: {
+        Args: {
+          p_action: string
+          p_from_path?: string
+          p_is_active?: boolean
+          p_limit?: number
+          p_note?: string
+          p_redirect_id?: string
+          p_status_code?: number
+          p_to_path?: string
+        }
+        Returns: Json
+      }
       manage_reference_check: {
         Args: {
           p_action: string
@@ -17713,6 +18500,23 @@ export type Database = {
           p_granted_date?: string
           p_post_journal?: boolean
           p_reason?: string
+        }
+        Returns: Json
+      }
+      manage_salary_grade: {
+        Args: {
+          p_action: string
+          p_code?: string
+          p_currency?: string
+          p_employee_id?: string
+          p_grade_id?: string
+          p_is_active?: boolean
+          p_level?: number
+          p_max_cents?: number
+          p_mid_cents?: number
+          p_min_cents?: number
+          p_name?: string
+          p_notes?: string
         }
         Returns: Json
       }
@@ -17766,6 +18570,23 @@ export type Database = {
           p_order_id?: string
           p_resolution_hours?: number
           p_response_hours?: number
+        }
+        Returns: Json
+      }
+      manage_shift: {
+        Args: {
+          p_action: string
+          p_break_minutes?: number
+          p_employee_id?: string
+          p_end_time?: string
+          p_location?: string
+          p_notes?: string
+          p_role?: string
+          p_shift_date?: string
+          p_shift_id?: string
+          p_start_time?: string
+          p_status?: string
+          p_week_start?: string
         }
         Returns: Json
       }
@@ -17874,6 +18695,28 @@ export type Database = {
           p_notes?: string
           p_start_date: string
           p_user_id?: string
+        }
+        Returns: Json
+      }
+      manage_training: {
+        Args: {
+          p_action: string
+          p_award_certification?: boolean
+          p_category?: string
+          p_cost_cents?: number
+          p_course_id?: string
+          p_description?: string
+          p_due_date?: string
+          p_duration_hours?: number
+          p_employee_id?: string
+          p_is_active?: boolean
+          p_mandatory?: boolean
+          p_notes?: string
+          p_provider?: string
+          p_score?: string
+          p_title?: string
+          p_url?: string
+          p_valid_months?: number
         }
         Returns: Json
       }
@@ -18068,6 +18911,10 @@ export type Database = {
         }
         Returns: Json
       }
+      predict_lead_score: {
+        Args: { p_apply?: boolean; p_email?: string; p_lead_id?: string }
+        Returns: Json
+      }
       prepare_vat_return: {
         Args: { p_from: string; p_to: string }
         Returns: Json
@@ -18204,6 +19051,10 @@ export type Database = {
           p_signature_url?: string
           p_signed_by?: string
         }
+        Returns: Json
+      }
+      record_experiment_conversion: {
+        Args: { p_slug: string; p_visitor_id: string }
         Returns: Json
       }
       record_invoice_payment: {
@@ -18506,6 +19357,7 @@ export type Database = {
           source: string
         }[]
       }
+      resolve_redirect: { Args: { p_path: string }; Returns: Json }
       resolve_vendor_price: {
         Args: {
           p_at?: string
@@ -18772,6 +19624,19 @@ export type Database = {
           p_preferred_carrier_code?: string
           p_preferred_carrier_id?: string
           p_weight_grams: number
+        }
+        Returns: Json
+      }
+      send_bulk_lead_email: {
+        Args: {
+          p_body_html: string
+          p_dry_run?: boolean
+          p_limit?: number
+          p_min_score?: number
+          p_sources?: string[]
+          p_stage_key?: string
+          p_statuses?: string[]
+          p_subject: string
         }
         Returns: Json
       }
