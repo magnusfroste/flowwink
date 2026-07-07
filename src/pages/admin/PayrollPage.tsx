@@ -197,7 +197,16 @@ export default function PayrollPage() {
                   <TableBody>
                     {(runsData ?? []).map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.period_date.slice(0, 7)}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{r.period_date.slice(0, 7)}</div>
+                          {((r.total_pension_employer_cents ?? 0) > 0 ||
+                            (r.total_pension_employee_cents ?? 0) > 0) && (
+                            <div className="text-[11px] text-muted-foreground font-normal font-mono mt-0.5">
+                              Pension: er {fmtSEK(r.total_pension_employer_cents ?? 0)} · ee{' '}
+                              {fmtSEK(r.total_pension_employee_cents ?? 0)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={r.status === 'paid' ? 'default' : 'outline'} className="capitalize">
                             {r.status}
@@ -210,6 +219,7 @@ export default function PayrollPage() {
                         <TableCell>
                           <div className="flex gap-1 justify-end">
                             <RunDetails run={r} />
+                            {r.status === 'draft' && <ApplyPensionDialog run={r} />}
                             {r.status === 'draft' && (
                               <Button size="sm" onClick={() => approve.mutate(r.id)} disabled={approve.isPending}>
                                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
@@ -224,6 +234,7 @@ export default function PayrollPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+
                     {(!runsData || runsData.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
