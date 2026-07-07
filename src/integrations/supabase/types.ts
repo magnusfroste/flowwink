@@ -3541,6 +3541,91 @@ export type Database = {
         }
         Relationships: []
       }
+      consultant_assignments: {
+        Row: {
+          allocation_pct: number
+          client_name: string
+          company_id: string | null
+          consultant_id: string
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string | null
+          hourly_rate_cents: number | null
+          id: string
+          notes: string | null
+          project_id: string | null
+          role_title: string | null
+          sow_url: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_pct?: number
+          client_name: string
+          company_id?: string | null
+          consultant_id: string
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          hourly_rate_cents?: number | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          role_title?: string | null
+          sow_url?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_pct?: number
+          client_name?: string
+          company_id?: string | null
+          consultant_id?: string
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          hourly_rate_cents?: number | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          role_title?: string | null
+          sow_url?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultant_assignments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultant_assignments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_profiles: {
         Row: {
           availability: string | null
@@ -3633,6 +3718,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      consultant_skill_rates: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          currency: string
+          hourly_rate_cents: number
+          id: string
+          level: string | null
+          skill: string
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          currency?: string
+          hourly_rate_cents: number
+          id?: string
+          level?: string | null
+          skill: string
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          hourly_rate_cents?: number
+          id?: string
+          level?: string | null
+          skill?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_skill_rates_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_proposals: {
         Row: {
@@ -7265,6 +7391,90 @@ export type Database = {
           },
         ]
       }
+      loyalty_accounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          customer_email: string
+          customer_id: string | null
+          customer_name: string | null
+          id: string
+          lifetime_points: number
+          points_balance: number
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          customer_email: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          lifetime_points?: number
+          points_balance?: number
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          customer_email?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          lifetime_points?: number
+          points_balance?: number
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      loyalty_transactions: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          points: number
+          sale_id: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          points: number
+          sale_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          points?: number
+          sale_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           assigned_to: string | null
@@ -9372,6 +9582,8 @@ export type Database = {
           location: string | null
           metadata: Json | null
           name: string
+          receipt_footer: string | null
+          receipt_header: string | null
           updated_at: string
         }
         Insert: {
@@ -9383,6 +9595,8 @@ export type Database = {
           location?: string | null
           metadata?: Json | null
           name: string
+          receipt_footer?: string | null
+          receipt_header?: string | null
           updated_at?: string
         }
         Update: {
@@ -9394,6 +9608,8 @@ export type Database = {
           location?: string | null
           metadata?: Json | null
           name?: string
+          receipt_footer?: string | null
+          receipt_header?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -9467,15 +9683,18 @@ export type Database = {
           customer_id: string | null
           discount_cents: number
           id: string
+          invoice_id: string | null
           metadata: Json | null
           payment_details: Json | null
           payment_method: string
           receipt_number: string | null
           refund_of: string | null
+          refund_reason: string | null
           register_id: string
           session_id: string | null
           status: string
           subtotal_cents: number
+          table_id: string | null
           tax_cents: number
           tip_cents: number
           total_cents: number
@@ -9488,15 +9707,18 @@ export type Database = {
           customer_id?: string | null
           discount_cents?: number
           id?: string
+          invoice_id?: string | null
           metadata?: Json | null
           payment_details?: Json | null
           payment_method?: string
           receipt_number?: string | null
           refund_of?: string | null
+          refund_reason?: string | null
           register_id: string
           session_id?: string | null
           status?: string
           subtotal_cents?: number
+          table_id?: string | null
           tax_cents?: number
           tip_cents?: number
           total_cents?: number
@@ -9509,20 +9731,30 @@ export type Database = {
           customer_id?: string | null
           discount_cents?: number
           id?: string
+          invoice_id?: string | null
           metadata?: Json | null
           payment_details?: Json | null
           payment_method?: string
           receipt_number?: string | null
           refund_of?: string | null
+          refund_reason?: string | null
           register_id?: string
           session_id?: string | null
           status?: string
           subtotal_cents?: number
+          table_id?: string | null
           tax_cents?: number
           tip_cents?: number
           total_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "pos_sales_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pos_sales_refund_of_fkey"
             columns: ["refund_of"]
@@ -9542,6 +9774,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "pos_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_sales_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "pos_tables"
             referencedColumns: ["id"]
           },
         ]
@@ -9601,6 +9840,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pos_sessions_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "pos_registers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_tables: {
+        Row: {
+          active: boolean
+          area: string | null
+          created_at: string
+          current_sale_id: string | null
+          id: string
+          name: string
+          register_id: string | null
+          seats: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          area?: string | null
+          created_at?: string
+          current_sale_id?: string | null
+          id?: string
+          name: string
+          register_id?: string | null
+          seats?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          area?: string | null
+          created_at?: string
+          current_sale_id?: string | null
+          id?: string
+          name?: string
+          register_id?: string | null
+          seats?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_tables_current_sale_id_fkey"
+            columns: ["current_sale_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_tables_register_id_fkey"
             columns: ["register_id"]
             isOneToOne: false
             referencedRelation: "pos_registers"
@@ -11706,17 +11999,24 @@ export type Database = {
           customer_phone: string | null
           deal_id: string | null
           description: string | null
+          first_response_at: string | null
           id: string
           invoice_id: string | null
           metadata: Json | null
+          next_occurrence_at: string | null
           notes: string | null
           order_number: string | null
+          parent_order_id: string | null
           priority: string
           project_id: string | null
+          recurrence_rule: string | null
+          recurrence_until: string | null
           requested_date: string | null
           scheduled_end: string | null
           scheduled_start: string | null
           service_address: string | null
+          sla_resolution_due: string | null
+          sla_response_due: string | null
           status: string
           title: string
           total_amount: number | null
@@ -11734,17 +12034,24 @@ export type Database = {
           customer_phone?: string | null
           deal_id?: string | null
           description?: string | null
+          first_response_at?: string | null
           id?: string
           invoice_id?: string | null
           metadata?: Json | null
+          next_occurrence_at?: string | null
           notes?: string | null
           order_number?: string | null
+          parent_order_id?: string | null
           priority?: string
           project_id?: string | null
+          recurrence_rule?: string | null
+          recurrence_until?: string | null
           requested_date?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           service_address?: string | null
+          sla_resolution_due?: string | null
+          sla_response_due?: string | null
           status?: string
           title: string
           total_amount?: number | null
@@ -11762,20 +12069,71 @@ export type Database = {
           customer_phone?: string | null
           deal_id?: string | null
           description?: string | null
+          first_response_at?: string | null
           id?: string
           invoice_id?: string | null
           metadata?: Json | null
+          next_occurrence_at?: string | null
           notes?: string | null
           order_number?: string | null
+          parent_order_id?: string | null
           priority?: string
           project_id?: string | null
+          recurrence_rule?: string | null
+          recurrence_until?: string | null
           requested_date?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           service_address?: string | null
+          sla_resolution_due?: string | null
+          sla_response_due?: string | null
           status?: string
           title?: string
           total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_packages: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          default_priority: string
+          description: string | null
+          id: string
+          lines: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_priority?: string
+          description?: string | null
+          id?: string
+          lines?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_priority?: string
+          description?: string | null
+          id?: string
+          lines?: Json
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -11787,11 +12145,13 @@ export type Database = {
           calendar_event_id: string | null
           created_at: string
           id: string
+          proof_photos: Json
           scheduled_end: string
           scheduled_start: string
           service_order_id: string
           signature_url: string | null
           signed_at: string | null
+          signed_by: string | null
           status: string
           technician_id: string | null
           technician_notes: string | null
@@ -11803,11 +12163,13 @@ export type Database = {
           calendar_event_id?: string | null
           created_at?: string
           id?: string
+          proof_photos?: Json
           scheduled_end: string
           scheduled_start: string
           service_order_id: string
           signature_url?: string | null
           signed_at?: string | null
+          signed_by?: string | null
           status?: string
           technician_id?: string | null
           technician_notes?: string | null
@@ -11819,11 +12181,13 @@ export type Database = {
           calendar_event_id?: string | null
           created_at?: string
           id?: string
+          proof_photos?: Json
           scheduled_end?: string
           scheduled_start?: string
           service_order_id?: string
           signature_url?: string | null
           signed_at?: string | null
+          signed_by?: string | null
           status?: string
           technician_id?: string | null
           technician_notes?: string | null
@@ -14984,6 +15348,15 @@ export type Database = {
       }
       check_approval_escalations: { Args: never; Returns: Json }
       check_mo_availability: { Args: { p_mo_id: string }; Returns: Json }
+      check_technician_availability: {
+        Args: {
+          p_end: string
+          p_exclude_visit_id?: string
+          p_start: string
+          p_technician_id: string
+        }
+        Returns: Json
+      }
       checkout_objective: {
         Args: { p_locked_by?: string; p_objective_id: string }
         Returns: boolean
@@ -15093,17 +15466,24 @@ export type Database = {
           customer_phone: string | null
           deal_id: string | null
           description: string | null
+          first_response_at: string | null
           id: string
           invoice_id: string | null
           metadata: Json | null
+          next_occurrence_at: string | null
           notes: string | null
           order_number: string | null
+          parent_order_id: string | null
           priority: string
           project_id: string | null
+          recurrence_rule: string | null
+          recurrence_until: string | null
           requested_date: string | null
           scheduled_end: string | null
           scheduled_start: string | null
           service_address: string | null
+          sla_resolution_due: string | null
+          sla_response_due: string | null
           status: string
           title: string
           total_amount: number | null
@@ -15141,6 +15521,10 @@ export type Database = {
       }
       confirm_pick: {
         Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
+        Returns: Json
+      }
+      consultant_utilization_report: {
+        Args: { p_consultant_id?: string; p_from?: string; p_to?: string }
         Returns: Json
       }
       consume_reservation: {
@@ -15608,6 +15992,16 @@ export type Database = {
         Args: { p_employee_id: string }
         Returns: string
       }
+      link_service_order: {
+        Args: {
+          p_contract_id?: string
+          p_deal_id?: string
+          p_order_id: string
+          p_project_id?: string
+          p_unlink?: string
+        }
+        Returns: Json
+      }
       lint_get_not_null_columns: {
         Args: never
         Returns: {
@@ -15767,6 +16161,7 @@ export type Database = {
         }
         Returns: string
       }
+      loyalty_tier_for: { Args: { p_lifetime: number }; Returns: string }
       manage_approval_chain: {
         Args: {
           p_action: string
@@ -15842,6 +16237,38 @@ export type Database = {
           p_limit?: number
           p_shortcut?: string
           p_title?: string
+        }
+        Returns: Json
+      }
+      manage_consultant_assignment: {
+        Args: {
+          p_action: string
+          p_allocation_pct?: number
+          p_assignment_id?: string
+          p_client_name?: string
+          p_company_id?: string
+          p_consultant_id?: string
+          p_contract_id?: string
+          p_currency?: string
+          p_end_date?: string
+          p_hourly_rate_cents?: number
+          p_notes?: string
+          p_project_id?: string
+          p_role_title?: string
+          p_sow_url?: string
+          p_start_date?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      manage_consultant_rates: {
+        Args: {
+          p_action: string
+          p_consultant_id?: string
+          p_currency?: string
+          p_hourly_rate_cents?: number
+          p_level?: string
+          p_skill?: string
         }
         Returns: Json
       }
@@ -15922,6 +16349,17 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_loyalty: {
+        Args: {
+          p_action: string
+          p_customer_email?: string
+          p_customer_name?: string
+          p_note?: string
+          p_points?: number
+          p_sale_id?: string
+        }
+        Returns: Json
+      }
       manage_maintenance_request: {
         Args: {
           p_action: string
@@ -15949,6 +16387,19 @@ export type Database = {
           p_probability?: number
           p_sort_order?: number
           p_stage_id?: string
+        }
+        Returns: Json
+      }
+      manage_pos_table: {
+        Args: {
+          p_action: string
+          p_area?: string
+          p_name?: string
+          p_register_id?: string
+          p_sale_id?: string
+          p_seats?: number
+          p_status?: string
+          p_table_id?: string
         }
         Returns: Json
       }
@@ -15993,6 +16444,15 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_recurring_service_order: {
+        Args: {
+          p_action: string
+          p_order_id?: string
+          p_rule?: string
+          p_until?: string
+        }
+        Returns: Json
+      }
       manage_routing_operation: {
         Args: {
           p_action: string
@@ -16002,6 +16462,27 @@ export type Database = {
           p_name?: string
           p_sequence?: number
           p_work_center_id?: string
+        }
+        Returns: Json
+      }
+      manage_service_package: {
+        Args: {
+          p_action: string
+          p_active?: boolean
+          p_description?: string
+          p_lines?: Json
+          p_name?: string
+          p_order_id?: string
+          p_package_id?: string
+        }
+        Returns: Json
+      }
+      manage_service_sla: {
+        Args: {
+          p_action: string
+          p_order_id?: string
+          p_resolution_hours?: number
+          p_response_hours?: number
         }
         Returns: Json
       }
@@ -16153,6 +16634,15 @@ export type Database = {
       }
       payroll_timesheet_basis: {
         Args: { p_period_date?: string }
+        Returns: Json
+      }
+      pos_sale_to_invoice: {
+        Args: {
+          p_customer_email?: string
+          p_customer_name?: string
+          p_due_in_days?: number
+          p_sale_id: string
+        }
         Returns: Json
       }
       post_manual_depreciation: {
@@ -16337,9 +16827,33 @@ export type Database = {
         }
         Returns: Json
       }
+      record_visit_proof: {
+        Args: {
+          p_notes?: string
+          p_photo_urls?: Json
+          p_signature_url?: string
+          p_signed_by?: string
+          p_visit_id: string
+        }
+        Returns: Json
+      }
+      record_visit_time: {
+        Args: { p_action: string; p_at?: string; p_visit_id: string }
+        Returns: Json
+      }
       redeem_discount_code: { Args: { p_code_id: string }; Returns: boolean }
       redeem_gift_card: {
         Args: { p_amount_cents: number; p_code: string }
+        Returns: Json
+      }
+      refund_pos_sale: {
+        Args: {
+          p_lines?: Json
+          p_method?: string
+          p_reason?: string
+          p_sale_id: string
+          p_session_id?: string
+        }
         Returns: Json
       }
       refund_return: {
@@ -16435,6 +16949,7 @@ export type Database = {
         }[]
       }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
+      render_pos_receipt: { Args: { p_sale_id: string }; Returns: Json }
       reopen_accounting_period: {
         Args: { p_month: number; p_reason?: string; p_year: number }
         Returns: {
