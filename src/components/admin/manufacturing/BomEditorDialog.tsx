@@ -32,6 +32,7 @@ import {
   type BomHeader,
   type CreateBomLineInput,
 } from '@/hooks/useManufacturing';
+import { RoutingEditor } from '@/components/admin/manufacturing/RoutingEditor';
 
 interface Props {
   open: boolean;
