@@ -1305,3 +1305,26 @@ accountSuggestion from the AI. Kontering comes from a deterministic multi-signal
 5. MCC signal when card feeds arrive.
 Where we deliberately differ: our autonomy dial (auto-book ≥95 with HIL off) — they never auto-book;
 their risk gates become our safety complement, not a replacement for autonomy.
+
+### Receipts/underlag in the agentic flow (design, 2026-07-07)
+
+Magnus: Bokio lets the bookkeeper attach underlag with a "+" — how do we think when the AGENT books?
+**Answer: invert the flow — underlag is a lifecycle, not an attach-moment.**
+
+1. **Book now, track the gap.** The agent books from the bank event immediately (books stay current);
+   the verifikat gets a tracked `missing underlag` state. (Standard practice: verification = the bank
+   event initially, completed later. BFL's 7-year archive gets completed over time, visibly.)
+2. **Receipts arrive as signals** — email to the company inbox (gmail-inbox-scan), photo/upload
+   (extract-receipt + OCR exist), forwarded supplier PDFs. The documents module is the pool
+   (= Bokio's "Uppladdat").
+3. **The agent matches pool ↔ verifikat continuously** on (amount, date, counterparty) — Bokio's
+   "Förslag på underlag" pane as a standing bidirectional process. ≥threshold auto-attach + clear the
+   flag; below → proposal in the review queue.
+4. **Gaps are visible and CHASED**: dashboard card "N entries missing receipts" + journal filter; the
+   agent nags the human ("receipt for the Dustin purchase 12/6 missing — reply with a photo").
+   Compliance drudgery no human wants = ideal agent work.
+5. The human "+" (Bokio gesture) remains in the review UI — the exception, not the flow.
+
+**Build (BR2/BR3, mostly assembly):** journal_entries↔documents link (+ underlag_status), a
+match_receipts skill (pool↔verifikat scoring), missing-receipts dashboard card + journal filter,
+inbox-signal wiring. Existing pieces: documents module, extract-receipt, gmail-inbox-scan, signals.
