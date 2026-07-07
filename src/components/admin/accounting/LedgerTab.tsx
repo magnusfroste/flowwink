@@ -108,7 +108,7 @@ function AccountRow({
   fmt: (c: number) => string;
 }) {
   const [open, setOpen] = useState(false);
-  const { data, isLoading } = useAccountLedger(code, { enabled: open });
+  const { data, isLoading } = useAccountLedger(open ? code : null);
 
   return (
     <div className="border-b border-border/60 last:border-b-0">
