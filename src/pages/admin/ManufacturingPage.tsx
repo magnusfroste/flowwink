@@ -118,6 +118,7 @@ function MoList() {
                 completedAt={mo.completed_at as string | null | undefined}
                 cancelledAt={(mo as { cancelled_at?: string | null }).cancelled_at ?? null}
               />
+              <MoWorkOrdersPanel moId={String(mo.id)} />
             </CardContent>
           </Card>
         );
