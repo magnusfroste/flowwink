@@ -201,7 +201,42 @@ export default function NewsletterPage() {
     },
   });
 
-  // Delete subscriber
+  // Schedule newsletter
+  const scheduleMutation = useMutation({
+    mutationFn: async ({ id, scheduled_at }: { id: string; scheduled_at: string }) => {
+      const { error } = await supabase
+        .from("newsletters")
+        .update({ status: "scheduled", scheduled_at })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+      toast.success("Newsletter scheduled");
+    },
+    onError: (e: Error) => {
+      logger.error("Schedule failed", e);
+      toast.error(e.message);
+    },
+  });
+
+  // Cancel schedule
+  const cancelScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("newsletters")
+        .update({ status: "draft", scheduled_at: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+      toast.success("Schedule cancelled");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const deleteSubscriberMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
