@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuditTrail, auditRowsToCsv, type AuditRow } from '@/hooks/useAuditTrail';
-import { Download, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Download, AlertTriangle } from 'lucide-react';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 const ACCOUNTING_TABLES = [
   'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
