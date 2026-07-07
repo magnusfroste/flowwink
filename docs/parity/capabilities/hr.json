@@ -130,41 +130,41 @@
       "id": "salary_grades",
       "name": "Salary grades/scales",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "salary grades/scales exist"
+      "verify": "salary_grades table + employees.salary_grade_id + manage_salary_grade skill (create/update/delete/list/assign/compliance with compa-ratio) + CompensationPanel tab on HRPage (20260708110000). LIVE VERIFIED on rzhj 2026-07-07: grade created (band 25000-35000), assign reported in_band=true, compliance flagged above_band with compa_ratio 1.4 after a raise."
     },
     {
       "id": "benefits_mgmt",
       "name": "Benefits/allowances",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "benefits/allowances management exists"
+      "verify": "benefit_plans + employee_benefits + manage_benefits skill (create_plan/update_plan/list_plans/enroll/end_enrollment/list_enrollments/summary) + CompensationPanel on HRPage; employee self-read RLS for the portal (20260708110000). LIVE VERIFIED on rzhj 2026-07-07: plan created, enrolled, duplicate active enrollment rejected (partial unique index), summary totalled employer cost, enrollment ended."
     },
     {
       "id": "training_catalog",
       "name": "Training/course catalog",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "training/course catalog exists"
+      "verify": "training_courses + training_enrollments + manage_training skill (create_course/update_course/list_courses/enroll/complete/cancel/list_enrollments; complete can award a certifications row with expiry from valid_months) + TrainingPanel on HRPage (20260708110000). LIVE VERIFIED on rzhj 2026-07-07: course created, enrolled, completed with certification written to the existing certifications table (found+fixed column drift issued_date/expires_at live)."
     },
     {
       "id": "disciplinary",
       "name": "Disciplinary/warnings",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "disciplinary/warnings tracking exists"
+      "verify": "disciplinary_actions + manage_disciplinary skill (create/update/acknowledge/resolve/withdraw/get/list, trust=approve for sensitive HR data, admin-only RLS) + DisciplinaryPanel on HRPage (20260708110000). LIVE VERIFIED on rzhj 2026-07-07 through the staged-approval gateway flow: verbal warning created and acknowledged (status flow open->acknowledged)."
     },
     {
       "id": "shift_scheduling",
       "name": "Shift scheduling/roster",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "shift scheduling/roster exists"
+      "verify": "shifts table + manage_shift skill (create/update/assign/delete/list/roster; overlap guard, open shifts) + ShiftsPanel weekly roster on HRPage; employee self-read RLS (20260708110000). LIVE VERIFIED on rzhj 2026-07-07: shift created, overlapping second shift rejected with explicit error, open shift listed, roster returned per-employee total_hours 7.5 (break deducted)."
     }
   ]
 }

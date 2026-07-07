@@ -30,6 +30,7 @@ import {
 import { extractPlainText } from "@/lib/tiptap-utils";
 import { AITiptapToolbar } from "@/components/admin/AITiptapToolbar";
 import { AITextAssistant } from "@/components/admin/AITextAssistant";
+import { KbVersionHistoryCard } from "@/components/admin/kb/KbVersionHistoryCard";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
 
@@ -409,6 +410,8 @@ export default function KbArticleEditorPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {!isNew && id && <KbVersionHistoryCard articleId={id} />}
           </div>
         </div>
       </div>

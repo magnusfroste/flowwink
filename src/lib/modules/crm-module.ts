@@ -713,6 +713,101 @@ Use this to find email addresses and contact information for people at a company
     },
     instructions: 'Destructive: deletes p_duplicate_id after moving its children to p_primary_id, so no tasks/deals/history are lost. Pick the keeper as primary — usually the record whose status is further along (customer > opportunity > lead). Scores are summed; empty primary fields are filled from the duplicate. Returns {moved:{table:count}}. Run find_duplicate_leads first to get the pair.',
   },
+  {
+    name: 'manage_consent',
+    description:
+      'GDPR consent center: record granted/revoked consent per contact email and type (marketing_email, newsletter, sms, profiling, analytics), check current state, read the full audit history. Use when: a contact opts in/out of marketing, before outreach ("may I email this person?"), documenting a GDPR request. NOT for: newsletter list membership itself (manage_newsletter_subscribers) or sending email.',
+    category: 'crm',
+    handler: 'rpc:manage_consent',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_consent',
+        description:
+          'grant/revoke/check/history/list over contact_consents — an append-only audit trail; current state = latest event per email+type. check also reports newsletter unsubscribe status. Public unsubscribes (/newsletter/manage) sync into the trail automatically.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['grant', 'revoke', 'check', 'history', 'list'] },
+            p_email: { type: 'string', description: 'Contact email (required for grant/revoke/check/history)' },
+            p_consent_type: {
+              type: 'string',
+              enum: ['marketing_email', 'newsletter', 'sms', 'profiling', 'analytics'],
+              description: 'Consent type (default marketing_email)',
+            },
+            p_source: { type: 'string', description: 'Where the consent event came from, e.g. form, phone call, admin' },
+            p_note: { type: 'string' },
+            p_limit: { type: 'integer', default: 100 },
+          },
+        },
+      },
+    },
+    instructions:
+      'Append-only: grant/revoke always add a new event (never edit history) — GDPR documentation requirement. check returns the current state per type ("none" = never recorded). send_bulk_lead_email automatically excludes contacts whose marketing_email or newsletter consent is revoked, and unsubscribed newsletter subscribers.',
+  },
+  {
+    name: 'send_bulk_lead_email',
+    description:
+      'Send one email to a whole lead segment (mass mail) with automatic unsubscribe-list and consent exclusions plus an unsubscribe footer link. Use when: announcing something to all opportunities, reactivating cold leads, campaign-style outreach to CRM contacts. NOT for: a personal 1:1 email (send_email_to_lead), newsletter issues to subscribers (send_newsletter), or drip sequences (lead_nurture_sequence).',
+    category: 'communication',
+    handler: 'rpc:send_bulk_lead_email',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_bulk_lead_email',
+        description:
+          'Selects leads by status/source/score/stage, excludes unsubscribed + consent-revoked emails, appends an unsubscribe footer and dispatches through the email-send router. p_dry_run=true previews the audience without sending. Records a blast log + per-recipient rows + lead activity.',
+        parameters: {
+          type: 'object',
+          required: ['p_subject', 'p_body_html'],
+          properties: {
+            p_subject: { type: 'string' },
+            p_body_html: { type: 'string', description: 'Email body HTML (footer with unsubscribe link is appended automatically)' },
+            p_statuses: { type: 'array', items: { type: 'string', enum: ['lead', 'opportunity', 'customer', 'lost'] }, description: 'Filter: lead statuses to include (default all)' },
+            p_sources: { type: 'array', items: { type: 'string' }, description: 'Filter: lead sources to include' },
+            p_min_score: { type: 'integer', description: 'Filter: minimum lead score' },
+            p_stage_key: { type: 'string', description: 'Filter: pipeline stage key' },
+            p_limit: { type: 'integer', default: 100, description: 'Max recipients (cap 500)' },
+            p_dry_run: { type: 'boolean', default: false, description: 'Preview audience + exclusions without sending' },
+          },
+        },
+      },
+    },
+    instructions:
+      'ALWAYS run p_dry_run=true first and sanity-check targeted/excluded counts before the real send. Exclusions: newsletter_subscribers.status=unsubscribed and contacts with revoked marketing_email/newsletter consent (manage_consent). Recipients are upserted onto the newsletter subscriber list so the standard /newsletter/manage unsubscribe link works. Sends are dispatched async via the email-send router; "sent" means dispatched. Returns blast_id — recipients are in lead_email_blast_recipients.',
+  },
+  {
+    name: 'predict_lead_score',
+    description:
+      'Predictive lead scoring: estimate a lead\'s win probability from historical closed outcomes (won vs lost) using attribute likelihoods — source, email domain type, phone/company presence, engagement level. Use when: prioritizing which leads to work, qualifying pipeline quality, updating scores from evidence rather than activity points. NOT for: activity-point scoring (qualify_lead) or enriching company data (enrich_company).',
+    category: 'crm',
+    handler: 'rpc:predict_lead_score',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'predict_lead_score',
+        description:
+          'Naive-Bayes style model over closed leads (customer/converted = won, lost = lost) with Laplace smoothing; falls back to an attribute heuristic when history < 10 closed leads. Returns win_probability_pct + per-factor likelihood ratios. p_apply=true writes the probability to leads.score.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_lead_id: { type: 'string', format: 'uuid', description: 'Lead to score' },
+            p_email: { type: 'string', description: 'Alternative: newest lead with this email' },
+            p_apply: { type: 'boolean', default: false, description: 'Write the probability (0-100) to leads.score and log a lead activity' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Model detail: P(win) prior × likelihood ratio per feature (source, free vs corporate email domain, has_phone, has_company, activity-count bucket), Laplace-smoothed. factors[] explains each feature\'s direction — use it to tell the user WHY the lead scored high/low. model=heuristic_fallback means <10 closed leads exist yet; the score is attribute-based until history accumulates. Complements qualify_lead (engagement points): qualify_lead measures activity, this predicts outcome.',
+  },
 ];
 
 export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({

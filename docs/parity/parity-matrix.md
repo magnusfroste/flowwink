@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 78%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 80%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
@@ -40,10 +40,6 @@ category: reference
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 69% | 10/1/5 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 70% | 12/0/6 | — |
-| **pages** | Website (website.page) | L4 → L4 | `███████░░░` 70% | 5/0/3 | — |
-| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `███████░░░` 72% | 8/1/3 | — |
-| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `████████░░` 76% | 15/0/5 | — |
-| **kb** | Knowledge / Helpdesk KB | L3 → L4 | `████████░░` 79% | 4/1/1 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 80% | 10/1/4 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
@@ -53,6 +49,7 @@ category: reference
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
+| **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 94% | 11/0/1 | — |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
@@ -60,7 +57,10 @@ category: reference
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
+| **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 20/0/0 | — |
+| **kb** | Knowledge / Helpdesk KB | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **multi-currency** | Accounting multi-currency | L4 → L4 | `██████████` 100% | 10/0/0 | — |
+| **pages** | Website (website.page) | L4 → L4 | `██████████` 100% | 8/0/0 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 100% | 17/0/0 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L4 → L4 | `██████████` 100% | 12/0/0 | — |
 | **projects** | Project (project.project/project.task) | L4 → L4 | `██████████` 100% | 13/0/0 | — |

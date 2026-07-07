@@ -641,6 +641,102 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
 - Stateless on the server side — caller owns the conversation history.
 - Returns 429/402 on AI provider rate-limit / credits exhausted — back off and retry.`,
   },
+  {
+    name: 'manage_redirect',
+    description:
+      'Manage URL redirects (301/302) from old paths to new pages or external URLs. Use when: a page slug changed and old links must keep working, consolidating pages, migrating from another site, fixing 404s. NOT for: renaming a page slug itself (manage_page) or navigation menus.',
+    category: 'content',
+    handler: 'rpc:manage_redirect',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_redirect',
+        description:
+          'list/create/update/delete rows in page_redirects. The public site resolves redirects on 404 (chains followed up to 5 hops, loops rejected at create). create upserts on from_path.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'create', 'update', 'delete'] },
+            p_redirect_id: { type: 'string', format: 'uuid', description: 'Target redirect (update/delete)' },
+            p_from_path: { type: 'string', description: 'Old path, e.g. "/old-pricing" (leading slash optional, matched case-insensitively)' },
+            p_to_path: { type: 'string', description: 'New path (e.g. "/pricing") or a full external https:// URL' },
+            p_status_code: { type: 'integer', enum: [301, 302], description: '301 permanent (default) or 302 temporary' },
+            p_is_active: { type: 'boolean' },
+            p_note: { type: 'string' },
+            p_limit: { type: 'integer', default: 100 },
+          },
+        },
+      },
+    },
+    instructions:
+      'create upserts by from_path and rejects self-redirects and immediate 2-hop loops. Paths are normalized (lowercased, slashes trimmed). hit_count/last_hit_at on each row show real traffic through the redirect.',
+  },
+  {
+    name: 'manage_page_translation',
+    description:
+      'Multi-language pages: set a page locale, create/link translations of a page, list a page\'s language versions. Use when: translating the site into another language, linking existing pages as language pairs, checking which locales a page has. NOT for: editing page content (manage_page) or translating raw text (translate utility).',
+    category: 'content',
+    handler: 'rpc:manage_page_translation',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_page_translation',
+        description:
+          'set_locale/link/unlink/create/list over pages.locale + pages.translation_group_id. create clones the source page as a draft in the new locale (slug gets a -<locale> suffix); the public page offers published translations via ?lang=.',
+        parameters: {
+          type: 'object',
+          required: ['p_action', 'p_slug'],
+          properties: {
+            p_action: { type: 'string', enum: ['set_locale', 'link', 'unlink', 'create', 'list'] },
+            p_slug: { type: 'string', description: 'Slug of the (source) page' },
+            p_locale: { type: 'string', description: 'Locale code, e.g. en, sv, de (set_locale/create)' },
+            p_target_slug: { type: 'string', description: 'Slug of the page to link as a translation (link)' },
+            p_title: { type: 'string', description: 'Title for the new translation (create; defaults to source title + locale)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Pages in the same translation_group_id are language versions of each other; one page per locale per group. create copies content_json as a DRAFT — translate the copy (manage_page update) and publish it. link requires the two pages to already have different locales (use set_locale first). The public site resolves ?lang=<locale> to the published translation.',
+  },
+  {
+    name: 'manage_page_experiment',
+    description:
+      'A/B test two versions of a page: create an experiment between a control page and a variant page, start/stop it, and read impressions/conversions/lift per variant. Use when: optimizing a landing page or hero, comparing two copy versions, concluding which variant won. NOT for: creating the variant page content itself (manage_page).',
+    category: 'analytics',
+    handler: 'rpc:manage_page_experiment',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_page_experiment',
+        description:
+          'create/start/stop/conclude/list/results over page_experiments. Visitors are split deterministically (sticky by visitor id); variant B content is served in place of the control page. results returns unique impressions, conversions, rates and lift.',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'start', 'stop', 'conclude', 'list', 'results'] },
+            p_experiment_id: { type: 'string', format: 'uuid', description: 'Target experiment (start/stop/conclude/results)' },
+            p_page_slug: { type: 'string', description: 'Control page A slug (create)' },
+            p_variant_slug: { type: 'string', description: 'Variant page B slug (create) — usually a draft copy of the control with the change to test' },
+            p_name: { type: 'string', description: 'Experiment name (create)' },
+            p_traffic_split: { type: 'number', description: 'Fraction of visitors who see variant B, 0-1 exclusive (default 0.5)' },
+            p_goal: { type: 'string', description: 'What counts as a conversion, e.g. "form submit"' },
+            p_winner: { type: 'string', enum: ['a', 'b'], description: 'Winning variant (conclude)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Workflow: clone the page (manage_page or manage_page_translation-style copy) and edit the variant → create → start. Only one running experiment per page. The variant page can stay a draft — its content is served through the experiment engine. Conversions are recorded on form submissions on the page. conclude with p_winner records the outcome; to ship variant B, copy its content onto the control page.',
+  },
 ];
 
 export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({

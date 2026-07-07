@@ -239,6 +239,9 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
       setIsSubmitted(true);
       setFormData({});
       setFiles({});
+      // A/B testing: a successful form submit counts as a conversion for any
+      // running page experiment (listener lives in usePageExperiment).
+      window.dispatchEvent(new CustomEvent('fw:experiment-conversion'));
     } catch (error) {
       logger.error('Form submission error:', error);
       toast({

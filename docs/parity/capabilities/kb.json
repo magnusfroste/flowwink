@@ -41,18 +41,17 @@
       "id": "article_feedback",
       "name": "Article feedback/rating",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "'Was this helpful?' ThumbsUp/ThumbsDown in src/pages/KnowledgeBasePage.tsx",
-      "notes": "Skill/admin surface missing — no feedback skill or admin feedback analytics."
+      "verify": "Public 'Was this helpful?' thumbs (bump_kb_article_feedback, auto-flags needs_improvement) + kb_feedback_report skill (report/list_flagged/clear_flag) + admin surfaces: feedback badges + needs-improvement badge + clear-flag action on admin KnowledgeBasePage (20260708120000). LIVE VERIFIED on rzhj 2026-07-07: 3 negative votes via the public RPC auto-flagged the article; report returned totals + negative_ratio 1.0; clear_flag reset it."
     },
     {
       "id": "versioning",
       "name": "Article versioning",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no version history table, skill, or UI for kb_articles"
+      "verify": "kb_article_revisions + BEFORE UPDATE/DELETE trigger (content-only, skips metadata/feedback changes) + kb_article_history skill (list/get/restore, recreates deleted articles as drafts) + KbVersionHistoryCard in KbArticleEditorPage (20260708120000). LIVE VERIFIED on rzhj 2026-07-07: edit captured revision v1, get returned the old body, restore brought back v1 content (verified via manage_kb_article get)."
     },
     {
       "id": "ai_autoresolve",

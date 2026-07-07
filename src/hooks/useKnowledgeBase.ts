@@ -31,10 +31,38 @@ export interface KbArticle {
   views_count: number;
   helpful_count: number;
   not_helpful_count: number;
+  positive_feedback_count?: number;
+  negative_feedback_count?: number;
+  needs_improvement?: boolean;
   meta_json: unknown;
   created_at: string;
   updated_at: string;
   category?: KbCategory;
+}
+
+// Clear the auto-set "needs improvement" flag after an article is reworked
+// (same backend as the kb_feedback_report skill's clear_flag action).
+export function useClearKbImprovementFlag() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.rpc('kb_feedback_report' as any, {
+        p_action: 'clear_flag',
+        p_slug: slug,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kb-articles'] });
+      toast({ title: 'Improvement flag cleared' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
 }
 
 // Categories hooks

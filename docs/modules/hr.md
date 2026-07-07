@@ -12,7 +12,7 @@ generated_at: "2026-07-07"
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **4 agent skills**, an **admin UI**.
+Ships with **9 agent skills**, **7 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,8 +24,8 @@ Ships with **4 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 4 |
-| **Owns tables** | — |
+| **MCP-exposed skills** | 9 |
+| **Owns tables** | 7 |
 
 ## Skills
 
@@ -38,6 +38,25 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_employee` | internal | Create, update, search, and deactivate employee records. Use when: adding new team members, updating roles/departments, offboarding. NOT for: leave requests (use manage_leave), documents. |
 | `manage_leave` | internal | Create, approve, reject, or list leave requests for employees. Use when: handling vacation/sick leave, reviewing pending requests, checking who is on leave. NOT for: general employee data (use mana… |
 | `onboarding_checklist` | internal | Create and manage onboarding checklists for new employees. Use when: a new employee is added and needs onboarding steps, checking onboarding progress. NOT for: general task management. |
+| `manage_salary_grade` | internal | Salary grades/scales: define pay bands (code, level, min/mid/max), assign employees to a grade, and audit band compliance (who is paid outside their band, compa-ratios). Use when: setting up a comp… |
+| `manage_benefits` | internal | Benefits/allowances: maintain benefit plans (health, pension, insurance, wellness, meal, commute, equipment) with employer/employee monthly costs, enroll employees, and report total benefit spend. … |
+| `manage_training` | internal | Training/course catalog: maintain courses (provider, duration, cost, mandatory flag, certification validity), enroll employees, track completion and optionally award a certification. Use when: onbo… |
+| `manage_disciplinary` | internal | Disciplinary actions/warnings: record verbal/written/final warnings, suspensions or termination notices with reason and severity, track acknowledgement and resolution. Use when: documenting a polic… |
+| `manage_shift` | internal | Shift scheduling/roster: create and assign work shifts (date, start/end, role, location), detect overlaps, and read a weekly roster with hours per employee and open (unassigned) shifts. Use when: s… |
+
+## Data Model
+
+Tables created by this module (from migrations):
+
+- `public.benefit_plans`
+- `public.disciplinary_actions`
+- `public.employee_benefits`
+- `public.salary_grades`
+- `public.shifts`
+- `public.training_courses`
+- `public.training_enrollments`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Module API Contract
 
@@ -59,6 +78,7 @@ This module participates in the following end-to-end business processes:
 |---------|------|
 | Module definition | `src/lib/modules/hr-module.ts` |
 | Admin page | `src/pages/admin/HrPage.tsx` |
+| Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
 
 ## Contributing
 

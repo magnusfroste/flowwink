@@ -39,12 +39,11 @@
     },
     {
       "id": "scoring_basic",
-      "name": "Lead scoring",
+      "name": "Lead scoring (engagement + predictive)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "notes": "Activity+recency only; Odoo has predictive scoring",
-      "verify": "LIVE VERIFIED on rzhj 2026-07-05 (Stage-3): qualify_lead returned score/engagement_level (cold, activity_count=0) and stamped leads.ai_qualified_at + updated_at on the row. Mechanism: qualify_lead skill + leads.score column. qualify_lead, score column"
+      "verify": "qualify_lead (activity/recency points) + predict_lead_score skill (rpc): Laplace-smoothed naive-Bayes over closed outcomes (source, email domain class, phone/company presence, activity bucket) with heuristic fallback <10 closed leads, p_apply writes leads.score + activity row; LeadPredictiveScoreCard on LeadDetailPage with factor badges (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: bayes model over 23 won/1 lost returned win_probability_pct with per-factor likelihood ratios and applied the score."
     },
     {
       "id": "custom_stages",
@@ -70,9 +69,9 @@
       "id": "bulk_email",
       "name": "Bulk email with unsubscribe lists",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "mass-mail with list management (overlaps newsletter)"
+      "verify": "send_bulk_lead_email skill (rpc, trust=approve): segment filters (status/source/score/stage), auto-exclusion of newsletter-unsubscribed + consent-revoked, unsubscribe footer to /newsletter/manage, dispatch via pg_net -> email-send router, blast log + per-recipient rows + lead activity; BulkLeadEmailDialog on LeadsPage with dry-run preview (20260708100000). LIVE VERIFIED on rzhj 2026-07-07 through the staged-approval gateway flow: dry run targeted 3 / sent 1 / excluded 1 unsubscribed + 1 revoked; real send delivered via Resend (provider message id returned, net._http_response 200)."
     },
     {
       "id": "lost_reasons",
@@ -95,9 +94,9 @@
       "id": "consent_center",
       "name": "GDPR consent / preference center",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "consent tracking per contact"
+      "verify": "contact_consents append-only trail + manage_consent skill (grant/revoke/check/history/list) + trigger syncing /newsletter/manage (public preference center) unsubscribes into the trail; LeadConsentCard on LeadDetailPage; enforced by send_bulk_lead_email (20260708100000). LIVE VERIFIED on rzhj 2026-07-07: revoke->check returned marketing_email=revoked, history listed the audit trail, and the revoked contact was excluded from a live blast."
     },
     {
       "id": "lead_dedup",

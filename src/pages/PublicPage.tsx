@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import type { Page, ContentBlock, SectionBackground } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { useAnchorScroll } from '@/hooks/useAnchorScroll';
+import { usePageExperiment } from '@/hooks/usePageExperiment';
 
 // Special marker to distinguish connection errors from "page not found"
 const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
@@ -206,9 +207,79 @@ export default function PublicPage() {
 
   // Check for connection error first
   const isConnectionError = page === CONNECTION_ERROR;
-  
+
   // Get the actual page data (null if error or not found)
-  const pageData = isConnectionError ? null : page;
+  const rawPageData = isConnectionError ? null : page;
+
+  // URL redirects (pages parity: redirects) — when the page is not found,
+  // ask the redirect table before showing a 404. Follows chains server-side.
+  const { data: redirect, isLoading: checkingRedirect } = useQuery({
+    queryKey: ['page-redirect', pageSlug],
+    queryFn: async (): Promise<{ found: boolean; to_path?: string; external?: boolean } | null> => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.rpc('resolve_redirect' as any, { p_path: pageSlug });
+        if (error) return null;
+        return data as { found: boolean; to_path?: string; external?: boolean };
+      } catch {
+        return null;
+      }
+    },
+    enabled: !isLoading && rawPageData === null && !isConnectionError,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!redirect?.found || !redirect.to_path) return;
+    if (redirect.external) {
+      window.location.replace(redirect.to_path);
+    } else {
+      navigate(redirect.to_path, { replace: true });
+    }
+  }, [redirect, navigate]);
+
+  // Multi-language pages (pages parity: multilanguage) — ?lang=<locale> resolves
+  // to the published translation in the page's translation group.
+  const requestedLang = searchParams.get('lang')?.toLowerCase() || null;
+  const { data: translations } = useQuery({
+    queryKey: ['page-translations', pageSlug],
+    queryFn: async (): Promise<Array<{ slug: string; locale: string; title: string }>> => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.rpc('get_page_translations' as any, { p_slug: pageSlug });
+        if (error) return [];
+        return ((data as { translations?: Array<{ slug: string; locale: string; title: string }> })?.translations) ?? [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!requestedLang && !!rawPageData,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!requestedLang || !rawPageData || !translations) return;
+    const currentLocale = (rawPageData as Page & { locale?: string }).locale;
+    if (currentLocale === requestedLang) return;
+    const target = translations.find((t) => t.locale === requestedLang);
+    if (target && target.slug !== pageSlug) {
+      navigate(`/${target.slug}`, { replace: true });
+    }
+  }, [requestedLang, rawPageData, translations, pageSlug, navigate]);
+
+  // A/B testing (pages parity: ab_testing) — swap in the variant content when
+  // this visitor is assigned to bucket B of a running experiment.
+  const experiment = usePageExperiment(pageSlug, !!rawPageData);
+  const pageData = rawPageData && experiment.isVariant
+    ? {
+        ...rawPageData,
+        title: experiment.title ?? rawPageData.title,
+        content_json: experiment.content,
+        meta_json: experiment.meta ?? rawPageData.meta_json,
+      }
+    : rawPageData;
 
   // Track page view
   usePageViewTracker({
@@ -294,6 +365,15 @@ export default function PublicPage() {
 
   // No page found - show Coming Soon if no pages exist, otherwise 404
   if (!pageData) {
+    // Redirect lookup in flight or a redirect matched — keep the spinner
+    // instead of flashing a 404 while we navigate.
+    if (checkingRedirect || redirect?.found) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
     // hasAnyPages still resolving — keep spinner instead of flashing 404
     if (checkingPages || hasAnyPages === undefined) {
       return (

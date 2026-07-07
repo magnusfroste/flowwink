@@ -12,7 +12,7 @@ generated_at: "2026-07-07"
 
 > Create and manage leads
 
-Ships with **14 agent skills**, an **admin UI**.
+Ships with **17 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **14 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 14 |
+| **MCP-exposed skills** | 17 |
 | **Owns tables** | — |
 
 ## Skills
@@ -48,6 +48,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_pipeline_stage` | internal | Manage configurable pipeline stages for leads, deals, or tickets (the shared stage engine). Use when: customizing a sales/support pipeline, adding/renaming stages, setting win probability. NOT for:… |
 | `find_duplicate_leads` | internal | Find likely duplicate leads by name similarity or matching email — normalizes plus-addressing and case so aliases collapse (anna+x@d ≡ anna+y@d ≡ anna@d) (read-only). Use when: cleaning the CRM, be… |
 | `merge_leads` | internal | Merge a duplicate lead into a primary one; reassigns every child record (tasks, deals, activities, invoices, quotes, tickets, webinar registrations) then deletes the duplicate. Pass the record to K… |
+| `manage_consent` | internal | GDPR consent center: record granted/revoked consent per contact email and type (marketing_email, newsletter, sms, profiling, analytics), check current state, read the full audit history. Use when: … |
+| `send_bulk_lead_email` | internal | Send one email to a whole lead segment (mass mail) with automatic unsubscribe-list and consent exclusions plus an unsubscribe footer link. Use when: announcing something to all opportunities, react… |
+| `predict_lead_score` | internal | Predictive lead scoring: estimate a lead\ |
 
 ## Used in Processes
 

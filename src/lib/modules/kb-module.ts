@@ -110,6 +110,63 @@ Manages knowledge base articles: list, get, create, update, publish, unpublish.
 - Articles with include_in_chat=true are embedded into chat context.
 - Always set a clear question field for chat matching.`,
   },
+  {
+    name: 'kb_article_history',
+    description:
+      'Version history for KB articles: list revisions, read an old revision, restore one. Every title/question/answer edit and every delete is captured automatically. Use when: reviewing what changed in an article, recovering overwritten or deleted content, auditing edits. NOT for: current content (manage_kb_article get) or wiki pages (wiki_page_history).',
+    category: 'content',
+    handler: 'rpc:kb_article_history',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'kb_article_history',
+        description:
+          'list (per slug or article_id, newest first) / get (full revision body incl. answer_json) / restore (write a revision back — recreates deleted articles as drafts).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'get', 'restore'] },
+            p_slug: { type: 'string', description: 'Article slug (list)' },
+            p_article_id: { type: 'string', format: 'uuid', description: 'Alternative to slug (list) — survives slug changes' },
+            p_revision_id: { type: 'string', format: 'uuid', description: 'Revision id (get/restore)' },
+            p_limit: { type: 'integer', default: 20, description: 'list: max revisions (max 100)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Revisions store the PREVIOUS state before each edit (metadata-only changes like publish toggles or feedback counts do not create revisions). restore on a deleted article recreates it UNPUBLISHED — review and publish via manage_kb_article. Restoring also snapshots the current state first, so nothing is lost.',
+  },
+  {
+    name: 'kb_feedback_report',
+    description:
+      'KB article feedback analytics: which articles get thumbs up/down from readers, which are auto-flagged as needing improvement, and clearing the flag after a rewrite. Use when: prioritizing KB rework, "which help articles are failing users", content quality review. NOT for: reading article content (manage_kb_article) or chat-answer feedback (chat analytics).',
+    category: 'analytics',
+    handler: 'rpc:kb_feedback_report',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'kb_feedback_report',
+        description:
+          'report (all articles with feedback, worst first, + totals) / list_flagged (needs_improvement=true) / clear_flag (mark an article fixed). Feedback comes from the public "Was this helpful?" buttons.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_action: { type: 'string', enum: ['report', 'list_flagged', 'clear_flag'], default: 'report' },
+            p_slug: { type: 'string', description: 'Article slug (clear_flag)' },
+            p_limit: { type: 'integer', default: 50 },
+          },
+        },
+      },
+    },
+    instructions:
+      'needs_improvement is auto-set by the public feedback RPC when an article gets >=3 negatives or >30% negative ratio (min 5 votes). Typical loop: list_flagged → rewrite the article (manage_kb_article update) → clear_flag. negative_ratio in report is the key sort signal.',
+  },
 ];
 
 export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput>({

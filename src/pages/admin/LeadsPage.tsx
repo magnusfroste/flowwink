@@ -15,12 +15,13 @@ import { formatPrice } from '@/hooks/useProducts';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { LeadKanban } from '@/components/admin/leads/LeadKanban';
+import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ import { toast } from 'sonner';
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showBulkEmailDialog, setShowBulkEmailDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const { data: stats, isLoading: statsLoading } = useLeadStats();
@@ -131,6 +133,10 @@ export default function LeadsPage() {
                   <Upload className="h-4 w-4 mr-2" />
                   Import CSV
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowBulkEmailDialog(true)}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Bulk email
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button onClick={() => setShowCreateDialog(true)}>
@@ -141,6 +147,7 @@ export default function LeadsPage() {
         </AdminPageHeader>
 
       <CreateLeadDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <BulkLeadEmailDialog open={showBulkEmailDialog} onOpenChange={setShowBulkEmailDialog} />
       <CsvImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}

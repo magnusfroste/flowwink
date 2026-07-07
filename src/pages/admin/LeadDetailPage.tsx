@@ -24,6 +24,8 @@ import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { LeadCommunicationsCard } from '@/components/admin/crm/LeadCommunicationsCard';
 import { VisitorTimelineWidget } from '@/components/admin/crm/VisitorTimelineWidget';
 import { LostReasonDialog, lostReasonLabel } from '@/components/admin/crm/LostReasonDialog';
+import { LeadConsentCard } from '@/components/admin/crm/LeadConsentCard';
+import { LeadPredictiveScoreCard } from '@/components/admin/crm/LeadPredictiveScoreCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -565,6 +567,12 @@ export default function LeadDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Predictive scoring (crm parity: scoring) */}
+          <LeadPredictiveScoreCard leadId={lead.id} />
+
+          {/* GDPR consent center (crm parity: consent_center) */}
+          <LeadConsentCard email={lead.email} />
         </div>
       </div>
 

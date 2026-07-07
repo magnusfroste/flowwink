@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle } from "lucide-react";
+import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
@@ -36,6 +36,7 @@ import {
   useDeleteKbArticle,
   useKbStats,
   useBulkUpdateKbArticlesChatStatus,
+  useClearKbImprovementFlag,
 } from "@/hooks/useKnowledgeBase";
 import { useIsModuleEnabled } from "@/hooks/useModules";
 import { KbCategoryDialog } from "@/components/admin/kb/KbCategoryDialog";
@@ -54,6 +55,7 @@ export default function KnowledgeBasePage() {
   const deleteCategory = useDeleteKbCategory();
   const deleteArticle = useDeleteKbArticle();
   const bulkUpdateChat = useBulkUpdateKbArticlesChatStatus();
+  const clearImprovementFlag = useClearKbImprovementFlag();
 
   const filteredArticles = articles?.filter(article =>
     article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -305,6 +307,18 @@ export default function KnowledgeBasePage() {
                                 AI
                               </Badge>
                             )}
+                            {((article.positive_feedback_count ?? 0) + (article.negative_feedback_count ?? 0)) > 0 && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <ThumbsUp className="h-3 w-3" /> {article.positive_feedback_count ?? 0}
+                                <ThumbsDown className="h-3 w-3 ml-1" /> {article.negative_feedback_count ?? 0}
+                              </Badge>
+                            )}
+                            {article.needs_improvement && (
+                              <Badge variant="destructive" className="text-xs">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Needs improvement
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {article.question}
@@ -326,6 +340,12 @@ export default function KnowledgeBasePage() {
                                 Edit
                               </Link>
                             </DropdownMenuItem>
+                            {article.needs_improvement && (
+                              <DropdownMenuItem onClick={() => clearImprovementFlag.mutate(article.slug)}>
+                                <Check className="h-4 w-4 mr-2" />
+                                Mark improved (clear flag)
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive"
