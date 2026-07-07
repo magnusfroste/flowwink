@@ -194,6 +194,28 @@ export function useRecordSale() {
   });
 }
 
+export function useAddTip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { sale_id: string; tip_cents: number; method: string }) => {
+      const { data, error } = await supabase.rpc('add_tip' as any, {
+        p_sale_id: params.sale_id,
+        p_tip_cents: params.tip_cents,
+        p_method: params.method,
+      });
+      if (error) throw error;
+      return data as { success: boolean; sale_id: string; tip_cents: number; grand_total_cents: number };
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['pos-recent-sales'] });
+      qc.invalidateQueries({ queryKey: ['pos-today-sales'] });
+      qc.invalidateQueries({ queryKey: ['pos-open-session'] });
+      toast.success(`Tip added — grand total ${(data.grand_total_cents / 100).toFixed(2)}`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to add tip'),
+  });
+}
+
 export function useCloseSession() {
   const qc = useQueryClient();
   return useMutation({
