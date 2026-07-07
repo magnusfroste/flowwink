@@ -389,7 +389,9 @@ export default function NewsletterPage() {
           <TabsList>
             <TabsTrigger value="newsletters">Newsletters</TabsTrigger>
             <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+            <TabsTrigger value="flows">Flows</TabsTrigger>
           </TabsList>
+
 
           {/* Newsletters Tab */}
           <TabsContent value="newsletters" className="space-y-4">
