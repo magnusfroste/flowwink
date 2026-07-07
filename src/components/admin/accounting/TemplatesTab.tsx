@@ -443,10 +443,7 @@ function DirectionBadge({ dir }: { dir: 'in' | 'out' | 'n/a' }) {
   if (dir === 'n/a') {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
-  const cls =
-    dir === 'in'
-      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-      : 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20';
+  const cls = 'text-muted-foreground';
   return (
     <Badge variant="outline" className={cn('font-normal text-[10px] px-1.5 py-0', cls)}>
       {dir}
