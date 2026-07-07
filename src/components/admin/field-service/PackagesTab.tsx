@@ -90,19 +90,17 @@ function PackageDialog({ open, pkg, onClose }: { open: boolean; pkg: ServicePack
   const [active, setActive] = useState(true);
   const [lines, setLines] = useState<PackageLine[]>([]);
 
-  // sync on open
-  useState(() => 0);
-  // simplistic: reset when pkg changes
-  if (pkg && (lines as any)._for !== pkg.id) {
-    (lines as any)._for = pkg.id;
-    setName(pkg.name);
-    setDescription(pkg.description ?? '');
-    setActive(pkg.active);
-    setLines((pkg.lines ?? []).map((l) => ({ ...l })));
-  }
-  if (!pkg && !open && lines.length > 0) {
-    // reset when closed
-  }
+  useEffect(() => {
+    if (pkg) {
+      setName(pkg.name);
+      setDescription(pkg.description ?? '');
+      setActive(pkg.active);
+      setLines((pkg.lines ?? []).map((l) => ({ ...l })));
+    } else if (!open) {
+      setName(''); setDescription(''); setActive(true); setLines([]);
+    }
+  }, [pkg?.id, open]);
+
 
   function addLine() {
     setLines([...lines, { kind: 'labor', description: '', quantity: 1, unit_price: 0 }]);
