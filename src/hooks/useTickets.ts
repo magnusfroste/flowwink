@@ -23,6 +23,7 @@ export interface Ticket {
   sla_deadline: string | null;
   resolved_at: string | null;
   closed_at: string | null;
+  tags: string[];
   metadata: Record<string, unknown>;
   created_by: string | null;
   created_at: string;
@@ -31,6 +32,7 @@ export interface Ticket {
   lead?: { id: string; name: string | null; email: string } | null;
   company?: { id: string; name: string } | null;
 }
+
 
 export interface TicketComment {
   id: string;
