@@ -79,6 +79,10 @@ export default function HRPage() {
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="skills">Skills & Certs</TabsTrigger>
             <TabsTrigger value="contracts">Contracts</TabsTrigger>
+            <TabsTrigger value="compensation">Compensation</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
+            <TabsTrigger value="shifts">Shifts</TabsTrigger>
           </TabsList>
           <TabsContent value="employees">
             <Card>
