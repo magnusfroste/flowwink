@@ -441,7 +441,10 @@ function RunDetails({ run }: { run: PayrollRun }) {
               <TableHead className="text-right">PAYE tax</TableHead>
               <TableHead className="text-right">Social fee</TableHead>
               <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Pension er / ee</TableHead>
+              <TableHead className="text-right">Sick days / pay</TableHead>
               <TableHead className="text-right">Employer cost</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -452,14 +455,25 @@ function RunDetails({ run }: { run: PayrollRun }) {
                 <TableCell className="text-right font-mono">{fmtSEK(l.tax_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.social_fee_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.net_cents)}</TableCell>
+                <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                  {fmtSEK(l.pension_employer_cents ?? 0)} / {fmtSEK(l.pension_employee_cents ?? 0)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                  {(l.sick_days ?? 0)}d · {fmtSEK(l.sick_pay_cents ?? 0)}
+                </TableCell>
                 <TableCell className="text-right font-mono">
                   {fmtSEK(l.gross_cents + l.social_fee_cents)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {run.status === 'draft' && (
+                    <SickDaysDialog run={run} line={l} />
+                  )}
                 </TableCell>
               </TableRow>
             ))}
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                   No employee lines for this run.
                 </TableCell>
               </TableRow>
@@ -471,11 +485,18 @@ function RunDetails({ run }: { run: PayrollRun }) {
                 <TableCell className="text-right font-mono">{fmtSEK(totals.tax)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.social)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.net)}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {fmtSEK(run.total_pension_employer_cents ?? 0)} /{' '}
+                  {fmtSEK(run.total_pension_employee_cents ?? 0)}
+                </TableCell>
+                <TableCell></TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.employer)}</TableCell>
+                <TableCell></TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+
       </DialogContent>
     </Dialog>
   );
