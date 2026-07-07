@@ -7,6 +7,7 @@ import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFiscalYear } from './FiscalYearContext';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function LedgerTab() {
   useAccountingRealtime();
