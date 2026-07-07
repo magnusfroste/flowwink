@@ -39,7 +39,10 @@ export interface PosSale {
   status: string;
   created_at: string;
   customer_email: string | null;
+  refund_of?: string | null;
+  invoice_id?: string | null;
 }
+
 
 export interface PosSaleLine {
   product_id?: string;
