@@ -25,6 +25,8 @@ interface PayrollRun {
   total_tax_cents: number;
   total_social_fee_cents: number;
   total_net_cents: number;
+  total_pension_employer_cents?: number;
+  total_pension_employee_cents?: number;
   approved_at: string | null;
   paid_at: string | null;
 }
@@ -39,7 +41,13 @@ interface PayrollLine {
   tax_cents: number;
   social_fee_cents: number;
   net_cents: number;
+  sick_days?: number | null;
+  sick_pay_cents?: number | null;
+  sick_deduction_cents?: number | null;
+  pension_employer_cents?: number | null;
+  pension_employee_cents?: number | null;
 }
+
 interface Employee {
   id: string;
   full_name: string;
@@ -189,7 +197,16 @@ export default function PayrollPage() {
                   <TableBody>
                     {(runsData ?? []).map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.period_date.slice(0, 7)}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{r.period_date.slice(0, 7)}</div>
+                          {((r.total_pension_employer_cents ?? 0) > 0 ||
+                            (r.total_pension_employee_cents ?? 0) > 0) && (
+                            <div className="text-[11px] text-muted-foreground font-normal font-mono mt-0.5">
+                              Pension: er {fmtSEK(r.total_pension_employer_cents ?? 0)} · ee{' '}
+                              {fmtSEK(r.total_pension_employee_cents ?? 0)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={r.status === 'paid' ? 'default' : 'outline'} className="capitalize">
                             {r.status}
@@ -202,6 +219,7 @@ export default function PayrollPage() {
                         <TableCell>
                           <div className="flex gap-1 justify-end">
                             <RunDetails run={r} />
+                            {r.status === 'draft' && <ApplyPensionDialog run={r} />}
                             {r.status === 'draft' && (
                               <Button size="sm" onClick={() => approve.mutate(r.id)} disabled={approve.isPending}>
                                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
@@ -216,6 +234,7 @@ export default function PayrollPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+
                     {(!runsData || runsData.length === 0) && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
@@ -279,11 +298,18 @@ function RunDetails({ run }: { run: PayrollRun }) {
     queryKey: ['payroll_lines', run.id, open],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('list_payroll_lines' as any, { p_run_id: run.id });
+      const { data, error } = await supabase
+        .from('payroll_lines' as any)
+        .select('id, employee_id, gross_cents, benefits_cents, deductions_cents, taxable_cents, tax_cents, social_fee_cents, net_cents, sick_days, sick_pay_cents, sick_deduction_cents, pension_employer_cents, pension_employee_cents, employees:employee_id(name)')
+        .eq('run_id', run.id);
       if (error) throw error;
-      return ((data as any)?.lines ?? []) as PayrollLine[];
+      return ((data ?? []) as any[]).map((l) => ({
+        ...l,
+        employee_name: l.employees?.name ?? null,
+      })) as PayrollLine[];
     },
   });
+
 
   const period = run.period_date.slice(0, 7);
   const sorted = [...(lines ?? [])].sort((a, b) =>
@@ -415,7 +441,10 @@ function RunDetails({ run }: { run: PayrollRun }) {
               <TableHead className="text-right">PAYE tax</TableHead>
               <TableHead className="text-right">Social fee</TableHead>
               <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Pension er / ee</TableHead>
+              <TableHead className="text-right">Sick days / pay</TableHead>
               <TableHead className="text-right">Employer cost</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -426,14 +455,25 @@ function RunDetails({ run }: { run: PayrollRun }) {
                 <TableCell className="text-right font-mono">{fmtSEK(l.tax_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.social_fee_cents)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(l.net_cents)}</TableCell>
+                <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                  {fmtSEK(l.pension_employer_cents ?? 0)} / {fmtSEK(l.pension_employee_cents ?? 0)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                  {(l.sick_days ?? 0)}d · {fmtSEK(l.sick_pay_cents ?? 0)}
+                </TableCell>
                 <TableCell className="text-right font-mono">
                   {fmtSEK(l.gross_cents + l.social_fee_cents)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {run.status === 'draft' && (
+                    <SickDaysDialog run={run} line={l} />
+                  )}
                 </TableCell>
               </TableRow>
             ))}
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                   No employee lines for this run.
                 </TableCell>
               </TableRow>
@@ -445,11 +485,18 @@ function RunDetails({ run }: { run: PayrollRun }) {
                 <TableCell className="text-right font-mono">{fmtSEK(totals.tax)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.social)}</TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.net)}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {fmtSEK(run.total_pension_employer_cents ?? 0)} /{' '}
+                  {fmtSEK(run.total_pension_employee_cents ?? 0)}
+                </TableCell>
+                <TableCell></TableCell>
                 <TableCell className="text-right font-mono">{fmtSEK(totals.employer)}</TableCell>
+                <TableCell></TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+
       </DialogContent>
     </Dialog>
   );
@@ -858,5 +905,155 @@ function SummaryCard({ label, value, highlight }: { label: string; value: string
       </CardHeader>
       <CardContent className="pb-3 text-lg font-semibold font-mono">{value}</CardContent>
     </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Pension + sick-pay dialogs (draft-only actions)
+// ─────────────────────────────────────────────────────────────────────────
+
+function ApplyPensionDialog({ run }: { run: PayrollRun }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [employerPct, setEmployerPct] = useState('4.5');
+  const [employeePct, setEmployeePct] = useState('0');
+
+  const apply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_pension' as any, {
+        p_run_id: run.id,
+        p_employer_pct: parseFloat(employerPct || '0'),
+        p_employee_pct: parseFloat(employeePct || '0'),
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (d: any) => {
+      toast.success(
+        `Pension applied — employer ${fmtSEK(d?.total_pension_employer_cents ?? 0)}, employee ${fmtSEK(d?.total_pension_employee_cents ?? 0)}`,
+      );
+      qc.invalidateQueries({ queryKey: ['payroll_runs'] });
+      qc.invalidateQueries({ queryKey: ['payroll_lines', run.id] });
+      setOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">Apply pension</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Apply pension — {run.period_date.slice(0, 7)}</DialogTitle>
+          <CardDescription className="pt-2">
+            Idempotent: re-running with new percentages replaces the previous values (no compounding).
+            Employee % is deducted from net.
+          </CardDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="space-y-1">
+            <Label>Employer %</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={employerPct}
+              onChange={(e) => setEmployerPct(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Employee %</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={employeePct}
+              onChange={(e) => setEmployeePct(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => apply.mutate()} disabled={apply.isPending}>
+            {apply.isPending ? 'Applying…' : 'Apply pension'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SickDaysDialog({ run, line }: { run: PayrollRun; line: PayrollLine }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [sickDays, setSickDays] = useState(String(line.sick_days ?? 0));
+  const [workDays, setWorkDays] = useState('21');
+
+  const apply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_sick_pay' as any, {
+        p_run_id: run.id,
+        p_employee_id: line.employee_id,
+        p_sick_days: parseInt(sickDays || '0', 10),
+        p_work_days_per_month: parseInt(workDays || '21', 10),
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (d: any) => {
+      toast.success(
+        `Sick pay applied — sick ${fmtSEK(d?.sick_pay_cents ?? 0)}, karens ${fmtSEK(d?.karensavdrag_cents ?? 0)}`,
+      );
+      if (d?.note) toast.message(d.note);
+      qc.invalidateQueries({ queryKey: ['payroll_runs'] });
+      qc.invalidateQueries({ queryKey: ['payroll_lines', run.id] });
+      setOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost">Sick days</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Sick days — {line.employee_name ?? line.employee_id.slice(0, 8)}</DialogTitle>
+          <CardDescription className="pt-2">
+            Applies 80% sick pay minus karensavdrag (first-day deduction). Set 0 to reset.
+            Re-run <span className="font-medium">Apply pension</span> afterwards if pension was already applied.
+          </CardDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="space-y-1">
+            <Label>Sick days</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={sickDays}
+              onChange={(e) => setSickDays(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Work days / month</Label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={workDays}
+              onChange={(e) => setWorkDays(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => apply.mutate()} disabled={apply.isPending}>
+            {apply.isPending ? 'Applying…' : 'Apply sick pay'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
