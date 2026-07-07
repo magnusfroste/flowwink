@@ -58,6 +58,10 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AssignmentsTab } from "@/components/admin/consultants/AssignmentsTab";
+import { RatesTab } from "@/components/admin/consultants/RatesTab";
+
 import { CheckinHistoryButton, useLastCheckin } from "@/components/admin/CheckinHistoryButton";
 import { formatDistanceToNow } from "date-fns";
 
