@@ -623,8 +623,29 @@ export default function NewsletterPage() {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+
+                                <ScheduleDialog
+                                  newsletter={newsletter}
+                                  onSchedule={(iso) =>
+                                    scheduleMutation.mutate({ id: newsletter.id, scheduled_at: iso })
+                                  }
+                                  pending={scheduleMutation.isPending}
+                                />
                               </>
                             )}
+
+                            {newsletter.status === "scheduled" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => cancelScheduleMutation.mutate(newsletter.id)}
+                                disabled={cancelScheduleMutation.isPending}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel schedule
+                              </Button>
+                            )}
+
 
                             {newsletter.status !== "sent" && (
                               <AlertDialog>
