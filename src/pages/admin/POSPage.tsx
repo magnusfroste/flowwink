@@ -60,6 +60,24 @@ export default function POSPage() {
   const closeSession$ = useCloseSession();
   const recordSale$ = useRecordSale();
   const addTip$ = useAddTip();
+  const createInvoice$ = useCreateInvoiceFromSale();
+  const updateRegister$ = useUpdateRegisterReceipt();
+
+  // History action state
+  const [refundSale, setRefundSale] = useState<PosSale | null>(null);
+  const [receiptSaleId, setReceiptSaleId] = useState<string | null>(null);
+  const [invoicePrompt, setInvoicePrompt] = useState<PosSale | null>(null);
+  const [invoiceEmail, setInvoiceEmail] = useState('');
+
+  // Register receipt settings (edited in popover)
+  const [receiptHeader, setReceiptHeader] = useState('');
+  const [receiptFooter, setReceiptFooter] = useState('');
+
+  // Barcode / quick-add
+  const [barcode, setBarcode] = useState('');
+  const barcodeError = useRef<string | null>(null);
+  const [barcodeMsg, setBarcodeMsg] = useState<string | null>(null);
+
 
   // Tip dialog state (post-checkout)
   const [tipDialog, setTipDialog] = useState<{
