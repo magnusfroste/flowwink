@@ -232,19 +232,16 @@ export function BudgetsTab() {
                 )}
               </TableBody>
             </Table>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Budget vs Actual</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Compares budgeted amounts to posted journal activity (Σ debit − credit) per account.
-            Positive variance = under budget, negative = over budget.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <AccountingTabHeader
+        title="Budget vs Actual"
+        description="Compares budgeted amounts to posted journal activity (Σ debit − credit) per account. Positive variance = under budget, negative = over budget."
+      />
+
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="grid gap-2">
               <Label>Fiscal year</Label>
