@@ -1,19 +1,22 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAccountBalances } from '@/hooks/useAccounting';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
-import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronRight } from 'lucide-react';
 import { useFiscalYear } from './FiscalYearContext';
 
 export function ProfitLossTab() {
   useAccountingRealtime();
   const { data: balances, isLoading } = useAccountBalances();
   const { data: prefs } = useAccountingPreferences();
-  const { data: branding } = useBrandingSettings();
+  const { year: fiscalYear } = useFiscalYear();
+  const [showDecimals, setShowDecimals] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
 
   const fmt = (cents: number) => {
-    const decimals = prefs?.decimals ?? 2;
+    const decimals = showDecimals ? (prefs?.decimals ?? 2) : 0;
     const decSep = prefs?.decimalSeparator ?? ',';
     const thouSep = prefs?.thousandsSeparator ?? ' ';
     const neg = cents < 0;
@@ -26,115 +29,149 @@ export function ProfitLossTab() {
 
   const report = useMemo(() => {
     if (!balances) return null;
+    const filter = (b: { balance: number }) => showInactive || b.balance !== 0;
     const revenue = balances
       .filter((b) => b.account_type === 'revenue' || b.account_type === 'income')
-      .filter((b) => b.balance !== 0)
+      .filter(filter)
       .sort((a, b) => a.account_code.localeCompare(b.account_code));
     const expenses = balances
       .filter((b) => b.account_type === 'expense')
-      .filter((b) => b.balance !== 0)
+      .filter(filter)
       .sort((a, b) => a.account_code.localeCompare(b.account_code));
     const totalRevenue = revenue.reduce((s, r) => s + r.balance, 0);
     const totalExpenses = expenses.reduce((s, e) => s + e.balance, 0);
     const netResult = totalRevenue - totalExpenses;
     return { revenue, expenses, totalRevenue, totalExpenses, netResult };
-  }, [balances]);
+  }, [balances, showInactive]);
 
   if (isLoading) return <Skeleton className="h-96" />;
   if (!report) return null;
 
-  const orgName = branding?.organizationName || 'Organization';
-  const { year: fiscalYear } = useFiscalYear();
-  const today = new Date();
-  const generated = today.toISOString().slice(0, 16).replace('T', ' ');
-
   return (
     <div className="rounded-lg border bg-card">
-      {/* Report header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 px-6 pt-6 pb-4 border-b">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Profit &amp; Loss</h2>
-          <div className="mt-3 text-sm">
-            <div className="font-semibold">{orgName}</div>
-          </div>
-        </div>
-        <div className="text-sm text-muted-foreground grid grid-cols-[auto_auto] gap-x-4 gap-y-1">
-          <span>Fiscal year</span><span className="text-foreground">{fiscalYear}</span>
-          <span>Report period</span><span className="text-foreground">{fiscalYear}-01-01 – {fiscalYear}-12-31</span>
-          <span>Generated</span><span className="text-foreground">{generated}</span>
-        </div>
+      <div className="flex items-center gap-6 px-6 py-4 border-b">
+        <div className="text-sm font-medium">{fiscalYear}</div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+          <Checkbox checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
+          Show decimals
+        </label>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+          <Checkbox checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
+          Show inactive
+        </label>
       </div>
 
-      {/* Report table */}
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="text-left font-semibold px-6 py-2 w-full">Account</th>
-            <th className="text-right font-semibold px-6 py-2 whitespace-nowrap">Accumulated</th>
-          </tr>
-        </thead>
-        <tbody>
-          <GroupHeader label="Operating income" amount={fmt(report.totalRevenue)} />
-          <SubHeader label="Net revenue" amount={fmt(report.totalRevenue)} />
-          {report.revenue.length === 0 && <EmptyRow />}
-          {report.revenue.map((a) => (
-            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(a.balance)} />
-          ))}
+      <div className="px-6 pt-6 pb-2">
+        <Section
+          title="Operating income"
+          period={fiscalYear}
+          accounts={report.revenue}
+          fmt={fmt}
+          sign={1}
+        />
+        <TotalRow label="Total operating income" amount={fmt(report.totalRevenue)} />
+      </div>
 
-          <GroupHeader label="Operating expenses" amount={fmt(-report.totalExpenses)} />
-          <SubHeader label="Other external expenses" amount={fmt(-report.totalExpenses)} />
-          {report.expenses.length === 0 && <EmptyRow />}
-          {report.expenses.map((a) => (
-            <AccountRow key={a.account_code} code={a.account_code} name={a.account_name} amount={fmt(-a.balance)} />
-          ))}
+      <div className="px-6 pt-6 pb-2">
+        <Section
+          title="Operating expenses"
+          period={fiscalYear}
+          accounts={report.expenses}
+          fmt={fmt}
+          sign={-1}
+        />
+        <TotalRow label="Total operating expenses" amount={fmt(-report.totalExpenses)} />
+      </div>
 
-          <GroupHeader label="Net result" amount={fmt(report.netResult)} />
-          <SubHeader label="Result for the year" amount={fmt(report.netResult)} />
-        </tbody>
-        <tfoot>
-          <tr className="bg-foreground text-background">
-            <td className="px-6 py-3 font-semibold">Calculated result</td>
-            <td className="px-6 py-3 text-right font-mono font-semibold">{fmt(report.netResult)}</td>
-          </tr>
-        </tfoot>
-      </table>
+      <div className="px-6 pt-6 pb-2">
+        <SectionTitle title="Operating result" period={fiscalYear} />
+        <TotalRow label="Total operating result" amount={fmt(report.netResult)} />
+      </div>
+
+      <div className="px-6 pt-6 pb-6">
+        <SectionTitle title="Calculated result" period={fiscalYear} />
+        <TotalRow label="Calculated result" amount={fmt(report.netResult)} strong />
+      </div>
     </div>
   );
 }
 
-function GroupHeader({ label, amount }: { label: string; amount: string }) {
+function SectionTitle({ title, period }: { title: string; period: number | string }) {
   return (
-    <tr className="bg-foreground text-background">
-      <td className="px-6 py-2.5 font-semibold">{label}</td>
-      <td className="px-6 py-2.5 text-right font-mono font-semibold">{amount}</td>
-    </tr>
+    <div className="flex items-baseline justify-between pb-2">
+      <div className="font-semibold">{title}</div>
+      <div className="text-xs text-muted-foreground">{period}</div>
+    </div>
   );
 }
 
-function SubHeader({ label, amount }: { label: string; amount: string }) {
+function Section({
+  title,
+  period,
+  accounts,
+  fmt,
+  sign,
+}: {
+  title: string;
+  period: number | string;
+  accounts: Array<{ account_code: string; account_name: string; balance: number }>;
+  fmt: (n: number) => string;
+  sign: 1 | -1;
+}) {
+  const [open, setOpen] = useState(true);
   return (
-    <tr className="border-y bg-muted/60">
-      <td className="px-6 py-2 font-semibold">{label}</td>
-      <td className="px-6 py-2 text-right font-mono font-semibold">{amount}</td>
-    </tr>
+    <div>
+      <SectionTitle title={title} period={period} />
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground w-full"
+      >
+        <ChevronRight
+          className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`}
+        />
+        <span>{open ? 'Hide accounts' : `Show ${accounts.length} accounts`}</span>
+      </button>
+      {open && (
+        <div className="pl-6">
+          {accounts.length === 0 ? (
+            <div className="py-2 text-sm text-muted-foreground italic">No entries</div>
+          ) : (
+            accounts.map((a) => (
+              <div
+                key={a.account_code}
+                className="flex items-baseline justify-between py-1.5 text-sm border-b border-border/40 last:border-b-0"
+              >
+                <div>
+                  <span className="font-mono text-muted-foreground">{a.account_code}</span>{' '}
+                  <span>{a.account_name}</span>
+                </div>
+                <div className="font-mono tabular-nums">{fmt(sign * a.balance)}</div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
-function AccountRow({ code, name, amount }: { code: string; name: string; amount: string }) {
+function TotalRow({
+  label,
+  amount,
+  strong,
+}: {
+  label: string;
+  amount: string;
+  strong?: boolean;
+}) {
   return (
-    <tr className="odd:bg-muted/20">
-      <td className="px-6 py-1.5 pl-10 text-muted-foreground">
-        <span className="font-mono">{code}</span> - {name}
-      </td>
-      <td className="px-6 py-1.5 text-right font-mono">{amount}</td>
-    </tr>
-  );
-}
-
-function EmptyRow() {
-  return (
-    <tr>
-      <td colSpan={2} className="px-6 py-3 pl-10 text-sm text-muted-foreground italic">No entries</td>
-    </tr>
+    <div
+      className={`flex items-baseline justify-between border-t py-2.5 ${
+        strong ? 'font-semibold' : 'font-medium'
+      }`}
+    >
+      <div>{label}</div>
+      <div className="font-mono tabular-nums">{amount}</div>
+    </div>
   );
 }
