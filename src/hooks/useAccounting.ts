@@ -379,6 +379,16 @@ export function useAccountBalances() {
 
       const chartMap = new Map((chart || []).map((a) => [a.account_code, a]));
 
+      const openingMap = new Map(
+        (openingData || []).map((ob: any) => [
+          ob.account_code,
+          {
+            amount_cents: Number(ob.amount_cents || 0),
+            balance_type: (ob.balance_type || 'debit') as 'debit' | 'credit',
+          },
+        ]),
+      );
+
       const balances: AccountBalance[] = [];
       for (const [code, bal] of map) {
         const chartAccount = chartMap.get(code);
@@ -388,6 +398,14 @@ export function useAccountBalances() {
           normalBalance === 'debit'
             ? bal.debit_total - bal.credit_total
             : bal.credit_total - bal.debit_total;
+
+        const opening = openingMap.get(code);
+        bal.opening_cents = opening
+          ? opening.balance_type === normalBalance
+            ? opening.amount_cents
+            : -opening.amount_cents
+          : 0;
+        bal.closing_cents = bal.balance;
         balances.push(bal);
       }
 
