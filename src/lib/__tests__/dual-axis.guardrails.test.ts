@@ -100,4 +100,10 @@ describe('dual-axis guardrails', () => {
     expect(src).toContain('acctTemplateBankDirection');
     expect(src).toContain('directionCompatible');
   });
+
+  it('matching: vendor defaults win over keyword scoring in proposals', () => {
+    const src = read('supabase/functions/agent-execute/index.ts');
+    expect(src).toContain('vendorDefaults');
+    expect(src).toContain("match_details: ['vendor-default']");
+  });
 });

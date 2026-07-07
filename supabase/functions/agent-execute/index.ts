@@ -6221,6 +6221,18 @@ async function executeDbAction(
       const { data: allTemplates } = await supabase.from('accounting_templates')
         .select('id, template_name, description, keywords, template_lines, usage_count, category');
 
+      // Vendor defaults WIN over keyword scoring (routing rule #1, same as
+      // manage_journal_entry's instructions): a counterparty the books have
+      // learned ("SKATTEVERKET → Insättning till skattekonto") is proposed at
+      // confidence 98 regardless of how vague the bank text is.
+      const { data: vendorRows } = await supabase.from('vendors')
+        .select('name, last_used_template_id')
+        .not('last_used_template_id', 'is', null)
+        .eq('is_active', true);
+      const vendorDefaults = new Map<string, string>(
+        (vendorRows || []).map((v: any) => [String(v.name).toLowerCase().trim(), v.last_used_template_id]),
+      );
+
       const proposals = (events || []).map((ev: any) => {
         const searchTerms = `${ev.counterparty || ''} ${ev.description || ''} ${ev.reference || ''}`.trim();
         const grossCents = Math.abs(ev.amount_cents || 0);
@@ -6250,6 +6262,32 @@ async function executeDbAction(
             suggested_amount_cents: grossCents, proposed_lines: [], top_candidates: [] };
         }
         const scored = acctScoreTemplates(directionCompatible, searchTerms);
+
+        // Routing rule #1: vendor default wins (if direction-compatible).
+        const vendorTplId = vendorDefaults.get(String(ev.counterparty || '').toLowerCase().trim());
+        const vendorTpl = vendorTplId
+          ? directionCompatible.find((t: any) => t.id === vendorTplId) ?? null
+          : null;
+        if (vendorTpl) {
+          const isPctV = acctIsPctTemplate(vendorTpl.template_lines);
+          const netBaseV = isPctV ? acctNetBaseFromGross(vendorTpl.template_lines, grossCents) : grossCents;
+          return {
+            ...base,
+            status: 'auto',
+            confidence: 98,
+            suggested_template_id: vendorTpl.id,
+            suggested_template_name: vendorTpl.template_name,
+            suggested_amount_cents: netBaseV,
+            match_details: ['vendor-default'],
+            proposed_lines: isPctV
+              ? acctExpandTemplateLines(vendorTpl.template_lines, netBaseV)
+              : vendorTpl.template_lines,
+            top_candidates: [
+              { template_id: vendorTpl.id, name: vendorTpl.template_name, confidence: 98 },
+              ...scored.slice(0, 2).map((s) => ({ template_id: s.template.id, name: s.template.template_name, confidence: s.confidence })),
+            ],
+          };
+        }
         const best = scored[0];
         const status = best.confidence >= 95 ? 'auto' : best.confidence >= 70 ? 'propose' : 'escalate';
         const isPct = acctIsPctTemplate(best.template.template_lines);
