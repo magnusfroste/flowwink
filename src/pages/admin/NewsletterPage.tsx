@@ -812,7 +812,13 @@ export default function NewsletterPage() {
               </Table>
             </Card>
           </TabsContent>
+
+          {/* Flows Tab */}
+          <TabsContent value="flows" className="space-y-4">
+            <FlowsTab />
+          </TabsContent>
         </Tabs>
+
 
         {/* Stats Dialog */}
         <Dialog 
