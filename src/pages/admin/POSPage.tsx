@@ -240,7 +240,41 @@ export default function POSPage() {
                 </SelectContent>
               </Select>
             )}
+            {activeRegister && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" title="Register receipt template">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96 space-y-3" align="end">
+                  <div className="text-sm font-medium">Receipt template · {activeRegister.name}</div>
+                  <div>
+                    <Label className="text-xs">Header</Label>
+                    <Textarea rows={3} value={receiptHeader}
+                      onChange={(e) => setReceiptHeader(e.target.value)}
+                      placeholder="Welcome to our shop!" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Footer</Label>
+                    <Textarea rows={3} value={receiptFooter}
+                      onChange={(e) => setReceiptFooter(e.target.value)}
+                      placeholder="Thank you — see you soon!" />
+                  </div>
+                  <Button
+                    size="sm" className="w-full"
+                    disabled={updateRegister$.isPending}
+                    onClick={() => updateRegister$.mutate({
+                      register_id: activeRegister.id,
+                      receipt_header: receiptHeader || null,
+                      receipt_footer: receiptFooter || null,
+                    })}
+                  >Save template</Button>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
+
         </div>
 
         {!registers || registers.length === 0 ? (
