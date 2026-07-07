@@ -6786,10 +6786,17 @@ async function executeDbAction(
       // journal entry, refuse — the link IS the idempotency key. Retries after
       // transport failures hit this instead of creating duplicates.
       const bankTxIdForGuard = (args as any).bank_transaction_id;
+      let bankTxDate: string | null = null;
       if (bankTxIdForGuard) {
         const { data: existingTx } = await supabase.from('bank_transactions')
-          .select('journal_entry_id').eq('id', bankTxIdForGuard).maybeSingle();
-        if (existingTx?.journal_entry_id) {
+          .select('journal_entry_id, transaction_date').eq('id', bankTxIdForGuard).maybeSingle();
+        // Stale-reference guard: booking against a bank event that no longer
+        // exists means the caller is working from stale data (cached proposals
+        // after a wipe/re-import). Refuse instead of creating an orphan entry.
+        if (!existingTx) {
+          throw new Error(`bank_transaction ${bankTxIdForGuard} not found — the event list is stale. Refresh proposals (propose_bookkeeping) and retry.`);
+        }
+        if (existingTx.journal_entry_id) {
           return {
             already_booked: true,
             entry_id: existingTx.journal_entry_id,
@@ -6797,12 +6804,16 @@ async function executeDbAction(
             message: 'This bank event is already booked (linked to a journal entry). No new entry was created.',
           };
         }
+        // Default the entry to the EVENT's date — booking a 2025 bank event
+        // must not land on today's date (it would fall outside the fiscal
+        // year and vanish from year-filtered views).
+        bankTxDate = existingTx.transaction_date as string;
       }
 
       // Explicit period-lock check (sweep finding #B3). The DB trigger
       // guard_journal_entries_period() is the backstop; checking here gives
       // agents a clear, actionable error instead of a raw trigger exception.
-      const effectiveDate = entry_date || new Date().toISOString().split('T')[0];
+      const effectiveDate = entry_date || bankTxDate || new Date().toISOString().split('T')[0];
       {
         const d = new Date(effectiveDate);
         if (!isNaN(d.getTime())) {
@@ -6833,7 +6844,7 @@ async function executeDbAction(
 
       const { data: entry, error: entryErr } = await supabase.from('journal_entries')
         .insert({
-          entry_date: entry_date || new Date().toISOString().split('T')[0],
+          entry_date: effectiveDate,
           description: description || 'FlowPilot transaction',
           reference_number: reference_number || null,
           status: 'posted',
@@ -6868,7 +6879,7 @@ async function executeDbAction(
         created: true,
         entry_id: entry.id,
         bank_transaction_id: bankTxId || null,
-        entry_date: entry_date || new Date().toISOString().split('T')[0],
+        entry_date: effectiveDate,
         total_debit_cents: totalDebit,
         total_credit_cents: totalCredit,
         lines_count: entryLines.length,

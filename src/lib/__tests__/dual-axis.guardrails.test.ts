@@ -87,4 +87,11 @@ describe('dual-axis guardrails', () => {
     const src = read('src/hooks/useAutomations.ts');
     expect(src).toContain('staged === true');
   });
+
+  it('litmus: booking a bank event defaults entry_date to the EVENT date and refuses stale references', () => {
+    const src = read('supabase/functions/agent-execute/index.ts');
+    expect(src).toContain('bankTxDate');
+    expect(src).toContain("entry_date || bankTxDate");
+    expect(src).toMatch(/not found — the event list is stale/);
+  });
 });
