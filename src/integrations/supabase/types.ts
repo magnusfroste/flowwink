@@ -8535,6 +8535,9 @@ export type Database = {
           pension_employee_cents: number
           pension_employer_cents: number
           run_id: string
+          sick_days: number
+          sick_deduction_cents: number
+          sick_pay_cents: number
           social_fee_cents: number
           tax_cents: number
           taxable_cents: number
@@ -8551,6 +8554,9 @@ export type Database = {
           pension_employee_cents?: number
           pension_employer_cents?: number
           run_id: string
+          sick_days?: number
+          sick_deduction_cents?: number
+          sick_pay_cents?: number
           social_fee_cents?: number
           tax_cents?: number
           taxable_cents?: number
@@ -8567,6 +8573,9 @@ export type Database = {
           pension_employee_cents?: number
           pension_employer_cents?: number
           run_id?: string
+          sick_days?: number
+          sick_deduction_cents?: number
+          sick_pay_cents?: number
           social_fee_cents?: number
           tax_cents?: number
           taxable_cents?: number
@@ -14596,6 +14605,15 @@ export type Database = {
         Returns: Json
       }
       apply_reconciliation_rules: { Args: never; Returns: Json }
+      apply_sick_pay: {
+        Args: {
+          p_employee_id: string
+          p_run_id: string
+          p_sick_days: number
+          p_work_days_per_month?: number
+        }
+        Returns: Json
+      }
       apply_stock_movement_event: {
         Args: { p_payload: Json }
         Returns: undefined
