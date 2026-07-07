@@ -114,32 +114,47 @@ export default function FieldServicePage() {
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="packages">Packages</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : orders.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No service orders {filter ? `with status "${filter}"` : 'yet'}.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {orders.map((order) => (
-                <ServiceOrderRow key={order.id} order={order} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+        {activeTab === 'packages' ? (
+          <div className="mt-4"><PackagesTab /></div>
+        ) : (
+          <TabsContent value={activeTab} className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : orders.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No service orders {filter ? `with status "${filter}"` : 'yet'}.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {orders.map((order) => (
+                  <ServiceOrderRow
+                    key={order.id}
+                    order={order}
+                    breached={breaches?.has(order.id) ?? false}
+                    onSchedule={() => setScheduleOrderId(order.id)}
+                    onOpen={() => setDetailOrderId(order.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
+
+      <ScheduleVisitDialog orderId={scheduleOrderId} onClose={() => setScheduleOrderId(null)} />
+      <ServiceOrderDetailDialog orderId={detailOrderId} onClose={() => setDetailOrderId(null)} />
     </div>
     </AdminLayout>
   );
 }
+
 
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
