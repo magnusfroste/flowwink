@@ -207,8 +207,8 @@ export default function PageExperimentsTab() {
               {listQ.data.experiments.map((e) => {
                 const isOpen = expanded.has(e.id);
                 return (
-                  <>
-                    <TableRow key={e.id}>
+                  <FragmentWithKey key={e.id}>
+                    <TableRow>
                       <TableCell>
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => toggle(e.id)}>
                           {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
