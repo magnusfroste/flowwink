@@ -266,6 +266,14 @@ export default function PagesListPage() {
                   <Palette className="h-3.5 w-3.5" />
                   Branding
                 </TabsTrigger>
+                <TabsTrigger value="redirects" className="gap-1.5">
+                  <ArrowRightLeft className="h-3.5 w-3.5" />
+                  Redirects
+                </TabsTrigger>
+                <TabsTrigger value="experiments" className="gap-1.5">
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  Experiments
+                </TabsTrigger>
                 <TabsTrigger value="trash" className="gap-1.5">
                   <Trash2 className="h-3.5 w-3.5" />
                   Trash
