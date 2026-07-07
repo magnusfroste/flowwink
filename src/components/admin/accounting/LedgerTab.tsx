@@ -103,10 +103,14 @@ export function LedgerTab() {
 function AccountRow({
   code,
   name,
+  opening_cents,
+  closing_cents,
   fmt,
 }: {
   code: string;
   name: string;
+  opening_cents: number;
+  closing_cents: number;
   fmt: (c: number) => string;
 }) {
   const [open, setOpen] = useState(false);
@@ -123,10 +127,10 @@ function AccountRow({
           <span className="text-sm text-muted-foreground truncate">{name}</span>
         </div>
         <div className="text-right font-mono tabular-nums text-sm text-muted-foreground w-28">
-          {data ? fmt(data.opening_cents) : '—'}
+          {fmt(opening_cents)}
         </div>
         <div className="text-right font-mono tabular-nums text-sm w-28">
-          {data ? fmt(data.closing_cents) : '—'}
+          {fmt(closing_cents)}
         </div>
         {open ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
