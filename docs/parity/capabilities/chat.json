@@ -28,10 +28,10 @@
       "id": "transcripts",
       "name": "Transcript history",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "verify": "src/components/admin/chat/VisitorSessionsTab.tsx",
-      "notes": "Admin UI only — no transcript skill in chat-module.ts skillSeeds.",
+      "verify": "VisitorSessionsTab.tsx (admin UI) + get_chat_transcript skill in chat-module.ts skillSeeds (db:chat_messages, generic CRUD; chat_messages allowlisted in agent-execute)",
+      "notes": "Dual surface complete 2026-07-07. Live-verified via MCP gateway: list, conversation_id filter, chronological order all work; lint_skill clean (read-only NOT NULL exemption in fixture).",
       "epic": "EPIC-07"
     },
     {

@@ -9,24 +9,20 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 64%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 66%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
 | **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `████░░░░░░` 39% | 6/0/9 | EPIC-08 |
-| **email** | Mail / Discuss (outbound email) | L3 → L4 | `████░░░░░░` 40% | 2/2/4 | EPIC-05 |
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 44% | 5/3/6 | EPIC-05 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
-| **payroll** | Payroll (hr.payslip) | L2 → L4 | `█████░░░░░` 45% | 8/2/7 | EPIC-08 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `█████░░░░░` 47% | 7/0/7 | — |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | EPIC-07 |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████░░░░░` 50% | 2/0/3 | — |
-| **chat** | Livechat + chatbot | L3 → L4 | `█████░░░░░` 50% | 0/5/0 | EPIC-06, EPIC-07 |
-| **global-blocks** | Website building blocks/snippets | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | EPIC-06 |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `█████░░░░░` 50% | 9/0/7 | — |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | EPIC-06 |
@@ -34,14 +30,16 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
 | **sla** | Helpdesk SLA policies | L3 → L4 | `█████░░░░░` 53% | 8/0/7 | — |
 | **pricelists** | Sales pricelists (product.pricelist) | L3 → L4 | `█████░░░░░` 54% | 6/0/6 | — |
+| **payroll** | Payroll (hr.payslip) | L2 → L4 | `██████░░░░` 55% | 10/0/7 | — |
 | **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | EPIC-06 |
 | **multi-currency** | Accounting multi-currency | L2 → L4 | `██████░░░░` 57% | 6/0/4 | — |
 | **wiki** | Knowledge (knowledge.article) | L2 → L4 | `██████░░░░` 57% | 3/0/3 | — |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 10/0/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
+| **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `██████░░░░` 59% | 9/0/6 | — |
-| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `██████░░░░` 59% | 3/4/2 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `██████░░░░` 59% | 11/1/6 | EPIC-04 |
+| **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████░░░░` 60% | 4/0/4 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 63% | 3/0/3 | — |
@@ -52,6 +50,7 @@ category: reference
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 68% | 13/0/6 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `███████░░░` 68% | 6/1/4 | — |
+| **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 69% | 10/1/5 | — |
 | **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 70% | 12/0/6 | — |
@@ -69,6 +68,7 @@ category: reference
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
+| **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 
 ## Differentiators (no Odoo counterpart — excluded from the mean)

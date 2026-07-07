@@ -8,40 +8,40 @@
       "id": "block_crud",
       "name": "Global block CRUD",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "GlobalBlocksPage.tsx (HeaderBlockEditor/FooterBlockEditor); module declares skills: ['manage_global_blocks']",
-      "notes": "Skill not in global-blocks-module skillSeeds — seeded via supabase/seed/module-skills.json / archived migration, so the in-module skill surface is absent per the dual-surface check.",
+      "verify": "GlobalBlocksPage.tsx (HeaderBlockEditor/FooterBlockEditor); manage_global_blocks SkillSeed inlined in global-blocks-module.ts (2026-07-07); executeGlobalBlocksAction in agent-execute",
+      "notes": "Dual surface complete: admin UI + in-module skill seed (was migration-seeded only). Live-verified 2026-07-07 via MCP gateway: list/get/update/toggle all work.",
       "epic": "EPIC-06"
     },
     {
       "id": "reuse",
       "name": "Reuse across pages",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "useGlobalBlocks.ts; PublicNavigation.tsx + PublicFooter.tsx render global blocks on every public page",
-      "notes": "Skill surface missing in module skillSeeds (see block_crud).",
+      "notes": "Skill surface now in module skillSeeds (manage_global_blocks, 2026-07-07); rendering via useGlobalBlocks on every public page.",
       "epic": "EPIC-06"
     },
     {
       "id": "sync_updates",
       "name": "Edit once, update everywhere",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "single global_blocks row per slot; edits in GlobalBlocksPage.tsx propagate to all pages via useGlobalBlocks",
-      "notes": "Skill surface missing in module skillSeeds (see block_crud).",
+      "notes": "Skill surface now in module skillSeeds (manage_global_blocks, 2026-07-07); single row per slot propagates everywhere.",
       "epic": "EPIC-06"
     },
     {
       "id": "categories",
       "name": "Block categories",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
       "verify": "global_blocks.category (nullable text, 20260704150500 migration); Library tab in GlobalBlocksPage.tsx with free-text category input (datalist suggestions from existing values) + category filter; manage_global_blocks handler in agent-execute supports category on list (filter) and update (set)",
-      "notes": "Built 2026-07-04: free-text categories, no taxonomy table by design. Skill tool_definition patched via migration (skill is migration-seeded, not in module skillSeeds). Pending live verification before done.",
+      "notes": "Live-verified 2026-07-07 via MCP gateway: update slot=header category='site-chrome' → filtered list returns it → reverted. Free-text categories, no taxonomy table by design.",
       "epic": "EPIC-06"
     }
   ]

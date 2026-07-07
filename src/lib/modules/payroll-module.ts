@@ -3,7 +3,8 @@
  *
  * Manages monthly payroll runs:
  *  - create_payroll_run: snapshot active employees + recurring components into draft lines
- *  - approve_payroll_run: post wage journal (Dt 7210/7510, Cr 2710/2731/2890)
+ *  - apply_pension / apply_sick_pay: draft-run adjustments (idempotent, replace-not-compound)
+ *  - approve_payroll_run: post wage journal (Dt 7210/7410/7510, Cr 2710/2731/2890/2950)
  *  - mark_payroll_paid: post bank disbursement (Dt 2890 / Cr 1930)
  *
  * Defaults: 31.42% employer social fee, 30% PAYE schablon (override per employee).
@@ -206,7 +207,7 @@ export const payrollModule = defineModule<Input, Output>({
   processes: ['hire-to-retire', 'record-to-report'],
   maturity: 'L2',
   description:
-    'Monthly payroll runs (SE-locale): snapshots employees + recurring components, posts wage journals (BAS 7210/7510/2710/2731/2890), and tracks net wage payment. 31.42% employer social fee default, per-employee tax rate override.',
+    'Monthly payroll runs (SE-locale): snapshots employees + recurring components, applies pension (tjänstepension) and statutory sick pay (sjuklön) adjustments on draft runs, posts wage journals (BAS 7210/7410/7510/2710/2731/2890/2950), and tracks net wage payment. 31.42% employer social fee default, per-employee tax rate override.',
   requires: ['hr'],
   capabilities: ['data:read', 'data:write'],
   tier: 'extended',

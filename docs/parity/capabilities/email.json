@@ -8,10 +8,10 @@
       "id": "send_email",
       "name": "Send email",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
-      "verify": "SendEmailDialog in src/components/admin/crm/ (used by LeadDetailPage); email-send edge gateway",
-      "notes": "Skill surface missing — send_email SkillSeed was removed from email-module.ts (manifest comment); only admin UI + gateway exist.",
+      "verify": "send_email SkillSeed in email-module.ts (edge:email-send gateway, approve-gated, scope both); SendEmailDialog in src/components/admin/crm/; email-send edge gateway",
+      "notes": "Skill surface restored 2026-07-07. Live-verified via MCP gateway: routes to email-send, approval gate fires (202 pending_approval), lint_skill clean. Simulated-send fallback when no provider configured (Law 4).",
       "epic": "EPIC-05"
     },
     {
@@ -67,10 +67,10 @@
       "id": "crm_email_association",
       "name": "Email ↔ lead association + contact timeline",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 2,
       "verify": "supabase/migrations/20260703210000_email-lead-association.sql (BEFORE INSERT trigger + backfill on outbound_communications); LeadCommunicationsCard.tsx on LeadDetailPage; useLeadCommunications.ts",
-      "notes": "DB trigger links email rows to leads on unique email match (all writers); timeline UI shows agent/manual/system actor badges + open quotes. Not runtime-verified on a live DB; ambiguous multi-lead emails stay unlinked; no skill surface.",
+      "notes": "Runtime-verified on live dev 2026-07-07: INSERT into outbound_communications with a lead's email set related_entity_type='lead'/related_entity_id via trg_associate_comm_with_lead at write time. Skill surface now exists (send_email). Ambiguous multi-lead emails stay unlinked by design.",
       "epic": "EPIC-05"
     }
   ]

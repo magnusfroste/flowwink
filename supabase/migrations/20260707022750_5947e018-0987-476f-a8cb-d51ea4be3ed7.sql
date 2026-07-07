@@ -2,6 +2,9 @@
 -- The newsletter edge function is deployed --no-verify-jwt; the handler enforces
 -- that the Bearer token equals the project anon (or service) key.
 -- pg_cron and pg_net are already installed on this project.
+-- NB: the Bearer must be the NEW-format publishable key — the deployed edge
+-- runtime's SUPABASE_ANON_KEY is the publishable key on this project, so the
+-- legacy JWT anon key gets a silent 401 (see project_autonomy_cron_silent_401).
 
 DO $$
 BEGIN
@@ -16,7 +19,7 @@ SELECT cron.schedule(
   $cron$
   SELECT net.http_post(
     url := 'https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/newsletter/dispatch-scheduled',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6aGpvdHhmZmpmc2RsaHJka3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTk2MzAsImV4cCI6MjA4MTEzNTYzMH0.h_S8ZHuCWWz97-uzQge0sb3riHmElrKTTfs5jrwE72c"}'::jsonb,
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer sb_publishable_WcvHvlNYuw_GDKEqnGeolw_ir4jw4pD"}'::jsonb,
     body := jsonb_build_object('trigger', 'pg_cron', 'scheduled_at', now())
   );
   $cron$
