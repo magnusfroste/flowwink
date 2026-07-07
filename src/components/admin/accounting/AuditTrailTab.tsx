@@ -212,9 +212,10 @@ export function AuditTrailTab() {
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }
+
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
