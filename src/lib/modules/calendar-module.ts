@@ -78,11 +78,37 @@ const CALENDAR_SKILLS: SkillSeed[] = [
             p_attendees: { type: 'array', items: { type: 'object' }, description: '[{email, name?}]' },
             p_from: { type: 'string', description: 'list: range start (ISO)' },
             p_to: { type: 'string', description: 'list: range end (ISO)' },
+            p_visibility: { type: 'string', enum: ['private', 'team', 'public'], description: 'Sharing level. private = creator + admins only. Default team.' },
+            p_reminder_minutes: { type: 'integer', description: 'Email reminder N minutes before start (e.g. 60). Max 20160 (14 days). Omit for no reminder.' },
           },
         },
       },
     },
-    instructions: 'Standalone events only — bookings remain in the booking module (list_events aggregates both views for read). Admin/service-role for mutations; staff can read.',
+    instructions: 'Standalone events only — bookings remain in the booking module (list_events aggregates both views for read). Admin/service-role for mutations; staff can read. Private events are hidden from non-creators (RLS) and from list for other staff. Changing starts_at re-arms an already-sent reminder.',
+  },
+  {
+    name: 'export_calendar_ics',
+    description: 'Export calendar events as an RFC 5545 iCalendar (.ics) text — importable/subscribable in Google Calendar, Outlook and Apple Calendar. Includes VALARM blocks for events with reminders. Use when: "export the calendar", syncing FlowWink events into an external calendar. NOT for: listing events as data (list_events / manage_calendar_event).',
+    category: 'system',
+    handler: 'rpc:export_calendar_ics',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'export_calendar_ics',
+        description: 'Render calendar_events in a range as iCalendar text (default: -30d to +365d).',
+        parameters: {
+          type: 'object',
+          properties: {
+            from: { type: 'string', description: 'ISO timestamp range start. Default now-30d.' },
+            to: { type: 'string', description: 'ISO timestamp range end. Default now+365d.' },
+            include_private: { type: 'boolean', description: 'Include private events (service/admin context). Default false.' },
+          },
+        },
+      },
+    },
+    instructions: 'Returns raw ICS text — save it as a .ics file or serve it to the user verbatim. Private events are excluded unless include_private=true.',
   },
 ];
 
@@ -104,7 +130,7 @@ export const calendarModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  skills: ['list_events', 'manage_calendar_event'],
+  skills: ['list_events', 'manage_calendar_event', 'export_calendar_ics'],
   skillSeeds: CALENDAR_SKILLS,
 
 

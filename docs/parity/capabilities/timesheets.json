@@ -1,7 +1,7 @@
 {
   "module": "timesheets",
   "odoo_app": "Timesheets (account.analytic.line)",
-  "current_maturity": "L3",
+  "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
     { "id": "time_entry", "name": "Time entry", "odoo": true, "status": "done", "weight": 1, "verify": "Time entry create/edit supported" },
@@ -12,12 +12,68 @@
     { "id": "summary", "name": "Timesheet summary", "odoo": true, "status": "done", "weight": 1, "verify": "Timesheet summary/rollup view" },
     { "id": "owner_validation", "name": "Owner-only edit", "odoo": true, "status": "done", "weight": 1, "verify": "Owner-only edit validation on entries" },
 
-    { "id": "approval_workflow", "name": "Manager approval workflow", "odoo": true, "status": "missing", "weight": 2, "verify": "Manager approval workflow for timesheets" },
-    { "id": "split_allocation", "name": "Multi-project day split", "odoo": true, "status": "missing", "weight": 2, "verify": "Split a day across multiple projects" },
-    { "id": "indirect_time", "name": "Indirect time (PTO/training)", "odoo": true, "status": "missing", "weight": 1, "verify": "Indirect time categories (PTO/training)" },
-    { "id": "overtime_shift", "name": "Overtime/shift rules", "odoo": true, "status": "missing", "weight": 1, "verify": "Overtime/shift rule calculations" },
-    { "id": "payroll_integration", "name": "Feed payroll", "odoo": true, "status": "missing", "weight": 1, "verify": "Timesheet hours feed payroll" },
-    { "id": "productivity_analytics", "name": "Utilization analytics", "odoo": true, "status": "missing", "weight": 1, "verify": "Utilization/productivity analytics report" },
-    { "id": "employee_cost", "name": "Employee labor cost", "odoo": true, "status": "missing", "weight": 1, "verify": "Employee labor cost per timesheet entry" }
+    {
+      "id": "approval_workflow",
+      "name": "Manager approval workflow",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: manage_timesheet_approval(approve, 2026-07-02..02) live via MCP gateway → entries_updated:1, approval_status stamped with approved_by/approved_at. Backend: time_entries.approval_status draft|submitted|approved|rejected + approval_notes (migration 20260707211000). UI: TimesheetsPage approval bar + status badges (Lovable build 2026-07-07).",
+      "notes": "submit is owner-scoped; approve/reject require admin/approver. split/edit of approved entries rejected until re-rejected."
+    },
+    {
+      "id": "split_allocation",
+      "name": "Multi-project day split",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: split_time_entry live via MCP gateway (2h entry → 1h+1h, ids returned; earlier SQL test split 10h → 6h+4h across two projects with sum validation). UI: TimesheetsPage row action Split dialog (Lovable build 2026-07-07).",
+      "notes": "Allocations must sum to the original hours unless allow_total_change; project_name resolved case-insensitively; invoiced/approved entries rejected."
+    },
+    {
+      "id": "indirect_time",
+      "name": "Indirect time (PTO/training)",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: log_indirect_time(category=sick/training/overhead) live via MCP gateway → categorized entries on auto-created 'Internal (non-billable)' project; time_entries.category work|pto|sick|training|overhead. UI: category select in new-entry form (Lovable build 2026-07-07).",
+      "notes": "Sick days flow into payroll_timesheet_basis.sick_days → apply_sick_pay."
+    },
+    {
+      "id": "overtime_shift",
+      "name": "Overtime/shift rules",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: apply_overtime_rules(2026-07-01..07, threshold 8h) live via MCP gateway → 10h day flagged 2h overtime on entries (time_entries.overtime_hours, idempotent recompute). UI: overtime indicator + Apply-overtime button in Reports tab (Lovable build 2026-07-07).",
+      "notes": "Daily-threshold rule (default 8h/day, work category only). Shift calendars/multipliers per shift not modeled — threshold+multiplier covers the Odoo base case."
+    },
+    {
+      "id": "payroll_integration",
+      "name": "Feed payroll",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "DONE 2026-07-07 (agent surface). Skills live via MCP gateway: payroll_timesheet_basis(2026-07) → per-employee work/overtime/pto hours + sick_days (verified sick day logged via log_indirect_time appeared as sick_days:1); apply_timesheet_overtime(draft run edfe5125) → 2 OT hours × salary/168 × 1.5 = 75000 öre added to gross, tax/social/net recomputed, run totals refreshed (apply_sick_pay adjustment pattern, idempotent).",
+      "notes": "payroll_lines.overtime_hours/overtime_pay_cents (migration 20260707211000). Workflow: create_payroll_run → payroll_timesheet_basis → apply_sick_pay + apply_timesheet_overtime."
+    },
+    {
+      "id": "productivity_analytics",
+      "name": "Utilization analytics",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: timesheet_utilization_report(2026-07-01..07) live via MCP gateway → per-person work/billable/pto/sick/training/overtime hours, capacity (workdays×8), utilization 25%, billable 100%, cost/revenue cents. UI: Reports tab on TimesheetsPage (Lovable build 2026-07-07).",
+      "notes": "Capacity = Mon–Fri workdays × capacity_hours_per_day (default 8)."
+    },
+    {
+      "id": "employee_cost",
+      "name": "Employee labor cost",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "DONE 2026-07-07. time_entries.cost_rate_cents (per-entry override) + fallback employees.monthly_salary_cents/168h; live gateway report showed cost_cents 450000 for 18h logged (QA Hire, 42000 kr salary → 250 kr/h). Margin = revenue (project rate × billable h) − cost in the same report.",
+      "notes": "Cost surfaces through timesheet_utilization_report; per-entry cost_rate_cents column ready for role-based rates."
+    }
   ]
 }

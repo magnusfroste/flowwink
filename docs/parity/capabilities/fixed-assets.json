@@ -1,7 +1,7 @@
 {
   "module": "fixed-assets",
   "odoo_app": "Accounting → Assets",
-  "current_maturity": "L3",
+  "current_maturity": "L4",
   "target_maturity": "L4",
   "capabilities": [
     { "id": "registration", "name": "Asset registration + acquisition JE", "odoo": true, "status": "done", "weight": 1, "verify": "asset registration with acquisition journal entry" },
@@ -12,12 +12,66 @@
     { "id": "disposal", "name": "Disposal w/ gain/loss JE", "odoo": true, "status": "done", "weight": 1, "verify": "asset disposal with gain/loss journal entry" },
     { "id": "year_end_proposals", "name": "Year-end depreciation proposals", "odoo": true, "status": "done", "weight": 1, "verify": "year-end depreciation proposals" },
 
-    { "id": "impairment", "name": "Impairment/revaluation", "odoo": true, "status": "missing", "weight": 2, "verify": "asset impairment/revaluation" },
-    { "id": "lease_accounting", "name": "Lease accounting (IFRS16/ASC842)", "odoo": true, "status": "missing", "weight": 2, "verify": "lease accounting" },
-    { "id": "component_tracking", "name": "Asset component breakdown", "odoo": true, "status": "missing", "weight": 1, "verify": "asset component breakdown" },
-    { "id": "depreciation_methods_extra", "name": "Sum-of-years/unit-of-production", "odoo": true, "status": "missing", "weight": 1, "verify": "sum-of-years and unit-of-production depreciation" },
-    { "id": "asset_locations", "name": "Asset location/maintenance tracking", "odoo": true, "status": "missing", "weight": 1, "verify": "asset location/maintenance tracking" },
-    { "id": "depreciation_override", "name": "Manual depreciation adjustment", "odoo": true, "status": "missing", "weight": 1, "verify": "manual depreciation adjustment" },
-    { "id": "schedule_report", "name": "Depreciation schedule report", "odoo": true, "status": "missing", "weight": 1, "verify": "depreciation schedule report" }
+    {
+      "id": "impairment",
+      "name": "Impairment/revaluation",
+      "odoo": true,
+      "status": "done",
+      "weight": 2,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: revalue_fixed_asset live via MCP gateway — impairment (NBV 12000→10000 kr: Dt 7720 / Cr 1219, JE 34d5bfcd) AND reversal (950000→1000000 öre: Dt 1219 / Cr 7788, JE 06cf1f82, capped at cost). History in asset_revaluations. UI: Revalue/Impair dialog on FixedAssetsPage (Lovable build 2026-07-07).",
+      "notes": "BAS 2024: 7720 Nedskrivningar / 7788 Återföring. Migration 20260707210000."
+    },
+    {
+      "id": "lease_accounting",
+      "name": "Lease accounting (IFRS16/ASC842)",
+      "odoo": true,
+      "status": "missing",
+      "weight": 2,
+      "verify": "asset impairment/revaluation shipped separately; no lease_contracts/ROU-asset model yet",
+      "notes": "Deliberately deferred (round 4): needs lease table + PV/amortization RPCs — a full epic, not a flip. BAS/K2 SMEs rarely require IFRS 16."
+    },
+    {
+      "id": "component_tracking",
+      "name": "Asset component breakdown",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. fixed_assets.parent_asset_id (self-parent CHECK-rejected) + update_fixed_asset(p_parent_asset_id) live via MCP gateway — UOP press linked as component of SYD machine; response returns nested components[]. UI: Edit dialog parent-asset select + 'component of' hint (Lovable build 2026-07-07).",
+      "notes": "Components depreciate independently (own method/life) — matches Odoo's asset-per-component model."
+    },
+    {
+      "id": "depreciation_methods_extra",
+      "name": "Sum-of-years/unit-of-production",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. sum_of_years: registered 36-mo/12000 kr asset → schedule 500 kr/mo year 1 (3/6 SYD fraction) via compute_monthly_depreciation(asset, period). units_of_production: post_units_depreciation live via gateway (250 units/10000 → 15000 öre, JE posted, units_depreciated tracked; monthly sweep skips UOP). UI: method select + Post-units dialog (Lovable build 2026-07-07).",
+      "notes": "CHECK constraint now allows straight_line|declining|sum_of_years|units_of_production. Sweep-idempotency unique index scoped to automatic entries so UOP/manual postings don't collide (fixed during round 4)."
+    },
+    {
+      "id": "asset_locations",
+      "name": "Asset location/maintenance tracking",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. fixed_assets.location + update_fixed_asset(p_location) live via MCP gateway ('Factory B'); returned in get_depreciation_schedule rows. Maintenance link pre-existed: equipment.fixed_asset_id (maintenance module). UI: location field + column (Lovable build 2026-07-07)."
+    },
+    {
+      "id": "depreciation_override",
+      "name": "Manual depreciation adjustment",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: post_manual_depreciation(25000 öre) live via MCP gateway → depreciation_entries row flagged is_manual + JE be35f020, accumulated updated; over-depreciation below salvage rejected with remaining-base error. UI: Manual depreciation dialog (Lovable build 2026-07-07)."
+    },
+    {
+      "id": "schedule_report",
+      "name": "Depreciation schedule report",
+      "odoo": true,
+      "status": "done",
+      "weight": 1,
+      "verify": "Dual-surface DONE 2026-07-07. Skill: get_depreciation_schedule live via MCP gateway → per-asset forward monthly rows {period, amount_cents, accumulated_cents, nbv_cents} until fully depreciated (SYD asset verified 3 rows @50000). UI: schedule dialog on FixedAssetsPage (Lovable build 2026-07-07).",
+      "notes": "Computed on demand (no schedule table); UOP estimated as even spread with estimated:true flag."
+    }
   ]
 }

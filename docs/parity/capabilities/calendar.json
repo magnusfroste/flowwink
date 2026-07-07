@@ -11,31 +11,34 @@
       "status": "done",
       "weight": 2,
       "verify": "calendar_events table + manage_calendar_event RPC/skill (create/update/delete/list w/ range) (migration 20260612120000)",
-      "notes": "Stage-3 verified 2026-06-12 via agent-execute (create→list→delete; time-order CHECK). Verify-first: module previously had NO table (list_events reads bookings). Calendar UI for standalone events. UI shipped 2026-06-12 (calendar events source + NewCalendarEventDialog incl attendees). Dual-surface complete."
+      "notes": "Stage-3 verified 2026-06-12 via agent-execute (create→list→delete; time-order CHECK). Verify-first: module previously had NO table (list_events reads bookings). Calendar UI for standalone events. UI shipped 2026-06-12 (calendar events source + NewCalendarEventDialog incl attendees). Dual-surface complete. 2026-07-07: RPC extended with p_visibility + p_reminder_minutes (migration 20260707212000)."
     },
     {
       "id": "sharing",
       "name": "Shared calendars",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no sharing skill or UI"
+      "verify": "Dual-surface DONE 2026-07-07. calendar_events.visibility private|team|public (default team) + RLS: private events visible only to creator/admin (Staff-view policy rewritten); manage_calendar_event list filters private for non-creators; export_calendar_ics excludes private unless include_private. Live via MCP gateway: created team event with visibility param (event f8e3ff72). UI: visibility select in NewCalendarEventDialog (Lovable build 2026-07-07).",
+      "notes": "Migration 20260707212000. Per-user granular calendar-sharing lists (share with specific colleague) not modeled — private/team/public covers the Odoo base case."
     },
     {
       "id": "external_sync",
       "name": "Google/Outlook sync",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 1,
-      "verify": "no ICS/Google/Outlook sync code in calendar module or CalendarPage"
+      "verify": "Export half DONE 2026-07-07: export_calendar_ics skill live via MCP gateway → valid RFC 5545 VCALENDAR (UTC DTSTART/DTEND, RFC-escaped SUMMARY/DESCRIPTION/LOCATION, VALARM from reminder_minutes) importable in Google/Outlook/Apple. UI: Export .ics download button on CalendarPage (Lovable build 2026-07-07).",
+      "notes": "Partial: one-way export only. Live two-way OAuth sync (Google/Outlook webhooks) not built — would need OAuth flow + sync scheduler."
     },
     {
       "id": "reminders",
       "name": "Reminders",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no calendar reminder skill or UI"
+      "verify": "DONE 2026-07-07. calendar_events.reminder_minutes (CHECK 0..20160) + reminder_sent_at; manage_calendar_event accepts p_reminder_minutes (gateway-verified: event f8e3ff72 created with 30-min reminder) and re-arms reminder when starts_at moves; ICS export emits VALARM. Delivery: send-calendar-reminders edge function + 15-min cron sweep (Lovable build 2026-07-07, send-booking-reminders pattern) emails attendees and stamps reminder_sent_at.",
+      "notes": "Migration 20260707212000. Same reminder pipeline pattern as bookings/webinars."
     },
     {
       "id": "invitees",
@@ -44,7 +47,7 @@
       "status": "done",
       "weight": 1,
       "verify": "calendar_events.attendees jsonb [{email,name?}]",
-      "notes": "Stored + returned; invite emails/RSVP. UI shipped 2026-06-12 (calendar events source + NewCalendarEventDialog incl attendees). Dual-surface complete."
+      "notes": "Stored + returned; invite emails/RSVP. UI shipped 2026-06-12 (calendar events source + NewCalendarEventDialog incl attendees). Dual-surface complete. Reminder emails to attendees added 2026-07-07."
     },
     {
       "id": "unified_aggregation",
