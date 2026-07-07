@@ -124,6 +124,32 @@ export default function POSPage() {
     }
     setSearch('');
   }
+
+  async function quickAddByBarcode(q: string) {
+    const s = q.trim();
+    if (!s) return;
+    try {
+      const match = await lookupPosProduct(s);
+      if (match) {
+        addLineFromProduct(match as unknown as PosProduct);
+        setBarcode('');
+        setBarcodeMsg(null);
+      } else {
+        setBarcodeMsg(`No match for "${s}"`);
+      }
+    } catch (e) {
+      logger.error('barcode lookup', e);
+      setBarcodeMsg('Lookup failed');
+    }
+  }
+
+  // Sync register receipt template into local state when the active register changes
+  useEffect(() => {
+    setReceiptHeader(activeRegister?.receipt_header ?? '');
+    setReceiptFooter(activeRegister?.receipt_footer ?? '');
+  }, [activeRegister?.id]);
+  void barcodeError;
+
   function addBlankLine() {
     setLines([...lines, { product_name: '', quantity: 1, unit_price_cents: 0 }]);
   }
