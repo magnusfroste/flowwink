@@ -12,9 +12,9 @@ export function LedgerTab() {
   useAccountingRealtime();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const { data: balances, isLoading } = useAccountBalances();
-  const { data: prefs } = useAccountingPreferences();
   const { year: fiscalYear } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
+  const { data: prefs } = useAccountingPreferences();
 
   const fmt = (cents: number) => {
     const decimals = prefs?.decimals ?? 2;
@@ -114,7 +114,8 @@ function AccountRow({
   fmt: (c: number) => string;
 }) {
   const [open, setOpen] = useState(false);
-  const { data, isLoading } = useAccountLedger(open ? code : null);
+  const { year: ledgerFiscalYear } = useFiscalYear();
+  const { data, isLoading } = useAccountLedger(open ? code : null, ledgerFiscalYear);
 
   return (
     <div className="border-b border-border/60 last:border-b-0">

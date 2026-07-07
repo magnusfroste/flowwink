@@ -9,9 +9,9 @@ import { useFiscalYear } from './FiscalYearContext';
 
 export function ProfitLossTab() {
   useAccountingRealtime();
-  const { data: balances, isLoading } = useAccountBalances();
-  const { data: prefs } = useAccountingPreferences();
   const { year: fiscalYear } = useFiscalYear();
+  const { data: balances, isLoading } = useAccountBalances(fiscalYear);
+  const { data: prefs } = useAccountingPreferences();
   const [showDecimals, setShowDecimals] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 

@@ -311,11 +311,16 @@ export function useCreateJournalEntry() {
 // Account Balances (General Ledger)
 // ============================================================
 
-export function useAccountBalances() {
+export function useAccountBalances(fiscalYear?: number) {
+  // IB + movements are PER FISCAL YEAR. The caller passes the selected year
+  // (useFiscalYear()); default = current calendar year. Hardcoding
+  // new Date().getFullYear() here was the bug that made a 2025 IB invisible
+  // while viewing fiscal 2025 (dual-axis class, 2026-07-07).
+  const year = fiscalYear ?? new Date().getFullYear();
   return useQuery({
-    queryKey: ['account-balances'],
+    queryKey: ['account-balances', year],
     queryFn: async () => {
-      // Fetch all posted entry lines
+      // Posted entry lines WITHIN the fiscal year (movements)
       const { data: lines, error } = await supabase
         .from('journal_entry_lines')
         .select(`
@@ -323,18 +328,19 @@ export function useAccountBalances() {
           account_name,
           debit_cents,
           credit_cents,
-          journal_entries!inner(status)
+          journal_entries!inner(status, entry_date)
         `)
-        .eq('journal_entries.status', 'posted');
+        .eq('journal_entries.status', 'posted')
+        .gte('journal_entries.entry_date', `${year}-01-01`)
+        .lte('journal_entries.entry_date', `${year}-12-31`);
 
       if (error) throw error;
 
-      // Fetch opening balances for current fiscal year
-      const currentYear = new Date().getFullYear();
+      // Opening balances for the SELECTED fiscal year
       const { data: openingData } = await supabase
         .from('opening_balances')
         .select('*')
-        .eq('fiscal_year', currentYear);
+        .eq('fiscal_year', year);
 
       // Aggregate by account
       const map = new Map<string, AccountBalance>();
@@ -440,13 +446,14 @@ export interface AccountLedger {
   closing_cents: number;
 }
 
-export function useAccountLedger(accountCode: string | null) {
+export function useAccountLedger(accountCode: string | null, fiscalYear?: number) {
+  const year = fiscalYear ?? new Date().getFullYear();
   return useQuery({
-    queryKey: ['account-ledger', accountCode],
+    queryKey: ['account-ledger', accountCode, year],
     enabled: !!accountCode,
     queryFn: async (): Promise<AccountLedger | null> => {
       if (!accountCode) return null;
-      const currentYear = new Date().getFullYear();
+      const currentYear = year;
 
       const { data: chart } = await supabase
         .from('chart_of_accounts')
@@ -483,6 +490,8 @@ export function useAccountLedger(accountCode: string | null) {
         `)
         .eq('account_code', accountCode)
         .eq('journal_entries.status', 'posted')
+        .gte('journal_entries.entry_date', `${currentYear}-01-01`)
+        .lte('journal_entries.entry_date', `${currentYear}-12-31`)
         .order('entry_date', { foreignTable: 'journal_entries', ascending: true });
 
       if (error) throw error;

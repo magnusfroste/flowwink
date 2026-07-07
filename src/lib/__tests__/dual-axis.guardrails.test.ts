@@ -128,4 +128,12 @@ describe('dual-axis guardrails', () => {
     expect(src).toContain('opening_cents');
     expect(src).toContain('movement_cents');
   });
+
+  it('IB: UI balance hooks are fiscal-year-aware (no hardcoded current year)', () => {
+    const src = read('src/hooks/useAccounting.ts');
+    expect(src).toContain('useAccountBalances(fiscalYear?: number)');
+    expect(src).toContain("queryKey: ['account-balances', year]");
+    // movements must be filtered to the fiscal year
+    expect(src).toMatch(/gte\('journal_entries\.entry_date'/);
+  });
 });
