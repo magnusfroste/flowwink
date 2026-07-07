@@ -6465,12 +6465,48 @@ async function executeDbAction(
           balanceMap.set(line.account_code, existing);
         }
 
-        // Calculate balances based on normal_balance
+        // Merge OPENING BALANCES (IB) for balance-sheet accounts. IB is a
+        // STATE (opening_balances table, per fiscal_year), not a journal
+        // transaction — this is the single IB mechanism (2026-07-07 decision;
+        // the verifikat-IB approach was rejected: it pollutes the journal and
+        // makes the IB|movement|UB three-column report impossible).
+        // Fiscal year = year of the report's end date (BR is an as-of report).
+        const fiscalYearForIB = new Date(untilDate || new Date().toISOString()).getFullYear();
+        const { data: ibRows } = await supabase.from('opening_balances')
+          .select('account_code, account_name, amount_cents, balance_type')
+          .eq('fiscal_year', fiscalYearForIB);
+        const ibByAccount = new Map<string, number>();
+        for (const ib of (ibRows || []) as any[]) {
+          // signed in the account's NORMAL direction: debit-normal accounts
+          // count debit-IB as +, credit-normal count credit-IB as +.
+          const normal = chartMap.get(ib.account_code)?.normal_balance
+            || (ib.balance_type === 'debit' ? 'debit' : 'credit');
+          const signed = ib.balance_type === normal ? Number(ib.amount_cents) : -Number(ib.amount_cents);
+          ibByAccount.set(ib.account_code, (ibByAccount.get(ib.account_code) || 0) + signed);
+          if (!balanceMap.has(ib.account_code)) {
+            balanceMap.set(ib.account_code, {
+              account_code: ib.account_code,
+              account_name: ib.account_name || chartMap.get(ib.account_code)?.account_name || ib.account_code,
+              account_type: chartMap.get(ib.account_code)?.account_type || 'unknown',
+              debit_total: 0, credit_total: 0, balance: 0,
+            });
+          }
+        }
+
+        // Calculate balances based on normal_balance. Balance-sheet accounts
+        // (asset/liability/equity) carry IB + movement; P&L accounts are
+        // period-only (their IB is inside equity via retained earnings).
         for (const [code, bal] of balanceMap) {
           const normalBalance = chartMap.get(code)?.normal_balance || 'debit';
-          bal.balance = normalBalance === 'debit'
+          const movement = normalBalance === 'debit'
             ? bal.debit_total - bal.credit_total
             : bal.credit_total - bal.debit_total;
+          const acctType = bal.account_type;
+          const opening = (acctType === 'asset' || acctType === 'liability' || acctType === 'equity')
+            ? (ibByAccount.get(code) || 0) : 0;
+          (bal as any).opening_cents = opening;
+          (bal as any).movement_cents = movement;
+          bal.balance = opening + movement;
         }
 
         const balances = Array.from(balanceMap.values()).sort((a, b) => a.account_code.localeCompare(b.account_code));

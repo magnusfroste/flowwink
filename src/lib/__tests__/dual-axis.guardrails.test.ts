@@ -121,4 +121,11 @@ describe('dual-axis guardrails', () => {
     const migs = readdirSync(join(ROOT, 'supabase/migrations'));
     expect(migs.some((f) => f.includes('journal-entry-template-provenance'))).toBe(true);
   });
+
+  it('IB: opening balances live in opening_balances (state) and are merged into balance reports', () => {
+    const src = read('supabase/functions/agent-execute/index.ts');
+    expect(src).toContain('fiscalYearForIB');
+    expect(src).toContain('opening_cents');
+    expect(src).toContain('movement_cents');
+  });
 });
