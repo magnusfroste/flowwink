@@ -227,3 +227,6 @@ verify_jwt = false
 
 [functions.signal-ingest]
 verify_jwt = false
+
+[functions.send-calendar-reminders]
+verify_jwt = false
