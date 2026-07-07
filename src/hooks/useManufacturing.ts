@@ -233,3 +233,40 @@ export const useCheckAvailability = () =>
   useMoMutation<{ p_mo_id: string }>('check_mo_availability', 'Availability checked');
 export const useTriggerProcurement = () =>
   useMoMutation<{ p_mo_id: string }>('trigger_procurement_for_mo', 'Procurement requested');
+
+export interface MrpCandidate {
+  product_id: string;
+  product_name: string;
+  quantity_on_hand: number;
+  reorder_point: number;
+  suggested_qty: number;
+  bom_id: string;
+}
+
+export interface MrpRunResult {
+  success: boolean;
+  dry_run: boolean;
+  candidate_count: number;
+  created: number;
+  candidates: MrpCandidate[];
+}
+
+export function useMrpRun() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (p_dry_run: boolean): Promise<MrpRunResult> => {
+      const { data, error } = await supabase.rpc('mrp_reorder_run' as never, { p_dry_run } as never);
+      if (error) throw error;
+      return data as unknown as MrpRunResult;
+    },
+    onSuccess: (data) => {
+      if (!data.dry_run) {
+        toast({ title: `Created ${data.created} draft MO(s) ✓` });
+        qc.invalidateQueries({ queryKey: ['manufacturing_orders'] });
+      }
+    },
+    onError: (e: Error) =>
+      toast({ title: 'MRP run failed', description: e.message, variant: 'destructive' }),
+  });
+}
