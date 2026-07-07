@@ -142,6 +142,18 @@ export default function HRPage() {
           <TabsContent value="contracts">
             <ContractsPanel />
           </TabsContent>
+          <TabsContent value="compensation">
+            <CompensationPanel />
+          </TabsContent>
+          <TabsContent value="training">
+            <TrainingPanel />
+          </TabsContent>
+          <TabsContent value="disciplinary">
+            <DisciplinaryPanel />
+          </TabsContent>
+          <TabsContent value="shifts">
+            <ShiftsPanel />
+          </TabsContent>
         </Tabs>
       </AdminPageContainer>
     </AdminLayout>
