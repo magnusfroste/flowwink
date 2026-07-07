@@ -293,8 +293,11 @@ export default function POSPage() {
               <TabsTrigger value="register">Register</TabsTrigger>
               <TabsTrigger value="session">Session</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="tables">Tables</TabsTrigger>
+              <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
               <TabsTrigger value="gift-cards">Gift Cards</TabsTrigger>
             </TabsList>
+
 
             {/* Register / sale */}
             <TabsContent value="register" className="space-y-4">
