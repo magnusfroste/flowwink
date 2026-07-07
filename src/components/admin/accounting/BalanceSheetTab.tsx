@@ -72,10 +72,11 @@ export function BalanceSheetTab() {
   const mutedOpening = report.allOpeningZero;
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        What the business owns and owes at year-end, alongside the opening position and the change during the year.
-      </p>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Balance Sheet"
+        description="What the business owns and owes at year-end, alongside the opening position and the change during the year."
+      />
     <div className="rounded-lg border bg-card">
       <div className="flex items-center gap-6 px-6 py-4 border-b">
         <div className="text-sm font-medium">{fiscalYear}</div>
