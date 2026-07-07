@@ -82,6 +82,8 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '2050', account_name: 'Vinst eller förlust föregående år', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2070', account_name: 'Uppskrivningsfond', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2072', account_name: 'Reservfond', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2013', account_name: 'Övriga egna uttag', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '2018', account_name: 'Övriga egna insättningar', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2080', account_name: 'Överkursfond', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2081', account_name: 'Fond för utvecklingsutgifter', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2091', account_name: 'Balanserad vinst eller förlust', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
@@ -99,6 +101,7 @@ export const BAS_2024_ACCOUNTS = [
   // Kortfristiga skulder
   { account_code: '2410', account_name: 'Kortfristiga banklån', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2420', account_name: 'Förskott från kunder', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2350', account_name: 'Andra långfristiga skulder till kreditinstitut', account_type: 'liability', account_category: 'Långfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2440', account_name: 'Leverantörsskulder', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2450', account_name: 'Fakturerad men ej upparbetad intäkt', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2460', account_name: 'Skatteskulder', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
@@ -124,6 +127,7 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '2890', account_name: 'Upplupna semesterlöner', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2891', account_name: 'Upplupna sociala avgifter', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2920', account_name: 'Upplupna löner', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2898', account_name: 'Outtagen vinstutdelning', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2990', account_name: 'Upplupna kostnader', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
 
   // ============================================================
@@ -254,6 +258,8 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '7220', account_name: 'Avgifter för tjänstepension', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '7230', account_name: 'Övriga sociala kostnader', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '7290', account_name: 'Övriga personalkostnader', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '7321', account_name: 'Skattefria traktamenten, Sverige', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '7331', account_name: 'Skattefria bilersättningar', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '7310', account_name: 'Utbildning', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '7320', account_name: 'Sjukvård', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '7330', account_name: 'Personalförsäkringar', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
@@ -280,6 +286,7 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '8320', account_name: 'Ränteintäkter skattefria', account_type: 'revenue', account_category: 'Finansiella poster', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '8330', account_name: 'Valutakursvinster på fordringar', account_type: 'revenue', account_category: 'Finansiella poster', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '8410', account_name: 'Räntekostnader', account_type: 'expense', account_category: 'Finansiella poster', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '8999', account_name: 'Årets resultat', account_type: 'expense', account_category: 'Årets resultat', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '8420', account_name: 'Valutakursförluster', account_type: 'expense', account_category: 'Finansiella poster', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '8422', account_name: 'Dröjsmålsräntor', account_type: 'expense', account_category: 'Finansiella poster', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '8430', account_name: 'Räntekostnader till koncernföretag', account_type: 'expense', account_category: 'Finansiella poster', normal_balance: 'debit', locale: 'se-bas2024' },
