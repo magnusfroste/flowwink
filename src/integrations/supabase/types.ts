@@ -1726,6 +1726,47 @@ export type Database = {
           },
         ]
       }
+      asset_revaluations: {
+        Row: {
+          amount_cents: number
+          asset_id: string
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          new_value_cents: number
+          reason: string | null
+          revaluation_date: string
+        }
+        Insert: {
+          amount_cents: number
+          asset_id: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          new_value_cents: number
+          reason?: string | null
+          revaluation_date?: string
+        }
+        Update: {
+          amount_cents?: number
+          asset_id?: string
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          new_value_cents?: number
+          reason?: string | null
+          revaluation_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_revaluations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_entries: {
         Row: {
           break_minutes: number
@@ -2910,9 +2951,12 @@ export type Database = {
           location: string | null
           related_entity_id: string | null
           related_entity_type: string | null
+          reminder_minutes: number | null
+          reminder_sent_at: string | null
           starts_at: string
           title: string
           updated_at: string
+          visibility: string
         }
         Insert: {
           all_day?: boolean
@@ -2925,9 +2969,12 @@ export type Database = {
           location?: string | null
           related_entity_id?: string | null
           related_entity_type?: string | null
+          reminder_minutes?: number | null
+          reminder_sent_at?: string | null
           starts_at: string
           title: string
           updated_at?: string
+          visibility?: string
         }
         Update: {
           all_day?: boolean
@@ -2940,9 +2987,12 @@ export type Database = {
           location?: string | null
           related_entity_id?: string | null
           related_entity_type?: string | null
+          reminder_minutes?: number | null
+          reminder_sent_at?: string | null
           starts_at?: string
           title?: string
           updated_at?: string
+          visibility?: string
         }
         Relationships: []
       }
@@ -4341,24 +4391,33 @@ export type Database = {
           asset_id: string
           created_at: string
           id: string
+          is_manual: boolean
           journal_entry_id: string | null
+          notes: string | null
           period_date: string
+          units: number | null
         }
         Insert: {
           amount_cents: number
           asset_id: string
           created_at?: string
           id?: string
+          is_manual?: boolean
           journal_entry_id?: string | null
+          notes?: string | null
           period_date: string
+          units?: number | null
         }
         Update: {
           amount_cents?: number
           asset_id?: string
           created_at?: string
           id?: string
+          is_manual?: boolean
           journal_entry_id?: string | null
+          notes?: string | null
           period_date?: string
+          units?: number | null
         }
         Relationships: [
           {
@@ -5661,10 +5720,14 @@ export type Database = {
           disposed_at: string | null
           id: string
           in_service_date: string
+          location: string | null
           name: string
+          parent_asset_id: string | null
           purchase_date: string
           salvage_cents: number
           status: string
+          total_expected_units: number | null
+          units_depreciated: number
           updated_at: string
           useful_life_months: number
         }
@@ -5682,10 +5745,14 @@ export type Database = {
           disposed_at?: string | null
           id?: string
           in_service_date?: string
+          location?: string | null
           name: string
+          parent_asset_id?: string | null
           purchase_date?: string
           salvage_cents?: number
           status?: string
+          total_expected_units?: number | null
+          units_depreciated?: number
           updated_at?: string
           useful_life_months: number
         }
@@ -5703,14 +5770,26 @@ export type Database = {
           disposed_at?: string | null
           id?: string
           in_service_date?: string
+          location?: string | null
           name?: string
+          parent_asset_id?: string | null
           purchase_date?: string
           salvage_cents?: number
           status?: string
+          total_expected_units?: number | null
+          units_depreciated?: number
           updated_at?: string
           useful_life_months?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fixed_assets_parent_asset_id_fkey"
+            columns: ["parent_asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flowpilot_briefings: {
         Row: {
@@ -8581,6 +8660,8 @@ export type Database = {
           gross_cents: number
           id: string
           net_cents: number
+          overtime_hours: number
+          overtime_pay_cents: number
           pension_employee_cents: number
           pension_employer_cents: number
           run_id: string
@@ -8600,6 +8681,8 @@ export type Database = {
           gross_cents?: number
           id?: string
           net_cents?: number
+          overtime_hours?: number
+          overtime_pay_cents?: number
           pension_employee_cents?: number
           pension_employer_cents?: number
           run_id: string
@@ -8619,6 +8702,8 @@ export type Database = {
           gross_cents?: number
           id?: string
           net_cents?: number
+          overtime_hours?: number
+          overtime_pay_cents?: number
           pension_employee_cents?: number
           pension_employer_cents?: number
           run_id?: string
@@ -13382,6 +13467,12 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          approval_notes: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          cost_rate_cents: number | null
           created_at: string
           description: string | null
           employee_id: string | null
@@ -13391,12 +13482,19 @@ export type Database = {
           invoice_id: string | null
           is_billable: boolean | null
           is_invoiced: boolean | null
+          overtime_hours: number
           project_id: string
           task_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          cost_rate_cents?: number | null
           created_at?: string
           description?: string | null
           employee_id?: string | null
@@ -13406,12 +13504,19 @@ export type Database = {
           invoice_id?: string | null
           is_billable?: boolean | null
           is_invoiced?: boolean | null
+          overtime_hours?: number
           project_id: string
           task_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          cost_rate_cents?: number | null
           created_at?: string
           description?: string | null
           employee_id?: string | null
@@ -13421,6 +13526,7 @@ export type Database = {
           invoice_id?: string | null
           is_billable?: boolean | null
           is_invoiced?: boolean | null
+          overtime_hours?: number
           project_id?: string
           task_id?: string | null
           updated_at?: string
@@ -14661,6 +14767,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_overtime_rules: {
+        Args: {
+          p_daily_threshold_hours?: number
+          p_end_date: string
+          p_start_date: string
+        }
+        Returns: Json
+      }
       apply_pension: {
         Args: {
           p_employee_pct?: number
@@ -14682,6 +14796,16 @@ export type Database = {
       apply_stock_movement_event: {
         Args: { p_payload: Json }
         Returns: undefined
+      }
+      apply_timesheet_overtime: {
+        Args: {
+          p_employee_id?: string
+          p_hours_per_day?: number
+          p_multiplier?: number
+          p_run_id: string
+          p_work_days_per_month?: number
+        }
+        Returns: Json
       }
       approve_expense_report: { Args: { p_report_id: string }; Returns: Json }
       approve_payroll_run: { Args: { p_run_id: string }; Returns: Json }
@@ -14996,10 +15120,20 @@ export type Database = {
         Args: { p_recording_url?: string; p_webinar_id: string }
         Returns: Json
       }
-      compute_monthly_depreciation: {
-        Args: { p_asset: Database["public"]["Tables"]["fixed_assets"]["Row"] }
-        Returns: number
-      }
+      compute_monthly_depreciation:
+        | {
+            Args: {
+              p_asset: Database["public"]["Tables"]["fixed_assets"]["Row"]
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_asset: Database["public"]["Tables"]["fixed_assets"]["Row"]
+              p_period_date: string
+            }
+            Returns: number
+          }
       confirm_mo: { Args: { p_mo_id: string }; Returns: Json }
       confirm_newsletter_subscription: {
         Args: { p_token: string }
@@ -15161,6 +15295,10 @@ export type Database = {
         Args: { p_series: string; p_voucher_number: number; p_year: number }
         Returns: Json
       }
+      export_calendar_ics: {
+        Args: { p_from?: string; p_include_private?: boolean; p_to?: string }
+        Returns: string
+      }
       extract_email_address: { Args: { raw: string }; Returns: string }
       find_duplicate_companies: {
         Args: { p_limit?: number; p_threshold?: number }
@@ -15249,6 +15387,10 @@ export type Database = {
       get_conversation_token_estimate: {
         Args: { p_conversation_id: string }
         Returns: number
+      }
+      get_depreciation_schedule: {
+        Args: { p_asset_id?: string; p_months?: number }
+        Returns: Json
       }
       get_employee_leave_balances: {
         Args: { p_employee_id: string; p_year?: number }
@@ -15604,6 +15746,17 @@ export type Database = {
         Args: { p_all?: boolean; p_slug?: string }
         Returns: Json
       }
+      log_indirect_time: {
+        Args: {
+          p_category: string
+          p_description?: string
+          p_employee_id?: string
+          p_entry_date: string
+          p_hours: number
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       log_migration_run: {
         Args: {
           p_metadata?: Json
@@ -15671,9 +15824,11 @@ export type Database = {
           p_event_id?: string
           p_from?: string
           p_location?: string
+          p_reminder_minutes?: number
           p_starts_at?: string
           p_title?: string
           p_to?: string
+          p_visibility?: string
         }
         Returns: Json
       }
@@ -15866,6 +16021,17 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_timesheet_approval: {
+        Args: {
+          p_action: string
+          p_employee_id?: string
+          p_end_date: string
+          p_notes?: string
+          p_start_date: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       manage_work_center: {
         Args: {
           p_action: string
@@ -15985,8 +16151,30 @@ export type Database = {
         }
         Returns: Json
       }
+      payroll_timesheet_basis: {
+        Args: { p_period_date?: string }
+        Returns: Json
+      }
+      post_manual_depreciation: {
+        Args: {
+          p_amount_cents: number
+          p_asset_id: string
+          p_period_date?: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
       post_to_cowork_chat: {
         Args: { p_author_name?: string; p_content: string; p_metadata?: Json }
+        Returns: Json
+      }
+      post_units_depreciation: {
+        Args: {
+          p_asset_id: string
+          p_notes?: string
+          p_period_date?: string
+          p_units: number
+        }
         Returns: Json
       }
       prepare_vat_return: {
@@ -16194,10 +16382,14 @@ export type Database = {
           disposed_at: string | null
           id: string
           in_service_date: string
+          location: string | null
           name: string
+          parent_asset_id: string | null
           purchase_date: string
           salvage_cents: number
           status: string
+          total_expected_units: number | null
+          units_depreciated: number
           updated_at: string
           useful_life_months: number
         }
@@ -16383,6 +16575,17 @@ export type Database = {
         }[]
       }
       return_reason_report: { Args: { p_days?: number }; Returns: Json }
+      revalue_fixed_asset: {
+        Args: {
+          p_asset_id: string
+          p_impairment_account?: string
+          p_new_value_cents: number
+          p_reason?: string
+          p_revaluation_date?: string
+          p_reversal_account?: string
+        }
+        Returns: Json
+      }
       revalue_open_balances: {
         Args: {
           p_ap_account?: string
@@ -16711,6 +16914,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      split_time_entry: {
+        Args: {
+          p_allocations: Json
+          p_allow_total_change?: boolean
+          p_entry_id: string
+        }
+        Returns: Json
+      }
       start_mo: { Args: { p_mo_id: string }; Returns: Json }
       start_webinar: { Args: { p_webinar_id: string }; Returns: Json }
       stitch_visitor_to_lead: {
@@ -16732,6 +16943,14 @@ export type Database = {
         Returns: Json
       }
       sweep_stale_voice_calls: { Args: never; Returns: number }
+      timesheet_utilization_report: {
+        Args: {
+          p_capacity_hours_per_day?: number
+          p_end_date: string
+          p_start_date: string
+        }
+        Returns: Json
+      }
       transfer_stock: {
         Args: {
           p_from_location_id: string
@@ -16836,6 +17055,17 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      update_fixed_asset: {
+        Args: {
+          p_asset_id: string
+          p_description?: string
+          p_location?: string
+          p_name?: string
+          p_parent_asset_id?: string
+          p_total_expected_units?: number
+        }
+        Returns: Json
       }
       validate_discount_code: {
         Args: { p_code: string; p_currency?: string; p_order_cents?: number }

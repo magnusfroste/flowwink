@@ -21,6 +21,9 @@ export interface Project {
   updated_at: string;
 }
 
+export type ApprovalStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+export type TimeCategory = 'work' | 'pto' | 'sick' | 'training' | 'overhead';
+
 export interface TimeEntry {
   id: string;
   user_id: string;
@@ -33,6 +36,13 @@ export interface TimeEntry {
   invoice_id: string | null;
   created_at: string;
   updated_at: string;
+  employee_id: string | null;
+  approval_status: ApprovalStatus | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  approval_notes: string | null;
+  category: TimeCategory | null;
+  overtime_hours: number | null;
   // Joined
   projects?: Pick<Project, 'name' | 'color' | 'client_name'>;
 }
