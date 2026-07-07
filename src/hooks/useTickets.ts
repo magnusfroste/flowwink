@@ -253,3 +253,51 @@ export function useAddTicketComment() {
 }
 
 export { TICKET_STATUSES };
+
+export interface TicketSearchResult {
+  id: string;
+  subject: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  category: TicketCategory;
+  contact_email: string | null;
+  contact_name: string | null;
+  assigned_to: string | null;
+  tags: string[];
+  sla_deadline: string | null;
+  created_at: string;
+}
+
+export function useTicketSearch(query: string, status?: TicketStatus) {
+  return useQuery({
+    queryKey: ['tickets', 'search', query, status],
+    enabled: query.trim().length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('search_tickets', {
+        p_query: query.trim(),
+        p_status: status ?? null,
+        p_limit: 50,
+      } as never);
+      if (error) throw error;
+      const payload = data as unknown as { results?: TicketSearchResult[] } | null;
+      return payload?.results ?? [];
+    },
+  });
+}
+
+export function useUpdateTicketTags() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ tags, updated_at: new Date().toISOString() } as never)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
+    onError: (err: Error) => toast({ title: 'Failed to update tags', description: err.message, variant: 'destructive' }),
+  });
+}
+
