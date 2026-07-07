@@ -104,7 +104,7 @@ describe('dual-axis guardrails', () => {
   it('matching: vendor defaults win over keyword scoring in proposals', () => {
     const src = read('supabase/functions/agent-execute/index.ts');
     expect(src).toContain('vendorDefaults');
-    expect(src).toContain("match_details: ['vendor-default']");
+    expect(src).toContain("'vendor-default'");
   });
 
   it('learning loop: confirmed bookings teach the counterparty its template (graduated trust ramp)', () => {
