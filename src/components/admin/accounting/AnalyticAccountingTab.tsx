@@ -7,7 +7,7 @@ import {
   type AnalyticAccountType,
 } from '@/hooks/useAnalyticAccounting';
 import { useProjects } from '@/hooks/useProjects';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+// Card wrappers removed — this tab now uses the shared AccountingTabHeader shell.
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
