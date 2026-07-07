@@ -3542,6 +3542,7 @@ export type Database = {
           account_owner: string | null
           address: string | null
           annual_revenue_cents: number | null
+          country: string | null
           created_at: string
           created_by: string | null
           credit_limit_cents: number | null
@@ -3567,6 +3568,7 @@ export type Database = {
           account_owner?: string | null
           address?: string | null
           annual_revenue_cents?: number | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit_cents?: number | null
@@ -3592,6 +3594,7 @@ export type Database = {
           account_owner?: string | null
           address?: string | null
           annual_revenue_cents?: number | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit_cents?: number | null
@@ -5097,8 +5100,10 @@ export type Database = {
           monthly_salary_cents: number
           name: string
           notes: string | null
+          payroll_country: string
           personal_number: string | null
           phone: string | null
+          salary_structure_id: string | null
           start_date: string | null
           status: string
           tax_rate_pct: number
@@ -5121,8 +5126,10 @@ export type Database = {
           monthly_salary_cents?: number
           name: string
           notes?: string | null
+          payroll_country?: string
           personal_number?: string | null
           phone?: string | null
+          salary_structure_id?: string | null
           start_date?: string | null
           status?: string
           tax_rate_pct?: number
@@ -5145,8 +5152,10 @@ export type Database = {
           monthly_salary_cents?: number
           name?: string
           notes?: string | null
+          payroll_country?: string
           personal_number?: string | null
           phone?: string | null
+          salary_structure_id?: string | null
           start_date?: string | null
           status?: string
           tax_rate_pct?: number
@@ -5160,6 +5169,20 @@ export type Database = {
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_payroll_country_fk"
+            columns: ["payroll_country"]
+            isOneToOne: false
+            referencedRelation: "payroll_country_profiles"
+            referencedColumns: ["country_code"]
+          },
+          {
+            foreignKeyName: "employees_salary_structure_id_fkey"
+            columns: ["salary_structure_id"]
+            isOneToOne: false
+            referencedRelation: "salary_structures"
             referencedColumns: ["id"]
           },
         ]
@@ -6230,6 +6253,72 @@ export type Database = {
           },
         ]
       }
+      fx_forward_contracts: {
+        Row: {
+          amount_cents: number
+          base_currency: string
+          contract_ref: string | null
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          direction: string
+          forward_rate: number
+          id: string
+          journal_id: string | null
+          notes: string | null
+          quote_currency: string
+          realized_gain_cents: number | null
+          settled_at: string | null
+          settled_rate: number | null
+          status: string
+          trade_date: string
+          updated_at: string
+          value_date: string
+        }
+        Insert: {
+          amount_cents: number
+          base_currency: string
+          contract_ref?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          forward_rate: number
+          id?: string
+          journal_id?: string | null
+          notes?: string | null
+          quote_currency?: string
+          realized_gain_cents?: number | null
+          settled_at?: string | null
+          settled_rate?: number | null
+          status?: string
+          trade_date?: string
+          updated_at?: string
+          value_date: string
+        }
+        Update: {
+          amount_cents?: number
+          base_currency?: string
+          contract_ref?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          forward_rate?: number
+          id?: string
+          journal_id?: string | null
+          notes?: string | null
+          quote_currency?: string
+          realized_gain_cents?: number | null
+          settled_at?: string | null
+          settled_rate?: number | null
+          status?: string
+          trade_date?: string
+          updated_at?: string
+          value_date?: string
+        }
+        Relationships: []
+      }
       gift_cards: {
         Row: {
           balance_cents: number
@@ -6957,6 +7046,7 @@ export type Database = {
           reference_number: string | null
           source: string
           status: string
+          subsidiary_id: string | null
           template_id: string | null
           updated_at: string
           vendor_id: string | null
@@ -6976,6 +7066,7 @@ export type Database = {
           reference_number?: string | null
           source?: string
           status?: string
+          subsidiary_id?: string | null
           template_id?: string | null
           updated_at?: string
           vendor_id?: string | null
@@ -6995,6 +7086,7 @@ export type Database = {
           reference_number?: string | null
           source?: string
           status?: string
+          subsidiary_id?: string | null
           template_id?: string | null
           updated_at?: string
           vendor_id?: string | null
@@ -7015,6 +7107,13 @@ export type Database = {
             columns: ["journal_id"]
             isOneToOne: false
             referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_subsidiary_id_fkey"
+            columns: ["subsidiary_id"]
+            isOneToOne: false
+            referencedRelation: "subsidiaries"
             referencedColumns: ["id"]
           },
           {
@@ -8933,6 +9032,39 @@ export type Database = {
           },
         ]
       }
+      payroll_country_profiles: {
+        Row: {
+          country_code: string
+          created_at: string
+          currency: string
+          default_tax_pct: number
+          employer_social_pct: number
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          currency?: string
+          default_tax_pct: number
+          employer_social_pct: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          currency?: string
+          default_tax_pct?: number
+          employer_social_pct?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payroll_export_lines: {
         Row: {
           created_at: string
@@ -9067,6 +9199,7 @@ export type Database = {
       }
       payroll_lines: {
         Row: {
+          advance_deduction_cents: number
           benefits_cents: number
           components: Json
           created_at: string
@@ -9085,9 +9218,11 @@ export type Database = {
           sick_pay_cents: number
           social_fee_cents: number
           tax_cents: number
+          tax_correction_cents: number
           taxable_cents: number
         }
         Insert: {
+          advance_deduction_cents?: number
           benefits_cents?: number
           components?: Json
           created_at?: string
@@ -9106,9 +9241,11 @@ export type Database = {
           sick_pay_cents?: number
           social_fee_cents?: number
           tax_cents?: number
+          tax_correction_cents?: number
           taxable_cents?: number
         }
         Update: {
+          advance_deduction_cents?: number
           benefits_cents?: number
           components?: Json
           created_at?: string
@@ -9127,6 +9264,7 @@ export type Database = {
           sick_pay_cents?: number
           social_fee_cents?: number
           tax_cents?: number
+          tax_correction_cents?: number
           taxable_cents?: number
         }
         Relationships: [
@@ -9157,6 +9295,7 @@ export type Database = {
           payment_journal_id: string | null
           period_date: string
           status: string
+          total_advances_cents: number
           total_gross_cents: number
           total_net_cents: number
           total_pension_employee_cents: number
@@ -9174,6 +9313,7 @@ export type Database = {
           payment_journal_id?: string | null
           period_date: string
           status?: string
+          total_advances_cents?: number
           total_gross_cents?: number
           total_net_cents?: number
           total_pension_employee_cents?: number
@@ -9191,6 +9331,7 @@ export type Database = {
           payment_journal_id?: string | null
           period_date?: string
           status?: string
+          total_advances_cents?: number
           total_gross_cents?: number
           total_net_cents?: number
           total_pension_employee_cents?: number
@@ -10127,33 +10268,54 @@ export type Database = {
       pricelist_items: {
         Row: {
           created_at: string
+          days_of_week: number[] | null
           discount_pct: number | null
           fixed_price_cents: number | null
+          formula_base: string | null
           id: string
+          margin_pct: number | null
           min_quantity: number
           notes: string | null
           pricelist_id: string
           product_id: string | null
+          rounding_cents: number | null
+          surcharge_cents: number | null
+          time_end: string | null
+          time_start: string | null
         }
         Insert: {
           created_at?: string
+          days_of_week?: number[] | null
           discount_pct?: number | null
           fixed_price_cents?: number | null
+          formula_base?: string | null
           id?: string
+          margin_pct?: number | null
           min_quantity?: number
           notes?: string | null
           pricelist_id: string
           product_id?: string | null
+          rounding_cents?: number | null
+          surcharge_cents?: number | null
+          time_end?: string | null
+          time_start?: string | null
         }
         Update: {
           created_at?: string
+          days_of_week?: number[] | null
           discount_pct?: number | null
           fixed_price_cents?: number | null
+          formula_base?: string | null
           id?: string
+          margin_pct?: number | null
           min_quantity?: number
           notes?: string | null
           pricelist_id?: string
           product_id?: string | null
+          rounding_cents?: number | null
+          surcharge_cents?: number | null
+          time_end?: string | null
+          time_start?: string | null
         }
         Relationships: [
           {
@@ -10172,9 +10334,43 @@ export type Database = {
           },
         ]
       }
+      pricelist_revisions: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          item_id: string | null
+          pricelist_id: string | null
+          snapshot: Json
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          item_id?: string | null
+          pricelist_id?: string | null
+          snapshot: Json
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          item_id?: string | null
+          pricelist_id?: string | null
+          snapshot?: Json
+          table_name?: string
+        }
+        Relationships: []
+      }
       pricelists: {
         Row: {
           company_id: string | null
+          country: string | null
           created_at: string
           created_by: string | null
           currency: string
@@ -10185,12 +10381,14 @@ export type Database = {
           lead_id: string | null
           name: string
           priority: number
+          segment: string | null
           updated_at: string
           valid_from: string | null
           valid_until: string | null
         }
         Insert: {
           company_id?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -10201,12 +10399,14 @@ export type Database = {
           lead_id?: string | null
           name: string
           priority?: number
+          segment?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
           company_id?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -10217,6 +10417,7 @@ export type Database = {
           lead_id?: string | null
           name?: string
           priority?: number
+          segment?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
@@ -12227,6 +12428,133 @@ export type Database = {
           },
         ]
       }
+      salary_advances: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          granted_date: string
+          id: string
+          journal_id: string | null
+          reason: string | null
+          repaid_at: string | null
+          repayment_run_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          granted_date?: string
+          id?: string
+          journal_id?: string | null
+          reason?: string | null
+          repaid_at?: string | null
+          repayment_run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          granted_date?: string
+          id?: string
+          journal_id?: string | null
+          reason?: string | null
+          repaid_at?: string | null
+          repayment_run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_advances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_structure_components: {
+        Row: {
+          amount_cents: number
+          component_type: string
+          created_at: string
+          id: string
+          label: string
+          pct_of_base: number | null
+          sort_order: number
+          structure_id: string
+          taxable: boolean
+        }
+        Insert: {
+          amount_cents?: number
+          component_type?: string
+          created_at?: string
+          id?: string
+          label: string
+          pct_of_base?: number | null
+          sort_order?: number
+          structure_id: string
+          taxable?: boolean
+        }
+        Update: {
+          amount_cents?: number
+          component_type?: string
+          created_at?: string
+          id?: string
+          label?: string
+          pct_of_base?: number | null
+          sort_order?: number
+          structure_id?: string
+          taxable?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_structure_components_structure_id_fkey"
+            columns: ["structure_id"]
+            isOneToOne: false
+            referencedRelation: "salary_structures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_structures: {
+        Row: {
+          active: boolean
+          base_salary_cents: number | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          base_salary_cents?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          base_salary_cents?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_intelligence_profiles: {
         Row: {
           created_at: string
@@ -13805,6 +14133,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subsidiaries: {
+        Row: {
+          code: string
+          country: string | null
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          country?: string | null
+          created_at?: string
+          currency: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          country?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       support_agents: {
         Row: {
@@ -15493,35 +15857,85 @@ export type Database = {
         }
         Relationships: []
       }
+      wiki_page_revisions: {
+        Row: {
+          action: string
+          content_md: string
+          edited_by: string | null
+          id: string
+          revised_at: string
+          revision_no: number
+          slug: string
+          title: string
+        }
+        Insert: {
+          action?: string
+          content_md: string
+          edited_by?: string | null
+          id?: string
+          revised_at?: string
+          revision_no: number
+          slug: string
+          title: string
+        }
+        Update: {
+          action?: string
+          content_md?: string
+          edited_by?: string | null
+          id?: string
+          revised_at?: string
+          revision_no?: number
+          slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
       wiki_pages: {
         Row: {
           content_md: string
           created_at: string
           created_by: string | null
+          editable_by: string
+          parent_slug: string | null
           slug: string
           title: string
           updated_at: string
           updated_by: string | null
+          visibility: string
         }
         Insert: {
           content_md?: string
           created_at?: string
           created_by?: string | null
+          editable_by?: string
+          parent_slug?: string | null
           slug: string
           title: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
         Update: {
           content_md?: string
           created_at?: string
           created_by?: string | null
+          editable_by?: string
+          parent_slug?: string | null
           slug?: string
           title?: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wiki_pages_parent_fk"
+            columns: ["parent_slug"]
+            isOneToOne: false
+            referencedRelation: "wiki_pages"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       wishlist_items: {
         Row: {
@@ -15810,6 +16224,15 @@ export type Database = {
       apply_stock_movement_event: {
         Args: { p_payload: Json }
         Returns: undefined
+      }
+      apply_tax_correction: {
+        Args: {
+          p_employee_id: string
+          p_reason?: string
+          p_run_id: string
+          p_tax_delta_cents: number
+        }
+        Returns: Json
       }
       apply_timesheet_overtime: {
         Args: {
@@ -16182,6 +16605,10 @@ export type Database = {
         Args: { p_line_id: string; p_lot_id?: string; p_qty_picked: number }
         Returns: Json
       }
+      consolidation_report: {
+        Args: { p_as_of?: string; p_presentation_currency?: string }
+        Returns: Json
+      }
       consultant_utilization_report: {
         Args: { p_consultant_id?: string; p_from?: string; p_to?: string }
         Returns: Json
@@ -16272,7 +16699,7 @@ export type Database = {
           _product_name: string
           _quantity?: number
           _start_date?: string
-          _unit_amount_cents: number
+          _unit_amount_cents?: number
         }
         Returns: Json
       }
@@ -16370,7 +16797,12 @@ export type Database = {
         Args: { p_line_id: string; p_qty?: number }
         Returns: Json
       }
+      fx_rate_at: {
+        Args: { p_at?: string; p_from: string; p_to: string }
+        Returns: number
+      }
       gen_webmeet_slug: { Args: never; Returns: string }
+      generate_agi: { Args: { p_period?: string }; Returns: Json }
       generate_mo_work_orders: { Args: { p_mo_id: string }; Returns: Json }
       generate_monthly_expense_report: {
         Args: { p_period?: string; p_user_id?: string }
@@ -16525,6 +16957,14 @@ export type Database = {
         Args: { p_email?: string; p_id: string }
         Returns: Json
       }
+      get_payslip: {
+        Args: { p_employee_id?: string; p_run_id?: string }
+        Returns: Json
+      }
+      get_pricelist_history: {
+        Args: { p_limit?: number; p_pricelist_id?: string }
+        Returns: Json
+      }
       get_project_schedule: { Args: { p_project_id: string }; Returns: Json }
       get_quote_by_token: {
         Args: { p_token: string }
@@ -16644,6 +17084,10 @@ export type Database = {
           p_employment_type?: string
           p_start_date?: string
         }
+        Returns: Json
+      }
+      import_exchange_rates: {
+        Args: { p_rates: Json; p_source?: string }
         Returns: Json
       }
       inspect_return: {
@@ -17036,6 +17480,23 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_fx_forward: {
+        Args: {
+          p_action: string
+          p_amount_cents?: number
+          p_base_currency?: string
+          p_contract_id?: string
+          p_contract_ref?: string
+          p_counterparty?: string
+          p_direction?: string
+          p_forward_rate?: number
+          p_notes?: string
+          p_quote_currency?: string
+          p_settled_rate?: number
+          p_value_date?: string
+        }
+        Returns: Json
+      }
       manage_gift_card: {
         Args: {
           p_action: string
@@ -17097,6 +17558,19 @@ export type Database = {
           p_request_id?: string
           p_status?: string
           p_title?: string
+        }
+        Returns: Json
+      }
+      manage_payroll_country: {
+        Args: {
+          p_action: string
+          p_country_code?: string
+          p_currency?: string
+          p_default_tax_pct?: number
+          p_employee_id?: string
+          p_employer_social_pct?: number
+          p_name?: string
+          p_notes?: string
         }
         Returns: Json
       }
@@ -17230,6 +17704,36 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_salary_advance: {
+        Args: {
+          p_action: string
+          p_advance_id?: string
+          p_amount_cents?: number
+          p_employee_id?: string
+          p_granted_date?: string
+          p_post_journal?: boolean
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      manage_salary_structure: {
+        Args: {
+          p_action: string
+          p_active?: boolean
+          p_amount_cents?: number
+          p_base_salary_cents?: number
+          p_component_id?: string
+          p_component_type?: string
+          p_description?: string
+          p_employee_id?: string
+          p_label?: string
+          p_name?: string
+          p_pct_of_base?: number
+          p_structure_id?: string
+          p_taxable?: boolean
+        }
+        Returns: Json
+      }
       manage_service_credit: {
         Args: {
           p_action: string
@@ -17329,6 +17833,20 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_subsidiary: {
+        Args: {
+          p_action: string
+          p_code?: string
+          p_country?: string
+          p_currency?: string
+          p_is_active?: boolean
+          p_journal_entry_id?: string
+          p_name?: string
+          p_notes?: string
+          p_subsidiary_id?: string
+        }
+        Returns: Json
+      }
       manage_task_dependency: {
         Args: {
           p_action: string
@@ -17356,6 +17874,38 @@ export type Database = {
           p_notes?: string
           p_start_date: string
           p_user_id?: string
+        }
+        Returns: Json
+      }
+      manage_vendor_price: {
+        Args: {
+          p_action: string
+          p_currency?: string
+          p_id?: string
+          p_is_preferred?: boolean
+          p_lead_time_days?: number
+          p_min_order_quantity?: number
+          p_notes?: string
+          p_price_tier_min_qty?: number
+          p_product_id?: string
+          p_unit_price_cents?: number
+          p_valid_from?: string
+          p_valid_until?: string
+          p_vendor_id?: string
+          p_vendor_sku?: string
+        }
+        Returns: Json
+      }
+      manage_wiki_hierarchy: {
+        Args: { p_action: string; p_parent_slug?: string; p_slug?: string }
+        Returns: Json
+      }
+      manage_wiki_permissions: {
+        Args: {
+          p_action: string
+          p_editable_by?: string
+          p_slug?: string
+          p_visibility?: string
         }
         Returns: Json
       }
@@ -17942,6 +18492,7 @@ export type Database = {
       resolve_pricelist_price: {
         Args: {
           p_at?: string
+          p_at_time?: string
           p_company_id?: string
           p_currency?: string
           p_lead_id?: string
@@ -17954,6 +18505,15 @@ export type Database = {
           pricelist_name: string
           source: string
         }[]
+      }
+      resolve_vendor_price: {
+        Args: {
+          p_at?: string
+          p_product_id: string
+          p_quantity?: number
+          p_vendor_id?: string
+        }
+        Returns: Json
       }
       resource_capacity_report: {
         Args: {
@@ -18372,6 +18932,10 @@ export type Database = {
         }
         Returns: Json
       }
+      subsidiary_ledger_report: {
+        Args: { p_from?: string; p_subsidiary_code: string; p_to?: string }
+        Returns: Json
+      }
       summarize_candidate_pipeline: {
         Args: { p_job_id?: string; p_stuck_threshold_days?: number }
         Returns: Json
@@ -18521,6 +19085,16 @@ export type Database = {
         Args: { p_format?: string; p_period?: string }
         Returns: Json
       }
+      wiki_page_history: {
+        Args: {
+          p_action: string
+          p_limit?: number
+          p_revision_id?: string
+          p_slug?: string
+        }
+        Returns: Json
+      }
+      year_end_payroll_summary: { Args: { p_year?: number }; Returns: Json }
       year_end_readiness: { Args: { p_year?: number }; Returns: Json }
     }
     Enums: {
