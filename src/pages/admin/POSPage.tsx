@@ -10,14 +10,18 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import {
   useRegisters, useOpenSession, useTodaySales, useRecentSales,
-  useOpenSessionMutation, useCloseSession, useRecordSale,
+  useOpenSessionMutation, useCloseSession, useRecordSale, useAddTip,
   usePosProducts,
   type PosSaleLine, type PosPayment, type PosProduct,
 } from '@/hooks/usePOS';
 import { Plus, Trash2, Receipt, Banknote, CreditCard, Smartphone, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { GiftCardsTab } from '@/components/admin/pos/GiftCardsTab';
+import { logger } from '@/lib/logger';
 
 function fmtMoney(cents: number, currency = 'SEK') {
   return `${(cents / 100).toFixed(2)} ${currency}`;
