@@ -33,7 +33,7 @@ export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('accounting_templates')
-        .select('id, name')
+        .select('id, template_name')
         .eq('id', templateId!)
         .maybeSingle();
       if (error) throw error;
@@ -52,7 +52,7 @@ export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <span>
               Booked via template:{' '}
-              <span className="text-foreground">{template?.name ?? '…'}</span>
+              <span className="text-foreground">{template?.template_name ?? '…'}</span>
             </span>
             {matchSource && (
               <Badge variant="secondary" className="font-normal text-[10px] px-1.5 py-0">
