@@ -89,6 +89,24 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
     );
   };
 
+  const addTag = (raw: string) => {
+    const t = raw.trim();
+    if (!t) return;
+    if (tags.includes(t)) return;
+    updateTags.mutate({ id: ticket.id, tags: [...tags, t] });
+    setTagInput("");
+  };
+
+  const removeTag = (t: string) => {
+    updateTags.mutate({ id: ticket.id, tags: tags.filter((x) => x !== t) });
+  };
+
+  const insertCanned = (id: string, body: string) => {
+    setNewComment((prev) => (prev ? `${prev}\n\n${body}` : body));
+    incrementUsage.mutate(id);
+  };
+
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-[520px] p-0 flex flex-col">
