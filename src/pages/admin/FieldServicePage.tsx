@@ -19,8 +19,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Loader2, Plus, Truck, CheckCircle2, Calendar, Clock } from 'lucide-react';
+import { Loader2, Plus, Truck, CheckCircle2, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { PackagesTab } from '@/components/admin/field-service/PackagesTab';
+import { ScheduleVisitDialog } from '@/components/admin/field-service/ScheduleVisitDialog';
+import { ServiceOrderDetailDialog } from '@/components/admin/field-service/ServiceOrderDetailDialog';
+import { useSlaBreaches } from '@/hooks/useFieldServiceRpc';
+
 
 const STATUS_VARIANT: Record<ServiceOrderStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   draft: 'outline',
