@@ -3,6 +3,7 @@ import { useFiscalYear } from './FiscalYearContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useVatReport } from '@/hooks/useTax';
@@ -97,7 +98,7 @@ export function VatReportTab() {
         <Card>
           <CardHeader className="pb-2"><CardDescription>Att betala / få tillbaka</CardDescription></CardHeader>
           <CardContent>
-            <div className={`text-2xl font-semibold ${netVat >= 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+            <div className={`text-2xl font-semibold ${netVat >= 0 ? 'text-destructive' : 'text-success'}`}>
               {formatSek(netVat)} kr
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -138,6 +139,3 @@ export function VatReportTab() {
     </div>
   );
 }
-
-// Local Input import (avoid circular)
-import { Input } from '@/components/ui/input';

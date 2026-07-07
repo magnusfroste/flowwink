@@ -51,6 +51,10 @@ export function LedgerTab() {
   }
 
   return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Every account with its opening balance, activity for the year, and closing balance. Click a row to see the vouchers behind it.
+      </p>
     <div className="rounded-lg border bg-card">
       <div className="flex flex-wrap items-center gap-6 px-6 py-4 border-b">
         <div className="text-sm font-medium">{fiscalYear}</div>
@@ -96,6 +100,7 @@ export function LedgerTab() {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }
@@ -202,9 +207,7 @@ function AccountLedgerLines({ data, fmt }: { data: any; fmt: (c: number) => stri
             <div className="truncate">{l.description}</div>
             <div
               className={`text-right font-mono tabular-nums ${
-                l.delta >= 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-destructive'
+                l.delta >= 0 ? 'text-success' : 'text-destructive'
               }`}
             >
               {l.delta >= 0 ? '+' : '\u2212'}

@@ -76,8 +76,8 @@ export function VoucherIntegrityTab() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Scanning…</p>
           ) : data && data.length === 0 ? (
-            <div className="flex items-center gap-2 p-4 rounded-md bg-muted/50">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+            <div className="flex items-center gap-2 p-4 rounded-md bg-success/10">
+              <CheckCircle className="h-5 w-5 text-success" />
               <span className="text-sm">No gaps detected for {year}{series && ` in series ${series}`}.</span>
             </div>
           ) : (

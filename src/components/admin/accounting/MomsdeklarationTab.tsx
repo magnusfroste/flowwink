@@ -58,7 +58,7 @@ export function MomsdeklarationTab() {
         <TableCell className="font-mono text-xs">{code}</TableCell>
         <TableCell>{b.label}</TableCell>
         <TableCell><Badge variant="outline" className="text-[10px]">{b.kind}</Badge></TableCell>
-        <TableCell className={`text-right font-mono ${isNet ? (b.amount_cents >= 0 ? 'text-destructive' : 'text-emerald-600') : ''}`}>
+        <TableCell className={`text-right font-mono ${isNet ? (b.amount_cents >= 0 ? 'text-destructive' : 'text-success') : ''}`}>
           {fmtSek(b.amount_cents)}
         </TableCell>
       </TableRow>
@@ -83,7 +83,7 @@ export function MomsdeklarationTab() {
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">År</label>
+              <label className="block text-xs text-muted-foreground mb-1">Year</label>
               <Input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-24" />
             </div>
             <div>
@@ -91,14 +91,14 @@ export function MomsdeklarationTab() {
               <Select value={mode} onValueChange={(v) => setMode(v as 'month' | 'quarter')}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="month">Månad</SelectItem>
-                  <SelectItem value="quarter">Kvartal</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="quarter">Quarter</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {mode === 'month' ? (
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Månad</label>
+                <label className="block text-xs text-muted-foreground mb-1">Month</label>
                 <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
                   <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -108,7 +108,7 @@ export function MomsdeklarationTab() {
               </div>
             ) : (
               <div>
-                <label className="block text-xs text-muted-foreground mb-1">Kvartal</label>
+                <label className="block text-xs text-muted-foreground mb-1">Quarter</label>
                 <Select value={String(quarter)} onValueChange={(v) => setQuarter(Number(v))}>
                   <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -119,7 +119,7 @@ export function MomsdeklarationTab() {
             )}
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
               {isFetching && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Uppdatera
+              Refresh
             </Button>
           </div>
         </CardContent>
@@ -139,7 +139,7 @@ export function MomsdeklarationTab() {
             <Card>
               <CardHeader className="pb-2"><CardDescription>Ruta 49 — {netCents >= 0 ? 'Att betala' : 'Återbetalning'}</CardDescription></CardHeader>
               <CardContent>
-                <div className={`text-2xl font-semibold ${netCents >= 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                <div className={`text-2xl font-semibold ${netCents >= 0 ? 'text-destructive' : 'text-success'}`}>
                   {fmtSek(netCents)} kr
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
