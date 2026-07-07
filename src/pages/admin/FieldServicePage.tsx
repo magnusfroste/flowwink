@@ -19,8 +19,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Loader2, Plus, Truck, CheckCircle2, Calendar, Clock } from 'lucide-react';
+import { Loader2, Plus, Truck, CheckCircle2, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { PackagesTab } from '@/components/admin/field-service/PackagesTab';
+import { ScheduleVisitDialog } from '@/components/admin/field-service/ScheduleVisitDialog';
+import { ServiceOrderDetailDialog } from '@/components/admin/field-service/ServiceOrderDetailDialog';
+import { useSlaBreaches } from '@/hooks/useFieldServiceRpc';
+
 
 const STATUS_VARIANT: Record<ServiceOrderStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   draft: 'outline',
@@ -39,11 +44,15 @@ const PRIORITY_COLOR: Record<string, string> = {
 };
 
 export default function FieldServicePage() {
-  const [activeTab, setActiveTab] = useState<'all' | ServiceOrderStatus>('all');
+  const [activeTab, setActiveTab] = useState<'all' | ServiceOrderStatus | 'packages'>('all');
   const [newOpen, setNewOpen] = useState(false);
+  const [scheduleOrderId, setScheduleOrderId] = useState<string | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const filter = activeTab === 'all' ? undefined : (activeTab as ServiceOrderStatus);
+  const filter = activeTab === 'all' || activeTab === 'packages' ? undefined : (activeTab as ServiceOrderStatus);
   const { data: orders = [], isLoading } = useServiceOrders(filter);
+  const { data: breaches } = useSlaBreaches();
+
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -105,32 +114,47 @@ export default function FieldServicePage() {
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="invoiced">Invoiced</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="packages">Packages</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : orders.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No service orders {filter ? `with status "${filter}"` : 'yet'}.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {orders.map((order) => (
-                <ServiceOrderRow key={order.id} order={order} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+        {activeTab === 'packages' ? (
+          <div className="mt-4"><PackagesTab /></div>
+        ) : (
+          <TabsContent value={activeTab} className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : orders.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No service orders {filter ? `with status "${filter}"` : 'yet'}.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {orders.map((order) => (
+                  <ServiceOrderRow
+                    key={order.id}
+                    order={order}
+                    breached={breaches?.has(order.id) ?? false}
+                    onSchedule={() => setScheduleOrderId(order.id)}
+                    onOpen={() => setDetailOrderId(order.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
+
+      <ScheduleVisitDialog orderId={scheduleOrderId} onClose={() => setScheduleOrderId(null)} />
+      <ServiceOrderDetailDialog orderId={detailOrderId} onClose={() => setDetailOrderId(null)} />
     </div>
     </AdminLayout>
   );
 }
+
 
 function KpiCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
@@ -148,12 +172,13 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
   );
 }
 
-function ServiceOrderRow({ order }: { order: ServiceOrder }) {
-  const updateStatus = useUpdateServiceOrderStatus();
+function ServiceOrderRow({ order, breached, onSchedule, onOpen }: {
+  order: ServiceOrder; breached: boolean; onSchedule: () => void; onOpen: () => void;
+}) {
   const complete = useCompleteServiceOrder();
 
   return (
-    <Card>
+    <Card className="cursor-pointer hover:bg-accent/40" onClick={onOpen}>
       <CardContent className="py-4 flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -161,6 +186,14 @@ function ServiceOrderRow({ order }: { order: ServiceOrder }) {
             <span className="font-semibold truncate">{order.title}</span>
             <Badge variant={STATUS_VARIANT[order.status]}>{order.status}</Badge>
             <span className={`text-xs uppercase ${PRIORITY_COLOR[order.priority]}`}>{order.priority}</span>
+            {(order as any).parent_order_id && (
+              <Badge variant="secondary" className="text-[10px]">Recurring</Badge>
+            )}
+            {breached && (
+              <Badge variant="destructive" className="text-[10px] gap-1">
+                <AlertTriangle className="h-3 w-3" /> SLA breach
+              </Badge>
+            )}
           </div>
           <div className="text-sm text-muted-foreground mt-1">
             {order.customer_name}
@@ -168,12 +201,12 @@ function ServiceOrderRow({ order }: { order: ServiceOrder }) {
             {order.scheduled_start && ` · ${format(new Date(order.scheduled_start), 'PP HH:mm')}`}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-sm font-mono">
             {order.total_amount.toFixed(2)} {order.currency}
           </span>
-          {order.status === 'draft' && (
-            <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: order.id, status: 'scheduled' })}>
+          {(order.status === 'draft' || order.status === 'scheduled') && (
+            <Button size="sm" variant="outline" onClick={onSchedule}>
               Schedule
             </Button>
           )}
@@ -187,6 +220,7 @@ function ServiceOrderRow({ order }: { order: ServiceOrder }) {
     </Card>
   );
 }
+
 
 function NewServiceOrderDialog({ onClose }: { onClose: () => void }) {
   const create = useCreateServiceOrder();
