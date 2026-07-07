@@ -15677,6 +15677,19 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_canned_response: {
+        Args: {
+          p_action: string
+          p_body_md?: string
+          p_category?: string
+          p_id?: string
+          p_is_active?: boolean
+          p_limit?: number
+          p_shortcut?: string
+          p_title?: string
+        }
+        Returns: Json
+      }
       manage_discount_code: {
         Args: {
           p_action: string
