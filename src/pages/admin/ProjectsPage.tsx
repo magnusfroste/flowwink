@@ -465,13 +465,39 @@ export default function ProjectsPage() {
               {selectedId ? (
                 <>
                   <ProjectMilestonesPanel projectId={selectedId} />
-                  <Card>
-                    <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
-                    <CardContent><TaskBoard projectId={selectedId} /></CardContent>
-                  </Card>
+                  <Tabs defaultValue="board">
+                    <TabsList>
+                      <TabsTrigger value="board">Board</TabsTrigger>
+                      <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                      <TabsTrigger value="capacity">Capacity</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="board">
+                      <Card>
+                        <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+                        <CardContent><TaskBoard projectId={selectedId} /></CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="timeline">
+                      <ProjectGantt projectId={selectedId} />
+                    </TabsContent>
+                    <TabsContent value="capacity">
+                      <ProjectCapacity projectId={selectedId} />
+                    </TabsContent>
+                  </Tabs>
                 </>
               ) : (
-                <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
+                <Tabs defaultValue="hint">
+                  <TabsList>
+                    <TabsTrigger value="hint">Overview</TabsTrigger>
+                    <TabsTrigger value="capacity">Capacity (global)</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="hint">
+                    <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
+                  </TabsContent>
+                  <TabsContent value="capacity">
+                    <ProjectCapacity projectId={null} />
+                  </TabsContent>
+                </Tabs>
               )}
             </div>
           </div>
