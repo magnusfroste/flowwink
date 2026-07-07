@@ -7,15 +7,18 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { DatesSetArg, EventClickArg } from '@fullcalendar/core';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 
 import { useCalendarSources, useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { NewCalendarEventDialog } from '@/components/admin/calendar/NewCalendarEventDialog';
+import { toast } from 'sonner';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
