@@ -262,27 +262,15 @@ export function EditTemplateDialog({ open, onOpenChange, template, cloneFrom }: 
                 line.credit_pct > 0 && line.debit_pct === 0 ? 'credit' : 'debit';
               const pct = side === 'debit' ? line.debit_pct : line.credit_pct;
               return (
-                <div
-                  key={i}
-                  className="grid grid-cols-[84px_1fr_84px_32px] gap-2 items-start border rounded p-2"
-                >
-                  <Select value={side} onValueChange={(v) => setSide(i, v as 'debit' | 'credit')}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="debit">Debit</SelectItem>
-                      <SelectItem value="credit">Credit</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <div className="space-y-1 min-w-0">
+                <div key={i} className="space-y-1.5 border rounded p-2">
+                  {/* Row 1: the account gets the full width — it carries the longest text */}
+                  <div className="flex items-center gap-2">
                     <Select
                       value={line.account_code}
                       onValueChange={(v) => handlePickAccount(i, v)}
                     >
                       <SelectTrigger
-                        className="text-sm"
+                        className="text-sm flex-1 min-w-0"
                         title={line.account_code ? `${line.account_code} — ${line.account_name}` : undefined}
                       >
                         <SelectValue placeholder="Account" />
@@ -295,36 +283,48 @@ export function EditTemplateDialog({ open, onOpenChange, template, cloneFrom }: 
                         ))}
                       </SelectContent>
                     </Select>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="shrink-0 h-9 w-8"
+                      onClick={() => setLines((p) => p.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Row 2: direction + description + % */}
+                  <div className="flex items-center gap-2">
+                    <Select value={side} onValueChange={(v) => setSide(i, v as 'debit' | 'credit')}>
+                      <SelectTrigger className="text-sm w-[92px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="debit">Debit</SelectItem>
+                        <SelectItem value="credit">Credit</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Input
                       placeholder="Description"
-                      className="text-sm"
+                      className="text-sm flex-1 min-w-0"
                       value={line.description || ''}
                       onChange={(e) => updateLine(i, { description: e.target.value })}
                     />
+                    <div className="relative w-[84px] shrink-0">
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        className="tabular-nums px-2 pr-5 text-right text-sm"
+                        value={Number.isFinite(pct) ? pct : 0}
+                        onChange={(e) => setPct(i, Number(e.target.value))}
+                      />
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        %
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      className="tabular-nums px-2 pr-5 text-right text-sm"
-                      value={Number.isFinite(pct) ? pct : 0}
-                      onChange={(e) => setPct(i, Number(e.target.value))}
-                    />
-                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                      %
-                    </span>
-                  </div>
-
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setLines((p) => p.filter((_, idx) => idx !== i))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               );
             })}
