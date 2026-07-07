@@ -13,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useProjects, useCreateProject, useProjectTasks, useCreateProjectTask, useUpdateProjectTask, useUpdateProject, useDeleteProject, useDeleteProjectTask, type Project } from "@/hooks/useProjects";
 import { ProjectMilestonesPanel } from "@/components/admin/projects/ProjectMilestonesPanel";
+import { ProjectGantt } from "@/components/admin/projects/ProjectGantt";
+import { ProjectCapacity } from "@/components/admin/projects/ProjectCapacity";
+import { TaskEditDialog } from "@/components/admin/projects/TaskEditDialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 
@@ -128,6 +132,7 @@ function TaskRow({
   const deleteTask = useDeleteProjectTask();
   const doneCount = subtasks.filter((s) => s.status === "done").length;
 
+  const [editOpen, setEditOpen] = useState(false);
   return (
     <Card
       className="group hover:shadow-sm transition-shadow"
@@ -175,6 +180,14 @@ function TaskRow({
             </button>
           )}
           <button
+            onClick={() => setEditOpen(true)}
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-opacity"
+            aria-label="Edit task"
+            title="Edit task"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
             onClick={() => deleteTask.mutate({ id: task.id, project_id: projectId })}
             className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
             aria-label="Delete task"
@@ -183,6 +196,9 @@ function TaskRow({
           </button>
         </div>
       </CardContent>
+      {editOpen && (
+        <TaskEditDialog task={task} projectId={projectId} onOpenChange={setEditOpen} />
+      )}
     </Card>
   );
 }
@@ -449,13 +465,39 @@ export default function ProjectsPage() {
               {selectedId ? (
                 <>
                   <ProjectMilestonesPanel projectId={selectedId} />
-                  <Card>
-                    <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
-                    <CardContent><TaskBoard projectId={selectedId} /></CardContent>
-                  </Card>
+                  <Tabs defaultValue="board">
+                    <TabsList>
+                      <TabsTrigger value="board">Board</TabsTrigger>
+                      <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                      <TabsTrigger value="capacity">Capacity</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="board">
+                      <Card>
+                        <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+                        <CardContent><TaskBoard projectId={selectedId} /></CardContent>
+                      </Card>
+                    </TabsContent>
+                    <TabsContent value="timeline">
+                      <ProjectGantt projectId={selectedId} />
+                    </TabsContent>
+                    <TabsContent value="capacity">
+                      <ProjectCapacity projectId={selectedId} />
+                    </TabsContent>
+                  </Tabs>
                 </>
               ) : (
-                <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
+                <Tabs defaultValue="hint">
+                  <TabsList>
+                    <TabsTrigger value="hint">Overview</TabsTrigger>
+                    <TabsTrigger value="capacity">Capacity (global)</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="hint">
+                    <Card><CardContent className="py-12 text-center text-muted-foreground">Select a project to see tasks</CardContent></Card>
+                  </TabsContent>
+                  <TabsContent value="capacity">
+                    <ProjectCapacity projectId={null} />
+                  </TabsContent>
+                </Tabs>
               )}
             </div>
           </div>

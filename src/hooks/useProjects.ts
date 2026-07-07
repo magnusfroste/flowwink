@@ -26,6 +26,7 @@ export type ProjectTask = {
   status: string;
   priority: string;
   assigned_to: string | null;
+  start_date: string | null;
   due_date: string | null;
   estimated_hours: number | null;
   sort_order: number;

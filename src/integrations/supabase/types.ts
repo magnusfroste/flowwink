@@ -2996,6 +2996,71 @@ export type Database = {
         }
         Relationships: []
       }
+      candidate_assessments: {
+        Row: {
+          application_id: string
+          assigned_at: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          kind: string
+          max_score: number | null
+          name: string
+          notes: string | null
+          passed: boolean | null
+          provider: string | null
+          score: number | null
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          application_id: string
+          assigned_at?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          max_score?: number | null
+          name: string
+          notes?: string | null
+          passed?: boolean | null
+          provider?: string | null
+          score?: number | null
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          application_id?: string
+          assigned_at?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: string
+          max_score?: number | null
+          name?: string
+          notes?: string | null
+          passed?: boolean | null
+          provider?: string | null
+          score?: number | null
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_notes: {
         Row: {
           application_id: string
@@ -3078,7 +3143,10 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          priority: number
           tracking_url_template: string | null
+          transit_days_max: number
+          transit_days_min: number
         }
         Insert: {
           api_credentials_secret_ref?: string | null
@@ -3087,7 +3155,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          priority?: number
           tracking_url_template?: string | null
+          transit_days_max?: number
+          transit_days_min?: number
         }
         Update: {
           api_credentials_secret_ref?: string | null
@@ -3096,7 +3167,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          priority?: number
           tracking_url_template?: string | null
+          transit_days_max?: number
+          transit_days_min?: number
         }
         Relationships: []
       }
@@ -6422,6 +6496,68 @@ export type Database = {
         }
         Relationships: []
       }
+      interviews: {
+        Row: {
+          application_id: string
+          calendar_event_id: string | null
+          created_at: string
+          created_by: string | null
+          feedback: string | null
+          id: string
+          interviewer_id: string | null
+          kind: string
+          location: string | null
+          meeting_url: string | null
+          rating: number | null
+          scheduled_end: string
+          scheduled_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          calendar_event_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          feedback?: string | null
+          id?: string
+          interviewer_id?: string | null
+          kind?: string
+          location?: string | null
+          meeting_url?: string | null
+          rating?: number | null
+          scheduled_end: string
+          scheduled_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          calendar_event_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          feedback?: string | null
+          id?: string
+          interviewer_id?: string | null
+          kind?: string
+          location?: string | null
+          meeting_url?: string | null
+          rating?: number | null
+          scheduled_end?: string
+          scheduled_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_count_lines: {
         Row: {
           count_id: string
@@ -6633,6 +6769,75 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_offers: {
+        Row: {
+          application_id: string
+          body_markdown: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          responded_at: string | null
+          salary_cents: number | null
+          sent_at: string | null
+          start_date: string | null
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          body_markdown?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          responded_at?: string | null
+          salary_cents?: number | null
+          sent_at?: string | null
+          start_date?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          body_markdown?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          responded_at?: string | null
+          salary_cents?: number | null
+          sent_at?: string | null
+          start_date?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_offers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_offers_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "employment_contract_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -9901,6 +10106,24 @@ export type Database = {
           },
         ]
       }
+      postal_code_rules: {
+        Row: {
+          country: string
+          example: string | null
+          pattern: string
+        }
+        Insert: {
+          country: string
+          example?: string | null
+          pattern: string
+        }
+        Update: {
+          country?: string
+          example?: string | null
+          pattern?: string
+        }
+        Relationships: []
+      }
       pricelist_items: {
         Row: {
           created_at: string
@@ -10551,6 +10774,42 @@ export type Database = {
           },
         ]
       }
+      project_task_dependencies: {
+        Row: {
+          created_at: string
+          depends_on_task_id: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on_task_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on_task_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           assigned_to: string | null
@@ -10566,6 +10825,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["project_task_priority"]
           project_id: string
           sort_order: number
+          start_date: string | null
           status: Database["public"]["Enums"]["project_task_status"]
           title: string
           updated_at: string
@@ -10584,6 +10844,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["project_task_priority"]
           project_id: string
           sort_order?: number
+          start_date?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           title: string
           updated_at?: string
@@ -10602,6 +10863,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["project_task_priority"]
           project_id?: string
           sort_order?: number
+          start_date?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           title?: string
           updated_at?: string
@@ -10658,6 +10920,36 @@ export type Database = {
           },
         ]
       }
+      project_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          spec: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          spec?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          spec?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           budget_hours: number | null
@@ -10674,6 +10966,7 @@ export type Database = {
           is_billable: boolean | null
           name: string
           status: string
+          task_workflow: Json | null
           updated_at: string
         }
         Insert: {
@@ -10691,6 +10984,7 @@ export type Database = {
           is_billable?: boolean | null
           name: string
           status?: string
+          task_workflow?: Json | null
           updated_at?: string
         }
         Update: {
@@ -10708,6 +11002,7 @@ export type Database = {
           is_billable?: boolean | null
           name?: string
           status?: string
+          task_workflow?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -11309,6 +11604,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reference_checks: {
+        Row: {
+          application_id: string
+          checked_by: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          rating: number | null
+          referee_email: string | null
+          referee_name: string
+          referee_phone: string | null
+          relationship: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          checked_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          referee_email?: string | null
+          referee_name: string
+          referee_phone?: string | null
+          relationship?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          checked_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          referee_email?: string | null
+          referee_name?: string
+          referee_phone?: string | null
+          relationship?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_checks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reorder_rules: {
         Row: {
@@ -11939,6 +12290,66 @@ export type Database = {
         }
         Relationships: []
       }
+      service_credits: {
+        Row: {
+          amount_cents: number
+          applied_at: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_email: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          status: string
+          violation_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          applied_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          violation_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          applied_at?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          violation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_credits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_credits_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "sla_violations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_order_lines: {
         Row: {
           created_at: string
@@ -12207,13 +12618,29 @@ export type Database = {
         Row: {
           carrier_code: string | null
           carrier_id: string | null
+          contents_type: string | null
           cost_cents: number | null
           created_at: string
+          customs_currency: string | null
+          customs_declaration: Json | null
+          customs_declared_at: string | null
+          customs_items: Json
+          customs_value_cents: number | null
           delivered_at: string | null
+          destination_country: string | null
           id: string
+          incoterm: string | null
+          kind: string
           label_url: string | null
           metadata: Json | null
           order_id: string
+          pickup_id: string | null
+          pod_notes: string | null
+          pod_photo_urls: Json
+          pod_signature_url: string | null
+          pod_signed_at: string | null
+          pod_signed_by: string | null
+          return_of_shipment_id: string | null
           shipped_at: string | null
           status: string
           tracking_number: string | null
@@ -12224,13 +12651,29 @@ export type Database = {
         Insert: {
           carrier_code?: string | null
           carrier_id?: string | null
+          contents_type?: string | null
           cost_cents?: number | null
           created_at?: string
+          customs_currency?: string | null
+          customs_declaration?: Json | null
+          customs_declared_at?: string | null
+          customs_items?: Json
+          customs_value_cents?: number | null
           delivered_at?: string | null
+          destination_country?: string | null
           id?: string
+          incoterm?: string | null
+          kind?: string
           label_url?: string | null
           metadata?: Json | null
           order_id: string
+          pickup_id?: string | null
+          pod_notes?: string | null
+          pod_photo_urls?: Json
+          pod_signature_url?: string | null
+          pod_signed_at?: string | null
+          pod_signed_by?: string | null
+          return_of_shipment_id?: string | null
           shipped_at?: string | null
           status?: string
           tracking_number?: string | null
@@ -12241,13 +12684,29 @@ export type Database = {
         Update: {
           carrier_code?: string | null
           carrier_id?: string | null
+          contents_type?: string | null
           cost_cents?: number | null
           created_at?: string
+          customs_currency?: string | null
+          customs_declaration?: Json | null
+          customs_declared_at?: string | null
+          customs_items?: Json
+          customs_value_cents?: number | null
           delivered_at?: string | null
+          destination_country?: string | null
           id?: string
+          incoterm?: string | null
+          kind?: string
           label_url?: string | null
           metadata?: Json | null
           order_id?: string
+          pickup_id?: string | null
+          pod_notes?: string | null
+          pod_photo_urls?: Json
+          pod_signature_url?: string | null
+          pod_signed_at?: string | null
+          pod_signed_by?: string | null
+          return_of_shipment_id?: string | null
           shipped_at?: string | null
           status?: string
           tracking_number?: string | null
@@ -12268,6 +12727,79 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_pickup_id_fkey"
+            columns: ["pickup_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_pickups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_return_of_shipment_id_fkey"
+            columns: ["return_of_shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_pickups: {
+        Row: {
+          address: string | null
+          carrier_id: string
+          confirmation_ref: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          instructions: string | null
+          pickup_date: string
+          status: string
+          updated_at: string
+          window_end: string | null
+          window_start: string | null
+        }
+        Insert: {
+          address?: string | null
+          carrier_id: string
+          confirmation_ref?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          pickup_date: string
+          status?: string
+          updated_at?: string
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          address?: string | null
+          carrier_id?: string
+          confirmation_ref?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          pickup_date?: string
+          status?: string
+          updated_at?: string
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_pickups_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
             referencedColumns: ["id"]
           },
         ]
@@ -12376,12 +12908,46 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_clock_pauses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          paused_at: string
+          reason: string | null
+          resumed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          paused_at?: string
+          reason?: string | null
+          resumed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          paused_at?: string
+          reason?: string | null
+          resumed_at?: string | null
+        }
+        Relationships: []
+      }
       sla_policies: {
         Row: {
           created_at: string
           description: string | null
           enabled: boolean
           entity_type: string
+          escalation_actions: Json
           id: string
           metric: string
           name: string
@@ -12394,6 +12960,7 @@ export type Database = {
           description?: string | null
           enabled?: boolean
           entity_type: string
+          escalation_actions?: Json
           id?: string
           metric: string
           name: string
@@ -12406,6 +12973,7 @@ export type Database = {
           description?: string | null
           enabled?: boolean
           entity_type?: string
+          escalation_actions?: Json
           id?: string
           metric?: string
           name?: string
@@ -12415,16 +12983,84 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_tier_assignments: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          customer_email: string | null
+          id: string
+          tier_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          tier_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          tier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_tier_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_tier_assignments_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "sla_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_tiers: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          threshold_multiplier: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          threshold_multiplier?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          threshold_multiplier?: number
+        }
+        Relationships: []
+      }
       sla_violations: {
         Row: {
           actual_minutes: number
           created_at: string
           entity_id: string
           entity_type: string
+          escalated_at: string | null
+          escalation_log: Json
           id: string
           metric: string
           notes: string | null
           policy_id: string
+          remediation_note: string | null
+          remediation_status: string | null
+          remediation_task_id: string | null
           resolved_at: string | null
           resolved_by: string | null
           severity: string
@@ -12435,10 +13071,15 @@ export type Database = {
           created_at?: string
           entity_id: string
           entity_type: string
+          escalated_at?: string | null
+          escalation_log?: Json
           id?: string
           metric: string
           notes?: string | null
           policy_id: string
+          remediation_note?: string | null
+          remediation_status?: string | null
+          remediation_task_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string
@@ -12449,10 +13090,15 @@ export type Database = {
           created_at?: string
           entity_id?: string
           entity_type?: string
+          escalated_at?: string | null
+          escalation_log?: Json
           id?: string
           metric?: string
           notes?: string | null
           policy_id?: string
+          remediation_note?: string | null
+          remediation_status?: string | null
+          remediation_task_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string
@@ -15066,6 +15712,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      add_business_days: {
+        Args: { p_days: number; p_from: string }
+        Returns: string
+      }
       add_tip: {
         Args: { p_method?: string; p_sale_id: string; p_tip_cents: number }
         Returns: Json
@@ -15208,6 +15858,15 @@ export type Database = {
         }[]
       }
       award_rfq: { Args: { _bid_id: string; _rfq_id: string }; Returns: string }
+      batch_shipping_labels: {
+        Args: {
+          p_carrier_id?: string
+          p_limit?: number
+          p_shipment_ids?: string[]
+          p_status?: string
+        }
+        Returns: Json
+      }
       book_appointment_slot: {
         Args: {
           p_customer_email: string
@@ -15618,6 +16277,16 @@ export type Database = {
         Returns: Json
       }
       create_payroll_run: { Args: { p_period_date: string }; Returns: Json }
+      create_return_label: {
+        Args: {
+          p_carrier_id?: string
+          p_order_id?: string
+          p_reason?: string
+          p_shipment_id?: string
+          p_weight_grams?: number
+        }
+        Returns: Json
+      }
       create_webmeet_room: {
         Args: {
           p_expires_in_minutes?: number
@@ -15655,6 +16324,10 @@ export type Database = {
         Returns: string
       }
       end_webmeet_room: { Args: { p_room_id: string }; Returns: Json }
+      estimate_delivery_date: {
+        Args: { p_carrier_id: string; p_ship_date?: string }
+        Returns: Json
+      }
       evaluate_approval_required: {
         Args: {
           p_amount_cents?: number
@@ -15852,6 +16525,7 @@ export type Database = {
         Args: { p_email?: string; p_id: string }
         Returns: Json
       }
+      get_project_schedule: { Args: { p_project_id: string }; Returns: Json }
       get_quote_by_token: {
         Args: { p_token: string }
         Returns: {
@@ -16227,6 +16901,23 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_candidate_assessment: {
+        Args: {
+          p_action: string
+          p_application_id?: string
+          p_assessment_id?: string
+          p_due_date?: string
+          p_kind?: string
+          p_max_score?: number
+          p_name?: string
+          p_notes?: string
+          p_passed?: boolean
+          p_provider?: string
+          p_score?: number
+          p_url?: string
+        }
+        Returns: Json
+      }
       manage_canned_response: {
         Args: {
           p_action: string
@@ -16237,6 +16928,24 @@ export type Database = {
           p_limit?: number
           p_shortcut?: string
           p_title?: string
+        }
+        Returns: Json
+      }
+      manage_carrier_pickup: {
+        Args: {
+          p_action: string
+          p_address?: string
+          p_carrier_id?: string
+          p_confirmation_ref?: string
+          p_contact_name?: string
+          p_contact_phone?: string
+          p_instructions?: string
+          p_pickup_date?: string
+          p_pickup_id?: string
+          p_shipment_ids?: string[]
+          p_status?: string
+          p_window_end?: string
+          p_window_start?: string
         }
         Returns: Json
       }
@@ -16349,6 +17058,22 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_job_offer: {
+        Args: {
+          p_action: string
+          p_application_id?: string
+          p_body_markdown?: string
+          p_currency?: string
+          p_expires_at?: string
+          p_notes?: string
+          p_offer_id?: string
+          p_salary_cents?: number
+          p_start_date?: string
+          p_status?: string
+          p_template_id?: string
+        }
+        Returns: Json
+      }
       manage_loyalty: {
         Args: {
           p_action: string
@@ -16418,6 +17143,18 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_project_member: {
+        Args: {
+          p_action: string
+          p_hourly_rate_override_cents?: number
+          p_member_id?: string
+          p_project_id?: string
+          p_role?: string
+          p_tracks_time?: boolean
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       manage_project_milestone: {
         Args: {
           p_action: string
@@ -16427,6 +17164,19 @@ export type Database = {
           p_name?: string
           p_project_id?: string
           p_sort_order?: number
+        }
+        Returns: Json
+      }
+      manage_project_template: {
+        Args: {
+          p_action: string
+          p_client_name?: string
+          p_description?: string
+          p_name?: string
+          p_project_id?: string
+          p_spec?: Json
+          p_start_date?: string
+          p_template_id?: string
         }
         Returns: Json
       }
@@ -16453,6 +17203,21 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_reference_check: {
+        Args: {
+          p_action: string
+          p_application_id?: string
+          p_notes?: string
+          p_rating?: number
+          p_referee_email?: string
+          p_referee_name?: string
+          p_referee_phone?: string
+          p_reference_id?: string
+          p_relationship?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       manage_routing_operation: {
         Args: {
           p_action: string
@@ -16462,6 +17227,20 @@ export type Database = {
           p_name?: string
           p_sequence?: number
           p_work_center_id?: string
+        }
+        Returns: Json
+      }
+      manage_service_credit: {
+        Args: {
+          p_action: string
+          p_amount_cents?: number
+          p_company_id?: string
+          p_credit_id?: string
+          p_currency?: string
+          p_customer_email?: string
+          p_notes?: string
+          p_reason?: string
+          p_violation_id?: string
         }
         Returns: Json
       }
@@ -16486,6 +17265,19 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_shipment_customs: {
+        Args: {
+          p_action: string
+          p_contents_type?: string
+          p_currency?: string
+          p_customs_value_cents?: number
+          p_destination_country?: string
+          p_incoterm?: string
+          p_items?: Json
+          p_shipment_id: string
+        }
+        Returns: Json
+      }
       manage_shipping_rate: {
         Args: {
           p_action: string
@@ -16499,6 +17291,60 @@ export type Database = {
           p_name?: string
           p_price_cents?: number
           p_rate_id?: string
+        }
+        Returns: Json
+      }
+      manage_sla_clock: {
+        Args: {
+          p_action: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      manage_sla_escalation: {
+        Args: { p_action: string; p_actions?: Json; p_policy_id: string }
+        Returns: Json
+      }
+      manage_sla_remediation: {
+        Args: {
+          p_action: string
+          p_assigned_to?: string
+          p_note?: string
+          p_violation_id?: string
+        }
+        Returns: Json
+      }
+      manage_sla_tier: {
+        Args: {
+          p_action: string
+          p_assignment_id?: string
+          p_company_id?: string
+          p_customer_email?: string
+          p_description?: string
+          p_name?: string
+          p_threshold_multiplier?: number
+          p_tier_id?: string
+        }
+        Returns: Json
+      }
+      manage_task_dependency: {
+        Args: {
+          p_action: string
+          p_depends_on_task_id?: string
+          p_project_id?: string
+          p_task_id?: string
+        }
+        Returns: Json
+      }
+      manage_task_workflow: {
+        Args: {
+          p_action: string
+          p_enforce_dependencies?: boolean
+          p_project_id: string
+          p_require_subtasks_done?: boolean
+          p_transitions?: Json
         }
         Returns: Json
       }
@@ -16546,6 +17392,10 @@ export type Database = {
       }
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
+        Returns: Json
+      }
+      match_internal_candidates: {
+        Args: { p_job_posting_id: string; p_limit?: number }
         Returns: Json
       }
       match_invoice_to_receipt: {
@@ -16610,6 +17460,7 @@ export type Database = {
         Returns: Json
       }
       mrp_reorder_run: { Args: { p_dry_run?: boolean }; Returns: Json }
+      next_business_day: { Args: { p_from: string }; Returns: string }
       next_document_number: {
         Args: { p_kind: string; p_prefix: string }
         Returns: string
@@ -16696,6 +17547,7 @@ export type Database = {
           suggestions_created: number
         }[]
       }
+      project_cost_forecast: { Args: { p_project_id: string }; Returns: Json }
       propose_accruals: { Args: { p_year: number }; Returns: Json }
       propose_annual_depreciation: { Args: { p_year: number }; Returns: Json }
       publish_scheduled_pages: { Args: never; Returns: Json }
@@ -16794,6 +17646,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_delivery_proof: {
+        Args: {
+          p_notes?: string
+          p_photo_urls?: string[]
+          p_shipment_id: string
+          p_signature_url?: string
+          p_signed_by?: string
+        }
+        Returns: Json
+      }
       record_invoice_payment: {
         Args: {
           p_amount_cents: number
@@ -16839,6 +17701,10 @@ export type Database = {
       }
       record_visit_time: {
         Args: { p_action: string; p_at?: string; p_visit_id: string }
+        Returns: Json
+      }
+      recruitment_analytics: {
+        Args: { p_days?: number; p_job_posting_id?: string }
         Returns: Json
       }
       redeem_discount_code: { Args: { p_code_id: string }; Returns: boolean }
@@ -17089,6 +17955,14 @@ export type Database = {
           source: string
         }[]
       }
+      resource_capacity_report: {
+        Args: {
+          p_capacity_hours_per_week?: number
+          p_project_id?: string
+          p_weeks?: number
+        }
+        Returns: Json
+      }
       return_reason_report: { Args: { p_days?: number }; Returns: Json }
       revalue_fixed_asset: {
         Args: {
@@ -17140,6 +18014,7 @@ export type Database = {
           test_name: string
         }[]
       }
+      run_sla_sweep: { Args: { p_entity_type?: string }; Returns: Json }
       run_year_end: {
         Args: { p_confirm?: boolean; p_year: number }
         Returns: Json
@@ -17153,6 +18028,22 @@ export type Database = {
           p_url: string
         }
         Returns: boolean
+      }
+      schedule_interview: {
+        Args: {
+          p_action: string
+          p_application_id?: string
+          p_end?: string
+          p_feedback?: string
+          p_interview_id?: string
+          p_interviewer_id?: string
+          p_kind?: string
+          p_location?: string
+          p_meeting_url?: string
+          p_rating?: number
+          p_start?: string
+        }
+        Returns: Json
       }
       search_memories_hybrid: {
         Args: {
@@ -17314,6 +18205,16 @@ export type Database = {
         Args: { p_module: string; p_scenario?: string }
         Returns: Json
       }
+      select_shipping_carrier: {
+        Args: {
+          p_country?: string
+          p_currency?: string
+          p_preferred_carrier_code?: string
+          p_preferred_carrier_id?: string
+          p_weight_grams: number
+        }
+        Returns: Json
+      }
       send_dunning_reminders: {
         Args: { p_dry_run?: boolean }
         Returns: {
@@ -17428,6 +18329,24 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      sla_compliance_report: {
+        Args: { p_days?: number; p_entity_type?: string }
+        Returns: Json
+      }
+      sla_paused_minutes: {
+        Args: {
+          p_end: string
+          p_entity_id: string
+          p_entity_type: string
+          p_start: string
+          p_use_business_hours?: boolean
+        }
+        Returns: number
+      }
+      sla_tier_multiplier: {
+        Args: { p_company_id: string; p_email: string }
+        Returns: number
       }
       split_time_entry: {
         Args: {
@@ -17579,6 +18498,16 @@ export type Database = {
           p_name?: string
           p_parent_asset_id?: string
           p_total_expected_units?: number
+        }
+        Returns: Json
+      }
+      validate_address: {
+        Args: {
+          p_city?: string
+          p_country: string
+          p_name?: string
+          p_postal_code?: string
+          p_street?: string
         }
         Returns: Json
       }
