@@ -294,8 +294,57 @@ export function JournalCsvActions({
             <Download className="h-4 w-4 mr-2" />
             Export TSV (tab)
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setWipeOpen(true);
+            }}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete all…
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <AlertDialog open={wipeOpen} onOpenChange={(o) => !wiping && setWipeOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete all journal entries?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes every journal entry and resets bank events to unbooked
+              (they reappear in Events to book). Closed periods are reopened. This is a
+              dev/iteration tool.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex items-center gap-2 pt-2">
+            <Checkbox
+              id="wipe-bank-events"
+              checked={wipeBankEvents}
+              onCheckedChange={(v) => setWipeBankEvents(v === true)}
+              disabled={wiping}
+            />
+            <Label htmlFor="wipe-bank-events" className="text-sm cursor-pointer">
+              Also delete bank events
+            </Label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={wiping}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleWipe();
+              }}
+              disabled={wiping}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {wiping && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
