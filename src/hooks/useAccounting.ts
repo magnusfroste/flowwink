@@ -100,6 +100,8 @@ export interface AccountBalance {
   debit_total: number;
   credit_total: number;
   balance: number;
+  opening_cents: number;
+  closing_cents: number;
 }
 
 // ============================================================
