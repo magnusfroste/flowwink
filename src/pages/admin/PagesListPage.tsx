@@ -128,6 +128,10 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
             <Copy className="h-4 w-4 mr-2" />
             Duplicate
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onOpenTranslations(page.slug)}>
+            <Languages className="h-4 w-4 mr-2" />
+            Translations
+          </DropdownMenuItem>
           {page.slug !== homepageSlug && (
             <DropdownMenuItem onClick={() => onSetHomepage(page.slug)}>
               <Home className="h-4 w-4 mr-2" />
