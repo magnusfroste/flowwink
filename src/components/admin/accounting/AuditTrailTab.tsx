@@ -193,7 +193,7 @@ export function AuditTrailTab() {
                           <TableRow key={k}>
                             <TableCell className="font-mono text-xs">{k}</TableCell>
                             <TableCell className="text-xs"><code className="text-destructive">{stringify(v.before)}</code></TableCell>
-                            <TableCell className="text-xs"><code className="text-green-700 dark:text-green-400">{stringify(v.after)}</code></TableCell>
+                            <TableCell className="text-xs"><code className="text-success">{stringify(v.after)}</code></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

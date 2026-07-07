@@ -52,11 +52,11 @@ export function YearEndTab() {
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : data ? (
             <>
-              <div className={`p-4 rounded-md flex items-center gap-3 ${data.ready ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
+              <div className={`p-4 rounded-md flex items-center gap-3 ${data.ready ? 'bg-success/10' : 'bg-warning/10'}`}>
                 {data.ready ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                  <CheckCircle2 className="h-6 w-6 text-success" />
                 ) : (
-                  <XCircle className="h-6 w-6 text-amber-600" />
+                  <XCircle className="h-6 w-6 text-warning" />
                 )}
                 <div>
                   <p className="font-semibold">
@@ -70,9 +70,9 @@ export function YearEndTab() {
                 {data.checks?.map((c: any) => (
                   <div key={c.id} className="flex items-center gap-3 p-3 rounded-md border">
                     {c.pass ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                      <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
                     ) : (
-                      <XCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                      <XCircle className="h-5 w-5 text-warning shrink-0" />
                     )}
                     <div className="flex-1">
                       <p className="font-medium text-sm">{c.label}</p>
