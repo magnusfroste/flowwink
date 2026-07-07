@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Wallet, Plus, CheckCircle2, Banknote, Eye, Trash2, FileDown, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PayslipDialog } from '@/components/payroll/PayslipDialog';
 
 interface PayrollRun {
   id: string;
