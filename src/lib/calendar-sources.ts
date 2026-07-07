@@ -338,12 +338,12 @@ registerCalendarSource({
     return (items as any[]).map((e): CalendarEvent => ({
       id: `event:${e.id}`,
       sourceId: 'events',
-      title: e.title,
+      title: e.visibility === 'private' ? `🔒 ${e.title}` : e.title,
       start: e.starts_at ?? e.start,
       end: e.ends_at ?? e.end,
       allDay: e.all_day ?? false,
       color: '#0ea5e9',
-      meta: { location: e.location, attendees: e.attendees, raw: e },
+      meta: { location: e.location, attendees: e.attendees, visibility: e.visibility, reminder_minutes: e.reminder_minutes, raw: e },
     }));
   },
 });

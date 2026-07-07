@@ -7,15 +7,18 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { DatesSetArg, EventClickArg } from '@fullcalendar/core';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 
 import { useCalendarSources, useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { NewCalendarEventDialog } from '@/components/admin/calendar/NewCalendarEventDialog';
+import { toast } from 'sonner';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
@@ -93,6 +96,34 @@ export default function CalendarPage() {
           </div>
           <div className="flex items-center gap-2">
             <NewCalendarEventDialog />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const { data, error } = await supabase.rpc('export_calendar_ics' as any, {});
+                      if (error) { toast.error(error.message); return; }
+                      const ics = typeof data === 'string' ? data : (data as any)?.ics ?? '';
+                      if (!ics) { toast.error('No calendar data'); return; }
+                      const blob = new Blob([ics], { type: 'text/calendar' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'flowwink-calendar.ics';
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-1" /> Export .ics
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Import into Google/Outlook/Apple Calendar</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button variant="outline" size="sm" onClick={() => calendarRef.current?.getApi().today()}>
               Today
             </Button>

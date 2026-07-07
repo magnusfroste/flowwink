@@ -7,8 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type Visibility = 'team' | 'private' | 'public';
+type ReminderKey = 'none' | '15' | '60' | '1440';
+
+const REMINDER_LABEL: Record<ReminderKey, string> = {
+  none: 'None',
+  '15': '15 minutes before',
+  '60': '1 hour before',
+  '1440': '24 hours before',
+};
 
 export function NewCalendarEventDialog() {
   const qc = useQueryClient();
@@ -19,10 +30,13 @@ export function NewCalendarEventDialog() {
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState('');
   const [attendeesText, setAttendeesText] = useState('');
+  const [visibility, setVisibility] = useState<Visibility>('team');
+  const [reminder, setReminder] = useState<ReminderKey>('none');
 
   const reset = () => {
     setTitle(''); setStart(''); setEnd(''); setAllDay(false);
     setLocation(''); setAttendeesText('');
+    setVisibility('team'); setReminder('none');
   };
 
   const create = useMutation({
@@ -41,6 +55,8 @@ export function NewCalendarEventDialog() {
         p_all_day: allDay,
         p_location: location || null,
         p_attendees: attendees.length ? attendees : null,
+        p_visibility: visibility,
+        p_reminder_minutes: reminder === 'none' ? null : parseInt(reminder, 10),
       });
       if (error) throw error;
     },
@@ -85,6 +101,31 @@ export function NewCalendarEventDialog() {
           <div className="space-y-2">
             <Label>Location</Label>
             <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Visibility</Label>
+              <Select value={visibility} onValueChange={(v: Visibility) => setVisibility(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="team">Team</SelectItem>
+                  <SelectItem value="private">Private</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Reminder</Label>
+              <Select value={reminder} onValueChange={(v: ReminderKey) => setReminder(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(REMINDER_LABEL) as ReminderKey[]).map((k) => (
+                    <SelectItem key={k} value={k}>{REMINDER_LABEL[k]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
