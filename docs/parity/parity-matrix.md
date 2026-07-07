@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 80%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 81%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
@@ -25,7 +25,6 @@ category: reference
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `██████░░░░` 59% | 11/1/6 | EPIC-04 |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████░░░░` 60% | 4/0/4 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
-| **templates** | Website themes | L3 → L4 | `██████░░░░` 60% | 1/3/0 | EPIC-06 |
 | **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `██████░░░░` 62% | 11/0/6 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 63% | 3/0/3 | — |
@@ -47,6 +46,7 @@ category: reference
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `█████████░` 88% | 13/0/1 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
+| **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 94% | 11/0/1 | — |
