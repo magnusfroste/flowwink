@@ -238,6 +238,17 @@ export function TemplatesTab() {
 
   return (
     <div className="space-y-4">
+      <AccountingTabHeader
+        title="Templates"
+        description="Reusable booking recipes for common events. Frequent, correction-free templates keep autonomous bookkeeping trustworthy."
+        actions={
+          <Button size="sm" variant="outline" onClick={openNew}>
+            <Plus className="h-4 w-4 mr-1" />
+            New template
+          </Button>
+        }
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -262,19 +273,16 @@ export function TemplatesTab() {
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={openNew}>
-          <Plus className="h-4 w-4 mr-1" />
-          New template
-        </Button>
       </div>
 
       {/* Summary */}
       <p className="text-xs text-muted-foreground">
         {summary.total} templates · {summary.neverUsed} never used ·{' '}
-        <span className={summary.withCorrections > 0 ? 'text-amber-700 dark:text-amber-400' : ''}>
+        <span className={summary.withCorrections > 0 ? 'text-warning' : ''}>
           {summary.withCorrections} with corrections
         </span>
       </p>
+
 
       {/* Table */}
       {rows.length === 0 ? (
