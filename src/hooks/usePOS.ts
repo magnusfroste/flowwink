@@ -268,3 +268,132 @@ export function usePosProducts(search: string) {
     },
   });
 }
+
+export interface PosSaleLineRow {
+  id: string;
+  sale_id: string;
+  product_id: string | null;
+  product_name: string;
+  sku: string | null;
+  quantity: number;
+  unit_price_cents: number;
+  discount_cents: number | null;
+  tax_rate: number | null;
+  line_total_cents: number;
+}
+
+export function useSaleLines(saleId: string | undefined) {
+  return useQuery({
+    queryKey: ['pos-sale-lines', saleId],
+    enabled: !!saleId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pos_sale_lines')
+        .select('*')
+        .eq('sale_id', saleId!)
+        .order('created_at');
+      if (error) throw error;
+      return (data ?? []) as PosSaleLineRow[];
+    },
+  });
+}
+
+export function useRefundSale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      sale_id: string;
+      lines: Array<{ sale_line_id: string; quantity: number }> | null;
+      reason?: string;
+      method?: string;
+      session_id?: string;
+    }) => {
+      const { data, error } = await supabase.rpc('refund_pos_sale' as any, {
+        p_sale_id: params.sale_id,
+        p_lines: (params.lines as any) ?? null,
+        p_reason: params.reason ?? null,
+        p_method: params.method ?? null,
+        p_session_id: params.session_id ?? null,
+      });
+      if (error) throw error;
+      return data as { refund_sale_id: string; receipt_number: string; refund_total_cents: number };
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['pos-recent-sales'] });
+      qc.invalidateQueries({ queryKey: ['pos-today-sales'] });
+      const r = (data as any)?.receipt_number ?? (data as any)?.refund_receipt ?? 'refund';
+      toast.success(`Refund issued — ${r}`);
+    },
+    onError: (e: Error) => toast.error(e.message ?? 'Refund failed'),
+  });
+}
+
+export function useRenderReceipt(saleId: string | undefined) {
+  return useQuery({
+    queryKey: ['pos-receipt', saleId],
+    enabled: !!saleId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('render_pos_receipt' as any, { p_sale_id: saleId! });
+      if (error) throw error;
+      return data as any;
+    },
+  });
+}
+
+export function useCreateInvoiceFromSale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { sale_id: string; customer_name?: string; customer_email?: string }) => {
+      const { data, error } = await supabase.rpc('pos_sale_to_invoice' as any, {
+        p_sale_id: params.sale_id,
+        p_customer_name: params.customer_name ?? null,
+        p_customer_email: params.customer_email ?? null,
+      });
+      if (error) throw error;
+      return data as { invoice_id: string; invoice_number: string };
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['pos-recent-sales'] });
+      const n = (data as any)?.invoice_number ?? 'invoice';
+      toast.success(`Invoice ${n} created`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUpdateRegisterReceipt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { register_id: string; receipt_header?: string | null; receipt_footer?: string | null }) => {
+      const { error } = await supabase
+        .from('pos_registers')
+        .update({
+          receipt_header: params.receipt_header ?? null,
+          receipt_footer: params.receipt_footer ?? null,
+        } as any)
+        .eq('id', params.register_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pos-registers'] });
+      toast.success('Receipt template saved');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/** Imperative barcode/name lookup — returns first match or null. */
+export async function lookupPosProduct(query: string): Promise<PosProduct | null> {
+  const q = query.trim();
+  if (!q) return null;
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, barcode, price_cents, currency, image_url, stock_quantity')
+    .eq('available_in_pos', true)
+    .eq('is_active', true)
+    .or(`barcode.eq.${q},name.ilike.%${q}%`)
+    .limit(1);
+  if (error) throw error;
+  return ((data ?? [])[0] as unknown as PosProduct) ?? null;
+}
+
