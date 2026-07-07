@@ -2981,6 +2981,45 @@ export type Database = {
           },
         ]
       }
+      canned_responses: {
+        Row: {
+          body_md: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          shortcut: string | null
+          title: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          body_md: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          shortcut?: string | null
+          title: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          body_md?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          shortcut?: string | null
+          title?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       carriers: {
         Row: {
           api_credentials_secret_ref: string | null
@@ -6279,6 +6318,7 @@ export type Database = {
           reconciliation_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
+          subscription_id: string | null
           subtotal_cents: number
           tax_cents: number
           tax_rate: number
@@ -6312,6 +6352,7 @@ export type Database = {
           reconciliation_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          subscription_id?: string | null
           subtotal_cents?: number
           tax_cents?: number
           tax_rate?: number
@@ -6345,6 +6386,7 @@ export type Database = {
           reconciliation_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          subscription_id?: string | null
           subtotal_cents?: number
           tax_cents?: number
           tax_rate?: number
@@ -6379,6 +6421,13 @@ export type Database = {
             columns: ["reconciliation_id"]
             isOneToOne: false
             referencedRelation: "payment_reconciliations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -9005,6 +9054,7 @@ export type Database = {
           cancel_reason: string | null
           cancelled_at: string | null
           carrier: string | null
+          carrier_id: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -9026,6 +9076,7 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           carrier?: string | null
+          carrier_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -9047,6 +9098,7 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           carrier?: string | null
+          carrier_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -9063,6 +9115,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "picking_orders_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "picking_orders_source_location_id_fkey"
             columns: ["source_location_id"]
@@ -11767,6 +11826,7 @@ export type Database = {
       shipping_rates: {
         Row: {
           carrier_id: string
+          countries: string[] | null
           created_at: string
           currency: string
           dim_divisor: number | null
@@ -11780,6 +11840,7 @@ export type Database = {
         }
         Insert: {
           carrier_id: string
+          countries?: string[] | null
           created_at?: string
           currency?: string
           dim_divisor?: number | null
@@ -11793,6 +11854,7 @@ export type Database = {
         }
         Update: {
           carrier_id?: string
+          countries?: string[] | null
           created_at?: string
           currency?: string
           dim_divisor?: number | null
@@ -13239,6 +13301,7 @@ export type Database = {
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
           suggested_kb_article_ids: string[]
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -13264,6 +13327,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
           suggested_kb_article_ids?: string[]
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -13289,6 +13353,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
           suggested_kb_article_ids?: string[]
+          tags?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -14715,6 +14780,7 @@ export type Database = {
       calc_shipping_rate: {
         Args: {
           p_carrier_id: string
+          p_country?: string
           p_dim_divisor?: number
           p_height_cm?: number
           p_length_cm?: number
@@ -15228,6 +15294,7 @@ export type Database = {
           reconciliation_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
+          subscription_id: string | null
           subtotal_cents: number
           tax_cents: number
           tax_rate: number
@@ -15432,7 +15499,11 @@ export type Database = {
         }[]
       }
       list_shipping_options: {
-        Args: { p_currency?: string; p_weight_grams: number }
+        Args: {
+          p_country?: string
+          p_currency?: string
+          p_weight_grams: number
+        }
         Returns: Json
       }
       list_voucher_gaps: {
@@ -15769,7 +15840,9 @@ export type Database = {
       manage_shipping_rate: {
         Args: {
           p_action: string
+          p_allow_overlap?: boolean
           p_carrier_id?: string
+          p_countries?: string[]
           p_currency?: string
           p_dim_divisor?: number
           p_max_weight_grams?: number
@@ -16381,6 +16454,10 @@ export type Database = {
           similarity: number
           value: Json
         }[]
+      }
+      search_tickets: {
+        Args: { p_limit?: number; p_query: string; p_status?: string }
+        Returns: Json
       }
       seed_demo_accounting: {
         Args: { p_run_id: string; p_scenario?: string }
