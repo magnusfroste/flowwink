@@ -7,7 +7,7 @@ import {
   type AnalyticAccountType,
 } from '@/hooks/useAnalyticAccounting';
 import { useProjects } from '@/hooks/useProjects';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,13 +18,14 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Tag, FolderTree, Building2, Megaphone } from 'lucide-react';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
-const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any; color: string }> = {
-  cost_center: { label: 'Cost Center', icon: Tag, color: 'bg-blue-500/10 text-blue-600' },
-  project: { label: 'Project', icon: FolderTree, color: 'bg-emerald-500/10 text-emerald-600' },
-  department: { label: 'Department', icon: Building2, color: 'bg-purple-500/10 text-purple-600' },
-  campaign: { label: 'Campaign', icon: Megaphone, color: 'bg-amber-500/10 text-amber-600' },
-  other: { label: 'Other', icon: Tag, color: 'bg-muted text-muted-foreground' },
+const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any }> = {
+  cost_center: { label: 'Cost center', icon: Tag },
+  project: { label: 'Project', icon: FolderTree },
+  department: { label: 'Department', icon: Building2 },
+  campaign: { label: 'Campaign', icon: Megaphone },
+  other: { label: 'Other', icon: Tag },
 };
 
 export function AnalyticAccountingTab() {
