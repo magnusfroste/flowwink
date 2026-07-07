@@ -81,9 +81,10 @@
       "id": "dunning_sequences",
       "name": "Automated dunning retry",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "automated dunning retry sequences"
+      "verify": "Dual-surface DONE 2026-07-07. Automation: pg_cron dunning-processor-every-30min active; POST /functions/v1/dunning-processor → HTTP 200 {processed,recovered,cancelled,emailsSent}. Skills: list_dunning_sequences verified live via MCP gateway (pause_dunning/escalate_dunning seeded, same edge handler). UI: /admin/subscriptions/dunning DunningPage + dunning.enabled feature flag.",
+      "notes": "dunning_sequences/dunning_actions tables + processor + UI existed; the 3 agent skills were the missing surface — seeded 2026-07-07 (subscriptions-module.ts + dev agent_skills)."
     },
     {
       "id": "cohort_analysis",

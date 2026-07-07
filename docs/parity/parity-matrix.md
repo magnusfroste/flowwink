@@ -9,22 +9,20 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 66%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 67%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
-| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `████░░░░░░` 39% | 6/0/9 | EPIC-08 |
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
 | **field-service** | Field Service (industry_fsm) | L2 → L4 | `████░░░░░░` 44% | 5/3/6 | EPIC-05 |
 | **fixed-assets** | Accounting → Assets | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L3 → L4 | `████░░░░░░` 44% | 7/0/7 | — |
-| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `█████░░░░░` 47% | 7/0/7 | — |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `█████░░░░░` 48% | 8/0/9 | EPIC-07 |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████░░░░░` 50% | 2/0/3 | — |
 | **pos** | Point of Sale (pos.order) | L3 → L4 | `█████░░░░░` 50% | 9/0/7 | — |
 | **resume** | Employees → Skills / niche consultant pool | L2 → L4 | `█████░░░░░` 50% | 3/0/3 | — |
+| **shipping** | Inventory → Delivery/Shipping connectors | L2 → L4 | `█████░░░░░` 50% | 7/0/8 | EPIC-08 |
 | **templates** | Website themes | L3 → L4 | `█████░░░░░` 50% | 0/4/0 | EPIC-06 |
 | **projects** | Project (project.project/project.task) | L3 → L4 | `█████░░░░░` 53% | 7/0/6 | — |
 | **recruitment** | Recruitment (hr.applicant) | L3 → L4 | `█████░░░░░` 53% | 9/0/7 | — |
@@ -37,10 +35,12 @@ category: reference
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 10/0/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
+| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `██████░░░░` 58% | 8/0/6 | — |
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `██████░░░░` 59% | 9/0/6 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `██████░░░░` 59% | 11/1/6 | EPIC-04 |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████░░░░` 60% | 4/0/4 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `██████░░░░` 62% | 11/0/6 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 63% | 3/0/3 | — |
 | **reconciliation** | Accounting bank reconciliation | L3 → L4 | `██████░░░░` 63% | 9/0/4 | — |

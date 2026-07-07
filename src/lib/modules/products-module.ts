@@ -441,72 +441,67 @@ Manages e-commerce orders: list, get details, update status, view stats.
       type: 'function',
       function: {
         name: 'place_order',
-        description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
+        description: 'Place an order via the checkout API with sandbox mode support. Resolves products server-side (by id or name), computes cart weight from products.weight_grams, and auto-selects the cheapest shipping option for the total weight/country when the cart contains weighted products. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use browse_products), payment configuration (use site_settings).',
         parameters: {
           type: 'object',
+          required: ['items', 'customer_email'],
           properties: {
+            customer_email: { type: 'string', description: 'Customer email (also accepts customerEmail)' },
+            customer_name: { type: 'string', description: 'Customer name (also accepts customerName)' },
+            currency: { type: 'string', description: 'ISO currency code, default SEK' },
+            notes: { type: 'string', description: 'Free-text notes stored on order.metadata' },
             items: {
               type: 'array',
+              description: 'Cart items',
               items: {
                 type: 'object',
+                required: ['quantity'],
                 properties: {
-                  productId: {
-                    type: 'string',
-                  },
-                  productName: {
-                    type: 'string',
-                  },
-                  priceCents: {
-                    type: 'number',
-                  },
-                  quantity: {
-                    type: 'number',
-                  },
+                  product_id: { type: 'string', description: 'UUID of the product (preferred)' },
+                  product_name: { type: 'string', description: 'Fuzzy product name fallback' },
+                  quantity: { type: 'number' },
                 },
-                required: [
-                  'productId',
-                  'productName',
-                  'priceCents',
-                  'quantity',
-                ],
               },
-              description: 'Cart items',
             },
-            customerName: {
-              type: 'string',
-              description: 'Customer name',
+            shipping_address: {
+              type: 'object',
+              description: 'Optional delivery address. If country is set, the auto-cheapest lookup is scoped to carriers serving that country.',
+              properties: {
+                name: { type: 'string' },
+                line1: { type: 'string' },
+                line2: { type: 'string' },
+                postal_code: { type: 'string' },
+                city: { type: 'string' },
+                country: { type: 'string', description: 'ISO country code (e.g. SE, DE)' },
+                phone: { type: 'string' },
+              },
             },
-            customerEmail: {
+            shipping_rate_id: {
               type: 'string',
-              description: 'Customer email',
-            },
-            currency: {
-              type: 'string',
-              description: 'Currency code (default SEK)',
+              description: 'Optional UUID of a specific shipping_rates row to use. Validated against active status and weight band. If omitted and the cart has weighted products, list_shipping_options is called and the cheapest option is selected automatically.',
             },
           },
-          required: [
-            'items',
-            'customerName',
-            'customerEmail',
-          ],
         },
       },
     },
     instructions: `## place_order
 ### What
-Places an order through the create-checkout edge function. In sandbox mode, completes immediately without payment.
-### When to use
-- External agent (OpenClaw) tests the full purchase flow
-- Programmatic order creation for testing or automation
+Places an order as a customer. Accepts snake_case and camelCase. Resolves products server-side by product_id (UUID) or product_name (fuzzy). Computes total cart weight from products.weight_grams (NULL = non-shippable, excluded from sum) and wires shipping when the cart has any weighted product.
+### Shipping selection
+- If **shipping_rate_id** is provided → validated against shipping_rates (must be active and weight band must cover total weight).
+- Otherwise → calls list_shipping_options(total_weight, currency, country) and auto-selects the cheapest option.
+- If no options exist → order is created without shipping (graceful degrade).
+- Weightless / service carts → no shipping fields written (unchanged).
+### Order total
+total_cents = Σ(price × qty) + shipping_cost_cents. shipping_cost_cents and shipping_method are written to the order row and returned in the response so the caller can verify the math.
 ### Parameters
-- **items**: Array of {productId, productName, priceCents, quantity}.
-- **customerName**: Buyer name.
-- **customerEmail**: Buyer email.
-- **currency**: ISO currency code (default SEK).
-### Edge cases
-- Sandbox mode auto-detected from module config — no Stripe needed.
-- Always use notify trust level so admin sees orders.`,
+- **customer_email** (required), **customer_name**
+- **items[]**: {product_id | product_name, quantity}
+- **currency**: default SEK
+- **shipping_address**: {name, line1, line2, postal_code, city, country, phone}
+- **shipping_rate_id**: UUID from shipping_rates (optional; overrides auto-cheapest)
+### Response
+Returns order_id, total_cents, total_weight_grams, shipping_method, shipping_cost_cents.`,
   },
   {
     name: 'check_order_status',

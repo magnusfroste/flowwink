@@ -64,10 +64,10 @@
       "id": "search",
       "name": "Full-text search",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Full-text search across tickets",
-      "notes": "No text/tsvector search anywhere — useTickets.ts only filters by status; TicketsPage has no search input; no tsvector in migrations."
+      "verify": "Dual-surface DONE 2026-07-07. Skill: search_tickets(\"login error\") live via MCP gateway → ranked FTS hit (websearch syntax + ILIKE/tag fallback; GIN idx_tickets_fts). UI: TicketsPage debounced search input wired to the same RPC (Lovable commit db8c1ad9).",
+      "notes": "search_tickets RPC + skill added 2026-07-07 (20260707120000 migration + tickets-module.ts)."
     },
     {
       "id": "stage_pipeline",
@@ -99,10 +99,11 @@
       "id": "templates_canned",
       "name": "Canned responses",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Canned response templates",
-      "epic": "EPIC-07"
+      "verify": "Dual-surface DONE 2026-07-07. Skill: manage_canned_response create live via MCP gateway (id 7b5f10ca, rpc:manage_canned_response — SECURITY DEFINER w/ service_role escape). UI: CannedResponsesDialog management + Canned picker in TicketDetailDrawer reply box incl. usage_count tracking (commit db8c1ad9).",
+      "epic": "EPIC-07",
+      "notes": "canned_responses table + RLS + RPC added 2026-07-07 (20260707120000 migration)."
     },
     {
       "id": "time_tracking",
@@ -124,9 +125,10 @@
       "id": "tags",
       "name": "Custom tags",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Custom tags on tickets"
+      "verify": "Dual-surface DONE 2026-07-07. Schema: tickets.tags text[] + GIN index live on dev. Skill: manage_ticket update accepts tags[]; search_tickets matches tags. UI: tag filter chips on TicketsPage, Tags column in TicketsTable, add/remove editor in TicketDetailDrawer (commit db8c1ad9).",
+      "notes": "Added 2026-07-07."
     },
     {
       "id": "automation_triggers",

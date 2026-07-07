@@ -40,9 +40,10 @@
       "id": "rate_shopping",
       "name": "Carrier rate shopping",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "carrier rate shopping"
+      "verify": "Dual-surface DONE 2026-07-07. Skill: list_shipping_options(800g,SEK) live via MCP gateway → 2 carriers compared, sorted by price (PostNord 4900 / DHL 5900); place_order auto-selects cheapest matching carrier (verified order 3ccaa76e: 3000g → DHL Paket 1-5kg 8900, total 44900 = items+shipping). UI: CheckoutPage delivery selector lists all carrier options via the same RPC, cheapest pre-selected.",
+      "notes": "list_shipping_options RPC (destination-aware since 2026-07-07 migration) + list_shipping_options skill + place_order shipping wiring (Lovable commit c6089265). Closes OpenClaw finding e50f0784."
     },
     {
       "id": "weight_rate_calc",

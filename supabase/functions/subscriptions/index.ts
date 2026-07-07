@@ -210,7 +210,9 @@ async function listSubscriptions(supabase: any, args: Record<string, any>) {
   const status = args.status as string | undefined;
   const q = supabase
     .from("subscriptions")
-    .select("id, customer_email, customer_name, product_name, status, billing_interval, unit_amount_cents, currency, current_period_end, canceled_at, created_at")
+    // SUB-006: quantity + billing_interval_count exposed so external operators
+    // can reconcile per-subscription amounts against subscription_mrr.
+    .select("id, customer_email, customer_name, product_name, status, billing_interval, billing_interval_count, quantity, unit_amount_cents, currency, current_period_end, canceled_at, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (status) q.eq("status", status);

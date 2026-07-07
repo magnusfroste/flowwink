@@ -8739,7 +8739,7 @@ const GENERIC_CRUD_TABLES = new Set([
   // Purchasing extensions
   'goods_receipts', 'goods_receipt_lines', 'vendor_invoices', 'vendor_products',
   'rfqs', 'rfq_lines', 'rfq_bids',
-  'tickets', 'webinars', 'webinar_registrations',
+  'tickets', 'canned_responses', 'webinars', 'webinar_registrations',
   'booking_services', 'booking_availability', 'bookings',
   'content_proposals', 'content_research',
   'agent_memory', 'agent_activity',

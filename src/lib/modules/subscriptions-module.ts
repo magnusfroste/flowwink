@@ -35,7 +35,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'list_subscriptions',
-        description: 'List subscriptions, optionally filtered by status (active, trialing, past_due, canceled).',
+        description: 'List subscriptions, optionally filtered by status (active, trialing, past_due, canceled). Rows include quantity and billing_interval_count so per-subscription amounts reconcile with subscription_mrr.',
         parameters: {
           type: 'object',
           properties: {
@@ -290,6 +290,76 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Manual-provider subscriptions only. Proration fraction = remaining days / period days from current_period_start/end (0 when unknown → no adjustment). Returns prorated_cents, adjustment_invoice_id (upgrades) or credit_cents (downgrades — apply on the next invoice; recorded under metadata.last_change). No negative invoices in v1.',
   },
+  // ── Dunning (automated failed-payment recovery) ──
+  {
+    name: 'list_dunning_sequences',
+    description: 'List dunning sequences (failed-payment recovery runs) with MRR at risk, sorted highest first. Use when: reviewing payment-failure recovery, weekly revenue-risk briefing, deciding whom to contact personally. NOT for: pausing/escalating a sequence (pause_dunning / escalate_dunning) or listing healthy subs (list_subscriptions).',
+    category: 'commerce',
+    handler: 'edge:subscriptions',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'list_dunning_sequences',
+        description: 'Lists dunning_sequences with subscription context and total MRR at risk. The dunning-processor cron advances sequences every 30 minutes.',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'Filter: active (default) | paused | recovered | exhausted' },
+            limit: { type: 'number', description: 'Max rows (default 50, max 200)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'pause_dunning',
+    description: 'Pause an active dunning sequence for a subscription (stop retry emails for N days). Use when: customer promised to pay, dispute in progress, goodwill grace period. NOT for: permanently stopping recovery (cancel the subscription) or listing sequences (list_dunning_sequences).',
+    category: 'commerce',
+    handler: 'edge:subscriptions',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'pause_dunning',
+        description: 'Pauses the active dunning sequence identified by subscription_id or sequence_id. The cron resumes it after pause_days.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subscription_id: { type: 'string', description: 'Subscription UUID (alternative to sequence_id)' },
+            sequence_id: { type: 'string', description: 'dunning_sequences UUID (alternative to subscription_id)' },
+            reason: { type: 'string', description: 'Why the sequence is paused (audit trail)' },
+            pause_days: { type: 'number', description: 'Days to pause (default 7, max 30)' },
+          },
+        },
+      },
+    },
+    instructions: 'Provide subscription_id OR sequence_id. Only sequences in status=active can be paused; the action is recorded in dunning_actions.',
+  },
+  {
+    name: 'escalate_dunning',
+    description: 'Escalate a dunning sequence to its final step immediately (last-notice email + imminent cancellation). Use when: repeated failures with no customer response, high-risk account needs resolution now. NOT for: gentle handling (pause_dunning) or reviewing sequences (list_dunning_sequences).',
+    category: 'commerce',
+    handler: 'edge:subscriptions',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'escalate_dunning',
+        description: 'Jumps the sequence (by subscription_id or sequence_id) to the final dunning step and triggers the processor immediately.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subscription_id: { type: 'string', description: 'Subscription UUID (alternative to sequence_id)' },
+            sequence_id: { type: 'string', description: 'dunning_sequences UUID (alternative to subscription_id)' },
+            reason: { type: 'string', description: 'Why the sequence is escalated (audit trail)' },
+          },
+        },
+      },
+    },
+    instructions: 'Provide subscription_id OR sequence_id. Escalation sets current_step=4 and runs the dunning-processor at once — the customer receives the final notice immediately, so use deliberately.',
+  },
 ];
 
 export const subscriptionsModule = defineModule<Input, Output>({
@@ -316,10 +386,10 @@ export const subscriptionsModule = defineModule<Input, Output>({
     'create_manual_subscription',
     'generate_subscription_invoice',
     'cancel_manual_subscription',
-    // Dunning skills (list_dunning_sequences, pause_dunning, escalate_dunning)
-    // exist as edge function `subscriptions` but are not yet seeded as skills.
-    // Re-add here once SkillSeed entries are written.,
     'change_subscription',
+    'list_dunning_sequences',
+    'pause_dunning',
+    'escalate_dunning',
   ],
   data: {
     tables: [

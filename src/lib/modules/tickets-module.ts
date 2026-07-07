@@ -49,6 +49,7 @@ const TICKETS_SKILLS: SkillSeed[] = [
             priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
             category: { type: 'string', enum: ['bug', 'feature', 'question', 'billing', 'other'] },
             assigned_to: { type: 'string', description: 'support_agents/user UUID to reassign to (update).' },
+            tags: { type: 'array', items: { type: 'string' }, description: 'On update: replaces the ticket tags array (e.g. ["vip","billing"]).' },
             limit: { type: 'number' },
           },
           required: ['action'],
@@ -57,7 +58,63 @@ const TICKETS_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Lifecycle via action=update on an id: close={status:"closed"}, resolve={status:"resolved"}, reopen={status:"open"}, reassign={assigned_to:<uuid>}, escalate={priority:"urgent"}. action=list without a status returns recent tickets; pass status to filter the queue. Reply to the customer is a separate skill (reply_to_ticket_via_email).',
+      'Lifecycle via action=update on an id: close={status:"closed"}, resolve={status:"resolved"}, reopen={status:"open"}, reassign={assigned_to:<uuid>}, escalate={priority:"urgent"}, tag={tags:["vip"]} (replaces the whole array — read first, then write). action=list without a status returns recent tickets; pass status to filter the queue. Keyword lookup across subject/description/tags is search_tickets. Reply to the customer is a separate skill (reply_to_ticket_via_email).',
+  },
+  {
+    name: 'search_tickets',
+    description:
+      'Full-text search across ticket subjects, descriptions and tags, ranked by relevance. Use when: finding tickets about a topic ("all tickets mentioning login errors"), locating a customer issue without an id, checking for duplicates before creating a ticket. NOT for: listing/filtering by status alone (manage_ticket list) or updating tickets (manage_ticket).',
+    category: 'crm',
+    handler: 'rpc:search_tickets',
+    scope: 'both',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_tickets',
+        description: 'Ranked full-text search over tickets (subject + description + tags), optionally narrowed to a status.',
+        parameters: {
+          type: 'object',
+          required: ['p_query'],
+          properties: {
+            p_query: { type: 'string', description: 'Search phrase (websearch syntax: quoted phrases, OR, -exclusions)' },
+            p_status: { type: 'string', enum: ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'], description: 'Optional status filter' },
+            p_limit: { type: 'number', description: 'Max results (default 20, max 100)' },
+          },
+        },
+      },
+    },
+    instructions: 'Returns {results:[{id, subject, status, priority, category, contact_email, contact_name, assigned_to, tags, sla_deadline, created_at}]} ranked by relevance. Falls back to substring matching when full-text finds nothing, so partial words also hit.',
+  },
+  {
+    name: 'manage_canned_response',
+    description:
+      'CRUD for canned responses (reusable reply templates for support tickets). Use when: creating a standard answer for a recurring question, updating template wording, retiring an outdated template. NOT for: sending a reply (reply_to_ticket_via_email) or KB articles (manage_kb_article).',
+    category: 'crm',
+    handler: 'rpc:manage_canned_response',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_canned_response',
+        description: 'Create, list, get, update or delete canned responses (title, shortcut, body_md, category, is_active).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['create', 'list', 'get', 'update', 'delete'] },
+            p_id: { type: 'string', format: 'uuid', description: 'Canned response UUID — required for get/update/delete.' },
+            p_title: { type: 'string' },
+            p_shortcut: { type: 'string', description: 'Short trigger like "/refund" for quick insertion.' },
+            p_body_md: { type: 'string', description: 'Template body (markdown). Support placeholders like {{customer_name}} by convention.' },
+            p_category: { type: 'string' },
+            p_is_active: { type: 'boolean', description: 'Set false to retire without deleting. On list: filters.' },
+            p_limit: { type: 'number' },
+          },
+          'x-action-required': { create: ['p_title', 'p_body_md'], get: ['p_id'], update: ['p_id'], delete: ['p_id'] },
+        },
+      },
+    },
   },
   {
     name: 'ticket_triage',
@@ -98,9 +155,9 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
 
-  skills: ['manage_ticket', 'ticket_triage'],
+  skills: ['manage_ticket', 'ticket_triage', 'search_tickets', 'manage_canned_response'],
   data: {
-    tables: ['ticket_comments', 'support_escalations', 'tickets', 'support_agents'],
+    tables: ['ticket_comments', 'support_escalations', 'canned_responses', 'tickets', 'support_agents'],
   },
   skillSeeds: TICKETS_SKILLS,
 
