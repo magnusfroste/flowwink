@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2, Download, Shield } from "lucide-react";
+import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2, Download, Shield, Clock, Workflow, X } from "lucide-react";
+import { logger } from "@/lib/logger";
+
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -14,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useIsResendConfigured } from "@/hooks/useIntegrationStatus";
@@ -35,6 +39,7 @@ interface Newsletter {
   content_html: string | null;
   status: string;
   sent_at: string | null;
+  scheduled_at: string | null;
   sent_count: number;
   unique_opens: number | null;
   open_count: number | null;
@@ -42,6 +47,7 @@ interface Newsletter {
   click_count: number | null;
   created_at: string;
 }
+
 
 interface EmailOpen {
   id: string;
@@ -197,7 +203,42 @@ export default function NewsletterPage() {
     },
   });
 
-  // Delete subscriber
+  // Schedule newsletter
+  const scheduleMutation = useMutation({
+    mutationFn: async ({ id, scheduled_at }: { id: string; scheduled_at: string }) => {
+      const { error } = await supabase
+        .from("newsletters")
+        .update({ status: "scheduled", scheduled_at })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+      toast.success("Newsletter scheduled");
+    },
+    onError: (e: Error) => {
+      logger.error("Schedule failed", e);
+      toast.error(e.message);
+    },
+  });
+
+  // Cancel schedule
+  const cancelScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("newsletters")
+        .update({ status: "draft", scheduled_at: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+      toast.success("Schedule cancelled");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const deleteSubscriberMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
@@ -275,6 +316,9 @@ export default function NewsletterPage() {
         return <Badge variant="outline">Unsubscribed</Badge>;
       case "draft":
         return <Badge variant="secondary">Draft</Badge>;
+      case "scheduled":
+        return <Badge variant="outline" className="border-primary text-primary"><Clock className="h-3 w-3 mr-1" />Scheduled</Badge>;
+
       case "sent":
         return <Badge className="bg-green-500">Sent</Badge>;
       case "sending":
@@ -347,7 +391,9 @@ export default function NewsletterPage() {
           <TabsList>
             <TabsTrigger value="newsletters">Newsletters</TabsTrigger>
             <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+            <TabsTrigger value="flows">Flows</TabsTrigger>
           </TabsList>
+
 
           {/* Newsletters Tab */}
           <TabsContent value="newsletters" className="space-y-4">
@@ -433,7 +479,16 @@ export default function NewsletterPage() {
                         : 0;
                       return (
                       <TableRow key={newsletter.id}>
-                        <TableCell className="font-medium">{newsletter.subject}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{newsletter.subject}</div>
+                          {newsletter.status === "scheduled" && newsletter.scheduled_at && (
+                            <div className="text-xs text-muted-foreground font-normal mt-0.5 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(newsletter.scheduled_at), "MMM d, yyyy 'at' HH:mm")}
+                            </div>
+                          )}
+                        </TableCell>
+
                         <TableCell>{statusBadge(newsletter.status)}</TableCell>
                         <TableCell>
                           {newsletter.sent_count > 0 && (
@@ -570,8 +625,29 @@ export default function NewsletterPage() {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+
+                                <ScheduleDialog
+                                  newsletter={newsletter}
+                                  onSchedule={(iso) =>
+                                    scheduleMutation.mutate({ id: newsletter.id, scheduled_at: iso })
+                                  }
+                                  pending={scheduleMutation.isPending}
+                                />
                               </>
                             )}
+
+                            {newsletter.status === "scheduled" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => cancelScheduleMutation.mutate(newsletter.id)}
+                                disabled={cancelScheduleMutation.isPending}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel schedule
+                              </Button>
+                            )}
+
 
                             {newsletter.status !== "sent" && (
                               <AlertDialog>
@@ -738,7 +814,13 @@ export default function NewsletterPage() {
               </Table>
             </Card>
           </TabsContent>
+
+          {/* Flows Tab */}
+          <TabsContent value="flows" className="space-y-4">
+            <FlowsTab />
+          </TabsContent>
         </Tabs>
+
 
         {/* Stats Dialog */}
         <Dialog 
@@ -943,5 +1025,312 @@ export default function NewsletterPage() {
         </Dialog>
       </AdminPageContainer>
     </AdminLayout>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Schedule dialog (draft newsletters)
+// ─────────────────────────────────────────────────────────────────────────
+
+function ScheduleDialog({
+  newsletter,
+  onSchedule,
+  pending,
+}: {
+  newsletter: Newsletter;
+  onSchedule: (isoUtc: string) => void;
+  pending: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  // datetime-local default: 30 minutes from now, in the user's local time.
+  const defaultLocal = () => {
+    const d = new Date(Date.now() + 30 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [when, setWhen] = useState(defaultLocal);
+
+  const localDate = when ? new Date(when) : null;
+  const isFuture = !!localDate && !isNaN(localDate.getTime()) && localDate.getTime() > Date.now();
+
+  const submit = () => {
+    if (!isFuture || !localDate) {
+      toast.error("Schedule time must be in the future");
+      return;
+    }
+    onSchedule(localDate.toISOString());
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Calendar className="h-4 w-4 mr-1" />
+          Schedule
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Schedule "{newsletter.subject}"</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <label className="text-sm font-medium">Send at (your local time)</label>
+          <Input
+            type="datetime-local"
+            value={when}
+            onChange={(e) => setWhen(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            A background dispatcher checks every 5 minutes and sends any newsletters whose
+            scheduled time has passed.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={!isFuture || pending}>
+            {pending ? "Scheduling…" : "Schedule"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Flows tab — lead_nurture_sequence automations
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Automation {
+  id: string;
+  name: string;
+  trigger_type: string;
+  trigger_config: any;
+  skill_name: string;
+  skill_arguments: any;
+  enabled: boolean;
+  executor: string;
+  created_at: string;
+}
+
+const FLOW_PRESETS: Record<
+  string,
+  { label: string; name: string; trigger_type: "event" | "cron"; trigger_config: any; sequence_type: string; description: string }
+> = {
+  welcome: {
+    label: "Welcome",
+    name: "Welcome sequence",
+    trigger_type: "event",
+    trigger_config: { event: "lead.created" },
+    sequence_type: "welcome",
+    description: "Triggers on lead.created — introduces new subscribers to your brand.",
+  },
+  re_engage: {
+    label: "Re-engage",
+    name: "Re-engagement sequence",
+    trigger_type: "cron",
+    trigger_config: { schedule: "0 9 * * 1" },
+    sequence_type: "re_engage",
+    description: "Runs every Monday at 09:00 — wakes up cold subscribers.",
+  },
+  upsell: {
+    label: "Upsell",
+    name: "Post-purchase upsell",
+    trigger_type: "event",
+    trigger_config: { event: "order.completed" },
+    sequence_type: "upsell",
+    description: "Triggers on order.completed — offers related products.",
+  },
+};
+
+function FlowsTab() {
+  const qc = useQueryClient();
+  const [newOpen, setNewOpen] = useState(false);
+  const [preset, setPreset] = useState<keyof typeof FLOW_PRESETS>("welcome");
+
+  const { data: flows = [], isLoading } = useQuery({
+    queryKey: ["newsletter-flows"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agent_automations")
+        .select("*")
+        .eq("skill_name", "lead_nurture_sequence")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Automation[];
+    },
+  });
+
+  const toggleEnabled = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from("agent_automations")
+        .update({ enabled })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["newsletter-flows"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createFlow = useMutation({
+    mutationFn: async (presetKey: keyof typeof FLOW_PRESETS) => {
+      const p = FLOW_PRESETS[presetKey];
+      const { error } = await supabase.from("agent_automations").insert({
+        name: p.name,
+        trigger_type: p.trigger_type,
+        trigger_config: p.trigger_config,
+        skill_name: "lead_nurture_sequence",
+        skill_arguments: { sequence_type: p.sequence_type },
+        executor: "platform",
+        enabled: false,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["newsletter-flows"] });
+      setNewOpen(false);
+      toast.success("Flow created (disabled — enable to activate)");
+    },
+    onError: (e: Error) => {
+      logger.error("Create flow failed", e);
+      toast.error(e.message);
+    },
+  });
+
+  const deleteFlow = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("agent_automations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["newsletter-flows"] });
+      toast.success("Flow removed");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const describeTrigger = (a: Automation): string => {
+    if (a.trigger_type === "event") return `event: ${a.trigger_config?.event ?? "—"}`;
+    if (a.trigger_type === "cron") return `cron: ${a.trigger_config?.schedule ?? "—"}`;
+    return a.trigger_type;
+  };
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <Dialog open={newOpen} onOpenChange={setNewOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New flow
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New automation flow</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-muted-foreground">
+                Pick a preset. Flows are created disabled — review and enable them
+                consciously.
+              </p>
+              <div className="space-y-2">
+                {(Object.keys(FLOW_PRESETS) as Array<keyof typeof FLOW_PRESETS>).map((k) => {
+                  const p = FLOW_PRESETS[k];
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setPreset(k)}
+                      className={`w-full text-left rounded-md border px-3 py-2 hover:bg-accent transition-colors ${
+                        preset === k ? "border-primary bg-accent/50" : ""
+                      }`}
+                    >
+                      <div className="font-medium text-sm">{p.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {p.description}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setNewOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createFlow.mutate(preset)}
+                disabled={createFlow.isPending}
+              >
+                {createFlow.isPending ? "Creating…" : "Create flow"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Trigger</TableHead>
+              <TableHead>Sequence</TableHead>
+              <TableHead className="text-right">Enabled</TableHead>
+              <TableHead className="w-16"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Loading…
+                </TableCell>
+              </TableRow>
+            ) : flows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <Workflow className="h-6 w-6 mx-auto mb-2 opacity-60" />
+                  No flows yet. Use "New flow" to add one.
+                </TableCell>
+              </TableRow>
+            ) : (
+              flows.map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell className="font-medium">{f.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground font-mono">
+                    {describeTrigger(f)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {f.skill_arguments?.sequence_type ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Switch
+                      checked={f.enabled}
+                      onCheckedChange={(v) => toggleEnabled.mutate({ id: f.id, enabled: v })}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteFlow.mutate(f.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+    </>
   );
 }

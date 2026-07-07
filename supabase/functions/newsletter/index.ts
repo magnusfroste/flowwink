@@ -17,6 +17,8 @@ import { handle as handleTrack } from './track.ts';
 import { handle as handleLink } from './link.ts';
 import { handle as handleGdpr } from './gdpr.ts';
 import { handle as handleExport } from './export.ts';
+import { handle as handleDispatchScheduled } from './dispatch-scheduled.ts';
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +50,9 @@ serve(async (req) => {
       return handleGdpr(req);
     case "export":
       return handleExport(req);
+    case "dispatch-scheduled":
+      return handleDispatchScheduled(req);
+
     default:
       return new Response(
         JSON.stringify({ error: `Unknown newsletter route: ${route}` }),
