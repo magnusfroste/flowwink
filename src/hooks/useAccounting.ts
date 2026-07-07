@@ -89,9 +89,13 @@ export interface AccountingTemplate {
 export interface TemplateLine {
   account_code: string;
   account_name: string;
-  type: 'debit' | 'credit';
-  description: string;
+  /** @deprecated use debit_pct/credit_pct — kept for legacy reads */
+  type?: 'debit' | 'credit';
+  debit_pct?: number;
+  credit_pct?: number;
+  description?: string;
 }
+
 
 export interface AccountBalance {
   account_code: string;
