@@ -221,9 +221,9 @@ export function JournalTab() {
                       <td className="px-4 py-1.5 text-right font-mono">{fmt(e.total_cents || 0)}</td>
                       <td className="px-4 py-1.5 text-center">
                         {e.is_balanced ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-600 inline" />
+                          <Check className="h-3.5 w-3.5 text-success inline" />
                         ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 inline" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-warning inline" />
                         )}
                       </td>
                       <td className="px-4 py-1.5">
