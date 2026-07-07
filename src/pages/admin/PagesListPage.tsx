@@ -59,13 +59,14 @@ const STATUS_ORDER: Record<PageStatus, number> = {
   archived: 4,
 };
 
-function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage }: {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage, onOpenTranslations }: {
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
   onDuplicate: (page: { title: string; slug: string }) => void;
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
+  onOpenTranslations: (slug: string) => void;
 }) {
   const showInMenu = page.show_in_menu;
 
