@@ -69,18 +69,14 @@ export function AnalyticAccountingTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Analytic Accounting</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tag journal entries to projects, cost centers, departments or campaigns for profitability reporting.
-            </p>
-          </div>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Analytic Accounting"
+        description="Tag journal entries to projects, cost centers, departments or campaigns for profitability reporting."
+        actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />New analytic account</Button>
+              <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" />New analytic account</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
