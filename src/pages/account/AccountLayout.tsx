@@ -22,6 +22,7 @@ const employeeNav = [
   { to: '/account/performance', label: 'Performance', icon: Target },
   { to: '/account/skills', label: 'Skills', icon: GraduationCap },
   { to: '/account/contracts', label: 'Contracts', icon: FileText },
+  { to: '/account/payslips', label: 'Payslips', icon: Receipt },
 ];
 
 const managerNav = [{ to: '/account/team', label: 'My Team', icon: Users }];
