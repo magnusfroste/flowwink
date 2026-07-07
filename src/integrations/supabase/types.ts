@@ -14536,6 +14536,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_wipe_journal: {
+        Args: { p_delete_bank_events?: boolean }
+        Returns: Json
+      }
       advance_approval_step: {
         Args: {
           p_comment?: string
