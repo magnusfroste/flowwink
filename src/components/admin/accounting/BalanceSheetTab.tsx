@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronRight } from 'lucide-react';
 import { useFiscalYear } from './FiscalYearContext';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 type Balance = {
   account_code: string;
