@@ -12,7 +12,7 @@ type Balance = {
   account_name: string;
   account_type: string;
   balance: number;
-  opening_balance?: number;
+  opening_cents?: number;
 };
 
 export function BalanceSheetTab() {
@@ -38,7 +38,7 @@ export function BalanceSheetTab() {
   const report = useMemo(() => {
     if (!balances) return null;
     const nonZero = (b: Balance) =>
-      showInactive || b.balance !== 0 || (b.opening_balance ?? 0) !== 0;
+      showInactive || b.balance !== 0 || (b.opening_cents ?? 0) !== 0;
     const sort = <T extends { account_code: string }>(arr: T[]) =>
       [...arr].sort((a, b) => a.account_code.localeCompare(b.account_code));
     const assets = sort((balances as Balance[]).filter((b) => b.account_type === 'asset').filter(nonZero));
@@ -46,7 +46,7 @@ export function BalanceSheetTab() {
     const equity = sort((balances as Balance[]).filter((b) => b.account_type === 'equity').filter(nonZero));
 
     const totals = (arr: Balance[]) => {
-      const opening = arr.reduce((s, a) => s + (a.opening_balance ?? 0), 0);
+      const opening = arr.reduce((s, a) => s + (a.opening_cents ?? 0), 0);
       const closing = arr.reduce((s, a) => s + a.balance, 0);
       return { opening, closing, change: closing - opening };
     };
@@ -60,7 +60,7 @@ export function BalanceSheetTab() {
       change: equityT.change + liabT.change,
     };
 
-    const allOpeningZero = (balances as Balance[]).every((b) => (b.opening_balance ?? 0) === 0);
+    const allOpeningZero = (balances as Balance[]).every((b) => (b.opening_cents ?? 0) === 0);
 
     return { assets, liabilities, equity, assetsT, equityT, liabT, eqLiabT, allOpeningZero };
   }, [balances, showInactive]);
@@ -182,7 +182,7 @@ function Section({
   return (
     <div>
       {accounts.map((a) => {
-        const opening = a.opening_balance ?? 0;
+        const opening = a.opening_cents ?? 0;
         const change = a.balance - opening;
         return (
           <div

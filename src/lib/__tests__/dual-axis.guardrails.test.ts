@@ -136,4 +136,10 @@ describe('dual-axis guardrails', () => {
     // movements must be filtered to the fiscal year
     expect(src).toMatch(/gte\('journal_entries\.entry_date'/);
   });
+
+  it('IB: UI uses the canonical opening_cents field (no invented aliases)', () => {
+    const tab = read('src/components/admin/accounting/BalanceSheetTab.tsx');
+    expect(tab).toContain('opening_cents');
+    expect(tab).not.toContain('opening_balance?');
+  });
 });
