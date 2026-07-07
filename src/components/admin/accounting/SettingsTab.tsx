@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 
 export function SettingsTab() {
