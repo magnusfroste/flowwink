@@ -363,6 +363,8 @@ export function useAccountBalances() {
           debit_total: 0,
           credit_total: 0,
           balance: 0,
+          opening_cents: 0,
+          closing_cents: 0,
         };
         existing.debit_total += Number(line.debit_cents || 0);
         existing.credit_total += Number(line.credit_cents || 0);
