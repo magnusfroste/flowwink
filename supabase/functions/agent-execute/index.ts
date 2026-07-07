@@ -1831,58 +1831,9 @@ async function executeOpenClawAction(
 
     case 'place_order': {
       // MCP skill: external agent (ClawTwo) places an order as a customer
-      const { customer_email, customer_name, items, currency = 'SEK', notes } = args as any;
-      if (!customer_email || !items?.length) {
-        return { error: 'customer_email and items[] (each with product_id or product_name, quantity) are required' };
-      }
-
-      // Resolve products and calculate total
-      let totalCents = 0;
-      const resolvedItems: any[] = [];
-      for (const item of items) {
-        const qty = item.quantity || 1;
-        let product: any = null;
-
-        if (item.product_id) {
-          const { data } = await supabase.from('products').select('id, name, price_cents').eq('id', item.product_id).single();
-          product = data;
-        } else if (item.product_name || item.name) {
-          const searchName = item.product_name || item.name;
-          const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${searchName}%`).limit(1).single();
-          product = data;
-        }
-
-        if (!product) return { error: `Product not found: ${item.product_id || item.product_name}` };
-        totalCents += product.price_cents * qty;
-        resolvedItems.push({ product_id: product.id, product_name: product.name, price_cents: product.price_cents, quantity: qty });
-      }
-
-      // Create order
-      const { data: order, error: orderErr } = await supabase.from('orders').insert({
-        customer_email,
-        customer_name: customer_name || customer_email,
-        total_cents: totalCents,
-        currency,
-        status: 'pending',
-        metadata: { source: 'mcp_place_order', notes },
-      }).select('id, status, total_cents, currency').single();
-      if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
-
-      // Create order items
-      for (const ri of resolvedItems) {
-        await supabase.from('order_items').insert({ order_id: order.id, ...ri });
-      }
-
-      return {
-        success: true,
-        order_id: order.id,
-        status: order.status,
-        total_cents: order.total_cents,
-        currency: order.currency,
-        items_count: resolvedItems.length,
-        message: `Order ${order.id} created with ${resolvedItems.length} item(s) totaling ${(totalCents / 100).toFixed(2)} ${currency}`,
-      };
+      return await placeOrderShared(supabase, args as any, 'mcp_place_order');
     }
+
 
     case 'confirm_fulfillment': {
       // MCP skill: external agent (ClawThree/supplier) confirms delivery of an order or PO
@@ -4782,69 +4733,151 @@ Return ONLY a JSON object with "subject" and "body_html" keys. The body_html sho
 // Orders module — with management and stats
 // =============================================================================
 
+/**
+ * Shared place_order implementation used by both the switch-case dispatcher and
+ * the orders module handler. Accepts snake_case and camelCase inputs, resolves
+ * products server-side, computes cart weight, and wires shipping (rate-band
+ * validation OR auto-cheapest via list_shipping_options RPC). Weightless carts
+ * skip shipping entirely (unchanged behavior).
+ */
+async function placeOrderShared(
+  supabase: SupabaseClient,
+  a: any,
+  source: string,
+): Promise<any> {
+  const customer_email = a.customer_email ?? a.customerEmail;
+  const customer_name = a.customer_name ?? a.customerName;
+  const items = a.items;
+  const currency = a.currency ?? 'SEK';
+  const notes = a.notes;
+  const shipping_address = a.shipping_address ?? a.shippingAddress ?? null;
+  const shipping_rate_id = a.shipping_rate_id ?? a.shippingRateId ?? null;
+
+  if (!customer_email || !items?.length) {
+    return { error: 'customer_email and items[] (each with product_id or product_name, quantity) are required' };
+  }
+
+  let itemsCents = 0;
+  let totalWeightGrams = 0;
+  const resolvedItems: any[] = [];
+  for (const item of items) {
+    const qty = item.quantity ?? item.qty ?? 1;
+    const productId = item.product_id ?? item.productId;
+    const productName = item.product_name ?? item.productName ?? item.name;
+    let product: any = null;
+    if (productId) {
+      const { data } = await supabase.from('products').select('id, name, price_cents, weight_grams').eq('id', productId).single();
+      product = data;
+    } else if (productName) {
+      const { data } = await supabase.from('products').select('id, name, price_cents, weight_grams').ilike('name', `%${productName}%`).limit(1).single();
+      product = data;
+    }
+    if (!product) return { error: `Product not found: ${productId || productName}` };
+    itemsCents += (product.price_cents || 0) * qty;
+    if (product.weight_grams != null) {
+      totalWeightGrams += product.weight_grams * qty;
+    }
+    resolvedItems.push({ product_id: product.id, product_name: product.name, price_cents: product.price_cents, quantity: qty });
+  }
+
+  // Resolve shipping (only for carts with weighted products)
+  let shippingCents = 0;
+  let shippingMethod: string | null = null;
+  if (totalWeightGrams > 0) {
+    if (shipping_rate_id) {
+      const { data: rate } = await supabase
+        .from('shipping_rates')
+        .select('id, name, price_cents, currency, min_weight_grams, max_weight_grams, is_active, carrier_id')
+        .eq('id', shipping_rate_id)
+        .maybeSingle();
+      if (!rate || !rate.is_active) {
+        return { error: `Shipping rate ${shipping_rate_id} not found or inactive` };
+      }
+      if (totalWeightGrams < (rate.min_weight_grams ?? 0) ||
+          (rate.max_weight_grams != null && totalWeightGrams > rate.max_weight_grams)) {
+        return { error: `Shipping rate ${rate.name} does not cover weight ${totalWeightGrams}g (band ${rate.min_weight_grams}–${rate.max_weight_grams ?? '∞'}g)` };
+      }
+      const { data: carrier } = await supabase.from('carriers').select('name').eq('id', rate.carrier_id).maybeSingle();
+      shippingCents = rate.price_cents;
+      shippingMethod = `${carrier?.name ?? 'Carrier'} — ${rate.name}`;
+    } else {
+      const { data: opts } = await supabase.rpc('list_shipping_options', {
+        p_weight_grams: totalWeightGrams,
+        p_currency: currency,
+        p_country: shipping_address?.country ?? null,
+      });
+      const options = (opts as any)?.options ?? [];
+      if (options.length > 0) {
+        const cheapest = options[0];
+        shippingCents = cheapest.price_cents;
+        shippingMethod = `${cheapest.carrier_name} — ${cheapest.rate_name}`;
+      }
+      // No options → graceful degrade, no shipping written
+    }
+  }
+
+  const totalCents = itemsCents + shippingCents;
+
+  const insertRow: any = {
+    customer_email,
+    customer_name: customer_name || customer_email,
+    total_cents: totalCents,
+    currency,
+    status: 'pending',
+    metadata: { source, notes },
+  };
+  if (shippingMethod) {
+    insertRow.shipping_method = shippingMethod;
+    insertRow.shipping_cost_cents = shippingCents;
+  }
+  if (shipping_address) {
+    if (shipping_address.name) insertRow.shipping_name = shipping_address.name;
+    if (shipping_address.line1) insertRow.shipping_address_line1 = shipping_address.line1;
+    if (shipping_address.line2) insertRow.shipping_address_line2 = shipping_address.line2;
+    if (shipping_address.postal_code) insertRow.shipping_postal_code = shipping_address.postal_code;
+    if (shipping_address.city) insertRow.shipping_city = shipping_address.city;
+    if (shipping_address.country) insertRow.shipping_country = shipping_address.country;
+    if (shipping_address.phone) insertRow.shipping_phone = shipping_address.phone;
+  }
+
+  const { data: order, error: orderErr } = await supabase
+    .from('orders')
+    .insert(insertRow)
+    .select('id, status, total_cents, currency, shipping_method, shipping_cost_cents')
+    .single();
+  if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
+
+  for (const ri of resolvedItems) {
+    await supabase.from('order_items').insert({ order_id: order.id, ...ri });
+  }
+
+  return {
+    success: true,
+    order_id: order.id,
+    status: order.status,
+    total_cents: order.total_cents,
+    currency: order.currency,
+    items_count: resolvedItems.length,
+    total_weight_grams: totalWeightGrams,
+    shipping_method: order.shipping_method ?? null,
+    shipping_cost_cents: order.shipping_cost_cents ?? null,
+    message: `Order ${order.id} created with ${resolvedItems.length} item(s) totaling ${(totalCents / 100).toFixed(2)} ${currency}${shippingMethod ? ` (incl. shipping ${(shippingCents / 100).toFixed(2)} via ${shippingMethod})` : ''}`,
+  };
+}
+
+
+
 async function executeOrdersAction(
   supabase: SupabaseClient,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
   if (skillName === 'place_order') {
-    // External agent places an order as a customer. Accepts snake_case AND camelCase
-    // (customer_email/customerEmail, item.product_id/productId) and resolves products
-    // server-side. Was mis-routed to edge:create-checkout (storefront/Stripe, camel-only,
-    // expects pre-priced cart items) — that broke snake_case and the MCP item contract.
-    const a = args as any;
-    const customer_email = a.customer_email ?? a.customerEmail;
-    const customer_name = a.customer_name ?? a.customerName;
-    const items = a.items;
-    const currency = a.currency ?? 'SEK';
-    const notes = a.notes;
-    if (!customer_email || !items?.length) {
-      return { error: 'customer_email and items[] (each with product_id or product_name, quantity) are required' };
-    }
-
-    let totalCents = 0;
-    const resolvedItems: any[] = [];
-    for (const item of items) {
-      const qty = item.quantity ?? item.qty ?? 1;
-      const productId = item.product_id ?? item.productId;
-      const productName = item.product_name ?? item.productName ?? item.name;
-      let product: any = null;
-      if (productId) {
-        const { data } = await supabase.from('products').select('id, name, price_cents').eq('id', productId).single();
-        product = data;
-      } else if (productName) {
-        const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${productName}%`).limit(1).single();
-        product = data;
-      }
-      if (!product) return { error: `Product not found: ${productId || productName}` };
-      totalCents += (product.price_cents || 0) * qty;
-      resolvedItems.push({ product_id: product.id, product_name: product.name, price_cents: product.price_cents, quantity: qty });
-    }
-
-    const { data: order, error: orderErr } = await supabase.from('orders').insert({
-      customer_email,
-      customer_name: customer_name || customer_email,
-      total_cents: totalCents,
-      currency,
-      status: 'pending',
-      metadata: { source: 'mcp_place_order', notes },
-    }).select('id, status, total_cents, currency').single();
-    if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
-
-    for (const ri of resolvedItems) {
-      await supabase.from('order_items').insert({ order_id: order.id, ...ri });
-    }
-
-    return {
-      success: true,
-      order_id: order.id,
-      status: order.status,
-      total_cents: order.total_cents,
-      currency: order.currency,
-      items_count: resolvedItems.length,
-      message: `Order ${order.id} created with ${resolvedItems.length} item(s) totaling ${(totalCents / 100).toFixed(2)} ${currency}`,
-    };
+    // External agent places an order as a customer. Delegates to shared helper
+    // that accepts snake_case AND camelCase, resolves products/shipping server-side.
+    return await placeOrderShared(supabase, args as any, 'mcp_place_order');
   }
+
 
   if (skillName === 'manage_orders') {
     let { action = 'list', order_id, status, period = 'month', limit = 20 } = args as any;
