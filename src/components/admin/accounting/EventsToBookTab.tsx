@@ -49,6 +49,7 @@ interface Proposal {
   suggested_amount_cents: number;
   proposed_lines: ProposedLine[];
   top_candidates: Candidate[];
+  match_details?: string | null;
 }
 
 interface ProposalsResult {
@@ -148,6 +149,9 @@ export function EventsToBookTab() {
   const bookMutation = useMutation({
     mutationFn: async (p: Proposal) => {
       const templateId = templateOverrides[p.bank_transaction_id] ?? p.suggested_template_id;
+      const matchSource = (p.match_details ?? '').toLowerCase().includes('vendor-default')
+        ? 'vendor-default'
+        : 'keyword';
       const args: Record<string, unknown> = {
         action: 'create',
         template_id: templateId,
@@ -156,6 +160,7 @@ export function EventsToBookTab() {
         reference_number: p.counterparty,
         bank_transaction_id: p.bank_transaction_id,
         entry_date: p.transaction_date,
+        match_source: matchSource,
         auto_confirm: true,
       };
       const first = await invokeSkill<any>('manage_journal_entry', args);

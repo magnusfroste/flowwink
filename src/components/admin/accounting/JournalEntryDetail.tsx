@@ -1,6 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import type { JournalEntry } from '@/hooks/useAccounting';
 
 const formatCents = (cents: number) =>
@@ -12,9 +14,32 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const MATCH_SOURCE_LABEL: Record<string, string> = {
+  'vendor-default': 'vendor default',
+  keyword: 'keyword match',
+  manual: 'manual',
+};
+
 export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
   const totalDebit = entry.lines?.reduce((s, l) => s + (l.debit_cents || 0), 0) || 0;
   const totalCredit = entry.lines?.reduce((s, l) => s + (l.credit_cents || 0), 0) || 0;
+
+  const templateId = (entry as any).template_id as string | null | undefined;
+  const matchSource = (entry as any).match_source as string | null | undefined;
+
+  const { data: template } = useQuery({
+    queryKey: ['accounting-template', templateId],
+    enabled: !!templateId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounting_templates')
+        .select('id, name')
+        .eq('id', templateId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -22,6 +47,20 @@ export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
         <SheetHeader>
           <SheetTitle>{entry.description}</SheetTitle>
         </SheetHeader>
+
+        {templateId && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              Booked via template:{' '}
+              <span className="text-foreground">{template?.name ?? '…'}</span>
+            </span>
+            {matchSource && (
+              <Badge variant="secondary" className="font-normal text-[10px] px-1.5 py-0">
+                {MATCH_SOURCE_LABEL[matchSource] ?? matchSource}
+              </Badge>
+            )}
+          </div>
+        )}
 
         <div className="mt-6 space-y-6">
           <div className="grid grid-cols-2 gap-4 text-sm">
