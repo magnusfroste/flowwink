@@ -335,16 +335,35 @@ export default function POSPage() {
                       <CardTitle className="text-base">Catalog</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
+                      <div className="space-y-1">
+                        <div className="relative">
+                          <ScanBarcode className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            className="pl-9 font-mono"
+                            placeholder="Scan barcode or type SKU/name + Enter…"
+                            value={barcode}
+                            autoFocus
+                            onChange={(e) => { setBarcode(e.target.value); setBarcodeMsg(null); }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                quickAddByBarcode(barcode);
+                              }
+                            }}
+                          />
+                        </div>
+                        {barcodeMsg && <div className="text-xs text-destructive px-1">{barcodeMsg}</div>}
+                      </div>
                       <div className="relative">
                         <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           className="pl-9"
-                          placeholder="Search by name or scan barcode…"
+                          placeholder="Browse catalog…"
                           value={search}
                           onChange={(e) => setSearch(e.target.value)}
-                          autoFocus
                         />
                       </div>
+
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-64 overflow-y-auto">
                         {(products ?? []).map((p) => (
                           <button
