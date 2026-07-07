@@ -696,7 +696,18 @@ export default function ConsultantProfilesPage() {
             </Table>
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="assignments">
+            <AssignmentsTab />
+          </TabsContent>
+
+          <TabsContent value="rates">
+            <RatesTab />
+          </TabsContent>
+        </Tabs>
       </div>
+
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
