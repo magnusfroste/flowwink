@@ -45,27 +45,30 @@ export function BalanceSheetTab() {
     const liabilities = sort((balances as Balance[]).filter((b) => b.account_type === 'liability').filter(nonZero));
     const equity = sort((balances as Balance[]).filter((b) => b.account_type === 'equity').filter(nonZero));
 
-    const totalAssets = assets.reduce((s, a) => s + a.balance, 0);
-    const totalLiabilities = liabilities.reduce((s, l) => s + l.balance, 0);
-    const totalEquity = equity.reduce((s, e) => s + e.balance, 0);
-    const openingAssets = assets.reduce((s, a) => s + (a.opening_balance ?? 0), 0);
-    const openingLiab = liabilities.reduce((s, a) => s + (a.opening_balance ?? 0), 0);
-    const openingEquity = equity.reduce((s, a) => s + (a.opening_balance ?? 0), 0);
-    return {
-      assets,
-      liabilities,
-      equity,
-      totalAssets,
-      totalLiabilities,
-      totalEquity,
-      openingAssets,
-      openingLiab,
-      openingEquity,
+    const totals = (arr: Balance[]) => {
+      const opening = arr.reduce((s, a) => s + (a.opening_balance ?? 0), 0);
+      const closing = arr.reduce((s, a) => s + a.balance, 0);
+      return { opening, closing, change: closing - opening };
     };
+
+    const assetsT = totals(assets);
+    const equityT = totals(equity);
+    const liabT = totals(liabilities);
+    const eqLiabT = {
+      opening: equityT.opening + liabT.opening,
+      closing: equityT.closing + liabT.closing,
+      change: equityT.change + liabT.change,
+    };
+
+    const allOpeningZero = (balances as Balance[]).every((b) => (b.opening_balance ?? 0) === 0);
+
+    return { assets, liabilities, equity, assetsT, equityT, liabT, eqLiabT, allOpeningZero };
   }, [balances, showInactive]);
 
   if (isLoading) return <Skeleton className="h-96" />;
   if (!report) return null;
+
+  const mutedOpening = report.allOpeningZero;
 
   return (
     <div className="rounded-lg border bg-card">
@@ -83,15 +86,13 @@ export function BalanceSheetTab() {
 
       <div className="px-6 pt-6">
         <ColumnHeader fiscalYear={fiscalYear} label="Assets" />
-        <Section
-          accounts={report.assets}
-          fmt={fmt}
-        />
+        <Section accounts={report.assets} fmt={fmt} mutedOpening={mutedOpening} />
         <TotalRow
           label="Total assets"
-          opening={fmt(report.openingAssets)}
-          delta={fmt(report.totalAssets - report.openingAssets)}
-          closing={fmt(report.totalAssets)}
+          opening={fmt(report.assetsT.opening)}
+          change={fmt(report.assetsT.change)}
+          closing={fmt(report.assetsT.closing)}
+          mutedOpening={mutedOpening}
           strong
         />
       </div>
@@ -99,18 +100,33 @@ export function BalanceSheetTab() {
       <div className="px-6 pt-8 pb-6">
         <ColumnHeader fiscalYear={fiscalYear} label="Equity & liabilities" />
         <SubGroup label="Equity">
-          <Section accounts={report.equity} fmt={fmt} />
+          <Section accounts={report.equity} fmt={fmt} mutedOpening={mutedOpening} />
+          <TotalRow
+            label="Total equity"
+            opening={fmt(report.equityT.opening)}
+            change={fmt(report.equityT.change)}
+            closing={fmt(report.equityT.closing)}
+            mutedOpening={mutedOpening}
+            strong
+          />
         </SubGroup>
         <SubGroup label="Liabilities">
-          <Section accounts={report.liabilities} fmt={fmt} />
+          <Section accounts={report.liabilities} fmt={fmt} mutedOpening={mutedOpening} />
+          <TotalRow
+            label="Total liabilities"
+            opening={fmt(report.liabT.opening)}
+            change={fmt(report.liabT.change)}
+            closing={fmt(report.liabT.closing)}
+            mutedOpening={mutedOpening}
+            strong
+          />
         </SubGroup>
         <TotalRow
           label="Total equity & liabilities"
-          opening={fmt(report.openingEquity + report.openingLiab)}
-          delta={fmt(
-            report.totalEquity + report.totalLiabilities - report.openingEquity - report.openingLiab,
-          )}
-          closing={fmt(report.totalEquity + report.totalLiabilities)}
+          opening={fmt(report.eqLiabT.opening)}
+          change={fmt(report.eqLiabT.change)}
+          closing={fmt(report.eqLiabT.closing)}
+          mutedOpening={mutedOpening}
           strong
         />
       </div>
@@ -123,12 +139,12 @@ function ColumnHeader({ fiscalYear, label }: { fiscalYear: number | string; labe
     <div className="grid grid-cols-[1fr_auto_auto_auto] gap-6 pb-3 border-b">
       <div className="font-semibold">{label}</div>
       <div className="text-right text-xs text-muted-foreground w-28">
-        <div>Opening</div>
+        <div>Opening balance</div>
         <div>{fiscalYear}-01-01</div>
       </div>
-      <div className="text-right text-xs text-muted-foreground w-24">Result</div>
+      <div className="text-right text-xs text-muted-foreground w-24">Change</div>
       <div className="text-right text-xs text-muted-foreground w-28">
-        <div>Closing</div>
+        <div>Closing balance</div>
         <div>{fiscalYear}-12-31</div>
       </div>
     </div>
@@ -154,9 +170,11 @@ function SubGroup({ label, children }: { label: string; children: React.ReactNod
 function Section({
   accounts,
   fmt,
+  mutedOpening,
 }: {
   accounts: Balance[];
   fmt: (n: number) => string;
+  mutedOpening?: boolean;
 }) {
   if (accounts.length === 0) {
     return <div className="py-2 text-sm text-muted-foreground italic">No entries</div>;
@@ -165,7 +183,7 @@ function Section({
     <div>
       {accounts.map((a) => {
         const opening = a.opening_balance ?? 0;
-        const delta = a.balance - opening;
+        const change = a.balance - opening;
         return (
           <div
             key={a.account_code}
@@ -175,10 +193,14 @@ function Section({
               <span className="font-mono text-muted-foreground">{a.account_code}</span>{' '}
               <span>{a.account_name}</span>
             </div>
-            <div className="text-right font-mono tabular-nums text-muted-foreground w-28">
+            <div
+              className={`text-right font-mono tabular-nums w-28 ${
+                mutedOpening || opening === 0 ? 'text-muted-foreground/50' : ''
+              }`}
+            >
               {fmt(opening)}
             </div>
-            <div className="text-right font-mono tabular-nums w-24">{fmt(delta)}</div>
+            <div className="text-right font-mono tabular-nums w-24">{fmt(change)}</div>
             <div className="text-right font-mono tabular-nums w-28">{fmt(a.balance)}</div>
           </div>
         );
@@ -190,15 +212,17 @@ function Section({
 function TotalRow({
   label,
   opening,
-  delta,
+  change,
   closing,
   strong,
+  mutedOpening,
 }: {
   label: string;
   opening: string;
-  delta: string;
+  change: string;
   closing: string;
   strong?: boolean;
+  mutedOpening?: boolean;
 }) {
   return (
     <div
@@ -207,8 +231,14 @@ function TotalRow({
       }`}
     >
       <div>{label}</div>
-      <div className="text-right font-mono tabular-nums w-28">{opening}</div>
-      <div className="text-right font-mono tabular-nums w-24">{delta}</div>
+      <div
+        className={`text-right font-mono tabular-nums w-28 ${
+          mutedOpening ? 'text-muted-foreground/50' : ''
+        }`}
+      >
+        {opening}
+      </div>
+      <div className="text-right font-mono tabular-nums w-24">{change}</div>
       <div className="text-right font-mono tabular-nums w-28">{closing}</div>
     </div>
   );
