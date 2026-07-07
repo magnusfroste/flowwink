@@ -5,6 +5,8 @@ import { WeeklyTimesheetTab } from '@/components/admin/timesheets/WeeklyTimeshee
 import { ProjectsTab } from '@/components/admin/timesheets/ProjectsTab';
 import { TasksTab } from '@/components/admin/timesheets/TasksTab';
 import { BudgetTab } from '@/components/admin/timesheets/BudgetTab';
+import { EntriesTab } from '@/components/admin/timesheets/EntriesTab';
+import { ReportsTab } from '@/components/admin/timesheets/ReportsTab';
 
 export default function TimesheetsPage() {
   return (
