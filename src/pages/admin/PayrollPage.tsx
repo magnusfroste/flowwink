@@ -907,3 +907,153 @@ function SummaryCard({ label, value, highlight }: { label: string; value: string
     </Card>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Pension + sick-pay dialogs (draft-only actions)
+// ─────────────────────────────────────────────────────────────────────────
+
+function ApplyPensionDialog({ run }: { run: PayrollRun }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [employerPct, setEmployerPct] = useState('4.5');
+  const [employeePct, setEmployeePct] = useState('0');
+
+  const apply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_pension' as any, {
+        p_run_id: run.id,
+        p_employer_pct: parseFloat(employerPct || '0'),
+        p_employee_pct: parseFloat(employeePct || '0'),
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (d: any) => {
+      toast.success(
+        `Pension applied — employer ${fmtSEK(d?.total_pension_employer_cents ?? 0)}, employee ${fmtSEK(d?.total_pension_employee_cents ?? 0)}`,
+      );
+      qc.invalidateQueries({ queryKey: ['payroll_runs'] });
+      qc.invalidateQueries({ queryKey: ['payroll_lines', run.id] });
+      setOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">Apply pension</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Apply pension — {run.period_date.slice(0, 7)}</DialogTitle>
+          <CardDescription className="pt-2">
+            Idempotent: re-running with new percentages replaces the previous values (no compounding).
+            Employee % is deducted from net.
+          </CardDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="space-y-1">
+            <Label>Employer %</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={employerPct}
+              onChange={(e) => setEmployerPct(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Employee %</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={employeePct}
+              onChange={(e) => setEmployeePct(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => apply.mutate()} disabled={apply.isPending}>
+            {apply.isPending ? 'Applying…' : 'Apply pension'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SickDaysDialog({ run, line }: { run: PayrollRun; line: PayrollLine }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [sickDays, setSickDays] = useState(String(line.sick_days ?? 0));
+  const [workDays, setWorkDays] = useState('21');
+
+  const apply = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_sick_pay' as any, {
+        p_run_id: run.id,
+        p_employee_id: line.employee_id,
+        p_sick_days: parseInt(sickDays || '0', 10),
+        p_work_days_per_month: parseInt(workDays || '21', 10),
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (d: any) => {
+      toast.success(
+        `Sick pay applied — sick ${fmtSEK(d?.sick_pay_cents ?? 0)}, karens ${fmtSEK(d?.karensavdrag_cents ?? 0)}`,
+      );
+      if (d?.note) toast.message(d.note);
+      qc.invalidateQueries({ queryKey: ['payroll_runs'] });
+      qc.invalidateQueries({ queryKey: ['payroll_lines', run.id] });
+      setOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost">Sick days</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Sick days — {line.employee_name ?? line.employee_id.slice(0, 8)}</DialogTitle>
+          <CardDescription className="pt-2">
+            Applies 80% sick pay minus karensavdrag (first-day deduction). Set 0 to reset.
+            Re-run <span className="font-medium">Apply pension</span> afterwards if pension was already applied.
+          </CardDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="space-y-1">
+            <Label>Sick days</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={sickDays}
+              onChange={(e) => setSickDays(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Work days / month</Label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={workDays}
+              onChange={(e) => setWorkDays(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => apply.mutate()} disabled={apply.isPending}>
+            {apply.isPending ? 'Applying…' : 'Apply sick pay'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
