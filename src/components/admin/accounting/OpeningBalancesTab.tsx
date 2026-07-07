@@ -12,6 +12,7 @@ import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
 import { useOpeningBalances, useUpsertOpeningBalance, useDeleteOpeningBalance } from '@/hooks/useOpeningBalances';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function OpeningBalancesTab() {
   const { locale } = useAccountingLocale();
