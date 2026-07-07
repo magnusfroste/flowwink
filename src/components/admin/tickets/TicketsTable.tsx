@@ -57,6 +57,7 @@ export function TicketsTable({ tickets, isLoading }: TicketsTableProps) {
               <TableHead>Status</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Tags</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Created</TableHead>
             </TableRow>
@@ -91,6 +92,16 @@ export function TicketsTable({ tickets, isLoading }: TicketsTableProps) {
                     {TICKET_CATEGORY_LABELS[ticket.category]}
                   </span>
                 </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1 max-w-[180px]">
+                    {(ticket.tags ?? []).slice(0, 3).map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
+                    ))}
+                    {(ticket.tags?.length ?? 0) > 3 && (
+                      <Badge variant="outline" className="text-[10px]">+{ticket.tags.length - 3}</Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-sm text-muted-foreground truncate max-w-[200px]">
                   {ticket.contact_name || ticket.contact_email || '—'}
                 </TableCell>
@@ -99,6 +110,7 @@ export function TicketsTable({ tickets, isLoading }: TicketsTableProps) {
                 </TableCell>
               </TableRow>
             ))}
+
           </TableBody>
         </Table>
       </div>
