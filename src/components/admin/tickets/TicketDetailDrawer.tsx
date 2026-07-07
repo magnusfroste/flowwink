@@ -175,6 +175,48 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
             </div>
           </div>
 
+          {/* Tags */}
+          <Separator className="my-4" />
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+              <h4 className="text-sm font-medium">Tags</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {tags.map((t) => (
+                <Badge key={t} variant="outline" className="text-[10px] gap-1 pl-2 pr-1">
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(t)}
+                    className="hover:bg-muted rounded p-0.5"
+                    aria-label={`Remove tag ${t}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              <Input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addTag(tagInput);
+                  }
+                }}
+                placeholder="Add tag…"
+                className="h-6 w-28 text-xs"
+              />
+              {tagInput.trim() && (
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => addTag(tagInput)}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+
           {/* Description */}
           {ticket.description && (
             <>
