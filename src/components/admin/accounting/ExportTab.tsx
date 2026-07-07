@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AccountingTabHeader } from './AccountingTabHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -118,66 +118,65 @@ export function ExportTab() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Standardised accounting export</CardTitle>
-          <CardDescription>
-            Export the general ledger in the standard format your auditor or new
-            accounting system expects. Formats are provided by the active locale
-            pack ({pack.label}).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 max-w-md">
-            <div className="space-y-2">
-              <Label htmlFor="from">From</Label>
-              <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="to">To</Label>
-              <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <AccountingTabHeader
+        title="Standardised Export"
+        description={<>Export the general ledger in the standard format your auditor or new accounting system expects. Formats are provided by the active locale pack ({pack.label}).</>}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {adapters.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No export adapters registered for {pack.label}.
-            </CardContent>
-          </Card>
-        )}
-        {adapters.map((a) => (
-          <Card key={a.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">{a.label}</CardTitle>
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="from" className="text-xs text-muted-foreground">From</Label>
+            <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40 h-9" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="to" className="text-xs text-muted-foreground">To</Label>
+            <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40 h-9" />
+          </div>
+        </div>
+
+
+        {adapters.length === 0 ? (
+          <div className="py-16 text-center">
+            <h3 className="text-sm font-medium mb-1">No export adapters available</h3>
+            <p className="text-sm text-muted-foreground">The active locale pack ({pack.label}) does not register any export formats.</p>
+          </div>
+        ) : (
+          adapters.map((a) => (
+            <div
+              key={a.id}
+              className="flex items-center gap-4 px-6 py-3 border-b border-border/40 last:border-b-0"
+            >
+              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-medium truncate">{a.label}</span>
+                  <span className="text-xs text-muted-foreground">.{a.extension}</span>
                 </div>
-                <Badge variant="secondary">{purposeLabel[a.purpose] ?? a.purpose}</Badge>
+                <div className="text-xs text-muted-foreground truncate">
+                  {a.description ?? purposeLabel[a.purpose] ?? a.purpose}
+                </div>
               </div>
-              <CardDescription>{a.description ?? `.${a.extension}`}</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <Badge variant="outline" className="font-normal shrink-0">{purposeLabel[a.purpose] ?? a.purpose}</Badge>
               <Button
+                size="sm"
+                variant="outline"
                 onClick={() => handleDownload(a.id)}
                 disabled={busyId !== null}
-                className="w-full"
+                className="shrink-0"
               >
                 {busyId === a.id ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Download className="h-4 w-4 mr-2" />
                 )}
-                Download .{a.extension}
+                Download
               </Button>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
+

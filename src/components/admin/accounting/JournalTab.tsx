@@ -13,10 +13,11 @@ import { NewJournalEntryDialog } from './NewJournalEntryDialog';
 import { JournalEntryDetail } from './JournalEntryDetail';
 import { JournalCsvActions } from './JournalCsvActions';
 import { cn } from '@/lib/utils';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
-  posted: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+  posted: 'bg-success/15 text-success',
   voided: 'bg-destructive/10 text-destructive',
 };
 
@@ -84,6 +85,10 @@ export function JournalTab() {
 
   return (
     <div className="space-y-4">
+      <AccountingTabHeader
+        title="Journal"
+        description="Every voucher posted to the books, in chronological order. Click a row to inspect the debit/credit lines and template provenance."
+      />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -216,9 +221,9 @@ export function JournalTab() {
                       <td className="px-4 py-1.5 text-right font-mono">{fmt(e.total_cents || 0)}</td>
                       <td className="px-4 py-1.5 text-center">
                         {e.is_balanced ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-600 inline" />
+                          <Check className="h-3.5 w-3.5 text-success inline" />
                         ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 inline" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-warning inline" />
                         )}
                       </td>
                       <td className="px-4 py-1.5">

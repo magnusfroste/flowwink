@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, Calendar, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function YearEndTab() {
   const [year, setYear] = useState(new Date().getFullYear() - 1);
@@ -22,72 +20,80 @@ export function YearEndTab() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Year-End Readiness
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Checklist before closing the annual books. Locale packs add country-specific year-end proposals on top.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3 items-end">
-            <div>
-              <Label>Fiscal year</Label>
-              <Input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(parseInt(e.target.value))}
-                className="w-32"
-              />
-            </div>
-            <Button onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} /> Run checks
-            </Button>
-          </div>
+      <AccountingTabHeader
+        title="Year-End Readiness"
+        description="Checklist before closing the annual books. Locale packs add country-specific year-end proposals on top."
+      />
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : data ? (
-            <>
-              <div className={`p-4 rounded-md flex items-center gap-3 ${data.ready ? 'bg-success/10' : 'bg-warning/10'}`}>
-                {data.ready ? (
-                  <CheckCircle2 className="h-6 w-6 text-success" />
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
+          <Input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(parseInt(e.target.value))}
+            className="w-28 h-9"
+            aria-label="Fiscal year"
+          />
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            Run checks
+          </Button>
+          {data && (
+            <div className="ml-auto flex items-center gap-2 text-sm">
+              {data.ready ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  <span>{year} is ready for year-end close</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 text-warning" />
+                  <span>{year} not yet ready</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : !data ? (
+          <div className="py-16 text-center">
+            <h3 className="text-sm font-medium mb-1">No checks run yet</h3>
+            <p className="text-sm text-muted-foreground">Select a fiscal year and run the readiness checklist.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-[auto_1fr_auto] gap-4 px-6 py-2 text-xs text-muted-foreground border-b">
+              <div className="w-5"></div>
+              <div>Check</div>
+              <div className="text-right">Status</div>
+            </div>
+            {data.checks?.map((c: any) => (
+              <div
+                key={c.id}
+                className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-6 py-3 text-sm border-b border-border/40 last:border-b-0"
+              >
+                {c.pass ? (
+                  <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                 ) : (
-                  <XCircle className="h-6 w-6 text-warning" />
+                  <XCircle className="h-4 w-4 text-warning shrink-0" />
                 )}
-                <div>
-                  <p className="font-semibold">
-                    {data.ready ? `${year} is ready for year-end close` : `${year} not yet ready`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Generated {new Date(data.generated_at).toLocaleString()}</p>
+                <div className="min-w-0">
+                  <div className="font-medium">{c.label}</div>
+                  <div className="text-xs text-muted-foreground">{c.detail}</div>
+                </div>
+                <div className={`text-xs ${c.pass ? 'text-muted-foreground' : 'text-warning'}`}>
+                  {c.pass ? 'OK' : 'Action needed'}
                 </div>
               </div>
-
-              <div className="space-y-2">
-                {data.checks?.map((c: any) => (
-                  <div key={c.id} className="flex items-center gap-3 p-3 rounded-md border">
-                    {c.pass ? (
-                      <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-warning shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{c.label}</p>
-                      <p className="text-xs text-muted-foreground">{c.detail}</p>
-                    </div>
-                    <Badge variant={c.pass ? 'secondary' : 'destructive'}>
-                      {c.pass ? 'OK' : 'Action needed'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
+            ))}
+            <div className="px-6 py-2 border-t text-xs text-muted-foreground">
+              Generated {new Date(data.generated_at).toLocaleString()}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

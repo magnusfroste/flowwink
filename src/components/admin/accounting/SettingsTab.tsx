@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 
 export function SettingsTab() {
@@ -107,15 +108,19 @@ export function SettingsTab() {
   const selectedInfo = ACCOUNTING_LOCALES.find((l) => l.value === locale);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button asChild variant="outline" size="sm">
-          <Link to="/admin/accounting/locale-packs">
-            <ExternalLink className="h-3 w-3 mr-1" />
-            Manage locale packs
-          </Link>
-        </Button>
-      </div>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Settings"
+        description="Chart of accounts, display formatting, and locale pack for this instance. All amounts are stored as integer öre/cents — settings only affect display."
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/accounting/locale-packs">
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Manage locale packs
+            </Link>
+          </Button>
+        }
+      />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

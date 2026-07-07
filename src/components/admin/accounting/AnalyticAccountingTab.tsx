@@ -7,7 +7,7 @@ import {
   type AnalyticAccountType,
 } from '@/hooks/useAnalyticAccounting';
 import { useProjects } from '@/hooks/useProjects';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// Card wrappers removed — this tab now uses the shared AccountingTabHeader shell.
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,13 +18,14 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Tag, FolderTree, Building2, Megaphone } from 'lucide-react';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
-const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any; color: string }> = {
-  cost_center: { label: 'Cost Center', icon: Tag, color: 'bg-blue-500/10 text-blue-600' },
-  project: { label: 'Project', icon: FolderTree, color: 'bg-emerald-500/10 text-emerald-600' },
-  department: { label: 'Department', icon: Building2, color: 'bg-purple-500/10 text-purple-600' },
-  campaign: { label: 'Campaign', icon: Megaphone, color: 'bg-amber-500/10 text-amber-600' },
-  other: { label: 'Other', icon: Tag, color: 'bg-muted text-muted-foreground' },
+const TYPE_META: Record<AnalyticAccountType, { label: string; icon: any }> = {
+  cost_center: { label: 'Cost center', icon: Tag },
+  project: { label: 'Project', icon: FolderTree },
+  department: { label: 'Department', icon: Building2 },
+  campaign: { label: 'Campaign', icon: Megaphone },
+  other: { label: 'Other', icon: Tag },
 };
 
 export function AnalyticAccountingTab() {
@@ -68,18 +69,14 @@ export function AnalyticAccountingTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Analytic Accounting</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tag journal entries to projects, cost centers, departments or campaigns for profitability reporting.
-            </p>
-          </div>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Analytic Accounting"
+        description="Tag journal entries to projects, cost centers, departments or campaigns for profitability reporting."
+        actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />New analytic account</Button>
+              <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" />New analytic account</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -146,67 +143,69 @@ export function AnalyticAccountingTab() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : accounts.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Tag className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No analytic accounts yet.</p>
-              <p className="text-xs mt-1">Create cost centers or projects to start tagging journal entries.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Lines</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {accounts.map(a => {
-                  const bal = balanceMap.get(a.id);
-                  const meta = TYPE_META[a.account_type];
-                  const Icon = meta.icon;
-                  return (
-                    <TableRow key={a.id}>
-                      <TableCell className="font-mono text-sm">{a.code}</TableCell>
-                      <TableCell className="font-medium">{a.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={meta.color}>
-                          <Icon className="h-3 w-3 mr-1" />{meta.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">{bal?.line_count ?? 0}</TableCell>
-                      <TableCell className="text-right font-mono">{fmt(bal?.balance_cents ?? 0)}</TableCell>
-                      <TableCell>
-                        {a.is_active
-                          ? <Badge variant="outline">Active</Badge>
-                          : <Badge variant="secondary">Archived</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => update.mutate({ id: a.id, is_active: !a.is_active })}
-                        >
-                          {a.is_active ? 'Archive' : 'Reactivate'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        }
+      />
+
+      <div className="rounded-lg border bg-card">
+        {isLoading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : accounts.length === 0 ? (
+          <div className="py-16 text-center">
+            <Tag className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+            <h3 className="text-sm font-medium mb-1">No analytic accounts yet</h3>
+            <p className="text-sm text-muted-foreground">Create cost centers or projects to start tagging journal entries.</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Lines</TableHead>
+                <TableHead className="text-right">Balance</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {accounts.map((a) => {
+                const bal = balanceMap.get(a.id);
+                const meta = TYPE_META[a.account_type];
+                const Icon = meta.icon;
+                return (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-mono text-sm">{a.code}</TableCell>
+                    <TableCell className="font-medium">{a.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-normal">
+                        <Icon className="h-3 w-3 mr-1" />{meta.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground tabular-nums">{bal?.line_count ?? 0}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{fmt(bal?.balance_cents ?? 0)}</TableCell>
+                    <TableCell>
+                      {a.is_active
+                        ? <Badge variant="outline" className="font-normal">Active</Badge>
+                        : <Badge variant="secondary" className="font-normal">Archived</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => update.mutate({ id: a.id, is_active: !a.is_active })}
+                      >
+                        {a.is_active ? 'Archive' : 'Reactivate'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }
+

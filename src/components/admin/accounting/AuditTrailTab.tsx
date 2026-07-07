@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuditTrail, auditRowsToCsv, type AuditRow } from '@/hooks/useAuditTrail';
-import { Download, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Download, AlertTriangle } from 'lucide-react';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 const ACCOUNTING_TABLES = [
   'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
@@ -56,30 +56,24 @@ export function AuditTrailTab() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5" />
-              Agent Audit Trail
-            </CardTitle>
-            <CardDescription>
-              Immutable record of every autonomous accounting action — payload hashes, before/after snapshots, 7-year retention.
-            </CardDescription>
-          </div>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Audit Trail"
+        description="Immutable record of every autonomous accounting action — payload hashes, before/after snapshots, 7-year retention."
+        actions={
           <Button variant="outline" size="sm" onClick={handleExport} disabled={!rows.length}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV ({rows.length})
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
+        }
+      />
+
+      <div className="rounded-lg border bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 px-6 py-4 border-b">
+          <div className="space-y-1">
             <Label className="text-xs">Table</Label>
             <Select value={tableName} onValueChange={setTableName}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All tables</SelectItem>
                 {ACCOUNTING_TABLES.map((t) => (
@@ -88,10 +82,10 @@ export function AuditTrailTab() {
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="space-y-1">
             <Label className="text-xs">Agent</Label>
             <Select value={agentType} onValueChange={setAgentType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All agents</SelectItem>
                 <SelectItem value="openclaw">OpenClaw</SelectItem>
@@ -101,17 +95,17 @@ export function AuditTrailTab() {
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="space-y-1">
             <Label className="text-xs">From</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" />
           </div>
-          <div>
+          <div className="space-y-1">
             <Label className="text-xs">To</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" />
           </div>
         </div>
 
-        <div className="border rounded-md overflow-x-auto">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -127,23 +121,23 @@ export function AuditTrailTab() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No audit entries match these filters.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No audit entries match these filters.</TableCell></TableRow>
               )}
               {rows.map((r) => (
                 <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelected(r)}>
                   <TableCell className="text-xs whitespace-nowrap">{new Date(r.occurred_at).toLocaleString()}</TableCell>
-                  <TableCell><Badge variant="outline">{r.agent_type || '—'}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="font-normal">{r.agent_type || '—'}</Badge></TableCell>
                   <TableCell className="text-xs">{r.skill_name || '—'}</TableCell>
                   <TableCell className="text-xs font-mono">{r.table_name}</TableCell>
                   <TableCell>
-                    <Badge variant={ACTION_VARIANT[r.crud_action] || 'outline'}>{r.crud_action}</Badge>
+                    <Badge variant={ACTION_VARIANT[r.crud_action] || 'outline'} className="font-normal">{r.crud_action}</Badge>
                   </TableCell>
                   <TableCell className="text-xs font-mono">{r.entity_id?.slice(0, 8) || '—'}</TableCell>
                   <TableCell>
-                    {r.success ? <Badge variant="secondary">ok</Badge> : <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />fail</Badge>}
+                    {r.success ? <Badge variant="secondary" className="font-normal">ok</Badge> : <Badge variant="destructive" className="font-normal"><AlertTriangle className="h-3 w-3 mr-1" />fail</Badge>}
                   </TableCell>
                   <TableCell className="text-[10px] font-mono text-muted-foreground">{r.request_payload_sha256.slice(0, 12)}…</TableCell>
                 </TableRow>
@@ -151,7 +145,9 @@ export function AuditTrailTab() {
             </TableBody>
           </Table>
         </div>
-      </CardContent>
+      </div>
+
+
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -216,9 +212,10 @@ export function AuditTrailTab() {
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }
+
 
 function Field({ label, value }: { label: string; value: string }) {
   return (

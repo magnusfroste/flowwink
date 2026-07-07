@@ -12,6 +12,7 @@ import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
 import { useOpeningBalances, useUpsertOpeningBalance, useDeleteOpeningBalance } from '@/hooks/useOpeningBalances';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function OpeningBalancesTab() {
   const { locale } = useAccountingLocale();
@@ -75,10 +76,12 @@ export function OpeningBalancesTab() {
   const availableAccounts = (accounts || []).filter(a => !usedCodes.has(a.account_code));
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Carry-forward balances at the start of the fiscal year — the foundation of every balance-sheet report.
-      </p>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Opening Balances"
+        description="Carry-forward balances at the start of the fiscal year — the foundation of every balance-sheet report."
+      />
+
 
       <div className="rounded-lg border bg-card">
         <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">

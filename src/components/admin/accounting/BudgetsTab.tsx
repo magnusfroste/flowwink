@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccountingTabHeader } from './AccountingTabHeader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -134,7 +134,7 @@ export function BudgetsTab() {
 
   const varianceClass = (variance: number) =>
     variance > 0
-      ? 'text-emerald-600'
+      ? 'text-success'
       : variance < 0
         ? 'text-destructive'
         : 'text-muted-foreground';
@@ -143,23 +143,20 @@ export function BudgetsTab() {
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 3 + i);
 
   return (
-    <div className="space-y-6 mt-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Budgets</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Set per-account budgets for the whole fiscal year or a single month. Annual budgets
-              are compared against the full year in Budget vs Actual.
-            </p>
-          </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" />
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="Budgets"
+        description="Set per-account budgets for the whole fiscal year or a single month. Annual budgets are compared against the full year in Budget vs Actual."
+        actions={
+          <Button size="sm" variant="outline" onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-1" />
             New budget
           </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border overflow-x-auto">
+        }
+      />
+
+      <div className="rounded-lg border bg-card">
+        <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -235,19 +232,16 @@ export function BudgetsTab() {
                 )}
               </TableBody>
             </Table>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Budget vs Actual</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Compares budgeted amounts to posted journal activity (Σ debit − credit) per account.
-            Positive variance = under budget, negative = over budget.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <AccountingTabHeader
+        title="Budget vs Actual"
+        description="Compares budgeted amounts to posted journal activity (Σ debit − credit) per account. Positive variance = under budget, negative = over budget."
+      />
+
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="grid gap-2">
               <Label>Fiscal year</Label>
@@ -281,66 +275,67 @@ export function BudgetsTab() {
               </Select>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-lg border overflow-x-auto">
-            <Table>
-              <TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Account</TableHead>
+                <TableHead className="text-right">Budget</TableHead>
+                <TableHead className="text-right">Actual</TableHead>
+                <TableHead className="text-right">Variance</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bva.isLoading ? (
                 <TableRow>
-                  <TableHead>Account</TableHead>
-                  <TableHead className="text-right">Budget</TableHead>
-                  <TableHead className="text-right">Actual</TableHead>
-                  <TableHead className="text-right">Variance</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Loading…
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bva.isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      Loading…
+              ) : (bva.data ?? []).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No data for the selected period.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                (bva.data ?? []).map((r) => (
+                  <TableRow key={r.account_code}>
+                    <TableCell>
+                      <span className="font-mono font-medium">{r.account_code}</span>
+                      {r.account_name && (
+                        <span className="text-muted-foreground ml-2 text-sm">{r.account_name}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                      {fmtSEK(r.budget_cents)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                      {fmtSEK(r.actual_cents)}
+                    </TableCell>
+                    <TableCell className={`text-right font-mono text-sm tabular-nums ${varianceClass(r.variance_cents)}`}>
+                      {fmtSEK(r.variance_cents)}
+                    </TableCell>
+                    <TableCell>
+                      {r.variance_cents > 0 ? (
+                        <span className="text-success text-sm">Under budget</span>
+                      ) : r.variance_cents < 0 ? (
+                        <span className="text-destructive text-sm">Over budget</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">On budget</span>
+                      )}
                     </TableCell>
                   </TableRow>
-                ) : (bva.data ?? []).length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No data for the selected period.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  (bva.data ?? []).map((r) => (
-                    <TableRow key={r.account_code}>
-                      <TableCell>
-                        <span className="font-mono font-medium">{r.account_code}</span>
-                        {r.account_name && (
-                          <span className="text-muted-foreground ml-2 text-sm">{r.account_name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        {fmtSEK(r.budget_cents)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
-                        {fmtSEK(r.actual_cents)}
-                      </TableCell>
-                      <TableCell className={`text-right font-mono text-sm ${varianceClass(r.variance_cents)}`}>
-                        {fmtSEK(r.variance_cents)}
-                      </TableCell>
-                      <TableCell>
-                        {r.variance_cents > 0 ? (
-                          <span className="text-emerald-600 text-sm">Under budget</span>
-                        ) : r.variance_cents < 0 ? (
-                          <span className="text-destructive text-sm">Over budget</span>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">On budget</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">

@@ -7,6 +7,7 @@ import { useAccountingRealtime } from '@/hooks/useAccountingRealtime';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFiscalYear } from './FiscalYearContext';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function LedgerTab() {
   useAccountingRealtime();
@@ -51,10 +52,11 @@ export function LedgerTab() {
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Every account with its opening balance, activity for the year, and closing balance. Click a row to see the vouchers behind it.
-      </p>
+    <div className="space-y-4">
+      <AccountingTabHeader
+        title="General Ledger"
+        description="Every account with its opening balance, activity for the year, and closing balance. Click a row to see the vouchers behind it."
+      />
     <div className="rounded-lg border bg-card">
       <div className="flex flex-wrap items-center gap-6 px-6 py-4 border-b">
         <div className="text-sm font-medium">{fiscalYear}</div>

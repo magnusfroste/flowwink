@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, Search } from 'lucide-react';
+import { CheckCircle, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function VoucherIntegrityTab() {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -38,84 +35,79 @@ export function VoucherIntegrityTab() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Voucher Integrity
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Detects gaps in voucher-number sequences. Required for audit-grade bookkeeping (SE, DE, IFRS, GAAP).
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3 items-end">
-            <div>
-              <Label>Fiscal year</Label>
-              <Input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(parseInt(e.target.value))}
-                className="w-32"
-              />
-            </div>
-            <div>
-              <Label>Series (optional)</Label>
-              <Input
-                value={series}
-                onChange={(e) => setSeries(e.target.value)}
-                placeholder="e.g. SALES"
-                className="w-40"
-              />
-            </div>
-            <Button onClick={() => refetch()} disabled={isLoading}>
-              <Search className="h-4 w-4 mr-1" /> Scan
-            </Button>
-          </div>
+      <AccountingTabHeader
+        title="Voucher Integrity"
+        description="Detects gaps in voucher-number sequences — required for audit-grade bookkeeping (SE, DE, IFRS, GAAP)."
+      />
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Scanning…</p>
-          ) : data && data.length === 0 ? (
-            <div className="flex items-center gap-2 p-4 rounded-md bg-success/10">
-              <CheckCircle className="h-5 w-5 text-success" />
-              <span className="text-sm">No gaps detected for {year}{series && ` in series ${series}`}.</span>
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
+          <Input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(parseInt(e.target.value))}
+            className="w-28 h-9"
+            aria-label="Fiscal year"
+          />
+          <Input
+            value={series}
+            onChange={(e) => setSeries(e.target.value)}
+            placeholder="Series (optional, e.g. SALES)"
+            className="w-56 h-9"
+          />
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <Search className="h-4 w-4 mr-2" />
+            Scan
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">Scanning…</div>
+        ) : data && data.length === 0 ? (
+          <div className="py-16 text-center">
+            <CheckCircle className="h-6 w-6 text-success mx-auto mb-2" />
+            <h3 className="text-sm font-medium mb-1">No gaps detected</h3>
+            <p className="text-sm text-muted-foreground">
+              Voucher numbering is continuous for {year}{series && ` in series ${series}`}.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-[6rem_5rem_1fr_6rem_5rem_7rem_5rem] gap-4 px-6 py-2 text-xs text-muted-foreground border-b">
+              <div>Series</div>
+              <div>Year</div>
+              <div>Missing #</div>
+              <div>Next existing</div>
+              <div className="text-right">Gap</div>
+              <div>Last seen</div>
+              <div></div>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Series</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Missing #</TableHead>
-                  <TableHead>Next existing</TableHead>
-                  <TableHead>Gap size</TableHead>
-                  <TableHead>Last seen</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((gap: any, i: number) => (
-                  <TableRow key={i}>
-                    <TableCell><Badge variant="outline">{gap.series}</Badge></TableCell>
-                    <TableCell>{gap.fiscal_year}</TableCell>
-                    <TableCell className="font-mono">{gap.expected_number}{gap.gap_size > 1 && `…${Number(gap.next_existing_number) - 1}`}</TableCell>
-                    <TableCell className="font-mono">{gap.next_existing_number}</TableCell>
-                    <TableCell>
-                      <Badge variant={gap.gap_size > 5 ? 'destructive' : 'secondary'}>
-                        {gap.gap_size}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{gap.last_seen_date}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => handleExplain(gap)}>Explain</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+            {data?.map((gap: any, i: number) => (
+              <div
+                key={i}
+                className="grid grid-cols-[6rem_5rem_1fr_6rem_5rem_7rem_5rem] items-baseline gap-4 px-6 py-2 text-sm border-b border-border/40 last:border-b-0"
+              >
+                <div className="font-mono text-xs">{gap.series}</div>
+                <div className="font-mono text-xs text-muted-foreground">{gap.fiscal_year}</div>
+                <div className="font-mono">
+                  {gap.expected_number}
+                  {gap.gap_size > 1 && `…${Number(gap.next_existing_number) - 1}`}
+                </div>
+                <div className="font-mono text-xs text-muted-foreground">{gap.next_existing_number}</div>
+                <div className={`text-right font-mono tabular-nums ${gap.gap_size > 5 ? 'text-destructive' : ''}`}>
+                  {gap.gap_size}
+                </div>
+                <div className="text-xs text-muted-foreground">{gap.last_seen_date || '\u2014'}</div>
+                <div className="text-right">
+                  <Button size="sm" variant="ghost" className="h-7" onClick={() => handleExplain(gap)}>
+                    Explain
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
 
       <Dialog open={!!explainGap} onOpenChange={(o) => !o && setExplainGap(null)}>
         <DialogContent className="max-w-2xl">

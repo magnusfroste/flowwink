@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { AccountingTabHeader } from './AccountingTabHeader';
 
 type SortKey = 'uses' | 'entries' | 'corrections' | 'last_used' | 'name';
 type SortDir = 'asc' | 'desc';
@@ -238,6 +239,17 @@ export function TemplatesTab() {
 
   return (
     <div className="space-y-4">
+      <AccountingTabHeader
+        title="Templates"
+        description="Reusable booking recipes for common events. Frequent, correction-free templates keep autonomous bookkeeping trustworthy."
+        actions={
+          <Button size="sm" variant="outline" onClick={openNew}>
+            <Plus className="h-4 w-4 mr-1" />
+            New template
+          </Button>
+        }
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -262,19 +274,16 @@ export function TemplatesTab() {
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={openNew}>
-          <Plus className="h-4 w-4 mr-1" />
-          New template
-        </Button>
       </div>
 
       {/* Summary */}
       <p className="text-xs text-muted-foreground">
         {summary.total} templates · {summary.neverUsed} never used ·{' '}
-        <span className={summary.withCorrections > 0 ? 'text-amber-700 dark:text-amber-400' : ''}>
+        <span className={summary.withCorrections > 0 ? 'text-warning' : ''}>
           {summary.withCorrections} with corrections
         </span>
       </p>
+
 
       {/* Table */}
       {rows.length === 0 ? (
@@ -329,7 +338,7 @@ export function TemplatesTab() {
                 <div
                   className={cn(
                     'text-right font-mono tabular-nums',
-                    row.corrections > 0 && 'text-amber-700 dark:text-amber-400 font-medium',
+                    row.corrections > 0 && 'text-warning font-medium',
                   )}
                 >
                   {row.corrections}
@@ -434,10 +443,7 @@ function DirectionBadge({ dir }: { dir: 'in' | 'out' | 'n/a' }) {
   if (dir === 'n/a') {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
-  const cls =
-    dir === 'in'
-      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-      : 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20';
+  const cls = 'text-muted-foreground';
   return (
     <Badge variant="outline" className={cn('font-normal text-[10px] px-1.5 py-0', cls)}>
       {dir}
