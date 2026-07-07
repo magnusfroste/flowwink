@@ -423,6 +423,10 @@ export default function SlaMonitorPage() {
                 <CalendarClock className="h-3.5 w-3.5" />
                 Business Hours
               </TabsTrigger>
+              <TabsTrigger value="compliance" className="gap-1.5">
+                <BarChart3 className="h-3.5 w-3.5" />
+                Compliance
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="violations" className="mt-4">
@@ -435,6 +439,10 @@ export default function SlaMonitorPage() {
 
             <TabsContent value="business-hours" className="mt-4">
               <BusinessHoursTab />
+            </TabsContent>
+
+            <TabsContent value="compliance" className="mt-4">
+              <ComplianceTab />
             </TabsContent>
           </Tabs>
         </div>
