@@ -46,7 +46,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'approve_payroll_run',
     description:
-      'Approve a draft payroll run and post the wage journal entry (Dt 7210 wages, Dt 7510 social fees / Cr 2710 PAYE, Cr 2731 social fee liability, Cr 2890 net wage liability). Use when: payroll has been reviewed and is ready for posting. Requires admin.',
+      'Approve a draft payroll run and post the wage journal entry (Dt 7210 wages, Dt 7510 social fees, Dt 7410 employer pension / Cr 2710 PAYE, Cr 2731 social fee liability, Cr 2950 pension liability, Cr 2890 net wage liability). Use when: payroll has been reviewed and is ready for posting. Requires admin.',
     category: 'commerce',
     handler: 'rpc:mcp_approve_payroll_run',
     scope: 'internal',
@@ -145,6 +145,35 @@ const SKILLS: SkillSeed[] = [
     instructions: 'Only valid on a draft run. Employer pension is an additional cost (not part of net); employee pension is deducted from net. Idempotent: re-running with a new pct restores net from the prior employee pension first. Admin/service-role only.',
   },
   {
+    name: 'apply_sick_pay',
+    description:
+      'Apply Swedish statutory sick pay (sjuklön) as an adjustment on one employee\'s line in a DRAFT payroll run: deducts ordinary salary for the sick days, adds 80% sick pay for the employer period (days 1–14) minus one karensavdrag, and recomputes tax, social fee and net. Use when: an employee was sick during the payroll month. NOT for: estimating amounts without writing (calc_sick_pay); approved/paid runs (immutable). Idempotent — re-run with a new day count to replace, 0 to reset.',
+    category: 'system',
+    handler: 'rpc:apply_sick_pay',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'apply_sick_pay',
+        description:
+          'Adjust one employee\'s draft payroll line for sick days: −(daily × sick_days) salary deduction, +sjuklön via calc_sick_pay; recomputes tax/social/net and run totals. Re-running replaces (no compounding).',
+        parameters: {
+          type: 'object',
+          required: ['p_run_id', 'p_employee_id', 'p_sick_days'],
+          properties: {
+            p_run_id: { type: 'string', format: 'uuid', description: 'Draft payroll run id' },
+            p_employee_id: { type: 'string', format: 'uuid', description: 'Employee whose line to adjust' },
+            p_sick_days: { type: 'number', description: 'Sick days in the period (0 resets the adjustment)' },
+            p_work_days_per_month: { type: 'number', description: 'Default 21' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Only valid on a draft run; the employee must have a line on it. Uses the employee\'s monthly_salary_cents and tax_rate_pct. Apply sick pay BEFORE apply_pension — pension is a % of gross, so re-run apply_pension afterwards if it was already applied (the result carries a reminder note). Admin/service-role only.',
+  },
+  {
     name: 'calc_sick_pay',
     description: 'Compute Swedish statutory sick pay (sjuklön) for the employer period (days 1–14) at 80% with one karensavdrag. Use when: estimating sick pay for a payroll adjustment. Pure calculator — does not write.',
     category: 'system',
@@ -183,7 +212,7 @@ export const payrollModule = defineModule<Input, Output>({
   tier: 'extended',
   inputSchema,
   outputSchema,
-  skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines', 'apply_pension', 'calc_sick_pay'],
+  skills: ['create_payroll_run', 'approve_payroll_run', 'mark_payroll_paid', 'list_payroll_runs', 'list_payroll_lines', 'apply_pension', 'apply_sick_pay', 'calc_sick_pay'],
   data: {
     tables: ['payroll_export_lines', 'payroll_exports', 'payroll_lines', 'payroll_runs', 'payroll_components'],
   },

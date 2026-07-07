@@ -32,6 +32,11 @@
       "account_type",
       "normal_balance"
     ],
+    "chat_messages": [
+      "conversation_id",
+      "role",
+      "content"
+    ],
     "contracts": [
       "counterparty_name",
       "title"
@@ -251,6 +256,11 @@
     ],
     "manage_ticket": [
       "subject"
+    ],
+    "get_chat_transcript": [
+      "conversation_id",
+      "role",
+      "content"
     ]
   }
 }

@@ -8732,8 +8732,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'crm_tasks',
   // Reconciliation / bank feeds
   'bank_transactions',
-  // Chat (conversations + feedback used by support skills)
-  'chat_conversations', 'chat_feedback',
+  // Chat (conversations + feedback used by support skills; messages for get_chat_transcript)
+  'chat_conversations', 'chat_feedback', 'chat_messages',
   // Support agents (availability/presence read for transfer decisions)
   'support_agents',
   // Manufacturing

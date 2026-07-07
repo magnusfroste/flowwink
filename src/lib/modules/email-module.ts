@@ -37,6 +37,56 @@ type Output = z.infer<typeof outputSchema>;
 // ── Bundled skill definitions (migrated from setup-flowpilot) ──
 const EMAIL_SKILLS: SkillSeed[] = [
   {
+    name: 'send_email',
+    description:
+      'Send a one-off email through the provider-agnostic gateway (SMTP/Resend/Composio — whichever the site has configured). Logs to outbound_communications; with no provider configured the send is simulated and stored for inspection. Use when: sending a transactional or ad-hoc message to a known recipient (confirmation, follow-up, notification). NOT for: newsletter campaigns (send_newsletter); replying on an email-sourced ticket (reply_to_ticket_via_email); emailing a CRM lead with tracked context (send_email_to_lead).',
+    category: 'communication',
+    handler: 'edge:email-send',
+    scope: 'both',
+    trust_level: 'approve',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_email',
+        description:
+          'Send an email via the configured provider (SMTP/Resend). Requires approval. Logged to outbound_communications; simulated if no provider is configured.',
+        parameters: {
+          type: 'object',
+          properties: {
+            to: {
+              type: 'string',
+              description: 'Recipient email address. Multiple recipients: comma-free single address per call preferred.',
+            },
+            subject: { type: 'string', description: 'Email subject line.' },
+            html: { type: 'string', description: 'HTML body of the email (also used to derive text if text omitted).' },
+            text: { type: 'string', description: 'Optional plain-text body.' },
+            replyTo: { type: 'string', description: 'Optional Reply-To address.' },
+            fromOverride: {
+              type: 'string',
+              description: 'Optional explicit From ("Name <addr@example.com>"). Defaults to the site\'s configured sender.',
+            },
+            source: {
+              type: 'string',
+              description: 'Originating module/skill label for the outbound_communications log (default "send_email").',
+            },
+          },
+          required: ['to', 'subject', 'html'],
+        },
+      },
+    },
+    instructions: `## send_email
+### What
+Routes one email through the email-send gateway. Provider comes from site_settings.integrations.email (SMTP or Resend); modules and agents never talk to providers directly.
+### When to use
+- Ad-hoc or transactional messages to a specific recipient.
+### Verify delivery
+Check list_communications (channel=email) — status 'sent' means the provider accepted it; 'simulated' means no provider is configured and the message was only logged; 'failed' carries the provider error (see get_communication).
+### Edge cases
+- Requires approval (trust_level=approve) — outbound mail to arbitrary recipients.
+- No provider configured is NOT an error: the send is simulated and logged, so flows keep working (Law 4).
+- The gateway associates the recipient with a CRM lead automatically when the email uniquely matches one (outbound_communications trigger).`,
+  },
+  {
     name: 'scan_gmail_inbox',
     description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
     category: 'communication',
@@ -275,9 +325,10 @@ export const emailModule = defineModule<Input, Output>({
   inputSchema,
   outputSchema,
 
-  // send_email/configure_email_provider/preview_email_template were declared
-  // but never had SkillSeed entries. Removed to align manifest with reality.
-  skills: ['scan_gmail_inbox', 'list_communications', 'get_communication', 'email_to_ticket', 'reply_to_ticket_via_email'],
+  // configure_email_provider/preview_email_template were declared but never
+  // had SkillSeed entries — removed to align manifest with reality.
+  // send_email got a real SkillSeed 2026-07-07 (edge:email-send gateway).
+  skills: ['send_email', 'scan_gmail_inbox', 'list_communications', 'get_communication', 'email_to_ticket', 'reply_to_ticket_via_email'],
   skillSeeds: EMAIL_SKILLS,
   automations: EMAIL_AUTOMATIONS,
 
