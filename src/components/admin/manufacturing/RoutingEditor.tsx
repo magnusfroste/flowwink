@@ -93,7 +93,7 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
           p_duration_minutes: draft.duration_minutes,
         });
       }
-      setHydratedFor(null); // force rehydrate from refetch
+      setSignature(""); // force rehydrate from refetch
     } catch (err) {
       logger.error('Save routing operation failed', err);
     }
@@ -106,7 +106,7 @@ export function RoutingEditor({ bomId }: { bomId: string }) {
     }
     try {
       await manage.mutateAsync({ p_action: 'delete', p_id: draft.id });
-      setHydratedFor(null);
+      setSignature("");
     } catch (err) {
       logger.error('Delete routing operation failed', err);
     }
