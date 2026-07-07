@@ -477,7 +477,16 @@ export default function NewsletterPage() {
                         : 0;
                       return (
                       <TableRow key={newsletter.id}>
-                        <TableCell className="font-medium">{newsletter.subject}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{newsletter.subject}</div>
+                          {newsletter.status === "scheduled" && newsletter.scheduled_at && (
+                            <div className="text-xs text-muted-foreground font-normal mt-0.5 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(newsletter.scheduled_at), "MMM d, yyyy 'at' HH:mm")}
+                            </div>
+                          )}
+                        </TableCell>
+
                         <TableCell>{statusBadge(newsletter.status)}</TableCell>
                         <TableCell>
                           {newsletter.sent_count > 0 && (
