@@ -338,7 +338,7 @@ export function TemplatesTab() {
                 <div
                   className={cn(
                     'text-right font-mono tabular-nums',
-                    row.corrections > 0 && 'text-amber-700 dark:text-amber-400 font-medium',
+                    row.corrections > 0 && 'text-warning font-medium',
                   )}
                 >
                   {row.corrections}
