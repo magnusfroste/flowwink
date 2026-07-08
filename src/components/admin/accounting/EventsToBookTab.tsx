@@ -416,7 +416,7 @@ export function EventsToBookTab() {
 
       {isFetching && !isLoading && (
         <div className="mt-3 text-xs text-muted-foreground flex items-center gap-2">
-          <Loader2 className="h-3 w-3 animate-spin" /> Updating…
+          <Loader2 className="h-3 w-3 animate-spin" /> Uppdaterar…
         </div>
       )}
       </>
@@ -492,14 +492,9 @@ function ProposalDetail({
   isBooking: boolean;
 }) {
   const p = proposal;
-  // These come from the propose_bookkeeping payload and are declared required, but
-  // an escalate/no-match row can omit them — guard so the detail pane never crashes
-  // (same trust-the-backend-shape class as the match_details bug).
-  const topCandidates = p.top_candidates ?? [];
-  const proposedLines = p.proposed_lines ?? [];
   const effectiveTemplateId = templateOverride ?? p.suggested_template_id;
   const effectiveTemplateName =
-    topCandidates.find((c) => c.template_id === effectiveTemplateId)?.name ??
+    p.top_candidates.find((c) => c.template_id === effectiveTemplateId)?.name ??
     p.suggested_template_name;
   const isEscalate = p.status === 'escalate';
 
@@ -524,7 +519,7 @@ function ProposalDetail({
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
           How it will be booked
         </div>
-        {proposedLines.length > 0 ? (
+        {p.proposed_lines.length > 0 ? (
           <div className="rounded-md border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -535,7 +530,7 @@ function ProposalDetail({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {proposedLines.map((l, i) => (
+                {p.proposed_lines.map((l, i) => (
                   <tr key={i}>
                     <td className="px-4 py-2.5">
                       <span className="tabular-nums text-muted-foreground mr-2">
@@ -579,7 +574,7 @@ function ProposalDetail({
           Book
         </Button>
 
-        {topCandidates.length > 0 && (
+        {p.top_candidates.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -587,7 +582,7 @@ function ProposalDetail({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-72">
-              {topCandidates.map((c) => (
+              {p.top_candidates.map((c) => (
                 <DropdownMenuItem
                   key={c.template_id}
                   onSelect={() => onTemplateChange(c.template_id)}
