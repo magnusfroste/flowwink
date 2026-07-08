@@ -107,9 +107,10 @@
       "id": "delegation",
       "name": "Approval delegation",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "approval delegation"
+      "verify": "approval_delegations table (from_user, to_user, starts_at, ends_at) with helper manage_approval_delegation RPC. Admin UI: Delegations tab in ExpensesPage — create/revoke with date range. Active window derived from starts_at/ends_at. Used by approval routing across all approval chains, not just expenses.",
+      "notes": "Built 2026-07-09."
     },
     {
       "id": "po_matching",
@@ -123,9 +124,10 @@
       "id": "bulk_actions",
       "name": "Bulk approve/reject",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "bulk approve/reject actions"
+      "verify": "ExpenseReportsTab has checkbox multi-select on submitted reports plus an action bar with Approve selected (loops approve_expense_report RPC) and Reject selected (batch UPDATE to rejected status with reason prompt). Single-row Reject also added.",
+      "notes": "Built 2026-07-09."
     }
   ]
 }
