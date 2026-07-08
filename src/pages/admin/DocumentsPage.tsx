@@ -29,6 +29,7 @@ export default function DocumentsPage() {
   const [category, setCategory] = useState("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
+  const [detailDoc, setDetailDoc] = useState<null | ReturnType<typeof useDocuments>['data'] extends (infer T)[] | undefined ? T : never>(null);
   const { data: documents, isLoading } = useDocuments(category);
   const deleteDoc = useDeleteDocument();
 
