@@ -25,6 +25,10 @@ export interface Expense {
   report_id: string | null;
   created_at: string;
   updated_at: string;
+  // Rate-driven expenses (mileage / per-diem)
+  rate_code?: string | null;
+  quantity?: number | null;
+  unit?: string | null;
 }
 
 export interface ExpenseReport {
