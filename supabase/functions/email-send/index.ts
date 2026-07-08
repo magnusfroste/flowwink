@@ -326,6 +326,33 @@ serve(async (req: Request) => {
 
     const from = body.fromOverride || `${fromName} <${fromEmail}>`;
 
+    // Signature append — look up by sender_user_id, then by from-address
+    if (!body.skip_signature) {
+      let sigHtml: string | null = null;
+      if (body.sender_user_id) {
+        const { data: sig } = await supabase
+          .from("email_signatures")
+          .select("html")
+          .eq("user_id", body.sender_user_id)
+          .order("is_default", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        sigHtml = sig?.html ?? null;
+      }
+      if (!sigHtml && fromEmail) {
+        const { data: sig2 } = await supabase
+          .from("email_signatures")
+          .select("html")
+          .ilike("from_address", fromEmail)
+          .maybeSingle();
+        sigHtml = sig2?.html ?? null;
+      }
+      if (sigHtml) {
+        body.html = `${body.html}<div class="email-signature" style="margin-top:24px;color:#555;font-size:13px">${sigHtml}</div>`;
+        if (body.text) body.text = `${body.text}\n\n--\n${sigHtml.replace(/<[^>]+>/g, "")}`;
+      }
+    }
+
     let result: unknown;
     if (provider === "resend") {
       result = await sendViaResend({
