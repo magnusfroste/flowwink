@@ -197,6 +197,13 @@ export type Database = {
             foreignKeyName: "accounting_corrections_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "accounting_corrections_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -7382,6 +7389,13 @@ export type Database = {
             foreignKeyName: "journal_entries_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -11029,6 +11043,13 @@ export type Database = {
             foreignKeyName: "procurement_suggestions_preferred_vendor_id_fkey"
             columns: ["preferred_vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "procurement_suggestions_preferred_vendor_id_fkey"
+            columns: ["preferred_vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -11788,6 +11809,56 @@ export type Database = {
           },
         ]
       }
+      purchase_order_revisions: {
+        Row: {
+          amount_delta_cents: number | null
+          approval_request_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          new_total_cents: number | null
+          prev_total_cents: number | null
+          purchase_order_id: string
+          reason: string | null
+          revision_number: number
+          snapshot: Json
+        }
+        Insert: {
+          amount_delta_cents?: number | null
+          approval_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_total_cents?: number | null
+          prev_total_cents?: number | null
+          purchase_order_id: string
+          reason?: string | null
+          revision_number: number
+          snapshot: Json
+        }
+        Update: {
+          amount_delta_cents?: number | null
+          approval_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_total_cents?: number | null
+          prev_total_cents?: number | null
+          purchase_order_id?: string
+          reason?: string | null
+          revision_number?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_revisions_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           created_at: string
@@ -11841,6 +11912,13 @@ export type Database = {
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
           {
             foreignKeyName: "purchase_orders_vendor_id_fkey"
             columns: ["vendor_id"]
@@ -12443,6 +12521,13 @@ export type Database = {
             foreignKeyName: "reorder_rules_preferred_vendor_id_fkey"
             columns: ["preferred_vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "reorder_rules_preferred_vendor_id_fkey"
+            columns: ["preferred_vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -12666,6 +12751,13 @@ export type Database = {
             foreignKeyName: "rfq_bids_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "rfq_bids_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -12781,6 +12873,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchase_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_awarded_vendor_id_fkey"
+            columns: ["awarded_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
           },
           {
             foreignKeyName: "rfqs_awarded_vendor_id_fkey"
@@ -15847,6 +15946,145 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_credit_memos: {
+        Row: {
+          amount_cents: number
+          applied_at: string | null
+          created_at: string
+          created_by: string | null
+          credit_date: string
+          credit_number: string
+          currency: string
+          dispute_id: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          reason: string | null
+          status: string
+          updated_at: string
+          vendor_id: string
+          vendor_invoice_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_date?: string
+          credit_number: string
+          currency?: string
+          dispute_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id: string
+          vendor_invoice_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_date?: string
+          credit_number?: string
+          currency?: string
+          dispute_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+          vendor_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_credit_memos_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoice_disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_credit_memos_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_credit_memos_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_credit_memos_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invoice_disputes: {
+        Row: {
+          created_at: string
+          disputed_amount_cents: number | null
+          id: string
+          opened_at: string
+          opened_by: string | null
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+          vendor_invoice_id: string
+        }
+        Insert: {
+          created_at?: string
+          disputed_amount_cents?: number | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id: string
+        }
+        Update: {
+          created_at?: string
+          disputed_amount_cents?: number | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoice_disputes_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_invoices: {
         Row: {
           approved_at: string | null
@@ -15929,6 +16167,13 @@ export type Database = {
             foreignKeyName: "vendor_invoices_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -15998,6 +16243,13 @@ export type Database = {
             foreignKeyName: "vendor_products_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_products_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -16016,10 +16268,12 @@ export type Database = {
           id: string
           is_active: boolean
           last_used_template_id: string | null
+          manual_rating: number | null
           name: string
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          rating_notes: string | null
           updated_at: string
           website: string | null
         }
@@ -16035,10 +16289,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_used_template_id?: string | null
+          manual_rating?: number | null
           name: string
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating_notes?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -16054,10 +16310,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_used_template_id?: string | null
+          manual_rating?: number | null
           name?: string
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating_notes?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -16824,6 +17082,23 @@ export type Database = {
           passives: number | null
           promoters: number | null
           total_responses: number | null
+        }
+        Relationships: []
+      }
+      v_vendor_scorecard: {
+        Row: {
+          delivered_count: number | null
+          invoice_count: number | null
+          is_active: boolean | null
+          manual_rating: number | null
+          name: string | null
+          on_time_count: number | null
+          on_time_pct: number | null
+          po_count: number | null
+          rating_notes: string | null
+          variance_invoice_count: number | null
+          variance_pct: number | null
+          vendor_id: string | null
         }
         Relationships: []
       }
