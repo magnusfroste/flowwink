@@ -35,7 +35,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 125, credit_pct: 0 },
-      { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
+      { account_code: '3001', account_name: 'Försäljning varor 25% moms', debit_pct: 0, credit_pct: 100 },
       { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
     ],
   },
@@ -456,18 +456,6 @@ export const BAS_2024_TEMPLATES = [
     ],
   },
   {
-    template_name: 'Privata uttag',
-    description: 'Ägaren tar ut medel från företaget (enskild firma)',
-    category: 'adjustment',
-    keywords: ['uttag', 'privat uttag', 'owner draw', 'eget uttag'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '2010', account_name: 'Aktiekapital', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
     template_name: 'Kundförlust',
     description: 'Avskrivning av osäker kundfordran',
     category: 'adjustment',
@@ -551,30 +539,6 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '7399', account_name: 'Övriga personalkostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
-    template_name: 'Milersättning skattefri',
-    description: 'Skattefri bilersättning till anställd (egen bil i tjänsten)',
-    category: 'payroll',
-    keywords: ['milersättning', 'bilersättning', 'körjournal', 'mileage'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '5860', account_name: 'Bilersättningar skattefria', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
-    template_name: 'Traktamente inrikes skattefritt',
-    description: 'Skattefritt traktamente vid tjänsteresa',
-    category: 'payroll',
-    keywords: ['traktamente', 'tjänsteresa', 'per diem'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '5850', account_name: 'Traktamenten skattefria', debit_pct: 100, credit_pct: 0 },
       { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -940,18 +904,6 @@ export const BAS_2024_TEMPLATES = [
     ],
   },
   {
-    template_name: 'Räntekostnad lån',
-    description: 'Räntebetalning på banklån',
-    category: 'expense',
-    keywords: ['ränta', 'räntekostnad', 'låneränta', 'interest expense'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '8410', account_name: 'Räntekostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
     template_name: 'Amortering banklån',
     description: 'Amortering på banklån (endast kapitaldelen)',
     category: 'payment',
@@ -967,7 +919,7 @@ export const BAS_2024_TEMPLATES = [
     template_name: 'Nytt banklån utbetalt',
     description: 'Utbetalning av nytt banklån till företagskontot',
     category: 'payment',
-    keywords: ['banklån', 'nytt lån', 'lån utbetalning', 'new loan'],
+    keywords: ['banklån', 'nytt lån', 'lån utbetalning', 'new loan', 'loan', 'kredit beviljad', 'låneutbetalning'],
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
@@ -1033,18 +985,6 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '8910', account_name: 'Skatt på årets resultat', debit_pct: 100, credit_pct: 0 },
       { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
-    template_name: 'Insättning skattekonto',
-    description: 'Överföring från företagskonto till skattekontot',
-    category: 'tax',
-    keywords: ['skattekonto', 'insättning skatt', 'tax account'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1240,18 +1180,6 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '8410', account_name: 'Räntekostnader', debit_pct: 100, credit_pct: 0 },
       { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
-    ],
-  },
-  {
-    template_name: 'Banklån upptagande',
-    description: 'Utbetalning av nytt banklån till företagskontot',
-    category: 'adjustment',
-    keywords: ['banklån', 'lån', 'loan', 'kredit beviljad', 'låneutbetalning'],
-    is_system: true,
-    locale: 'se-bas2024',
-    template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2350', account_name: 'Andra långfristiga skulder till kreditinstitut', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
