@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { Upload, RefreshCw, Wand2, X, FileText, ScanLine, Trash2, BookOpen, Settings2, Plus } from 'lucide-react';
+import { Upload, RefreshCw, Wand2, X, FileText, ScanLine, Trash2, BookOpen, Settings2, Plus, Scale } from 'lucide-react';
 import {
   useBankTransactions,
   useImportBatches,
@@ -43,6 +43,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ReconciliationRulesPanel } from '@/components/admin/reconciliation/ReconciliationRulesPanel';
 import { ReconciliationReportPanel } from '@/components/admin/reconciliation/ReconciliationReportPanel';
+import { PartialMatchDialog } from '@/components/admin/reconciliation/PartialMatchDialog';
+import { PettyCashPanel } from '@/components/admin/reconciliation/PettyCashPanel';
+import { ReconciliationSignoffPanel } from '@/components/admin/reconciliation/ReconciliationSignoffPanel';
+import { BankFeedsPanel } from '@/components/admin/reconciliation/BankFeedsPanel';
 
 const STATUS_COLORS: Record<BankTxStatus, string> = {
   unmatched: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
@@ -54,7 +58,7 @@ const STATUS_COLORS: Record<BankTxStatus, string> = {
 type ImportFormat = 'csv' | 'camt053' | 'sie' | 'image';
 
 export default function ReconciliationPage() {
-  const [tab, setTab] = useState<'transactions' | 'reconciliation' | 'rules' | 'report' | 'imports' | 'accounts'>('transactions');
+  const [tab, setTab] = useState<'transactions' | 'reconciliation' | 'rules' | 'report' | 'petty-cash' | 'signoff' | 'feeds' | 'imports' | 'accounts'>('transactions');
   const [statusFilter, setStatusFilter] = useState<BankTxStatus | 'all'>('unmatched');
   const [accountFilter, setAccountFilter] = useState<string>('all');
   const [importFormat, setImportFormat] = useState<ImportFormat>('csv');
@@ -76,6 +80,10 @@ export default function ReconciliationPage() {
 
   // Account editor state
   const [accountEditor, setAccountEditor] = useState<Partial<BankAccount> | null>(null);
+
+  // Partial-match dialog state
+  const [partialOpen, setPartialOpen] = useState(false);
+  const [partialTx, setPartialTx] = useState<BankTransaction | null>(null);
 
   // Period for reconciliation summary
   const today = new Date();
@@ -274,6 +282,9 @@ export default function ReconciliationPage() {
             <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
             <TabsTrigger value="rules">Rules</TabsTrigger>
             <TabsTrigger value="report">Report</TabsTrigger>
+            <TabsTrigger value="petty-cash">Petty cash</TabsTrigger>
+            <TabsTrigger value="signoff">Sign-off</TabsTrigger>
+            <TabsTrigger value="feeds">Bank feeds</TabsTrigger>
             <TabsTrigger value="imports">Import history</TabsTrigger>
             <TabsTrigger value="accounts">Bank accounts</TabsTrigger>
           </TabsList>
@@ -281,6 +292,9 @@ export default function ReconciliationPage() {
 
         {tab === 'rules' && <ReconciliationRulesPanel />}
         {tab === 'report' && <ReconciliationReportPanel />}
+        {tab === 'petty-cash' && <PettyCashPanel />}
+        {tab === 'signoff' && <ReconciliationSignoffPanel />}
+        {tab === 'feeds' && <BankFeedsPanel />}
 
 
         {tab === 'transactions' && (
@@ -368,6 +382,15 @@ export default function ReconciliationPage() {
                                   onClick={() => openBookDialog(tx)}
                                 >
                                   <BookOpen className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title="Partial match (variance)"
+                                  onClick={() => { setPartialTx(tx); setPartialOpen(true); }}
+                                >
+                                  <Scale className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -895,6 +918,12 @@ export default function ReconciliationPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PartialMatchDialog
+        open={partialOpen}
+        onOpenChange={setPartialOpen}
+        transaction={partialTx}
+        bankGlAccount={bankAccounts.find((a) => a.id === partialTx?.bank_account_id)?.gl_account || '1930'}
+      />
     </AdminLayout>
   );
 }

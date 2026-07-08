@@ -2003,6 +2003,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_feed_connections: {
+        Row: {
+          bank_account_id: string | null
+          config: Json
+          created_at: string
+          created_by: string | null
+          external_ref: string | null
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id?: string | null
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          external_ref?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string | null
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          external_ref?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bank_import_batches: {
         Row: {
           created_at: string
@@ -10495,6 +10537,51 @@ export type Database = {
           },
         ]
       }
+      petty_cash_counts: {
+        Row: {
+          book_balance_cents: number
+          cash_account_code: string
+          count_date: string
+          counted_by: string | null
+          counted_cents: number
+          created_at: string
+          currency: string
+          diff_account_code: string | null
+          difference_cents: number
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+        }
+        Insert: {
+          book_balance_cents: number
+          cash_account_code: string
+          count_date?: string
+          counted_by?: string | null
+          counted_cents: number
+          created_at?: string
+          currency?: string
+          diff_account_code?: string | null
+          difference_cents: number
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+        }
+        Update: {
+          book_balance_cents?: number
+          cash_account_code?: string
+          count_date?: string
+          counted_by?: string | null
+          counted_cents?: number
+          created_at?: string
+          currency?: string
+          diff_account_code?: string | null
+          difference_cents?: number
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
       picking_lines: {
         Row: {
           created_at: string
@@ -12759,6 +12846,9 @@ export type Database = {
           match_type: string
           notes: string | null
           reconciliation_id: string | null
+          variance_account_code: string | null
+          variance_cents: number
+          variance_journal_entry_id: string | null
         }
         Insert: {
           amount_cents: number
@@ -12772,6 +12862,9 @@ export type Database = {
           match_type?: string
           notes?: string | null
           reconciliation_id?: string | null
+          variance_account_code?: string | null
+          variance_cents?: number
+          variance_journal_entry_id?: string | null
         }
         Update: {
           amount_cents?: number
@@ -12785,6 +12878,9 @@ export type Database = {
           match_type?: string
           notes?: string | null
           reconciliation_id?: string | null
+          variance_account_code?: string | null
+          variance_cents?: number
+          variance_journal_entry_id?: string | null
         }
         Relationships: [
           {
@@ -12842,6 +12938,51 @@ export type Database = {
           suggested_account_code?: string | null
           suggested_category?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reconciliation_signoffs: {
+        Row: {
+          bank_account_id: string
+          book_balance_cents: number
+          created_at: string
+          currency: string
+          difference_cents: number
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          reconciled_at: string
+          reconciled_by: string | null
+          statement_balance_cents: number
+        }
+        Insert: {
+          bank_account_id: string
+          book_balance_cents: number
+          created_at?: string
+          currency?: string
+          difference_cents: number
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          reconciled_at?: string
+          reconciled_by?: string | null
+          statement_balance_cents: number
+        }
+        Update: {
+          bank_account_id?: string
+          book_balance_cents?: number
+          created_at?: string
+          currency?: string
+          difference_cents?: number
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          reconciled_at?: string
+          reconciled_by?: string | null
+          statement_balance_cents?: number
         }
         Relationships: []
       }
@@ -18673,6 +18814,20 @@ export type Database = {
         }
         Returns: Json
       }
+      create_partial_match_with_variance: {
+        Args: {
+          p_bank_gl_account?: string
+          p_bank_transaction_id: string
+          p_entity_id: string
+          p_entity_type: string
+          p_match_cents: number
+          p_notes?: string
+          p_variance_account_code?: string
+          p_variance_account_name?: string
+          p_variance_cents?: number
+        }
+        Returns: Json
+      }
       create_payroll_run: { Args: { p_period_date: string }; Returns: Json }
       create_return_label: {
         Args: {
@@ -20450,6 +20605,17 @@ export type Database = {
         }
         Returns: Json
       }
+      record_petty_cash_count: {
+        Args: {
+          p_cash_account_code: string
+          p_count_date?: string
+          p_counted_cents: number
+          p_currency?: string
+          p_diff_account_code?: string
+          p_notes?: string
+        }
+        Returns: Json
+      }
       record_pos_sale: {
         Args: {
           p_customer_email?: string
@@ -21233,6 +21399,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      signoff_reconciliation: {
+        Args: {
+          p_bank_account_id: string
+          p_notes?: string
+          p_period_end: string
+          p_period_start: string
+          p_statement_balance_cents: number
+        }
+        Returns: Json
+      }
       sla_compliance_report: {
         Args: { p_days?: number; p_entity_type?: string }
         Returns: Json
@@ -21307,6 +21483,10 @@ export type Database = {
       try_acquire_agent_lock: {
         Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
         Returns: boolean
+      }
+      unlock_reconciliation_signoff: {
+        Args: { p_signoff_id: string }
+        Returns: undefined
       }
       unreconcile_payment:
         | {
