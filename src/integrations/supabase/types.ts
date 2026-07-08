@@ -15462,6 +15462,160 @@ export type Database = {
           },
         ]
       }
+      ticket_escalation_rules: {
+        Row: {
+          action_notify: boolean
+          action_raise_priority: string | null
+          action_reassign_kind: string | null
+          action_reassign_to: string | null
+          age_field: string
+          age_hours: number
+          created_at: string
+          id: string
+          is_active: boolean
+          match_priority: string | null
+          match_status: string | null
+          match_unassigned: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          action_notify?: boolean
+          action_raise_priority?: string | null
+          action_reassign_kind?: string | null
+          action_reassign_to?: string | null
+          age_field?: string
+          age_hours?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          match_priority?: string | null
+          match_status?: string | null
+          match_unassigned?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          action_notify?: boolean
+          action_raise_priority?: string | null
+          action_reassign_kind?: string | null
+          action_reassign_to?: string | null
+          age_field?: string
+          age_hours?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          match_priority?: string | null
+          match_status?: string | null
+          match_unassigned?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_team_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_lead: boolean
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_time_entries: {
+        Row: {
+          billable: boolean
+          created_at: string
+          id: string
+          minutes: number
+          note: string | null
+          started_at: string | null
+          ticket_id: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          billable?: boolean
+          created_at?: string
+          id?: string
+          minutes: number
+          note?: string | null
+          started_at?: string | null
+          ticket_id: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          billable?: boolean
+          created_at?: string
+          id?: string
+          minutes?: number
+          note?: string | null
+          started_at?: string | null
+          ticket_id?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_time_entries_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -15487,6 +15641,7 @@ export type Database = {
           subject: string
           suggested_kb_article_ids: string[]
           tags: string[]
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -15513,6 +15668,7 @@ export type Database = {
           subject: string
           suggested_kb_article_ids?: string[]
           tags?: string[]
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -15539,6 +15695,7 @@ export type Database = {
           subject?: string
           suggested_kb_article_ids?: string[]
           tags?: string[]
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -15561,6 +15718,13 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -19783,6 +19947,7 @@ export type Database = {
         }[]
       }
       run_sla_sweep: { Args: { p_entity_type?: string }; Returns: Json }
+      run_ticket_escalations: { Args: never; Returns: Json }
       run_year_end: {
         Args: { p_confirm?: boolean; p_year: number }
         Returns: Json
