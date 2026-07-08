@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List, Target, Calendar } from 'lucide-react';
+import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List, Target, Calendar, Settings2 } from 'lucide-react';
 import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
 import { useProducts, formatPrice } from '@/hooks/useProducts';
 import { useLeads } from '@/hooks/useLeads';
@@ -46,6 +46,9 @@ import { PipelineSummary } from '@/components/admin/deals/PipelineSummary';
 import { ScheduleNextActivityDialog } from '@/components/admin/deals/ScheduleNextActivityDialog';
 import { LostReasonDialog } from '@/components/admin/crm/LostReasonDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
+import { DealTeamsPanel } from '@/components/admin/deals/DealTeamsPanel';
+import { DealTemplatesPanel } from '@/components/admin/deals/DealTemplatesPanel';
+import { useDealTeams, useLatestExchangeRates, useBaseCurrency, convertAmount } from '@/hooks/useDealsParity';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 
