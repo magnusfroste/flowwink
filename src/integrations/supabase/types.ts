@@ -11928,6 +11928,48 @@ export type Database = {
           },
         ]
       }
+      quote_attachments: {
+        Row: {
+          created_at: string
+          document_id: string
+          filename: string
+          id: string
+          quote_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          filename: string
+          id?: string
+          quote_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          filename?: string
+          id?: string
+          quote_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_attachments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_attachments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           created_at: string
@@ -11996,6 +12038,56 @@ export type Database = {
           },
           {
             foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_revisions: {
+        Row: {
+          amount_delta_cents: number | null
+          approval_request_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          new_total_cents: number | null
+          prev_total_cents: number | null
+          quote_id: string
+          reason: string | null
+          revision_number: number
+          snapshot: Json
+        }
+        Insert: {
+          amount_delta_cents?: number | null
+          approval_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_total_cents?: number | null
+          prev_total_cents?: number | null
+          quote_id: string
+          reason?: string | null
+          revision_number: number
+          snapshot: Json
+        }
+        Update: {
+          amount_delta_cents?: number | null
+          approval_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_total_cents?: number | null
+          prev_total_cents?: number | null
+          quote_id?: string
+          reason?: string | null
+          revision_number?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_revisions_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
@@ -12409,6 +12501,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recurring_quote_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          generated_count: number
+          id: string
+          interval: string
+          last_generated_at: string | null
+          last_generated_quote_id: string | null
+          name: string
+          next_run_at: string
+          notes: string | null
+          source_quote_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          generated_count?: number
+          id?: string
+          interval: string
+          last_generated_at?: string | null
+          last_generated_quote_id?: string | null
+          name: string
+          next_run_at: string
+          notes?: string | null
+          source_quote_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          generated_count?: number
+          id?: string
+          interval?: string
+          last_generated_at?: string | null
+          last_generated_quote_id?: string | null
+          name?: string
+          next_run_at?: string
+          notes?: string | null
+          source_quote_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_quote_templates_source_quote_id_fkey"
+            columns: ["source_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reference_checks: {
         Row: {
@@ -17411,6 +17559,10 @@ export type Database = {
         Args: { _count: number; _from: string; _interval: string }
         Returns: string
       }
+      advance_quote_recurrence: {
+        Args: { _from: string; _interval: string }
+        Returns: string
+      }
       allocate_landed_cost: {
         Args: {
           p_amount_cents: number
@@ -20034,6 +20186,7 @@ export type Database = {
           test_name: string
         }[]
       }
+      run_recurring_quotes: { Args: never; Returns: Json }
       run_sla_sweep: { Args: { p_entity_type?: string }; Returns: Json }
       run_ticket_escalations: { Args: never; Returns: Json }
       run_trial_conversions: { Args: never; Returns: Json }

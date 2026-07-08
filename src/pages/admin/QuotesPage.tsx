@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { useQuotes, getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName, type QuoteStatus } from '@/hooks/useQuotes';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { QuoteDetailSheet } from '@/components/admin/quotes/QuoteDetailSheet';
 import { CreateQuoteDialog } from '@/components/admin/quotes/CreateQuoteDialog';
+import { RecurringQuotesTab } from '@/components/admin/quotes/RecurringQuotesTab';
 
 const STATUS_COLORS: Record<QuoteStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -24,6 +25,7 @@ const STATUS_COLORS: Record<QuoteStatus, string> = {
 export default function QuotesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'all'>('all');
+  const [view, setView] = useState<'list' | 'recurring'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('id'));
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -58,6 +60,18 @@ export default function QuotesPage() {
             <Plus className="h-4 w-4 mr-1" /> New Quote
           </Button>
         </AdminPageHeader>
+
+        <Tabs value={view} onValueChange={(v) => setView(v as any)} className="mb-3">
+          <TabsList>
+            <TabsTrigger value="list">Quotes</TabsTrigger>
+            <TabsTrigger value="recurring">Recurring</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {view === 'recurring' ? (
+          <RecurringQuotesTab />
+        ) : (
+        <>
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -132,6 +146,8 @@ export default function QuotesPage() {
             </TableBody>
           </Table>
         </div>
+        </>
+        )}
 
         <QuoteDetailSheet
           quoteId={selectedId}
