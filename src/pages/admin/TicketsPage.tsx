@@ -61,7 +61,7 @@ export default function TicketsPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "table")}>
+        <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
           <AdminPageHeader title="Tickets">
             <TabsList>
               <TabsTrigger value="kanban" className="gap-1.5">
@@ -71,6 +71,14 @@ export default function TicketsPage() {
               <TabsTrigger value="table" className="gap-1.5">
                 <List className="h-3.5 w-3.5" />
                 List
+              </TabsTrigger>
+              <TabsTrigger value="teams" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Teams
+              </TabsTrigger>
+              <TabsTrigger value="rules" className="gap-1.5">
+                <AlarmClock className="h-3.5 w-3.5" />
+                Escalation
               </TabsTrigger>
             </TabsList>
             <SavedViewsMenu
