@@ -142,6 +142,7 @@ const QuoteTemplatesPage = lazy(() => import("./pages/admin/QuoteTemplatesPage")
 const PublicQuotePage = lazy(() => import("./pages/PublicQuotePage"));
 const SignatureCertificatePage = lazy(() => import("./pages/SignatureCertificatePage"));
 const PublicInvoicePage = lazy(() => import("./pages/PublicInvoicePage"));
+const PublicDocumentSignPage = lazy(() => import("./pages/PublicDocumentSignPage"));
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage"));
 const CurrenciesPage = lazy(() => import("./pages/admin/CurrenciesPage"));
 const FixedAssetsPage = lazy(() => import("./pages/admin/FixedAssetsPage"));
@@ -361,6 +362,7 @@ const router = createBrowserRouter([
       { path: "/quote/:token", element: <PublicQuotePage /> },
       { path: "/quote/:token/certificate", element: <SignatureCertificatePage /> },
       { path: "/invoice/:token", element: <PublicInvoicePage /> },
+      { path: "/sign/document/:token", element: <PublicDocumentSignPage /> },
       { path: "/s/:token", element: <PublicSurveyPage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
       { path: "/admin/accounting/locale-packs", element: <LocalePacksPage /> },

@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDocuments, useDeleteDocument, getDocumentSignedUrl } from "@/hooks/useDocuments";
+import { useDocuments, useDeleteDocument, getDocumentSignedUrl, type Document } from "@/hooks/useDocuments";
 import { FileText, Trash2, ExternalLink, FolderOpen, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { AddDocumentDialog } from "@/components/admin/documents/AddDocumentDialog";
 import { DocumentTagsCell } from "@/components/admin/documents/DocumentTagsCell";
+import { DocumentDetailSheet } from "@/components/admin/documents/DocumentDetailSheet";
 
 const CATEGORIES = ["all", "general", "contract", "hr", "finance", "project"];
 
@@ -28,6 +29,7 @@ export default function DocumentsPage() {
   const [category, setCategory] = useState("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
+  const [detailDoc, setDetailDoc] = useState<Document | null>(null);
   const { data: documents, isLoading } = useDocuments(category);
   const deleteDoc = useDeleteDocument();
 
@@ -109,7 +111,7 @@ export default function DocumentsPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredDocs.map((doc) => (
-                        <TableRow key={doc.id}>
+                        <TableRow key={doc.id} className="cursor-pointer" onClick={() => setDetailDoc(doc)}>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -136,7 +138,7 @@ export default function DocumentsPage() {
                             <DocumentTagsCell documentId={doc.id} tags={doc.tags} />
                           </TableCell>
                           <TableCell className="text-sm">{format(new Date(doc.created_at), "MMM d, yyyy")}</TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <div className="flex gap-1">
                               {doc.file_url && (
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openFile(doc.file_url)}>
@@ -159,6 +161,7 @@ export default function DocumentsPage() {
         </Tabs>
 
         <AddDocumentDialog open={addOpen} onOpenChange={setAddOpen} />
+        <DocumentDetailSheet doc={detailDoc} open={!!detailDoc} onOpenChange={(o) => !o && setDetailDoc(null)} />
       </AdminPageContainer>
     </AdminLayout>
   );

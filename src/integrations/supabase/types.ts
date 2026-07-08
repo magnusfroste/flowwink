@@ -4952,12 +4952,172 @@ export type Database = {
         }
         Relationships: []
       }
+      document_share_links: {
+        Row: {
+          access_count: number
+          created_at: string
+          created_by: string | null
+          document_id: string
+          expires_at: string | null
+          id: string
+          last_accessed_at: string | null
+          permissions: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          access_count?: number
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          expires_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          permissions?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          access_count?: number
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          expires_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          permissions?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_share_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_signature_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          message: string | null
+          sent_at: string | null
+          signature_data: string | null
+          signature_type: string | null
+          signed_at: string | null
+          signer_email: string
+          signer_name: string | null
+          status: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          message?: string | null
+          sent_at?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string | null
+          signer_email: string
+          signer_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          message?: string | null
+          sent_at?: string | null
+          signature_data?: string | null
+          signature_type?: string | null
+          signed_at?: string | null
+          signer_email?: string
+          signer_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signature_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          file_name: string | null
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+          version_no: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+          version_no: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           category: string
           content_extracted_at: string | null
           content_md: string | null
           created_at: string
+          current_version_no: number
           description: string | null
           extraction_error: string | null
           extraction_status: string
@@ -4969,6 +5129,7 @@ export type Database = {
           id: string
           related_entity_id: string | null
           related_entity_type: string | null
+          signed_at: string | null
           source: string
           tags: string[] | null
           title: string
@@ -4980,6 +5141,7 @@ export type Database = {
           content_extracted_at?: string | null
           content_md?: string | null
           created_at?: string
+          current_version_no?: number
           description?: string | null
           extraction_error?: string | null
           extraction_status?: string
@@ -4991,6 +5153,7 @@ export type Database = {
           id?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
+          signed_at?: string | null
           source?: string
           tags?: string[] | null
           title: string
@@ -5002,6 +5165,7 @@ export type Database = {
           content_extracted_at?: string | null
           content_md?: string | null
           created_at?: string
+          current_version_no?: number
           description?: string | null
           extraction_error?: string | null
           extraction_status?: string
@@ -5013,6 +5177,7 @@ export type Database = {
           id?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
+          signed_at?: string | null
           source?: string
           tags?: string[] | null
           title?: string
@@ -17927,6 +18092,16 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_document_signature: {
+        Args: {
+          _ip?: string
+          _signature_data: string
+          _signature_type: string
+          _token: string
+          _ua?: string
+        }
+        Returns: Json
+      }
       complete_migration_run: {
         Args: { p_error_message?: string; p_run_id: string; p_status: string }
         Returns: undefined
@@ -20091,6 +20266,34 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resolve_document_share: {
+        Args: { _token: string }
+        Returns: {
+          document_id: string
+          file_name: string
+          file_type: string
+          file_url: string
+          permissions: string
+          title: string
+        }[]
+      }
+      resolve_document_signature_request: {
+        Args: { _token: string }
+        Returns: {
+          document_id: string
+          expires_at: string
+          file_name: string
+          file_type: string
+          file_url: string
+          message: string
+          request_id: string
+          signed_at: string
+          signer_email: string
+          signer_name: string
+          status: string
+          title: string
+        }[]
       }
       resolve_inbound_unit_cost: {
         Args: {
