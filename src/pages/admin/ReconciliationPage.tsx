@@ -918,6 +918,12 @@ export default function ReconciliationPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PartialMatchDialog
+        open={partialOpen}
+        onOpenChange={setPartialOpen}
+        transaction={partialTx}
+        bankGlAccount={bankAccounts.find((a) => a.id === partialTx?.bank_account_id)?.gl_account || '1930'}
+      />
     </AdminLayout>
   );
 }
