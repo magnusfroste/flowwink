@@ -18,7 +18,7 @@ import { SavedViewsMenu } from "@/components/admin/SavedViewsMenu";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export default function TicketsPage() {
-  const [view, setView] = useState<"kanban" | "table">("kanban");
+  const [view, setView] = useState<"kanban" | "table" | "teams" | "rules">("kanban");
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
