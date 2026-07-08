@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 81%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 85%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
@@ -20,15 +20,7 @@ category: reference
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 10/0/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
-| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `██████░░░░` 58% | 8/0/6 | — |
-| **expenses** | Expenses (hr.expense) | L4 → L4 | `██████░░░░` 59% | 9/0/6 | — |
-| **quotes** | Sales (sale.order quotation) | L3 → L4 | `██████░░░░` 59% | 11/1/6 | EPIC-04 |
-| **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████░░░░` 60% | 4/0/4 | — |
-| **purchasing** | Purchase (purchase.order) | L3 → L4 | `██████░░░░` 60% | 11/0/7 | — |
-| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `██████░░░░` 62% | 11/0/6 | — |
 | **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
-| **documents** | Documents (documents.document) | L3 → L4 | `██████░░░░` 63% | 3/0/3 | — |
-| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `██████░░░░` 63% | 9/0/4 | — |
 | **contracts** | Sign + contract management | L3 → L4 | `██████░░░░` 64% | 8/0/4 | — |
 | **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
@@ -37,9 +29,13 @@ category: reference
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `███████░░░` 68% | 6/1/4 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 69% | 10/1/5 | — |
-| **returns** | Inventory returns / RMA | L2 → L4 | `███████░░░` 69% | 9/0/4 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 70% | 12/0/6 | — |
+| **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 73% | 14/1/3 | EPIC-04 |
+| **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 75% | 14/0/4 | — |
+| **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `████████░░` 79% | 11/0/3 | — |
 | **products** | Sales / Inventory (product.template, product.product, sale.order.line) | L4 → L4 | `████████░░` 80% | 10/1/4 | — |
+| **tickets** | Helpdesk (helpdesk.ticket) | L3 → L4 | `████████░░` 81% | 14/0/3 | — |
+| **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 86% | 5/0/1 | EPIC-07 |
@@ -47,6 +43,7 @@ category: reference
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
 | **webinars** | Events (event.event) | L3 → L4 | `█████████░` 89% | 6/0/1 | — |
 | **templates** | Website themes | L3 → L4 | `█████████░` 90% | 3/1/0 | EPIC-06 |
+| **reconciliation** | Accounting bank reconciliation | L3 → L4 | `█████████░` 91% | 12/1/0 | — |
 | **calendar** | Calendar (calendar.event) | L3 → L4 | `█████████░` 92% | 4/1/0 | — |
 | **companies** | Contacts (res.partner companies) | L4 → L4 | `█████████░` 93% | 11/0/1 | — |
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 94% | 11/0/1 | — |
@@ -55,6 +52,8 @@ category: reference
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
+| **documents** | Documents (documents.document) | L3 → L4 | `██████████` 100% | 6/0/0 | — |
+| **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████████` 100% | 8/0/0 | — |
 | **forms** | Website forms | L4 → L4 | `██████████` 100% | 7/0/0 | — |
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 20/0/0 | — |
@@ -65,6 +64,7 @@ category: reference
 | **pricelists** | Sales pricelists (product.pricelist) | L4 → L4 | `██████████` 100% | 12/0/0 | — |
 | **projects** | Project (project.project/project.task) | L4 → L4 | `██████████` 100% | 13/0/0 | — |
 | **resume** | Employees → Skills / niche consultant pool | L3 → L4 | `██████████` 100% | 6/0/0 | — |
+| **returns** | Inventory returns / RMA | L2 → L4 | `██████████` 100% | 13/0/0 | — |
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **sla** | Helpdesk SLA policies | L4 → L4 | `██████████` 100% | 15/0/0 | — |
@@ -97,5 +97,5 @@ category: reference
 | Module | Capability | Status | Epic |
 |---|---|---|---|
 | contact-center | Presence-aware routing → queue → escalation | partial | EPIC-07 |
-| reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | missing | — |
+| reconciliation | Live bank feeds (Plaid/Tink/GoCardless) | partial | — |
 
