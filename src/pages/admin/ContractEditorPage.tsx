@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContractMarkdownEditor } from '@/components/admin/contracts/ContractMarkdownEditor';
+import { ContractObligationsPanel } from '@/components/admin/contracts/ContractObligationsPanel';
+import { ContractBillingPanel } from '@/components/admin/contracts/ContractBillingPanel';
 import { DocumentsPanel } from '@/components/admin/documents/DocumentsPanel';
 import {
   useContract, useSendContract, useContractSignatures, useContractVersions,
