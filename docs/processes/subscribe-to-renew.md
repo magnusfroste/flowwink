@@ -119,5 +119,12 @@ subscription and reviewing draft cycle invoices require an admin.
   qty/price change pending (→ done after UI).
 - `invoicing.recurring` — recurring engine exists for subscription-billed
   invoices; standalone recurring invoices (no subscription) not yet.
-- Usage-based billing, plan templates, cohort analysis — see
+- ✅ **Plan templates shipped** — `subscription_plans` (reusable name/price/interval/
+  features); a subscription can be created from a plan_id that fills
+  product_name/unit_amount_cents/billing_interval.
+- ✅ **Trial → paid conversion** — `trial_end` + `status='trialing'`; a conversion
+  action flips to active and starts billing (trial days-remaining shown in the list).
+- ✅ **Commitment / lock-in periods** — `commitment_months`/`commitment_end`;
+  cancellation before term end is flagged as early-termination with remaining commitment.
+- Remaining gaps: usage-based billing, cohort analysis, seat auto-scaling — see
   `docs/parity/capabilities/subscriptions.json`.

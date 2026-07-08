@@ -52,7 +52,7 @@ flowchart TD
 | Booking suggestion | — | ✅ (`suggest_accounting_template`) | — |
 | Journal entries | ✅ | ✅ (`manage_journal_entry`) | — |
 | Opening balances | ✅ | ✅ (`manage_opening_balances`) | — |
-| Reconciliations | ✅ | ⚠️ Partial (autonomous reconciliation) | — |
+| Reconciliations | ✅ | ⚠️ Partial (autonomous) — now incl. partial-match variance, petty-cash, sign-off | — |
 | Reports | ✅ | ✅ (`accounting_reports`) | — |
 | Period-end close | ✅ | ✅ (`close_accounting_period`, `reopen_accounting_period`) | — |
 | Tax reporting | ❌ Missing | — | — |
@@ -65,7 +65,9 @@ flowchart TD
 - ❌ Tax reporting (VAT, employer reports, K10) — see § The Swedish statutory tail below for the full map + borrow plan
 - ❌ **Correction flow for posted vouchers (storno)** — today a mistake is fixed by reopening the period and editing, which breaks the immutability principle Swedish law expects (BFL: posted vouchers are never edited — you post a reversal or a correction entry). Needed: `reverse_journal_entry` / `correct_journal_entry` skills + UI, and with them the period-reopen path becomes the exception instead of the correction mechanism
 - ✅ SIE export — pluggable adapters per locale pack (SE → SIE 4, generic → SAF-T + CSV)
-- ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`; ❌ live PSD2 bank connection (Odoo and Accounted both have feed-level sync)
+- ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`; ❌ live PSD2 bank connection (Odoo and Accounted both have feed-level sync; a `bank_feed_connections` scaffold exists but aggregator sync needs Plaid/Tink creds)
+- ✅ Reconciliation depth (2026-07-08) — partial-match with variance write-off, petty-cash reconciliation, and reconciliation sign-off (`reconciliation_signoffs`, locks matched lines once balanced)
+- ✅ Agentic bookkeeping matcher — `suggest_accounting_template` / `propose_bookkeeping` rewritten with a word-boundary + Swedish-compound scorer (no more substring false-matches) and bank-leg-derived net base; template data cleaned (goods→3001, VAT-payment 1:1 via 2650, bank-paid equipment template)
 - ❌ Cash-flow statement (kassaflödesanalys) — we report balance sheet + P&L + GL; the third statement is missing
 - ❌ Document retention enforcement — the archive stores vouchers' documents, but nothing enforces the 7-year rule or provides the BFL-required *systemdokumentation* and *arkivplan* artifacts
 - ❌ Multi-currency revaluation

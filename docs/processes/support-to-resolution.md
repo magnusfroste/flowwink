@@ -63,8 +63,10 @@ flowchart TD
 - ✅ Email channel — `email_to_ticket` turns inbound email into cases (verified E2E: email → SLA policy → `sla_check` → triage → assign); WhatsApp/Slack still missing for a true multi-channel inbox
 - ✅ Conversation transfer — live conversations can be handed between agents (transfer target picker in LiveSupportPage, `current_conversations` load surfaced via `list_support_agents`)
 - ⚠️ CSAT — chat feedback capture + `analyze_chat_feedback`/`support_get_feedback` exist; a per-case post-resolution survey (Odoo-style rating email) is not wired, though the `surveys` module could carry it
-- ❌ Macros / canned responses for human agents
-- ❌ Skill-based routing to specific agents (assignment is load/availability-based)
+- ✅ Macros / canned responses for human agents — `manage_canned_response`
+- ✅ Queue / team assignment + routing — `route_conversation` (least-loaded agent handling the queue) + `manage_ticket` reassign; escalation rules via `manage_sla_escalation`
+- ✅ Time tracking per ticket — logged via `log_time` (timesheets) against the ticket
+- ⚠️ Skill-based routing to specific agents — partial: `route_conversation` routes to the least-loaded agent that handles the queue (not per-named-skill yet)
 - ❌ Internal knowledge base (separate from public KB)
 
 ---

@@ -62,8 +62,12 @@ flowchart TD
 
 ## Known gaps (missing for L5)
 
-- ❌ A/B testing of headlines/CTAs (infrastructure missing)
-- ❌ Multi-language content management
+- ✅ A/B testing of headlines/CTAs — `manage_page_experiment` (two-version page split test)
+- ✅ Multi-language content management — `manage_page_translation` (multi-language pages)
+- ✅ UTM / attribution tracking — `get_attribution_report` (campaign/source/medium over a window, leads + orders)
+- ✅ Blog comments + moderation (`moderate_blog_comment`, `list_blog_comments`), RSS (`get_blog_rss_url`), SEO meta (`generate_meta_description`, `generate_alt_text`), author pages
+- ✅ Media library / DAM — alt-text (`media_set_alt_text`), where-used (`media_find_usage`), optimized variants (`media_optimize`), browse (`media_browse`)
+- ✅ Organic social scheduling — `schedule_social_post`, `list_social_posts`, `mark_social_post_posted`; campaign optimization `ad_optimize`
 - ❌ Editorial calendar with deadlines / approvals
 - ❌ Influencer / partnership outreach
 - ⚠️ Image generation requires external AI (OpenAI / Gemini / local)

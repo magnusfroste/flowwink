@@ -65,7 +65,7 @@ flowchart TD
 - ✅ Forecasting — `lead_pipeline_review` returns the weighted forecast (Σ deal value × stage probability, per-stage breakdown); Stage-3 verified
 - ✅ Duplicate handling — `find_duplicate_leads` (email normalization incl. plus-addressing/case) + `merge_leads` (score-summing survivor); Stage-3 verified
 - ✅ Lost reasons + win-rate — taxonomy (price/timing/competitor/no_response/other) + note on the lost transition; win/loss rollup in `lead_pipeline_review`
-- ❌ Multi-touch attribution (which channel closed the deal?)
+- ⚠️ Multi-touch attribution — `get_attribution_report` (paidGrowth) returns campaign/source/medium over a window across leads + orders; full multi-touch weighting still basic
 - ❌ Round-robin lead assignment to reps
 - ❌ Bulk email with unsubscribe-list management (Odoo mass-mail class; overlaps Newsletter)
 - ❌ GDPR consent / preference center per contact (Odoo has consent tracking — relevant for every EU SMB)

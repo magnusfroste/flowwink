@@ -29,7 +29,7 @@ flowchart TD
     A["Webinar created (draft)<br/>manage_webinar"]
     A --> B["Published — registrations open<br/>publish_webinar"]
     B --> C["Visitors register — lead linked or created, +15 score, dedup per email<br/>register_webinar"]
-    C --> D["Reminder tick — confirm / 24h / 1h / post events, deduplicated<br/>webinar_reminder_tick cron"]
+    C --> D["Reminders — confirm / 24h / 1h / post, deduplicated<br/>send_webinar_reminders"]
     D --> E["Live — or automatic when the date passes<br/>start_webinar"]
     E --> F["Completed + recording attached<br/>complete_webinar"]
     F --> G["Attendance marked — lead +10<br/>mark_webinar_attendance"]
@@ -78,7 +78,7 @@ completed / cancelled`)
 | Status | Meaning | Moved forward by | What the transition does |
 |---|---|---|---|
 | `draft` | Being planned, not visible | admin / agent (`manage_webinar` create) | Row created; registrations rejected |
-| `published` | Open for registration | admin / agent (`publish_webinar`, from `draft` only) | Emits `webinar.published`; `register_for_webinar` now accepts signups |
+| `published` | Open for registration | admin / agent (`publish_webinar`, from `draft` only) | Emits `webinar.published`; `register_webinar` now accepts signups |
 | `live` | Broadcast running | admin / agent (`start_webinar`, from `draft` or `published`) — normally automatic when the date passes | Emits `webinar.live`; registrations still accepted |
 | `completed` | Ran and closed | admin / agent (`complete_webinar`, from `live` or `published`) | Sets `recording_url` (if passed), emits `webinar.completed`; unlocks `generate_blog_from_webinar` |
 | `cancelled` | Will not run | admin / agent (`cancel_webinar`, from anything except `completed`/`cancelled`; trust: approve) | Emits `webinar.cancelled` with reason so automations can notify registrants |
@@ -101,7 +101,7 @@ visitors, chat and MCP operators all use the same RPC.
 
 ### Coming from spreadsheets
 
-- The signup Google Form + export → `register_for_webinar` with built-in dedup per event
+- The signup Google Form + export → `register_webinar` with built-in dedup per event
 - The copy-paste into the CRM afterwards → automatic: every registration is a linked, scored lead at signup time
 - The manual "reminder tomorrow!" email → `webinar.reminder.*` events on a 15-minute tick, deduplicated per registration
 - The attendance checklist → `mark_webinar_attendance`, which also ranks your follow-up list via lead score
@@ -116,7 +116,7 @@ visitors, chat and MCP operators all use the same RPC.
 | Create / edit | ✅ (WebinarsPage) | ✅ (`manage_webinar`) | ✅ |
 | Publish | ✅ | ✅ (`publish_webinar`, trust: notify) | ✅ |
 | Register | ✅ (public WebinarBlock) | ✅ (`register_webinar`, external scope) | ✅ |
-| Reminders | — | auto (`webinar_reminder_tick` cron → platform events) | — |
+| Reminders | — | auto (`send_webinar_reminders` — 'Webinar Reminders' automation → platform events) | — |
 | Start / complete | ✅ | ✅ (`start_webinar`, `complete_webinar` + recording URL) | ✅ |
 | Cancel | ✅ | ✅ (`cancel_webinar`, trust: approve) | ✅ (staged) |
 | Attendance | ✅ | ✅ (`mark_webinar_attendance`, trust: auto) | ✅ |

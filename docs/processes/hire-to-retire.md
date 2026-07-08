@@ -4,8 +4,8 @@
 
 **Problem it solves:** A new hire means re-typing the same person into five places — contract, checklist, HR record, all by hand — this process turns an accepted offer into employee record, draft contract and onboarding checklist in one call, and keeps leave and expenses tidy afterwards.
 
-**Maturity level:** L3 — Operational (auto-hire bridge live; payroll & performance still manual)
-**Status:** ✅ Hire-to-Onboard automated; ⚠️ lacks payroll and performance management
+**Maturity level:** L3 — Operational (auto-hire bridge live; payroll internal cycle live; performance still manual)
+**Status:** ✅ Hire-to-Onboard automated; ✅ payroll runs live (`create_payroll_run`→`approve_payroll_run`→`mark_payroll_paid`, `generate_agi_export`, `year_end_payroll_summary`); ⚠️ statutory filing (AGI/Skatteverket submit) still external; ⚠️ lacks performance management
 
 ---
 
@@ -33,7 +33,7 @@ flowchart TD
     D --> D2["Draft contract from template<br/>tokens + probation auto-set"]
     D --> D3["Onboarding checklist seeded<br/>best-matching template"]
     D --> D4["Application marked hired, employee linked"]
-    D2 --> E["Contract signed by both parties<br/>sign_employment_contract"]
+    D2 --> E["Contract signed by both parties<br/>send_contract_for_signature"]
     E --> F["Ongoing: leave, expenses, attendance<br/>manage_leave, manage_expenses"]
     F --> G["Contract renewals (annual)<br/>contract_renewal_check"]
     G --> H["Offboarding — contracts terminated, access revoked"]
@@ -53,8 +53,8 @@ flowchart TD
 | Candidate screening | ✅ | ✅ (`score_candidate`) | — |
 | **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | — |
-| Contract handling | ✅ | ✅ (`manage_contract`, `sign_employment_contract`) | — |
-| Onboarding checklist | ✅ | ✅ (`onboarding_checklist`, `apply_onboarding_template`) | — |
+| Contract handling | ✅ | ✅ (`manage_contract`, `send_contract_for_signature`) | — |
+| Onboarding checklist | ✅ | ✅ (`onboarding_checklist`) | — |
 | Leave requests | ✅ | ✅ (`manage_leave`) | — |
 | **Year-end vacation allocation** | ✅ | ✅ (`auto_allocate_vacation`) | ✅ MCP-exposed |
 | Contract renewal check | — | ✅ (`contract_renewal_check`) | — |

@@ -17,8 +17,8 @@
 |--------|---------------------|
 | **Manufacturing** | BOMs, manufacturing orders, work centers, routing operations, work orders |
 | **Products** | The finished good + component catalog (UoM per product) |
-| **Inventory** | Component reservation/consumption, finished-goods receipt, valuation layers |
-| **Purchasing** | Procurement of missing components (`trigger_procurement_for_mo`, `mrp_reorder_run`) |
+| **Inventory** | Component reservation/consumption, finished-goods receipt, valuation layers; inter-warehouse replenishment (`transfer_stock`) + reorder rules (`reorder_rules`) |
+| **Purchasing** | Procurement of missing components (`trigger_procurement_for_mo`); reorder review (`list_reorder_candidates`) → MRP draft-MO run (`mrp_reorder_run`, a manufacturing-module skill) |
 
 ---
 

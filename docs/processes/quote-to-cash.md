@@ -135,8 +135,10 @@ the public page; approval sign-off requires an admin/approver.
 
 - ✅ Quote/proposal module — full sign-and-pay flow live (e-sign with certificate, auto-invoice on accept, Stripe Pay now, `prepayment_pct` deposits); deal-conversion automation still WIP
 - ✅ Versioned price lists — `pricelists` module: customer/company price lists with validity windows; `resolve_pricelist_price` picks the most specific match
-- ⚠️ Recurring billing — `subscriptions` module covers MRR/dunning; Stripe is primary processor
-- ✅ Multi-currency at the invoice level — `multi-currency` module; invoices and quotes carry `exchange_rate`, rates via `fetch-fx-rates`
+- ✅ Recurring quotes / retainers — `recurring_quote_templates` regenerates a draft quote on a schedule (monthly retainer, annual renewal); `subscriptions` module covers MRR/dunning; Stripe is primary processor
+- ✅ Quote amendment workflow — a sent quote can be revised with a full version history (`quote_revisions`; current vs original); re-send resets acceptance
+- ✅ Quote attachments — quotes carry file attachments (`quote_attachments`: spec PDFs, drawings, terms) that follow the quote when sent/accepted
+- ✅ Multi-currency at the invoice level — `multi-currency` module; invoices and quotes carry `exchange_rate`, rates via `fetch_ecb_rates` (manual override `set_exchange_rate`, bulk backfill `import_exchange_rates`)
 - ✅ Amount-threshold approvals — generic `approvals` engine (rules per entity type incl. invoice and quote); the quote flow is wired end-to-end via the `pending_approval` status, invoice rules are configured in the Approvals UI
 - ⚠️ Reconciliation requires manual matching for ambiguous cases (auto via `auto_match_transactions`)
 

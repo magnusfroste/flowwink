@@ -6,7 +6,7 @@
 **Problem it solves:** Returns are handled ad hoc — nobody knows what came back, restocking is guesswork, and refund amounts are worked out on a pocket calculator — this process tracks every RMA from request to refund with the math enforced.
 
 **Maturity level:** L3 — Operational (full RMA lifecycle incl. QC + partial refunds)
-**Status:** ✅ Core loop live · F2 depth (reasons/fees/partials) shipped 2026-06-12
+**Status:** ✅ Core loop live · F2 depth (reasons/fees/partials) 2026-06-12 · full reverse chain (RTV / pickup / condition-actions) shipped 2026-07-08
 
 ## Flow
 
@@ -90,7 +90,19 @@ MCP; inspection and refunds require admin trust.
 | 🤖 FlowPilot | reason analytics in reviews; refund execution on approval |
 | 🔗 External agent | full loop over MCP |
 
+## Shipped (2026-07-08) — RMA now covers the full reverse chain
+
+- ✅ **Return-to-vendor (RTV)** — `return_to_vendor` links a customer RMA to a supplier
+  return + expected vendor credit (ties into `vendor_credit_memos` from purchasing) when
+  goods are the supplier's fault.
+- ✅ **Automated return email + label** — on RMA approval the customer gets a return
+  confirmation (via `email-send`) with instructions + a return shipping label reference
+  (`create_return_label`).
+- ✅ **Reverse-logistics pickup** — `return_pickups` schedules a carrier pickup
+  (date/address/carrier/status) via `manage_carrier_pickup`.
+- ✅ **Condition-based actions** — the `inspect_return` QC step drives the next action from
+  the graded condition (new→restock, damaged→scrap/RTV, used→refurbish).
+
 ## Known gaps (parity scorecards)
 
-`return_to_vendor`, `return_email`/labels, `reverse_logistics` pickup,
-`condition_actions` — see `docs/parity/capabilities/returns.json`.
+Remaining depth tracked in `docs/parity/capabilities/returns.json`.

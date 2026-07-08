@@ -26,17 +26,19 @@
 
 ```mermaid
 flowchart TD
-    A["Low stock / manual need"] --> B["Reorder check — auto or manual<br/>purchase_reorder_check"]
+    A["Low stock / manual need"] --> B["Reorder check — auto or manual<br/>purchase_reorder_check · list_reorder_candidates · mrp_reorder_run"]
     B --> C["Purchase order created<br/>create_purchase_order"]
     C --> D["PO sent to vendor<br/>send_purchase_order"]
-    D --> E["Delivery → goods receipt<br/>receive_goods"]
-    E --> F["Stock updated (Inventory)"]
+    D --> D2["PO change order (amendment + revision history)<br/>purchase_order_revisions"]
+    D2 --> E["Delivery → goods receipt<br/>receive_purchase_order"]
+    E --> F["Stock updated (Inventory) — receive→QC→putaway<br/>inventory_receipts"]
     F --> G["Vendor invoice in → 3-way match against PO + GR<br/>match_invoice_to_receipt"]
+    G --> G2["Mismatch → dispute + supplier credit memo<br/>vendor_invoice_disputes · vendor_credit_memos"]
     G --> H["Booking (Accounting)"]
     H --> I["Payment"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
-    class B,C,D,E,F,G agent
+    class B,C,D,D2,E,F,G,G2 agent
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
@@ -103,12 +105,16 @@ paid require admin trust.
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
 | Vendor onboarding | ✅ | ✅ (`manage_vendor`) | — |
-| Reorder detection | — | ✅ (`purchase_reorder_check`) | — |
+| Reorder detection | — | ✅ (`purchase_reorder_check`, `list_reorder_candidates`, `mrp_reorder_run`) | — |
 | PO creation | ✅ | ✅ (`create_purchase_order`) | — |
 | PO dispatch | ✅ | ✅ (`send_purchase_order`) | — |
-| Goods receipt | ✅ | ✅ (`receive_goods`) | — |
+| PO change order / revision history | ✅ | ✅ (`purchase_order_revisions`) | — |
+| Goods receipt | ✅ | ✅ (`receive_purchase_order`) | — |
+| Receive→QC→putaway | ✅ | ✅ (`inventory_receipts`) | — |
 | Expense handling | ✅ | ✅ (`manage_expenses`, `analyze_receipt`) | — |
 | 3-way match | ⚠️ Manual fallback | ✅ (`match_invoice_to_receipt`, `auto_approve_vendor_invoice`) | 🔗 Delegation possible |
+| Invoice dispute / supplier credit memo | ✅ | ✅ (`vendor_invoice_disputes`, `vendor_credit_memos`) | — |
+| Vendor scorecard (on-time / price / quality) | ✅ | ✅ (`vendor_scorecard`) | — |
 | Expense P2P loop | ✅ | ✅ (`submit_/approve_/book_/mark_expense_report_paid`) | — |
 
 ---

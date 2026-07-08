@@ -27,7 +27,7 @@ flowchart TD
 
 | Step | Module | Skills |
 |---|---|---|
-| Acquire | fixed-assets + accounting | `register_fixed_asset` |
+| Acquire | fixed-assets + accounting | `register_fixed_asset` (alias-tolerant for external agents — accepts `acquisition_cost_cents`/`useful_life_years` as well as the canonical `cost_cents`/`useful_life_months`; hardened 2026-07-08 per OpenClaw finding) |
 | Depreciate | fixed-assets | `run_monthly_depreciation` (straight-line/declining) |
 | Year-end | fixed-assets + accounting | `propose_annual_depreciation`, `run_year_end` |
 | Retire | fixed-assets | `dispose_fixed_asset` |

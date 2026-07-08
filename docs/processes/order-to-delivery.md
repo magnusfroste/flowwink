@@ -28,7 +28,7 @@
 flowchart TD
     A["Customer checkout (Stripe)"] --> B["Order created — status: unfulfilled"]
     B --> C["Stripe webhook → order.paid"]
-    C --> D["Stock reservation (Inventory)<br/>check_stock"]
+    C --> D["Stock reservation (Inventory)<br/>reserve_stock"]
     D --> E["Picking (manual) — status: picked"]
     E --> F["Packing (manual) — status: packed"]
     F --> G["Shipping (manual) — status: shipped + tracking"]
@@ -48,7 +48,7 @@ flowchart TD
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
 | Order intake | — | ✅ Auto (Stripe webhook) | — |
-| Stock check | ✅ | ✅ (`check_stock`) | — |
+| Stock check / reservation | ✅ | ✅ (`manage_inventory`, `reserve_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
 | Pick/pack/ship | ✅ | ✅ (`allocate_picking`, `confirm_pick`, `ship_picking`) | ✅ over MCP |
 | Partial fulfillment | ✅ (OrderLineFulfillment) | ✅ (`fulfill_order_line` — order ships when all lines complete) | — |
@@ -62,7 +62,7 @@ flowchart TD
 
 - ✅ Returns / RMA — full reverse flow lives in [Return-to-Refund](./return-to-refund.md) (request → approve → receive → inspect → partial refund)
 - ✅ Partial shipments — `order_items.qty_fulfilled` + `fulfill_order_line`; ships only when all lines complete
-- ✅ Cycle counting — `inventory#cycle_count` (skill + admin UI, Stage-3 verified 2026-07-06)
+- ✅ Cycle counting — `manage_inventory_count` (skill + admin UI, Stage-3 verified 2026-07-06)
 - ❌ Integrations with WMS / carriers (Postnord, DHL APIs) — the `shipping` module tracks shipments but has no carrier API adapters
 - ❌ Multi-warehouse fulfillment routing
 - ❌ Pre-orders / backorder auto-creation on stockout (partly via `back_in_stock_requests`)
