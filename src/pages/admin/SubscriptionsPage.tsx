@@ -168,6 +168,10 @@ export default function SubscriptionsPage() {
         <TabsContent value="renewals">
           <RenewalsPanel />
         </TabsContent>
+
+        <TabsContent value="plans">
+          <SubscriptionPlansTab />
+        </TabsContent>
       </Tabs>
     </AdminPageContainer>
     </AdminLayout>
