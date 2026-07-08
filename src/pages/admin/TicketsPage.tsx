@@ -141,6 +141,7 @@ export default function TicketsPage() {
               </div>
             )}
           </div>
+          )}
 
           <TabsContent value="kanban" className="mt-0">
             <TicketsKanban tickets={displayTickets} isLoading={isBusy} />
@@ -148,6 +149,14 @@ export default function TicketsPage() {
 
           <TabsContent value="table" className="mt-0">
             <TicketsTable tickets={displayTickets} isLoading={isBusy} />
+          </TabsContent>
+
+          <TabsContent value="teams" className="mt-0">
+            <TicketTeamsTab />
+          </TabsContent>
+
+          <TabsContent value="rules" className="mt-0">
+            <TicketEscalationRulesTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
