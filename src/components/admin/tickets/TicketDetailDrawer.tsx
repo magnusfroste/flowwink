@@ -260,6 +260,12 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
           <Separator className="my-4" />
           <EntityActivityTimeline entityType="ticket" entityId={ticket.id} title="Activity" compact />
 
+          {/* Time tracking */}
+          <Separator className="my-4" />
+          <TicketTimeEntriesPanel ticketId={ticket.id} />
+
+
+
 
           {/* Comments */}
           <Separator className="my-4" />
