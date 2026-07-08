@@ -60,6 +60,18 @@ export default function QuotesPage() {
             <Plus className="h-4 w-4 mr-1" /> New Quote
           </Button>
         </AdminPageHeader>
+
+        <Tabs value={view} onValueChange={(v) => setView(v as any)} className="mb-3">
+          <TabsList>
+            <TabsTrigger value="list">Quotes</TabsTrigger>
+            <TabsTrigger value="recurring">Recurring</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {view === 'recurring' ? (
+          <RecurringQuotesTab />
+        ) : (
+        <>
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
