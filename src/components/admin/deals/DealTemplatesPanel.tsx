@@ -19,6 +19,18 @@ import {
 import { useLeads } from '@/hooks/useLeads';
 import { useProducts } from '@/hooks/useProducts';
 
+/** Format money, tolerating a missing/invalid currency code (free-text input can
+ *  hold '' or garbage). Intl.NumberFormat throws RangeError on a bad ISO code —
+ *  fall back to SEK so the templates table never crashes. */
+function fmtMoney(amount: number, currency?: string | null): string {
+  const cur = /^[A-Za-z]{3}$/.test(currency ?? '') ? (currency as string).toUpperCase() : 'SEK';
+  try {
+    return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: cur }).format(amount);
+  } catch {
+    return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(amount);
+  }
+}
+
 export function DealTemplatesPanel() {
   const { data: templates = [] } = useDealTemplates();
   const { data: teams = [] } = useDealTeams();
@@ -65,7 +77,7 @@ export function DealTemplatesPanel() {
                     <TableCell className="font-medium">{t.name}</TableCell>
                     <TableCell className="text-sm">{t.default_stage || '—'}</TableCell>
                     <TableCell className="font-mono text-sm">
-                      {new Intl.NumberFormat('sv-SE', { style: 'currency', currency: t.default_currency }).format(t.default_value_cents / 100)}
+                      {fmtMoney(t.default_value_cents / 100, t.default_currency)}
                     </TableCell>
                     <TableCell className="text-sm">{product?.name || '—'}</TableCell>
                     <TableCell>
@@ -146,12 +158,12 @@ export function DealTemplatesPanel() {
                 <div>
                   <Label className="text-xs">Default team</Label>
                   <Select
-                    value={editing.default_team_id || ''}
-                    onValueChange={(v) => setEditing({ ...editing, default_team_id: v || null })}
+                    value={editing.default_team_id || 'none'}
+                    onValueChange={(v) => setEditing({ ...editing, default_team_id: v === 'none' ? null : v })}
                   >
                     <SelectTrigger className="h-9"><SelectValue placeholder="None" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -160,12 +172,12 @@ export function DealTemplatesPanel() {
               <div>
                 <Label className="text-xs">Default product</Label>
                 <Select
-                  value={editing.default_product_id || ''}
-                  onValueChange={(v) => setEditing({ ...editing, default_product_id: v || null })}
+                  value={editing.default_product_id || 'none'}
+                  onValueChange={(v) => setEditing({ ...editing, default_product_id: v === 'none' ? null : v })}
                 >
                   <SelectTrigger className="h-9"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

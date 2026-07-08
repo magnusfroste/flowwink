@@ -352,15 +352,15 @@ export default function BlogPostEditorPage() {
                       <div className="space-y-2">
                         <Label>Content Reviewer</Label>
                         <Select
-                          value={reviewerId}
-                          onValueChange={setReviewerId}
+                          value={reviewerId || 'none'}
+                          onValueChange={(v) => setReviewerId(v === 'none' ? '' : v)}
                           disabled={!canEdit}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select reviewer" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
                             {authors?.map((author) => (
                               <SelectItem key={author.id} value={author.id}>
                                 {author.full_name || author.email}
