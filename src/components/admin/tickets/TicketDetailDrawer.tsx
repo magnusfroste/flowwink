@@ -63,6 +63,7 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
   const { data: comments = [] } = useTicketComments(ticket?.id);
   const addComment = useAddTicketComment();
   const { data: cannedResponses = [] } = useCannedResponses(true);
+  const { data: teams = [] } = useTicketTeams();
   const incrementUsage = useIncrementCannedUsage();
   const [newComment, setNewComment] = useState("");
   const [tagInput, setTagInput] = useState("");
