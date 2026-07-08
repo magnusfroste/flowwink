@@ -256,7 +256,7 @@ function ReceiptLinesRow({ receiptId }: { receiptId: string }) {
             ))}
           </TableBody>
         </Table>
-      </CardContent>
+      </TableCell>
     </TableRow>
   );
 }
