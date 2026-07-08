@@ -9315,6 +9315,57 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          alt_text: string | null
+          bucket: string
+          created_at: string
+          created_by: string | null
+          filename: string
+          folder: string
+          height: number | null
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          filename: string
+          folder?: string
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          variants?: Json
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          filename?: string
+          folder?: string
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          variants?: Json
+          width?: number | null
+        }
+        Relationships: []
+      }
       migration_audit_log: {
         Row: {
           completed_at: string | null
@@ -19688,6 +19739,15 @@ export type Database = {
         Args: { p_limit?: number; p_threshold?: number }
         Returns: Json
       }
+      find_media_usage: {
+        Args: { p_needle: string }
+        Returns: {
+          slug: string
+          source_id: string
+          source_type: string
+          title: string
+        }[]
+      }
       flag_at_risk_subscriptions: { Args: never; Returns: Json }
       fulfill_order_line: {
         Args: { p_line_id: string; p_qty?: number }
@@ -22082,6 +22142,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_media_alt_text: {
+        Args: { p_alt_text: string; p_bucket?: string; p_storage_path: string }
+        Returns: {
+          alt_text: string | null
+          bucket: string
+          created_at: string
+          created_by: string | null
+          filename: string
+          folder: string
+          height: number | null
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "media_assets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_quote_item_selection: {
         Args: { _accept_token: string; _item_id: string; _selected: boolean }
         Returns: Json
@@ -22480,6 +22565,42 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "email_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_media_asset: {
+        Args: {
+          p_alt_text?: string
+          p_bucket?: string
+          p_filename?: string
+          p_folder?: string
+          p_height?: number
+          p_mime_type?: string
+          p_size_bytes?: number
+          p_storage_path: string
+          p_variants?: Json
+          p_width?: number
+        }
+        Returns: {
+          alt_text: string | null
+          bucket: string
+          created_at: string
+          created_by: string | null
+          filename: string
+          folder: string
+          height: number | null
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "media_assets"
           isOneToOne: true
           isSetofReturn: false
         }
