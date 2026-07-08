@@ -10,13 +10,15 @@ import { TicketsKanban } from "@/components/admin/tickets/TicketsKanban";
 import { TicketsTable } from "@/components/admin/tickets/TicketsTable";
 import { CreateTicketDialog } from "@/components/admin/tickets/CreateTicketDialog";
 import { CannedResponsesDialog } from "@/components/admin/tickets/CannedResponsesDialog";
+import { TicketTeamsTab } from "@/components/admin/tickets/TicketTeamsTab";
+import { TicketEscalationRulesTab } from "@/components/admin/tickets/TicketEscalationRulesTab";
 import { useTickets, useTicketSearch, type Ticket } from "@/hooks/useTickets";
-import { LayoutGrid, List, Search, X } from "lucide-react";
+import { LayoutGrid, List, Search, X, Users, AlarmClock } from "lucide-react";
 import { SavedViewsMenu } from "@/components/admin/SavedViewsMenu";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export default function TicketsPage() {
-  const [view, setView] = useState<"kanban" | "table">("kanban");
+  const [view, setView] = useState<"kanban" | "table" | "teams" | "rules">("kanban");
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -59,7 +61,7 @@ export default function TicketsPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "table")}>
+        <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
           <AdminPageHeader title="Tickets">
             <TabsList>
               <TabsTrigger value="kanban" className="gap-1.5">
@@ -69,6 +71,14 @@ export default function TicketsPage() {
               <TabsTrigger value="table" className="gap-1.5">
                 <List className="h-3.5 w-3.5" />
                 List
+              </TabsTrigger>
+              <TabsTrigger value="teams" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Teams
+              </TabsTrigger>
+              <TabsTrigger value="rules" className="gap-1.5">
+                <AlarmClock className="h-3.5 w-3.5" />
+                Escalation
               </TabsTrigger>
             </TabsList>
             <SavedViewsMenu
@@ -84,9 +94,11 @@ export default function TicketsPage() {
             <CreateTicketDialog />
           </AdminPageHeader>
 
-          {/* Search + tag filter */}
+          {/* Search + tag filter (only for queue views) */}
+          {(view === "kanban" || view === "table") && (
           <div className="mb-4 space-y-2">
             <div className="relative max-w-md">
+
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={searchInput}
@@ -129,6 +141,7 @@ export default function TicketsPage() {
               </div>
             )}
           </div>
+          )}
 
           <TabsContent value="kanban" className="mt-0">
             <TicketsKanban tickets={displayTickets} isLoading={isBusy} />
@@ -136,6 +149,14 @@ export default function TicketsPage() {
 
           <TabsContent value="table" className="mt-0">
             <TicketsTable tickets={displayTickets} isLoading={isBusy} />
+          </TabsContent>
+
+          <TabsContent value="teams" className="mt-0">
+            <TicketTeamsTab />
+          </TabsContent>
+
+          <TabsContent value="rules" className="mt-0">
+            <TicketEscalationRulesTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>

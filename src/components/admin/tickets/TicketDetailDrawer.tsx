@@ -46,8 +46,10 @@ import {
   useAddTicketComment,
 } from "@/hooks/useTickets";
 import { useCannedResponses, useIncrementCannedUsage } from "@/hooks/useCannedResponses";
+import { useTicketTeams } from "@/hooks/useTicketTeams";
+import { TicketTimeEntriesPanel } from "@/components/admin/tickets/TicketTimeEntriesPanel";
 import { formatDistanceToNow, format } from "date-fns";
-import { MessageSquare, Send, Building2, User, Mail, Clock, Tag, X, Plus, MessageSquareQuote } from "lucide-react";
+import { MessageSquare, Send, Building2, User, Mail, Clock, Tag, X, Plus, MessageSquareQuote, Users } from "lucide-react";
 
 interface TicketDetailDrawerProps {
   ticket: Ticket | null;
@@ -61,6 +63,7 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
   const { data: comments = [] } = useTicketComments(ticket?.id);
   const addComment = useAddTicketComment();
   const { data: cannedResponses = [] } = useCannedResponses(true);
+  const { data: teams = [] } = useTicketTeams();
   const incrementUsage = useIncrementCannedUsage();
   const [newComment, setNewComment] = useState("");
   const [tagInput, setTagInput] = useState("");
@@ -141,6 +144,28 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
                     <SelectItem key={val} value={val}>{label}</SelectItem>
                   )
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Team assignment (queue) */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Team / queue</span>
+            </div>
+            <Select
+              value={ticket.team_id ?? "none"}
+              onValueChange={(v) => updateTicket.mutate({ id: ticket.id, team_id: v === "none" ? null : v } as never)}
+            >
+              <SelectTrigger className="h-8 text-xs w-full">
+                <SelectValue placeholder="Unassigned" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {teams.filter(t => t.is_active).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -234,6 +259,12 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
           {/* Activity timeline */}
           <Separator className="my-4" />
           <EntityActivityTimeline entityType="ticket" entityId={ticket.id} title="Activity" compact />
+
+          {/* Time tracking */}
+          <Separator className="my-4" />
+          <TicketTimeEntriesPanel ticketId={ticket.id} />
+
+
 
 
           {/* Comments */}

@@ -83,9 +83,9 @@
       "id": "escalation_rules",
       "name": "Escalation rules",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "Escalation rules on ticket aging/breach"
+      "verify": "DONE 2026-07-08. Table ticket_escalation_rules + run_ticket_escalations() SECURITY DEFINER (service_role escape) applies condition (age > X hrs, status/priority/unassigned filters) and raise-priority/reassign/notify actions. UI: Escalation tab on /admin/tickets with builder + Run sweep now."
     },
     {
       "id": "customer_portal",
@@ -109,9 +109,9 @@
       "id": "time_tracking",
       "name": "Time tracking per ticket",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Time tracking logged per ticket"
+      "verify": "DONE 2026-07-08. Table ticket_time_entries (minutes, note, billable, started_at) + TicketTimeEntriesPanel in TicketDetailDrawer: Start/Stop timer, manual entry, billable toggle, per-ticket total incl. billable subtotal."
     },
     {
       "id": "split_merge",
@@ -142,9 +142,9 @@
       "id": "multilevel_assignment",
       "name": "Queue/team assignment",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "Queue/team-based ticket assignment"
+      "verify": "DONE 2026-07-08. Tables ticket_teams + ticket_team_members; tickets.team_id FK. UI: Teams tab on /admin/tickets to create teams + add members; TicketDetailDrawer team selector routes a ticket to a queue."
     }
   ]
 }

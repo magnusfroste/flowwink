@@ -14,6 +14,7 @@ export interface Ticket {
   priority: TicketPriority;
   category: TicketCategory;
   assigned_to: string | null;
+  team_id: string | null;
   lead_id: string | null;
   company_id: string | null;
   contact_email: string | null;
