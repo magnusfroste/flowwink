@@ -9262,6 +9262,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'bank_transactions',
   // Chat (conversations + feedback used by support skills; messages for get_chat_transcript)
   'chat_conversations', 'chat_feedback', 'chat_messages',
+  // Blog comments (moderation via list_blog_comments)
+  'blog_comments',
   // Support agents (availability/presence read for transfer decisions)
   'support_agents',
   // Manufacturing
