@@ -95,6 +95,7 @@ export default function SubscriptionsPage() {
         <TabsList>
           <TabsTrigger value="list">Subscriptions</TabsTrigger>
           <TabsTrigger value="renewals">Renewals & Risk</TabsTrigger>
+          <TabsTrigger value="plans">Plan templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
