@@ -14,7 +14,7 @@ import {
   openCustomerPortal, type SubscriptionStatus, type Subscription,
 } from '@/hooks/useSubscriptions';
 import { format } from 'date-fns';
-import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown } from 'lucide-react';
+import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -22,6 +22,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChangePlanDialog } from '@/components/admin/subscriptions/ChangePlanDialog';
+import { SubscriptionPlansTab } from '@/components/admin/subscriptions/SubscriptionPlansTab';
+import { useSubscriptionPlans, useConvertTrial } from '@/hooks/useSubscriptionPlans';
+import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
 const STATUS_LABEL: Record<SubscriptionStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
