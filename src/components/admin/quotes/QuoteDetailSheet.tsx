@@ -13,6 +13,8 @@ import {
   type QuoteStatus,
 } from '@/hooks/useQuotes';
 import { useRequestQuoteApproval, useSendQuote, useSendQuoteReminder, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
+import { QuoteAttachmentsPanel } from './QuoteAttachmentsPanel';
+import { QuoteRevisionsPanel } from './QuoteRevisionsPanel';
 import { toast } from 'sonner';
 
 interface Props {
