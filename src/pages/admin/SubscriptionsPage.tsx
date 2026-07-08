@@ -426,7 +426,27 @@ function NewManualSubscriptionButton() {
           <DialogTitle>New invoice-billed subscription</DialogTitle>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-3">
+          {plans.length > 0 && (
+            <div className="md:col-span-2 space-y-1 rounded-lg border p-3 bg-muted/30">
+              <Label>Start from plan template (optional)</Label>
+              <Select value={f.plan_id || 'none'} onValueChange={(v) => applyPlan(v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="No template — fill fields manually" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No template — fill fields manually</SelectItem>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} — {(p.unit_amount_cents / 100).toFixed(2)} {p.currency.toUpperCase()}/{p.billing_interval}
+                      {p.trial_days > 0 ? ` · ${p.trial_days}d trial` : ''}
+                      {p.commitment_months > 0 ? ` · ${p.commitment_months}mo commit` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Picking a template fills the fields below; you can still tweak them.</p>
+            </div>
+          )}
           <div className="md:col-span-2 grid grid-cols-2 gap-3">
+
             <div className="space-y-1">
               <Label>Customer email *</Label>
               <Input value={f.customer_email} onChange={(e) => set('customer_email', e.target.value)} placeholder="ap@acme.com" />
