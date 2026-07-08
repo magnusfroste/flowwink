@@ -205,6 +205,10 @@ export default function DealDetailPage() {
           <EntityActivityTimeline entityType="deal" entityId={deal.id} title="Notes & Tasks" />
         </div>
 
+          {/* Change history */}
+          <DealHistoryTimeline dealId={deal.id} />
+        </div>
+
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Deal Info */}
