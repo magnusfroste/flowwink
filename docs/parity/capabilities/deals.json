@@ -30,12 +30,12 @@
     },
     {
       "id": "stages_basic",
-      "name": "Stage flow (4 hardcoded)",
+      "name": "Stage flow (data-driven)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "notes": "Hardcoded enum; superseded by custom_stages",
-      "verify": "stage enum on deals"
+      "notes": "Superseded by custom_stages — pipeline_stages(entity_type='deal') is the source of truth and PipelineStagesPage lets admins edit stages.",
+      "verify": "pipeline_stages(entity_type='deal') + PipelineStagesPage CRUD"
     },
     {
       "id": "custom_stages",
@@ -61,17 +61,17 @@
       "id": "deal_templates",
       "name": "Deal/quote templates",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "deal/quote template records"
+      "verify": "DONE 2026-07-08. Table deal_templates (name, default_product_id, default_stage/id, default_value_cents, default_currency, default_team_id, default_notes). RPC create_deal_from_template(p_template_id,p_lead_id,...) spins up a deal atomically. UI: DealTemplatesPanel (Setup drawer on DealsPage) with CRUD + 'Use' launcher."
     },
     {
       "id": "deal_teams",
       "name": "Deal team assignment",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "team assignment on deals"
+      "verify": "DONE 2026-07-08. Tables deal_teams + deal_team_members (same pattern as ticket_teams). deals.team_id nullable FK. UI: DealTeamsPanel CRUD in Setup drawer, team filter Select in DealsPage header, team selector in DealDetailPage sidebar."
     },
     {
       "id": "lost_reasons",
@@ -86,17 +86,17 @@
       "id": "deal_history",
       "name": "Deal change history",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "deal change audit/history records"
+      "verify": "DONE 2026-07-08. Table deal_history (deal_id, field, old_value, new_value, changed_by, changed_at). AFTER UPDATE trigger tg_log_deal_history iterates stage/stage_id/value_cents/currency/lead_id/product_id/team_id/owner_id/expected_close/notes/lost_reason and logs one row per changed field. UI: DealHistoryTimeline on DealDetailPage."
     },
     {
       "id": "multicurrency_conversion",
       "name": "Multi-currency auto-conversion",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "auto FX conversion on deal amounts"
+      "verify": "DONE 2026-07-08. Postgres helper convert_amount_to_base(cents,from,to) uses the latest exchange_rates row (direct or inverse). Client helper convertAmount() + useLatestExchangeRates/useBaseCurrency hooks. DealsPage table + DealDetailPage header render ≈ converted amount in base currency when deal.currency differs."
     }
   ]
 }
