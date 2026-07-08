@@ -894,13 +894,26 @@ export const BAS_2024_TEMPLATES = [
     template_name: 'Förbrukningsinventarier (direktavdrag)',
     description: 'Inventarier under ett halvt prisbasbelopp — kostnadsförs direkt, 25% moms',
     category: 'expense',
-    keywords: ['förbrukningsinventarier', 'mindre inköp', 'skärm', 'tangentbord', 'verktyg', 'small equipment'],
+    keywords: ['förbrukningsinventarier', 'mindre inköp', 'skärm', 'tangentbord', 'verktyg', 'small equipment', 'dockningsstation', 'kringutrustning', 'hårdvara', 'datortillbehör', 'it-produkter'],
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '5410', account_name: 'Förbrukningsinventarier', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
+    ],
+  },
+  {
+    template_name: 'Förbrukningsinventarier (kort/bank)',
+    description: 'Inköp av mindre utrustning betalt direkt från företagskonto/kort, 25% moms',
+    category: 'expense',
+    keywords: ['förbrukningsinventarier', 'mindre inköp', 'skärm', 'tangentbord', 'verktyg', 'dockningsstation', 'kringutrustning', 'hårdvara', 'datortillbehör', 'it-produkter', 'small equipment'],
+    is_system: true,
+    locale: 'se-bas2024',
+    template_lines: [
+      { account_code: '5410', account_name: 'Förbrukningsinventarier', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
