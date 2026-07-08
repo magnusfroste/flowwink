@@ -81,6 +81,10 @@ export default function ReconciliationPage() {
   // Account editor state
   const [accountEditor, setAccountEditor] = useState<Partial<BankAccount> | null>(null);
 
+  // Partial-match dialog state
+  const [partialOpen, setPartialOpen] = useState(false);
+  const [partialTx, setPartialTx] = useState<BankTransaction | null>(null);
+
   // Period for reconciliation summary
   const today = new Date();
   const [periodStart, setPeriodStart] = useState(format(startOfMonth(today), 'yyyy-MM-dd'));
