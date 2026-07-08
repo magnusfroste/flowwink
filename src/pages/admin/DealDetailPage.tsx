@@ -143,12 +143,18 @@ export default function DealDetailPage() {
                   </Select>
                 </div>
 
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className={cn("font-mono text-lg", stageInfo.color)}
                 >
                   {formattedValue}
                 </Badge>
+
+                {convertedLabel && (
+                  <Badge variant="outline" className="font-mono">
+                    ≈ {convertedLabel} <span className="ml-1 text-muted-foreground">({baseCurrency})</span>
+                  </Badge>
+                )}
 
                 {deal.expected_close && (
                   <Badge variant="outline" className="flex items-center gap-1">
