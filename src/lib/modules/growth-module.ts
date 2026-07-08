@@ -384,9 +384,13 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
     'ad_creative_generate',
     'ad_performance_check',
     'ad_optimize',
+    'get_attribution_report',
+    'schedule_social_post',
+    'list_social_posts',
+    'mark_social_post_posted',
   ],
   data: {
-    tables: ['ad_creatives', 'ad_campaigns', 'content_proposals', 'content_research'],
+    tables: ['ad_creatives', 'ad_campaigns', 'content_proposals', 'content_research', 'utm_attributions', 'social_posts'],
   },
   skillSeeds: GROWTH_SKILLS,
 
