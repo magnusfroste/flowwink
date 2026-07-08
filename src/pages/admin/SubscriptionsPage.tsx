@@ -338,7 +338,9 @@ function NewManualSubscriptionButton() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: plans = [] } = useSubscriptionPlans(true);
   const [f, setF] = useState({
+    plan_id: '' as string,
     customer_email: '',
     customer_name: '',
     product_name: '',
@@ -352,8 +354,28 @@ function NewManualSubscriptionButton() {
     billing_contact_email: '',
     po_number: '',
     auto_finalize: false,
+    trial_days: '0',
+    commitment_months: '0',
   });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
+
+  const applyPlan = (planId: string) => {
+    set('plan_id', planId);
+    if (!planId) return;
+    const p = plans.find((x) => x.id === planId);
+    if (!p) return;
+    setF((x) => ({
+      ...x,
+      plan_id: planId,
+      product_name: p.product_name,
+      unit_amount: (p.unit_amount_cents / 100).toString(),
+      currency: p.currency.toUpperCase(),
+      billing_interval: p.billing_interval,
+      billing_interval_count: String(p.billing_interval_count),
+      trial_days: String(p.trial_days ?? 0),
+      commitment_months: String(p.commitment_months ?? 0),
+    }));
+  };
 
   const submit = async () => {
     if (!f.customer_email || !f.product_name || !f.unit_amount) {
@@ -376,7 +398,10 @@ function NewManualSubscriptionButton() {
         _billing_contact_email: f.billing_contact_email || null,
         _po_number: f.po_number || null,
         _auto_finalize: f.auto_finalize,
-      });
+        _plan_id: f.plan_id || null,
+        _trial_days: Number(f.trial_days || 0),
+        _commitment_months: Number(f.commitment_months || 0),
+      } as never);
       if (error) throw error;
       toast.success('Manual subscription created');
       qc.invalidateQueries({ queryKey: ['subscriptions'] });
