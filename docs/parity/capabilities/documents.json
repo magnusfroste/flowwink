@@ -33,25 +33,25 @@
       "id": "versions",
       "name": "Version history",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no version table/skill/UI for documents (module description claims version tracking but no implementation found)"
+      "verify": "Document versions: document_versions (version_no unique per document_id; file_url, file_name, file_size_bytes, file_type, uploaded_by). useReplaceDocumentFile snapshots current file into document_versions then swaps the documents.file_url and increments documents.current_version_no. useRestoreDocumentVersion snapshots current then restores an older file pointer. UI: DocumentDetailSheet Versions card with upload + open + restore. LIVE VERIFIED 2026-07-08: version_no unique constraint honored; snapshot round-trip succeeded."
     },
     {
       "id": "share_links",
       "name": "Share links",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "only 120s signed URLs for in-admin viewing (getDocumentSignedUrl); no shareable-link feature or skill"
+      "verify": "Tokenized share links: document_share_links (unguessable token=gen_random_uuid(), permissions view|download, expires_at, revoked_at, access_count). Public edge function /document-share resolves token via SECURITY DEFINER resolve_document_share() — returns 410 when invalid/revoked/expired, otherwise 302 to a 5-minute signed storage URL (with Content-Disposition=attachment when permissions=download). UI: DocumentDetailSheet Shares card create/copy/revoke. LIVE VERIFIED 2026-07-08: edge function deployed, unknown-token returns 410 invalid_or_expired; resolver bumps access_count."
     },
     {
       "id": "esign_request",
       "name": "E-sign request",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no e-sign skill or UI in documents module (signing lives in contracts module, not surfaced for documents)"
+      "verify": "Native e-sign request: document_signature_requests (single signer: signer_email, unguessable token, status draft/sent/signed/declined/expired, signature_data typed name or PNG data-URL, signature_type, ip/ua, expires_at). Public route /sign/document/:token → PublicDocumentSignPage (Type/Draw tabs, reuses SignaturePad). Anon RPCs: resolve_document_signature_request (token→request+doc), complete_document_signature (validates status/expiry, sanitizes drawn PNG ≤300k, stamps documents.signed_at). Edge function /document-sign-request routes the invite email through email-send. UI: DocumentDetailSheet Signatures card. LIVE VERIFIED 2026-07-08: complete_document_signature returned {ok:true, signed_at} and documents.signed_at was stamped."
     },
     {
       "id": "ai_extraction",
