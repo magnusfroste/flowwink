@@ -93,9 +93,9 @@
       "id": "multi_step_routes",
       "name": "Multi-step routes (receive→QC→putaway)",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "route + rule config, intermediate locations"
+      "verify": "inventory_receipts + inventory_receipt_lines + advance_inventory_receipt RPC posts stock_moves on putaway; ReceivingRoutePanel UI (migration 20260708 R12)"
     },
     {
       "id": "cycle_count",
