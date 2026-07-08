@@ -297,6 +297,7 @@ const router = createBrowserRouter([
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
       { path: "/admin/communications", element: <CommunicationsPage /> },
+      { path: "/admin/email", element: <EmailPage /> },
       { path: "/admin/leads", element: <LeadsPage /> },
       { path: "/admin/leads/:id", element: <LeadDetailPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },
