@@ -23,20 +23,30 @@ type Provider = "smtp" | "resend" | "composio";
 
 interface SendBody {
   to: string | string[];
-  subject: string;
-  html: string;
+  subject?: string;
+  html?: string;
   text?: string;
+  // Template send: if template_name (or template_id) is set, subject/html are loaded from email_templates
+  // and {{variable}} tokens are substituted from `variables`. Body-level subject/html override the template.
+  template_name?: string;
+  template_id?: string;
+  variables?: Record<string, string>;
   fromOverride?: string;     // "Name <addr@example.com>" — explicit per-call override (highest priority)
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
   provider?: Provider;       // Per-call provider preference (e.g. send_email_to_lead asks for 'composio')
   expects_reply?: boolean;   // Hint: prefer reply-friendly channels (Composio → SMTP → Resend) on fallback
+  skip_signature?: boolean;  // Explicit opt-out of appending stored signature
   // logging hints
   source?: string;
   related_entity_type?: string;
   related_entity_id?: string;
   extra_metadata?: Record<string, unknown>;
+}
+
+function renderTemplate(input: string, vars: Record<string, string> = {}): string {
+  return input.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, k) => vars[k] ?? "");
 }
 
 
