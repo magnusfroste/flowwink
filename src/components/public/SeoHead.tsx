@@ -312,6 +312,9 @@ export function SeoHead({
       {/* Basic Meta */}
       <title>{finalTitle}</title>
       {finalDescription && <meta name="description" content={finalDescription} />}
+      {keywords && keywords.length > 0 && (
+        <meta name="keywords" content={keywords.join(', ')} />
+      )}
       <meta name="robots" content={robotsContent} />
       
       {/* Google Verification */}
