@@ -173,6 +173,7 @@ export async function createLeadFromForm(options: {
     const { companyId } = await findCompanyByDomain(email);
 
     // Create new lead with company_id link
+    const attribution = buildAttributionFields();
     const { data: newLead, error: insertError } = await supabase
       .from('leads')
       .insert({
@@ -186,6 +187,7 @@ export async function createLeadFromForm(options: {
         status: 'lead',
         score: ACTIVITY_POINTS.form_submit,
         needs_review: false,
+        ...attribution,
       })
       .select()
       .single();
