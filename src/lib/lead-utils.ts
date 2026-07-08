@@ -216,6 +216,9 @@ export async function createLeadFromForm(options: {
     // Slack notification (fire-and-forget)
     notifyNewLead({ name: name || '', email, source: 'form', score: ACTIVITY_POINTS.form_submit, leadId: newLead.id });
 
+    // Attribution log (fire-and-forget)
+    logUtmConversion('form_submit', newLead.id);
+
     return { lead: newLead as unknown as Lead, isNew: true, error: null };
   } catch (error) {
     logger.error('createLeadFromForm error:', error);
