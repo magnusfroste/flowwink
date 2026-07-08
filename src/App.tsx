@@ -89,6 +89,7 @@ const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const BlogCategoryPage = lazy(() => import("./pages/BlogCategoryPage"));
 const BlogTagPage = lazy(() => import("./pages/BlogTagPage"));
+const BlogAuthorPage = lazy(() => import("./pages/BlogAuthorPage"));
 const ChatPage = lazy(() => import("./pages/ChatPage"));
 const DocsLandingPage = lazy(() => import("./pages/DocsLandingPage"));
 const DocsCategoryPage = lazy(() => import("./pages/DocsCategoryPage"));
