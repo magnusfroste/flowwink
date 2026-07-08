@@ -20,6 +20,15 @@ Deno.serve(async (req) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
 
+    // 1) Convert trials whose trial_end has passed (manual + auto_finalize only).
+    //    Safe to run every day; the RPC scopes itself.
+    const { data: trialResult, error: trialErr } = await supabase.rpc("run_trial_conversions");
+    if (trialErr) {
+      console.warn("[subscription-billing-cron] run_trial_conversions failed:", trialErr.message);
+    }
+
+
+
     const { data: due, error } = await supabase
       .from("subscriptions")
       .select("id, customer_email, product_name, unit_amount_cents, next_invoice_date")
@@ -51,6 +60,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         run_at: new Date().toISOString(),
+        trial_sweep: trialResult ?? null,
         candidates: due?.length ?? 0,
         succeeded: results.filter((r) => r.ok).length,
         failed: results.filter((r) => !r.ok).length,

@@ -14614,6 +14614,68 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          billing_interval: string
+          billing_interval_count: number
+          commitment_months: number
+          created_at: string
+          currency: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          name: string
+          product_id: string | null
+          product_name: string
+          trial_days: number
+          unit_amount_cents: number
+          updated_at: string
+        }
+        Insert: {
+          billing_interval?: string
+          billing_interval_count?: number
+          commitment_months?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          product_id?: string | null
+          product_name: string
+          trial_days?: number
+          unit_amount_cents: number
+          updated_at?: string
+        }
+        Update: {
+          billing_interval?: string
+          billing_interval_count?: number
+          commitment_months?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_id?: string | null
+          product_name?: string
+          trial_days?: number
+          unit_amount_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plans_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_winback_campaigns: {
         Row: {
           active: boolean
@@ -14736,6 +14798,9 @@ export type Database = {
           cancel_at: string | null
           cancel_at_period_end: boolean
           canceled_at: string | null
+          commitment_end: string | null
+          commitment_months: number | null
+          commitment_start: string | null
           created_at: string
           currency: string
           current_period_end: string | null
@@ -14749,6 +14814,7 @@ export type Database = {
           metadata: Json
           next_invoice_date: string | null
           payment_terms: string
+          plan_id: string | null
           po_number: string | null
           product_id: string | null
           product_name: string | null
@@ -14775,6 +14841,9 @@ export type Database = {
           cancel_at?: string | null
           cancel_at_period_end?: boolean
           canceled_at?: string | null
+          commitment_end?: string | null
+          commitment_months?: number | null
+          commitment_start?: string | null
           created_at?: string
           currency?: string
           current_period_end?: string | null
@@ -14788,6 +14857,7 @@ export type Database = {
           metadata?: Json
           next_invoice_date?: string | null
           payment_terms?: string
+          plan_id?: string | null
           po_number?: string | null
           product_id?: string | null
           product_name?: string | null
@@ -14814,6 +14884,9 @@ export type Database = {
           cancel_at?: string | null
           cancel_at_period_end?: boolean
           canceled_at?: string | null
+          commitment_end?: string | null
+          commitment_months?: number | null
+          commitment_start?: string | null
           created_at?: string
           currency?: string
           current_period_end?: string | null
@@ -14827,6 +14900,7 @@ export type Database = {
           metadata?: Json
           next_invoice_date?: string | null
           payment_terms?: string
+          plan_id?: string | null
           po_number?: string | null
           product_id?: string | null
           product_name?: string | null
@@ -14849,6 +14923,13 @@ export type Database = {
             columns: ["last_invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
           {
@@ -17785,6 +17866,10 @@ export type Database = {
         Args: { p_reservation_id: string; p_to_location_code?: string }
         Returns: string
       }
+      convert_trial_to_active: {
+        Args: { _subscription_id: string }
+        Returns: Json
+      }
       convert_uom: {
         Args: { p_from_uom: string; p_qty: number; p_to_uom: string }
         Returns: number
@@ -17858,15 +17943,18 @@ export type Database = {
           _billing_contact_email?: string
           _billing_interval?: string
           _billing_interval_count?: number
+          _commitment_months?: number
           _currency?: string
           _customer_email: string
           _customer_name: string
           _payment_terms?: string
+          _plan_id?: string
           _po_number?: string
           _product_id?: string
-          _product_name: string
+          _product_name?: string
           _quantity?: number
           _start_date?: string
+          _trial_days?: number
           _unit_amount_cents?: number
         }
         Returns: Json
@@ -19948,6 +20036,7 @@ export type Database = {
       }
       run_sla_sweep: { Args: { p_entity_type?: string }; Returns: Json }
       run_ticket_escalations: { Args: never; Returns: Json }
+      run_trial_conversions: { Args: never; Returns: Json }
       run_year_end: {
         Args: { p_confirm?: boolean; p_year: number }
         Returns: Json

@@ -20,7 +20,12 @@ export interface Subscription {
   billing_interval: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
+  trial_start?: string | null;
   trial_end: string | null;
+  plan_id?: string | null;
+  commitment_start?: string | null;
+  commitment_months?: number | null;
+  commitment_end?: string | null;
   cancel_at_period_end: boolean;
   canceled_at: string | null;
   provider: string;

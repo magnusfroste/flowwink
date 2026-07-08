@@ -14,7 +14,7 @@ import {
   openCustomerPortal, type SubscriptionStatus, type Subscription,
 } from '@/hooks/useSubscriptions';
 import { format } from 'date-fns';
-import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown } from 'lucide-react';
+import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -22,6 +22,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChangePlanDialog } from '@/components/admin/subscriptions/ChangePlanDialog';
+import { SubscriptionPlansTab } from '@/components/admin/subscriptions/SubscriptionPlansTab';
+import { useSubscriptionPlans, useConvertTrial } from '@/hooks/useSubscriptionPlans';
+import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
 const STATUS_LABEL: Record<SubscriptionStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
@@ -92,6 +95,7 @@ export default function SubscriptionsPage() {
         <TabsList>
           <TabsTrigger value="list">Subscriptions</TabsTrigger>
           <TabsTrigger value="renewals">Renewals & Risk</TabsTrigger>
+          <TabsTrigger value="plans">Plan templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
@@ -164,6 +168,10 @@ export default function SubscriptionsPage() {
         <TabsContent value="renewals">
           <RenewalsPanel />
         </TabsContent>
+
+        <TabsContent value="plans">
+          <SubscriptionPlansTab />
+        </TabsContent>
       </Tabs>
     </AdminPageContainer>
     </AdminLayout>
@@ -198,6 +206,26 @@ function SubscriptionRow({
     : '—';
   const [changeOpen, setChangeOpen] = useState(false);
   const canChangePlan = isManual && sub.status === 'active';
+  const convertTrial = useConvertTrial();
+
+  const trialDaysLeft = sub.trial_end
+    ? Math.max(0, differenceInDays(new Date(sub.trial_end), new Date()))
+    : null;
+  const commitmentMonthsLeft = sub.commitment_end
+    ? Math.max(0, differenceInCalendarMonths(new Date(sub.commitment_end), new Date()))
+    : null;
+  const isEarly = sub.commitment_end && new Date(sub.commitment_end) > new Date();
+
+  const handleCancel = () => {
+    if (isEarly) {
+      const ok = confirm(
+        `Early termination: this subscription has a commitment until ${format(new Date(sub.commitment_end!), 'MMM d, yyyy')} (${commitmentMonthsLeft} month(s) remaining). Continue?`
+      );
+      if (!ok) return;
+    }
+    onCancel();
+  };
+
   return (
     <TableRow>
       <TableCell>
@@ -216,10 +244,16 @@ function SubscriptionRow({
       </TableCell>
       <TableCell>{formatMoney(sub.unit_amount_cents * sub.quantity, sub.currency)}</TableCell>
       <TableCell>
-        <Badge variant={status.variant}>{status.label}</Badge>
-        {sub.cancel_at_period_end && (
-          <Badge variant="outline" className="ml-2">Ends soon</Badge>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant={status.variant}>{status.label}</Badge>
+          {sub.cancel_at_period_end && <Badge variant="outline">Ends soon</Badge>}
+          {sub.status === 'trialing' && trialDaysLeft !== null && (
+            <Badge variant="outline" className="text-[10px]">Trial · {trialDaysLeft}d left</Badge>
+          )}
+          {isEarly && (
+            <Badge variant="outline" className="text-[10px]">Committed · {commitmentMonthsLeft}mo</Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         {isManual && nextInvoice ? (
@@ -240,6 +274,11 @@ function SubscriptionRow({
             <DropdownMenuItem onClick={onPortal}>
               <ExternalLink className="h-4 w-4 mr-2" />Customer portal
             </DropdownMenuItem>
+            {sub.status === 'trialing' && (
+              <DropdownMenuItem onClick={() => convertTrial.mutate(sub.id)}>
+                <PlayCircle className="h-4 w-4 mr-2" />Convert trial → active
+              </DropdownMenuItem>
+            )}
             {canChangePlan && (
               <DropdownMenuItem onClick={() => setChangeOpen(true)}>
                 <ArrowUpDown className="h-4 w-4 mr-2" />Change plan
@@ -251,8 +290,9 @@ function SubscriptionRow({
               </DropdownMenuItem>
             ) : (
               ['active', 'trialing', 'past_due'].includes(sub.status) && (
-                <DropdownMenuItem onClick={onCancel} className="text-destructive">
-                  <XCircle className="h-4 w-4 mr-2" />Cancel at period end
+                <DropdownMenuItem onClick={handleCancel} className="text-destructive">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {isEarly ? 'Cancel (early termination)' : 'Cancel at period end'}
                 </DropdownMenuItem>
               )
             )}
@@ -298,7 +338,9 @@ function NewManualSubscriptionButton() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: plans = [] } = useSubscriptionPlans(true);
   const [f, setF] = useState({
+    plan_id: '' as string,
     customer_email: '',
     customer_name: '',
     product_name: '',
@@ -312,8 +354,28 @@ function NewManualSubscriptionButton() {
     billing_contact_email: '',
     po_number: '',
     auto_finalize: false,
+    trial_days: '0',
+    commitment_months: '0',
   });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
+
+  const applyPlan = (planId: string) => {
+    set('plan_id', planId);
+    if (!planId) return;
+    const p = plans.find((x) => x.id === planId);
+    if (!p) return;
+    setF((x) => ({
+      ...x,
+      plan_id: planId,
+      product_name: p.product_name,
+      unit_amount: (p.unit_amount_cents / 100).toString(),
+      currency: p.currency.toUpperCase(),
+      billing_interval: p.billing_interval,
+      billing_interval_count: String(p.billing_interval_count),
+      trial_days: String(p.trial_days ?? 0),
+      commitment_months: String(p.commitment_months ?? 0),
+    }));
+  };
 
   const submit = async () => {
     if (!f.customer_email || !f.product_name || !f.unit_amount) {
@@ -336,7 +398,10 @@ function NewManualSubscriptionButton() {
         _billing_contact_email: f.billing_contact_email || null,
         _po_number: f.po_number || null,
         _auto_finalize: f.auto_finalize,
-      });
+        _plan_id: f.plan_id || null,
+        _trial_days: Number(f.trial_days || 0),
+        _commitment_months: Number(f.commitment_months || 0),
+      } as never);
       if (error) throw error;
       toast.success('Manual subscription created');
       qc.invalidateQueries({ queryKey: ['subscriptions'] });
@@ -361,7 +426,27 @@ function NewManualSubscriptionButton() {
           <DialogTitle>New invoice-billed subscription</DialogTitle>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-3">
+          {plans.length > 0 && (
+            <div className="md:col-span-2 space-y-1 rounded-lg border p-3 bg-muted/30">
+              <Label>Start from plan template (optional)</Label>
+              <Select value={f.plan_id || 'none'} onValueChange={(v) => applyPlan(v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="No template — fill fields manually" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No template — fill fields manually</SelectItem>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} — {(p.unit_amount_cents / 100).toFixed(2)} {p.currency.toUpperCase()}/{p.billing_interval}
+                      {p.trial_days > 0 ? ` · ${p.trial_days}d trial` : ''}
+                      {p.commitment_months > 0 ? ` · ${p.commitment_months}mo commit` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Picking a template fills the fields below; you can still tweak them.</p>
+            </div>
+          )}
           <div className="md:col-span-2 grid grid-cols-2 gap-3">
+
             <div className="space-y-1">
               <Label>Customer email *</Label>
               <Input value={f.customer_email} onChange={(e) => set('customer_email', e.target.value)} placeholder="ap@acme.com" />
@@ -412,6 +497,16 @@ function NewManualSubscriptionButton() {
           <div className="space-y-1">
             <Label>Quantity</Label>
             <Input type="number" min="1" value={f.quantity} onChange={(e) => set('quantity', e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Trial (days)</Label>
+            <Input type="number" min="0" value={f.trial_days} onChange={(e) => set('trial_days', e.target.value)} />
+            <p className="text-xs text-muted-foreground">Starts as <strong>trialing</strong>; first invoice pushed to trial end.</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Commitment (months)</Label>
+            <Input type="number" min="0" value={f.commitment_months} onChange={(e) => set('commitment_months', e.target.value)} />
+            <p className="text-xs text-muted-foreground">Minimum term; cancellations before the end are flagged as early termination.</p>
           </div>
           <div className="space-y-1">
             <Label>Payment terms</Label>

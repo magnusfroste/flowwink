@@ -73,9 +73,9 @@
       "id": "plan_templates",
       "name": "Plan/package templates",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "plan/package templates"
+      "verify": "DONE 2026-07-08. Table subscription_plans (name, product_name, unit_amount_cents, currency, billing_interval, trial_days, commitment_months, features, is_active). Plan templates tab in /admin/subscriptions with CRUD; New manual subscription dialog offers Start-from-plan-template selector that fills all fields. create_manual_subscription RPC extended with _plan_id."
     },
     {
       "id": "dunning_sequences",
@@ -98,9 +98,9 @@
       "id": "trial_conversion",
       "name": "Trial→paid funnel",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "trial→paid conversion funnel"
+      "verify": "DONE 2026-07-08. trial_start/trial_end already exist; create_manual_subscription now accepts _trial_days (starts as trialing, first_invoice pushed to trial end). convert_trial_to_active RPC (SECURITY DEFINER + service_role escape) flips trialing→active. run_trial_conversions() sweep wired into subscription-billing-cron. UI: trial-days-left badge in the list + Convert trial → active dropdown item."
     },
     {
       "id": "seat_scaling",
@@ -114,9 +114,9 @@
       "id": "commitment_periods",
       "name": "Commitment/lock-in periods",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "commitment/lock-in period support"
+      "verify": "DONE 2026-07-08. subscriptions.commitment_start/months/end columns; create_manual_subscription accepts _commitment_months; cancel_manual_subscription now stamps early_termination + months_remaining_at_cancel in metadata and returns them. UI: Committed·Nmo badge in list; cancel confirm dialog warns about remaining commitment."
     }
   ]
 }
