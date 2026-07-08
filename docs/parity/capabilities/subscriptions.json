@@ -114,9 +114,9 @@
       "id": "commitment_periods",
       "name": "Commitment/lock-in periods",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "commitment/lock-in period support"
+      "verify": "DONE 2026-07-08. subscriptions.commitment_start/months/end columns; create_manual_subscription accepts _commitment_months; cancel_manual_subscription now stamps early_termination + months_remaining_at_cancel in metadata and returns them. UI: Committed·Nmo badge in list; cancel confirm dialog warns about remaining commitment."
     }
   ]
 }
