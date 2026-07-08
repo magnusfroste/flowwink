@@ -10,8 +10,10 @@ import { TicketsKanban } from "@/components/admin/tickets/TicketsKanban";
 import { TicketsTable } from "@/components/admin/tickets/TicketsTable";
 import { CreateTicketDialog } from "@/components/admin/tickets/CreateTicketDialog";
 import { CannedResponsesDialog } from "@/components/admin/tickets/CannedResponsesDialog";
+import { TicketTeamsTab } from "@/components/admin/tickets/TicketTeamsTab";
+import { TicketEscalationRulesTab } from "@/components/admin/tickets/TicketEscalationRulesTab";
 import { useTickets, useTicketSearch, type Ticket } from "@/hooks/useTickets";
-import { LayoutGrid, List, Search, X } from "lucide-react";
+import { LayoutGrid, List, Search, X, Users, AlarmClock } from "lucide-react";
 import { SavedViewsMenu } from "@/components/admin/SavedViewsMenu";
 import { useDebounce } from "@/hooks/useDebounce";
 
