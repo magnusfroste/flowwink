@@ -387,6 +387,14 @@ export default function ReconciliationPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
+                                  title="Partial match (variance)"
+                                  onClick={() => { setPartialTx(tx); setPartialOpen(true); }}
+                                >
+                                  <Scale className="h-4 w-4" />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
                                   title="Ignore"
                                   onClick={() => ignoreTx.mutate(tx.id)}
                                 >
