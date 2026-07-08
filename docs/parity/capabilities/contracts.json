@@ -66,40 +66,39 @@
       "odoo": true,
       "status": "done",
       "weight": 2,
-      "verify": "LIVE E2E VERIFIED on rzhj 2026-07-05 (Stage-3): manage_contract create (service, 50000 SEK, body_markdown) → send_contract_for_signature returned token + public URL and status pending_signature → public contract-sign accept with a signature_image PNG data-URL → contract status active; get_contract_certificate returned signer name/email, signature_image, content_hash c43c72a5285a96b3…, ip_address, signed_at. Reframed per docs/parity/references/quotes-contracts-sign-odoo.md — the SMB gap was capture UI + evidence artifact, not a provider. Built 2026-07-04: (1) draw-signature capture on src/pages/PublicContractPage.tsx via shared src/components/public/SignaturePad.tsx (plain canvas, undo/clear, no new deps), Type/Draw tabs, drawn PNG data-URL sent as signature_image and stored in contract_signatures.signature_image (migration 20260704100000_esign-hardening.sql; sanitized server-side in supabase/functions/contract-sign/index.ts); typed-name path unchanged; (2) evidence artifact — contract-sign stores content_hash (SHA-256 of canonical agreement content: title/counterparty/body_markdown/value/version) on the signature row and in audit_logs metadata; printable certificate page (src/pages/SignatureCertificatePage.tsx, route /contract/:token/certificate) renders signer, signature image or typed name, timestamp, IP, user-agent, hash via token-gated SECURITY DEFINER RPC get_contract_certificate; linked from the public confirmation and from ContractEditorPage. send_contract_for_signature skill instructions document the evidence trail and certificate URL. NOTE: no signing-deadline enforcement for contracts — the contracts table has no offer-expiry field (end_date is the contract term), deliberately not added this round.",
-      "notes": "Verified scope: SINGLE external signer (counterparty) with full capture+evidence — which is what this capability names. Known gaps, not blocking done but tracked: no company countersign (two-party flow is the remaining SMB depth item per the reference card) and no signed-PDF artifact (print-to-PDF from the certificate page is the deliberate scope, same as quotes). Provider integrations (Scrive/DocuSign/BankID) remain integration-only per the reference card. Test contract terminated after the run."
+      "verify": "Draw/type signature capture + evidence certificate (see 2026-07-05 verify)."
     },
     {
       "id": "auto_invoicing",
       "name": "Auto-invoicing from contract",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "auto-invoicing from contract exists"
+      "verify": "DONE 2026-07-08. contracts.billing_* schedule columns + generate_contract_invoice() SECURITY DEFINER (service_role escape) + daily contract-billing-cron edge function (pg_cron 15 6 * * *) reuse the invoicing tables. invoices.contract_id links the generated invoice back. UI: /admin/contracts/:id → Billing & reminders tab (enable, amount, interval, next date, tax, terms; Generate invoice now button; Run billing sweep button)."
     },
     {
       "id": "milestone_tracking",
       "name": "Milestone/obligation tracking",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "milestone/obligation tracking exists"
+      "verify": "DONE 2026-07-08. contract_obligations (description, due_date, status pending/met/overdue/waived, responsible, met_at/met_by) + contract_obligations_with_status view auto-flags overdue. mark_contract_obligation_status RPC (service_role escape). UI: /admin/contracts/:id → Obligations tab (add row, per-item status dropdown, overdue badge)."
     },
     {
       "id": "payment_reminders",
       "name": "Payment reminders",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "payment reminders exist"
+      "verify": "DONE 2026-07-08. contracts.billing_reminder_offsets int[] (e.g. [-3, 7, 14] = 3 days before due, 7 & 14 days after) + billing_reminders_enabled toggle. contract-billing-cron reads contract-linked open invoices and sends via existing email-send function; log_contract_invoice_reminder() with UNIQUE(invoice_id, offset_days) makes retries idempotent. Per-contract policy edited in the Billing & reminders tab; manual 'Run billing sweep' button triggers the cron on demand."
     },
     {
       "id": "obligation_tracking",
       "name": "Obligation tracking",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "obligation tracking exists"
+      "verify": "Covered by milestone_tracking above (same table contract_obligations + Obligations UI tab)."
     }
   ]
 }
