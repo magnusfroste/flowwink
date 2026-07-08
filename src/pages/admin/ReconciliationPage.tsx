@@ -43,6 +43,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ReconciliationRulesPanel } from '@/components/admin/reconciliation/ReconciliationRulesPanel';
 import { ReconciliationReportPanel } from '@/components/admin/reconciliation/ReconciliationReportPanel';
+import { PartialMatchDialog } from '@/components/admin/reconciliation/PartialMatchDialog';
+import { PettyCashPanel } from '@/components/admin/reconciliation/PettyCashPanel';
+import { ReconciliationSignoffPanel } from '@/components/admin/reconciliation/ReconciliationSignoffPanel';
+import { BankFeedsPanel } from '@/components/admin/reconciliation/BankFeedsPanel';
 
 const STATUS_COLORS: Record<BankTxStatus, string> = {
   unmatched: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
