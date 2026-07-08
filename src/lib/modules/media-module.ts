@@ -69,6 +69,79 @@ Browse, search, and manage files in the media library.
 - clear_all is DESTRUCTIVE. Requires confirmation.
 - get_url returns a signed URL for temporary access.`,
   },
+  {
+    name: 'media_set_alt_text',
+    description: 'Set or update the accessibility alt text for a media asset in the library. Use when: an image needs alt text for screen readers or SEO; auditing accessibility. NOT for: renaming files, editing image content.',
+    category: 'content',
+    handler: 'rpc:set_media_alt_text',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'media_set_alt_text',
+        description: 'Set/update alt text on a media asset (accessibility + SEO).',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_storage_path: { type: 'string', description: 'Storage path (e.g. "pages/1720000000-hero.webp")' },
+            p_alt_text: { type: 'string', description: 'Human-readable description of the image' },
+            p_bucket: { type: 'string', description: 'Storage bucket (default cms-images)' },
+          },
+          required: ['p_storage_path', 'p_alt_text'],
+        },
+      },
+    },
+    instructions: `## media_set_alt_text
+Update or set the alt text for one media asset. Lazy-creates a media_assets row if one does not yet exist for the file.
+Params exactly match the RPC: p_storage_path, p_alt_text, and optional p_bucket.`,
+  },
+  {
+    name: 'media_find_usage',
+    description: 'Find where a media asset is referenced across pages, blog posts, KB articles, and products. Use when: checking whether an image is safe to delete; auditing what uses a file. NOT for: full-text content search (use the content search skills).',
+    category: 'content',
+    handler: 'rpc:find_media_usage',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'media_find_usage',
+        description: 'List pages/blog posts/KB articles/products that reference a media URL or filename.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_needle: { type: 'string', description: 'Substring to search for — typically the filename or a URL fragment.' },
+          },
+          required: ['p_needle'],
+        },
+      },
+    },
+    instructions: `## media_find_usage
+Returns rows of {source_type, source_id, title, slug}. Empty result = not referenced. Pass a distinctive substring (the filename works well).`,
+  },
+  {
+    name: 'media_optimize',
+    description: 'Generate optimized image variants (thumbnail + web size) for a media asset. Use when: an uploaded image lacks thumbnails; preparing images for fast page loads. NOT for: cropping (use the image editor).',
+    category: 'content',
+    handler: 'edge:media-optimize',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'media_optimize',
+        description: 'Server-side resize: generates thumbnail (256px) and web (1280px) JPEG variants and stores them under <folder>/variants/.',
+        parameters: {
+          type: 'object',
+          properties: {
+            storage_path: { type: 'string', description: 'Storage path of the original image.' },
+            bucket: { type: 'string', description: 'Storage bucket (default cms-images).' },
+          },
+          required: ['storage_path'],
+        },
+      },
+    },
+    instructions: `## media_optimize
+Downloads the original, decodes with ImageScript, uploads JPEG variants, and updates media_assets.variants. Skips the web variant if the original is smaller.`,
+  },
 ];
 
 export const mediaModule = defineModule<MediaModuleInput, MediaModuleOutput>({
