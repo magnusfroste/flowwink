@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpensesListTab } from '@/components/admin/expenses/ExpensesListTab';
 import { ExpenseReportsTab } from '@/components/admin/expenses/ExpenseReportsTab';
 import { ExpensePoliciesTab } from '@/components/admin/expenses/ExpensePoliciesTab';
+import { ExpenseRatesTab } from '@/components/admin/expenses/ExpenseRatesTab';
+import { ExpenseDelegationsTab } from '@/components/admin/expenses/ExpenseDelegationsTab';
 
 export default function ExpensesPage() {
   const [tab, setTab] = useState('expenses');
@@ -23,6 +25,8 @@ export default function ExpensesPage() {
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="reports">Monthly Reports</TabsTrigger>
             <TabsTrigger value="policies">Policies</TabsTrigger>
+            <TabsTrigger value="rates">Rates</TabsTrigger>
+            <TabsTrigger value="delegations">Delegations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="expenses">
@@ -33,6 +37,12 @@ export default function ExpensesPage() {
           </TabsContent>
           <TabsContent value="policies">
             <ExpensePoliciesTab />
+          </TabsContent>
+          <TabsContent value="rates">
+            <ExpenseRatesTab />
+          </TabsContent>
+          <TabsContent value="delegations">
+            <ExpenseDelegationsTab />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
