@@ -182,13 +182,56 @@ serve(async (req: Request) => {
 
   try {
     body = (await req.json()) as SendBody;
-    if (!body?.to || !body?.subject || !body?.html) {
+    if (!body?.to) {
       return new Response(
-        JSON.stringify({ error: "to, subject, html are required" }),
+        JSON.stringify({ error: "to is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Load template if requested (subject/html not required when template resolves)
+    if (body.template_name || body.template_id) {
+      const q = supabase.from("email_templates").select("subject, html, text, active");
+      const { data: tpl, error: tplErr } = body.template_id
+        ? await q.eq("id", body.template_id).maybeSingle()
+        : await q.eq("name", body.template_name!).maybeSingle();
+      if (tplErr || !tpl) {
+        return new Response(JSON.stringify({ error: `Template not found: ${body.template_name ?? body.template_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (tpl.active === false) {
+        return new Response(JSON.stringify({ error: `Template is inactive: ${body.template_name ?? body.template_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const vars = body.variables ?? {};
+      body.subject = body.subject || renderTemplate(tpl.subject, vars);
+      body.html = body.html || renderTemplate(tpl.html, vars);
+      if (!body.text && tpl.text) body.text = renderTemplate(tpl.text, vars);
+    }
+
+    if (!body.subject || !body.html) {
+      return new Response(
+        JSON.stringify({ error: "subject and html (or a template_name) are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     recipients = Array.isArray(body.to) ? body.to : [body.to];
+
+    // Suppression list check — skip suppressed recipients
+    const lowered = recipients.map((r) => r.toLowerCase());
+    const { data: suppRows } = await supabase
+      .from("email_suppressions")
+      .select("email, reason")
+      .in("email", lowered);
+    const suppressedSet = new Set((suppRows ?? []).map((r: any) => r.email));
+    const allowed = recipients.filter((r) => !suppressedSet.has(r.toLowerCase()));
+    if (allowed.length === 0) {
+      const reasons = (suppRows ?? []).map((r: any) => `${r.email}:${r.reason}`).join(", ");
+      await logComm({ status: "skipped", provider: null, simulated: false, error_message: `All recipients suppressed (${reasons})` });
+      return new Response(JSON.stringify({ success: false, skipped: true, suppressed: Array.from(suppressedSet) }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    recipients = allowed;
 
     // Load email settings + integration toggles
     const { data: integ } = await supabase
