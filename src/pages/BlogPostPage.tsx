@@ -59,12 +59,19 @@ export default function BlogPostPage() {
     ? new Date(post.published_at)
     : new Date(post.created_at);
   
-  const metaDescription = post.meta_json?.description || post.excerpt || "";
-  const seoTitle = post.meta_json?.seoTitle || post.title;
-  
+  const meta = (post.meta_json ?? {}) as Record<string, unknown>;
+  const metaDescription = (meta.description as string) || post.excerpt || "";
+  const seoTitle = (meta.seoTitle as string) || post.title;
+  const metaOgImage = (meta.ogImage as string) || post.featured_image || undefined;
+  const metaKeywords = Array.isArray(meta.keywords)
+    ? (meta.keywords as string[])
+    : typeof meta.keywords === 'string'
+      ? (meta.keywords as string).split(',').map((s) => s.trim()).filter(Boolean)
+      : undefined;
+
   // Build canonical URL and breadcrumbs
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const canonicalUrl = `${baseUrl}/blog/${slug}`;
+  const canonicalUrl = (meta.canonicalUrl as string) || `${baseUrl}/blog/${slug}`;
   const breadcrumbs = [
     { name: 'Hem', url: baseUrl },
     { name: 'Blog', url: `${baseUrl}/blog` },
