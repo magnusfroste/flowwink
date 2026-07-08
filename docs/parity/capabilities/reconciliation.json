@@ -64,9 +64,10 @@
       "id": "live_bank_connectivity",
       "name": "Live bank feeds (Plaid/Tink/GoCardless)",
       "odoo": true,
-      "status": "missing",
+      "status": "partial",
       "weight": 3,
-      "verify": "live bank feed connectivity"
+      "verify": "Scaffold shipped 2026-07-08 — bank_feed_connections table, provider adapter interface (src/lib/reconciliation/bank-feed-providers.ts), BankFeedsPanel UI with Plaid/Tink/GoCardless 'Connect (coming soon)' cards. CSV/CAMT/MT940/OFX/SIE + Stripe payout sync are the live ingestion path. Real aggregator adapters need paid provider credentials.",
+      "notes": "Partial — infrastructure done, live aggregator sync deferred until credentials are provisioned."
     },
     {
       "id": "rule_engine",
@@ -82,25 +83,25 @@
       "id": "variance_investigation",
       "name": "Partial-match variance tools",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "partial-match variance investigation"
+      "verify": "DONE 2026-07-08. reconciliation_matches gains variance_cents/variance_account_code/variance_journal_entry_id. RPC create_partial_match_with_variance posts a balanced JE (Öresutjämning default 3740) and inserts the match row atomically. UI: PartialMatchDialog (Scale icon on unmatched rows) computes bank vs expected diff, picks variance account, submits."
     },
     {
       "id": "cash_reconciliation",
       "name": "Petty-cash reconciliation",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "petty-cash reconciliation"
+      "verify": "DONE 2026-07-08. Table petty_cash_counts (cash_account_code, counted_cents, book_balance_cents, difference_cents, diff_account_code). RPC record_petty_cash_count computes book balance from journal_entry_lines net for the cash account up to count_date and posts the diff to a cash-diff account (default 7960). UI: PettyCashPanel — enter counted amount, see book vs counted, post diff. Count history table."
     },
     {
       "id": "statement_certification",
       "name": "Reconciliation sign-off",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "reconciliation sign-off/certification"
+      "verify": "DONE 2026-07-08. Table reconciliation_signoffs (bank_account_id, period_start/end, statement_balance_cents, book_balance_cents, difference_cents, reconciled_by/at) with unique(bank_account_id, period). RPC signoff_reconciliation rejects sign-off if statement ≠ book. Trigger tg_recmatch_signoff_lock blocks UPDATE/DELETE on reconciliation_matches whose bank tx falls in a signed-off period (service_role bypass for corrections). UI: ReconciliationSignoffPanel."
     },
     {
       "id": "reconciliation_report",
