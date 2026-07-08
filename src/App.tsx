@@ -136,6 +136,8 @@ const CompanyInsightsPage = lazy(() => import("./pages/admin/CompanyInsightsPage
 const AutonomyTestSuitePage = lazy(() => import("./pages/admin/AutonomyTestSuitePage"));
 const PlatformTestsPage = lazy(() => import("./pages/admin/PlatformTestsPage"));
 const GrowthDashboardPage = lazy(() => import("./pages/admin/GrowthDashboardPage"));
+const AttributionReportPage = lazy(() => import("./pages/admin/AttributionReportPage"));
+const SocialPostsPage = lazy(() => import("./pages/admin/SocialPostsPage"));
 
 const TicketsPage = lazy(() => import("./pages/admin/TicketsPage"));
 const InvoicesPage = lazy(() => import("./pages/admin/InvoicesPage"));
