@@ -142,6 +142,7 @@ const QuoteTemplatesPage = lazy(() => import("./pages/admin/QuoteTemplatesPage")
 const PublicQuotePage = lazy(() => import("./pages/PublicQuotePage"));
 const SignatureCertificatePage = lazy(() => import("./pages/SignatureCertificatePage"));
 const PublicInvoicePage = lazy(() => import("./pages/PublicInvoicePage"));
+const PublicDocumentSignPage = lazy(() => import("./pages/PublicDocumentSignPage"));
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage"));
 const CurrenciesPage = lazy(() => import("./pages/admin/CurrenciesPage"));
 const FixedAssetsPage = lazy(() => import("./pages/admin/FixedAssetsPage"));
