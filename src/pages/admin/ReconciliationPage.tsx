@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { Upload, RefreshCw, Wand2, X, FileText, ScanLine, Trash2, BookOpen, Settings2, Plus } from 'lucide-react';
+import { Upload, RefreshCw, Wand2, X, FileText, ScanLine, Trash2, BookOpen, Settings2, Plus, Scale } from 'lucide-react';
 import {
   useBankTransactions,
   useImportBatches,
