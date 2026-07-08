@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 85%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 86%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
@@ -26,7 +26,6 @@ category: reference
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 68% | 13/0/6 | — |
-| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `███████░░░` 68% | 6/1/4 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 69% | 10/1/5 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 70% | 12/0/6 | — |
@@ -51,6 +50,7 @@ category: reference
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
+| **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████████` 100% | 11/0/0 | — |
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
 | **documents** | Documents (documents.document) | L3 → L4 | `██████████` 100% | 6/0/0 | — |
 | **email** | Mail / Discuss (outbound email) | L3 → L4 | `██████████` 100% | 8/0/0 | — |
