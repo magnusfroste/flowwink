@@ -73,9 +73,9 @@
       "id": "plan_templates",
       "name": "Plan/package templates",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 2,
-      "verify": "plan/package templates"
+      "verify": "DONE 2026-07-08. Table subscription_plans (name, product_name, unit_amount_cents, currency, billing_interval, trial_days, commitment_months, features, is_active). Plan templates tab in /admin/subscriptions with CRUD; New manual subscription dialog offers Start-from-plan-template selector that fills all fields. create_manual_subscription RPC extended with _plan_id."
     },
     {
       "id": "dunning_sequences",
