@@ -5,6 +5,7 @@ import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { BlockRenderer } from "@/components/public/BlockRenderer";
 import { AuthorCard } from "@/components/public/AuthorCard";
+import { BlogComments } from "@/components/public/BlogComments";
 import { BlogPostCard } from "@/components/public/BlogPostCard";
 import { SeoHead } from "@/components/public/SeoHead";
 import { Badge } from "@/components/ui/badge";
