@@ -108,17 +108,17 @@
       "id": "recurring_quotes",
       "name": "Recurring quotes/retainers",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "recurring quote/retainer support"
+      "verify": "Recurring quote templates: recurring_quote_templates (source_quote_id, interval weekly/monthly/quarterly/yearly, next_run_at, active, generated_count). run_recurring_quotes() SECURITY DEFINER with service_role escape clones source quote lines/tax/currency into a fresh draft and advances next_run_at via advance_quote_recurrence(). Deployed edge function recurring-quotes-cron scheduled every 6h via pg_cron. Admin surface at /admin/quotes → Recurring tab (RecurringQuotesTab.tsx: create/pause/delete/run-now). LIVE VERIFIED 2026-07-08: run_recurring_quotes generated QUO-R-20260708-f4a34c from a test template and advanced next_run_at."
     },
     {
       "id": "attachments",
       "name": "Quote attachments",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "file attachments on quotes"
+      "verify": "Quote attachments: quote_attachments (quote_id, document_id → documents, filename, uploaded_by). Reuses the documents module storage bucket via uploadDocumentForEntity(entityType=\"quote\"). UI: QuoteAttachmentsPanel in QuoteDetailSheet — upload/list/open/remove with signed URLs. LIVE VERIFIED 2026-07-08 (table + policies + FK to documents)."
     },
     {
       "id": "customer_portal",
@@ -142,9 +142,9 @@
       "id": "amendment_workflow",
       "name": "Quote amendment workflow",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "quote amendment workflow"
+      "verify": "Quote amendment workflow: quote_revisions (revision_number unique per quote, snapshot jsonb {prev,next}, prev/new totals, delta, approval_request_id). useAmendQuote hook auto-routes re-approval through the approvals module when delta > 0 and threshold triggers (evaluate(\"quote\",...)); optional reset_acceptance flag reverts sent quote to draft so it can be re-sent. UI: QuoteRevisionsPanel in QuoteDetailSheet. LIVE VERIFIED 2026-07-08: revision insert + unique constraint on (quote_id, revision_number)."
     },
     {
       "id": "approval_chain_routing",
