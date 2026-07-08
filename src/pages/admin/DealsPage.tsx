@@ -55,10 +55,7 @@ import { format } from 'date-fns';
 type ViewMode = 'kanban' | 'table';
 
 export default function DealsPage() {
-  const { data: deals: rawDeals = [], isLoading } = { data: undefined as any } as any;
-  const dealsQ = useDeals();
-  const rawDeals = dealsQ.data || [];
-  const isLoadingDeals = dealsQ.isLoading;
+  const { data: rawDeals = [], isLoading } = useDeals();
   const { data: stats } = useDealStats();
   const { data: teams = [] } = useDealTeams();
   const { data: rates = [] } = useLatestExchangeRates();
@@ -72,7 +69,7 @@ export default function DealsPage() {
   const [scheduleFor, setScheduleFor] = useState<{ deal: any; stage: DealStage } | null>(null);
   const [lostFor, setLostFor] = useState<string | null>(null);
 
-  const deals = teamFilter === 'all' ? rawDeals : rawDeals.filter((d: any) => d.team_id === teamFilter);
+  const deals = teamFilter === 'all' ? rawDeals : rawDeals.filter((d: any) => (d as any).team_id === teamFilter);
 
   const maybePromptScheduler = (dealId: string, newStage: DealStage) => {
     if (newStage !== 'closed_won' && newStage !== 'closed_lost') return;
