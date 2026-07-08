@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDocuments, useDeleteDocument, getDocumentSignedUrl } from "@/hooks/useDocuments";
+import { useDocuments, useDeleteDocument, getDocumentSignedUrl, type Document } from "@/hooks/useDocuments";
 import { FileText, Trash2, ExternalLink, FolderOpen, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { AddDocumentDialog } from "@/components/admin/documents/AddDocumentDialog";
