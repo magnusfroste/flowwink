@@ -9,25 +9,20 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 55  ·  **Mean parity:** 86%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
+**Benchmarked modules:** 55  ·  **Mean parity:** 89%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 4
 
 ## Scored modules
 
 | Module | Odoo app | Maturity → target | Parity | Done/Partial/Missing | Open epics |
 |---|---|---|---|---|---|
 | **contact-center** | Live Chat + Helpdesk (omnichannel routing, VOIP voicemail) | L1 → L3 | `████░░░░░░` 41% | 0/5/1 | EPIC-07 |
-| **media** | Website media library | L2 → L4 | `██████░░░░` 57% | 2/3/1 | EPIC-06 |
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 10/0/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
-| **blog** | Blog (blog.post) | L4 → L4 | `██████░░░░` 63% | 3/2/2 | — |
-| **contracts** | Sign + contract management | L3 → L4 | `██████░░░░` 64% | 8/0/4 | — |
-| **growth** | Marketing Automation + Social Marketing | L3 → L4 | `██████░░░░` 64% | 2/2/1 | — |
 | **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 68% | 13/0/6 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
-| **inventory** | Inventory (stock) | L3 → L4 | `███████░░░` 69% | 10/1/5 | — |
 | **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 70% | 12/0/6 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 73% | 14/1/3 | EPIC-04 |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `████████░░` 75% | 14/0/4 | — |
@@ -37,6 +32,7 @@ category: reference
 | **expenses** | Expenses (hr.expense) | L4 → L4 | `████████░░` 82% | 12/0/3 | — |
 | **invoicing** | Invoicing (account.move) | L4 → L4 | `████████░░` 83% | 11/0/3 | — |
 | **ecommerce** | Website eCommerce + Sales (website_sale, sale.order draft→sent→sale→cancel; see docs/parity/references/ecommerce-odoo.md) | L3 → L4 | `████████░░` 84% | 11/6/1 | — |
+| **growth** | Marketing Automation + Social Marketing | L4 → L4 | `█████████░` 86% | 4/1/0 | — |
 | **live-support** | Livechat (im_livechat) | L3 → L4 | `█████████░` 86% | 5/0/1 | EPIC-07 |
 | **fixed-assets** | Accounting → Assets | L4 → L4 | `█████████░` 88% | 13/0/1 | — |
 | **pos** | Point of Sale (pos.order) | L4 → L4 | `█████████░` 89% | 15/0/1 | — |
@@ -48,7 +44,10 @@ category: reference
 | **crm** | CRM (crm.lead, crm.stage) | L4 → L4 | `█████████░` 94% | 11/0/1 | — |
 | **field-service** | Field Service (industry_fsm) | L3 → L4 | `█████████░` 94% | 13/0/1 | — |
 | **recruitment** | Recruitment (hr.applicant) | L4 → L4 | `█████████░` 94% | 15/0/1 | — |
+| **inventory** | Inventory (stock) | L3 → L4 | `██████████` 95% | 15/0/1 | — |
 | **approvals** | Approvals + studio approval rules | L3 → L4 | `██████████` 100% | 9/0/0 | — |
+| **blog** | Blog (blog.post) | L4 → L4 | `██████████` 100% | 7/0/0 | — |
+| **contracts** | Sign + contract management | L3 → L4 | `██████████` 100% | 12/0/0 | — |
 | **customer360** | Contacts 360 view (partner timeline) | L3 → L4 | `██████████` 100% | 2/0/0 | — |
 | **deals** | CRM/Sales (crm.lead opportunities) | L4 → L4 | `██████████` 100% | 11/0/0 | — |
 | **docs** | Knowledge (documentation) | L4 → L4 | `██████████` 100% | 5/0/0 | — |
@@ -58,6 +57,7 @@ category: reference
 | **global-blocks** | Website building blocks/snippets | L3 → L4 | `██████████` 100% | 4/0/0 | — |
 | **hr** | Employees + Time Off + Attendances + Appraisals (hr.employee) | L3 → L4 | `██████████` 100% | 20/0/0 | — |
 | **kb** | Knowledge / Helpdesk KB | L3 → L4 | `██████████` 100% | 6/0/0 | — |
+| **media** | Website media library | L4 → L4 | `██████████` 100% | 6/0/0 | — |
 | **multi-currency** | Accounting multi-currency | L4 → L4 | `██████████` 100% | 10/0/0 | — |
 | **pages** | Website (website.page) | L4 → L4 | `██████████` 100% | 8/0/0 | — |
 | **payroll** | Payroll (hr.payslip) | L4 → L4 | `██████████` 100% | 17/0/0 | — |
