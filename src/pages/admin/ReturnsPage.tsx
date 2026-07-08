@@ -427,6 +427,9 @@ export default function ReturnsPage() {
                         {(r.status === 'received' || r.status === 'inspected' || r.status === 'partially_refunded') && (
                           <RefundDialog returnRow={r} />
                         )}
+                        <Button size="sm" variant="ghost" onClick={() => setDetailRow(r)}>
+                          <Settings2 className="h-3 w-3 mr-1" /> Manage
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -435,6 +438,7 @@ export default function ReturnsPage() {
             )}
           </CardContent>
         </Card>
+        <ReturnDetailDrawer returnRow={detailRow} onClose={() => setDetailRow(null)} />
       </div>
     </AdminLayout>
   );
