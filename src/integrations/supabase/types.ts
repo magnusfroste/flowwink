@@ -368,6 +368,7 @@ export type Database = {
           status: string
           target_audience: Json
           updated_at: string
+          utm_campaign: string | null
         }
         Insert: {
           budget_cents?: number
@@ -386,6 +387,7 @@ export type Database = {
           status?: string
           target_audience?: Json
           updated_at?: string
+          utm_campaign?: string | null
         }
         Update: {
           budget_cents?: number
@@ -404,6 +406,7 @@ export type Database = {
           status?: string
           target_audience?: Json
           updated_at?: string
+          utm_campaign?: string | null
         }
         Relationships: []
       }
@@ -8924,7 +8927,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string
+          first_utm_campaign: string | null
+          first_utm_medium: string | null
+          first_utm_source: string | null
           id: string
+          last_utm_campaign: string | null
+          last_utm_medium: string | null
+          last_utm_source: string | null
           lost_note: string | null
           lost_reason: string | null
           name: string | null
@@ -8946,7 +8955,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email: string
+          first_utm_campaign?: string | null
+          first_utm_medium?: string | null
+          first_utm_source?: string | null
           id?: string
+          last_utm_campaign?: string | null
+          last_utm_medium?: string | null
+          last_utm_source?: string | null
           lost_note?: string | null
           lost_reason?: string | null
           name?: string | null
@@ -8968,7 +8983,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string
+          first_utm_campaign?: string | null
+          first_utm_medium?: string | null
+          first_utm_source?: string | null
           id?: string
+          last_utm_campaign?: string | null
+          last_utm_medium?: string | null
+          last_utm_source?: string | null
           lost_note?: string | null
           lost_reason?: string | null
           name?: string | null
@@ -10041,9 +10062,15 @@ export type Database = {
           discount_code: string | null
           discount_code_id: string | null
           exchange_rate: number
+          first_utm_campaign: string | null
+          first_utm_medium: string | null
+          first_utm_source: string | null
           fulfillment_notes: string | null
           fulfillment_status: string
           id: string
+          last_utm_campaign: string | null
+          last_utm_medium: string | null
+          last_utm_source: string | null
           metadata: Json | null
           packed_at: string | null
           picked_at: string | null
@@ -10078,9 +10105,15 @@ export type Database = {
           discount_code?: string | null
           discount_code_id?: string | null
           exchange_rate?: number
+          first_utm_campaign?: string | null
+          first_utm_medium?: string | null
+          first_utm_source?: string | null
           fulfillment_notes?: string | null
           fulfillment_status?: string
           id?: string
+          last_utm_campaign?: string | null
+          last_utm_medium?: string | null
+          last_utm_source?: string | null
           metadata?: Json | null
           packed_at?: string | null
           picked_at?: string | null
@@ -10115,9 +10148,15 @@ export type Database = {
           discount_code?: string | null
           discount_code_id?: string | null
           exchange_rate?: number
+          first_utm_campaign?: string | null
+          first_utm_medium?: string | null
+          first_utm_source?: string | null
           fulfillment_notes?: string | null
           fulfillment_status?: string
           id?: string
+          last_utm_campaign?: string | null
+          last_utm_medium?: string | null
+          last_utm_source?: string | null
           metadata?: Json | null
           packed_at?: string | null
           picked_at?: string | null
@@ -10416,6 +10455,7 @@ export type Database = {
           device_type: string | null
           id: string
           ip_address: string | null
+          landing_url: string | null
           lead_id: string | null
           page_id: string | null
           page_slug: string
@@ -10423,6 +10463,11 @@ export type Database = {
           referrer: string | null
           session_id: string | null
           user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           visitor_id: string | null
         }
         Insert: {
@@ -10433,6 +10478,7 @@ export type Database = {
           device_type?: string | null
           id?: string
           ip_address?: string | null
+          landing_url?: string | null
           lead_id?: string | null
           page_id?: string | null
           page_slug: string
@@ -10440,6 +10486,11 @@ export type Database = {
           referrer?: string | null
           session_id?: string | null
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visitor_id?: string | null
         }
         Update: {
@@ -10450,6 +10501,7 @@ export type Database = {
           device_type?: string | null
           id?: string
           ip_address?: string | null
+          landing_url?: string | null
           lead_id?: string | null
           page_id?: string | null
           page_slug?: string
@@ -10457,6 +10509,11 @@ export type Database = {
           referrer?: string | null
           session_id?: string | null
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visitor_id?: string | null
         }
         Relationships: [
@@ -15663,6 +15720,78 @@ export type Database = {
           },
         ]
       }
+      social_posts: {
+        Row: {
+          blog_post_id: string | null
+          campaign_id: string | null
+          channel: string
+          content: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          external_ref: string | null
+          external_url: string | null
+          id: string
+          link_url: string | null
+          media_url: string | null
+          posted_at: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          blog_post_id?: string | null
+          campaign_id?: string | null
+          channel: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          external_ref?: string | null
+          external_url?: string | null
+          id?: string
+          link_url?: string | null
+          media_url?: string | null
+          posted_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          blog_post_id?: string | null
+          campaign_id?: string | null
+          channel?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          external_ref?: string | null
+          external_url?: string | null
+          id?: string
+          link_url?: string | null
+          media_url?: string | null
+          posted_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_locations: {
         Row: {
           code: string
@@ -17662,6 +17791,57 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      utm_attributions: {
+        Row: {
+          conversion_id: string | null
+          conversion_kind: string | null
+          id: string
+          landing_url: string | null
+          occurred_at: string
+          referrer: string | null
+          session_id: string | null
+          touch_type: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          conversion_id?: string | null
+          conversion_kind?: string | null
+          id?: string
+          landing_url?: string | null
+          occurred_at?: string
+          referrer?: string | null
+          session_id?: string | null
+          touch_type?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          conversion_id?: string | null
+          conversion_kind?: string | null
+          id?: string
+          landing_url?: string | null
+          occurred_at?: string
+          referrer?: string | null
+          session_id?: string | null
+          touch_type?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -21208,6 +21388,37 @@ export type Database = {
         Args: { p_payment_date?: string; p_run_id: string }
         Returns: Json
       }
+      mark_social_post_posted: {
+        Args: {
+          _external_ref?: string
+          _external_url?: string
+          _post_id: string
+        }
+        Returns: {
+          blog_post_id: string | null
+          campaign_id: string | null
+          channel: string
+          content: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          external_ref: string | null
+          external_url: string | null
+          id: string
+          link_url: string | null
+          media_url: string | null
+          posted_at: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "social_posts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
         Returns: Json
@@ -21389,6 +21600,14 @@ export type Database = {
           representation_cents: number
           sick_days: number
           vacation_days: number
+        }[]
+      }
+      process_due_social_posts: {
+        Args: never
+        Returns: {
+          channel: string
+          post_id: string
+          status: string
         }[]
       }
       procurement_run: {
@@ -22699,6 +22918,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      utm_attribution_report: {
+        Args: { _since?: string }
+        Returns: {
+          leads: number
+          orders: number
+          revenue_cents: number
+          unique_visitors: number
+          utm_campaign: string
+          utm_medium: string
+          utm_source: string
+          visits: number
+        }[]
       }
       validate_address: {
         Args: {
