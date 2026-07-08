@@ -1,4 +1,4 @@
-// agent-execute v2026-04-20-stale-deals-with-contact (lead/company in deal_stale_check)
+// agent-execute v2026-07-08-redeploy-bookkeeping-token-scorer (no-op deploy bump)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
