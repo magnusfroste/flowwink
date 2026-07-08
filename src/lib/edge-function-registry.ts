@@ -152,6 +152,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── Integrations ─────────────────────────────────────────────────────────
   composio: ['composio-proxy', 'composio-webhook'],
   browserControl: ['browser-fetch'],
+  mediaLibrary: ['media-optimize'],
 };
 
 /** All functions that belong to at least one module (i.e. not core). */
