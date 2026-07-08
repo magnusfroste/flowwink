@@ -86,7 +86,8 @@ export default function BlogPostPage() {
       <SeoHead
         title={seoTitle}
         description={metaDescription}
-        ogImage={post.featured_image || undefined}
+        ogImage={metaOgImage}
+        keywords={metaKeywords}
         canonicalUrl={canonicalUrl}
         pageType="article"
         contentBlocks={Array.isArray(post.content_json) ? post.content_json : undefined}
