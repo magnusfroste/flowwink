@@ -77,6 +77,9 @@ export default function BlogPage() {
           <TabsContent value="tags" className="mt-0">
             <BlogTagsTab />
           </TabsContent>
+          <TabsContent value="comments" className="mt-0">
+            <BlogCommentsTab />
+          </TabsContent>
           <TabsContent value="settings" className="mt-0">
             <BlogSettingsTab />
           </TabsContent>
