@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         run_at: new Date().toISOString(),
+        trial_sweep: trialResult ?? null,
         candidates: due?.length ?? 0,
         succeeded: results.filter((r) => r.ok).length,
         failed: results.filter((r) => !r.ok).length,
