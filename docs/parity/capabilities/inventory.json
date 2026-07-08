@@ -119,25 +119,25 @@
       "id": "interwarehouse",
       "name": "Inter-warehouse replenishment",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "DC→store transfer rules"
+      "verify": "inventory_transfers + inventory_transfer_lines + complete_inventory_transfer RPC posts stock_moves; TransfersPanel UI (migration 20260708 R12)"
     },
     {
       "id": "expiry_alerts",
       "name": "Expiry-date alerts / FEFO picking",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "automation on stock_lots.expiry_date"
+      "verify": "stock_lots.expiry_date + list_expiring_lots RPC + fefo_suggest_lot helper + ExpiringLotsPanel UI (migration 20260708 R12)"
     },
     {
       "id": "abc_analysis",
       "name": "ABC / slow-moving analysis",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "report classifying SKUs by velocity"
+      "verify": "abc_analysis_report RPC (80/95 percentile buckets from stock_moves value_cents) + AbcAnalysisPanel UI (migration 20260708 R12)"
     }
   ]
 }
