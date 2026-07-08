@@ -514,13 +514,7 @@ export default function BlogPostEditorPage() {
                           disabled={!canEdit}
                         />
                       </div>
-                          value={meta.description || ""}
-                          onChange={(e) => setMeta({ ...meta, description: e.target.value })}
-                          placeholder={excerpt || "Enter a description for search engines"}
-                          rows={3}
-                          disabled={!canEdit}
-                        />
-                      </div>
+
                     </div>
                   </div>
                 </SheetContent>
