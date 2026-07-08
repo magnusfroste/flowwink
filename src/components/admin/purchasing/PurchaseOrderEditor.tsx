@@ -348,6 +348,15 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
         </div>
       </div>
 
+      {poId && status !== 'draft' && (
+        <PoRevisionsPanel
+          purchaseOrderId={poId}
+          currency={currency}
+          currentSnapshot={{ vendor_id: vendorId, order_date: orderDate, expected_delivery: expectedDelivery, notes, currency, lines, subtotal_cents: subtotal, tax_cents: tax, total_cents: total }}
+          currentTotalCents={total}
+        />
+      )}
+
       {poId && (
         <PoInvoicesDrilldown purchaseOrderId={poId} currency={currency} />
       )}
