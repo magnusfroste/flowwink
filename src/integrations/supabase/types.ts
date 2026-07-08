@@ -7534,6 +7534,281 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_receipt_lines: {
+        Row: {
+          created_at: string
+          id: string
+          lot_id: string | null
+          product_id: string
+          putaway_move_id: string | null
+          qc_notes: string | null
+          qc_status: string
+          quantity: number
+          receipt_id: string
+          target_location_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          product_id: string
+          putaway_move_id?: string | null
+          qc_notes?: string | null
+          qc_status?: string
+          quantity: number
+          receipt_id: string
+          target_location_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          product_id?: string
+          putaway_move_id?: string | null
+          qc_notes?: string | null
+          qc_status?: string
+          quantity?: number
+          receipt_id?: string
+          target_location_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_receipt_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_receipt_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
+            foreignKeyName: "inventory_receipt_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_receipt_lines_putaway_move_id_fkey"
+            columns: ["putaway_move_id"]
+            isOneToOne: false
+            referencedRelation: "stock_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_receipt_lines_target_location_id_fkey"
+            columns: ["target_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_receipts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          done_at: string | null
+          id: string
+          notes: string | null
+          purchase_order_id: string | null
+          putaway_at: string | null
+          qc_at: string | null
+          received_at: string
+          reference: string
+          status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          id?: string
+          notes?: string | null
+          purchase_order_id?: string | null
+          putaway_at?: string | null
+          qc_at?: string | null
+          received_at?: string
+          reference?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          id?: string
+          notes?: string | null
+          purchase_order_id?: string | null
+          putaway_at?: string | null
+          qc_at?: string | null
+          received_at?: string
+          reference?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_receipts_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_receipts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "v_vendor_scorecard"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "inventory_receipts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transfer_lines: {
+        Row: {
+          created_at: string
+          id: string
+          lot_id: string | null
+          move_id: string | null
+          product_id: string
+          quantity: number
+          transfer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          move_id?: string | null
+          product_id: string
+          quantity: number
+          transfer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          move_id?: string | null
+          product_id?: string
+          quantity?: number
+          transfer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transfer_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transfer_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
+            foreignKeyName: "inventory_transfer_lines_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "stock_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transfer_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transfer_lines_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transfers: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          from_location_id: string
+          id: string
+          notes: string | null
+          reference: string
+          scheduled_date: string | null
+          status: string
+          to_location_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_location_id: string
+          id?: string
+          notes?: string | null
+          reference?: string
+          scheduled_date?: string | null
+          status?: string
+          to_location_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_location_id?: string
+          id?: string
+          notes?: string | null
+          reference?: string
+          scheduled_date?: string | null
+          status?: string
+          to_location_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transfers_from_location_id_fkey"
+            columns: ["from_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transfers_to_location_id_fkey"
+            columns: ["to_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           created_at: string
@@ -10807,6 +11082,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stock_lots"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picking_lines_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
           },
           {
             foreignKeyName: "picking_lines_picking_order_id_fkey"
@@ -15282,6 +15564,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_moves_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
             foreignKeyName: "stock_moves_mo_id_fkey"
             columns: ["mo_id"]
             isOneToOne: false
@@ -15355,6 +15644,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_quants_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
+          },
+          {
             foreignKeyName: "stock_quants_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -15423,6 +15719,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stock_lots"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "v_expiring_lots"
+            referencedColumns: ["lot_id"]
           },
           {
             foreignKeyName: "stock_reservations_product_id_fkey"
@@ -18282,6 +18585,26 @@ export type Database = {
         }
         Relationships: []
       }
+      v_expiring_lots: {
+        Row: {
+          days_until_expiry: number | null
+          expiry_date: string | null
+          lot_id: string | null
+          lot_number: string | null
+          on_hand_qty: number | null
+          product_id: string | null
+          product_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_lots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_vendor_scorecard: {
         Row: {
           delivered_count: number | null
@@ -18326,6 +18649,17 @@ export type Database = {
           _product_id: string
         }
         Returns: undefined
+      }
+      abc_analysis_report: {
+        Args: { p_days?: number }
+        Returns: {
+          abc_class: string
+          is_slow_mover: boolean
+          product_id: string
+          product_name: string
+          units_out: number
+          value_out_cents: number
+        }[]
       }
       add_business_days: {
         Args: { p_days: number; p_from: string }
@@ -18377,6 +18711,10 @@ export type Database = {
       advance_billing_date: {
         Args: { _count: number; _from: string; _interval: string }
         Returns: string
+      }
+      advance_inventory_receipt: {
+        Args: { p_receipt_id: string; p_to_status: string }
+        Returns: Json
       }
       advance_quote_recurrence: {
         Args: { _from: string; _interval: string }
@@ -18796,6 +19134,10 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_inventory_transfer: {
+        Args: { p_transfer_id: string }
+        Returns: Json
+      }
       complete_migration_run: {
         Args: { p_error_message?: string; p_run_id: string; p_status: string }
         Returns: undefined
@@ -19125,6 +19467,15 @@ export type Database = {
         Returns: string
       }
       extract_email_address: { Args: { raw: string }; Returns: string }
+      fefo_suggest_lot: {
+        Args: { p_location_id?: string; p_product_id: string }
+        Returns: {
+          expiry_date: string
+          lot_id: string
+          lot_number: string
+          on_hand_qty: number
+        }[]
+      }
       find_duplicate_companies: {
         Args: { p_limit?: number; p_threshold?: number }
         Returns: Json
@@ -19533,6 +19884,24 @@ export type Database = {
           args: string[]
           proname: string
         }[]
+      }
+      list_expiring_lots: {
+        Args: { p_within_days?: number }
+        Returns: {
+          days_until_expiry: number | null
+          expiry_date: string | null
+          lot_id: string | null
+          lot_number: string | null
+          on_hand_qty: number | null
+          product_id: string | null
+          product_name: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_expiring_lots"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_payroll_lines: { Args: { p_run_id: string }; Returns: Json }
       list_payroll_runs: { Args: { p_limit?: number }; Returns: Json }
