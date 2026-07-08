@@ -499,6 +499,16 @@ function NewManualSubscriptionButton() {
             <Input type="number" min="1" value={f.quantity} onChange={(e) => set('quantity', e.target.value)} />
           </div>
           <div className="space-y-1">
+            <Label>Trial (days)</Label>
+            <Input type="number" min="0" value={f.trial_days} onChange={(e) => set('trial_days', e.target.value)} />
+            <p className="text-xs text-muted-foreground">Starts as <strong>trialing</strong>; first invoice pushed to trial end.</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Commitment (months)</Label>
+            <Input type="number" min="0" value={f.commitment_months} onChange={(e) => set('commitment_months', e.target.value)} />
+            <p className="text-xs text-muted-foreground">Minimum term; cancellations before the end are flagged as early termination.</p>
+          </div>
+          <div className="space-y-1">
             <Label>Payment terms</Label>
             <Select value={f.payment_terms} onValueChange={(v) => set('payment_terms', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
