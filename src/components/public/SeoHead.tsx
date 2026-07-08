@@ -217,6 +217,7 @@ export function SeoHead({
   canonicalUrl,
   noIndex = false,
   noFollow = false,
+  keywords,
   pageType = 'page',
   contentBlocks = [],
   breadcrumbs = [],
