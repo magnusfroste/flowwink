@@ -17,6 +17,7 @@ import { PickPackPanel } from '@/components/admin/inventory/PickPackPanel';
 import { ReceivingPanel } from '@/components/admin/inventory/ReceivingPanel';
 import { CycleCountPanel } from '@/components/admin/inventory/CycleCountPanel';
 import { InventoryValuationPanel } from '@/components/admin/inventory/InventoryValuationPanel';
+import { TransfersPanel, ReceivingRoutePanel, ExpiringLotsPanel, AbcAnalysisPanel } from '@/components/admin/inventory/InventoryParityPanels';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
