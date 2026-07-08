@@ -125,6 +125,8 @@ export default function ContractEditorPage() {
         <Tabs defaultValue="editor">
           <TabsList>
             <TabsTrigger value="editor">Agreement</TabsTrigger>
+            <TabsTrigger value="obligations">Obligations</TabsTrigger>
+            <TabsTrigger value="billing">Billing &amp; reminders</TabsTrigger>
             <TabsTrigger value="activity">Activity ({signatures.length})</TabsTrigger>
             <TabsTrigger value="versions">Versions ({versions.length})</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
