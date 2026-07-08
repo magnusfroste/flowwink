@@ -169,15 +169,39 @@ export default function MediaLibraryPage() {
         // Convert to WebP for optimization
         const webpBlob = await convertToWebP(file);
         const fileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}.webp`;
+        const storagePath = `pages/${fileName}`;
 
         const { error } = await supabase.storage
           .from('cms-images')
-          .upload(`pages/${fileName}`, webpBlob, {
+          .upload(storagePath, webpBlob, {
             contentType: 'image/webp',
             cacheControl: '31536000',
           });
 
         if (error) throw error;
+
+        // Probe dimensions client-side and record metadata for
+        // alt-text / where-used / variants tracking.
+        let width: number | undefined;
+        let height: number | undefined;
+        try {
+          const dims = await probeImageDimensions(webpBlob);
+          width = dims.width;
+          height = dims.height;
+        } catch { /* non-fatal */ }
+
+        await upsertMeta
+          .mutateAsync({
+            storage_path: storagePath,
+            folder: 'pages',
+            filename: fileName,
+            mime_type: 'image/webp',
+            size_bytes: webpBlob.size,
+            width,
+            height,
+          })
+          .catch((e) => logger.warn('media_assets upsert failed', e));
+
         successCount++;
       } catch (error) {
         logger.error('Upload error:', error);
@@ -201,7 +225,7 @@ export default function MediaLibraryPage() {
         variant: 'destructive',
       });
     }
-  }, [toast, refetch]);
+  }, [toast, refetch, upsertMeta]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
