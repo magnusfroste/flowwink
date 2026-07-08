@@ -2403,6 +2403,72 @@ export type Database = {
           },
         ]
       }
+      blog_comments: {
+        Row: {
+          author_email: string
+          author_name: string
+          author_url: string | null
+          body: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          moderated_at: string | null
+          moderated_by: string | null
+          parent_id: string | null
+          post_id: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          author_email: string
+          author_name: string
+          author_url?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          parent_id?: string | null
+          post_id: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          author_email?: string
+          author_name?: string
+          author_url?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          parent_id?: string | null
+          post_id?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "blog_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_post_categories: {
         Row: {
           category_id: string
@@ -19143,6 +19209,10 @@ export type Database = {
         }
         Returns: Json
       }
+      blog_author_slug: {
+        Args: { _email: string; _full_name: string; _id: string }
+        Returns: string
+      }
       book_appointment_slot: {
         Args: {
           p_customer_email: string
@@ -21206,6 +21276,31 @@ export type Database = {
       merge_leads: {
         Args: { p_duplicate_id: string; p_primary_id: string }
         Returns: Json
+      }
+      moderate_blog_comment: {
+        Args: { _comment_id: string; _status: string }
+        Returns: {
+          author_email: string
+          author_name: string
+          author_url: string | null
+          body: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          moderated_at: string | null
+          moderated_by: string | null
+          parent_id: string | null
+          post_id: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "blog_comments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       mrp_reorder_run: { Args: { p_dry_run?: boolean }; Returns: Json }
       next_business_day: { Args: { p_from: string }; Returns: string }
