@@ -114,9 +114,9 @@
       "id": "vendor_sla",
       "name": "Vendor rating/SLA",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "vendor rating/SLA tracking"
+      "verify": "vendor scorecard view v_vendor_scorecard (on-time %, variance %) + manual_rating override on vendors; UI at Purchase Orders → Vendor Scorecards"
     },
     {
       "id": "drop_ship",
@@ -138,17 +138,17 @@
       "id": "po_amendments",
       "name": "PO change orders",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "PO change orders/amendments"
+      "verify": "purchase_order_revisions table + PoRevisionsPanel; amendments snapshot prior state, route re-approval through approvals module when total grows past threshold"
     },
     {
       "id": "dispute_resolution",
       "name": "Invoice dispute/credit memo",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "invoice dispute/credit memo"
+      "verify": "vendor_invoice_disputes + vendor_credit_memos tables (unique credit_number); UI at Purchase Orders → Disputes & Credits; credit memos offset Leverantörsskulder 2440 via accounting module"
     }
   ]
 }
