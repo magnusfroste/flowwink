@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+interface UtmPayload {
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+}
+
 interface PageViewRequest {
   pageId?: string;
   pageSlug: string;
@@ -16,6 +24,8 @@ interface PageViewRequest {
   userAgent?: string;
   deviceType?: string;
   browser?: string;
+  landingUrl?: string;
+  utm?: UtmPayload;
 }
 
 interface GeoData {
