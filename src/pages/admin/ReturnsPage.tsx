@@ -29,6 +29,9 @@ interface ReturnRow {
   restocking_fee_cents: number | null;
   total_amount_cents: number | null;
   refunded_cents: number | null;
+  return_label_url: string | null;
+  return_tracking_number: string | null;
+  return_carrier_code: string | null;
   created_at: string;
 }
 
