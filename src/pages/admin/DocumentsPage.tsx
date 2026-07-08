@@ -138,7 +138,7 @@ export default function DocumentsPage() {
                             <DocumentTagsCell documentId={doc.id} tags={doc.tags} />
                           </TableCell>
                           <TableCell className="text-sm">{format(new Date(doc.created_at), "MMM d, yyyy")}</TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <div className="flex gap-1">
                               {doc.file_url && (
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openFile(doc.file_url)}>
