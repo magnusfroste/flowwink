@@ -144,11 +144,15 @@ export default function InventoryPage() {
       </div>
 
       <Tabs defaultValue="stock">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="stock">Stock Levels</TabsTrigger>
           <TabsTrigger value="valuation">Valuation</TabsTrigger>
           <TabsTrigger value="pickpack">Pick & Pack</TabsTrigger>
           <TabsTrigger value="receiving">Receiving</TabsTrigger>
+          <TabsTrigger value="route">Receipt Route</TabsTrigger>
+          <TabsTrigger value="transfers">Transfers</TabsTrigger>
+          <TabsTrigger value="expiry">Expiry / FEFO</TabsTrigger>
+          <TabsTrigger value="abc">ABC Analysis</TabsTrigger>
           <TabsTrigger value="moves">Movements</TabsTrigger>
           <TabsTrigger value="cyclecount">Cycle Count</TabsTrigger>
           <TabsTrigger value="reorder">Reorder & MRP</TabsTrigger>
