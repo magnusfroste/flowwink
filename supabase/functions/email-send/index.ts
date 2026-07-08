@@ -23,20 +23,30 @@ type Provider = "smtp" | "resend" | "composio";
 
 interface SendBody {
   to: string | string[];
-  subject: string;
-  html: string;
+  subject?: string;
+  html?: string;
   text?: string;
+  // Template send: if template_name (or template_id) is set, subject/html are loaded from email_templates
+  // and {{variable}} tokens are substituted from `variables`. Body-level subject/html override the template.
+  template_name?: string;
+  template_id?: string;
+  variables?: Record<string, string>;
   fromOverride?: string;     // "Name <addr@example.com>" — explicit per-call override (highest priority)
   sender_user_id?: string;   // Per-user override: look up profile.email_from_address and use it as From
   replyTo?: string;
   tags?: Record<string, string>;
   provider?: Provider;       // Per-call provider preference (e.g. send_email_to_lead asks for 'composio')
   expects_reply?: boolean;   // Hint: prefer reply-friendly channels (Composio → SMTP → Resend) on fallback
+  skip_signature?: boolean;  // Explicit opt-out of appending stored signature
   // logging hints
   source?: string;
   related_entity_type?: string;
   related_entity_id?: string;
   extra_metadata?: Record<string, unknown>;
+}
+
+function renderTemplate(input: string, vars: Record<string, string> = {}): string {
+  return input.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_, k) => vars[k] ?? "");
 }
 
 
@@ -172,13 +182,56 @@ serve(async (req: Request) => {
 
   try {
     body = (await req.json()) as SendBody;
-    if (!body?.to || !body?.subject || !body?.html) {
+    if (!body?.to) {
       return new Response(
-        JSON.stringify({ error: "to, subject, html are required" }),
+        JSON.stringify({ error: "to is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Load template if requested (subject/html not required when template resolves)
+    if (body.template_name || body.template_id) {
+      const q = supabase.from("email_templates").select("subject, html, text, active");
+      const { data: tpl, error: tplErr } = body.template_id
+        ? await q.eq("id", body.template_id).maybeSingle()
+        : await q.eq("name", body.template_name!).maybeSingle();
+      if (tplErr || !tpl) {
+        return new Response(JSON.stringify({ error: `Template not found: ${body.template_name ?? body.template_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (tpl.active === false) {
+        return new Response(JSON.stringify({ error: `Template is inactive: ${body.template_name ?? body.template_id}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const vars = body.variables ?? {};
+      body.subject = body.subject || renderTemplate(tpl.subject, vars);
+      body.html = body.html || renderTemplate(tpl.html, vars);
+      if (!body.text && tpl.text) body.text = renderTemplate(tpl.text, vars);
+    }
+
+    if (!body.subject || !body.html) {
+      return new Response(
+        JSON.stringify({ error: "subject and html (or a template_name) are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     recipients = Array.isArray(body.to) ? body.to : [body.to];
+
+    // Suppression list check — skip suppressed recipients
+    const lowered = recipients.map((r) => r.toLowerCase());
+    const { data: suppRows } = await supabase
+      .from("email_suppressions")
+      .select("email, reason")
+      .in("email", lowered);
+    const suppressedSet = new Set((suppRows ?? []).map((r: any) => r.email));
+    const allowed = recipients.filter((r) => !suppressedSet.has(r.toLowerCase()));
+    if (allowed.length === 0) {
+      const reasons = (suppRows ?? []).map((r: any) => `${r.email}:${r.reason}`).join(", ");
+      await logComm({ status: "skipped", provider: null, simulated: false, error_message: `All recipients suppressed (${reasons})` });
+      return new Response(JSON.stringify({ success: false, skipped: true, suppressed: Array.from(suppressedSet) }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    recipients = allowed;
 
     // Load email settings + integration toggles
     const { data: integ } = await supabase
@@ -272,6 +325,33 @@ serve(async (req: Request) => {
     }
 
     const from = body.fromOverride || `${fromName} <${fromEmail}>`;
+
+    // Signature append — look up by sender_user_id, then by from-address
+    if (!body.skip_signature) {
+      let sigHtml: string | null = null;
+      if (body.sender_user_id) {
+        const { data: sig } = await supabase
+          .from("email_signatures")
+          .select("html")
+          .eq("user_id", body.sender_user_id)
+          .order("is_default", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        sigHtml = sig?.html ?? null;
+      }
+      if (!sigHtml && fromEmail) {
+        const { data: sig2 } = await supabase
+          .from("email_signatures")
+          .select("html")
+          .ilike("from_address", fromEmail)
+          .maybeSingle();
+        sigHtml = sig2?.html ?? null;
+      }
+      if (sigHtml) {
+        body.html = `${body.html}<div class="email-signature" style="margin-top:24px;color:#555;font-size:13px">${sigHtml}</div>`;
+        if (body.text) body.text = `${body.text}\n\n--\n${sigHtml.replace(/<[^>]+>/g, "")}`;
+      }
+    }
 
     let result: unknown;
     if (provider === "resend") {

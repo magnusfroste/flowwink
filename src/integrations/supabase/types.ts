@@ -5307,6 +5307,184 @@ export type Database = {
           },
         ]
       }
+      email_events: {
+        Row: {
+          communication_id: string | null
+          created_at: string
+          event_type: string
+          hard_bounce: boolean
+          id: string
+          message_id: string | null
+          payload: Json
+          recipient: string | null
+        }
+        Insert: {
+          communication_id?: string | null
+          created_at?: string
+          event_type: string
+          hard_bounce?: boolean
+          id?: string
+          message_id?: string | null
+          payload?: Json
+          recipient?: string | null
+        }
+        Update: {
+          communication_id?: string | null
+          created_at?: string
+          event_type?: string
+          hard_bounce?: boolean
+          id?: string
+          message_id?: string | null
+          payload?: Json
+          recipient?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_events_communication_id_fkey"
+            columns: ["communication_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_communications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_signatures: {
+        Row: {
+          created_at: string
+          from_address: string | null
+          html: string
+          id: string
+          is_default: boolean
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_address?: string | null
+          html: string
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_address?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          email: string
+          reason: string
+          source_event_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          reason: string
+          source_event_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          reason?: string
+          source_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_suppressions_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: false
+            referencedRelation: "email_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          created_by: string | null
+          html: string
+          id: string
+          name: string
+          subject: string
+          text: string | null
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          html: string
+          id?: string
+          name: string
+          subject: string
+          text?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          html?: string
+          id?: string
+          name?: string
+          subject?: string
+          text?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
+      email_threads: {
+        Row: {
+          created_at: string
+          first_message_at: string
+          last_message_at: string
+          message_count: number
+          related_entity_id: string | null
+          related_entity_type: string | null
+          subject: string | null
+          thread_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_message_at?: string
+          last_message_at?: string
+          message_count?: number
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          subject?: string | null
+          thread_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_message_at?: string
+          last_message_at?: string
+          message_count?: number
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          subject?: string | null
+          thread_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_benefits: {
         Row: {
           created_at: string
@@ -17846,6 +18024,21 @@ export type Database = {
         Args: { p_days: number; p_from: string }
         Returns: string
       }
+      add_email_suppression: {
+        Args: { p_email: string; p_reason?: string }
+        Returns: {
+          created_at: string
+          email: string
+          reason: string
+          source_event_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "email_suppressions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_tip: {
         Args: { p_method?: string; p_sale_id: string; p_tip_cents: number }
         Returns: Json
@@ -18533,6 +18726,7 @@ export type Database = {
         Returns: Json
       }
       current_employee_id: { Args: never; Returns: string }
+      delete_email_template: { Args: { p_name: string }; Returns: boolean }
       dispatch_automation_event: {
         Args: {
           entity_id?: string
@@ -20020,6 +20214,10 @@ export type Database = {
       }
       next_mo_number: { Args: never; Returns: string }
       normalize_email: { Args: { p_email: string }; Returns: string }
+      normalize_thread_key: {
+        Args: { p_subject: string; p_thread_id: string }
+        Returns: string
+      }
       open_pos_session: {
         Args: {
           p_cashier_name?: string
@@ -20213,6 +20411,32 @@ export type Database = {
         }
         Returns: Json
       }
+      record_email_event: {
+        Args: {
+          p_communication_id?: string
+          p_event_type: string
+          p_hard_bounce?: boolean
+          p_message_id: string
+          p_payload?: Json
+          p_recipient?: string
+        }
+        Returns: {
+          communication_id: string | null
+          created_at: string
+          event_type: string
+          hard_bounce: boolean
+          id: string
+          message_id: string | null
+          payload: Json
+          recipient: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "email_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_experiment_conversion: {
         Args: { p_slug: string; p_visitor_id: string }
         Returns: Json
@@ -20376,6 +20600,7 @@ export type Database = {
         }[]
       }
       release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
+      remove_email_suppression: { Args: { p_email: string }; Returns: boolean }
       render_pos_receipt: { Args: { p_sale_id: string }; Returns: Json }
       reopen_accounting_period: {
         Args: { p_month: number; p_reason?: string; p_year: number }
@@ -21237,6 +21462,58 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "return_to_vendor"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_email_signature: {
+        Args: {
+          p_from_address?: string
+          p_html: string
+          p_is_default?: boolean
+        }
+        Returns: {
+          created_at: string
+          from_address: string | null
+          html: string
+          id: string
+          is_default: boolean
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "email_signatures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_email_template: {
+        Args: {
+          p_active?: boolean
+          p_category?: string
+          p_html: string
+          p_name: string
+          p_subject: string
+          p_text?: string
+          p_variables?: Json
+        }
+        Returns: {
+          active: boolean
+          category: string | null
+          created_at: string
+          created_by: string | null
+          html: string
+          id: string
+          name: string
+          subject: string
+          text: string | null
+          updated_at: string
+          variables: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "email_templates"
           isOneToOne: true
           isSetofReturn: false
         }

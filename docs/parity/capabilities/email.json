@@ -18,9 +18,10 @@
       "id": "templates",
       "name": "Email templates",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no email template skill or admin UI; only dunning-specific templates (DunningPage)"
+      "verify": "no email template skill or admin UI; only dunning-specific templates (DunningPage)",
+      "notes": "email_templates table + upsert/delete RPCs. email-send accepts template_name/template_id + variables and renders {{tokens}}. 3 seeded (welcome/invoice_follow_up/sales_follow_up). Admin UI /admin/email \u2192 Templates tab."
     },
     {
       "id": "inbox_scan",
@@ -34,25 +35,28 @@
       "id": "threading",
       "name": "Conversation threading",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no threading skill or UI found"
+      "verify": "no threading skill or UI found",
+      "notes": "email_threads table (subject-normalized key). BEFORE INSERT trigger on outbound_communications derives thread_key, sets thread_id, upserts thread row (last_message_at/message_count). /admin/email \u2192 Threads tab groups conversations."
     },
     {
       "id": "signatures",
       "name": "Signatures",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no email signature skill or UI (signature matches are contract e-signing)"
+      "verify": "no email signature skill or UI (signature matches are contract e-signing)",
+      "notes": "email_signatures table (per-user or per from-address, is_default). email-send appends signature by sender_user_id or matching from-address unless skip_signature. upsert_email_signature RPC + /admin/email \u2192 Signatures tab."
     },
     {
       "id": "bounce_handling",
       "name": "Bounce/complaint handling",
       "odoo": true,
-      "status": "missing",
+      "status": "done",
       "weight": 1,
-      "verify": "no bounce/suppression handling found"
+      "verify": "no bounce/suppression handling found",
+      "notes": "email_events table + record_email_event RPC. email-webhook edge function normalizes Resend-shaped payloads. AFTER INSERT trigger auto-suppresses hard-bounce/complaint/unsubscribe into email_suppressions. email-send checks suppressions and skips (status=skipped). /admin/email \u2192 Suppressions tab."
     },
     {
       "id": "comms_log",
@@ -65,7 +69,7 @@
     },
     {
       "id": "crm_email_association",
-      "name": "Email ↔ lead association + contact timeline",
+      "name": "Email \u2194 lead association + contact timeline",
       "odoo": true,
       "status": "done",
       "weight": 2,

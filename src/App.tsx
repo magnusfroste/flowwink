@@ -39,6 +39,7 @@ const ContentCampaignsPage = lazy(() => import("./pages/admin/ContentCampaignsPa
 const FormSubmissionsPage = lazy(() => import("./pages/admin/FormSubmissionsPage"));
 const NewsletterPage = lazy(() => import("./pages/admin/NewsletterPage"));
 const CommunicationsPage = lazy(() => import("./pages/admin/CommunicationsPage"));
+const EmailPage = lazy(() => import("./pages/admin/EmailPage"));
 const BlogPage = lazy(() => import("./pages/admin/BlogPage"));
 const BlogPostEditorPage = lazy(() => import("./pages/admin/BlogPostEditorPage"));
 const ModulesPage = lazy(() => import("./pages/admin/ModulesPage"));
@@ -296,6 +297,7 @@ const router = createBrowserRouter([
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
       { path: "/admin/communications", element: <CommunicationsPage /> },
+      { path: "/admin/email", element: <EmailPage /> },
       { path: "/admin/leads", element: <LeadsPage /> },
       { path: "/admin/leads/:id", element: <LeadDetailPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },
