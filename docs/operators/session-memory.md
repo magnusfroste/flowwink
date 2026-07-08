@@ -2,7 +2,7 @@
 
 > **Purpose:** everything a fresh Claude Code session (local or cloud) needs to
 > continue the Program 80 grind without re-deriving context. Update this doc at
-> the end of significant sessions. Last updated: **2026-07-05 (evening)**.
+> the end of significant sessions. Last updated: **2026-07-08 (helicopter sync + audit)**.
 
 ## The program
 
@@ -21,15 +21,38 @@ Loop: **find → fix → deploy → re-verify live → flip scorecard**. Scoreca
 string); regenerate with `bun run scripts/parity-report.ts` before every push
 (CI has a `--check` gate).
 
-## Current standings (2026-07-05)
+## Current standings (2026-07-08, helicopter sync + cloud-session audit)
 
-Modules ≥80%: **products 80, ecommerce 81, invoicing 83, live-support 86,
-webinars 89, companies 93, approvals/customer360/docs/forms/sales-intelligence
-100**. Mean parity ~62%. 767+ vitest green, 56+ guardrail tests.
+**Mean parity 86%** across 55 benchmarked modules (61 → 64 → 86 in four
+days). The Program 80 fleet target is passed at fleet level; kb and deals
+are at **100%**. Read the number honestly: 86% of *our benchmarked
+capability lists*, not 86% of Odoo's full surface — say "covers the
+capabilities an SMB uses" in sales conversations.
 
-In flight: **PR #108** (draft) — after reconciliation vs main, effectively
-just this memory doc (the code fix and flips landed on main via the local
-session, see update below).
+**The 07-06 → 07-08 sprint (local session, ~266 commits):** eight parity
+rounds (timesheets/fixed-assets/calendar → pricelists/multi-currency/wiki/
+payroll → shipping/projects/sla/recruitment → field-service/pos/resume →
+pages/crm/hr/kb → deals 100 w/ configurable stages+teams+history+FX), the SE
+momsdeklaration (SKV 4700) built+flipped, CRITICAL accounting fixes (export
+crash, book-button crash, unbalanced payroll GL, VAT-settlement template),
+approval-system convergence (staging ops surface as approval_requests — one
+review queue), autonomous-booking milestone (14 events, HIL off), and the
+kb feedback+versioning surfaces.
+
+**Cloud-session audit verdict (2026-07-08):** evidence bar HELD — verify
+strings carry live gateway runs with concrete return values; independent
+spot-checks 3/3 pass (list_shipping_options price-sorted carriers,
+manage_pipeline_stage deals, payroll_timesheet_basis — and the PGRST202
+self-correction hint fired perfectly on a wrong-param probe).
+
+**⚠️ HISTORY REWRITE (2026-07-07/08):** a Lovable GitHub re-connect REPLACED
+the repo's git history — main now roots at "template: new_style_vite_react_
+shadcn_ts → Connect to Lovable Cloud" (~266 commits total). File content
+verified complete (zero lost files vs the old tree), but old commit SHAs
+cited in docs/verify strings no longer resolve on main, and branches from
+the old history can't merge ("unrelated histories" — recreate them from new
+main). If Lovable is ever re-connected again, expect the same: content
+survives, provenance doesn't.
 
 **UPDATE (late 2026-07-05/06):** a LOCAL Claude Code session took over the
 Lovable-MCP-dependent work (local CLI connects to mcp.lovable.dev directly
@@ -37,11 +60,13 @@ and reliably; cloud-session connector enablement is flaky). It independently
 found and fixed the same `kb_articles.answer` → `answer_text` bug (4c9b9ad0),
 redeployed agent-execute, flipped **kb#search → done** (8201f2b8, kb now 79%)
 and **products#uom → done** (0c4f3817, products 80%) directly on main, plus
-fleet-tooling fixes (3d6930e7). The cloud session verified the redeploy live
-from the outside (search_kb returns clean results via the gateway) and
-reconciled PR #108 down to this memory doc. **Coordination convention:
-whoever does substantive work updates THIS doc; the other session watches
-git (`git ls-remote` polling) and the live gateway surface.**
+fleet-tooling fixes (3d6930e7). (NB: these SHAs are from the pre-rewrite
+history and no longer resolve on main — kept for the narrative.) The cloud
+session verified the redeploy live from the outside (search_kb returns clean
+results via the gateway) and reconciled PR #108 down to this memory doc.
+**Coordination convention: whoever does substantive work updates THIS doc;
+the other session watches git (`git ls-remote` polling) and the live gateway
+surface.**
 
 ## The fleet & who deploys what
 
@@ -129,17 +154,24 @@ where RLS allows and for `--no-verify-jwt` public functions.
   trust_level) or fix the row yourself via `query_database`.
 - Lovable auto-deploys NOTHING from a `main` push except what Vercel builds
   (frontend). Migrations and edge functions ship only when nudged.
+- **⚠️ Re-connecting Lovable ↔ GitHub rewrites repo history** (see HISTORY
+  REWRITE above): content survives, git provenance does not. Avoid re-connects;
+  if one must happen, snapshot branches/tags first.
 
 ## Open queue (next session starts here)
 
-1. ~~agent-execute redeploy + kb#search flip~~ **DONE** (local session,
-   2026-07-06). Next kb step: article_feedback surface gets kb over 80.
-2. **Revoke/rotate** the temp `fwk_d0911…` gateway key (Magnus, in admin).
+1. ~~kb over 80~~ **DONE** — kb at 100 (feedback + versioning live-verified
+   2026-07-07). Remaining sub-80 tail: contact-center 41, media 57,
+   accounting 58 (SE statutory P1s: NE-bilaga/INK2/SRU, SIE 4 ledger
+   export/import, BFL retention; then storno correction flow).
+2. **Revoke/rotate** the temp `fwk_d0911…` gateway key (Magnus, in admin —
+   still valid as of 2026-07-08, used for the audit spot-checks).
 3. Data-quality: `support_agents` row with `current_conversations=24` vs
    `max_conversations=5` — stale counter, needs a reconcile (skill or cron).
-4. UI-build backlog for remaining partials: reconciliation rule admin,
-   expenses policy UI, SLA business-hours wiring, manufacturing shop-floor,
-   kb article_feedback surface (see `docs/parity/ui-backlog.md`).
+4. ~~UI-build backlog~~ largely DONE in the 07-06/07 UI wave (reconciliation
+   rules, SLA business hours, expense policies, budgets, gift cards, shipping
+   rates, milestones/subtasks, document tags, timesheets/fixed-assets UIs,
+   kb feedback). Remaining: manufacturing shop-floor (manufacturing 52%).
 5. Prod-fleet secrets for `.github/workflows/supabase-deploy.yml` when Magnus
    chooses to enable auto-deploy.
 6. Honest-depth items intentionally left partial: crm scoring_basic (vs Odoo
