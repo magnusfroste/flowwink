@@ -72,7 +72,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'send-webinar-reminders',
   'send-contact-email', 'send-invoice-email', 'send-order-confirmation', 'send-quote-email',
   'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
-  'sla-check', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
+  'sla-check', 'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
   'support-router', 'survey-send', 'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
   'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
