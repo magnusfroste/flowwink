@@ -120,6 +120,17 @@ export default function DealsPage() {
                 if (cfg.viewMode === 'kanban' || cfg.viewMode === 'table') setViewMode(cfg.viewMode);
               }}
             />
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger className="w-40 h-9"><SelectValue placeholder="All teams" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All teams</SelectItem>
+                {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => setShowSetup((s) => !s)}>
+              <Settings2 className="h-4 w-4 mr-2" />
+              {showSetup ? 'Hide setup' : 'Teams & templates'}
+            </Button>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Deal
