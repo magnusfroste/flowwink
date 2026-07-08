@@ -64,10 +64,10 @@
       "id": "reorder_rules",
       "name": "Reorder rules (min/reorder point)",
       "odoo": true,
-      "status": "partial",
+      "status": "done",
       "weight": 1,
-      "notes": "Single-threshold only; no min/max two-bin",
-      "verify": "reorder_point per product/location"
+      "notes": "reorder_rules table has min_qty/max_qty/reorder_qty per product+location; ReorderMrpPanel manages them and procurement_run materializes suggestions into POs/MOs.",
+      "verify": "reorder_rules table + ReorderMrpPanel UI + procurement_run/approve_procurement_suggestion skills"
     },
     {
       "id": "valuation",
