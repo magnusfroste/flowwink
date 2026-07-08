@@ -43,6 +43,10 @@ export interface Deal {
   /** Why the deal was lost (price/timing/competitor/no_response/other). Set on closed_lost, cleared on re-open. */
   lost_reason: string | null;
   lost_note: string | null;
+  /** Optional deal team assignment. */
+  team_id?: string | null;
+  /** Optional owner (user id). */
+  owner_id?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
