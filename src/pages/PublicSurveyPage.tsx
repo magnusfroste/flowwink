@@ -38,6 +38,7 @@ export default function PublicSurveyPage() {
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<number | null>(presetScore ? Number(presetScore) : null);
   const [comment, setComment] = useState('');
+  const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -51,13 +52,24 @@ export default function PublicSurveyPage() {
     })();
   }, [token]);
 
+  const questionVisible = (q: SurveyQuestion): boolean => {
+    if (!q.show_if) return true;
+    const src = q.show_if.id === 'score' ? score : answers[q.show_if.id];
+    if (q.show_if.equals !== undefined) return src === q.show_if.equals;
+    if (q.show_if.gte !== undefined && typeof src === 'number') return src >= q.show_if.gte;
+    if (q.show_if.lte !== undefined && typeof src === 'number') return src <= q.show_if.lte;
+    return true;
+  };
+
   const submit = async () => {
-    if (!token || score === null) return;
+    if (!token) return;
     setSubmitting(true);
+    const merged = { ...answers, ...(comment ? { comment } : {}), ...(score !== null ? { score } : {}) };
     const { data: result, error } = await supabase.rpc('submit_survey_response' as never, {
       _token: token,
       _score: score,
       _comment: comment || null,
+      _answers: merged,
     } as never);
     setSubmitting(false);
     const r = result as unknown as { success: boolean; error?: string };
@@ -67,6 +79,7 @@ export default function PublicSurveyPage() {
       setSubmitted(true);
     }
   };
+
 
   if (loading) {
     return (
