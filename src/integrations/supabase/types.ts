@@ -21601,6 +21601,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      move_application_stage: {
+        Args: {
+          p_application_id: string
+          p_comment?: string
+          p_rejected_reason?: string
+          p_to_stage: string
+        }
+        Returns: Json
+      }
       mrp_reorder_run: { Args: { p_dry_run?: boolean }; Returns: Json }
       next_business_day: { Args: { p_from: string }; Returns: string }
       next_document_number: {
