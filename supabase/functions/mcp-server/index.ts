@@ -20,7 +20,7 @@ import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/in
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
-const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null }>();
+const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[] }>();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -276,10 +276,15 @@ async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
   const all = (skillsResult.data ?? []) as unknown as SkillRow[];
   let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
 
+  // Federation-peer ceiling: a peer's toolset_groups cap what it can DISCOVER,
+  // intersected with any ?groups= it passed (ceiling always wins). Empty = open.
+  const peerGroups = requestContext.getStore()?.peerGroups ?? [];
+  const effGroups = effectiveGroups(filterGroups, peerGroups);
+
   // Apply toolset group filter — supports category tokens, composite tokens,
   // and module-level sub-filters (e.g. ?groups=invoicing narrows commerce).
-  if (filterGroups && filterGroups.length > 0) {
-    const { categories, modules } = resolveGroupTokens(filterGroups);
+  if (effGroups && effGroups.length > 0) {
+    const { categories, modules } = resolveGroupTokens(effGroups);
     filtered = filtered.filter((s) => {
       if (categories.has(s.category)) return true;
       if (modules.size === 0) return false;
@@ -314,6 +319,43 @@ function scopeAllowsSkill(
   if (category && scopes.includes(`mcp:${category}`)) return true;
   if (scopes.includes(`skill:${skillName}`)) return true;
   return false;
+}
+
+// Federation-peer scoping (the data-driven "invite with only these groups" model,
+// 2026-07-09). A peer minted via Agent Invites carries a2a_peers.toolset_groups.
+// EMPTY = full access (the deliberate default-open dev posture). NON-EMPTY = a
+// CEILING: the peer can neither see (discovery) nor run (execute) any skill
+// outside those groups, whatever ?groups= it passes. No global setting — the
+// ceiling travels with the invite. Resolved once per request into requestContext.
+async function resolvePeerGroups(apiKeyId: string | null): Promise<string[]> {
+  if (!apiKeyId) return [];
+  const { data } = await serviceClient()
+    .from("a2a_peers").select("toolset_groups").eq("api_key_id", apiKeyId).maybeSingle();
+  const g = (data?.toolset_groups ?? []) as string[];
+  return Array.isArray(g) ? g.filter((x) => typeof x === "string" && x.length > 0) : [];
+}
+
+// Is a skill within a set of group tokens? Mirrors loadExposedSkills' filter
+// (category token, composite, or module-level via classifySkillModule).
+function skillWithinGroups(
+  name: string, handler: string | null | undefined, category: string | null | undefined,
+  groups: string[] | undefined,
+): boolean {
+  if (!groups || groups.length === 0) return true; // no ceiling
+  const { categories, modules } = resolveGroupTokens(groups);
+  if (category && categories.has(category)) return true;
+  if (modules.size === 0) return false;
+  const mod = classifySkillModule(name, handler ?? null);
+  return mod ? modules.has(mod) : false;
+}
+
+// Intersect the client's ?groups= with the peer ceiling (ceiling always wins).
+function effectiveGroups(clientGroups: string[] | undefined, peerGroups: string[]): string[] | undefined {
+  if (peerGroups.length === 0) return clientGroups;            // no ceiling
+  if (!clientGroups || clientGroups.length === 0) return peerGroups; // ceiling only
+  const set = new Set(peerGroups);
+  const inter = clientGroups.filter((g) => set.has(g));
+  return inter.length > 0 ? inter : peerGroups; // never widen past the ceiling
 }
 
 async function executeSkill(
@@ -1293,6 +1335,9 @@ app.post("/rest/execute", async (c) => {
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
+  // Peer group ceiling (empty = full access). The REST path doesn't run inside
+  // requestContext, so resolve it explicitly here and apply to discovery + execute.
+  const peerGroups = await resolvePeerGroups(callerApiKeyId);
 
   // ?mode=dispatch → expose search_skills + execute_skill via REST (mirrors the MCP 2-tool surface)
   const url = new URL(c.req.url);
@@ -1307,7 +1352,7 @@ app.post("/rest/execute", async (c) => {
       : undefined;
     const limit = Math.min(typeof args?.limit === "number" ? args.limit : 15, 40);
     const scope = groups && groups.length ? groups : filterGroups;
-    const matchSkills = await loadExposedSkills(scope);
+    const matchSkills = await loadExposedSkills(effectiveGroups(scope, peerGroups));
     const defs = matchSkills.map((s) => s.tool_definition).filter((d) => d?.function?.name);
     let ranked = defs;
     if (query) {
@@ -1330,12 +1375,13 @@ app.post("/rest/execute", async (c) => {
     if (!name) {
       return c.json({ ok: false, error: "Missing 'name'. Call search_skills first to find a skill." }, 400, corsHeaders);
     }
-    const exposed = await loadExposedSkills(filterGroups);
+    const exposed = await loadExposedSkills(effectiveGroups(filterGroups, peerGroups));
     const match = exposed.find((s) => s.tool_definition?.function?.name === name);
     if (!match) {
       return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
     }
-    if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)) {
+    if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)
+        || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
       return c.json({ ok: false, error: `API key scope does not permit skill '${name}'.` }, 403, corsHeaders);
     }
     const result = await executeSkill(match.name, skillArgs, callerUserId, callerApiKeyId);
@@ -1346,7 +1392,7 @@ app.post("/rest/execute", async (c) => {
     }
   }
 
-  const skills = await loadExposedSkills();
+  const skills = await loadExposedSkills(effectiveGroups(undefined, peerGroups));
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
     const available = skills.map((s) => s.tool_definition?.function?.name).filter(Boolean);
@@ -1356,7 +1402,8 @@ app.post("/rest/execute", async (c) => {
     );
   }
 
-  if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)) {
+  if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)
+      || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
     return c.json({ ok: false, error: `API key scope does not permit skill '${tool}'.` }, 403, corsHeaders);
   }
   const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId);
@@ -1406,7 +1453,10 @@ app.all("/*", async (c) => {
 
   const callerUserId = (c.get("apiKeyCreatedBy" as any) as string | null) ?? null;
   const callerApiKeyId = (c.get("apiKeyId" as any) as string | null) ?? null;
-  const response = await requestContext.run({ callerUserId, callerApiKeyId }, () => handler(c.req.raw));
+  // Resolve the peer's group ceiling ONCE per request (empty = full access).
+  const peerGroups = await resolvePeerGroups(callerApiKeyId);
+  c.set("apiKeyPeerGroups" as any, peerGroups);
+  const response = await requestContext.run({ callerUserId, callerApiKeyId, peerGroups }, () => handler(c.req.raw));
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);

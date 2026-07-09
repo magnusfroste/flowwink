@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Copy, Check, UserPlus, Sparkles, Shield, Zap, TrendingUp, Bot, Users, Calculator, Bug } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
@@ -21,6 +22,23 @@ import { useModules, type ModulesSettings } from '@/hooks/useModules';
 import { toast } from 'sonner';
 
 type ModuleKey = keyof ModulesSettings;
+
+// The MCP skill-category groups an invite can be scoped to (mirrors
+// SKILL_CATEGORY_MODULES in supabase/functions/_shared/mcp/groups.ts). Leaving
+// the selection EMPTY = full access (the deliberate default-open model); ticking
+// groups limits the invited agent to those categories — enforced by the gateway
+// from a2a_peers.toolset_groups, no global setting to remember.
+const TOOLSET_GROUP_OPTIONS: { id: string; label: string; hint: string }[] = [
+  { id: 'crm', label: 'CRM & Sales', hint: 'leads, deals, companies, forms, bookings, hr, recruitment, projects, tickets' },
+  { id: 'commerce', label: 'Commerce & Finance', hint: 'ecommerce, accounting, expenses, contracts, inventory, purchasing, invoicing, timesheets' },
+  { id: 'content', label: 'Content & Site', hint: 'pages, blog, KB, handbook, resume, media, migration' },
+  { id: 'communication', label: 'Communication', hint: 'newsletter, chat, live support, webinars' },
+  { id: 'analytics', label: 'Analytics & SLA', hint: 'analytics, sla' },
+  { id: 'growth', label: 'Growth', hint: 'paid growth, attribution, social' },
+  { id: 'subscriptions', label: 'Subscriptions', hint: 'plans, MRR, dunning' },
+  { id: 'automation', label: 'Automation', hint: 'workflow automations' },
+  { id: 'search', label: 'Web/Search', hint: 'browser control, web search' },
+];
 
 interface MissionTemplate {
   id: string;
@@ -267,6 +285,9 @@ const MCP_RESOURCES = [
 export function AgentInvites() {
   const [selectedMission, setSelectedMission] = useState<string>('full-operator');
   const [customInstructions, setCustomInstructions] = useState('');
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]); // [] = full access
+  const toggleGroup = (id: string) =>
+    setSelectedGroups(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   const [agentName, setAgentName] = useState('');
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
@@ -313,7 +334,9 @@ export function AgentInvites() {
             invitee_name: peerName,
             invitee_description: `MCP Agent: ${mission.name || 'Custom Mission'}`,
             invitee_url: `https://${peerName.toLowerCase().replace(/\s+/g, '-')}.local`,
-            toolset_groups: [],
+            // Empty = full access (default-open); ticked groups scope the peer.
+            // Enforced by the gateway from a2a_peers.toolset_groups.
+            toolset_groups: selectedGroups,
             // Mission metadata — will be stored in federation_peer_missions
             mission_id: selectedMission === 'custom' ? 'custom' : mission.id,
             mission_name: selectedMission === 'custom' ? peerName : mission.name,
@@ -488,6 +511,29 @@ Read the \`flowwink://briefing\` resource — it should return identity, health 
               />
             </div>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <Label>Access scope</Label>
+              <span className="text-xs text-muted-foreground">
+                {selectedGroups.length === 0 ? 'Full access (all modules)' : `${selectedGroups.length} group${selectedGroups.length === 1 ? '' : 's'} selected`}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Leave empty for full access. Tick groups to limit this agent to only those module categories — the gateway enforces it from the invite, no separate setting.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {TOOLSET_GROUP_OPTIONS.map(g => (
+                <label key={g.id} htmlFor={`grp-${g.id}`} className="flex items-start gap-2 rounded-md border p-2 cursor-pointer hover:bg-muted/50">
+                  <Checkbox id={`grp-${g.id}`} checked={selectedGroups.includes(g.id)} onCheckedChange={() => toggleGroup(g.id)} className="mt-0.5" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium leading-tight">{g.label}</span>
+                    <span className="block text-[11px] text-muted-foreground truncate">{g.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <Button
             onClick={handleGenerate}
