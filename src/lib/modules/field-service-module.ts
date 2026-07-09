@@ -85,7 +85,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
             scheduled_start: { type: 'string', description: 'ISO timestamp' },
             scheduled_end: { type: 'string', description: 'ISO timestamp' },
             assigned_to: { type: 'string', description: 'User id of dispatcher / lead technician' },
-            technician_id: { type: 'string', description: 'Technician for the visit (used with schedule)' },
+            technician_id: { type: 'string', description: 'Technician for the visit — must be an AUTH USER id (users_list), NOT an employee id. Only honored by action:schedule (which creates the service_visits row the availability check + calendar read).' },
             kind: { type: 'string', enum: ['labor', 'material', 'expense', 'other'] },
             quantity: { type: 'number' },
             unit_price: { type: 'number' },
@@ -104,7 +104,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Lifecycle: draft → scheduled (assign technician + slot) → in_progress (auto when visit starts) → completed (sets completed_at, emits service_order.completed) → invoiced (when invoice is generated). Use add_line to append labor/material before completion. After completion, the platform event triggers invoicing automation. Before scheduling, call check_technician_availability to avoid double-booking.',
+      'Lifecycle: draft → scheduled → in_progress (auto when visit starts) → completed (sets completed_at, emits service_order.completed) → invoiced (when invoice is generated). ASSIGN + DISPATCH via action:schedule (id + scheduled_start + scheduled_end + technician_id) — this creates the service_visits row that check_technician_availability and the calendar read. action:update only edits header fields and does NOT create/move a visit, so scheduling via update silently leaves the technician un-dispatched. technician_id MUST be an auth user id (users_list) — an employee id fails with a foreign-key error. Use add_line to append labor/material before completion. Before scheduling, call check_technician_availability to avoid double-booking. After completion, the platform event triggers invoicing automation.',
   },
   {
     name: 'check_technician_availability',
