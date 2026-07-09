@@ -7,14 +7,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface SurveyQuestion {
+  id: string;
+  type: string;
+  label: string;
+  required?: boolean;
+  options?: string[];
+  show_if?: { id: string; equals?: unknown; gte?: number; lte?: number };
+}
+
 interface SurveyData {
   success: boolean;
   send_id?: string;
   campaign?: { name: string; email_intro: string };
   template?: {
-    kind: 'nps' | 'csat' | 'ces' | 'custom';
+    kind: 'nps' | 'csat' | 'ces' | 'custom' | 'quiz';
     name: string;
-    questions: Array<{ id: string; type: string; label: string; required?: boolean }>;
+    questions: SurveyQuestion[];
   };
   recipient_name?: string;
   error?: string;
