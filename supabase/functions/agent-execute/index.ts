@@ -377,6 +377,13 @@ serve(async (req) => {
         console.error('[agent-execute] staging insert failed:', opErr);
       }
 
+      // Double-gated skills (requires_staging AND trust_level=approve) need BOTH flags
+      // on the re-invoke, or they stop at the trust gate with status=pending_approval.
+      // Spell that out in the envelope so an agent following the message alone completes.
+      const isDoubleGated = ((skill as any).trust_level === 'approve');
+      const reinvokeArgs = isDoubleGated
+        ? `_approved_operation_id="${opRow?.id}" AND _approved=true`
+        : `_approved_operation_id="${opRow?.id}"`;
       return new Response(JSON.stringify({
         staged: true,
         operation_id: opRow?.id,
@@ -384,10 +391,12 @@ serve(async (req) => {
         risk_level: riskLevel,
         period_status: periodStatus,
         actor: agent_type,
-        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with _approved_operation_id="${opRow?.id}".`,
+        double_gated: isDoubleGated,
+        message: `Skill "${skill.name}" is staged. Review the preview, then call approve_pending_operation(p_id="${opRow?.id}") followed by re-invoking with ${reinvokeArgs}.${isDoubleGated ? ' (This skill also requires approval, so BOTH flags are needed — passing only _approved_operation_id stops at the trust gate.)' : ''}`,
         preview: { args },
         next: {
           approve: { skill: 'approve_pending_operation', args: { p_id: opRow?.id } },
+          reinvoke_args: isDoubleGated ? { _approved_operation_id: opRow?.id, _approved: true } : { _approved_operation_id: opRow?.id },
           reject: { skill: 'reject_pending_operation', args: { p_id: opRow?.id, p_reason: '<reason>' } },
         },
       }), {
