@@ -22520,6 +22520,10 @@ export type Database = {
           total_cents: number
         }[]
       }
+      send_purchase_order: {
+        Args: { p_purchase_order_id: string }
+        Returns: Json
+      }
       set_exchange_rate: {
         Args: {
           p_base: string
