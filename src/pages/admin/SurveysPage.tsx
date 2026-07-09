@@ -11,10 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSurveyTemplates, useSurveyCampaigns, useSurveyResponses, useNpsStats, useCreateCampaign, useSendSurvey, useSaveTemplate, useDeleteTemplate, type SurveyTemplate } from '@/hooks/useSurveys';
-import { Smile, Frown, Meh, Plus, Send, Loader2, MessageSquare, Pencil, Trash2, X } from 'lucide-react';
+import { useSurveyTemplates, useSurveyCampaigns, useSurveyResponses, useNpsStats, useCreateCampaign, useSendSurvey, useSaveTemplate, useDeleteTemplate, useSurveyAnalytics, exportSurveyResponsesCsv, type SurveyTemplate } from '@/hooks/useSurveys';
+import { Smile, Frown, Meh, Plus, Send, Loader2, MessageSquare, Pencil, Trash2, X, Download, BarChart3 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { downloadCSV } from '@/lib/csv-utils';
+import { toast } from 'sonner';
 
 const TRIGGERS = ['manual', 'order.delivered', 'order.paid', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'];
 
