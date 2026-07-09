@@ -19,7 +19,6 @@ category: reference
 | **accounting** | Accounting (account.move, account.account) | L3 → L4 | `██████░░░░` 58% | 10/0/6 | — |
 | **analytics** | Website analytics / Dashboards | L3 → L4 | `██████░░░░` 58% | 2/1/2 | — |
 | **chat** | Livechat + chatbot | L3 → L4 | `██████░░░░` 58% | 1/4/0 | EPIC-06, EPIC-07 |
-| **surveys** | Surveys (survey.survey) | L2 → L4 | `██████░░░░` 64% | 2/4/0 | EPIC-06 |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 68% | 13/0/6 | — |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
@@ -68,6 +67,7 @@ category: reference
 | **sales-intelligence** | CRM lead scoring (partial counterpart) | L4 → L4 | `██████████` 100% | 1/0/0 | — |
 | **shipping** | Inventory → Delivery/Shipping connectors | L4 → L4 | `██████████` 100% | 15/0/0 | — |
 | **sla** | Helpdesk SLA policies | L4 → L4 | `██████████` 100% | 15/0/0 | — |
+| **surveys** | Surveys (survey.survey) | L3 → L4 | `██████████` 100% | 7/0/0 | — |
 | **timesheets** | Timesheets (account.analytic.line) | L4 → L4 | `██████████` 100% | 14/0/0 | — |
 | **wiki** | Knowledge (knowledge.article) | L4 → L4 | `██████████` 100% | 6/0/0 | — |
 
