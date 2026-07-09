@@ -21,7 +21,7 @@ import { getUnifiedModule, getUnifiedSkillNames, isUnifiedModule } from '@/lib/m
 export interface SkillSeed {
   name: string;
   description: string;
-  category: 'content' | 'crm' | 'commerce' | 'communication' | 'automation' | 'search' | 'analytics' | 'system';
+  category: 'content' | 'crm' | 'commerce' | 'communication' | 'automation' | 'search' | 'analytics' | 'system' | 'growth' | 'subscriptions';
   handler: string;
   scope: 'internal' | 'external' | 'both';
   tool_definition: Record<string, unknown>;

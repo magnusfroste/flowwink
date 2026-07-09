@@ -19414,6 +19414,13 @@ export type Database = {
         }
         Returns: Json
       }
+      booked_counterparty_counts: {
+        Args: never
+        Returns: {
+          cnt: number
+          counterparty: string
+        }[]
+      }
       budget_vs_actual: {
         Args: { p_fiscal_year: number; p_period_month?: number }
         Returns: Json
@@ -20356,6 +20363,10 @@ export type Database = {
         Args: { p_rates: Json; p_source?: string }
         Returns: Json
       }
+      increment_template_usage: {
+        Args: { p_template_id: string }
+        Returns: undefined
+      }
       inspect_return: {
         Args: {
           p_notes?: string
@@ -20434,6 +20445,7 @@ export type Database = {
       }
       list_payroll_lines: { Args: { p_run_id: string }; Returns: Json }
       list_payroll_runs: { Args: { p_limit?: number }; Returns: Json }
+      list_quote_revisions: { Args: { p_quote_id: string }; Returns: Json }
       list_reorder_candidates: {
         Args: never
         Returns: {
@@ -20762,6 +20774,19 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_contract_obligation: {
+        Args: {
+          p_action: string
+          p_contract_id?: string
+          p_description?: string
+          p_due_date?: string
+          p_notes?: string
+          p_obligation_id?: string
+          p_responsible?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       manage_disciplinary: {
         Args: {
           p_action: string
@@ -20805,6 +20830,30 @@ export type Database = {
           p_slug?: string
           p_title?: string
           p_version_no?: number
+        }
+        Returns: Json
+      }
+      manage_document_share_link: {
+        Args: {
+          p_action: string
+          p_document_id?: string
+          p_expires_at?: string
+          p_link_id?: string
+          p_permissions?: string
+        }
+        Returns: Json
+      }
+      manage_email_template: {
+        Args: {
+          p_action: string
+          p_active?: boolean
+          p_category?: string
+          p_html?: string
+          p_name?: string
+          p_subject?: string
+          p_template_id?: string
+          p_text?: string
+          p_variables?: Json
         }
         Returns: Json
       }
@@ -21252,6 +21301,24 @@ export type Database = {
           p_name?: string
           p_threshold_multiplier?: number
           p_tier_id?: string
+        }
+        Returns: Json
+      }
+      manage_subscription_plan: {
+        Args: {
+          p_action: string
+          p_billing_interval?: string
+          p_billing_interval_count?: number
+          p_commitment_months?: number
+          p_currency?: string
+          p_description?: string
+          p_features?: Json
+          p_is_active?: boolean
+          p_name?: string
+          p_plan_id?: string
+          p_product_name?: string
+          p_trial_days?: number
+          p_unit_amount_cents?: number
         }
         Returns: Json
       }
