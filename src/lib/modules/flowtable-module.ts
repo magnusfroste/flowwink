@@ -152,7 +152,7 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
     category: 'crm',
     handler: 'module:flowtable',
     scope: 'internal',
-    'x-action-required': { create: ['values'], update: ['id', 'values'], delete: ['id'], get: ['id'] },
+    
     tool_definition: {
       type: 'function',
       function: {
