@@ -9711,7 +9711,17 @@ async function executeGenericCrud(
   if ((args as any).action === undefined) {
     // Verb may be a prefix (create_campaign) or a suffix (ad_campaign_create) —
     // handle both so e.g. ad_campaign_create inserts instead of listing.
-    if (skillName.startsWith('create_') || skillName.endsWith('_create')) action = 'create';
+    // CREATE synonyms (process-QA finding 2026-07-09): skills like
+    // register_vendor_invoice, schedule_social_post, tag_entity, follow_entity,
+    // record_accounting_correction all MEAN "insert a row" but their verb wasn't
+    // recognised, so they silently fell through to 'list' and returned rows
+    // instead of creating (the P2P chain broke on register_vendor_invoice). These
+    // verbs create from the provided fields — safe to map. NOTE status-transition
+    // verbs (send_/move_/mark_/approve_) are NOT here: they need a specific target
+    // state the generic handler can't infer, so they get dedicated RPC handlers.
+    const verb = skillName.split('_')[0];
+    const CREATE_VERBS = new Set(['create', 'register', 'record', 'schedule', 'tag', 'follow', 'log']);
+    if (skillName.startsWith('create_') || skillName.endsWith('_create') || CREATE_VERBS.has(verb)) action = 'create';
     else if (skillName.startsWith('update_') || skillName.endsWith('_update')) action = 'update';
     else if (skillName.startsWith('delete_') || skillName.endsWith('_delete')) action = 'delete';
   }
