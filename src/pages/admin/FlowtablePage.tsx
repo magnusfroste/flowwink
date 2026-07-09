@@ -476,6 +476,9 @@ export default function FlowtablePage() {
                         onRenameField={(id, name) =>
                           updateField.mutate({ id, table_id: activeTable.id, patch: { name, key: fieldKeyify(name) } })
                         }
+                        onChangeFieldType={(id, type) =>
+                          updateField.mutate({ id, table_id: activeTable.id, patch: { type } })
+                        }
                         onDeleteField={(id) =>
                           deleteField.mutate({ id, table_id: activeTable.id })
                         }
@@ -542,6 +545,7 @@ function GridView(props: {
   onUpdateRecord: (id: string, values: Record<string, unknown>) => void;
   onAddField: (name: string, type: FlowtableFieldType) => void;
   onRenameField: (id: string, name: string) => void;
+  onChangeFieldType: (id: string, type: FlowtableFieldType) => void;
   onDeleteField: (id: string) => void;
   onAddRow: () => void;
 }) {
@@ -599,7 +603,7 @@ function GridView(props: {
                       {FIELD_TYPES.map((t) => (
                         <DropdownMenuItem
                           key={t.value}
-                          onClick={() => f.type !== t.value && props.onRenameField(f.id, f.name)}
+                          onClick={() => f.type !== t.value && props.onChangeFieldType(f.id, t.value)}
                           className={f.type === t.value ? 'bg-accent' : ''}
                         >
                           {t.label}
@@ -646,11 +650,25 @@ function GridView(props: {
           </tr>
         </thead>
         <tbody>
-          {records.map((r) => (
+          {records.map((r, idx) => {
+            const isSelected = selected.has(r.id);
+            return (
             <tr key={r.id} className="group hover:bg-muted/30">
               <td className="border-r border-b w-10 p-0">
                 <div className="h-9 flex items-center justify-center">
-                  <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleOne(r.id)} />
+                  {/* Airtable-style: row number by default, checkbox on hover or when selected */}
+                  <span
+                    className={`text-xs text-muted-foreground tabular-nums ${
+                      isSelected ? 'hidden' : 'group-hover:hidden'
+                    }`}
+                  >
+                    {idx + 1}
+                  </span>
+                  <Checkbox
+                    className={isSelected ? '' : 'hidden group-hover:inline-flex'}
+                    checked={isSelected}
+                    onCheckedChange={() => toggleOne(r.id)}
+                  />
                 </div>
               </td>
               {fields.map((f) => (
@@ -663,7 +681,8 @@ function GridView(props: {
               ))}
               <td className="border-b" />
             </tr>
-          ))}
+            );
+          })}
           <tr>
             <td colSpan={fields.length + 2} className="border-b p-0">
               <button
@@ -719,9 +738,27 @@ function CellEditor({ field, value, onChange }: { field: FlowtableField; value: 
       </td>
     );
   }
+  // Date columns render an <input type="date">, which only accepts yyyy-MM-dd.
+  // Imported data is usually free-form text ("2/13/2026", "2026-02-13 10:31:16"),
+  // so coerce for display — otherwise switching a text column to Date blanks
+  // every cell. Store back the normalized yyyy-MM-dd on edit.
+  if (field.type === 'date') {
+    const display = toDateInputValue(value);
+    return (
+      <td className="border-r border-b p-0" style={cellStyle}>
+        <input
+          type="date"
+          key={display}
+          defaultValue={display}
+          title={display ? undefined : (value as string) ?? ''}
+          onBlur={(e) => { if (e.target.value !== display) onChange(e.target.value || null); }}
+          className={common}
+        />
+      </td>
+    );
+  }
   const inputType =
     field.type === 'number' ? 'number' :
-    field.type === 'date' ? 'date' :
     field.type === 'email' ? 'email' :
     field.type === 'url' ? 'url' :
     field.type === 'phone' ? 'tel' : 'text';
@@ -738,6 +775,32 @@ function CellEditor({ field, value, onChange }: { field: FlowtableField; value: 
       />
     </td>
   );
+}
+
+// Best-effort coercion of arbitrary imported date text to yyyy-MM-dd for
+// <input type="date">. Handles ISO (with or without time), M/D/YYYY and
+// D/M/YYYY (ambiguous → assumes the US M/D/YYYY that CSV exports usually emit).
+// Returns '' when it can't parse, so the cell stays editable without lying.
+function toDateInputValue(raw: unknown): string {
+  if (raw == null || raw === '') return '';
+  const s = String(raw).trim();
+  // Already yyyy-MM-dd (optionally followed by time) — take the date part.
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  // M/D/YYYY or D/M/YYYY
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (slash) {
+    const a = Number(slash[1]);
+    const b = Number(slash[2]);
+    const y = slash[3];
+    // If the first part can't be a month (>12), it must be the day.
+    const month = a > 12 ? b : a;
+    const day = a > 12 ? a : b;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+  return '';
 }
 
 // ---------- List view ----------

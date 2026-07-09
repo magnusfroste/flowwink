@@ -1057,6 +1057,10 @@ async function executeModuleAction(
       return await executeRiverAction(supabase, skillName, args);
     }
 
+    case 'flowtable': {
+      return await executeFlowtableAction(supabase, skillName, args);
+    }
+
     case 'globalElements': {
       return await executeGlobalBlocksAction(supabase, skillName, args);
     }
@@ -9196,6 +9200,277 @@ async function executeDbAction(
       // without writing per-table code.
       return await executeGenericCrud(supabase, table, skillName, args, auditCtx);
   }
+}
+
+// =============================================================================
+// Flowtable — query + record management over user-defined JSONB tables
+// =============================================================================
+
+// Flowtable data lives in flowtable_records.values (free-form JSONB keyed by
+// the table's field keys), so the generic CRUD engine can only filter on real
+// columns. These handlers push eq/neq/ilike filters down to PostgREST as
+// values->>key operators, evaluate numeric/emptiness ops in-handler over a
+// bounded scan, and expose count_by aggregation — the difference between
+// "agent pages 5 800 rows into context" and "agent asks one question".
+
+const FLOWTABLE_SCAN_CAP = 20000;
+const FLOWTABLE_PAGE = 1000;
+// Field keys come from fieldKeyify() in the UI (lowercase + underscores), but
+// hand-created keys could contain anything — only allow safe keys into
+// PostgREST filter/order strings.
+const safeFlowtableKey = (k: string): boolean => /^[a-zA-Z0-9_]+$/.test(k);
+
+async function resolveFlowtableTable(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<{ table?: any; error?: string }> {
+  const { table_id, table, base } = args as any;
+  if (table_id) {
+    const { data } = await supabase.from('flowtable_tables')
+      .select('id, name, slug, base_id').eq('id', table_id).maybeSingle();
+    if (!data) return { error: `Flowtable table ${table_id} not found` };
+    return { table: data };
+  }
+  if (!table) return { error: 'table_id or table (name/slug) is required' };
+  const term = sanitizeOrTerm(table);
+  let query = supabase.from('flowtable_tables')
+    .select('id, name, slug, base_id, flowtable_bases!inner(id, name, slug)')
+    .or(`slug.eq.${term},name.ilike.${term}`);
+  const { data: candidates, error } = await query.limit(10);
+  if (error) return { error: `Flowtable table lookup failed: ${error.message}` };
+  let matches = candidates || [];
+  if (base) {
+    const b = String(base).toLowerCase();
+    matches = matches.filter((t: any) =>
+      t.flowtable_bases?.slug === b || (t.flowtable_bases?.name || '').toLowerCase() === b);
+  }
+  if (matches.length === 0) return { error: `No Flowtable table matches '${table}'${base ? ` in base '${base}'` : ''}. Use list_flowtable_bases + list_flowtable_records to discover.` };
+  if (matches.length > 1) {
+    return { error: `Ambiguous table '${table}': ${matches.map((t: any) => `${t.flowtable_bases?.slug}/${t.slug}`).join(', ')}. Pass base or table_id.` };
+  }
+  return { table: matches[0] };
+}
+
+async function executeFlowtableAction(
+  supabase: any,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  if (skillName === 'query_flowtable') return await executeFlowtableQuery(supabase, args);
+  if (skillName === 'manage_flowtable_record') return await executeFlowtableRecord(supabase, args);
+  return { error: `Unknown flowtable skill: ${skillName}` };
+}
+
+async function executeFlowtableQuery(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const {
+    filters, search, order_by, ascending = true,
+    limit = 50, offset = 0, count_by,
+  } = args as any;
+
+  const resolved = await resolveFlowtableTable(supabase, args);
+  if (resolved.error) return { error: resolved.error };
+  const table = resolved.table;
+
+  const { data: fieldRows } = await supabase.from('flowtable_fields')
+    .select('key, name, type').eq('table_id', table.id).order('position');
+  const fields = fieldRows || [];
+  const fieldKeys = new Set(fields.map((f: any) => f.key));
+
+  // Validate filter fields up front — a typo'd key should error with the real
+  // keys listed, not silently match nothing.
+  const filterList: Array<{ field: string; op: string; value?: unknown }> =
+    Array.isArray(filters) ? filters : [];
+  for (const f of filterList) {
+    if (!f?.field || !safeFlowtableKey(f.field)) return { error: `Invalid filter field '${f?.field}'` };
+    if (!fieldKeys.has(f.field)) {
+      return { error: `Unknown field '${f.field}'. This table's fields: ${[...fieldKeys].join(', ')}` };
+    }
+  }
+  if (count_by && (!safeFlowtableKey(count_by) || !fieldKeys.has(count_by))) {
+    return { error: `Unknown count_by field '${count_by}'. Fields: ${[...fieldKeys].join(', ')}` };
+  }
+  if (order_by && (!safeFlowtableKey(order_by) || !fieldKeys.has(order_by))) {
+    return { error: `Unknown order_by field '${order_by}'. Fields: ${[...fieldKeys].join(', ')}` };
+  }
+
+  const PUSHDOWN_OPS = new Set(['eq', 'neq', 'ilike']);
+  const LOCAL_OPS = new Set(['gt', 'gte', 'lt', 'lte', 'is_empty', 'not_empty']);
+  const pushdown = filterList.filter((f) => PUSHDOWN_OPS.has(f.op));
+  const local = filterList.filter((f) => LOCAL_OPS.has(f.op));
+  const badOps = filterList.filter((f) => !PUSHDOWN_OPS.has(f.op) && !LOCAL_OPS.has(f.op));
+  if (badOps.length) {
+    return { error: `Unsupported op '${badOps[0].op}'. Supported: eq, neq, ilike (server-side); gt, gte, lt, lte (numeric), is_empty, not_empty.` };
+  }
+
+  const buildBase = () => {
+    let q = supabase.from('flowtable_records')
+      .select('id, values, created_at, updated_at')
+      .eq('table_id', table.id);
+    for (const f of pushdown) {
+      const col = `values->>${f.field}`;
+      if (f.op === 'ilike') q = q.filter(col, 'ilike', `%${sanitizeOrTerm(f.value)}%`);
+      else q = q.filter(col, f.op, String(f.value ?? ''));
+    }
+    if (search) {
+      const term = sanitizeOrTerm(search);
+      const keys = fields.map((f: any) => f.key).filter(safeFlowtableKey);
+      if (term && keys.length) {
+        q = q.or(keys.map((k: string) => `values->>${k}.ilike.%${term}%`).join(','));
+      }
+    }
+    return q;
+  };
+
+  const needsScan = local.length > 0 || !!count_by || !!order_by;
+
+  if (!needsScan) {
+    // Fast path — everything pushed down, page directly in the DB
+    const { data, error } = await buildBase()
+      .order('position', { ascending: true })
+      .range(offset, offset + Math.min(limit, 500) - 1);
+    if (error) return { error: `Flowtable query failed: ${error.message}` };
+    return {
+      table: { id: table.id, name: table.name, slug: table.slug },
+      fields,
+      items: data || [],
+      count: (data || []).length,
+      offset,
+    };
+  }
+
+  // Scan path — page through matches (pushdown applied), evaluate local ops,
+  // aggregate and sort in-handler. Bounded by FLOWTABLE_SCAN_CAP.
+  const matched: any[] = [];
+  let scanned = 0;
+  for (let page = 0; scanned < FLOWTABLE_SCAN_CAP; page++) {
+    const from = page * FLOWTABLE_PAGE;
+    const { data, error } = await buildBase()
+      .order('position', { ascending: true })
+      .range(from, from + FLOWTABLE_PAGE - 1);
+    if (error) return { error: `Flowtable scan failed: ${error.message}` };
+    const rows = data || [];
+    scanned += rows.length;
+    for (const r of rows) {
+      const v = r.values || {};
+      let ok = true;
+      for (const f of local) {
+        const raw = v[f.field];
+        if (f.op === 'is_empty') { if (!(raw === undefined || raw === null || raw === '')) ok = false; }
+        else if (f.op === 'not_empty') { if (raw === undefined || raw === null || raw === '') ok = false; }
+        else {
+          const a = Number(raw); const b = Number(f.value);
+          if (Number.isNaN(a) || Number.isNaN(b)) { ok = false; }
+          else if (f.op === 'gt') ok = a > b;
+          else if (f.op === 'gte') ok = a >= b;
+          else if (f.op === 'lt') ok = a < b;
+          else if (f.op === 'lte') ok = a <= b;
+        }
+        if (!ok) break;
+      }
+      if (ok) matched.push(r);
+    }
+    if (rows.length < FLOWTABLE_PAGE) break;
+  }
+
+  if (order_by) {
+    const dir = ascending ? 1 : -1;
+    matched.sort((x, y) => {
+      const a = x.values?.[order_by]; const b = y.values?.[order_by];
+      const an = Number(a); const bn = Number(b);
+      if (!Number.isNaN(an) && !Number.isNaN(bn)) return (an - bn) * dir;
+      return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true }) * dir;
+    });
+  }
+
+  const result: Record<string, unknown> = {
+    table: { id: table.id, name: table.name, slug: table.slug },
+    fields,
+    total_matched: matched.length,
+    scanned,
+    scan_capped: scanned >= FLOWTABLE_SCAN_CAP,
+    items: matched.slice(offset, offset + Math.min(limit, 500)),
+    offset,
+  };
+
+  if (count_by) {
+    const counts: Record<string, number> = {};
+    for (const r of matched) {
+      const key = String(r.values?.[count_by] ?? '(empty)');
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    // Sorted descending, capped so a high-cardinality field can't flood context
+    result.counts = Object.fromEntries(
+      Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 100),
+    );
+    result.distinct_values = Object.keys(counts).length;
+  }
+
+  return result;
+}
+
+async function executeFlowtableRecord(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action, id, values, merge = true } = args as any;
+  if (!action) return { error: 'action is required: create, update, delete or get' };
+
+  if (action === 'get' || action === 'update' || action === 'delete') {
+    if (!id) return { error: `id is required for ${action}` };
+  }
+
+  if (action === 'get') {
+    const { data, error } = await supabase.from('flowtable_records')
+      .select('id, table_id, values, created_at, updated_at').eq('id', id).maybeSingle();
+    if (error) return { error: `Get record failed: ${error.message}` };
+    if (!data) return { found: false, error: `Record ${id} not found` };
+    return { record: data };
+  }
+
+  if (action === 'delete') {
+    const { error } = await supabase.from('flowtable_records').delete().eq('id', id);
+    if (error) return { error: `Delete record failed: ${error.message}` };
+    return { deleted: true, id };
+  }
+
+  if (action === 'create') {
+    const resolved = await resolveFlowtableTable(supabase, args);
+    if (resolved.error) return { error: resolved.error };
+    const table = resolved.table;
+    if (!values || typeof values !== 'object') return { error: 'values (object keyed by field keys) is required for create' };
+    const { data: fieldRows } = await supabase.from('flowtable_fields')
+      .select('key').eq('table_id', table.id);
+    const known = new Set((fieldRows || []).map((f: any) => f.key));
+    const unknown = Object.keys(values).filter((k) => !known.has(k));
+    const { data, error } = await supabase.from('flowtable_records')
+      .insert({ table_id: table.id, values, position: Date.now() })
+      .select('id').single();
+    if (error) return { error: `Create record failed: ${error.message}` };
+    return {
+      created: true, id: data.id, table: table.name,
+      ...(unknown.length ? { warning: `Keys not among the table's fields (stored anyway, invisible in grid until a field exists): ${unknown.join(', ')}` } : {}),
+    };
+  }
+
+  if (action === 'update') {
+    const { data: existing, error: getErr } = await supabase.from('flowtable_records')
+      .select('id, values').eq('id', id).maybeSingle();
+    if (getErr) return { error: `Update lookup failed: ${getErr.message}` };
+    if (!existing) return { found: false, error: `Record ${id} not found` };
+    if (!values || typeof values !== 'object') return { error: 'values (object) is required for update' };
+    // JSONB update REPLACES the whole document — merge by default so an agent
+    // setting one field doesn't wipe the other columns of the row.
+    const next = merge ? { ...(existing.values || {}), ...values } : values;
+    const { error } = await supabase.from('flowtable_records')
+      .update({ values: next, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) return { error: `Update record failed: ${error.message}` };
+    return { updated: true, id, merged: !!merge };
+  }
+
+  return { error: `Unknown action '${action}'. Supported: create, update, delete, get.` };
 }
 
 // =============================================================================
