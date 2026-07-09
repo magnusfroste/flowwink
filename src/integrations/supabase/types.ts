@@ -23173,6 +23173,7 @@ export type Database = {
       invoice_status:
         | "draft"
         | "sent"
+        | "partially_paid"
         | "paid"
         | "cancelled"
         | "overdue"
@@ -23529,6 +23530,7 @@ export const Constants = {
       invoice_status: [
         "draft",
         "sent",
+        "partially_paid",
         "paid",
         "cancelled",
         "overdue",
