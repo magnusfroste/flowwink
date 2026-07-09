@@ -20443,6 +20443,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      list_flowtable_tables: {
+        Args: { p_base_id?: string; p_base_slug?: string }
+        Returns: Json
+      }
       list_payroll_lines: { Args: { p_run_id: string }; Returns: Json }
       list_payroll_runs: { Args: { p_limit?: number }; Returns: Json }
       list_quote_revisions: { Args: { p_quote_id: string }; Returns: Json }
