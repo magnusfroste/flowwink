@@ -6209,8 +6209,20 @@ async function executeSendInvoiceForOrder(
   // 5. Create or reuse invoice
   let invoice = existingInvoice;
   if (!invoice) {
-    const { count } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
-    const invoiceNumber = `INV-${String((count || 0) + 1).padStart(4, '0')}`;
+    // Use the canonical INV-YYYY-NNNNN series (same as manage_invoice create and
+    // quote convert_to_invoice). The old `INV-${count+1}` scheme was doubly wrong:
+    // a divergent format AND counting ALL invoice rows (incl. SUB-/CN-/POS-/CTR-
+    // document series), so it collided with and diverged from the real customer
+    // series — a sequential-numbering hazard (SE fortlöpande fakturanummer).
+    // Found by order-to-delivery QA 2026-07-09 (INV-0032 vs INV-2026-000NN).
+    const yr = new Date().getFullYear();
+    const { data: lastInv } = await supabase.from('invoices')
+      .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
+      .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
+    let nextNum = 1;
+    const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
+    if (lm) nextNum = parseInt(lm[1], 10) + 1;
+    const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
     const dueDate = new Date(Date.now() + due_days * 86400000).toISOString().slice(0, 10);
 
     const { data: created, error: createErr } = await supabase

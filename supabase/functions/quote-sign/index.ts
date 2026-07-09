@@ -159,11 +159,18 @@ Deno.serve(async (req: Request) => {
 
     // 5) On accept → auto-create invoice (Quote-to-Cash close)
     if (body.action === 'accept' && !quote.converted_to_invoice_id && !quote.invoice_id) {
-      // generate invoice number
-      const { count } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true });
-      const invoiceNumber = `INV-${String((count || 0) + 1).padStart(4, '0')}`;
+      // Canonical INV-YYYY-NNNNN series (matches manage_invoice / convert_to_invoice /
+      // send_invoice_for_order). The old INV-${count+1} scheme diverged in format AND
+      // counted every invoice-row series (SUB-/CN-/POS-/CTR-), breaking sequential
+      // customer-invoice numbering. Fixed in the same 2026-07-09 sweep.
+      const yr = new Date().getFullYear();
+      const { data: lastInv } = await supabase.from('invoices')
+        .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
+        .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
+      let nextNum = 1;
+      const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
+      if (lm) nextNum = parseInt(lm[1], 10) + 1;
+      const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
 
       // Default due date: 14 days
       const due = new Date();
