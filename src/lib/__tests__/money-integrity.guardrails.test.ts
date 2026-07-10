@@ -34,6 +34,16 @@ describe('Money integrity guardrails', () => {
     expect(pay.instructions ?? '').not.toMatch(/no p_reference/i);
   });
 
+  it('convert_to_invoice carries the quote\'s stored totals (bill what the customer accepted)', () => {
+    // The quote's per-line tax rounding (what the customer sees/e-signs/pay-now pays) and a
+    // doc-level recompute diverge by öre (5×199 @25%: 1245 vs 1244) — and a recompute also
+    // ignores quote-level discount_cents. The convert block must read quote.total_cents.
+    const src = readFileSync(join(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf8');
+    const convertBlock = src.slice(src.indexOf("action === 'convert_to_invoice'"), src.indexOf("action === 'convert_to_invoice'") + 4000);
+    expect(convertBlock).toMatch(/quote\.total_cents/);
+    expect(convertBlock).toMatch(/quote\.subtotal_cents/);
+  });
+
   it('the timesheet invoice generator uses the canonical INV-YYYY-NNNNN series', () => {
     // bulk_invoice_from_timesheets was the 3rd site minting a count-based INV number.
     // Its fix migration must build the number from the year + last INV-YYYY-%, not count(*).
