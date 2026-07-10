@@ -9343,7 +9343,7 @@ async function executeFlowtableQuery(
 ): Promise<unknown> {
   const {
     filters, search, order_by, ascending = true,
-    limit = 50, offset = 0, count_by, resolve_links = false,
+    limit = 50, offset = 0, count_by, resolve_links = false, resolve_computed = false,
   } = args as any;
 
   const resolved = await resolveFlowtableTable(supabase, args);
@@ -9367,13 +9367,26 @@ async function executeFlowtableQuery(
       .select('id, name').in('id', targetIds);
     for (const t of (targs || [])) linkTargetNames[t.id] = t.name;
   }
-  // Public field schema — link fields carry their target table id + name.
-  const fields = rawFields.map((f: any) => f.type === 'link'
-    ? { key: f.key, name: f.name, type: f.type,
-        link_table_id: f.options?.link_table_id,
-        link_table_name: linkTargetNames[f.options?.link_table_id],
-        link_display_field: f.options?.display_field }
-    : { key: f.key, name: f.name, type: f.type });
+  // Lookup fields pull a field from a linked row; rollup fields aggregate rows
+  // in another table that link back here. Both are derived (computed on read),
+  // opt-in via resolve_computed → item._computed[field].
+  const lookupFields = rawFields.filter((f: any) => f.type === 'lookup' && f.options?.via_link_field && f.options?.target_field);
+  const rollupFields = rawFields.filter((f: any) => f.type === 'rollup' && f.options?.source_table_id && f.options?.source_link_field);
+
+  // Public field schema — link/lookup/rollup fields carry their config so an
+  // agent understands the relation and can traverse it.
+  const fields = rawFields.map((f: any) => {
+    if (f.type === 'link') return { key: f.key, name: f.name, type: f.type,
+      link_table_id: f.options?.link_table_id,
+      link_table_name: linkTargetNames[f.options?.link_table_id],
+      link_display_field: f.options?.display_field };
+    if (f.type === 'lookup') return { key: f.key, name: f.name, type: f.type,
+      via_link_field: f.options?.via_link_field, target_field: f.options?.target_field };
+    if (f.type === 'rollup') return { key: f.key, name: f.name, type: f.type,
+      source_table_id: f.options?.source_table_id, source_link_field: f.options?.source_link_field,
+      agg: f.options?.agg || 'count', agg_field: f.options?.agg_field };
+    return { key: f.key, name: f.name, type: f.type };
+  });
 
   // Validate filter fields up front — a typo'd key should error with the real
   // keys listed, not silently match nothing.
@@ -9413,6 +9426,66 @@ async function executeFlowtableQuery(
         const display = tv ? String((disp ? tv[disp] : undefined) ?? Object.values(tv)[0] ?? linkId) : '(missing)';
         it._links = it._links || {};
         it._links[lf.key] = { id: linkId, display };
+      }
+    }
+  };
+
+  // Compute lookup + rollup (derived) fields for a page of items (opt-in via
+  // resolve_computed). Lookup: follow one of THIS table's link fields to the
+  // referenced row and read a field. Rollup: aggregate rows in another table
+  // that link back to each item's id. Batched per referenced table.
+  const resolveComputedOnItems = async (items: any[]): Promise<void> => {
+    if (!resolve_computed || !items.length || (!lookupFields.length && !rollupFields.length)) return;
+
+    for (const lu of lookupFields) {
+      const viaKey = lu.options.via_link_field;
+      const targetField = lu.options.target_field;
+      const viaLink = linkFields.find((lf: any) => lf.key === viaKey)
+        ?? rawFields.find((f: any) => f.key === viaKey && f.type === 'link');
+      const targetTableId = viaLink?.options?.link_table_id;
+      if (!targetTableId) continue;
+      const ids = [...new Set(items.map((it) => it.values?.[viaKey]).filter(Boolean))];
+      if (!ids.length) continue;
+      const { data: targetRows } = await supabase.from('flowtable_records')
+        .select('id, values').in('id', ids);
+      const byId: Record<string, any> = {};
+      for (const r of (targetRows || [])) byId[r.id] = r.values || {};
+      for (const it of items) {
+        const linkId = it.values?.[viaKey];
+        if (!linkId) continue;
+        it._computed = it._computed || {};
+        it._computed[lu.key] = byId[linkId]?.[targetField] ?? null;
+      }
+    }
+
+    for (const ru of rollupFields) {
+      const { source_table_id, source_link_field, agg = 'count', agg_field } = ru.options;
+      const rowIds = [...new Set(items.map((it) => it.id))];
+      // Pull source rows that link to any item in this page, then bucket by id.
+      const { data: srcRows } = await supabase.from('flowtable_records')
+        .select('id, values').eq('table_id', source_table_id)
+        .in(`values->>${source_link_field}`, rowIds);
+      const bucket: Record<string, any[]> = {};
+      for (const r of (srcRows || [])) {
+        const k = r.values?.[source_link_field];
+        if (!k) continue;
+        (bucket[k] = bucket[k] || []).push(r.values || {});
+      }
+      for (const it of items) {
+        const rows = bucket[it.id] || [];
+        let out: number | null;
+        if (agg === 'count') out = rows.length;
+        else {
+          const nums = rows.map((v) => Number(agg_field ? v[agg_field] : NaN)).filter((n) => !Number.isNaN(n));
+          if (!agg_field || !nums.length) out = agg_field ? 0 : null;
+          else if (agg === 'sum') out = nums.reduce((a, b) => a + b, 0);
+          else if (agg === 'avg') out = Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100;
+          else if (agg === 'min') out = Math.min(...nums);
+          else if (agg === 'max') out = Math.max(...nums);
+          else out = null;
+        }
+        it._computed = it._computed || {};
+        it._computed[ru.key] = out;
       }
     }
   };
@@ -9460,6 +9533,7 @@ async function executeFlowtableQuery(
     if (error) return { error: `Flowtable query failed: ${error.message}` };
     const items = data || [];
     await resolveLinksOnItems(items);
+    await resolveComputedOnItems(items);
     return {
       table: { id: table.id, name: table.name, slug: table.slug },
       fields,
@@ -9516,6 +9590,7 @@ async function executeFlowtableQuery(
 
   const pageItems = matched.slice(offset, offset + Math.min(limit, 500));
   await resolveLinksOnItems(pageItems);
+  await resolveComputedOnItems(pageItems);
   const result: Record<string, unknown> = {
     table: { id: table.id, name: table.name, slug: table.slug },
     fields,

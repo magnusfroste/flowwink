@@ -12,7 +12,9 @@ export type FlowtableFieldType =
   | 'url'
   | 'email'
   | 'phone'
-  | 'link';
+  | 'link'
+  | 'lookup'
+  | 'rollup';
 
 export interface FlowtableBase {
   id: string;

@@ -54,9 +54,12 @@ const FIELD_TYPES: { value: FlowtableFieldType; label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'phone', label: 'Phone' },
   { value: 'link', label: 'Link to table' },
+  { value: 'lookup', label: 'Lookup (from linked row)' },
+  { value: 'rollup', label: 'Rollup (aggregate linked rows)' },
 ];
 
-const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link']);
+const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link', 'lookup', 'rollup']);
+const ROLLUP_AGGS = ['count', 'sum', 'avg', 'min', 'max'] as const;
 
 export default function FlowtablePage() {
   const enabled = useIsModuleEnabled('flowtable');
@@ -648,6 +651,7 @@ function GridView(props: {
                       options={newOptions}
                       onChange={setNewOptions}
                       tables={tables}
+                      fields={fields}
                     />
                   )}
                   <Button
@@ -690,6 +694,8 @@ function GridView(props: {
                   key={f.id}
                   field={f}
                   value={r.values?.[f.key]}
+                  record={r}
+                  fields={fields}
                   onChange={(v) => props.onUpdateRecord(r.id, { ...r.values, [f.key]: v })}
                 />
               ))}
@@ -714,6 +720,7 @@ function GridView(props: {
         <FieldConfigDialog
           field={configField}
           tables={tables}
+          fields={fields}
           onClose={() => setConfigField(null)}
           onSave={(patch) => { props.onConfigureField(configField.id, patch); setConfigField(null); }}
         />
@@ -724,12 +731,14 @@ function GridView(props: {
 
 // Type-specific options editor, shared by the add-field popover and the
 // per-field config dialog. select/multiselect → user-defined choices;
-// link → target table + which field to display.
-function FieldOptionsEditor({ type, options, onChange, tables }: {
+// link → target table + display field; lookup → pull a field from the linked
+// row; rollup → aggregate rows from another table that link back here.
+function FieldOptionsEditor({ type, options, onChange, tables, fields }: {
   type: FlowtableFieldType;
   options: Record<string, unknown>;
   onChange: (o: Record<string, unknown>) => void;
   tables: FlowtableTable[];
+  fields: FlowtableField[];
 }) {
   if (type === 'select' || type === 'multiselect') {
     const choices = (options.choices as string[]) ?? [];
@@ -753,7 +762,114 @@ function FieldOptionsEditor({ type, options, onChange, tables }: {
     const targetId = (options.link_table_id as string) || '';
     return <LinkOptionsEditor targetId={targetId} options={options} onChange={onChange} tables={tables} />;
   }
+  if (type === 'lookup') {
+    return <LookupOptionsEditor options={options} onChange={onChange} fields={fields} />;
+  }
+  if (type === 'rollup') {
+    return <RollupOptionsEditor options={options} onChange={onChange} tables={tables} />;
+  }
   return null;
+}
+
+// Lookup — pull a field from the row referenced by one of THIS table's link
+// columns (e.g. Case → show the linked Product's price). Pick a link field in
+// this table, then a field from that link's target table.
+function LookupOptionsEditor({ options, onChange, fields }: {
+  options: Record<string, unknown>;
+  onChange: (o: Record<string, unknown>) => void;
+  fields: FlowtableField[];
+}) {
+  const viaKey = (options.via_link_field as string) || '';
+  const linkFields = fields.filter((f) => f.type === 'link' && f.options?.link_table_id);
+  const viaField = linkFields.find((f) => f.key === viaKey);
+  const targetTableId = viaField?.options?.link_table_id as string | undefined;
+  const { data: targetFields = [] } = useFlowtableFields(targetTableId);
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Via link field</Label>
+        <Select value={viaKey} onValueChange={(v) => onChange({ via_link_field: v, target_field: '' })}>
+          <SelectTrigger><SelectValue placeholder={linkFields.length ? 'Pick a link field' : 'No link fields yet'} /></SelectTrigger>
+          <SelectContent>
+            {linkFields.map((f) => <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {targetTableId && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Show which field</Label>
+          <Select value={(options.target_field as string) || ''} onValueChange={(v) => onChange({ ...options, target_field: v })}>
+            <SelectTrigger><SelectValue placeholder="Field from linked row" /></SelectTrigger>
+            <SelectContent>
+              {targetFields.map((f) => <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Rollup — aggregate rows from another table that link back to this row
+// (e.g. Product → count(Cases) or sum(Order.total)). Pick the source table,
+// the link field in it that points here, an aggregation, and (for
+// sum/avg/min/max) the field to aggregate.
+function RollupOptionsEditor({ options, onChange, tables }: {
+  options: Record<string, unknown>;
+  onChange: (o: Record<string, unknown>) => void;
+  tables: FlowtableTable[];
+}) {
+  const sourceId = (options.source_table_id as string) || '';
+  const agg = (options.agg as string) || 'count';
+  const { data: sourceFields = [] } = useFlowtableFields(sourceId || undefined);
+  const linkFields = sourceFields.filter((f) => f.type === 'link');
+  const numericish = sourceFields.filter((f) => ['number', 'text'].includes(f.type));
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Source table (that links here)</Label>
+        <Select value={sourceId} onValueChange={(v) => onChange({ source_table_id: v, source_link_field: '', agg: 'count' })}>
+          <SelectTrigger><SelectValue placeholder="Pick a table" /></SelectTrigger>
+          <SelectContent>
+            {tables.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {sourceId && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Its link field (pointing here)</Label>
+          <Select value={(options.source_link_field as string) || ''} onValueChange={(v) => onChange({ ...options, source_link_field: v })}>
+            <SelectTrigger><SelectValue placeholder={linkFields.length ? 'Pick a link field' : 'No link fields'} /></SelectTrigger>
+            <SelectContent>
+              {linkFields.map((f) => <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {sourceId && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Aggregate</Label>
+          <Select value={agg} onValueChange={(v) => onChange({ ...options, agg: v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROLLUP_AGGS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {sourceId && agg !== 'count' && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Of field</Label>
+          <Select value={(options.agg_field as string) || ''} onValueChange={(v) => onChange({ ...options, agg_field: v })}>
+            <SelectTrigger><SelectValue placeholder="Numeric field" /></SelectTrigger>
+            <SelectContent>
+              {numericish.map((f) => <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function LinkOptionsEditor({ targetId, options, onChange, tables }: {
@@ -796,9 +912,10 @@ function LinkOptionsEditor({ targetId, options, onChange, tables }: {
 }
 
 // Per-field config dialog — rename, retype, and edit type-specific options.
-function FieldConfigDialog({ field, tables, onClose, onSave }: {
+function FieldConfigDialog({ field, tables, fields, onClose, onSave }: {
   field: FlowtableField;
   tables: FlowtableTable[];
+  fields: FlowtableField[];
   onClose: () => void;
   onSave: (patch: Partial<FlowtableField>) => void;
 }) {
@@ -827,7 +944,7 @@ function FieldConfigDialog({ field, tables, onClose, onSave }: {
             </Select>
           </div>
           {TYPES_WITH_OPTIONS.has(type) && (
-            <FieldOptionsEditor type={type} options={options} onChange={setOptions} tables={tables} />
+            <FieldOptionsEditor type={type} options={options} onChange={setOptions} tables={tables} fields={fields} />
           )}
         </div>
         <DialogFooter>
@@ -841,9 +958,21 @@ function FieldConfigDialog({ field, tables, onClose, onSave }: {
   );
 }
 
-function CellEditor({ field, value, onChange }: { field: FlowtableField; value: unknown; onChange: (v: unknown) => void }) {
+function CellEditor({ field, value, record, fields, onChange }: {
+  field: FlowtableField;
+  value: unknown;
+  record?: FlowtableRecord;
+  fields?: FlowtableField[];
+  onChange: (v: unknown) => void;
+}) {
   const common = 'h-9 w-full px-2 bg-transparent border-0 outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background';
   const cellStyle = { width: field.width, minWidth: field.width } as const;
+  if (field.type === 'lookup') {
+    return <LookupCell field={field} record={record} fields={fields ?? []} cellStyle={cellStyle} />;
+  }
+  if (field.type === 'rollup') {
+    return <RollupCell field={field} record={record} cellStyle={cellStyle} />;
+  }
   if (field.type === 'checkbox') {
     return (
       <td className="border-r border-b p-0" style={cellStyle}>
@@ -991,6 +1120,74 @@ function LinkCell({ field, value, onChange, cellStyle, common }: {
           </Command>
         </PopoverContent>
       </Popover>
+    </td>
+  );
+}
+
+// Lookup cell — read-only. Follows one of this table's link fields to the
+// referenced row and shows a field from it (e.g. Case → linked Product.price).
+function LookupCell({ field, record, fields, cellStyle }: {
+  field: FlowtableField;
+  record?: FlowtableRecord;
+  fields: FlowtableField[];
+  cellStyle: { width: number; minWidth: number };
+}) {
+  const viaKey = field.options?.via_link_field as string | undefined;
+  const targetField = field.options?.target_field as string | undefined;
+  const viaField = fields.find((f) => f.key === viaKey);
+  const targetTableId = viaField?.options?.link_table_id as string | undefined;
+  const { data: rows = [] } = useFlowtableRecords(targetTableId);
+  const linkedId = viaKey ? (record?.values?.[viaKey] as string | undefined) : undefined;
+  const targetRow = linkedId ? rows.find((r) => r.id === linkedId) : undefined;
+  const out = targetRow && targetField ? targetRow.values?.[targetField] : undefined;
+  return (
+    <td className="border-r border-b p-0" style={cellStyle}>
+      <div className="h-9 px-2 flex items-center text-sm text-muted-foreground truncate">
+        {!viaKey || !targetField
+          ? <span className="text-xs italic">configure lookup</span>
+          : out != null && out !== '' ? String(out) : ''}
+      </div>
+    </td>
+  );
+}
+
+// Rollup cell — read-only. Aggregates rows in another table that link back to
+// this row (e.g. Product → count(Cases), sum(Order.total)).
+function RollupCell({ field, record, cellStyle }: {
+  field: FlowtableField;
+  record?: FlowtableRecord;
+  cellStyle: { width: number; minWidth: number };
+}) {
+  const sourceTableId = field.options?.source_table_id as string | undefined;
+  const sourceLinkField = field.options?.source_link_field as string | undefined;
+  const agg = (field.options?.agg as string) || 'count';
+  const aggField = field.options?.agg_field as string | undefined;
+  const { data: rows = [] } = useFlowtableRecords(sourceTableId);
+
+  let out: string = '';
+  if (!sourceTableId || !sourceLinkField) {
+    out = 'configure rollup';
+  } else if (record) {
+    const matches = rows.filter((r) => r.values?.[sourceLinkField] === record.id);
+    if (agg === 'count') {
+      out = String(matches.length);
+    } else {
+      const nums = matches
+        .map((r) => Number(aggField ? r.values?.[aggField] : undefined))
+        .filter((n) => !Number.isNaN(n));
+      if (!aggField) out = '—';
+      else if (!nums.length) out = '0';
+      else if (agg === 'sum') out = String(nums.reduce((a, b) => a + b, 0));
+      else if (agg === 'avg') out = String(Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100);
+      else if (agg === 'min') out = String(Math.min(...nums));
+      else if (agg === 'max') out = String(Math.max(...nums));
+    }
+  }
+  return (
+    <td className="border-r border-b p-0" style={cellStyle}>
+      <div className="h-9 px-2 flex items-center text-sm tabular-nums text-muted-foreground">
+        {out === 'configure rollup' ? <span className="text-xs italic">{out}</span> : out}
+      </div>
     </td>
   );
 }
