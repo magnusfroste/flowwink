@@ -21859,6 +21859,7 @@ export type Database = {
           p_invoice_id: string
           p_method?: string
           p_paid_at?: string
+          p_reference?: string
         }
         Returns: Json
       }
