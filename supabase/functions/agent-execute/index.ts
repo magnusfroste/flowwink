@@ -9025,6 +9025,11 @@ async function executeDbAction(
           body_markdown: a.body_markdown || null,
           file_url: a.file_url || null,
         };
+        // Recurring-billing config (lets an agent enable generate_contract_invoice; the
+        // billing_* columns were previously unreachable via the skill — QA 2026-07-10).
+        for (const k of ['billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate']) {
+          if (a[k] !== undefined) insertData[k] = a[k];
+        }
         const { data, error } = await supabase.from('contracts').insert(insertData)
           .select('id, title, status').single();
         if (error) throw new Error(`Create contract failed: ${error.message}`);
@@ -9034,7 +9039,7 @@ async function executeDbAction(
       if (action === 'update') {
         const { contract_id, ...rest } = args as any;
         if (!contract_id) throw new Error('contract_id is required');
-        const allowed = ['title', 'counterparty_name', 'counterparty_email', 'contract_type', 'status', 'start_date', 'end_date', 'renewal_type', 'renewal_notice_days', 'value_cents', 'currency', 'notes', 'body_markdown', 'file_url'];
+        const allowed = ['title', 'counterparty_name', 'counterparty_email', 'contract_type', 'status', 'start_date', 'end_date', 'renewal_type', 'renewal_notice_days', 'value_cents', 'currency', 'notes', 'body_markdown', 'file_url', 'billing_enabled', 'billing_amount_cents', 'billing_interval', 'billing_interval_count', 'billing_next_date', 'billing_due_in_days', 'billing_tax_rate'];
         const updates: Record<string, unknown> = {};
         for (const k of allowed) if (rest[k] !== undefined) updates[k] = rest[k];
         if (updates.status && !VALID_CONTRACT_STATUS.has(updates.status as string)) {
