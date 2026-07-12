@@ -19470,6 +19470,7 @@ export type Database = {
         Args: { p_fiscal_year: number; p_period_month?: number }
         Returns: Json
       }
+      build_or_tsquery: { Args: { query_text: string }; Returns: unknown }
       bulk_advance_approvals: {
         Args: {
           p_comment?: string
@@ -21556,6 +21557,30 @@ export type Database = {
       mark_webinar_attendance: {
         Args: { p_attended?: boolean; p_registration_id: string }
         Returns: Json
+      }
+      match_consultants: {
+        Args: {
+          match_count?: number
+          only_active?: boolean
+          query_embedding: string
+          query_text?: string
+          rrf_k?: number
+          semantic_weight?: number
+        }
+        Returns: {
+          availability: string
+          experience_years: number
+          hybrid_score: number
+          id: string
+          name: string
+          semantic_rank: number
+          semantic_score: number
+          skills: string[]
+          summary: string
+          text_rank: number
+          text_score: number
+          title: string
+        }[]
       }
       match_internal_candidates: {
         Args: { p_job_posting_id: string; p_limit?: number }
