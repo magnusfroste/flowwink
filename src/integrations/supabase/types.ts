@@ -996,6 +996,39 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_trust_policies: {
+        Row: {
+          actor: string
+          created_at: string
+          created_by: string | null
+          effective_trust_level: string
+          id: string
+          note: string | null
+          skill_category: string | null
+          skill_name: string | null
+        }
+        Insert: {
+          actor?: string
+          created_at?: string
+          created_by?: string | null
+          effective_trust_level: string
+          id?: string
+          note?: string | null
+          skill_category?: string | null
+          skill_name?: string | null
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          created_by?: string | null
+          effective_trust_level?: string
+          id?: string
+          note?: string | null
+          skill_category?: string | null
+          skill_name?: string | null
+        }
+        Relationships: []
+      }
       agent_workflows: {
         Row: {
           created_at: string
@@ -20022,6 +20055,19 @@ export type Database = {
         }[]
       }
       flag_at_risk_subscriptions: { Args: never; Returns: Json }
+      flowpilot_approved_pending: {
+        Args: { p_window_hours?: number }
+        Returns: {
+          activity_id: string
+          approval_request_id: string
+          approved_at: string
+          created_at: string
+          input: Json
+          pending_operation_id: string
+          skill_id: string
+          skill_name: string
+        }[]
+      }
       fulfill_order_line: {
         Args: { p_line_id: string; p_qty?: number }
         Returns: Json
@@ -22108,6 +22154,15 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      resolve_agent_trust: {
+        Args: {
+          p_agent_type: string
+          p_base_trust: string
+          p_skill_category: string
+          p_skill_name: string
+        }
+        Returns: string
+      }
       resolve_approval: {
         Args: {
           p_comment?: string
@@ -23085,6 +23140,7 @@ export type Database = {
         | "pending_approval"
         | "approved"
         | "rejected"
+        | "expired"
       agent_memory_category:
         | "preference"
         | "context"
@@ -23439,6 +23495,7 @@ export const Constants = {
         "pending_approval",
         "approved",
         "rejected",
+        "expired",
       ],
       agent_memory_category: [
         "preference",
