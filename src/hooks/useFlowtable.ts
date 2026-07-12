@@ -29,13 +29,26 @@ export interface FlowtableBase {
   updated_at: string;
 }
 
+export interface FlowtableViewFilter {
+  field: string;
+  op: 'eq' | 'neq' | 'contains' | 'gt' | 'lt' | 'empty' | 'not_empty';
+  value?: string;
+}
+export interface FlowtableViewConfig {
+  filters?: FlowtableViewFilter[];
+  sort?: { field: string; dir: 'asc' | 'desc' } | null;
+  group_by?: string | null;   // grid grouping (optional)
+  kanban_field?: string | null; // field grouped into columns in kanban view
+}
+
 export interface FlowtableTable {
   id: string;
   base_id: string;
   name: string;
   slug: string;
-  view_mode: 'grid' | 'list' | 'card';
+  view_mode: 'grid' | 'list' | 'card' | 'kanban';
   position: number;
+  view_config?: FlowtableViewConfig;
 }
 
 export interface FlowtableField {

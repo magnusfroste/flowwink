@@ -30,7 +30,7 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table2, Plus, Download, Upload, MoreHorizontal, Trash2, ChevronDown, LayoutGrid, List as ListIcon, Rows3,
-  Send, Users, X, Database, PanelLeft, PanelRight,
+  Send, Users, X, Database, PanelLeft, PanelRight, Filter, ArrowUpDown, Columns3, GripVertical,
 } from 'lucide-react';
 import {
   useFlowtableBases, useCreateBase, useUpdateBase, useDeleteBase,
@@ -40,7 +40,12 @@ import {
   usePushToCrmLeads,
   fieldKeyify,
   type FlowtableFieldType, type FlowtableRecord, type FlowtableField, type FlowtableTable,
+  type FlowtableViewConfig, type FlowtableViewFilter,
 } from '@/hooks/useFlowtable';
+import {
+  DndContext, closestCorners, PointerSensor, useSensor, useSensors, DragOverlay,
+  useDroppable, useDraggable, type DragStartEvent, type DragEndEvent,
+} from '@dnd-kit/core';
 
 const FIELD_TYPES: { value: FlowtableFieldType; label: string }[] = [
   { value: 'text', label: 'Single line text' },
@@ -60,6 +65,50 @@ const FIELD_TYPES: { value: FlowtableFieldType; label: string }[] = [
 
 const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link', 'lookup', 'rollup']);
 const ROLLUP_AGGS = ['count', 'sum', 'avg', 'min', 'max'] as const;
+
+const FILTER_OPS: { value: FlowtableViewFilter['op']; label: string; needsValue: boolean }[] = [
+  { value: 'eq', label: 'is', needsValue: true },
+  { value: 'neq', label: 'is not', needsValue: true },
+  { value: 'contains', label: 'contains', needsValue: true },
+  { value: 'gt', label: '>', needsValue: true },
+  { value: 'lt', label: '<', needsValue: true },
+  { value: 'not_empty', label: 'is not empty', needsValue: false },
+  { value: 'empty', label: 'is empty', needsValue: false },
+];
+
+// Apply a view's filters + sort to the loaded records (client-side; records for
+// a table are already in memory). Feeds grid, list, card and kanban alike.
+function applyViewConfig(records: FlowtableRecord[], cfg?: FlowtableViewConfig): FlowtableRecord[] {
+  let out = records;
+  const filters = cfg?.filters ?? [];
+  if (filters.length) {
+    out = out.filter((r) => filters.every((f) => {
+      const raw = r.values?.[f.field];
+      const s = raw == null ? '' : String(raw);
+      switch (f.op) {
+        case 'empty': return s.trim() === '';
+        case 'not_empty': return s.trim() !== '';
+        case 'eq': return s.toLowerCase() === (f.value ?? '').toLowerCase();
+        case 'neq': return s.toLowerCase() !== (f.value ?? '').toLowerCase();
+        case 'contains': return s.toLowerCase().includes((f.value ?? '').toLowerCase());
+        case 'gt': return Number(raw) > Number(f.value);
+        case 'lt': return Number(raw) < Number(f.value);
+        default: return true;
+      }
+    }));
+  }
+  if (cfg?.sort?.field) {
+    const { field, dir } = cfg.sort;
+    const mul = dir === 'desc' ? -1 : 1;
+    out = [...out].sort((a, b) => {
+      const av = a.values?.[field]; const bv = b.values?.[field];
+      const an = Number(av); const bn = Number(bv);
+      if (!Number.isNaN(an) && !Number.isNaN(bn)) return (an - bn) * mul;
+      return String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true }) * mul;
+    });
+  }
+  return out;
+}
 
 export default function FlowtablePage() {
   const enabled = useIsModuleEnabled('flowtable');
@@ -96,6 +145,10 @@ export default function FlowtablePage() {
 
   const { data: fields = [] } = useFlowtableFields(activeTable?.id);
   const { data: records = [] } = useFlowtableRecords(activeTable?.id);
+  const displayedRecords = useMemo(
+    () => applyViewConfig(records, activeTable?.view_config),
+    [records, activeTable?.view_config],
+  );
   const createField = useCreateField();
   const deleteField = useDeleteField();
   const updateField = useUpdateField();
@@ -379,8 +432,8 @@ export default function FlowtablePage() {
                   {/* Toolbar */}
                   <div className="border-b px-3 py-2 flex items-center gap-2 bg-background">
                     <div className="flex items-center rounded-md border overflow-hidden text-xs">
-                      {(['grid', 'list', 'card'] as const).map((mode) => {
-                        const Icon = mode === 'grid' ? Rows3 : mode === 'list' ? ListIcon : LayoutGrid;
+                      {(['grid', 'list', 'card', 'kanban'] as const).map((mode) => {
+                        const Icon = mode === 'grid' ? Rows3 : mode === 'list' ? ListIcon : mode === 'card' ? LayoutGrid : Columns3;
                         return (
                           <button
                             key={mode}
@@ -397,6 +450,13 @@ export default function FlowtablePage() {
                         );
                       })}
                     </div>
+                    <ViewToolbar
+                      fields={fields}
+                      config={activeTable.view_config ?? {}}
+                      onChange={(view_config) =>
+                        updateTable.mutate({ id: activeTable.id, base_id: activeBase.id, patch: { view_config } })
+                      }
+                    />
                     <div className="flex-1" />
                     {selected.size > 0 && (
                       <>
@@ -455,10 +515,22 @@ export default function FlowtablePage() {
 
                   {/* View */}
                   <div className="flex-1 overflow-auto">
-                    {activeTable.view_mode === 'card' ? (
+                    {activeTable.view_mode === 'kanban' ? (
+                      <KanbanView
+                        fields={fields}
+                        records={displayedRecords}
+                        config={activeTable.view_config ?? {}}
+                        onChangeConfig={(view_config) =>
+                          updateTable.mutate({ id: activeTable.id, base_id: activeBase.id, patch: { view_config } })
+                        }
+                        onUpdate={(id, values) =>
+                          updateRecord.mutate({ id, table_id: activeTable.id, values })
+                        }
+                      />
+                    ) : activeTable.view_mode === 'card' ? (
                       <CardView
                         fields={fields}
-                        records={records}
+                        records={displayedRecords}
                         onUpdate={(id, values) =>
                           updateRecord.mutate({ id, table_id: activeTable.id, values })
                         }
@@ -466,7 +538,7 @@ export default function FlowtablePage() {
                     ) : activeTable.view_mode === 'list' ? (
                       <ListView
                         fields={fields}
-                        records={records}
+                        records={displayedRecords}
                         selected={selected}
                         setSelected={setSelected}
                         onUpdate={(id, values) =>
@@ -476,7 +548,7 @@ export default function FlowtablePage() {
                     ) : (
                       <GridView
                         fields={fields}
-                        records={records}
+                        records={displayedRecords}
                         tables={tables}
                         selected={selected}
                         setSelected={setSelected}
@@ -1216,6 +1288,291 @@ function toDateInputValue(raw: unknown): string {
     }
   }
   return '';
+}
+
+// ---------- View toolbar: filter + sort (persisted per table) ----------
+function ViewToolbar({ fields, config, onChange }: {
+  fields: FlowtableField[];
+  config: FlowtableViewConfig;
+  onChange: (c: FlowtableViewConfig) => void;
+}) {
+  const filters = config.filters ?? [];
+  const sort = config.sort ?? null;
+  const activeCount = filters.length;
+  const setFilters = (next: FlowtableViewFilter[]) => onChange({ ...config, filters: next });
+  return (
+    <div className="flex items-center gap-1.5">
+      {/* Filter */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant={activeCount ? 'secondary' : 'ghost'} className="h-8 gap-1.5 text-xs">
+            <Filter className="h-3.5 w-3.5" />
+            Filter
+            {activeCount > 0 && (
+              <span className="ml-0.5 rounded-full bg-primary/15 text-primary px-1.5 text-[10px] font-semibold">{activeCount}</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-[26rem] p-3 space-y-2">
+          {filters.length === 0 && (
+            <p className="text-xs text-muted-foreground px-0.5 py-1">No filters. Show all rows.</p>
+          )}
+          {filters.map((f, i) => {
+            const opMeta = FILTER_OPS.find((o) => o.value === f.op);
+            return (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground w-8 shrink-0">{i === 0 ? 'Where' : 'and'}</span>
+                <Select value={f.field} onValueChange={(v) => setFilters(filters.map((x, j) => j === i ? { ...x, field: v } : x))}>
+                  <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Field" /></SelectTrigger>
+                  <SelectContent>
+                    {fields.map((fl) => <SelectItem key={fl.key} value={fl.key}>{fl.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={f.op} onValueChange={(v) => setFilters(filters.map((x, j) => j === i ? { ...x, op: v as FlowtableViewFilter['op'] } : x))}>
+                  <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FILTER_OPS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {opMeta?.needsValue && (
+                  <Input
+                    className="h-8 text-xs w-28"
+                    value={f.value ?? ''}
+                    onChange={(e) => setFilters(filters.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}
+                    placeholder="value"
+                  />
+                )}
+                <button className="text-muted-foreground hover:text-destructive shrink-0" onClick={() => setFilters(filters.filter((_, j) => j !== i))}>
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
+          <div className="flex items-center justify-between pt-1">
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
+              onClick={() => setFilters([...filters, { field: fields[0]?.key ?? '', op: 'contains', value: '' }])}
+              disabled={!fields.length}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add condition
+            </Button>
+            {filters.length > 0 && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground" onClick={() => setFilters([])}>
+                Clear all
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Sort */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant={sort ? 'secondary' : 'ghost'} className="h-8 gap-1.5 text-xs">
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            {sort ? `Sorted by ${fields.find((f) => f.key === sort.field)?.name ?? sort.field}` : 'Sort'}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 p-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Select value={sort?.field ?? ''} onValueChange={(v) => onChange({ ...config, sort: { field: v, dir: sort?.dir ?? 'asc' } })}>
+              <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Field" /></SelectTrigger>
+              <SelectContent>
+                {fields.map((fl) => <SelectItem key={fl.key} value={fl.key}>{fl.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="flex rounded-md border overflow-hidden text-xs">
+              {(['asc', 'desc'] as const).map((d) => (
+                <button key={d}
+                  className={`px-2 py-1.5 ${sort?.dir === d ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+                  onClick={() => sort?.field && onChange({ ...config, sort: { field: sort.field, dir: d } })}
+                >{d === 'asc' ? '↑' : '↓'}</button>
+              ))}
+            </div>
+          </div>
+          {sort && (
+            <Button size="sm" variant="ghost" className="h-7 text-xs w-full text-muted-foreground" onClick={() => onChange({ ...config, sort: null })}>
+              Clear sort
+            </Button>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+// ---------- Kanban view: group into columns by a select/text/link field, DnD ----------
+function KanbanView({ fields, records, config, onChangeConfig, onUpdate }: {
+  fields: FlowtableField[];
+  records: FlowtableRecord[];
+  config: FlowtableViewConfig;
+  onChangeConfig: (c: FlowtableViewConfig) => void;
+  onUpdate: (id: string, values: Record<string, unknown>) => void;
+}) {
+  const groupKey = config.kanban_field ?? null;
+  const groupField = fields.find((f) => f.key === groupKey);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  // Fields shown on a card: the first text-ish field as title, then a few more.
+  const titleField = fields.find((f) => ['text', 'longtext'].includes(f.type)) ?? fields[0];
+  const bodyFields = fields.filter((f) => f !== titleField && f.key !== groupKey && !['longtext'].includes(f.type)).slice(0, 4);
+
+  const columns = useMemo(() => {
+    if (!groupField) return [];
+    let values: string[];
+    if (groupField.type === 'select' || groupField.type === 'multiselect') {
+      values = ((groupField.options?.choices as string[]) ?? []);
+    } else {
+      values = [...new Set(records.map((r) => String(r.values?.[groupField.key] ?? '')).filter(Boolean))];
+    }
+    const cols = values.map((v) => ({ key: v, label: v }));
+    cols.push({ key: '__none__', label: 'Uncategorized' });
+    return cols;
+  }, [groupField, records]);
+
+  const byColumn = useMemo(() => {
+    const map: Record<string, FlowtableRecord[]> = {};
+    for (const c of columns) map[c.key] = [];
+    for (const r of records) {
+      const v = groupField ? String(r.values?.[groupField.key] ?? '') : '';
+      const k = v && map[v] !== undefined ? v : '__none__';
+      (map[k] = map[k] || []).push(r);
+    }
+    return map;
+  }, [columns, records, groupField]);
+
+  if (!groupField) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-3 max-w-xs">
+          <Columns3 className="h-10 w-10 mx-auto text-muted-foreground" />
+          <div>
+            <h3 className="text-sm font-semibold">Group cards by a field</h3>
+            <p className="text-xs text-muted-foreground">Pick a single-select or text field to stack cards into columns.</p>
+          </div>
+          <Select onValueChange={(v) => onChangeConfig({ ...config, kanban_field: v })}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Group by…" /></SelectTrigger>
+            <SelectContent>
+              {fields.filter((f) => !['lookup', 'rollup', 'checkbox'].includes(f.type)).map((f) => (
+                <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setDragId(null);
+    const over = e.over?.id as string | undefined;
+    const cardId = e.active.id as string;
+    if (!over) return;
+    const rec = records.find((r) => r.id === cardId);
+    if (!rec) return;
+    const newVal = over === '__none__' ? null : over;
+    if (String(rec.values?.[groupField.key] ?? '') === String(newVal ?? '')) return;
+    onUpdate(cardId, { ...rec.values, [groupField.key]: newVal });
+  };
+
+  const dragRec = dragId ? records.find((r) => r.id === dragId) : null;
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Group-by control */}
+      <div className="px-3 py-2 flex items-center gap-2 border-b bg-muted/20">
+        <span className="text-xs text-muted-foreground">Grouping by</span>
+        <Select value={groupField.key} onValueChange={(v) => onChangeConfig({ ...config, kanban_field: v })}>
+          <SelectTrigger className="h-7 text-xs w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {fields.filter((f) => !['lookup', 'rollup', 'checkbox'].includes(f.type)).map((f) => (
+              <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <DndContext sensors={sensors} collisionDetection={closestCorners}
+        onDragStart={(e: DragStartEvent) => setDragId(e.active.id as string)}
+        onDragEnd={onDragEnd}
+      >
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-3 p-3 h-full min-w-fit">
+            {columns.map((col) => (
+              <KanbanColumn key={col.key} id={col.key} label={col.label} count={byColumn[col.key]?.length ?? 0}>
+                {(byColumn[col.key] ?? []).map((r) => (
+                  <KanbanCard key={r.id} id={r.id} record={r} titleField={titleField} bodyFields={bodyFields} />
+                ))}
+              </KanbanColumn>
+            ))}
+          </div>
+        </div>
+        <DragOverlay dropAnimation={null}>
+          {dragRec && titleField ? (
+            <div className="w-64 rounded-lg border bg-background shadow-lg px-3 py-2 text-sm rotate-2">
+              {String(dragRec.values?.[titleField.key] ?? 'Untitled')}
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
+  );
+}
+
+function KanbanColumn({ id, label, count, children }: {
+  id: string; label: string; count: number; children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div className="w-72 shrink-0 flex flex-col rounded-lg bg-muted/40">
+      <div className="px-3 py-2 flex items-center justify-between">
+        <span className="text-xs font-semibold truncate">{label}</span>
+        <span className="text-[10px] text-muted-foreground rounded-full bg-background px-1.5 py-0.5">{count}</span>
+      </div>
+      <div
+        ref={setNodeRef}
+        className={`flex-1 overflow-y-auto px-2 pb-2 space-y-2 rounded-b-lg transition-colors ${isOver ? 'bg-primary/5 ring-1 ring-inset ring-primary/30' : ''}`}
+      >
+        {children}
+        {count === 0 && <div className="text-[11px] text-muted-foreground/60 text-center py-6">Drop here</div>}
+      </div>
+    </div>
+  );
+}
+
+function KanbanCard({ id, record, titleField, bodyFields }: {
+  id: string; record: FlowtableRecord; titleField?: FlowtableField; bodyFields: FlowtableField[];
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group/card rounded-lg border bg-background px-3 py-2 shadow-sm hover:shadow-md hover:border-primary/40 cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-40' : ''}`}
+    >
+      <div className="flex items-start gap-1.5">
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 mt-0.5 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium truncate">
+            {titleField ? String(record.values?.[titleField.key] ?? '') || <span className="text-muted-foreground italic">Untitled</span> : 'Untitled'}
+          </div>
+          {bodyFields.length > 0 && (
+            <div className="mt-1.5 space-y-1">
+              {bodyFields.map((f) => {
+                const v = record.values?.[f.key];
+                if (v == null || v === '') return null;
+                if (f.type === 'select') {
+                  return <span key={f.key} className="inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] mr-1">{String(v)}</span>;
+                }
+                return <div key={f.key} className="text-[11px] text-muted-foreground truncate"><span className="opacity-60">{f.name}:</span> {String(v)}</div>;
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---------- List view ----------
