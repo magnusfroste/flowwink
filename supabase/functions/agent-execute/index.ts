@@ -437,7 +437,20 @@ serve(async (req) => {
 
     // 3. Check trust level (auto → execute, notify → execute + notify, approve → block)
     //    `_approved: true` is the bypass flag set when an admin approves a pending activity.
-    const trustLevel = skill.trust_level || 'auto';
+    //    FlowPilot 2.0: the INTERNAL operator's effective trust is shaped by the
+    //    flowpilot_autonomy posture + agent_trust_policies (open-by-default, narrow-by-policy).
+    //    chat/mcp keep the skill's own trust_level — the external boundary is unchanged, so a
+    //    DB round-trip is spent only for agent_type='flowpilot'.
+    let trustLevel = skill.trust_level || 'auto';
+    if (agent_type === 'flowpilot') {
+      const { data: resolved } = await supabase.rpc('resolve_agent_trust', {
+        p_skill_name: skill.name,
+        p_skill_category: (skill as any).category ?? null,
+        p_base_trust: trustLevel,
+        p_agent_type: agent_type,
+      });
+      if (typeof resolved === 'string' && resolved) trustLevel = resolved;
+    }
     const bypassApproval = (args as any)?._approved === true;
     if (bypassApproval) delete (args as any)._approved;
 
