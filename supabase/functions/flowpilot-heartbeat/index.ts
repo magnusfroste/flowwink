@@ -75,11 +75,23 @@ async function loadSiteStats(supabase: any): Promise<string> {
     supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
   ]);
 
+  // Recent output titles — the operator must SEE what it already produced, or a
+  // recurring content objective degenerates into the same artifact re-worded
+  // daily (observed in fast-sim: 6 near-identical blog titles in 6 days).
+  const { data: recentPosts } = await supabase
+    .from("blog_posts")
+    .select("title, created_at")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  const recentTitles = (recentPosts || [])
+    .map((p: any) => `  - ${String(p.title || "").slice(0, 100)}`)
+    .join("\n");
+
   return `\n\nSite stats (7 days):
 - Page views: ${views.count ?? 0}
 - New leads: ${leads.count ?? 0}
 - Blog posts published: ${posts.count ?? 0}
-- Total confirmed subscribers: ${subscribers.count ?? 0}`;
+- Total confirmed subscribers: ${subscribers.count ?? 0}${recentTitles ? `\n\nYour recent blog output (newest first) — new content must take a DIFFERENT angle, audience or format than these; never re-word an existing one:\n${recentTitles}` : ""}`;
 }
 
 async function loadLinkedAutomations(supabase: any): Promise<string> {
@@ -97,6 +109,38 @@ async function loadLinkedAutomations(supabase: any): Promise<string> {
     out += `\n-${due} [${a.id.slice(0, 8)}] "${a.name}" → skill: ${a.skill_name} | runs: ${a.run_count} | last_error: ${a.last_error || 'none'}`;
   }
   return out;
+}
+
+// ─── Approval follow-through pre-pass ─────────────────────────────────────────
+// Hermes pattern: resumption is FIRST-CLASS. Before the operator reasons about
+// new work, it completes what a human already approved — and the result is fed
+// into this cycle's context so the operator SEES its decisions land. The 5-min
+// cron does the low-latency sweep; this pre-pass makes the loop self-contained
+// (an instance with only the heartbeat cron still follows through). Idempotent
+// and bounded — the sweep never retries failures, so double-invocation is safe.
+async function runFollowThroughPrePass(supabaseUrl: string, serviceKey: string, traceId: string): Promise<string> {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 25_000); // never let the pre-pass eat the heartbeat
+    const resp = await fetch(`${supabaseUrl}/functions/v1/flowpilot-followthrough`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ limit: 10, source: 'heartbeat_prepass', trace_id: traceId }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(to);
+    const out = await resp.json().catch(() => ({}));
+    if (!resp.ok || out?.skipped) return '';
+    const { candidates = 0, resumed = 0, failed = 0, results = [] } = out;
+    if (!candidates) return '';
+    const lines = (results as any[]).slice(0, 10).map((r) =>
+      `- ${r.skill}: ${r.resumed ? 'completed ✓' : `failed (${String(r.error || '').slice(0, 80)})`}`);
+    console.log(`[heartbeat] trace=${traceId} Follow-through pre-pass: ${resumed}/${candidates} completed, ${failed} failed`);
+    return `\n\nAPPROVED-ACTION FOLLOW-THROUGH (just executed, this cycle):\n${lines.join('\n')}\nThese human-approved actions are now DONE (or failed as noted) — evaluate their outcomes, do not re-propose them.`;
+  } catch (e) {
+    console.warn(`[heartbeat] trace=${traceId} Follow-through pre-pass failed (non-fatal):`, e);
+    return '';
+  }
 }
 
 // ─── Integrity gate ───────────────────────────────────────────────────────────
@@ -240,6 +284,12 @@ serve(async (req) => {
     const dispatchMode = ov?.dispatchMode !== false;
     const light = !!ov?.lightContext;
 
+    // 0a. Follow-through pre-pass — complete human-approved actions BEFORE
+    // reasoning, and surface the results in this cycle's context.
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const followThroughCtx = await runFollowThroughPrePass(supabaseUrl, serviceKey, traceId);
+
     // 0. Integrity gate + context gathering in parallel. In lightContext mode the
     // analytical loaders (integrity gate, self-healing, CMS schema, cross-module
     // insights, maturity scan) are stubbed to cut DB round-trips, tokens and cost
@@ -287,7 +337,7 @@ serve(async (req) => {
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,
-      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext,
+      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext + followThroughCtx,
       automationContext: automationCtx,
       healingReport: healingReport,
       cmsSchemaContext: cmsSchemaCtx,
@@ -327,7 +377,63 @@ serve(async (req) => {
       setTimeout(() => reject(new Error(`Heartbeat wall-clock timeout (${MAX_WALL_CLOCK_MS}ms)`)), MAX_WALL_CLOCK_MS)
     );
 
-    const result = await Promise.race([reasonPromise, timeoutPromise]);
+    let result = await Promise.race([reasonPromise, timeoutPromise]);
+
+    // 3b. Completion pass — kill the hollow turn (Hermes: a cycle ends with an
+    // artifact or an explicit "nothing to do", never with a declared intention).
+    // If active objectives exist and the cycle executed ZERO successful business
+    // skills, give the operator ONE bounded corrective continuation. This is an
+    // outcome check, not intent routing (Law 1 safe): we never pick a skill for
+    // it — we demand it either produces its objective output or explicitly
+    // concludes NO_REPLY after verifying the output already exists.
+    const businessSuccesses = (result.skillResults || []).filter((r: any) => r.status === 'success').length;
+    if (businessSuccesses === 0) {
+      const { count: activeObjectives } = await supabase
+        .from('agent_objectives')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
+      const elapsed = Date.now() - startTime;
+      const wallClockLeft = MAX_WALL_CLOCK_MS - elapsed;
+      const budgetLeft = TOKEN_BUDGET - (result.tokenUsage?.total_tokens || 0);
+      if ((activeObjectives || 0) > 0 && wallClockLeft > 30_000 && budgetLeft > 10_000) {
+        console.log(`[heartbeat] trace=${traceId} Hollow turn detected (${activeObjectives} active objectives, 0 business skills) — running completion pass`);
+        const completionPromise = reason(supabase, [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `COMPLETION PASS. Your previous cycle this heartbeat ended without executing any business skill, but ${activeObjectives} objective(s) are active. Your last words were: "${String(result.response || '').slice(-600)}". A declared intention is not an outcome. For each active objective: verify whether its expected output for this period ALREADY exists as a real artifact. If it exists for all of them, reply exactly NO_REPLY. Otherwise produce the missing output NOW — search_skills → execute_skill — before replying. Do not plan, do not reflect; execute or conclude.` },
+        ], {
+          scope: 'internal',
+          maxIterations: Math.min(6, maxIter),
+          tier: 'reasoning',
+          traceId: `${traceId}-cp`,
+          builtInToolGroups: ['objectives', 'planning'],
+          tokenBudget: Math.min(budgetLeft, 60_000),
+          dispatchMode,
+          skillCategories: dispatchMode ? undefined : skillCategories,
+          scoringIntent: (objectiveCtx || '').slice(0, 1500),
+        });
+        const cpTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('completion-pass timeout')), wallClockLeft - 5_000));
+        try {
+          const cp = await Promise.race([completionPromise, cpTimeout]);
+          // Merge: the heartbeat's outcome is the union of both passes.
+          result = {
+            ...result,
+            response: cp.response || result.response,
+            actionsExecuted: [...result.actionsExecuted, ...cp.actionsExecuted],
+            skillResults: [...(result.skillResults || []), ...(cp.skillResults || [])],
+            tokenUsage: {
+              prompt_tokens: (result.tokenUsage?.prompt_tokens || 0) + (cp.tokenUsage?.prompt_tokens || 0),
+              completion_tokens: (result.tokenUsage?.completion_tokens || 0) + (cp.tokenUsage?.completion_tokens || 0),
+              total_tokens: (result.tokenUsage?.total_tokens || 0) + (cp.tokenUsage?.total_tokens || 0),
+            },
+          };
+          const cpSuccesses = (cp.skillResults || []).filter((r: any) => r.status === 'success').length;
+          console.log(`[heartbeat] trace=${traceId} Completion pass: ${cpSuccesses} business skill(s) executed`);
+        } catch (cpErr) {
+          console.warn(`[heartbeat] trace=${traceId} Completion pass failed (non-fatal):`, cpErr);
+        }
+      }
+    }
 
     const duration = Date.now() - startTime;
 

@@ -97,6 +97,26 @@ guardrail test + dev end-to-end proof (stage → approve in UI → next sweep ex
 created). Writes one in-place `agent_activity` pulse row (`skill_name='followthrough_sweep'`,
 `agent='cron'`) the Operator Health card reads — never a row per run.
 
+### Phase 1.5 — Hermes hardening of the loop  *(SHIPPED 2026-07-12, sim-proven)*
+
+Fast-forward sim (`npm run flowpilot:sim`) exposed three operator-quality gaps; all fixed
+in the heartbeat/reason seam and pinned by `flowpilot-hermes.guardrails.test.ts`:
+
+1. **Hollow turns** — a cycle ended "Preparing to generate…" with zero execution (baseline
+   day 2). Now: if a cycle with active objectives executed no business skill, ONE bounded
+   completion pass runs (artifact-or-NO_REPLY). Outcome check, not intent routing — Law 1
+   intact. Proven: starved 3-iteration cycle → detected → rescued with a published post.
+2. **`search_skills` counted as execution** — the dispatch meta-tool wasn't in
+   BUILT_IN_TOOL_NAMES; a cycle that only searched looked productive. Fixed at the root.
+3. **Content amnesia** — 6 near-identical blog titles in 6 sim days. The heartbeat context
+   now shows recent output titles; post-fix sim produced trends-piece / how-to guide /
+   business case on consecutive days.
+4. **Follow-through as heartbeat pre-pass** — approvals complete at the START of each cycle
+   and the operator SEES the results in context (the Phase-1 "pre-pass" half, now real).
+
+Sim scoreboard: baseline 2 artifacts/3 days with 1 hollow turn → after: 5/5 days delivered,
+0 hollow, differentiated content, follow-through visible every cycle.
+
 ### Phase 2 — Pipeline-collapse for known chains
 Turn P2P / dunning / month-end / expense-reimbursement into deterministic **composite
 automations** the loop *invokes* as one step, instead of hand-walking 7 skills across

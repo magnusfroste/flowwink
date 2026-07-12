@@ -87,6 +87,12 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'skill_pack_list', 'skill_pack_install',
   'chain_skills',
   'evaluate_outcomes', 'record_outcome',
+  // Dispatch-surface meta tool: served in-process from the loaded catalog
+  // (execute_skill never reaches here — it unwraps to the real skill name).
+  // Without this, a cycle that only SEARCHED for skills counts as having
+  // executed one, which defeats outcome checks like the heartbeat's
+  // hollow-turn detection.
+  'search_skills',
 ]);
 
 // ─── Reply Directive Parser (OpenClaw Protocol Specs L5) ──────────────────────
