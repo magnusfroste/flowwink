@@ -99,6 +99,21 @@ a review queue (human-approved at first, the dial can open later). `flowpilot-di
 consolidates. Closes the loop so FlowPilot improves at *this* business over the proof weeks —
 the exact Hermes "grows with you" property, governed by the autonomy dial.
 
+## 4b. Plumbing vs policy vs transparency (design ruling, Magnus 2026-07-10)
+
+- **Plumbing** (heartbeat, resume, distill, learn cadence) = **engine constants**, not
+  settings. Dedicated pg_cron jobs, never surfaced as adjustable automations — a knob you
+  must never turn is false transparency and settings-sprawl. Cadence: heartbeat hourly,
+  resume sweep every 5 min (HIL responsiveness), briefing/distill/learn daily. Dev is live;
+  fleet gets the cadence at proof-week start (heartbeat cost is an owner decision per
+  instance).
+- **Policy** (what the operator MAY do) = the only adjustable layer: `flowpilot_autonomy`
+  posture + `agent_trust_policies` + objectives + /admin/approvals.
+- **Transparency** = seeing what the agent DID and WANTS, not seeing the gears: activity
+  log + approvals + daily briefing, plus a small **Operator Health card** (posture, last
+  heartbeat/resume/distill/learn run + status, pending approvals count) so the owner sees
+  in 5 seconds that the engine is alive without understanding five cron jobs.
+
 ## 5. Proof-weeks gate
 
 FlowPilot operates **liteit** (real co., real bank feed, zero customer risk) on the
