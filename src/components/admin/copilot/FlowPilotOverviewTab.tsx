@@ -390,9 +390,11 @@ export function FlowPilotOverviewTab() {
           </CardContent>
         </Card>
       </div>
+      </div>
     </div>
   );
 }
+
 
 function JumpLink({ to, icon: Icon, label }: { to: string; icon: typeof Bot; label: string }) {
   return (
