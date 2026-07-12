@@ -70,3 +70,8 @@ begin
   return coalesce(p_base_trust, 'auto');
 end;
 $$;
+
+-- NB: posture is intentionally NOT set here. Absent flowpilot_autonomy → 'guarded' (the safe
+-- default for every install, incl. forks). An owner opts into 'proving' explicitly per
+-- instance: insert/update site_settings key='flowpilot_autonomy' value '{"posture":"proving"}'.
+-- Dev is set to proving out-of-band for the parity audit; the fleet ships guarded.
