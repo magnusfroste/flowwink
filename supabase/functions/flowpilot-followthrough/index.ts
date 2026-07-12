@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isModuleEnabled } from "../_shared/modules.ts";
 
 /**
  * FlowPilot 2.0 — Approval follow-through.
@@ -39,10 +40,10 @@ serve(async (req) => {
   const windowHours = Number(body?.window_hours) || 48;
   const limit = Math.min(Number(body?.limit) || 25, 100);
 
-  // Gate on the FlowPilot module being enabled (row-shaped site_settings.modules).
-  const { data: mod } = await supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle();
-  const modules = (mod?.value as Record<string, boolean> | null) || null;
-  if (modules && modules.flowpilot === false) {
+  // Gate on the FlowPilot module — via the shared helper (the module value is an
+  // OBJECT {enabled,...}; a hand-rolled `modules.flowpilot === false` check passes
+  // when it shouldn't and this sweep would act for a disabled operator).
+  if (!(await isModuleEnabled(supabase, "flowpilot"))) {
     return new Response(JSON.stringify({ skipped: true, reason: "flowpilot_disabled" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
