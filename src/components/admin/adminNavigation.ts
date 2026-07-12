@@ -140,7 +140,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
-      { name: "Consultants", href: "/admin/resume", icon: FileUser, moduleId: "consultants" },
+      { name: "Consultants", href: "/admin/consultants", icon: FileUser, moduleId: "consultants" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Pipeline Stages", href: "/admin/pipelines/stages", icon: FolderKanban, moduleId: "crm" },
       { name: "Activities", href: "/admin/activities", icon: CheckSquare, moduleId: "crm" },

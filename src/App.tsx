@@ -350,7 +350,7 @@ const router = createBrowserRouter([
       { path: "/admin/webmeet", element: <WebmeetPage /> },
       { path: "/meet/:slug", element: <MeetRoomPage /> },
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
-      { path: "/admin/resume", element: <ConsultantProfilesPage /> },
+      { path: "/admin/consultants", element: <ConsultantProfilesPage /> },
       { path: "/admin/federation", element: <FederationPage /> },
       
       { path: "/admin/wiki", element: <WikiPage /> },

@@ -647,8 +647,8 @@ export function ModuleDetailSheet({
                         if (!modules) return;
                         updateModules.mutate({
                           ...modules,
-                          resume: {
-                            ...modules.resume,
+                          consultants: {
+                            ...modules.consultants,
                             publicAnonymization: value,
                           },
                         });

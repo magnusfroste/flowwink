@@ -61,7 +61,7 @@ function buildProfileText(p: any): string {
 
 // ────────────────────────────────────────────────────────────────────────
 // Public anonymization (GDPR)
-// Reads modules.resume.publicAnonymization from site_settings.
+// Reads modules.consultants.publicAnonymization from site_settings.
 // 'full' (default) → "Anna L."   'initials' → "AL"   'off' → real name
 // Always strips email, phone, linkedin_url for public callers.
 // ────────────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ async function loadAnonymizationMode(supabase: any): Promise<AnonMode> {
       .select('value')
       .eq('key', 'modules')
       .maybeSingle();
-    const mode = (data?.value as any)?.resume?.publicAnonymization;
+    const mode = (data?.value as any)?.consultants?.publicAnonymization;
     if (mode === 'initials' || mode === 'off' || mode === 'full') return mode;
   } catch (_) { /* fall through */ }
   return 'full';

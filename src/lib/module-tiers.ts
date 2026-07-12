@@ -142,7 +142,7 @@ export const MODULE_TIER_MAP: Readonly<Record<string, ModuleTier>> = {
   templates: 'extended',
   wiki: 'extended',
   river: 'extended',
-  resume: 'extended',
+  consultants: 'extended',
   growth: 'extended',
   salesIntelligence: 'extended',
   companyInsights: 'extended',

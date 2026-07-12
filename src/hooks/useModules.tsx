@@ -846,7 +846,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/webinars': 'webinars',
   '/admin/webmeet': 'webmeet',
   '/admin/sales-intelligence': 'salesIntelligence',
-  '/admin/resume': 'consultants',
+  '/admin/consultants': 'consultants',
   '/admin/federation': 'federation',
   '/admin/growth': 'paidGrowth',
   '/admin/company-insights': 'companyInsights',

@@ -16,7 +16,7 @@ export const MODULE_DEMO_SEEDERS: Partial<Record<keyof ModulesSettings, string>>
   invoicing: "invoices",
   expenses: "expenses",
   ecommerce: "ecommerce",
-  resume: "consultants",
+  consultants: "consultants",
   blog: "blog",
   knowledgeBase: "kb",
   projects: "projects",
