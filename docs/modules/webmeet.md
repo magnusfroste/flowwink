@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # WebMeet
@@ -43,9 +43,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/webmeet-module.ts` |
-| Hook | `src/hooks/useWebMeet.ts` |
 | Hook | `src/hooks/useWebmeet.ts` |
-| Admin page | `src/pages/admin/WebMeetPage.tsx` |
+| Admin page | `src/pages/admin/WebmeetPage.tsx` |
 
 ## Contributing
 

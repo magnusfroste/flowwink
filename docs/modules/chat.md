@@ -5,12 +5,12 @@ version: "1.0.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Chat
 
-> Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors. For internal operator chat use FlowChat (/admin/flowchat); for workspace Q&A over your own data use Cowork (/admin/cowork).
+> Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors. For internal operator chat use FlowChat (/admin/flowchat); for workspace Q&A over your own data use Flowwork (/admin/flowwork).
 
 Ships with **1 agent skill**, **2 public blocks**.
 

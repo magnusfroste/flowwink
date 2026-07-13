@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Quotes
 
 > Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending high-value offers.
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **3 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -38,6 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `list_quote_revisions` | internal | Read-only: version history of a quote (revision number, reason, prev/new totals, delta). Use when: reviewing how a quote changed before acceptance. NOT for: creating quotes (manage_quote). |
 | `manage_quote` | internal | Manage sales quotes end-to-end: list pending/sent quotes, create new from a lead or template, add line items, send for approval (if above threshold) and then to the customer with a public e-sign li… |
 | `send_quote_expiry_reminders` | internal | Scan sent quotes whose valid_until is within the next 48 hours or up to 3 days past (grace window) and email the customer a reminder, reusing the existing quote reminder email pipeline (send-quote-… |
 

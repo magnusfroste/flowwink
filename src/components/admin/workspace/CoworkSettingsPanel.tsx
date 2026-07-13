@@ -30,7 +30,7 @@ export function CoworkSettingsPanel() {
   const handleSave = async () => {
     try {
       await save.mutateAsync(draft);
-      toast({ title: 'Cowork settings saved' });
+      toast({ title: 'Flowwork settings saved' });
       setOpen(false);
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message, variant: 'destructive' });
@@ -48,7 +48,7 @@ export function CoworkSettingsPanel() {
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Cowork Chat settings</SheetTitle>
+          <SheetTitle>Flowwork settings</SheetTitle>
           <SheetDescription>
             Control how the assistant blends your workspace data with the model's
             own knowledge and the public web.
@@ -73,7 +73,7 @@ export function CoworkSettingsPanel() {
                 <label className="flex gap-3 items-start cursor-pointer rounded-md border border-border/60 p-3 hover:bg-muted/40">
                   <RadioGroupItem value="cowork" id="mode-cowork" className="mt-0.5" />
                   <div className="space-y-0.5">
-                    <div className="text-sm font-medium">Cowork (recommended)</div>
+                    <div className="text-sm font-medium">Flowwork (recommended)</div>
                     <div className="text-xs text-muted-foreground">
                       Grounds in your workspace data, then uses the model's own
                       knowledge and web search when needed.

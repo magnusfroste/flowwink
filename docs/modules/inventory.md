@@ -5,7 +5,7 @@ version: "2.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Inventory

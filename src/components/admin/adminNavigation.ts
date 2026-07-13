@@ -125,7 +125,7 @@ export const navigationGroups: NavGroup[] = [
     label: "Support",
     allowedRoles: ["support"],
     items: [
-      { name: "Cowork Chat", href: "/admin/cowork", icon: Sparkles, moduleId: "workspaceChat" },
+      { name: "Flowwork", href: "/admin/flowwork", icon: Sparkles, moduleId: "workspaceChat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
       { name: "Voice", href: "/admin/voice", icon: Phone, moduleId: "voice" },
       { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },

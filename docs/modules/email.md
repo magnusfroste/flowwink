@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Email
 
 > Provider-agnostic email sender. Routes system emails through SMTP or Resend.
 
-Ships with **6 agent skills**.
+Ships with **7 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **6 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | Yes |
 | **Capabilities** | `data:write` |
-| **MCP-exposed skills** | 6 |
+| **MCP-exposed skills** | 7 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -38,6 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `manage_email_template` | internal | CRUD for reusable email templates with {{variables}}. Use when: defining or editing the templates outbound email is sent from. NOT for: sending an email (use send_email). |
 | `send_email` | both | Send a one-off email through the provider-agnostic gateway (SMTP/Resend/Composio — whichever the site has configured). Logs to outbound_communications; with no provider configured the send is simul… |
 | `scan_gmail_inbox` | internal | Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorizati… |
 | `list_communications` | both | List entries from the outbound communications gateway log (email/sms/slack/signing). Use when: following up on whether a message actually went out, debugging silent failures, checking which provide… |
@@ -56,6 +57,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/email-module.ts` |
+| Admin page | `src/pages/admin/EmailPage.tsx` |
 | Migration | `supabase/migrations/20260703210000_email-lead-association.sql` |
 
 ## Contributing

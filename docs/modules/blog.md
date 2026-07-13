@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Blog
 
 > Publish content to the blog
 
-Ships with **12 agent skills**, an **admin UI**.
+Ships with **15 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **12 agent skills**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 12 |
+| **MCP-exposed skills** | 15 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -50,6 +50,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `product_promoter` | internal | Creates a promotional blog post for a product. Use when: user wants to promote a product via blog, creating product-focused articles. NOT for: general blog writing (use write_blog_post), managing p… |
 | `seo_content_brief` | internal | Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), t… |
 | `social_post_batch` | internal | Creates social media posts for multiple platforms in batch. Use when: user wants posts for several platforms at once, bulk social content creation. NOT for: single platform post (use generate_socia… |
+| `moderate_blog_comment` | internal | Approve, mark as spam, reject, or reset a reader comment on a blog post. Use when: an admin wants to publish a pending comment or purge spam. NOT for: creating comments (public form only) or deleti… |
+| `list_blog_comments` | internal | List blog comments filtered by status (pending by default) for moderation review. Use when: showing the moderation queue or auditing comments per post. |
+| `get_blog_rss_url` | external | Return the public RSS feed URL for the blog. Use when: a caller asks for the RSS/Atom feed, or when integrating a syndication endpoint. |
 
 ## Used in Processes
 

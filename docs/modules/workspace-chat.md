@@ -1,14 +1,14 @@
 ---
-title: "Cowork Chat Module"
+title: "Flowwork Module"
 module_id: "workspaceChat"
 version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
-# Cowork Chat
+# Flowwork
 
 > Internal authenticated chat that blends your workspace data with the model\
 
@@ -38,7 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `post_to_cowork_chat` | internal | Post a message into the Cowork Chat as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team something; surfac… |
+| `post_to_cowork_chat` | internal | Post a message into Flowwork (the internal team chat) as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team… |
 
 ## Module API Contract
 

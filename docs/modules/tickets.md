@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Tickets

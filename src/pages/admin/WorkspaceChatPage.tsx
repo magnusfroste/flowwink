@@ -90,7 +90,7 @@ export default function WorkspaceChatPage() {
     sources,
     mode: settings?.mode,
     onError: (msg) =>
-      toast({ title: 'Cowork Chat', description: msg, variant: 'destructive' }),
+      toast({ title: 'Flowwork', description: msg, variant: 'destructive' }),
     onFirstMessage: async (text) => {
       if (activeSessionRef.current) return activeSessionRef.current;
       const id = await createSession(text);
@@ -324,9 +324,9 @@ export default function WorkspaceChatPage() {
           <Card>
             <CardContent className="py-12 text-center space-y-4">
               <Sparkles className="h-10 w-10 mx-auto text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Cowork Chat is disabled</h2>
+              <h2 className="text-xl font-semibold">Flowwork is disabled</h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Enable the Cowork Chat module to ask questions about your
+                Enable the Flowwork module to ask questions about your
                 workspace data combined with the model's own knowledge.
               </p>
               <Button asChild>
@@ -357,7 +357,7 @@ export default function WorkspaceChatPage() {
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2 shrink-0">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Cowork</span>
+              <span className="text-sm font-medium">Flowwork</span>
             </div>
             <SessionPicker
               sessions={sessions}

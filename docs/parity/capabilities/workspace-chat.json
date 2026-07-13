@@ -10,7 +10,7 @@
       "odoo": false,
       "status": "done",
       "weight": 2,
-      "verify": "Cowork Chat UI + workspace-chat edge fn (RAG over workspace data)",
+      "verify": "Flowwork UI (f.d. Cowork Chat) + workspace-chat edge fn (RAG over workspace data)",
       "notes": "Owner confirmed 2026-06-12: unique module — an AI interface to your own data, NOT a Discuss/Slack clone. Previous Discuss-benchmark (channels/DM/threads) removed as a category error."
     },
     {

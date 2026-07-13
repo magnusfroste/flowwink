@@ -5,7 +5,7 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 const WORKSPACE_CHAT_SKILLS: SkillSeed[] = [
   {
     name: 'post_to_cowork_chat',
-    description: 'Post a message into the Cowork Chat as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team something; surfacing an autonomous action. NOT for: public site chat (chat-completion), the social feed (post_to_river), or answering a user question in-thread.',
+    description: 'Post a message into Flowwork (the internal team chat) as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team something; surfacing an autonomous action. NOT for: public site chat (chat-completion), the social feed (post_to_river), or answering a user question in-thread.',
     category: 'communication',
     handler: 'rpc:post_to_cowork_chat',
     scope: 'internal',
@@ -25,7 +25,7 @@ const WORKSPACE_CHAT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'The agent\'s voice in the team workspace. Keep messages short and actionable; include metadata.source so the UI can badge them. Staff roles may also post (author_type=user).',
+    instructions: 'The agent\'s voice in the team workspace (Flowwork). Keep messages short and actionable; include metadata.source so the UI can badge them. Staff roles may also post (author_type=user). NB: the skill/RPC name and the cowork_messages table keep the legacy "cowork" wire name — renaming deployed identifiers is a fleet-wide lockstep with no user value.',
   },
 ];
 
@@ -42,22 +42,26 @@ type Input = z.infer<typeof inputSchema>;
 type Output = z.infer<typeof outputSchema>;
 
 /**
- * Cowork Chat — internal RAG/CAG + model knowledge chat for admins & employees.
+ * Flowwork — internal RAG/CAG + model knowledge chat for admins & employees.
+ * (Renamed from "Cowork Chat" 2026-07 — the old name collided with Anthropic's
+ * Claude Cowork product. Display/story renamed; wire identifiers kept.)
  *
  * - Authenticated, read-only chat against:
  *   - workspace data (documents, contracts, KB, pages, CRM, employees), AND
  *   - the model's own training knowledge (toggleable), AND
  *   - the public web via Firecrawl (toggleable, requires FIRECRAWL_API_KEY).
- * - Two modes: 'cowork' (default — blended) and 'strict' (workspace-only).
+ * - Two modes: 'cowork' (stored value; shown as "Flowwork" — blended) and
+ *   'strict' (workspace-only).
  * - Uses the same AI provider as AI Chat (Integrations).
  * - Independent of FlowPilot — works as long as an AI provider is configured.
- * - Exposes NO skills (no MCP, no mutations).
  *
- * Internal id stays `workspaceChat` for backward compat with stored module flags.
+ * Legacy wire names kept on purpose (per the naming policy in CLAUDE.md):
+ * module id `workspaceChat`, skill/RPC `post_to_cowork_chat`, tables
+ * `cowork_messages`, site_settings key `cowork_chat`, edge fn `workspace-chat`.
  */
 export const workspaceChatModule = defineModule<Input, Output>({
   id: 'workspaceChat',
-  name: 'Cowork Chat',
+  name: 'Flowwork',
   version: '1.1.0',
   processes: [],
   maturity: 'L3',

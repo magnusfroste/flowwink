@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Documents
 
 > Document management with categorization, entity linking, and version tracking
 
-Ships with **3 agent skills**, an **admin UI**.
+Ships with **4 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **3 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 3 |
+| **MCP-exposed skills** | 4 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,6 +36,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_document` | internal | Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use manage_media),… |
 | `extract_pdf_text` | internal | Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a docum… |
+| `manage_document_share_link` | internal | Create/revoke/list tokenized public share links for a document (optional expiry, view/download permission). Use when: sharing a document externally without an account. NOT for: uploading documents … |
 | `upload_document` | internal | Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or rece… |
 
 ## Module API Contract

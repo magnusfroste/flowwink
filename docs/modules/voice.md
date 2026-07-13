@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Voice
@@ -55,6 +55,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Admin page | `src/pages/admin/VoicePage.tsx` |
 | Migration | `supabase/migrations/20260705150000_fix-subscription-invoice-idempotency.sql` |
 | Migration | `supabase/migrations/20260707130000_invoice-status-enum-complete.sql` |
+| Migration | `supabase/migrations/20260709080000_invoice-partially-paid-status.sql` |
+| Migration | `supabase/migrations/20260710000000_timesheet-invoice-number-series.sql` |
+| Migration | `supabase/migrations/20260710030000_no-cancel-paid-invoice.sql` |
 
 ## Contributing
 

@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # HR & Employees
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **9 agent skills**, **7 database tables**, an **admin UI**.
+Ships with **9 agent skills**, **7 database tables**.
 
 ## Quick Facts
 
@@ -77,7 +77,6 @@ This module participates in the following end-to-end business processes:
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/hr-module.ts` |
-| Admin page | `src/pages/admin/HrPage.tsx` |
 | Migration | `supabase/migrations/20260708110000_hr-parity-r8.sql` |
 
 ## Contributing

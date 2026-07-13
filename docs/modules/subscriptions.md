@@ -5,14 +5,14 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Subscriptions
 
 > Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back
 
-Ships with **14 agent skills**, **1 database table**, an **admin UI**.
+Ships with **15 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **14 agent skills**, **1 database table**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 14 |
+| **MCP-exposed skills** | 15 |
 | **Owns tables** | 1 |
 
 ## Integrations
@@ -45,6 +45,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `record_churn_reason` | internal | Record why a customer churned (reason category + free-text feedback + NPS). Use when: customer cancels via portal, exit survey returned. NOT for: technical cancellation (use Stripe customer-portal … |
 | `manage_winback_campaign` | internal | Create or update a win-back campaign (the offer + email shown to churned/at-risk subscribers). Use when: setting up a retention offer after a churn event, or editing an existing one. NOT for: listi… |
 | `list_winback_campaigns` | internal | List configured win-back campaigns (active or all). Use when: choosing which offer to send, auditing win-back program. NOT for: creating/editing a campaign (manage_winback_campaign) or sending it. |
+| `manage_subscription_plan` | internal | CRUD for reusable subscription plan templates (name/price/interval/trial/commitment). Use when: defining or changing the plans customers subscribe to. NOT for: creating a customer subscription (use… |
 | `create_manual_subscription` | internal | Create a recurring subscription billed by invoice (not via Stripe card). Use when: B2B customer signs a service plan paid by invoice (telecom plans, retainers, hosted services). NOT for: online car… |
 | `generate_subscription_invoice` | internal | Generate the next due invoice for a manual subscription. Use when: ad-hoc billing run, customer requested immediate invoice, testing. NOT for: stripe-billed subscriptions (Stripe handles those). No… |
 | `cancel_manual_subscription` | internal | Cancel a manual (invoice-billed) subscription. Use when: customer terminates B2B plan, account closed. NOT for: Stripe subscriptions (use Stripe customer portal or cancel_subscription). |

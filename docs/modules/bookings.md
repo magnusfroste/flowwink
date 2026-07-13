@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Booking
@@ -52,8 +52,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/booking-module.ts` |
 | Hook | `src/hooks/useBookings.ts` |
 | Admin page | `src/pages/admin/BookingsPage.tsx` |
-| Public block | `src/components/public/blocks/BookingBlock.tsx` |
 | Public block | `src/components/public/blocks/SmartBookingBlock.tsx` |
+| Public block | `src/components/public/blocks/BookingBlock.tsx` |
 
 ## Contributing
 

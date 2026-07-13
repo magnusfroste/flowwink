@@ -636,7 +636,7 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   workspaceChat: {
     enabled: false,
-    name: 'Cowork Chat',
+    name: 'Flowwork',
     description:
       'Internal authenticated chat for admins/employees. Combines your workspace data (documents, contracts, KB, CRM, HR) with the model\'s own knowledge and optional web search. Read-only with source citations.',
     icon: 'Sparkles',
@@ -768,7 +768,7 @@ export const defaultModulesSettings: ModulesSettings = {
     enabled: false,
     name: 'Wiki',
     description:
-      'Internal TEdit-style wiki / intranet. Authenticated staff can read and edit; CamelCase or [[WikiWord]] auto-links create missing pages on click. Surfaces as a selectable knowledge source in Cowork Chat.',
+      'Internal TEdit-style wiki / intranet. Authenticated staff can read and edit; CamelCase or [[WikiWord]] auto-links create missing pages on click. Surfaces as a selectable knowledge source in Flowwork.',
     icon: 'BookOpen',
     category: 'content',
     autonomy: 'agent-capable',

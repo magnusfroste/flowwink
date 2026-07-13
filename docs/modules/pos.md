@@ -5,14 +5,14 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Point of Sale
 
 > In-store register — sessions, receipts, split payments, stock-aware product catalog
 
-Ships with **14 agent skills**, **3 database tables**, an **admin UI**.
+Ships with **14 agent skills**, **4 database tables**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **14 agent skills**, **3 database tables**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 14 |
-| **Owns tables** | 3 |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -53,6 +53,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 Tables created by this module (from migrations):
 
+- `public.agent_trust_policies`
 - `public.loyalty_accounts`
 - `public.loyalty_transactions`
 - `public.pos_tables`
@@ -72,10 +73,10 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 | Purpose | Path |
 |---------|------|
 | Module definition | `src/lib/modules/pos-module.ts` |
-| Hook | `src/hooks/usePos.ts` |
-| Admin page | `src/pages/admin/PosPage.tsx` |
 | Migration | `supabase/migrations/20260630120000_f1a2b3c4-job-posting-slug-autogen.sql` |
 | Migration | `supabase/migrations/20260707214000_pos-parity-r5.sql` |
+| Migration | `supabase/migrations/20260709100000_pos-sale-resolve-product-name.sql` |
+| Migration | `supabase/migrations/20260710080000_flowpilot-trust-posture.sql` |
 
 ## Contributing
 

@@ -5,14 +5,14 @@ version: "0.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Flowtable
 
 > Airtable-style flexible tables for lists, prospect sheets, content backlogs. CSV import/export + push-to-CRM bridge.
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **5 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | — |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 5 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,6 +36,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `list_flowtable_bases` | internal | List all Flowtable bases the current user can access. Use when: agent needs to discover existing ad-hoc tables (call lists, prospecting sheets, content backlogs). NOT for: structured CRM data (use … |
 | `list_flowtable_records` | internal | List records inside a Flowtable table. Use when: reading rows from a user-owned ad-hoc table (call lists, prospect sheets). Each record has a free-form `values` JSONB matching the table\ |
+| `list_flowtable_tables` | internal | Discover the tables + field schema inside a Flowtable base (Airtable-style). Use when: an agent found a base (list_flowtable_bases) and needs to know which tables it holds + their field keys before… |
+| `query_flowtable` | internal | Query a Flowtable table server-side: filter on field values (eq/neq/ilike pushed to the DB; gt/gte/lt/lte numeric, is_empty/not_empty), free-text search across all fields, sort by a field, and coun… |
+| `manage_flowtable_record` | internal | Create, update, delete or get a single Flowtable record. Update MERGES the given values into the existing row by default (merge=false replaces). Use when: correcting or enriching rows in an importe… |
 
 ## Module API Contract
 
@@ -52,6 +55,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Module definition | `src/lib/modules/flowtable-module.ts` |
 | Hook | `src/hooks/useFlowtable.ts` |
 | Admin page | `src/pages/admin/FlowtablePage.tsx` |
+| Migration | `supabase/migrations/20260709010000_flowtable-list-tables.sql` |
+| Migration | `supabase/migrations/20260712140000_flowtable-view-config.sql` |
 
 ## Contributing
 

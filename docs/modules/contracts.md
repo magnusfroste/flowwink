@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Contracts
 
 > Contract lifecycle management with renewal tracking and document storage
 
-Ships with **7 agent skills**, an **admin UI**.
+Ships with **9 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **7 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 7 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Skills
@@ -34,9 +34,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `manage_contract_obligation` | internal | Track contract milestones/obligations (description, due date, status pending/met/overdue, responsible). Use when: adding or updating what a contract commits either party to. NOT for: the contract d… |
 | `manage_contract` | internal | Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), pr… |
 | `list_contract_templates` | internal | List available contract templates (NDA, Service, MSA, SOW, etc) before creating a contract. Use when: agent or admin needs to create a contract and wants to discover existing templates instead of w… |
 | `contract_renewal_check` | internal | Check for contracts expiring soon and alert. Use when: autonomous heartbeat checks for renewal deadlines, or admin asks "which contracts are expiring soon?". NOT for: creating contracts (use manage… |
+| `generate_contract_invoice` | internal | Generate a customer invoice for a contract (the CTR-YYYYMMDD-… series). Use when: a service/retainer agreement is due for billing (its recurring fee), after the contract is active. NOT for: subscri… |
 | `get_contract_content` | internal | Fetch the full markdown body of a contract for LLM consumption. Use when: external operator (ClawWink) or agent needs to read, summarize, or analyze the actual agreement text — not just metadata. R… |
 | `search_contracts` | internal | Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "find the contract with X", "which contracts mention the Y clause?", "search NDA with ACME". … |
 | `send_contract_for_signature` | internal | Generate a public signing link for a contract and mark it as pending_signature. Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current … |

@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Surveys & NPS
 
 > Capture customer satisfaction with one-click NPS, CSAT, and custom surveys. Triggered manually or automatically after orders, tickets, contracts and bookings. Detractor responses auto-route to FlowPilot for recovery; promoter responses boost lead score and surface testimonial opportunities.
 
-Ships with **4 agent skills**, an **admin UI**.
+Ships with **6 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **4 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 4 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | — |
 
 ## Skills
@@ -38,6 +38,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_survey_template` | internal | Create, list, or get survey templates — the reusable question sets that a survey campaign attaches to. Use when: you need a template_id for create_survey_campaign but none exists yet; setting up an… |
 | `send_survey` | internal | Send an active survey campaign to one or more recipients via email. Each recipient gets a unique one-click token link. Use when: a triggering event fires (order delivered, ticket closed), running a… |
 | `list_survey_responses` | internal | List responses for a campaign with optional filters (category, score range, date range). Use when: reviewing detractor feedback, building a monthly NPS report, finding promoters to ask for testimon… |
+| `get_survey_analytics` | internal | Aggregate per-campaign NPS/CSAT scores AND per-question response distributions across all responses. Use when: building the monthly NPS report, seeing which quiz question failed the most, understan… |
+| `export_survey_responses` | internal | Export survey responses as a CSV string. Use when: an operator requests a spreadsheet-ready extract for board reports, external BI, or archive. Filters by campaign, category, and start date. Caps a… |
 
 ## Module API Contract
 

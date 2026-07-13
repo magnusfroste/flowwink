@@ -272,7 +272,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
 const APPROVAL_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'Notify approvers in cowork chat',
-    description: 'When a chain approval is created or advances to a new step, post a notice in Cowork Chat (approval.assigned event).',
+    description: 'When a chain approval is created or advances to a new step, post a notice in Flowwork (approval.assigned event).',
     trigger_type: 'event',
     trigger_config: { event: 'approval.assigned' },
     skill_name: 'post_to_cowork_chat',

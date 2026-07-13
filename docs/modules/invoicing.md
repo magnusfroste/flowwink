@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Invoicing
 
 > Create and manage invoices with line items, tax computation, and status tracking
 
-Ships with **9 agent skills**.
+Ships with **10 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **9 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 10 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -47,6 +47,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `create_credit_note` | internal | Issue a credit note against an invoice — full (negates the invoice) or partial (a given amount). Use when: a customer returns goods, an invoice was over-billed, or a refund needs a credit document.… |
 | `record_invoice_payment` | internal | Record a manual payment (cash/Swish/card, no bank transaction) against an invoice; tracks paid_amount_cents and marks the invoice paid when fully settled. Use when: logging a payment received outsi… |
 | `ar_aging_report` | internal | Accounts-receivable aging: open (not fully paid) invoices bucketed per customer into current / 1-30 / 31-60 / 61-90 / 90+ days overdue. Use when: "who owes us money", collections review, month-end … |
+| `run_month_end_invoicing` | internal | Run the WHOLE month-end billing run as one deterministic step: (a) every project with billable uninvoiced time in the period gets one invoice draft (bulk_invoice_from_timesheets per project); (b) e… |
 
 ## Module API Contract
 

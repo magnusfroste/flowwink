@@ -3,7 +3,7 @@
  *
  * Surfaces conversations with `scope='visitor'` (anonymous + identified
  * leads coming through `/chat` and the chat widget). Internal admin/operator
- * threads (FlowChat, Cowork) live under their own surfaces and are excluded
+ * threads (FlowChat, Flowwork) live under their own surfaces and are excluded
  * here on purpose — this tab is the audit/log view for the public widget.
  */
 
@@ -135,7 +135,7 @@ export function VisitorSessionsTab() {
             </CardTitle>
             <CardDescription>
               Visitor chat sessions from <code className="text-xs">/chat</code> and the chat widget.
-              Internal operator threads live in FlowChat and Cowork.
+              Internal operator threads live in FlowChat and Flowwork.
             </CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>

@@ -35,7 +35,7 @@ and grounding strategy — none with real retrieval:
 |---|---|---|---|
 | Public chat widget / AiAssistantBlock | `chat-completion` | Anonymous (`sessionId` in localStorage, optional self-declared email). **Never consumes the user JWT** — a logged-in customer gets the anonymous experience. | `buildKnowledgeBase()` in `_shared/chat-context.ts` **bulk-dumps** published pages + `kb_articles` into the system prompt up to a ~50k-token budget. No ranking, no query relevance. |
 | Docs chat | `docs-chat` | Anonymous | Hand-rolled keyword scoring over `docs_pages` ("CAG"). |
-| Cowork Chat (workspace) | `workspace-chat` | JWT + role gate (`admin`/`employee`/`manager`). Role-agnostic beyond the gate — every allowed role sees the same sources. | `buildContext()` pulls the **25 most-recent rows** per selected source (documents, contracts, kb, pages, crm, employees, wiki) into a 15k-token fair-share budget, with `[N]` inline citations. |
+| Flowwork (workspace) | `workspace-chat` | JWT + role gate (`admin`/`employee`/`manager`). Role-agnostic beyond the gate — every allowed role sees the same sources. | `buildContext()` pulls the **25 most-recent rows** per selected source (documents, contracts, kb, pages, crm, employees, wiki) into a 15k-token fair-share budget, with `[N]` inline citations. |
 | FlowPilot Operate / FlowChat | `agent-operate` | JWT, admin | Full pilot core (`_shared/agent-reason.ts`, soul, objectives, memories) + `search_skills` → `execute_skill`. The *acting* agent, not a retrieval surface. |
 | Live support (human) | `support-router` → `route_conversation_to_agent` RPC | — | Human handoff; `chat-completion` already skips AI when a human agent is engaged. |
 
@@ -121,7 +121,7 @@ retrieve({
   text, tsvector, embedding, visibility class), populated by an indexer that
   walks pages/KB/wiki/docs/handbook content — incremental on write (trigger or
   event-bus), full reindex as a maintenance skill.
-- **Citations are first-class**: every result carries what the Cowork
+- **Citations are first-class**: every result carries what the Flowwork
   `[N]`-citation drawer needs. The citation UI already built for Cowork is an
   asset; retrieval feeds it everywhere.
 

@@ -16,7 +16,7 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
  *   - `manage_wiki_page`  — list / get / create / update / delete
  *   - `search_wiki`       — full-text-ish search over title + content
  *
- * Cowork Chat integration:
+ * Flowwork integration:
  *   - The `workspace-chat` edge function exposes `wiki` as a selectable
  *     knowledge source so support staff can ground answers in the intranet.
  *
@@ -237,7 +237,7 @@ export const wikiModule = defineModule<Input, Output>({
   processes: ['hire-to-retire'],
   maturity: 'L4',
   description:
-    'Internal TEdit-style wiki / intranet with page hierarchy, automatic version history (list/diff/restore), and per-page permissions (visibility + edit lock, RLS-enforced). CamelCase / [[WikiWord]] auto-linking creates missing pages on click. Surfaces as a selectable knowledge source in Cowork Chat.',
+    'Internal TEdit-style wiki / intranet with page hierarchy, automatic version history (list/diff/restore), and per-page permissions (visibility + edit lock, RLS-enforced). CamelCase / [[WikiWord]] auto-linking creates missing pages on click. Surfaces as a selectable knowledge source in Flowwork.',
   capabilities: ['data:read', 'data:write', 'content:receive'],
   tier: 'standard',
   inputSchema,

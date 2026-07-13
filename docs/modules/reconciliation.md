@@ -5,14 +5,14 @@ version: "1.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Reconciliation
 
 > Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches against invoices/expenses/orders.
 
-Ships with **9 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **9 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 10 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -47,6 +47,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_reconciliation_rule` | internal | Manage auto-categorisation rules for bank transactions (match counterparty/reference/description → suggested account + category). Use when: setting up recurring-payment rules, automating bank codin… |
 | `apply_reconciliation_rules` | internal | Tag unmatched bank transactions with a suggested account/category from the highest-priority matching reconciliation rule. Use when: after importing a bank file, before manual review. NOT for: invoi… |
 | `reconciliation_report` | internal | Bank reconciliation summary for a period: matched vs unmatched counts and amounts, plus rule-suggested count. Use when: month-end reconciliation review, reporting bank-feed health. |
+| `run_bookkeeping_sweep` | internal | Run the WHOLE daily bookkeeping pipeline as one deterministic step: apply reconciliation rules → auto-match bank events against invoices/expenses/orders → propose bookings for the rest → auto-book … |
 
 ## Module API Contract
 

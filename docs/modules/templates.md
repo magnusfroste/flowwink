@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-07"
+generated_at: "2026-07-13"
 ---
 
 # Templates
 
 > Template gallery, export current site as reusable template, and import templates from file
 
-Ships with **1 agent skill**.
+Ships with **3 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **1 agent skill**.
 | **Autonomy** | config-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 1 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Skills
@@ -34,7 +34,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `list_templates` | internal | List the starter-template catalog (static JSON in /templates) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am … |
+| `list_templates` | internal | List the starter-template catalog (bundled template JSON) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am I ru… |
+| `install_template` | internal | Install a starter template from the bundled catalog: seeds pages, blog posts, KB categories/articles, products (and consultants/booking data when the template ships them), then records an installed… |
+| `export_site_template` | internal | Export the current site as a reusable StarterTemplate JSON: serializes published pages (with blocks + meta), published blog posts, branding/chat/header/footer/SEO/cookie settings, homepage slug and… |
 
 ## Module API Contract
 
