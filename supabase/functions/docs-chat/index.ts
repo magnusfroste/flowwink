@@ -1,8 +1,11 @@
-// Public AI chat scoped to docs_pages content (CAG: load relevant pages → answer with citations).
-// No JWT required (visitors are anonymous). Reads docs_pages via service role.
+// Public AI chat over the docs (Retrieval Engine consumer — see
+// docs/architecture/retrieval-engine.md). No JWT required (visitors are
+// anonymous). Retrieval runs with the CALLER's eyes: the anon client + RLS
+// on knowledge_chunks means this surface can only ever ground on 'public'
+// chunks — never internal wiki/documents content.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getAnonClient } from '../_shared/supabase-clients.ts';
+import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,21 +14,6 @@ const corsHeaders = {
 };
 
 interface Msg { role: "user" | "assistant" | "system"; content: string }
-
-function tokenize(s: string): string[] {
-  return (s.toLowerCase().match(/[a-z0-9åäö]+/gi) ?? []).filter((t) => t.length > 2);
-}
-
-function score(text: string, queryTokens: string[]): number {
-  const lc = text.toLowerCase();
-  let s = 0;
-  for (const t of queryTokens) {
-    const re = new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "g");
-    const matches = lc.match(re);
-    if (matches) s += matches.length;
-  }
-  return s;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -40,30 +28,16 @@ serve(async (req) => {
     }
 
     const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-    const queryTokens = tokenize(lastUser);
 
-    const supabase = getServiceClient();
+    // This surface answers from the docs site only (sources filter runs in SQL).
+    const chunks = await retrieve(getAnonClient(), {
+      query: lastUser,
+      k: 8,
+      tokenBudget: 4000,
+      sources: ["docs_pages"],
+    });
 
-    const { data: pages } = await supabase
-      .from("docs_pages")
-      .select("category, slug, title, content, frontmatter")
-      .limit(500);
-
-    const ranked = (pages ?? [])
-      .map((p) => ({
-        ...p,
-        _score: score(p.title, queryTokens) * 5 + score(p.content.slice(0, 4000), queryTokens),
-      }))
-      .filter((p) => p._score > 0)
-      .sort((a, b) => b._score - a._score)
-      .slice(0, 5);
-
-    const context = ranked
-      .map(
-        (p, i) =>
-          `[Doc ${i + 1}] ${p.title} (/docs/${p.category}/${p.slug})\n${p.content.slice(0, 2500)}`,
-      )
-      .join("\n\n---\n\n");
+    const context = renderContext(chunks);
 
     const systemPrompt = `You are the Flowwink docs assistant. You help evaluators understand what Flowwink is, how it works, and what modules/processes exist.
 

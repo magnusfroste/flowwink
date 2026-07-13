@@ -74,6 +74,10 @@ verify_jwt = false
 [functions.docs-sync]
 verify_jwt = false
 
+# Cron-invoked sweeper (Retrieval Engine); pg_cron sends the anon key.
+[functions.knowledge-indexer]
+verify_jwt = false
+
 [functions.elks46-ingest]
 verify_jwt = false
 

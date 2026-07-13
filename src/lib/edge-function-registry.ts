@@ -63,7 +63,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'flowpilot-distill', 'flowpilot-followthrough', 'flowpilot-heartbeat', 'flowpilot-learn', 'gatewayapi-ingest', 'skill-curator',
   'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-inbox-scan',
   'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',
-  'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
+  'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
   'openai-account', 'openclaw-responses', 'parse-resume', 'process-image',
   'process-job-application', 'prospect-fit-analysis', 'prospect-research', 'qualify-lead',
   'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'recurring-quotes-cron',
