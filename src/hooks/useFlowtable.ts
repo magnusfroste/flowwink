@@ -14,7 +14,44 @@ export type FlowtableFieldType =
   | 'phone'
   | 'link'
   | 'lookup'
-  | 'rollup';
+  | 'rollup'
+  | 'user'
+  | 'currency'
+  | 'rating';
+
+export interface TeamProfile {
+  id: string;
+  full_name: string | null;
+  email: string;
+  avatar_url: string | null;
+  title: string | null;
+}
+
+// Team members for the 'user' field picker. Optionally scoped to a platform
+// role (app_role via user_roles) — assign to a PERSON, filter by role.
+export function useTeamProfiles(roleFilter?: string) {
+  return useQuery({
+    queryKey: ['flowtable-team-profiles', roleFilter ?? 'all'],
+    queryFn: async (): Promise<TeamProfile[]> => {
+      const { data: profiles, error } = await supabase
+        .from('profiles' as never)
+        .select('id, full_name, email, avatar_url, title')
+        .order('full_name', { ascending: true, nullsFirst: false })
+        .limit(200);
+      if (error) throw error;
+      let list = (profiles ?? []) as unknown as TeamProfile[];
+      if (roleFilter) {
+        const { data: roles } = await supabase
+          .from('user_roles' as never)
+          .select('user_id')
+          .eq('role', roleFilter);
+        const allowed = new Set(((roles ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
+        list = list.filter((p) => allowed.has(p.id));
+      }
+      return list;
+    },
+  });
+}
 
 export interface FlowtableBase {
   id: string;

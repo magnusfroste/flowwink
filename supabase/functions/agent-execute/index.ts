@@ -9558,9 +9558,13 @@ async function executeFlowtableQuery(
   // opt-in via resolve_computed → item._computed[field].
   const lookupFields = rawFields.filter((f: any) => f.type === 'lookup' && f.options?.via_link_field && f.options?.target_field);
   const rollupFields = rawFields.filter((f: any) => f.type === 'rollup' && f.options?.source_table_id && f.options?.source_link_field);
+  // User fields store a profiles.id (a real platform identity, not a name
+  // string) — resolved to {display, email} alongside links so an operator can
+  // read AND set assignees that the rest of FlowWink understands.
+  const userFields = rawFields.filter((f: any) => f.type === 'user');
 
-  // Public field schema — link/lookup/rollup fields carry their config so an
-  // agent understands the relation and can traverse it.
+  // Public field schema — link/lookup/rollup/user fields carry their config so
+  // an agent understands the relation and can traverse it.
   const fields = rawFields.map((f: any) => {
     if (f.type === 'link') return { key: f.key, name: f.name, type: f.type,
       link_table_id: f.options?.link_table_id,
@@ -9571,6 +9575,9 @@ async function executeFlowtableQuery(
     if (f.type === 'rollup') return { key: f.key, name: f.name, type: f.type,
       source_table_id: f.options?.source_table_id, source_link_field: f.options?.source_link_field,
       agg: f.options?.agg || 'count', agg_field: f.options?.agg_field };
+    if (f.type === 'user') return { key: f.key, name: f.name, type: f.type,
+      user_role_filter: f.options?.role_filter || null,
+      stores: 'profiles.id' };
     return { key: f.key, name: f.name, type: f.type };
   });
 
@@ -9595,7 +9602,32 @@ async function executeFlowtableQuery(
   // Batches one select per target table over the ids actually present, so a
   // 50-row page with 2 link columns costs at most 2 extra queries.
   const resolveLinksOnItems = async (items: any[]): Promise<void> => {
-    if (!resolve_links || !linkFields.length || !items.length) return;
+    if (!resolve_links || !items.length) return;
+
+    // User fields → profiles: same shape as record links, plus email so the
+    // operator can act on the person (notify, create a task, cross-reference).
+    if (userFields.length) {
+      const ids = [...new Set(items.flatMap((it) => userFields.map((uf: any) => it.values?.[uf.key])).filter(Boolean))];
+      if (ids.length) {
+        const { data: people } = await supabase.from('profiles')
+          .select('id, full_name, email').in('id', ids);
+        const byId: Record<string, any> = {};
+        for (const p of (people || [])) byId[p.id] = p;
+        for (const it of items) {
+          for (const uf of userFields) {
+            const uid = it.values?.[uf.key];
+            if (!uid) continue;
+            const p = byId[uid];
+            it._links = it._links || {};
+            it._links[uf.key] = p
+              ? { id: uid, display: p.full_name || p.email, email: p.email }
+              : { id: uid, display: '(unknown user)' };
+          }
+        }
+      }
+    }
+
+    if (!linkFields.length) return;
     for (const lf of linkFields) {
       const targetId = lf.options.link_table_id;
       const disp = lf.options.display_field;

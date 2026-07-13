@@ -41,6 +41,7 @@ import {
   fieldKeyify,
   type FlowtableFieldType, type FlowtableRecord, type FlowtableField, type FlowtableTable,
   type FlowtableViewConfig, type FlowtableViewFilter,
+  useTeamProfiles, type TeamProfile,
 } from '@/hooks/useFlowtable';
 import {
   DndContext, closestCorners, PointerSensor, useSensor, useSensors, DragOverlay,
@@ -61,9 +62,19 @@ const FIELD_TYPES: { value: FlowtableFieldType; label: string }[] = [
   { value: 'link', label: 'Link to table' },
   { value: 'lookup', label: 'Lookup (from linked row)' },
   { value: 'rollup', label: 'Rollup (aggregate linked rows)' },
+  { value: 'user', label: 'User (team member)' },
+  { value: 'currency', label: 'Currency' },
+  { value: 'rating', label: 'Rating (1-5)' },
 ];
 
-const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link', 'lookup', 'rollup']);
+// Platform roles usable as a picker filter on user fields (assign to a
+// PERSON; the role only scopes who is pickable). 'customer' excluded — not team.
+const APP_ROLE_FILTERS = [
+  'admin', 'employee', 'sales', 'hr', 'accounting', 'support',
+  'warehouse', 'marketing', 'purchasing', 'projects', 'writer', 'approver',
+] as const;
+
+const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link', 'lookup', 'rollup', 'user', 'currency']);
 const ROLLUP_AGGS = ['count', 'sum', 'avg', 'min', 'max'] as const;
 
 const FILTER_OPS: { value: FlowtableViewFilter['op']; label: string; needsValue: boolean }[] = [
@@ -840,6 +851,34 @@ function FieldOptionsEditor({ type, options, onChange, tables, fields }: {
   if (type === 'rollup') {
     return <RollupOptionsEditor options={options} onChange={onChange} tables={tables} />;
   }
+  if (type === 'user') {
+    const rf = (options.role_filter as string) || '';
+    return (
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Limit picker to role (optional)</Label>
+        <Select value={rf || '__any__'} onValueChange={(v) => onChange({ ...options, role_filter: v === '__any__' ? '' : v })}>
+          <SelectTrigger><SelectValue placeholder="Everyone" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__any__">Everyone</SelectItem>
+            {APP_ROLE_FILTERS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <p className="text-[11px] text-muted-foreground">Assignments store the person; the role only filters who is pickable.</p>
+      </div>
+    );
+  }
+  if (type === 'currency') {
+    return (
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Currency code</Label>
+        <Input
+          defaultValue={(options.currency_code as string) || 'SEK'}
+          maxLength={3}
+          onChange={(e) => onChange({ ...options, currency_code: e.target.value.toUpperCase() })}
+        />
+      </div>
+    );
+  }
   return null;
 }
 
@@ -1087,6 +1126,46 @@ function CellEditor({ field, value, record, fields, onChange }: {
   if (field.type === 'link') {
     return <LinkCell field={field} value={value} onChange={onChange} cellStyle={cellStyle} common={common} />;
   }
+  if (field.type === 'user') {
+    return <UserCell field={field} value={value} onChange={onChange} cellStyle={cellStyle} common={common} />;
+  }
+  if (field.type === 'currency') {
+    const code = (field.options?.currency_code as string) || 'SEK';
+    return (
+      <td className="border-r border-b p-0" style={cellStyle}>
+        <div className="flex items-center h-9">
+          <input
+            type="number"
+            defaultValue={(value as number | undefined) ?? ''}
+            onBlur={(e) => {
+              const v = e.target.value === '' ? null : Number(e.target.value);
+              if (v !== (value ?? null)) onChange(v);
+            }}
+            className={`${common} text-right pr-1`}
+          />
+          <span className="pr-2 text-[11px] text-muted-foreground shrink-0">{code}</span>
+        </div>
+      </td>
+    );
+  }
+  if (field.type === 'rating') {
+    const n = Number(value) || 0;
+    return (
+      <td className="border-r border-b p-0" style={cellStyle}>
+        <div className="h-9 px-2 flex items-center gap-0.5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChange(i === n ? null : i)}
+              className={`text-sm leading-none transition-colors ${i <= n ? 'text-amber-500' : 'text-muted-foreground/30 hover:text-amber-300'}`}
+              aria-label={`Rate ${i}`}
+            >★</button>
+          ))}
+        </div>
+      </td>
+    );
+  }
   // Date columns render an <input type="date">, which only accepts yyyy-MM-dd.
   // Imported data is usually free-form text ("2/13/2026", "2026-02-13 10:31:16"),
   // so coerce for display — otherwise switching a text column to Date blanks
@@ -1185,6 +1264,79 @@ function LinkCell({ field, value, onChange, cellStyle, common }: {
                     onSelect={() => { onChange(r.id); setOpen(false); }}
                   >
                     {displayOf(r.id)}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </td>
+  );
+}
+
+// User cell — assign a TEAM MEMBER (profiles.id). The picker lists people
+// (optionally scoped to a platform role via options.role_filter); the cell
+// shows an initials chip + name. Roles gate what a person may DO; the value
+// stored is always the person — never a role.
+function UserCell({ field, value, onChange, cellStyle, common }: {
+  field: FlowtableField;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  cellStyle: { width: number; minWidth: number };
+  common: string;
+}) {
+  const roleFilter = (field.options?.role_filter as string) || undefined;
+  const { data: people = [] } = useTeamProfiles(roleFilter);
+  const [open, setOpen] = useState(false);
+  const current = value as string | undefined;
+  const person = current ? people.find((p) => p.id === current) : undefined;
+
+  const initials = (p?: TeamProfile) => {
+    const n = p?.full_name || p?.email || '?';
+    return n.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  };
+  const displayName = (p?: TeamProfile) => p?.full_name || p?.email || '(unknown)';
+
+  return (
+    <td className="border-r border-b p-0" style={cellStyle}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button className={`${common} text-left truncate`}>
+            {current ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0">
+                  {person ? initials(person) : '?'}
+                </span>
+                <span className="text-sm truncate">{person ? displayName(person) : '(unknown user)'}</span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-64" align="start">
+          <Command>
+            <CommandInput placeholder="Search people…" />
+            <CommandList>
+              <CommandEmpty>No match</CommandEmpty>
+              <CommandGroup>
+                <CommandItem value="__clear__" onSelect={() => { onChange(null); setOpen(false); }}>
+                  <span className="text-muted-foreground">— (unassign)</span>
+                </CommandItem>
+                {people.map((p) => (
+                  <CommandItem
+                    key={p.id}
+                    value={`${displayName(p)} ${p.email} ${p.id}`}
+                    onSelect={() => { onChange(p.id); setOpen(false); }}
+                  >
+                    <span className="h-5 w-5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold flex items-center justify-center mr-2 shrink-0">
+                      {initials(p)}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm truncate">{displayName(p)}</span>
+                      {p.title && <span className="block text-[11px] text-muted-foreground truncate">{p.title}</span>}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -1453,7 +1605,7 @@ function KanbanView({ fields, records, config, onChangeConfig, onUpdate }: {
           <Select onValueChange={(v) => onChangeConfig({ ...config, kanban_field: v })}>
             <SelectTrigger className="h-9"><SelectValue placeholder="Group by…" /></SelectTrigger>
             <SelectContent>
-              {fields.filter((f) => !['lookup', 'rollup', 'checkbox'].includes(f.type)).map((f) => (
+              {fields.filter((f) => !['lookup', 'rollup', 'checkbox', 'user'].includes(f.type)).map((f) => (
                 <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>
               ))}
             </SelectContent>
@@ -1485,7 +1637,7 @@ function KanbanView({ fields, records, config, onChangeConfig, onUpdate }: {
         <Select value={groupField.key} onValueChange={(v) => onChangeConfig({ ...config, kanban_field: v })}>
           <SelectTrigger className="h-7 text-xs w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {fields.filter((f) => !['lookup', 'rollup', 'checkbox'].includes(f.type)).map((f) => (
+            {fields.filter((f) => !['lookup', 'rollup', 'checkbox', 'user'].includes(f.type)).map((f) => (
               <SelectItem key={f.key} value={f.key}>{f.name}</SelectItem>
             ))}
           </SelectContent>
