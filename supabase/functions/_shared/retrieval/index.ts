@@ -21,6 +21,11 @@ export interface RetrievalQuery {
   k?: number; // max chunks (default 8)
   tokenBudget?: number; // cap on total context tokens (default 4000)
   sources?: string[]; // narrow to specific source tables (filtered in SQL, not post-hoc)
+  /**
+   * Optional query vector for the hybrid semantic leg — compute it with
+   * embedQuery() (embedder.ts). Null/omitted → text-only ranking (Law 4).
+   */
+  queryEmbedding?: number[] | null;
 }
 
 export interface RetrievedChunk {
@@ -37,7 +42,7 @@ const CHARS_PER_TOKEN = 4;
 
 export async function retrieve(
   callerClient: any,
-  { query, k = 8, tokenBudget = 4000, sources }: RetrievalQuery,
+  { query, k = 8, tokenBudget = 4000, sources, queryEmbedding }: RetrievalQuery,
 ): Promise<RetrievedChunk[]> {
   const trimmed = query?.trim();
   if (!trimmed) return [];
@@ -46,6 +51,7 @@ export async function retrieve(
     query_text: trimmed,
     match_count: k,
     ...(sources?.length ? { sources } : {}),
+    ...(queryEmbedding?.length ? { query_embedding: queryEmbedding } : {}),
   });
   if (error) throw new Error(`search_knowledge_chunks failed: ${error.message}`);
 

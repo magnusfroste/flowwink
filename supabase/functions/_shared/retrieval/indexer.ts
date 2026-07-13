@@ -128,7 +128,19 @@ async function reindexEntity(
     return { chunks: 0, removed: true };
   }
 
-  const rows = await Promise.all(
+  // Hash-diff against stored chunks: unchanged chunks are skipped entirely
+  // (preserves their embeddings); changed/new chunks get embedding wiped so
+  // the embed sweep (embedder.ts) re-vectorizes them.
+  const { data: existing } = await service
+    .from('knowledge_chunks')
+    .select('chunk_index, content_hash')
+    .eq('source_table', sourceTable)
+    .eq('entity_id', entityId);
+  const existingHashes = new Map<number, string>(
+    (existing ?? []).map((r: any) => [r.chunk_index, r.content_hash]),
+  );
+
+  const allRows = await Promise.all(
     extracted.chunks.map(async (c, i) => ({
       source_table: sourceTable,
       entity_id: entityId,
@@ -138,25 +150,29 @@ async function reindexEntity(
       visibility: extracted.visibility,
       metadata: extracted.metadata,
       content_hash: await contentHash(c.content),
+      embedding: null,
+      embedding_model: null,
       updated_at: new Date().toISOString(),
     })),
   );
+  const rows = allRows.filter((r) => existingHashes.get(r.chunk_index) !== r.content_hash);
 
-  // Upsert current chunks, then trim any stale tail beyond the new count.
   if (rows.length > 0) {
     const { error } = await service
       .from('knowledge_chunks')
       .upsert(rows, { onConflict: 'source_table,entity_id,chunk_index' });
     if (error) throw new Error(`chunk upsert failed: ${error.message}`);
   }
+  // Trim the stale tail beyond the CURRENT total chunk count (not just the
+  // changed subset).
   await service
     .from('knowledge_chunks')
     .delete()
     .eq('source_table', sourceTable)
     .eq('entity_id', entityId)
-    .gte('chunk_index', rows.length);
+    .gte('chunk_index', allRows.length);
 
-  return { chunks: rows.length, removed: false };
+  return { chunks: allRows.length, removed: false };
 }
 
 export interface SweepResult {

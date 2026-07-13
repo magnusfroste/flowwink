@@ -10,6 +10,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { processQueue, queueFullReindex, CHUNK_SOURCES, type ChunkSource } from '../_shared/retrieval/indexer.ts';
+import { embedPendingChunks } from '../_shared/retrieval/embedder.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,9 +49,14 @@ serve(async (req) => {
 
     const sweep = await processQueue(service, body.limit ?? 50);
 
-    return new Response(JSON.stringify({ status: 'ok', ...(queued !== undefined ? { queued } : {}), ...sweep }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // M2: vectorize chunks lacking an embedding (or embedded with an old
+    // model). No provider configured → {provider: null}, text-only lane.
+    const embed = await embedPendingChunks(service, body.embed_limit ?? 80);
+
+    return new Response(
+      JSON.stringify({ status: 'ok', ...(queued !== undefined ? { queued } : {}), ...sweep, embed }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   } catch (e) {
     console.error('knowledge-indexer error:', e);
     return new Response(JSON.stringify({ error: String(e) }), {

@@ -69,10 +69,15 @@ describe('Retrieval Engine confidentiality guardrails', () => {
     expect(lib).not.toMatch(/SERVICE_ROLE|getServiceClient/);
   });
 
-  it('docs-chat retrieves with the anon client (caller’s eyes), not service role', () => {
+  it('docs-chat SEARCHES with the anon client (caller’s eyes) — service is config-only', () => {
     const fn = read('supabase/functions/docs-chat/index.ts');
-    expect(fn).toContain('getAnonClient');
-    expect(fn).not.toContain('getServiceClient');
+    // The chunk search must run on the anon client…
+    expect(fn).toMatch(/retrieve\(\s*getAnonClient\(\)/);
+    expect(fn).not.toMatch(/retrieve\(\s*getServiceClient/);
+    // …and the service client may appear ONLY as the embedQuery config source.
+    const serviceUses = fn.match(/getServiceClient\(\)/g) ?? [];
+    const embedConfigUses = fn.match(/embedQuery\(\s*getServiceClient\(\)/g) ?? [];
+    expect(serviceUses.length).toBe(embedConfigUses.length);
   });
 
   it('structured-data tables are not chunk sources (two-lane rule)', () => {

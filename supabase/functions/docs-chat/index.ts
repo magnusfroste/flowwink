@@ -4,8 +4,9 @@
 // on knowledge_chunks means this surface can only ever ground on 'public'
 // chunks — never internal wiki/documents content.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getAnonClient } from '../_shared/supabase-clients.ts';
+import { getAnonClient, getServiceClient } from '../_shared/supabase-clients.ts';
 import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
+import { embedQuery } from '../_shared/retrieval/embedder.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,12 +30,18 @@ serve(async (req) => {
 
     const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
 
+    // Hybrid: the query embedding is computed with provider CONFIG (service
+    // client — site_settings holds the API keys; null → text-only, Law 4).
+    // The chunk SEARCH still runs with the caller's eyes (anon client + RLS).
+    const queryEmbedding = await embedQuery(getServiceClient(), lastUser);
+
     // This surface answers from the docs site only (sources filter runs in SQL).
     const chunks = await retrieve(getAnonClient(), {
       query: lastUser,
       k: 8,
       tokenBudget: 4000,
       sources: ["docs_pages"],
+      queryEmbedding,
     });
 
     const context = renderContext(chunks);
