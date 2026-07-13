@@ -7232,6 +7232,7 @@ export type Database = {
           position: number
           slug: string
           updated_at: string
+          view_config: Json
           view_mode: string
         }
         Insert: {
@@ -7242,6 +7243,7 @@ export type Database = {
           position?: number
           slug: string
           updated_at?: string
+          view_config?: Json
           view_mode?: string
         }
         Update: {
@@ -7252,6 +7254,7 @@ export type Database = {
           position?: number
           slug?: string
           updated_at?: string
+          view_config?: Json
           view_mode?: string
         }
         Relationships: [
