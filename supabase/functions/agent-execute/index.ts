@@ -9520,6 +9520,8 @@ async function executeFlowtableAction(
 ): Promise<unknown> {
   if (skillName === 'query_flowtable') return await executeFlowtableQuery(supabase, args);
   if (skillName === 'manage_flowtable_record') return await executeFlowtableRecord(supabase, args);
+  if (skillName === 'manage_flowtable_table') return await executeFlowtableTable(supabase, args);
+  if (skillName === 'manage_flowtable_field') return await executeFlowtableField(supabase, args);
   return { error: `Unknown flowtable skill: ${skillName}` };
 }
 
@@ -9895,6 +9897,284 @@ async function executeFlowtableRecord(
   }
 
   return { error: `Unknown action '${action}'. Supported: create, update, delete, get.` };
+}
+
+// Schema management — the skill surface that lets an operator BUILD a base
+// (tables + fields), not just fill one. Mirrors the admin UI's conventions
+// (fieldKeyify/slugify, width defaults) so agent-created schema is
+// indistinguishable from human-created schema in the grid.
+
+const FLOWTABLE_FIELD_TYPES = new Set([
+  'text', 'longtext', 'number', 'checkbox', 'select', 'multiselect', 'date',
+  'url', 'email', 'phone', 'link', 'lookup', 'rollup', 'user', 'currency', 'rating',
+]);
+const FLOWTABLE_ROLLUP_AGGS = new Set(['count', 'sum', 'avg', 'min', 'max']);
+
+const flowtableFieldKeyify = (s: string): string =>
+  s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+
+const flowtableSlugify = (s: string): string =>
+  s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60);
+
+async function resolveFlowtableBase(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<{ base?: any; error?: string }> {
+  const { base_id, base } = args as any;
+  if (base_id) {
+    const { data } = await supabase.from('flowtable_bases')
+      .select('id, name, slug').eq('id', base_id).maybeSingle();
+    if (!data) return { error: `Flowtable base ${base_id} not found` };
+    return { base: data };
+  }
+  if (!base) return { error: 'base_id or base (name/slug) is required' };
+  const { data: all, error } = await supabase.from('flowtable_bases')
+    .select('id, name, slug').limit(100);
+  if (error) return { error: `Base lookup failed: ${error.message}` };
+  const b = String(base).toLowerCase();
+  const matches = (all || []).filter((x: any) =>
+    x.slug === b || (x.name || '').toLowerCase() === b);
+  if (!matches.length) {
+    const available = (all || []).map((x: any) => x.slug).join(', ') || '(none)';
+    return { error: `No Flowtable base matches '${base}'. Available bases: ${available}` };
+  }
+  if (matches.length > 1) {
+    return { error: `Ambiguous base '${base}'. Pass base_id.` };
+  }
+  return { base: matches[0] };
+}
+
+// Validate + normalize the options object for a field type. Returns the
+// cleaned options or an error string. Link/rollup targets may be given by
+// table name — resolved here so the stored config always holds ids.
+async function normalizeFlowtableFieldOptions(
+  supabase: any,
+  tableId: string,
+  type: string,
+  raw: Record<string, any>,
+): Promise<{ options?: Record<string, unknown>; error?: string }> {
+  const opts = raw && typeof raw === 'object' ? { ...raw } : {};
+
+  const resolveTarget = async (idKey: string, nameKey: string): Promise<string | { error: string }> => {
+    if (opts[idKey]) return String(opts[idKey]);
+    if (!opts[nameKey]) return { error: `options.${idKey} (or options.${nameKey} by name/slug) is required for type '${type}'` };
+    const r = await resolveFlowtableTable(supabase, { table: opts[nameKey] });
+    if (r.error) return { error: r.error };
+    return r.table.id;
+  };
+
+  if (type === 'link') {
+    const t = await resolveTarget('link_table_id', 'link_table');
+    if (typeof t !== 'string') return t;
+    const out: Record<string, unknown> = { link_table_id: t };
+    if (opts.display_field) out.display_field = String(opts.display_field);
+    return { options: out };
+  }
+  if (type === 'lookup') {
+    if (!opts.via_link_field || !opts.target_field) {
+      return { error: "lookup needs options.via_link_field (a link field key in THIS table) + options.target_field (field key in the linked table)" };
+    }
+    const { data: via } = await supabase.from('flowtable_fields')
+      .select('key, type').eq('table_id', tableId).eq('key', String(opts.via_link_field)).maybeSingle();
+    if (!via || via.type !== 'link') {
+      return { error: `options.via_link_field '${opts.via_link_field}' is not a link field on this table` };
+    }
+    return { options: { via_link_field: String(opts.via_link_field), target_field: String(opts.target_field) } };
+  }
+  if (type === 'rollup') {
+    const t = await resolveTarget('source_table_id', 'source_table');
+    if (typeof t !== 'string') return t;
+    if (!opts.source_link_field) {
+      return { error: 'rollup needs options.source_link_field — the link field key in the SOURCE table that points back at this table' };
+    }
+    const agg = String(opts.agg || 'count');
+    if (!FLOWTABLE_ROLLUP_AGGS.has(agg)) {
+      return { error: `Invalid agg '${agg}'. Supported: ${[...FLOWTABLE_ROLLUP_AGGS].join(', ')}` };
+    }
+    if (agg !== 'count' && !opts.agg_field) {
+      return { error: `agg '${agg}' needs options.agg_field (the numeric field in the source table to aggregate)` };
+    }
+    const out: Record<string, unknown> = { source_table_id: t, source_link_field: String(opts.source_link_field), agg };
+    if (opts.agg_field) out.agg_field = String(opts.agg_field);
+    return { options: out };
+  }
+  if (type === 'select' || type === 'multiselect') {
+    const out: Record<string, unknown> = {};
+    if (Array.isArray(opts.choices)) out.choices = opts.choices.map((c: any) => String(c));
+    return { options: out };
+  }
+  if (type === 'user') {
+    const out: Record<string, unknown> = {};
+    if (opts.role_filter) out.role_filter = String(opts.role_filter);
+    return { options: out };
+  }
+  if (type === 'currency') {
+    const out: Record<string, unknown> = {};
+    if (opts.currency_code) out.currency_code = String(opts.currency_code).toUpperCase().slice(0, 3);
+    return { options: out };
+  }
+  // Plain types keep nothing type-specific; drop unknown keys silently.
+  return { options: {} };
+}
+
+async function executeFlowtableTable(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action, name, fields, confirm = false } = args as any;
+  if (!action) return { error: 'action is required: create, rename or delete' };
+
+  if (action === 'create') {
+    const rb = await resolveFlowtableBase(supabase, args);
+    if (rb.error) return { error: rb.error };
+    if (!name) return { error: 'name is required for create' };
+    const slug = flowtableSlugify(String(name));
+    const { data: dup } = await supabase.from('flowtable_tables')
+      .select('id').eq('base_id', rb.base.id).eq('slug', slug).maybeSingle();
+    if (dup) return { error: `A table with slug '${slug}' already exists in base '${rb.base.name}'` };
+    const { data: created, error } = await supabase.from('flowtable_tables')
+      .insert({ base_id: rb.base.id, name: String(name), slug, view_mode: 'grid' })
+      .select('id, name, slug').single();
+    if (error) return { error: `Create table failed: ${error.message}` };
+
+    const createdFields: any[] = [];
+    const fieldErrors: string[] = [];
+    if (Array.isArray(fields) && fields.length) {
+      let pos = 0;
+      for (const f of fields) {
+        const fname = f?.name;
+        const ftype = String(f?.type || 'text');
+        if (!fname) { fieldErrors.push('field without name skipped'); continue; }
+        if (!FLOWTABLE_FIELD_TYPES.has(ftype)) {
+          fieldErrors.push(`'${fname}': unknown type '${ftype}'`); continue;
+        }
+        const norm = await normalizeFlowtableFieldOptions(supabase, created.id, ftype, f?.options || {});
+        if (norm.error) { fieldErrors.push(`'${fname}': ${norm.error}`); continue; }
+        const key = f?.key && safeFlowtableKey(String(f.key))
+          ? String(f.key) : flowtableFieldKeyify(String(fname));
+        if (!key) { fieldErrors.push(`'${fname}': empty key`); continue; }
+        if (createdFields.some((c) => c.key === key)) { fieldErrors.push(`'${fname}': duplicate key '${key}'`); continue; }
+        const { error: fe } = await supabase.from('flowtable_fields').insert({
+          table_id: created.id, name: String(fname), key, type: ftype,
+          position: pos++, width: ftype === 'longtext' ? 320 : 180, options: norm.options,
+        });
+        if (fe) { fieldErrors.push(`'${fname}': ${fe.message}`); continue; }
+        createdFields.push({ key, name: String(fname), type: ftype });
+      }
+    }
+    return {
+      created: true, table_id: created.id, name: created.name, slug: created.slug,
+      base: rb.base.name, fields: createdFields,
+      ...(fieldErrors.length ? { field_errors: fieldErrors } : {}),
+      ...(!createdFields.length ? { hint: 'Table has no fields yet — add them with manage_flowtable_field or pass fields[] on create.' } : {}),
+    };
+  }
+
+  const resolved = await resolveFlowtableTable(supabase, args);
+  if (resolved.error) return { error: resolved.error };
+  const table = resolved.table;
+
+  if (action === 'rename') {
+    if (!name) return { error: 'name is required for rename' };
+    // Slug stays stable — it may be referenced by operators and Flowwork citations.
+    const { error } = await supabase.from('flowtable_tables')
+      .update({ name: String(name) }).eq('id', table.id);
+    if (error) return { error: `Rename failed: ${error.message}` };
+    return { renamed: true, table_id: table.id, name: String(name), slug: table.slug };
+  }
+
+  if (action === 'delete') {
+    const { count } = await supabase.from('flowtable_records')
+      .select('id', { count: 'exact', head: true }).eq('table_id', table.id);
+    if ((count || 0) > 0 && !confirm) {
+      return { error: `Table '${table.name}' has ${count} records. Pass confirm=true to delete the table AND all its records/fields.` };
+    }
+    const { error } = await supabase.from('flowtable_tables').delete().eq('id', table.id);
+    if (error) return { error: `Delete table failed: ${error.message}` };
+    return { deleted: true, table_id: table.id, name: table.name, records_deleted: count || 0 };
+  }
+
+  return { error: `Unknown action '${action}'. Supported: create, rename, delete.` };
+}
+
+async function executeFlowtableField(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action, name, key, type, options } = args as any;
+  if (!action) return { error: 'action is required: create, update or delete' };
+
+  const resolved = await resolveFlowtableTable(supabase, args);
+  if (resolved.error) return { error: resolved.error };
+  const table = resolved.table;
+
+  const { data: fieldRows } = await supabase.from('flowtable_fields')
+    .select('id, key, name, type, position, options').eq('table_id', table.id).order('position');
+  const existing = fieldRows || [];
+  const keyList = existing.map((f: any) => f.key).join(', ') || '(none)';
+
+  if (action === 'create') {
+    if (!name) return { error: 'name is required for create' };
+    const ftype = String(type || 'text');
+    if (!FLOWTABLE_FIELD_TYPES.has(ftype)) {
+      return { error: `Unknown type '${ftype}'. Supported: ${[...FLOWTABLE_FIELD_TYPES].join(', ')}` };
+    }
+    const fkey = key && safeFlowtableKey(String(key)) ? String(key) : flowtableFieldKeyify(String(name));
+    if (!fkey) return { error: `Could not derive a valid key from '${name}' — pass key explicitly (a-z, 0-9, _)` };
+    if (existing.some((f: any) => f.key === fkey)) {
+      return { error: `Field key '${fkey}' already exists on '${table.name}'. Existing keys: ${keyList}` };
+    }
+    const norm = await normalizeFlowtableFieldOptions(supabase, table.id, ftype, options || {});
+    if (norm.error) return { error: norm.error };
+    const position = existing.length ? Math.max(...existing.map((f: any) => f.position || 0)) + 1 : 0;
+    const { error } = await supabase.from('flowtable_fields').insert({
+      table_id: table.id, name: String(name), key: fkey, type: ftype,
+      position, width: ftype === 'longtext' ? 320 : 180, options: norm.options,
+    });
+    if (error) return { error: `Create field failed: ${error.message}` };
+    return { created: true, table: table.name, field: { key: fkey, name: String(name), type: ftype, options: norm.options } };
+  }
+
+  // update/delete address the field by key.
+  if (!key) return { error: `key is required for ${action}. This table's fields: ${keyList}` };
+  const field = existing.find((f: any) => f.key === String(key));
+  if (!field) return { error: `No field with key '${key}' on '${table.name}'. Fields: ${keyList}` };
+
+  if (action === 'update') {
+    const patch: Record<string, unknown> = {};
+    if (name) patch.name = String(name);
+    const nextType = type ? String(type) : field.type;
+    if (type) {
+      if (!FLOWTABLE_FIELD_TYPES.has(nextType)) {
+        return { error: `Unknown type '${nextType}'. Supported: ${[...FLOWTABLE_FIELD_TYPES].join(', ')}` };
+      }
+      patch.type = nextType;
+    }
+    if (options || type) {
+      // Options are merged over the existing config, then re-validated for the
+      // (possibly new) type — so setting one option never wipes the others.
+      const merged = { ...(field.options || {}), ...(options || {}) };
+      const norm = await normalizeFlowtableFieldOptions(supabase, table.id, nextType, merged);
+      if (norm.error) return { error: norm.error };
+      patch.options = norm.options;
+    }
+    if (!Object.keys(patch).length) return { error: 'Nothing to update — pass name, type and/or options' };
+    const { error } = await supabase.from('flowtable_fields').update(patch).eq('id', field.id);
+    if (error) return { error: `Update field failed: ${error.message}` };
+    return { updated: true, table: table.name, field: { key: field.key, name: patch.name || field.name, type: nextType, ...(patch.options ? { options: patch.options } : {}) } };
+  }
+
+  if (action === 'delete') {
+    const { error } = await supabase.from('flowtable_fields').delete().eq('id', field.id);
+    if (error) return { error: `Delete field failed: ${error.message}` };
+    // Record values keep the orphaned key (harmless; invisible in the grid) —
+    // recreating a field with the same key resurfaces the data.
+    return { deleted: true, table: table.name, key: field.key };
+  }
+
+  return { error: `Unknown action '${action}'. Supported: create, update, delete.` };
 }
 
 // =============================================================================

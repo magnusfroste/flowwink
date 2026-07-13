@@ -178,6 +178,84 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
     instructions:
       'create: pass table (or table_id) + values; keys outside the table\'s fields are stored but flagged with a warning (they stay invisible in the grid until a matching field exists). update: MERGE semantics by default — only the keys you pass change; pass merge=false to replace the whole values object. Get field keys from query_flowtable/list_flowtable_records responses.',
   },
+  {
+    name: 'manage_flowtable_table',
+    description:
+      'Create, rename or delete a TABLE inside a Flowtable base — schema management, so an agent can build up a base (e.g. "set up a table for supplier contacts"), not just fill one. Create accepts an inline fields[] array to define the whole schema in one call. Use when: the data has no home yet. NOT for: rows (manage_flowtable_record); fields on an existing table (manage_flowtable_field).',
+    category: 'crm',
+    handler: 'module:flowtable',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_flowtable_table',
+        description: 'Create/rename/delete a Flowtable table; create can define fields inline.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'rename', 'delete'] },
+            base: { type: 'string', description: 'Base name or slug (create; also disambiguates rename/delete)' },
+            base_id: { type: 'string', description: 'Base UUID (alternative to base)' },
+            table_id: { type: 'string', description: 'Table UUID (rename/delete)' },
+            table: { type: 'string', description: 'Table name or slug (rename/delete, alternative to table_id)' },
+            name: { type: 'string', description: 'New table name (create/rename)' },
+            fields: {
+              type: 'array',
+              description: 'create only: schema to create with the table',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  type: { type: 'string', description: 'text|longtext|number|checkbox|select|multiselect|date|url|email|phone|link|lookup|rollup|user|currency|rating (default text)' },
+                  key: { type: 'string', description: 'Optional explicit key (a-z0-9_); derived from name if omitted' },
+                  options: { type: 'object', description: 'Type-specific config — see manage_flowtable_field' },
+                },
+                required: ['name'],
+              },
+            },
+            confirm: { type: 'boolean', description: 'delete only: required when the table still has records' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions:
+      'create: base (or base_id) + name; pass fields[] to define the schema in the same call (per-field failures come back in field_errors without failing the whole create). Deleting a table with records requires confirm=true and removes records + fields (cascade). rename changes the display name only — the slug stays stable because operators and citations reference it. Bases themselves are created by humans in /admin/flowtable; if no base fits, say so instead of guessing.',
+  },
+  {
+    name: 'manage_flowtable_field',
+    description:
+      'Create, update or delete a FIELD (column) on a Flowtable table — including relation fields (link/lookup/rollup), user assignment fields, and select choices. Use when: a table needs a new column (e.g. add an "Assignee" user field, add a link to Products, define select choices). NOT for: row values (manage_flowtable_record); creating tables (manage_flowtable_table).',
+    category: 'crm',
+    handler: 'module:flowtable',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_flowtable_field',
+        description: 'Create/update/delete a column on a Flowtable table, with type-specific options.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'update', 'delete'] },
+            table_id: { type: 'string', description: 'Table UUID' },
+            table: { type: 'string', description: 'Table name or slug (alternative to table_id)' },
+            base: { type: 'string', description: 'Base name or slug, to disambiguate table lookup' },
+            name: { type: 'string', description: 'Field display name (create; optionally update)' },
+            key: { type: 'string', description: 'Field key — identifies the field for update/delete; optional explicit key on create (derived from name if omitted)' },
+            type: { type: 'string', description: 'text|longtext|number|checkbox|select|multiselect|date|url|email|phone|link|lookup|rollup|user|currency|rating' },
+            options: {
+              type: 'object',
+              description: 'Type-specific config. link: {link_table_id | link_table (name), display_field}. lookup: {via_link_field, target_field}. rollup: {source_table_id | source_table (name), source_link_field, agg: count|sum|avg|min|max, agg_field (non-count)}. select/multiselect: {choices: [..]}. user: {role_filter}. currency: {currency_code}.',
+            },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions:
+      'Identify the table via table (+ base) or table_id; update/delete identify the field by key (error responses list the real keys). create derives key from name unless you pass one. Type-specific options are validated: link accepts link_table by NAME and stores the resolved link_table_id; lookup requires via_link_field to be an existing link field on the SAME table; rollup\'s source_link_field is the link field in the SOURCE table that points back here; agg other than count requires agg_field. update merges options over the existing config and re-validates, so setting one option never wipes the rest. Deleting a field keeps the values in existing rows (invisible until a field with the same key is recreated). Changing a field\'s type does not convert stored values.',
+  },
 ];
 
 export const flowtableModule = defineModule<Input, Output>({
