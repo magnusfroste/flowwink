@@ -182,8 +182,7 @@ verify_jwt = false
 [functions.twilio-ingest]
 verify_jwt = false
 
-[functions.elks46-ingest]
-verify_jwt = false
+# NB: elks46-ingest is already declared earlier in this file (kept single).
 
 [functions.gatewayapi-ingest]
 verify_jwt = false
