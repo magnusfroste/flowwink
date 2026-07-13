@@ -37,7 +37,8 @@ type SourceKey =
   | 'pages'
   | 'crm'
   | 'employees'
-  | 'wiki';
+  | 'wiki'
+  | 'flowtable';
 
 const ALL_SOURCES: SourceKey[] = [
   'documents',
@@ -47,6 +48,7 @@ const ALL_SOURCES: SourceKey[] = [
   'crm',
   'employees',
   'wiki',
+  'flowtable',
 ];
 
 interface Citation {
@@ -165,6 +167,7 @@ function applyTokenBudget(
 async function buildContext(
   supabase: any,
   sources: SourceKey[],
+  query = '',
 ): Promise<{ contextText: string; citations: Citation[]; meta: ContextMeta }> {
   const citations: Citation[] = [];
   const rawBlocks: Array<{ source: string; text: string }> = [];
@@ -350,6 +353,89 @@ async function buildContext(
     }
   }
 
+  if (sources.includes('flowtable')) {
+    // Flowtable = the company's long-tail knowledge (imported sheets: error
+    // codes, price lists, supplier registers). Unlike the other sources these
+    // tables can be huge (6k+ rows), so retrieval is QUESTION-DRIVEN: extract
+    // keywords from the user's latest message and search values server-side,
+    // instead of dumping recent rows. Only workspace-shared bases are exposed
+    // — owner-private bases stay out of the team chat.
+    try {
+      const terms = [...new Set(
+        String(query).toLowerCase()
+          .replace(/[^\p{L}\p{N}\s_-]/gu, ' ')
+          .split(/\s+/)
+          .filter((t) => t.length >= 3),
+      )].slice(0, 6);
+
+      if (terms.length) {
+        const { data: bases } = await supabase
+          .from('flowtable_bases')
+          .select('id, name, slug')
+          .eq('workspace_shared', true)
+          .limit(10);
+
+        if (bases?.length) {
+          const baseIds = bases.map((b: any) => b.id);
+          const baseById: Record<string, any> = {};
+          for (const b of bases) baseById[b.id] = b;
+
+          const { data: tables } = await supabase
+            .from('flowtable_tables')
+            .select('id, base_id, name, slug')
+            .in('base_id', baseIds)
+            .limit(30);
+
+          const safeKey = (k: string) => /^[a-zA-Z0-9_]+$/.test(k);
+          const esc = (t: string) => t.replace(/[,()\\%]/g, '');
+          const ROWS_PER_TABLE = 6;
+          const tableBlocks: string[] = [];
+
+          for (const t of (tables || [])) {
+            const { data: fields } = await supabase
+              .from('flowtable_fields')
+              .select('key, name')
+              .eq('table_id', t.id)
+              .order('position')
+              .limit(20);
+            const keys = (fields || []).map((f: any) => f.key).filter(safeKey);
+            if (!keys.length) continue;
+
+            const orExpr = keys
+              .flatMap((k: string) => terms.map((term) => `values->>${k}.ilike.%${esc(term)}%`))
+              .join(',');
+            const { data: rows } = await supabase
+              .from('flowtable_records')
+              .select('id, values')
+              .eq('table_id', t.id)
+              .or(orExpr)
+              .limit(ROWS_PER_TABLE);
+            if (!rows?.length) continue;
+
+            const base = baseById[t.base_id];
+            const rowLines = rows.map((rec: any) => {
+              const v = rec.values || {};
+              const firstVal = String(Object.values(v)[0] ?? rec.id).slice(0, 60);
+              const r = push('flowtable', rec.id, `${t.name}: ${firstVal}`, `/admin/flowtable/${base?.slug}/${t.slug}`);
+              const kv = keys
+                .map((k: string) => (v[k] != null && v[k] !== '' ? `${k}: ${String(v[k]).slice(0, 200)}` : null))
+                .filter(Boolean)
+                .join('; ');
+              return `[${r}] ${kv}`;
+            });
+            tableBlocks.push(`#### ${base?.name}/${t.name} (fields: ${keys.join(', ')})\n${rowLines.join('\n')}`);
+          }
+
+          if (tableBlocks.length) {
+            rawBlocks.push({ source: 'flowtable', text: `### Flowtable (matched rows)\n${tableBlocks.join('\n\n')}` });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('cowork-chat: flowtable source failed', e);
+    }
+  }
+
   const { contextText, meta } = applyTokenBudget(rawBlocks);
   return { contextText, citations, meta };
 }
@@ -477,7 +563,8 @@ Deno.serve(async (req) => {
     const allowWorld = mode === 'strict' ? false : settings.allowWorldKnowledge;
     const webSearchOn = mode === 'strict' ? false : settings.allowWebSearch && !!Deno.env.get('FIRECRAWL_API_KEY');
 
-    const { contextText, citations, meta: contextMeta } = await buildContext(supabaseAdmin, requestedSources);
+    const latestUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+    const { contextText, citations, meta: contextMeta } = await buildContext(supabaseAdmin, requestedSources, String(latestUserMessage));
     console.log(`[cowork-chat] context: ${contextMeta.tokens_used}/${contextMeta.tokens_budget} tokens, ${contextMeta.sources_active} sources, truncated=[${contextMeta.sources_truncated.join(',')}]`);
 
     const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabaseAdmin, 'fast');

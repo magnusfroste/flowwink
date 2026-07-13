@@ -9,7 +9,8 @@ export type WorkspaceSource =
   | 'pages'
   | 'crm'
   | 'employees'
-  | 'wiki';
+  | 'wiki'
+  | 'flowtable';
 
 export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'documents',
@@ -19,6 +20,7 @@ export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'crm',
   'employees',
   'wiki',
+  'flowtable',
 ];
 
 export interface WorkspaceCitation {

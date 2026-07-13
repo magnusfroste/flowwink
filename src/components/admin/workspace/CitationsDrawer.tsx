@@ -24,6 +24,7 @@ import {
   Layout,
   Users,
   UserCheck,
+  Table2,
 } from 'lucide-react';
 import type { WorkspaceCitation } from '@/hooks/useWorkspaceChat';
 import {
@@ -60,6 +61,7 @@ const SOURCE_META: Record<
   crm: { label: 'CRM', Icon: Users },
   employees: { label: 'Employees', Icon: UserCheck },
   wiki: { label: 'Wiki', Icon: BookOpen },
+  flowtable: { label: 'Flowtable', Icon: Table2 },
 };
 
 export function CitationsDrawer({

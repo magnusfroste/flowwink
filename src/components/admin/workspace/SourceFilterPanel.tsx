@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ALL_WORKSPACE_SOURCES, type WorkspaceSource } from '@/hooks/useWorkspaceChat';
-import { FileText, FileSignature, BookOpen, Layout, Users, UserCheck, RotateCcw } from 'lucide-react';
+import { FileText, FileSignature, BookOpen, Layout, Users, UserCheck, RotateCcw, Table2 } from 'lucide-react';
 
 const SOURCE_META: Record<WorkspaceSource, { label: string; description: string; Icon: any }> = {
   documents: { label: 'Documents', description: 'Files & uploaded docs', Icon: FileText },
@@ -13,6 +13,7 @@ const SOURCE_META: Record<WorkspaceSource, { label: string; description: string;
   crm: { label: 'CRM', description: 'Leads & deals', Icon: Users },
   employees: { label: 'Employees', description: 'HR records', Icon: UserCheck },
   wiki: { label: 'Wiki', description: 'Internal intranet pages', Icon: BookOpen },
+  flowtable: { label: 'Flowtable', description: 'Shared tables (imported sheets, catalogs)', Icon: Table2 },
 };
 
 interface Props {
