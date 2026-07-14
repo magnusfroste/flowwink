@@ -2125,6 +2125,54 @@ async function executeHandbookAction(
 // OpenClaw Beta Tester module handlers
 // =============================================================================
 
+/**
+ * Resolve the trustworthy attribution slug for a reported finding.
+ *
+ * Self-reported attribution (`reported_by` arg) is forgeable — a caller could
+ * claim any peer's name. So the AUTHENTICATED identity (the MCP api_key behind
+ * the call) is the source of truth: the claimed slug is honored only when it is
+ * corroborated by the key's own name, otherwise the key's identity wins. With
+ * no key context (internal service-role call) the arg is trusted as-is.
+ *
+ * Keeps the historical short-slug convention (reported_by='openclaw'/'claude')
+ * rather than the verbose key name, but only when the key actually is that peer.
+ */
+function slugifyAgentName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\(mcp\)/g, ' ')
+    .replace(/mcp key for peer/g, ' ')  // federation-invite key-name template
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'peer';
+}
+
+async function resolveReportedBy(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<string | null> {
+  const claimed = typeof args.reported_by === 'string' ? args.reported_by.trim().toLowerCase() : '';
+  const keyId = (args as any)._caller_api_key_id as string | undefined;
+
+  // No authenticated key (internal service-role call) → trust the arg.
+  if (!keyId) return claimed || null;
+
+  const { data: key } = await supabase.from('api_keys').select('name').eq('id', keyId).maybeSingle();
+  let authName: string = key?.name || '';
+  if (!authName) {
+    const { data: peer } = await supabase.from('a2a_peers').select('name').eq('api_key_id', keyId).maybeSingle();
+    authName = peer?.name || '';
+  }
+  // Key context exists but is unnameable → still prefer a claimed slug over null.
+  if (!authName) return claimed || null;
+
+  const authLower = authName.toLowerCase();
+  // Honor the clean claimed slug ONLY if the authenticated key corroborates it.
+  if (claimed && authLower.includes(claimed)) return claimed;
+  // Otherwise the authenticated identity wins (rejects impersonation).
+  return slugifyAgentName(authName);
+}
+
 async function executeOpenClawAction(
   supabase: any,
   skillName: string,
@@ -2170,7 +2218,7 @@ async function executeOpenClawAction(
 
     case 'report_finding':
     case 'openclaw_report_finding': {
-      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true, reported_by } = args as any;
+      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true } = args as any;
       const normalizedType = typeof type === 'string'
         ? ({ observation: 'suggestion', seo: 'suggestion', seo_audit: 'suggestion' } as Record<string, string>)[type.trim()] ?? type.trim()
         : '';
@@ -2181,11 +2229,16 @@ async function executeOpenClawAction(
         return { error: `invalid finding type "${normalizedType}". Allowed: ${validFindingTypes.join(', ')}` };
       }
 
-      // Save finding (session_id now optional for MCP-driven reports)
-      // reported_by persists peer attribution (e.g. "hermes", "claude-code") — required for federation audit trail.
+      // Save finding (session_id now optional for MCP-driven reports).
+      // reported_by is the audit-trail attribution. It is DERIVED from the
+      // authenticated api_key (not trusted from the arg) so a peer can't
+      // impersonate another — see resolveReportedBy. This closes the gap where
+      // gateway-filed findings landed reported_by=NULL and broke the collab
+      // loop's `WHERE reported_by='<peer>'` grouping.
+      const reportedBy = await resolveReportedBy(supabase, args as any);
       const { data, error } = await supabase
         .from('beta_test_findings')
-        .insert({ session_id: session_id || null, type: normalizedType, severity, title, description, context, screenshot_url, reported_by: reported_by || null })
+        .insert({ session_id: session_id || null, type: normalizedType, severity, title, description, context, screenshot_url, reported_by: reportedBy })
         .select('id, type, severity, title, reported_by')
         .single();
       if (error) throw new Error(`Finding report failed: ${error.message}`);
