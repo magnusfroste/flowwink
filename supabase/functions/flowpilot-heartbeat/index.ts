@@ -276,7 +276,7 @@ serve(async (req) => {
     const { data: hbOv } = await supabase
       .from('site_settings').select('value').eq('key', 'heartbeat_overrides').maybeSingle();
     const ov = (hbOv?.value || null) as
-      { tokenBudget?: number; maxIterations?: number; skillCategories?: string[]; lightContext?: boolean; dispatchMode?: boolean; tier?: 'fast' | 'reasoning' } | null;
+      { tokenBudget?: number; maxIterations?: number; skillCategories?: string[]; lightContext?: boolean; dispatchMode?: boolean; tier?: 'fast' | 'reasoning'; idleShortCircuit?: boolean } | null;
     // Dispatch surface ON by default — the 200+ business skills reach the
     // operator via search_skills/execute_skill (2 tools) instead of a pre-narrowed
     // set baked into the tool array. Set heartbeat_overrides.dispatchMode=false to
@@ -295,6 +295,26 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const followThroughCtx = await runFollowThroughPrePass(supabaseUrl, serviceKey, traceId);
+
+    // Idle short-circuit (cost lever 3): a heartbeat with NO active
+    // objectives and NO follow-through output has no standing work — skip
+    // the reasoning loop instead of paying a full context build + N ReAct
+    // iterations to conclude "nothing to do". An emptiness check, not
+    // intent routing (Law 1 safe). Dial off per instance with
+    // heartbeat_overrides.idleShortCircuit=false.
+    if (ov?.idleShortCircuit !== false && !followThroughCtx) {
+      const { count: activeObjectiveCount } = await supabase
+        .from('agent_objectives')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
+      if ((activeObjectiveCount ?? 0) === 0) {
+        console.log(`[heartbeat] trace=${traceId} Idle short-circuit: no active objectives, no follow-through work`);
+        return new Response(
+          JSON.stringify({ skipped: true, reason: 'idle_no_standing_work', trace_id: traceId }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
 
     // 0. Integrity gate + context gathering in parallel. In lightContext mode the
     // analytical loaders (integrity gate, self-healing, CMS schema, cross-module
