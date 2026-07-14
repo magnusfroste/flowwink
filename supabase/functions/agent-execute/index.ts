@@ -7808,9 +7808,20 @@ async function executeDbAction(
       }
 
       if (action === 'set') {
+        // account_name is NOT NULL on opening_balances and required-for-set in the
+        // tool contract — it was silently dropped here, so every agent 'set' failed
+        // (found live during the liteit proof week, 2026-07-14). Resolve it from the
+        // chart of accounts when the caller omits it.
         const { fiscal_year, account_code, amount_cents, balance_type, locale = 'se-bas2024' } = args as any;
+        let { account_name } = args as any;
         if (!fiscal_year || !account_code || amount_cents === undefined || !balance_type) {
           throw new Error('fiscal_year, account_code, amount_cents, and balance_type are required');
+        }
+        if (!account_name) {
+          const { data: coa } = await supabase.from('chart_of_accounts')
+            .select('account_name').eq('account_code', account_code).maybeSingle();
+          account_name = coa?.account_name;
+          if (!account_name) throw new Error(`account_name is required (account ${account_code} not found in chart_of_accounts)`);
         }
 
         // Upsert by fiscal_year + account_code + locale
@@ -7823,13 +7834,13 @@ async function executeDbAction(
 
         if (existing) {
           const { error } = await supabase.from('opening_balances')
-            .update({ amount_cents, balance_type })
+            .update({ amount_cents, balance_type, account_name })
             .eq('id', existing.id);
           if (error) throw new Error(`Update opening balance failed: ${error.message}`);
           return { updated: true, account_code, fiscal_year, amount_cents, balance_type };
         } else {
           const { error } = await supabase.from('opening_balances')
-            .insert({ fiscal_year, account_code, amount_cents, balance_type, locale });
+            .insert({ fiscal_year, account_code, account_name, amount_cents, balance_type, locale });
           if (error) throw new Error(`Insert opening balance failed: ${error.message}`);
           return { created: true, account_code, fiscal_year, amount_cents, balance_type };
         }
