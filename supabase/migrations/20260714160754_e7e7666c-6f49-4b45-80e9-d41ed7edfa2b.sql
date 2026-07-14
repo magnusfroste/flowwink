@@ -1,0 +1,2 @@
+DELETE FROM beta_test_findings WHERE title IN ('attrib-test-A-385d02','attrib-test-B-e139c3','attrib-test-C-cf63d4');
+DELETE FROM api_keys WHERE key_prefix='fwk_test' AND name IN ('MCP key for peer OpenClaw','MCP key for peer EvilBot') AND created_at > now() - interval '15 minutes';
