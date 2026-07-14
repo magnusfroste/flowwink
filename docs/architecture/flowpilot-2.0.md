@@ -181,6 +181,30 @@ restores the bundled text. Promote accepted improvements into the module seeds
   heartbeat/follow-through/distill/learn run + status, pending approvals count) so the owner sees
   in 5 seconds that the engine is alive without understanding five cron jobs.
 
+### 4c. Cost dials × proof-week quality (decision, Magnus 2026-07-14)
+
+The token-cost finding (hourly × tier 'reasoning' ≈ 3M prompt tokens/day ≈ $6–7/day per
+instance) added two COST DIALS that refine — not contradict — the 4b ruling: cadence via
+`set_flowpilot_heartbeat_cadence()` (default now every 3h) and model tier via
+`heartbeat_overrides.tier` ('fast' ≈5× cheaper default; 'reasoning' = full brain). Both
+are per-instance owner decisions, exactly as 4b anticipated ("heartbeat cost is an owner
+decision per instance").
+
+Three named configurations for an operator instance:
+
+| Config | Cadence | Tier | When |
+|---|---|---|---|
+| **A — economy** | 3h | fast | Steady-state default. Cheapest; proves the economic case *if* 'fast' handles the workload. |
+| **B — proof** *(CHOSEN for the liteit proof week)* | 3h | reasoning | Colleague's sane cadence + full brain: the proof measures capability, not a cheap model's ceiling. Set via `heartbeat_overrides.tier='reasoning'`. |
+| **C — peak observation** | hourly | reasoning | Densest signal, highest cost. For short intensive audits only. |
+
+**Decision:** liteit runs **B** for the proof week (applied 2026-07-14). **Backlog item:**
+at proof-week END, run 1–2 days on **A** and diff the outcome quality (objectives
+advanced, curator proposal quality, hollow-turn rate) — if A holds, A becomes the fleet
+steady-state and the economic story ("a capable operator for ~$1–2/day") is itself
+August-edition material. If A degrades, the cost of B *is* the price of the capability —
+also worth knowing precisely.
+
 ## 5. Proof-weeks gate
 
 FlowPilot operates **liteit** (real co., real bank feed, zero customer risk) on the
