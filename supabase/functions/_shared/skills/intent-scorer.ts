@@ -108,6 +108,51 @@ export interface ScoredSkill {
   name: string;
 }
 
+/**
+ * Discriminativeness of a skill-NAME word across the current skill set (IDF).
+ * A word in many skill names (manage, get, table, page, code) barely narrows
+ * the field, so a query hit on it should count for little; a rare word
+ * (flowtable, refund, knowledge) is a strong signal. This is what stops a
+ * generic collision word ("table" in "error codes table") from floating every
+ * `*_table` skill above the actually-relevant one — WITHOUT hardcoding any
+ * intent→skill routing (Law 1): the weights are derived from the corpus.
+ */
+function buildNameIdf(skills: any[]): (word: string) => number {
+  const df = new Map<string, number>();
+  const N = Math.max(skills.length, 1);
+  for (const skill of skills) {
+    const fnName = (skill?.function?.name || '').toLowerCase();
+    const words = new Set(fnName.split(/_+/).filter((w: string) => w.length > 1));
+    for (const w of words) df.set(w, (df.get(w) || 0) + 1);
+  }
+  const denom = Math.log(N + 1);
+  return (word: string): number => {
+    const d = df.get(word) ?? 0;
+    // log((N+1)/(df+1)) normalised to (0,1], floored so an exact name hit is
+    // never fully cancelled — a rare word ≈1, a word in ~half the skills ≈0.1.
+    const raw = Math.log((N + 1) / (d + 1)) / denom;
+    return Math.max(0.15, Math.min(1, raw));
+  };
+}
+
+/**
+ * Does the query contain `w`, or a compound whose HEAD is `w`? English
+ * compounds carry their category in the last morpheme: "flowtable" is a kind
+ * of table, "workspace" a kind of space — so a query word matches a name word
+ * when one is a suffix of the other. Suffix (not substring) is deliberate:
+ * it catches table⊂flowtable while rejecting book⊂bookkeeping (a bookkeeping
+ * skill is not a booking result), which a plain includes() got wrong.
+ */
+function nameWordHit(expandedMsg: string, msgWords: string[], w: string): boolean {
+  if (expandedMsg.includes(w)) return true;
+  if (w.length > 3) {
+    for (const mw of msgWords) {
+      if (mw.length > 3 && (w.endsWith(mw) || mw.endsWith(w))) return true;
+    }
+  }
+  return false;
+}
+
 interface ScoreOptions {
   maxSkills?: number;        // Max skills to return (default: 25)
   alwaysInclude?: string[];  // Skill names to always include
@@ -143,6 +188,10 @@ export function scoreSkillsByIntent(
   }
   const expandedMsg = Array.from(expandedTerms).join(' ');
 
+  // IDF weighting of name words — computed once over the corpus so common
+  // words (manage/get/table/page) can't outrank a rare, discriminative hit.
+  const idf = buildNameIdf(skills);
+
   const scored: ScoredSkill[] = skills.map(skill => {
     const functionName = (skill?.function?.name || '').toLowerCase();
     const name = functionName.replace(/_/g, ' ');
@@ -154,16 +203,16 @@ export function scoreSkillsByIntent(
       return { skill, score: 1000, name: functionName };
     }
 
-    // 1. Skill name word matching against expanded terms
+    // 1. Skill name word matching against expanded terms, IDF-weighted.
     const nameWords = name.split(' ').filter(w => w.length > 1);
     for (const w of nameWords) {
-      if (expandedMsg.includes(w)) score += 12;
+      if (nameWordHit(expandedMsg, msgWords, w)) score += 12 * idf(w);
     }
 
-    // 2. Function name against expanded terms (underscore-separated)
+    // 2. Function name parts (underscore-separated), IDF-weighted.
     const fnParts = functionName.split('_').filter(w => w.length > 1);
     for (const w of fnParts) {
-      if (expandedMsg.includes(w)) score += 8;
+      if (nameWordHit(expandedMsg, msgWords, w)) score += 8 * idf(w);
     }
 
     // 3. "Use when:" trigger matching
