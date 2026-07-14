@@ -22504,6 +22504,7 @@ export type Database = {
           query_embedding?: string
           query_text: string
           rrf_k?: number
+          semantic_weight?: number
           sources?: string[]
         }
         Returns: {
