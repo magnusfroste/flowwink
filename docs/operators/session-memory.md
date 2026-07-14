@@ -2,7 +2,7 @@
 
 > **Purpose:** everything a fresh Claude Code session (local or cloud) needs to
 > continue the Program 80 grind without re-deriving context. Update this doc at
-> the end of significant sessions. Last updated: **2026-07-13 (Flowtable/Flowwork arc, cloud session)**.
+> the end of significant sessions. Last updated: **2026-07-14 (schema skills #120 + deploy queue cleared, cloud session)**.
 
 ## The program
 
@@ -131,17 +131,27 @@ built out to relational, agent-operable parity, then wired into **Flowwork**
 wire; Flowtable field types are pure `options`-JSONB extensions (no schema
 churn); Flowwork retrieval stays question-driven and shared-bases-only.
 
-**⚠️ Deploy state on rzhj as of 2026-07-13 — NUDGE PENDING.** Merged to main
-(Vercel frontend auto-deploys) but the Lovable side has NOT been asked yet:
-1. Apply migration `20260712140000_flowtable-view-config.sql` (view persistence for #115 is silently non-durable until then).
-2. Redeploy `workspace-chat` (Flowtable source, #117).
-3. Redeploy `agent-execute` (user-field schema + resolve, #118).
-4. Click **"Sync skills from code"** at /admin/modules (query_flowtable instructions grew RELATIONS/DERIVED/USER sections).
+**✅ Deploy state on rzhj — RESOLVED 2026-07-14.** All four layers landed:
+migration `20260712140000` applied, `workspace-chat` + `agent-execute`
+redeployed (confirmed via "Deployade workspace-chat & agent" on main), skills
+synced. Stage-3 (b) verified live: `resolve_links` on a user field returns
+`{id, display: "magnus froste", email: "magnus@froste.eu"}`. Stage-3 (a)
+(Flowwork UI question citing flowtable) is in practice covered by the local
+session's M3 end-to-end verification of Flowwork on the Retrieval Engine.
 
-Then Stage-3 verify: (a) Flowwork question "vad betyder felkod E-SEN0012?"
-should cite a flowtable source — requires Magnus to flip Field Service Ops to
-`workspace_shared` first; (b) `query_flowtable` with `resolve_links` on a
-user field returns `{id, display, email}`.
+**Schema-management skills (#120, squash `9580f4ec`, 2026-07-14):**
+`manage_flowtable_table` (create with inline `fields[]` — a whole table
+schema in one call; rename keeps slug; delete needs `confirm=true` when rows
+exist) + `manage_flowtable_field` (create/update/delete columns;
+type-specific option validation — link accepts table NAME, lookup checks the
+via-field is a real link, rollup validates agg; update MERGES options).
+Full Stage-3 loop ran uncoached via the gateway: create table with
+link+lookup+user+select in one call → row with assignee → resolve_links/
+resolve_computed all correct → options-merge verified → validation + delete
+guard verified → test table deleted. Agents can now BUILD bases, not just
+fill them. **Gotcha found in the process:** "Sync skills from code" seeds
+from the browser's loaded SPA bundle — a stale tab syncs the OLD seed list
+silently. Hard-refresh /admin/modules before clicking sync.
 
 **Recurring conflict pattern:** `supabase/seed/module-skills.json` is a
 generated artifact and conflicts whenever both sessions push — resolve with
@@ -240,10 +250,9 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
-0. **Flowtable/Flowwork deploy nudge on rzhj** (see the arc section above):
-   migration 20260712140000 + workspace-chat & agent-execute redeploys +
-   "Sync skills from code", then the two Stage-3 verifications (Flowwork
-   felkodsfråga with flowtable citation; user-field resolve_links).
+0. ~~Flowtable/Flowwork deploy nudge on rzhj~~ **DONE 2026-07-14** — all
+   layers deployed, user-field resolve + schema skills (#120) Stage-3
+   verified live via the gateway (see the arc section).
 1. ~~kb over 80~~ **DONE** — kb at 100 (feedback + versioning live-verified
    2026-07-07). Remaining sub-80 tail: contact-center 41, media 57,
    accounting 58 (SE statutory P1s: NE-bilaga/INK2/SRU, SIE 4 ledger
