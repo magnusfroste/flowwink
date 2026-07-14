@@ -107,6 +107,7 @@ const CartPage = lazy(() => import("./pages/CartPage"));
 const CustomerAuthPage = lazy(() => import("./pages/account/CustomerAuthPage"));
 const AccountLayout = lazy(() => import("./pages/account/AccountLayout"));
 const CustomerOrdersPage = lazy(() => import("./pages/account/OrdersPage"));
+const AccountAssistantPage = lazy(() => import("./pages/account/AccountAssistantPage"));
 const AddressesPage = lazy(() => import("./pages/account/AddressesPage"));
 const WishlistPage = lazy(() => import("./pages/account/WishlistPage"));
 const CustomerProfilePage = lazy(() => import("./pages/account/ProfilePage"));
@@ -235,6 +236,7 @@ const router = createBrowserRouter([
         element: <AccountLayout />,
         children: [
           { index: true, element: <CustomerOrdersPage /> },
+          { path: "assistant", element: <AccountAssistantPage /> },
           { path: "addresses", element: <AddressesPage /> },
           { path: "wishlist", element: <WishlistPage /> },
           { path: "profile", element: <CustomerProfilePage /> },

@@ -21,6 +21,8 @@ interface ChatConversationProps {
   checkinId?: string;
   /** Hide the chat's internal title (use when the parent already renders a heading) */
   hideInternalTitle?: boolean;
+  /** Authenticated portal chat — send the user's JWT so the assistant grounds on their account (rung 2). */
+  authenticated?: boolean;
 }
 
 export function ChatConversation({
@@ -35,6 +37,7 @@ export function ChatConversation({
   onInitialMessageSent,
   checkinId,
   hideInternalTitle = false,
+  authenticated = false,
 }: ChatConversationProps) {
   const initialMessageSentRef = useRef(false);
   const { data: settings } = useChatSettings();
@@ -51,7 +54,7 @@ export function ChatConversation({
     sendMessage,
     cancelRequest,
     clearMessages,
-  } = useChat({ conversationId, onNewConversation, skipRestore, checkinId });
+  } = useChat({ conversationId, onNewConversation, skipRestore, checkinId, authenticated });
 
   // Load visitor-scoped skills for /commands
   useEffect(() => {

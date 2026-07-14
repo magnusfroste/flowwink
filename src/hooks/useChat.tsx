@@ -24,6 +24,13 @@ interface UseChatOptions {
   onNewConversation?: (id: string) => void;
   skipRestore?: boolean;
   checkinId?: string;
+  /**
+   * Authenticated (portal) chat: send the signed-in user's JWT as the
+   * Authorization bearer so chat-completion can resolve the customer and
+   * ground on their own account (identity ladder rung 2). Defaults to the
+   * anonymous public path. `apikey` stays the publishable key either way.
+   */
+  authenticated?: boolean;
 }
 
 const CONVERSATION_STORAGE_KEY = 'chat-conversation-id';
@@ -442,13 +449,23 @@ export function useChat(options?: UseChatOptions) {
     try {
       abortControllerRef.current = new AbortController();
 
+      // Rung 2: on the authenticated portal surface, send the user's JWT as the
+      // bearer so chat-completion resolves the customer and grounds on their own
+      // account. Falls back to the anon key (public path) when not authenticated
+      // or when there is no live session. `apikey` is always the publishable key.
+      let authBearer = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (options?.authenticated) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) authBearer = session.access_token;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-completion`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${authBearer}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({

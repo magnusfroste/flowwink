@@ -5,12 +5,13 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText } from 'lucide-react';
+import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 
 const customerNav = [
   { to: '/account', label: 'Orders', icon: Package, exact: true },
+  { to: '/account/assistant', label: 'Assistant', icon: Sparkles },
   { to: '/account/addresses', label: 'Addresses', icon: MapPin },
   { to: '/account/wishlist', label: 'Wishlist', icon: Heart },
 ];
