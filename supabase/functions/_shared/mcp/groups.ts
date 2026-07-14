@@ -22,6 +22,11 @@ export const SKILL_CATEGORY_MODULES: GroupMap = {
   crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
   communication: ["newsletter", "chat", "liveSupport", "webinars"],
   automation: [],
+  // browserControl stays listed for ?groups=browsercontrol alias routing,
+  // but the category itself is ALWAYS_ON (see below): search_web/scrape_url/
+  // search_knowledge are platform seeds, and gating the category behind the
+  // browser-control toggle hid them. Browser-control's own skills are still
+  // governed by their skill rows (enabled per module bootstrap).
   search: ["browserControl"],
   analytics: ["analytics", "sla"],
   system: [],
@@ -106,6 +111,14 @@ export function buildModuleToCategory(skillCategoryModules: GroupMap): Record<st
 }
 
 /**
+ * Categories that expose regardless of module toggles: they hold PLATFORM
+ * seeds (search_web, scrape_url, search_knowledge, …). Their module lists in
+ * SKILL_CATEGORY_MODULES exist only for ?groups=<module> alias routing.
+ * (MCP-as-Platform: disabling a module must never hide platform primitives.)
+ */
+export const ALWAYS_ON_CATEGORIES = new Set(["automation", "system", "search"]);
+
+/**
  * Is a skill category active given the current set of enabled modules?
  * `__all__` is a sentinel meaning "no filter — expose everything".
  */
@@ -115,6 +128,7 @@ export function isCategoryActive(
   skillCategoryModules: GroupMap,
 ): boolean {
   if (activeModules.has("__all__")) return true;
+  if (ALWAYS_ON_CATEGORIES.has(category)) return true;
   const required = skillCategoryModules[category];
   if (!required || required.length === 0) return true; // system / always-on
   return required.some((m) => activeModules.has(m));

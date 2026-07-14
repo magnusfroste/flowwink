@@ -115,6 +115,64 @@ Scheduled daily 07:00 UTC via the "Daily Briefing" automation in /admin/automati
 - preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
   },
   {
+    name: 'search_knowledge',
+    description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web).",
+    category: 'search',
+    handler: 'internal:search_knowledge',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_knowledge',
+        description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web).",
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Natural-language question or topic to search for',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max chunks to return (default 8, max 20)',
+            },
+            sources: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents'],
+              },
+              description: 'Restrict to specific knowledge sources (default: all)',
+            },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    instructions: `# Search Knowledge — the Retrieval Engine gateway surface
+
+Searches the knowledge_chunks index (kept fresh automatically: write-triggers
++ a 5-minute sweeper). Ranking is hybrid RRF: tsvector keyword + pgvector
+semantic when an embedding provider is configured; degrades to keyword-only
+otherwise (check the "ranking" field in the response).
+
+## Parameters (exact names)
+- query: natural-language question or topic (required)
+- limit: max chunks, default 8, max 20
+- sources: array subset of pages | kb_articles | wiki_pages | docs_pages | documents
+
+## Result shape
+results[]: { source, entity_id, title, url, content, score }. The title
+carries the heading trail ("Refund policy › Partial refunds") and url is the
+canonical citation link.
+
+## Boundaries (two-lane rule)
+This is the KNOWLEDGE lane — prose content. Structured/transactional data
+(orders, invoices, Flowtable rows) is the LIVE lane: use query_flowtable or
+the owning module's list_/get_ skills. Paraphrase freely: semantic ranking
+finds "how do I get my money back" → refund policy without keyword overlap.`,
+  },
+  {
     name: 'scrape_url',
     description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
     category: 'search',
