@@ -45,6 +45,68 @@ export async function resolveAuthenticatedCustomer(
   }
 }
 
+// ─── Identity ladder rung 3 (B2B) ─────────────────────────────────────────────
+
+export interface CompanyMembership {
+  companyId: string;
+  companyRole: 'viewer' | 'buyer' | 'approver' | 'admin';
+  visibilityScope: 'company' | 'company_plus_subsidiaries';
+}
+
+export interface CompanyContext {
+  userId: string;
+  email: string;
+  memberships: CompanyMembership[];
+  /** The company this turn acts for: the sole membership, or an explicitly
+   *  requested one the user actually belongs to. Null until chosen when >1. */
+  activeCompanyId: string | null;
+  activeRole: CompanyMembership['companyRole'] | null;
+}
+
+/**
+ * Resolve the signed-in B2B contact's company memberships (identity ladder
+ * rung 3). SAME security boundary as rung 2: the user is resolved from the
+ * VERIFIED JWT, then memberships are read from `company_contacts` for that
+ * user id only. A requested company is honoured ONLY if the user is actually a
+ * member of it — a client can never force a company it doesn't belong to.
+ * Returns null for anon/invalid; a context with empty memberships for a
+ * verified user who is not a B2B contact.
+ */
+export async function resolveCompanyMembership(
+  admin: any,
+  authHeader: string | null,
+  anonKey: string,
+  requestedCompanyId?: string | null,
+): Promise<CompanyContext | null> {
+  const customer = await resolveAuthenticatedCustomer(authHeader, anonKey);
+  if (!customer) return null;
+
+  const { data } = await admin
+    .from('company_contacts')
+    .select('company_id, company_role, visibility_scope')
+    .eq('auth_user_id', customer.userId)
+    .eq('status', 'active');
+
+  const memberships: CompanyMembership[] = (data ?? []).map((r: any) => ({
+    companyId: r.company_id,
+    companyRole: r.company_role,
+    visibilityScope: r.visibility_scope,
+  }));
+
+  let activeCompanyId: string | null = null;
+  if (requestedCompanyId && memberships.some((m) => m.companyId === requestedCompanyId)) {
+    activeCompanyId = requestedCompanyId; // honoured only because they're a member
+  } else if (memberships.length === 1) {
+    activeCompanyId = memberships[0].companyId; // sole membership → auto-active
+  } // >1 and none requested → null (the conversation must pick one; never guess)
+
+  const activeRole = activeCompanyId
+    ? memberships.find((m) => m.companyId === activeCompanyId)!.companyRole
+    : null;
+
+  return { userId: customer.userId, email: customer.email, memberships, activeCompanyId, activeRole };
+}
+
 const money = (cents: number | null | undefined, ccy?: string | null) =>
   `${((cents ?? 0) / 100).toFixed(0)}${ccy ? ' ' + ccy : ''}`;
 

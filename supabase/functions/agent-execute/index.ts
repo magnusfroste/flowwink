@@ -222,6 +222,16 @@ interface ExecuteRequest {
    * own records only". Injected into args as `_caller_email`.
    */
   caller_email?: string;
+  /**
+   * Identity ladder rung 3 (B2B): the ACTIVE company + role of a signed-in
+   * B2B contact, resolved by chat-completion from the verified JWT →
+   * company_contacts membership — NEVER from model output. Company-scoped
+   * skills use them to enforce "acts only within the caller's own company".
+   * Injected into args as `_company_id` / `_company_role`. (P0 plumbing — no
+   * company-scoped skill consumes them yet; wired in P1.)
+   */
+  company_id?: string;
+  company_role?: string;
   objective_context?: {
     goal: string;
     step: string;
@@ -283,7 +293,7 @@ serve(async (req) => {
     }
 
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email } = body;
+    const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A verified admin JWT is the authoritative caller identity — internal edge
     // callers (service key) keep passing caller_user_id/caller_api_key_id in the body.
     const caller_user_id = gateUserId ?? bodyCallerUserId;
@@ -305,6 +315,16 @@ serve(async (req) => {
       (args as any)._caller_email = String(caller_email).toLowerCase().trim();
     } else {
       delete (args as any)._caller_email;
+    }
+    // Verified active company + role (rung 3). Same rule as _caller_email:
+    // server-injected only, forced over anything the model put in args, so a
+    // company-scoped skill can never be tricked into acting for another company.
+    if (callerCompanyId) {
+      (args as any)._company_id = String(callerCompanyId).trim();
+      (args as any)._company_role = callerCompanyRole ? String(callerCompanyRole).trim() : 'viewer';
+    } else {
+      delete (args as any)._company_id;
+      delete (args as any)._company_role;
     }
     if (_rawHasData) {
       console.log('[normalize-debug] rawKeys:', Object.keys(rawArgs as any), 'flatKeys:', Object.keys(args), 'sample:', JSON.stringify(args).slice(0,200));
