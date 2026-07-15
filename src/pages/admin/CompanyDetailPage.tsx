@@ -30,6 +30,7 @@ import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { format } from 'date-fns';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
 import { supabase } from '@/integrations/supabase/client';
+import { CompanyContactsSection } from '@/components/admin/CompanyContactsSection';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -460,6 +461,8 @@ export default function CompanyDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {id && <CompanyContactsSection companyId={id} />}
       </div>
 
       <CreateLeadDialog 
