@@ -32,7 +32,7 @@ const RIVER_SKILLS: SkillSeed[] = [
   {
     name: 'post_to_river',
     description:
-      'Post a message to the internal River feed (team social channel, Slack/X-style). Use when: announcing a release, sharing a quick win, posting an internal heads-up, or replying in a thread. NOT for: external customer chat (use chat); ticket replies (use manage_tickets); newsletter/blog (those are external).',
+      'Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\'s team voice. Use when: announcing a release, sharing a quick win, posting an internal heads-up, or replying in a thread — anything a human colleague would genuinely post. NOT for: routine status or "checked, nothing new" (silence — that telemetry already lives in agent_activity); approval requests (the approval queue notifies on its own); external customer chat (use chat); ticket replies (use manage_tickets); newsletter/blog (those are external).',
     category: 'communication',
     handler: 'module:river',
     scope: 'internal',
@@ -88,6 +88,14 @@ optional images, threads via \`parent_id\`.
 - Internal announcements ("deploy is live", "new template shipped").
 - Quick wins worth celebrating with the team.
 - Replying to an existing post in a thread.
+
+### The colleague test (for agents)
+River is a human channel — every post costs team attention. Before posting,
+ask: would a human colleague post this? A completed objective, a shipped
+campaign, a heads-up that needs eyes → yes. Routine status, "checked X,
+nothing new", per-heartbeat summaries → NO — stay silent (that telemetry is
+already recorded in agent_activity). Approvals never go here; the approval
+queue notifies on its own. Aim for at most a few posts per day.
 
 ### Parameters
 - **action**: create | reply | pin | unpin | delete | list

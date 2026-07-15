@@ -30,7 +30,6 @@ import {
   type CoworkAttachment,
 } from '@/components/admin/workspace/AttachmentChip';
 import { MessageBubble } from '@/components/admin/workspace/MessageBubble';
-import { AgentFeed } from '@/components/admin/workspace/AgentFeed';
 import {
   Send,
   Square,
@@ -437,7 +436,6 @@ export default function WorkspaceChatPage() {
             // ── Hero (Grok-style centered intro) ─────────────────────────
             <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
               <div className="w-full max-w-2xl space-y-8 text-center">
-                <AgentFeed />
                 <div className="space-y-3">
                   <Sparkles className="h-10 w-10 mx-auto text-primary/80" />
                   <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
@@ -491,7 +489,6 @@ export default function WorkspaceChatPage() {
             <>
               <ScrollArea className="flex-1 min-h-0" ref={scrollRef as any}>
                 <div className="px-4 py-6 max-w-3xl mx-auto w-full space-y-6">
-                  <AgentFeed />
                   {messages.map((m, idx) => {
                     const isLast = idx === messages.length - 1;
                     return (

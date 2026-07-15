@@ -89,6 +89,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
+import { PendingApprovalsBadge } from './PendingApprovalsBadge';
 import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
 import type { AppRole } from '@/types/cms';
@@ -334,6 +335,7 @@ export function AdminSidebar() {
                                      <Link to={item.href}>
                                       <item.icon className="h-4 w-4" />
                                       <span>{item.name}</span>
+                                      {item.href === '/admin/approvals' && <PendingApprovalsBadge />}
                                     </Link>
                                   </SidebarMenuButton>
                                   <button
@@ -388,6 +390,7 @@ export function AdminSidebar() {
                                   <Link to={item.href}>
                                     <item.icon className="h-4 w-4" />
                                     <span>{item.name}</span>
+                                    {item.href === '/admin/approvals' && <PendingApprovalsBadge />}
                                   </Link>
                                 </SidebarMenuButton>
                               </TooltipTrigger>

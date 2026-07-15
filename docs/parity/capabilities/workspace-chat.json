@@ -15,12 +15,12 @@
     },
     {
       "id": "agent_post",
-      "name": "Agent can post/answer in cowork chat (optional)",
+      "name": "Agent team voice (River; legacy cowork channel write-compatible)",
       "odoo": false,
       "status": "done",
       "weight": 1,
-      "verify": "cowork_messages table + post_to_cowork_chat RPC/skill (migration 20260612160000); runtime-verified (agent/FlowPilot message persisted)",
-      "notes": "FlowPilot's voice in the workspace. AgentFeed UI shipped 2026-06-12 (realtime+poll, agent bubbles, source-chips, inbox link, graceful when table missing). Dual-surface complete."
+      "verify": "post_to_river skill + River UI (dual-surface). Legacy: cowork_messages table + post_to_cowork_chat RPC remain write-compatible (wire kept) but unrendered since Fas 0.",
+      "notes": "Fas 0 (2026-07-14): AgentFeed removed from Flowwork — the page is the user's private workspace. The agent's team voice moved to River with a colleague-test bar (post only what a human colleague would post; routine heartbeat status stays silent in agent_activity). post_to_cowork_chat demoted to legacy log channel."
     }
   ]
 }

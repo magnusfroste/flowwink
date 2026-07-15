@@ -269,20 +269,13 @@ const APPROVAL_SKILLS: SkillSeed[] = [
   },
 ];
 
-const APPROVAL_AUTOMATIONS: AutomationSeed[] = [
-  {
-    name: 'Notify approvers in cowork chat',
-    description: 'When a chain approval is created or advances to a new step, post a notice in Flowwork (approval.assigned event).',
-    trigger_type: 'event',
-    trigger_config: { event: 'approval.assigned' },
-    skill_name: 'post_to_cowork_chat',
-    skill_arguments: {
-      p_content: '🔔 Attest väntar: {{event.payload.entity_type}} {{event.payload.entity_id}} — steg {{event.payload.step}}. Godkänn via advance_approval_step eller Approval Inbox.',
-      p_author_name: 'Approvals',
-      p_metadata: { source: 'approvals', request_id: '{{event.payload.request_id}}' },
-    },
-  },
-];
+// 2026-07 (Fas 0): the "Notify approvers in cowork chat" automation seed was
+// retired — the Flowwork UI no longer renders cowork_messages, so the post
+// was invisible. The approver notification surface is now the pending-count
+// badge on the Approvals nav item (PendingApprovalsBadge, realtime on
+// approval_requests). Instances that already carry the old automation row
+// should disable it (agent_automations, name='Notify approvers in cowork chat').
+const APPROVAL_AUTOMATIONS: AutomationSeed[] = [];
 
 export const approvalsModule = defineModule<ApprovalsInput, ApprovalsOutput>({
   id: 'approvals',

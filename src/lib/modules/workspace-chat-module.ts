@@ -5,7 +5,7 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 const WORKSPACE_CHAT_SKILLS: SkillSeed[] = [
   {
     name: 'post_to_cowork_chat',
-    description: 'Post a message into Flowwork (the internal team chat) as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team something; surfacing an autonomous action. NOT for: public site chat (chat-completion), the social feed (post_to_river), or answering a user question in-thread.',
+    description: 'LEGACY log channel (cowork_messages) — no longer surfaced in the Flowwork UI. Use when: an automation or integration explicitly targets this channel for compatibility. NOT for: telling the team something (use post_to_river — but only for material milestones a human colleague would post); routine heartbeat status (stay silent — it is already in agent_activity); requesting approval (the approval queue notifies on its own).',
     category: 'communication',
     handler: 'rpc:post_to_cowork_chat',
     scope: 'internal',
@@ -25,7 +25,7 @@ const WORKSPACE_CHAT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'The agent\'s voice in the team workspace (Flowwork). Keep messages short and actionable; include metadata.source so the UI can badge them. Staff roles may also post (author_type=user). NB: the skill/RPC name and the cowork_messages table keep the legacy "cowork" wire name — renaming deployed identifiers is a fleet-wide lockstep with no user value.',
+    instructions: 'Kept for wire compatibility (existing automations may write here) — the Flowwork UI no longer renders cowork_messages. The agent\'s team voice moved to post_to_river, with a high bar: post only what a human colleague would post (a shipped milestone, a real win, a heads-up that needs eyes). Routine status is silence. NB: the skill/RPC name and the cowork_messages table keep the legacy "cowork" wire name — renaming deployed identifiers is a fleet-wide lockstep with no user value.',
   },
 ];
 
@@ -58,6 +58,12 @@ type Output = z.infer<typeof outputSchema>;
  * Legacy wire names kept on purpose (per the naming policy in CLAUDE.md):
  * module id `workspaceChat`, skill/RPC `post_to_cowork_chat`, tables
  * `cowork_messages`, site_settings key `cowork_chat`, edge fn `workspace-chat`.
+ *
+ * 2026-07 (Fas 0): the AgentFeed strip (cowork_messages rendered above the
+ * conversation) was removed — Flowwork is the user's private workspace. The
+ * agent's team voice lives in River (post_to_river, colleague-test bar);
+ * routine heartbeat status stays in agent_activity; approvals notify via the
+ * approval queue. cowork_messages remains write-compatible but unrendered.
  */
 export const workspaceChatModule = defineModule<Input, Output>({
   id: 'workspaceChat',

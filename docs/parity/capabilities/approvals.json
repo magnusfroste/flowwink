@@ -83,8 +83,8 @@
       "odoo": true,
       "status": "done",
       "weight": 1,
-      "verify": "approval.assigned event + 'Notify approvers in cowork chat' automation (event-dispatcher) → post_to_cowork_chat; e2e-verified: request → templated notice w/ request_id in cowork_messages",
-      "notes": "Full pipeline live (incl. fixing the dormant event→automation path: matcher key, templating, event-injection, error masking). AgentFeed UI shipped 2026-06-12 (realtime+poll, agent bubbles, source-chips, inbox link, graceful when table missing). Dual-surface complete."
+      "verify": "approval.assigned trigger + PendingApprovalsBadge on the Approvals nav item (realtime on approval_requests INSERT/UPDATE + 120s poll) + Approval Inbox. Old cowork-chat automation seed retired (posted into an unrendered channel).",
+      "notes": "Fas 0 (2026-07-14): notification surface moved from a cowork_messages post (invisible after AgentFeed removal) to a pending-count badge on the Approvals nav item — the queue announces itself instead of posting into chat. Instances carrying the old 'Notify approvers in cowork chat' automation row should disable it. Event pipeline (approval.assigned) unchanged."
     }
   ]
 }
