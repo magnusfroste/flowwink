@@ -117,8 +117,13 @@ export default function AccountLayout() {
               <Outlet />
             </div>
           </div>
+
+          <div className="mt-8 flex justify-end">
+            <BuildBadge />
+          </div>
         </div>
       </main>
+
 
       <PublicFooter />
     </>
