@@ -93,7 +93,7 @@ describe('rung 3 (B2B) P2 write+roles guardrails', () => {
     expect(migration).toMatch(/status\s*=\s*'active'/);
     expect(migration).toMatch(/lower\(cc\.contact_email\)\s*=\s*lower\(new\.email\)/);
     // document backfill walks an explicit FK, NOT a fuzzy email→company guess
-    expect(migration).toMatch(/from public\.orders o\s*\n\s*where i\.order_id = o\.id/);
+    expect(migration).toMatch(/from public\.quotes q\s*\n\s*where q\.invoice_id = i\.id/);
     expect(migration).not.toMatch(/customer_email\s*=\s*.*contact_email/i);
   });
 });

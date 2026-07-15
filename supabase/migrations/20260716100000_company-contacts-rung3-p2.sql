@@ -33,14 +33,15 @@ create trigger trg_link_invited_company_contacts
   after insert on public.profiles
   for each row execute function public.link_invited_company_contacts();
 
--- 2) Safe, FK-based document backfill: an invoice inherits its order's company.
---    This walks an EXPLICIT foreign key (invoices.order_id → orders.id) — NOT a
---    fuzzy email→company guess, which would mislabel a contact's personal B2C
---    invoice as company-visible (the Odoo #61702 cross-company portal-leak class).
---    Contracts have no safe automatic source → left to staff / set-on-create.
+-- 2) Safe, FK-based document backfill: an invoice inherits the company of the
+--    quote it was converted from. This walks an EXPLICIT foreign key
+--    (quotes.invoice_id → invoices.id) — NOT a fuzzy email→company guess, which
+--    would mislabel a contact's personal B2C invoice as company-visible (the Odoo
+--    #61702 cross-company portal-leak class). Invoices with no source quote and
+--    contracts have no safe automatic source → left to staff / set-on-create.
 update public.invoices i
-   set company_id = o.company_id
-  from public.orders o
- where i.order_id = o.id
+   set company_id = q.company_id
+  from public.quotes q
+ where q.invoice_id = i.id
    and i.company_id is null
-   and o.company_id is not null;
+   and q.company_id is not null;
