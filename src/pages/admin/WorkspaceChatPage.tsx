@@ -25,6 +25,7 @@ import { useCoworkSettings } from '@/hooks/useCoworkSettings';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettingsPanel';
 import { SessionPicker } from '@/components/admin/workspace/SessionPicker';
+import { SessionsAside } from '@/components/admin/workspace/SessionsAside';
 import {
   AttachmentChip,
   type CoworkAttachment,
@@ -347,10 +348,12 @@ export default function WorkspaceChatPage() {
   return (
     <AdminLayout>
       <div
-        className="h-[calc(100vh-4rem)] flex flex-col bg-background"
+        className="h-[calc(100vh-4rem)] flex bg-background"
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
+        {/* Chat column (header + body); session history lives in the right aside */}
+        <div className="flex-1 flex flex-col min-w-0">
         {/* ── Slim header ─────────────────────────────────────────────── */}
         <div className="border-b border-border/40 px-4 md:px-6 py-3 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -358,14 +361,17 @@ export default function WorkspaceChatPage() {
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Flowwork</span>
             </div>
-            <SessionPicker
-              sessions={sessions}
-              activeId={activeSessionId}
-              onSelect={handleSelectSession}
-              onNew={handleNewChat}
-              onRename={renameSession}
-              onDelete={handleDeleteSession}
-            />
+            {/* Dropdown picker is mobile-only; desktop uses the right aside */}
+            <div className="md:hidden">
+              <SessionPicker
+                sessions={sessions}
+                activeId={activeSessionId}
+                onSelect={handleSelectSession}
+                onNew={handleNewChat}
+                onRename={renameSession}
+                onDelete={handleDeleteSession}
+              />
+            </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -539,6 +545,17 @@ export default function WorkspaceChatPage() {
             </>
           )}
         </div>
+        </div>
+        {/* Right collapsible chat history (desktop+) — same pattern as FlowChat */}
+        <SessionsAside
+          sessions={sessions}
+          activeId={activeSessionId}
+          onSelect={handleSelectSession}
+          onNew={handleNewChat}
+          onRename={renameSession}
+          onDelete={handleDeleteSession}
+          storageKey="flowwork-sessions-aside-collapsed"
+        />
       </div>
     </AdminLayout>
   );
