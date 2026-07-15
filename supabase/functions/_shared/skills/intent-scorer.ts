@@ -122,7 +122,7 @@ function buildNameIdf(skills: any[]): (word: string) => number {
   const N = Math.max(skills.length, 1);
   for (const skill of skills) {
     const fnName = (skill?.function?.name || '').toLowerCase();
-    const words = new Set(fnName.split(/_+/).filter((w: string) => w.length > 1));
+    const words = new Set<string>(fnName.split(/_+/).filter((w: string) => w.length > 1));
     for (const w of words) df.set(w, (df.get(w) || 0) + 1);
   }
   const denom = Math.log(N + 1);
