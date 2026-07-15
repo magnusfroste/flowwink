@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
+import { BuildBadge } from '@/components/BuildBadge';
 
 const customerNav = [
   { to: '/account', label: 'Orders', icon: Package, exact: true },
@@ -116,8 +117,13 @@ export default function AccountLayout() {
               <Outlet />
             </div>
           </div>
+
+          <div className="mt-8 flex justify-end">
+            <BuildBadge />
+          </div>
         </div>
       </main>
+
 
       <PublicFooter />
     </>
