@@ -113,9 +113,21 @@ on the read side).
   Acme contact lists only Acme's orders, Globex only its own, no scope → denied; dev gateway
   smoke confirms enforcement live. Company-context injection + the adversarial second-company
   pre-fleet sweep deferred to P1.5/P2.
-- **P2 — write + roles.** company-scoped `request_return`, reorder, request_quote, role-gated
-  approvals, `manage_company_contacts` + the admin invite surface; invoices/contracts
-  `company_id` backfill + set-on-create; the adversarial second-company sweep before any fleet.
+- **P2 — write + roles.** ✅ SHIPPED 2026-07-16 (dev). Three company-scoped writes, each
+  gated by the server-injected company role (`companyScopeGuard`, viewer<buyer<approver<admin,
+  authoritative in the handler + mirrored in the chat offer surface): `request_company_return`
+  (buyer+), `approve_company_quote` (approver+, commitment not payment), `manage_company_contacts`
+  (admin: list/invite/set_role/revoke, last-admin guard). Invite activates on signup via
+  `trg_link_invited_company_contacts` (explicit email match, never a domain); safe FK-based
+  `invoices.company_id` backfill from the source quote (`quotes.invoice_id`). **Adversarial
+  second-company sweep PASSED live on dev:** a Nordvik admin accepted a Nordvik quote, opened a
+  company RMA, and invited a colleague — but could NOT see or approve Globex's quote (refused in
+  the assistant AND Globex's row stayed `sent` in the DB); an external/MCP caller with no company
+  context is denied by construction on all three. 16/16 rung-3 guardrails green. The staff invite
+  UI ("Company Contacts admin") shipped in parallel via Lovable. Remaining P2b (own pass, higher
+  surface area): `reorder`, `request_quote`, and pay-your-own-invoice via the payment rail
+  (Decision 4). Live role-DENY of a lower role is unit-proven + offer-surface-gated (a lower-role
+  live login wasn't available to exercise the rank branch end-to-end).
 - **P3 — hierarchy + multi-company UX.** parent/subsidiary opt-in, active-company switcher.
 
 ## 8. Pre-fleet gate (reuse the rung-2 sweep, lifted)
