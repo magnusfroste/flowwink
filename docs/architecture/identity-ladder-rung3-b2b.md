@@ -102,14 +102,20 @@ on the read side).
 
 ## 7. Build plan
 
-- **P0 — keystone.** `company_contacts` table + RLS + an admin invite/manage surface +
-  `resolveCompanyMembership(jwt)` shared resolver (twin of `resolveAuthenticatedCustomer`) +
-  server-inject `_company_id`/`_company_role` in agent-execute. Nothing customer-facing yet.
-- **P1 — read rung.** `COMPANY_SCOPED_SKILLS` gate in chat-completion (offered only to a
-  contact with an active membership), the read skills, company-context injection. Adversarial
-  sweep (below) before any fleet move.
-- **P2 — write + roles.** reorder, request_quote, role-gated approvals, `manage_company_contacts`;
-  invoices/contracts `company_id` backfill.
+- **P0 — keystone.** ✅ SHIPPED 2026-07-14 (commit 6c784fb6, dev + local). `company_contacts`
+  table + RLS + `current_user_company_ids()` + `resolveCompanyMembership()` resolver + server-
+  inject `_company_id`/`_company_role` in agent-execute. Cross-company isolation proven at the
+  data layer. (Admin invite/manage surface deferred to P2 — staff-provisioned via CRM for now.)
+- **P1 — read rung.** ✅ SHIPPED 2026-07-14 (commit b8cd89fb, dev + local). `COMPANY_SCOPED_SKILLS`
+  gate in chat-completion (offered only to a contact with an active membership) +
+  `list_company_orders` / `list_company_invoices` (scope:external, auto) whose handler
+  (`executeListCompanyRecords`) filters by the server-injected `_company_id`. Runtime-proven:
+  Acme contact lists only Acme's orders, Globex only its own, no scope → denied; dev gateway
+  smoke confirms enforcement live. Company-context injection + the adversarial second-company
+  pre-fleet sweep deferred to P1.5/P2.
+- **P2 — write + roles.** company-scoped `request_return`, reorder, request_quote, role-gated
+  approvals, `manage_company_contacts` + the admin invite surface; invoices/contracts
+  `company_id` backfill + set-on-create; the adversarial second-company sweep before any fleet.
 - **P3 — hierarchy + multi-company UX.** parent/subsidiary opt-in, active-company switcher.
 
 ## 8. Pre-fleet gate (reuse the rung-2 sweep, lifted)
