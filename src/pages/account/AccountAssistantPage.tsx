@@ -3,6 +3,7 @@ import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Sparkles } from 'lucide-react';
 
+// build-marker: 2026-07-15 redeploy trigger for /account/assistant route
 /**
  * Authenticated portal assistant (identity ladder rung 2). Reuses the shared
  * ChatConversation but with `authenticated` on, so the request carries the
