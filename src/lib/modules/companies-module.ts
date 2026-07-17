@@ -243,6 +243,75 @@ Manages CRM companies: list, get, create, update, delete.
     },
     instructions: "Company-facing admin. The company comes from the verified session — never ask for a company id. invite: an already-registered email is added active immediately; otherwise an 'invited' row that activates automatically when they sign up with that email. Roles ascend viewer<buyer<approver<admin. The platform refuses removing/demoting the company's last admin, and refuses the whole skill below the admin role.",
   },
+  {
+    name: 'reorder_company_order',
+    description: "Place a repeat of one of the signed-in B2B contact's OWN company's earlier orders (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher wants to order the same thing again. NOT for: brand-new orders with different items (staff/checkout), personal B2C orders, viewers (read-only role), or anonymous visitors.",
+    category: 'commerce',
+    handler: 'internal:reorder_company_order',
+    scope: 'external',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reorder_company_order',
+        description: "Repeat one of the caller's company orders as a new pending order (same line items). Scoped server-side to the caller's active company; requires the buyer role or higher. No payment is taken.",
+        parameters: {
+          type: 'object',
+          properties: {
+            order_reference: { type: 'string', description: 'The earlier company order id (or its short prefix) to repeat.' },
+          },
+          required: ['order_reference'],
+        },
+      },
+    },
+    instructions: "Company-facing write. The company + role come from the verified session — never ask for a company id. Resolve the source order among the company's own orders (list_company_orders first if unsure). Creates a PENDING copy with the same line items for staff to confirm — no payment is taken in chat. Idempotent: an already-open pending reorder of the same source order is returned, not duplicated.",
+  },
+  {
+    name: 'request_company_quote',
+    description: "File a quote request on behalf of the signed-in B2B contact's OWN company (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher asks for pricing/a quote on products or services. NOT for: accepting a received quote (approve_company_quote), staff-side quote authoring (manage_quote), or anonymous visitors (contact form).",
+    category: 'commerce',
+    handler: 'internal:request_company_quote',
+    scope: 'external',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'request_company_quote',
+        description: "File a draft quote request for the caller's company; staff price it up and send the quote back. Scoped server-side; requires the buyer role or higher.",
+        parameters: {
+          type: 'object',
+          properties: {
+            request: { type: 'string', description: 'What the company would like a quote for — products/services, quantities, timeline.' },
+          },
+          required: ['request'],
+        },
+      },
+    },
+    instructions: "Company-facing write. The company comes from the verified session — never ask for a company id. Capture the request as given (products, quantities, timeline) in the `request` field; it's filed as a DRAFT quote with the request in the notes and NO amounts — staff price it up (the customer never authors amounts). Idempotent on an identical open draft request. The finished quote comes back to the company for approval (approve_company_quote).",
+  },
+  {
+    name: 'initiate_company_invoice_payment',
+    description: "Get the secure payment link for one of the signed-in B2B contact's OWN company's unpaid invoices (identity ladder rung 3). Use when: an authenticated company contact with the buyer role or higher wants to pay a company invoice. NOT for: paying in chat (payment happens on the invoice page), refunds or credit changes (staff), personal B2C invoices, or anonymous visitors.",
+    category: 'commerce',
+    handler: 'internal:initiate_company_invoice_payment',
+    scope: 'external',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'initiate_company_invoice_payment',
+        description: "Resolve one of the caller's company's unpaid invoices and return its secure payment page link. Scoped server-side; requires the buyer role or higher. Moves no money — payment completes on the invoice page.",
+        parameters: {
+          type: 'object',
+          properties: {
+            invoice_reference: { type: 'string', description: 'The invoice number (or id) to pay.' },
+          },
+          required: ['invoice_reference'],
+        },
+      },
+    },
+    instructions: "Company-facing, read-only in effect: resolves the invoice within the company's OWN invoices and returns the payment-page link (/invoice/<token>) — the customer completes payment THERE, never in chat, and this skill never charges anything. Already-paid is reported as done; cancelled can't be paid. If more than one invoice matches, ask for the exact invoice number (list_company_invoices helps).",
+  },
 ];
 
 export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOutput>({
@@ -271,6 +340,10 @@ export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOut
     'request_company_return',
     'approve_company_quote',
     'manage_company_contacts',
+    // Rung 3 (B2B) P2b — reorder, quote request, pay-own-invoice via the rail.
+    'reorder_company_order',
+    'request_company_quote',
+    'initiate_company_invoice_payment',
   ],
   data: {
     tables: ['companies'],

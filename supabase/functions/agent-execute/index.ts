@@ -646,6 +646,15 @@ serve(async (req) => {
       } else if (handler === 'internal:manage_company_contacts') {
         result = await executeManageCompanyContacts(supabase, args);
 
+      } else if (handler === 'internal:reorder_company_order') {
+        result = await executeReorderCompanyOrder(supabase, args);
+
+      } else if (handler === 'internal:request_company_quote') {
+        result = await executeRequestCompanyQuote(supabase, args);
+
+      } else if (handler === 'internal:initiate_company_invoice_payment') {
+        result = await executeInitiateCompanyInvoicePayment(supabase, args);
+
       } else if (handler === 'internal:lint_skill') {
         result = await executeLintSkill(supabase, args);
 
@@ -12068,6 +12077,218 @@ async function executeManageCompanyContacts(
   }
 
   return { success: false, error: `Unknown action "${action}". Use list, invite, set_role, or revoke.` };
+}
+
+// internal:reorder_company_order — place a repeat of one of the caller's ACTIVE
+// company's earlier orders (rung 3 P2b, buyer+). The source order is resolved ONLY
+// among the company's own orders; the copy is stamped with the same company_id and
+// created as a 'pending' draft for staff to confirm/fulfil — no payment happens
+// here. Idempotent: an open pending reorder of the same source order is returned
+// instead of duplicated (metadata.reorder_of).
+// ─────────────────────────────────────────────────────────────────────────────
+async function executeReorderCompanyOrder(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const scope = companyScopeGuard(args, 'buyer');
+  if ('error' in scope) return { success: false, error: scope.error };
+  const { companyId } = scope;
+
+  const ref = typeof args.order_reference === 'string' ? args.order_reference.trim() : '';
+  if (!ref) return { success: false, error: 'order_reference is required (which earlier company order to repeat).' };
+
+  const { data: coOrders, error: ordErr } = await supabase
+    .from('orders')
+    .select('id, status, total_cents, currency, customer_name, created_at')
+    .eq('company_id', companyId)                          // ← the isolation predicate
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (ordErr) return { success: false, error: `Could not look up your company's orders: ${ordErr.message}` };
+
+  const cleanRef = ref.replace(/^#/, '').toLowerCase();
+  const matches = (coOrders ?? []).filter((o: any) =>
+    o.id.toLowerCase() === cleanRef || o.id.toLowerCase().startsWith(cleanRef));
+  if (matches.length === 0) {
+    return { success: false, error: `No order matching "${ref}" was found for your company. I can list your company's orders if that helps.` };
+  }
+  if (matches.length > 1) {
+    return { success: false, error: `"${ref}" matches more than one of your company's orders — please give the full order id (${matches.slice(0, 3).map((o: any) => o.id.slice(0, 12)).join(', ')}…).` };
+  }
+  const source = matches[0];
+
+  // Idempotency: an open pending reorder of this source order is THE reorder.
+  const { data: existing } = await supabase
+    .from('orders')
+    .select('id, status')
+    .eq('company_id', companyId)
+    .eq('status', 'pending')
+    .eq('metadata->>reorder_of', source.id)
+    .limit(1);
+  if (existing && existing.length) {
+    return { success: true, already_open: true, order_id: existing[0].id,
+      message: `A pending reorder of order ${source.id.slice(0, 8)} already exists (${existing[0].id.slice(0, 8)}).` };
+  }
+
+  const { data: items, error: itemErr } = await supabase
+    .from('order_items')
+    .select('product_id, product_name, quantity, price_cents, variant_id, tax_rate_pct')
+    .eq('order_id', source.id);
+  if (itemErr) return { success: false, error: `Could not read the order's items: ${itemErr.message}` };
+
+  const callerEmail = typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email : '';
+  const { data: created, error: insErr } = await supabase
+    .from('orders')
+    .insert({
+      customer_email: callerEmail || `company-${companyId.slice(0, 8)}@reorder.local`,
+      customer_name: source.customer_name,
+      company_id: companyId,                              // stamped — stays in scope
+      status: 'pending',
+      total_cents: source.total_cents,
+      currency: source.currency || 'SEK',
+      metadata: { reorder_of: source.id, placed_via: 'company_assistant' },
+    })
+    .select('id')
+    .single();
+  if (insErr) return { success: false, error: `Could not place the reorder: ${insErr.message}` };
+
+  if (items && items.length) {
+    const { error: itemsInsErr } = await supabase
+      .from('order_items')
+      .insert(items.map((it: any) => ({ ...it, order_id: created.id })));
+    if (itemsInsErr) {
+      // keep the order but be honest about the items
+      return { success: true, order_id: created.id, items_copied: 0,
+        message: `Reorder ${created.id.slice(0, 8)} placed, but the line items could not be copied (${itemsInsErr.message}) — our team will complete it from the original order.` };
+    }
+  }
+
+  return {
+    success: true, order_id: created.id, items_copied: (items ?? []).length,
+    total: `${((source.total_cents ?? 0) / 100).toFixed(0)} ${source.currency || 'SEK'}`,
+    message: `Reorder placed as a pending order ${created.id.slice(0, 8)} (${(items ?? []).length} line items, same as order ${source.id.slice(0, 8)}). Our team will confirm it — no payment has been taken.`,
+  };
+}
+
+// internal:request_company_quote — ask for a quote on behalf of the caller's
+// ACTIVE company (rung 3 P2b, buyer+). Creates a DRAFT quote stamped with the
+// company_id, carrying the request in the title/notes for staff to price up —
+// the customer never authors amounts (subtotal/total start at 0). Idempotent on
+// an identical open draft request.
+// ─────────────────────────────────────────────────────────────────────────────
+async function executeRequestCompanyQuote(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const scope = companyScopeGuard(args, 'buyer');
+  if ('error' in scope) return { success: false, error: scope.error };
+  const { companyId } = scope;
+
+  const request = typeof args.request === 'string' ? args.request.trim().slice(0, 4000) : '';
+  if (!request) return { success: false, error: 'request is required — describe what your company would like a quote for.' };
+
+  const title = `Quote request — ${request.slice(0, 80)}${request.length > 80 ? '…' : ''}`;
+
+  // Idempotency: the same open draft request isn't filed twice.
+  const { data: existing } = await supabase
+    .from('quotes')
+    .select('id, quote_number, status')
+    .eq('company_id', companyId)
+    .eq('status', 'draft')
+    .eq('title', title)
+    .limit(1);
+  if (existing && existing.length) {
+    return { success: true, already_open: true, quote_number: existing[0].quote_number,
+      message: `This request is already filed as draft quote ${existing[0].quote_number} — our team is on it.` };
+  }
+
+  // quotes.quote_number is NOT NULL with no default — same QUO-NNNN scheme as
+  // the manage_quote skill so the sequence stays uniform.
+  const { data: recent } = await supabase.from('quotes')
+    .select('quote_number').order('created_at', { ascending: false }).limit(50);
+  let max = 0;
+  for (const row of (recent || []) as Array<{ quote_number: string | null }>) {
+    const m = /(\d+)\s*$/.exec(row.quote_number || '');
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  const quoteNumber = `QUO-${String(max + 1).padStart(4, '0')}`;
+
+  const callerEmail = typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email : '';
+  const { data: created, error: insErr } = await supabase
+    .from('quotes')
+    .insert({
+      quote_number: quoteNumber,
+      company_id: companyId,                              // stamped — stays in scope
+      status: 'draft',
+      title,
+      notes: request,
+      customer_email: callerEmail || null,
+      line_items: [],                                     // staff price it up — the customer never authors amounts
+      subtotal_cents: 0, tax_rate: 0, tax_cents: 0, total_cents: 0,
+      currency: 'SEK',
+    })
+    .select('id, quote_number')
+    .single();
+  if (insErr) return { success: false, error: `Could not file the quote request: ${insErr.message}` };
+
+  return {
+    success: true, quote_number: created.quote_number,
+    message: `Quote request filed as ${created.quote_number}. Our team will price it up and send the quote to your company — you'll be able to review and approve it here.`,
+  };
+}
+
+// internal:initiate_company_invoice_payment — hand the caller the payment link
+// for ONE of their ACTIVE company's OWN unpaid invoices (rung 3 P2b, buyer+).
+// Decision 4: the assistant never moves money — this resolves the invoice within
+// company scope and routes to the real payment UI (/invoice/<public_token> →
+// create-invoice-payment/Stripe), where the customer completes payment themselves.
+// No state is written here.
+// ─────────────────────────────────────────────────────────────────────────────
+async function executeInitiateCompanyInvoicePayment(
+  supabase: any,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const scope = companyScopeGuard(args, 'buyer');
+  if ('error' in scope) return { success: false, error: scope.error };
+  const { companyId } = scope;
+
+  const ref = typeof args.invoice_reference === 'string' ? args.invoice_reference.trim() : '';
+  if (!ref) return { success: false, error: 'invoice_reference is required (the invoice number to pay).' };
+
+  const { data: coInvoices, error: invErr } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, status, total_cents, currency, due_date, public_token, payment_url')
+    .eq('company_id', companyId)                          // ← the isolation predicate
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (invErr) return { success: false, error: `Could not look up your company's invoices: ${invErr.message}` };
+
+  const rl = ref.replace(/^#/, '').toLowerCase();
+  const matches = (coInvoices ?? []).filter((i: any) =>
+    (i.invoice_number && i.invoice_number.toLowerCase() === rl) ||
+    i.id.toLowerCase() === rl || i.id.toLowerCase().startsWith(rl));
+  if (matches.length === 0) return { success: false, error: `No invoice matching "${ref}" was found for your company. I can list your company's invoices if that helps.` };
+  if (matches.length > 1) return { success: false, error: `"${ref}" matches more than one invoice — please give the full invoice number.` };
+  const invoice = matches[0];
+
+  if (invoice.status === 'paid') {
+    return { success: true, already_paid: true, invoice_number: invoice.invoice_number,
+      message: `Invoice ${invoice.invoice_number} is already paid — nothing to do.` };
+  }
+  if (invoice.status === 'cancelled') {
+    return { success: false, error: `Invoice ${invoice.invoice_number} is cancelled and can't be paid.` };
+  }
+  if (!invoice.public_token) {
+    return { success: false, error: `Invoice ${invoice.invoice_number} has no payment link yet — ask our team to send it.` };
+  }
+
+  return {
+    success: true,
+    invoice_number: invoice.invoice_number,
+    amount: `${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}`,
+    due_date: invoice.due_date,
+    payment_page: `/invoice/${invoice.public_token}`,
+    message: `Invoice ${invoice.invoice_number} (${((invoice.total_cents ?? 0) / 100).toFixed(0)} ${invoice.currency || 'SEK'}) is open. Pay it securely here: /invoice/${invoice.public_token} — payment is completed on that page, not in this chat.`,
+  };
 }
 
 // internal:lint_skill — runs the Agent Contract Integrity pre-release checklist

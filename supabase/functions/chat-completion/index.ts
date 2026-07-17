@@ -63,6 +63,9 @@ const COMPANY_SKILL_MIN_ROLE: Record<string, 'viewer' | 'buyer' | 'approver' | '
   list_company_orders: 'viewer',
   list_company_invoices: 'viewer',
   request_company_return: 'buyer',
+  reorder_company_order: 'buyer',
+  request_company_quote: 'buyer',
+  initiate_company_invoice_payment: 'buyer',
   approve_company_quote: 'approver',
   manage_company_contacts: 'admin',
 };
