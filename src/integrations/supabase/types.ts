@@ -19348,6 +19348,10 @@ export type Database = {
           value_out_cents: number
         }[]
       }
+      activate_confirmed_company_contact: {
+        Args: { p_email: string; p_user_id: string }
+        Returns: undefined
+      }
       add_business_days: {
         Args: { p_days: number; p_from: string }
         Returns: string
