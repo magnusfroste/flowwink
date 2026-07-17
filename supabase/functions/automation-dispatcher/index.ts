@@ -286,7 +286,9 @@ function calculateNextRun(cronExpr?: string, from?: Date): string {
     return nextDate.toISOString();
   }
 
-  // Weekly: M H * * D
+  // Weekly: M H * * D — where D may be a single day, a range ('1-5') or a
+  // list ('1,3,5'). parseInt('1-5') silently gave 1 (= Mondays only), which
+  // made a weekday cron skip Tue–Fri on a live instance — parse the full set.
   if (
     dayOfMonth === "*" &&
     month === "*" &&
@@ -294,15 +296,59 @@ function calculateNextRun(cronExpr?: string, from?: Date): string {
     !minute.includes("*") &&
     !hour.includes("*")
   ) {
-    const targetDay = parseInt(dayOfWeek, 10);
-    const nextDate = new Date(now);
-    nextDate.setUTCHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
-    let daysAhead = targetDay - now.getUTCDay();
-    if (daysAhead < 0 || (daysAhead === 0 && nextDate <= now)) daysAhead += 7;
-    nextDate.setUTCDate(nextDate.getUTCDate() + daysAhead);
-    return nextDate.toISOString();
+    const dowSet = parseDayOfWeekSet(dayOfWeek);
+    if (dowSet.size > 0) {
+      for (let offset = 0; offset <= 7; offset++) {
+        const cand = new Date(now);
+        cand.setUTCDate(cand.getUTCDate() + offset);
+        cand.setUTCHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+        if (cand > now && dowSet.has(cand.getUTCDay())) return cand.toISOString();
+      }
+    }
   }
 
-  // Fallback: 1 hour
+  // Monthly: M H DOM * * (e.g. '0 5 1 * *' = 05:00 on the 1st). Previously fell
+  // through to the hourly fallback — a month-end billing run fired 24×/day on a
+  // live instance. Next occurrence of that day-of-month at H:M UTC.
+  if (
+    /^\d+$/.test(dayOfMonth) &&
+    month === "*" &&
+    dayOfWeek === "*" &&
+    !minute.includes("*") &&
+    !hour.includes("*")
+  ) {
+    // Walk months forward and take the first future slot that lands on the
+    // exact DOM (months without that day — e.g. DOM=31 in September — are
+    // skipped by the getUTCDate check, never silently shifted).
+    const dom = parseInt(dayOfMonth, 10);
+    for (let k = 0; k < 24; k++) {
+      const cand = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth() + k, dom,
+        parseInt(hour, 10), parseInt(minute, 10), 0, 0,
+      ));
+      if (cand > now && cand.getUTCDate() === dom) return cand.toISOString();
+    }
+  }
+
+  // Fallback: 1 hour — for expressions this parser doesn't understand. Log it:
+  // a silent hourly fallback burned 100+ runs of a monthly automation before
+  // anyone noticed. If this shows up in logs, extend the parser.
+  console.warn(`calculateNextRun: unsupported cron "${cronExpr}" — falling back to +1h`);
   return new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+}
+
+// Parse a cron day-of-week field into the set of matching JS getUTCDay()
+// values: '1', '1-5', '1,3,5', '5-6' (cron 0/7 = Sunday both map to 0).
+function parseDayOfWeekSet(field: string): Set<number> {
+  const out = new Set<number>();
+  for (const part of field.split(",")) {
+    const range = part.trim().match(/^(\d+)-(\d+)$/);
+    if (range) {
+      const lo = parseInt(range[1], 10), hi = parseInt(range[2], 10);
+      for (let d = lo; d <= hi; d++) out.add(d % 7);
+    } else if (/^\d+$/.test(part.trim())) {
+      out.add(parseInt(part.trim(), 10) % 7);
+    }
+  }
+  return out;
 }
