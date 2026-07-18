@@ -344,6 +344,27 @@ Reads and updates site settings including module configuration, site name, theme
     instructions:
       'Deterministic and bounded: evidence window 7 days, threshold ≥3 failures or ≥1 human rejection, max 3 proposals per run, 14-day cooldown per skill. Proposals land in /admin/approvals (update_skill_instructions, trust=approve — policy-pinned even in proving posture); flowpilot-followthrough applies them after approval. Returns { observed_skills, candidates, proposals: [{skill, staged, approval_request_id, rationale}] }.',
   },
+  {
+    name: 'cron_health_report',
+    description:
+      'Report the real health of this instance\'s scheduled jobs — the truth pg_cron\'s own status hides. Use when: verifying scheduled work actually runs (newsletters, bookkeeping sweeps, page publishing, reminders); investigating "X never happened"; a routine health check. Flags jobs pointing at the WRONG instance (foreign_host), jobs that never ran, stale last-run times, and recent HTTP errors from cron-dispatched calls. NOT for: application error logs; skill failures (run_skill_curator).',
+    category: 'system',
+    handler: 'rpc:cron_health_report',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'cron_health_report',
+        description: 'Health of scheduled (pg_cron) jobs: per-job foreign_host/never_ran/last_status/last_run_age + recent HTTP errors. Read-only, no args.',
+        parameters: {
+          type: 'object',
+          properties: {},
+        },
+      },
+    },
+    instructions:
+      'Read-only, takes no arguments. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds}], http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h} }. THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron.',
+  },
 ];
 
 export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [
