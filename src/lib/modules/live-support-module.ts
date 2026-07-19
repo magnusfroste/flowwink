@@ -217,7 +217,7 @@ Retrieves chat feedback ratings and comments for quality monitoring.
     name: 'manage_channel',
     description: 'Configure or test an inbound channel (Telegram). action=test verifies the bot token; action=configure stores it and registers the webhook; action=list shows configured channels. Use when: connecting Telegram to the Contact Center; verifying a bot token. NOT for: sending a message (send_channel_message).',
     category: 'communication',
-    handler: 'edge:contact-center',
+    handler: 'internal:contact_center',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -242,7 +242,7 @@ Retrieves chat feedback ratings and comments for quality monitoring.
     name: 'send_channel_message',
     description: 'Send an outbound message on a conversation\'s channel (e.g. an agent reply out to Telegram). Use when: a human agent replies to a non-web conversation; pushing a proactive message to a channel thread. NOT for: web chat (the widget renders agent messages directly); routing (route_conversation).',
     category: 'communication',
-    handler: 'edge:contact-center',
+    handler: 'internal:contact_center',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -296,7 +296,7 @@ Retrieves chat feedback ratings and comments for quality monitoring.
     name: 'handle_voicemail',
     description: 'FlowPilot-analyze a voicemail transcript: extracts summary, intent, sentiment, and whether a callback was requested, and stores them on the voicemail. Use when: a voicemail has a transcript and needs triage. NOT for: transcribing audio (the voice channel produces the transcript); scheduling a callback (request_callback).',
     category: 'communication',
-    handler: 'edge:contact-center',
+    handler: 'internal:contact_center',
     scope: 'internal',
     tool_definition: {
       type: 'function',
