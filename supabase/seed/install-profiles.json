@@ -1,0 +1,42 @@
+{
+  "note": "Install profiles — what a FRESH site starts as. flowwink.sh /update-funcs asks for one when site_settings.modules does not exist yet (nobody has logged in to /admin/modules at install time), writes the row, and deploys core + that profile's functions. Without this the selective-deploy filter fails open and tries to deploy every function — which exceeds the Supabase Free cap of 100 and fails silently partway through. Modules absent from a profile are written as {enabled:false} so the filter can skip their functions; the frontend merges this partial row with defaultModulesSettings (useModules.tsx), so name/description/structural fields still come from code.",
+  "generated_by": "hand-maintained; module ids must exist in defaultModulesSettings (src/hooks/useModules.tsx) and function counts come from edge-function-map.json",
+  "profiles": {
+    "cms": {
+      "label": "CMS — website, content and audience",
+      "description": "Pages, blog, media, forms, newsletter and surveys. The visual layer plus content capture. Smallest footprint.",
+      "modules": [
+        "blog",
+        "mediaLibrary",
+        "newsletter",
+        "siteMigration",
+        "surveys",
+        "webinars"
+      ]
+    },
+    "crm": {
+      "label": "CRM — CMS plus customers, sales and support",
+      "description": "Everything in CMS, plus leads, companies, the 360° customer view, sales intelligence, bookings, calendar and live support.",
+      "extends": "cms",
+      "modules": [
+        "leads",
+        "companies",
+        "companyInsights",
+        "customer360",
+        "salesIntelligence",
+        "email",
+        "bookings",
+        "calendar",
+        "liveSupport",
+        "visitorIntelligence",
+        "sla"
+      ]
+    },
+    "erp": {
+      "label": "ERP — the full business operating system",
+      "description": "Everything in CRM, plus commerce, invoicing, quotes, subscriptions, accounting, HR and the rest. Exceeds the Supabase Free function cap — needs a paid plan, or drop modules after install.",
+      "extends": "crm",
+      "modules": "*"
+    }
+  }
+}
