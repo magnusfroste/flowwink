@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260719233000",
+      "migration_head": "20260720010000",
       "migrations_count": 246
     },
     "skills": {

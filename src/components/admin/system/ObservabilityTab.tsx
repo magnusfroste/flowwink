@@ -445,7 +445,7 @@ function InstanceSyncCard() {
             Instance Sync
           </CardTitle>
           <CardDescription>
-            {isLoading ? '…' : error ? 'status RPC unavailable (migration 20260719210000 not applied?)' : allKnownGreen ? 'all measurable layers in sync with this build' : 'layer drift vs this build'}
+            {isLoading ? '…' : error ? 'status RPC unavailable (instance-sync-status migration not applied?)' : allKnownGreen ? 'all measurable layers in sync with this build' : 'layer drift vs this build'}
           </CardDescription>
         </div>
         <Link to="/admin/modules" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
