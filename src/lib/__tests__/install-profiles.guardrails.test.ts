@@ -133,3 +133,30 @@ describe('flowwink.sh token acquisition', () => {
     for (const line of consumers) expect(line).toMatch(/supabase_access_token/);
   });
 });
+
+/**
+ * Guardrail: /update-db must report the PUSH's exit status, not the pipe's.
+ *
+ * Live finding #6 (demo rebuild): `if supabase db push | sed; then` tests
+ * sed's exit code — a dead connection printed "✓ Migrations applied". The
+ * push status must be captured separately, and an IPv6-only direct-connection
+ * failure must fall back to the IPv4 Supavisor pooler.
+ */
+describe('flowwink.sh update-db honesty', () => {
+  const script = readFileSync(join(root, 'scripts/flowwink.sh'), 'utf8');
+
+  it('never tests a pipeline tail for the push status', () => {
+    expect(script).not.toMatch(/if supabase db push[^\n]*\| sed/);
+    expect(script).toMatch(/push_status=\$\?/);
+  });
+
+  it('falls back to the IPv4 pooler on IPv6-only failures', () => {
+    expect(script).toMatch(/does not support IPv6/);
+    expect(script).toMatch(/config\/database\/pooler/);
+  });
+
+  it('a failed push aborts (return 1) so /install cannot continue to create-admin', () => {
+    const seg = script.split('cmd_update_db()')[1]?.split('\n}')[0] ?? '';
+    expect(seg).toMatch(/return 1/);
+  });
+});

@@ -291,13 +291,43 @@ cmd_update_db() {
 
     echo -e "  Pushing schema..."
     echo ""
-    if supabase db push --yes 2>&1 | sed 's/^/  /'; then
+    # NB: `if push | sed; then` tests SED's exit code — the push's failure was
+    # invisible and the script printed "✓ Migrations applied" over a dead
+    # connection (fresh-install finding #6). Capture the push's own status.
+    local push_out push_status
+    push_out=$(supabase db push --yes 2>&1)
+    push_status=$?
+    echo "$push_out" | sed 's/^/  /'
+
+    # Direct connections (db.<ref>:5432) resolve IPv6-only — unreachable from
+    # IPv4 networks (the known fleet issue). Retry via the Supavisor pooler.
+    if [ $push_status -ne 0 ] && echo "$push_out" | grep -q "does not support IPv6"; then
         echo ""
+        echo -e "  ${YELLOW}⚠ Direct connection is IPv6-only — retrying via the IPv4 pooler...${NC}"
+        local token pooler_tmpl db_pw pooler_url
+        token=$(supabase_access_token)
+        pooler_tmpl=$(curl -s -m 20 -H "Authorization: Bearer ${token}" \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}/config/database/pooler" 2>/dev/null \
+            | jq -r '(.[0] // .) | .connection_string // empty' 2>/dev/null)
+        if [ -z "$pooler_tmpl" ]; then
+            echo -e "  ${RED}✗ Could not fetch the pooler connection string.${NC}"
+        else
+            read -r -s -p "  Database password (set at project creation): " db_pw; echo ""
+            pooler_url="${pooler_tmpl/\[YOUR-PASSWORD\]/$db_pw}"
+            push_out=$(supabase db push --yes --db-url "$pooler_url" 2>&1)
+            push_status=$?
+            echo "$push_out" | sed 's/^/  /'
+        fi
+    fi
+
+    echo ""
+    if [ $push_status -eq 0 ]; then
         echo -e "  ${GREEN}✓ Migrations applied${NC}"
     else
-        echo ""
-        echo -e "  ${RED}✗ Migration failed${NC}"
+        echo -e "  ${RED}✗ Migration failed — the schema is NOT fully applied.${NC}"
+        echo -e "  ${DIM}Fix the error above and re-run /update-db before /create-admin.${NC}"
         echo -e "  ${DIM}Tip: supabase migration list --linked${NC}"
+        return 1
     fi
     echo ""
 }
@@ -885,11 +915,15 @@ cmd_status() {
         echo -e "  ${YELLOW}○${NC}  Edge functions    ${DIM}not deployed — run /update-funcs${NC}"
     fi
 
-    # Migrations
+    # Migrations. The list is a LOCAL | REMOTE | TIME table where an unapplied
+    # row simply has an EMPTY remote column — there is no "Not applied" text,
+    # so the old grep filtered nothing and /status reported every local file as
+    # applied even against a half-migrated database (fresh-install finding #7).
+    # Count applied = rows whose REMOTE column carries a version.
     local mig_out total applied pending
     mig_out=$(supabase migration list --linked 2>/dev/null || echo "")
-    total=$(echo "$mig_out" | tail -n +4 | grep -c "^" 2>/dev/null || echo "0")
-    applied=$(echo "$mig_out" | tail -n +4 | grep -v "Not applied" | grep -c "^" 2>/dev/null || echo "0")
+    total=$(echo "$mig_out" | awk -F'|' '$1 ~ /[0-9]{14}/ {n++} END {print n+0}')
+    applied=$(echo "$mig_out" | awk -F'|' '$1 ~ /[0-9]{14}/ && $2 ~ /[0-9]{14}/ {n++} END {print n+0}')
     pending=$((total - applied))
 
     if [ "$pending" -eq 0 ] && [ "$applied" -gt 0 ] 2>/dev/null; then

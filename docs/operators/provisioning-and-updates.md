@@ -31,7 +31,7 @@ all and freeze at whatever the migration wrote — bugs included. See
 | Site | Supabase ref | Frontend deploy |
 |------|--------------|-----------------|
 | www.flowwink.com | `hebytraibjmbqntsljph` | **Vercel auto** from `magnusfroste/flowwink` `main` |
-| demo.flowwink.com | `lcztuuaxulxivhbnkcpm` | **Vercel auto** from `main` |
+| demo.flowwink.com | `ydcrzguzfipraofvpegu` | **Vercel auto** from `main` |
 | www.autoversio.ai | `trpejhoieysrwiuhskkm` | **Fork** of the repo → does **not** auto-deploy. Sync the fork + redeploy manually. **Notify the owner.** |
 | www.liteit.se | `cdwpqcevbcbqxhycsqhm` | Separate Supabase account — deploy with that account's token |
 

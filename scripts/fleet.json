@@ -3,7 +3,7 @@
   "instances": [
     { "name": "autoversio", "ref": "trpejhoieysrwiuhskkm", "fork": true, "poolerHost": "aws-1-eu-north-1.pooler.supabase.com" },
     { "name": "liteit", "ref": "cdwpqcevbcbqxhycsqhm", "poolerHost": "aws-0-eu-west-1.pooler.supabase.com" },
-    { "name": "demo", "ref": "lcztuuaxulxivhbnkcpm", "poolerHost": "aws-1-eu-north-1.pooler.supabase.com" },
+    { "name": "demo", "ref": "ydcrzguzfipraofvpegu", "poolerHost": "aws-0-eu-north-1.pooler.supabase.com" },
     { "name": "www", "ref": "hebytraibjmbqntsljph", "poolerHost": "aws-1-eu-north-1.pooler.supabase.com" }
   ]
 }
