@@ -22,7 +22,7 @@ const CUSTOMER360_SKILLS: SkillSeed[] = [
     description:
       'Fetch the unified Customer 360 view for a person — lead profile, all deals, orders, invoices, quotes, tickets, bookings, subscriptions, chats, webinars and tasks plus a merged timeline and lifetime-value KPIs. Lookup by lead_id (preferred) OR email. Use when: an agent needs full context about a customer before answering a question, building a follow-up, or routing a ticket. NOT for: editing data — this is read-only.',
     category: 'crm',
-    handler: 'edge:customer-360',
+    handler: 'internal:get_customer_360',
     scope: 'internal',
     tool_definition: {
       type: 'function',

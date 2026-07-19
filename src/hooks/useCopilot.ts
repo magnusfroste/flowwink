@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { useCreatePage } from '@/hooks/usePages';
 import { useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
@@ -907,19 +908,14 @@ export function useCopilot(): UseCopilotReturn {
         content: m.content,
       }));
 
-      const { data, error: fnError } = await supabase.functions.invoke('copilot-action', {
-        body: { 
-          messages: conversationHistory,
-          currentModules: currentModules || defaultModulesSettings,
-          migrationState: migrationState.isActive ? {
-            sourceUrl: migrationState.sourceUrl,
-            platform: migrationState.detectedPlatform,
-          } : null,
-        },
+      const data = await callSkill<{ message?: string; toolCall?: { name: string; arguments: Record<string, unknown> } | null }>('build_site_step', {
+        messages: conversationHistory,
+        currentModules: currentModules || defaultModulesSettings,
+        migrationState: migrationState.isActive ? {
+          sourceUrl: migrationState.sourceUrl,
+          platform: migrationState.detectedPlatform,
+        } : null,
       });
-
-      if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
 
       // Process response
       const assistantMessage: CopilotMessage = {

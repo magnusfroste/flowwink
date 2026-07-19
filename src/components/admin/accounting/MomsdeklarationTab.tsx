@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFiscalYear } from './FiscalYearContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,10 +49,8 @@ export function MomsdeklarationTab() {
     queryKey: ['vat-return-se', year, mode, month, quarter],
     queryFn: async (): Promise<VatReturn> => {
       const body = mode === 'month' ? { year, month } : { year, quarter };
-      const { data, error } = await supabase.functions.invoke('accounting-vat-return-se', { body });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      return data as VatReturn;
+      const data = await callSkill('prepare_vat_return', body);
+      return data as unknown as VatReturn;
     },
   });
 

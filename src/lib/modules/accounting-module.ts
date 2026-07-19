@@ -35,7 +35,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
     name: 'prepare_vat_return',
     description: 'Prepare a full Swedish momsdeklaration (SKV 4700) for a period: all boxes (05,10,11,12,20,21,22,30,31,32,35,39,41,48,49) mapped from posted ledger via the active locale pack. Use when: closing a VAT period. NOT for: booking the VAT payment (manage_journal_entry) or full financial reports (accounting_reports).',
     category: 'system',
-    handler: 'edge:accounting-vat-return-se',
+    handler: 'internal:prepare_vat_return',
     scope: 'internal',
     trust_level: 'auto',
     tool_definition: {"type":"function","function":{"name":"prepare_vat_return","description":"Swedish VAT return (SKV 4700) for a period: all boxes mapped from posted ledger. A PERIOD IS REQUIRED — pass exactly one of: {from,to} (YYYY-MM-DD), {year,quarter}, or {year,month}. Calling with no period fails with \"Provide {from,to} or {year,month|quarter}\".","parameters":{"type":"object","properties":{"from":{"type":"string","description":"Period start YYYY-MM-DD (use together with `to`)"},"to":{"type":"string","description":"Period end YYYY-MM-DD (use together with `from`)"},"year":{"type":"integer","description":"Fiscal year — REQUIRED together with `quarter` or `month`, e.g. 2026"},"month":{"type":"integer","description":"Month 1-12 (use together with `year`)"},"quarter":{"type":"integer","description":"Quarter 1-4 (use together with `year`)"}},"anyOf":[{"required":["from","to"]},{"required":["year","quarter"]},{"required":["year","month"]}]}}} as SkillSeed['tool_definition'],

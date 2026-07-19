@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { callSkill } from '@/lib/call-skill';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AssignmentsTab } from "@/components/admin/consultants/AssignmentsTab";
@@ -398,12 +399,15 @@ export default function ConsultantProfilesPage() {
       }
 
       // Send to AI for structured extraction
-      const { data, error } = await supabase.functions.invoke("parse-resume", {
-        body: { resume_text: text },
-      });
-
-      if (error || !data?.success) {
-        toast({ title: "Parsing failed", description: data?.error || "Could not parse the resume.", variant: "destructive" });
+      let data: { success?: boolean; profile?: Record<string, any> };
+      try {
+        data = await callSkill("parse_resume", { resume_text: text });
+      } catch (err) {
+        toast({ title: "Parsing failed", description: err instanceof Error ? err.message : "Could not parse the resume.", variant: "destructive" });
+        return;
+      }
+      if (!data?.success) {
+        toast({ title: "Parsing failed", description: "Could not parse the resume.", variant: "destructive" });
         return;
       }
 

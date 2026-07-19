@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { DashCard, BigFigure, Subline, QuietEmpty, fmtSek } from './_shared';
 import { useFiscalYear } from '../FiscalYearContext';
 
@@ -17,12 +18,8 @@ export function VatCard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dash', 'vat-return', year, month],
     queryFn: async (): Promise<VatReturn> => {
-      const { data, error } = await supabase.functions.invoke('accounting-vat-return-se', {
-        body: { year, month },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      return data as VatReturn;
+      const data = await callSkill('prepare_vat_return', { year, month });
+      return data as unknown as VatReturn;
     },
     retry: false,
     staleTime: 5 * 60_000,

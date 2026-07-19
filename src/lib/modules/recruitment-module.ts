@@ -78,7 +78,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
     description:
       'Parse a candidate CV (PDF/text) and extract structured data: name, email, phone, skills, experience, education. Use when: a new application arrives with a resume that needs structuring. NOT for: scoring (use score_candidate after parsing).',
     category: 'crm',
-    handler: 'edge:parse-resume',
+    handler: 'internal:parse_resume',
     scope: 'internal',
     tool_definition: {
       type: 'function',

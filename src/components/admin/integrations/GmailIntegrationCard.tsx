@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 
 interface GmailStatus {
   connected: boolean;
@@ -114,8 +115,7 @@ export function GmailIntegrationCard() {
   const handleScan = async () => {
     setScanning(true);
     try {
-      const { data, error } = await supabase.functions.invoke('gmail-inbox-scan');
-      if (error) throw error;
+      const data = await callSkill<{ signal_count?: number }>('scan_gmail_inbox');
       toast.success(`Scanned ${data?.signal_count || 0} emails`);
       await fetchStatus();
     } catch (e) {

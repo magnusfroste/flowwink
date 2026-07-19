@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 
 export type Customer360TimelineEvent = {
   id: string;
@@ -58,25 +59,11 @@ export function useCustomer360(params: { leadId?: string; email?: string }) {
     queryKey: ['customer-360', params.leadId ?? null, params.email ?? null],
     enabled: Boolean(params.leadId || params.email),
     queryFn: async (): Promise<Customer360> => {
-      const search = new URLSearchParams();
-      if (params.leadId) search.set('lead_id', params.leadId);
-      if (params.email) search.set('email', params.email);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-360?${search.toString()}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      return res.json();
+      const args: Record<string, string> = {};
+      if (params.leadId) args.lead_id = params.leadId;
+      if (params.email) args.email = params.email;
+      const data = await callSkill('get_customer_360', args);
+      return data as unknown as Customer360;
     },
   });
 }

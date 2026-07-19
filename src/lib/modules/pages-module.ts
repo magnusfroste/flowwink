@@ -575,7 +575,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
     name: 'build_site_step',
     description: 'Run one step of the site-builder reasoning loop: takes conversation history + current module state, returns next assistant message and optionally a tool_call (create_block / migrate_url / update_footer / activate_modules). Caller is responsible for applying the tool_call and feeding the result back as the next user message. Use when: an external operator wants to drive the AI site builder programmatically; building or migrating a website block-by-block from another agent. NOT for: directly creating a single page (manage_page) or block (create_page_block); migrating a single URL without iterative feedback (migrate_url).',
     category: 'content',
-    handler: 'edge:copilot-action',
+    handler: 'internal:build_site_step',
     scope: 'both',
     tool_definition: {
       type: 'function',

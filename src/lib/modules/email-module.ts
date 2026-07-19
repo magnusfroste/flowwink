@@ -119,7 +119,7 @@ Check list_communications (channel=email) — status 'sent' means the provider a
     name: 'scan_gmail_inbox',
     description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
     category: 'communication',
-    handler: 'edge:gmail-inbox-scan',
+    handler: 'internal:scan_gmail_inbox',
     scope: 'internal',
     tool_definition: {
       type: 'function',
