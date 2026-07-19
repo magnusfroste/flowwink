@@ -206,7 +206,21 @@ export async function handleObjectiveUpdateProgress(supabase: any, args: { objec
   // Stamp the model's prose with machine-derived facts so the two sit side by side
   // and any contradiction is visible (and checkable) rather than buried in text.
   const evidence = await collectObjectiveEvidence(supabase, args.objective_id);
-  const progress = { ...(args.progress || {}), _evidence: evidence };
+
+  const { data: cur } = await supabase
+    .from('agent_objectives').select('progress').eq('id', args.objective_id).single();
+  const incoming = args.progress || {};
+
+  // `plan` is system-owned state (written by decompose_objective, advanced by
+  // advance_plan). The model routinely sends a progress object without it, which
+  // used to erase the plan — and with it the very evidence the completion gate
+  // checks, silently making the gate toothless (observed live on liteit: a
+  // 4-step plan became steps.total = 0 after one progress note). Preserve it.
+  const progress = {
+    ...incoming,
+    ...(cur?.progress?.plan && !(incoming as any).plan ? { plan: cur.progress.plan } : {}),
+    _evidence: evidence,
+  };
 
   const { error } = await supabase
     .from('agent_objectives').update({ progress }).eq('id', args.objective_id);

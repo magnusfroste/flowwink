@@ -95,6 +95,19 @@ describe('objective evidence guardrails', async () => {
     expect(res.warning).toMatch(/NO successful run/);
   });
 
+  it('preserves the system-owned plan when the model omits it (else the gate goes toothless)', async () => {
+    const steps = [{ id: 's1', skill_name: 'accounting_reports', status: 'pending' }];
+    const db = stubClient(planWith(steps), [{ skill_name: 'accounting_reports', status: 'success' }]);
+    // The model writes a plain note with no `plan` key — as it does in practice.
+    await H.handleObjectiveUpdateProgress(db, {
+      objective_id: 'o1',
+      progress: { status: 'Granskning pågår' },
+    });
+    const written = db.updates.at(-1).vals.progress;
+    expect(written.status).toBe('Granskning pågår');
+    expect(written.plan?.steps).toEqual(steps); // survived — observed lost on liteit before the fix
+  });
+
   it('REFUSES to complete an objective whose plan skill never succeeded', async () => {
     const db = stubClient(
       planWith([{ id: 's1', skill_name: 'prepare_vat_return', status: 'done' }]),
