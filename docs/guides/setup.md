@@ -34,7 +34,13 @@ npm run cli
 Then use the interactive menu:
 1. `/login` — log in to Supabase CLI
 2. `/link` — select and link your project
-3. `/install` — deploys edge functions, runs migrations, creates admin user, outputs env variables
+3. `/install` — runs migrations, sets API keys, deploys edge functions, creates the admin user, outputs env variables
+
+During `/install` you'll be asked **what this site is** — `cms`, `crm` or `erp`.
+That choice writes the module configuration and decides which edge functions
+get deployed; you can change any module later in `/admin/modules` (then re-run
+`/update-funcs`). See [Deploy Edge Functions](#2-deploy-edge-functions) for what
+each profile contains and why `erp` needs a paid Supabase plan.
 
 **✨ Auto-Migrations:** After initial setup, future migrations run automatically when you:
 - Start dev server: `npm run dev`
@@ -134,12 +140,40 @@ supabase link --project-ref YOUR_PROJECT_REF
 
 ### 2. Deploy Edge Functions
 
+**Use the CLI for this — don't loop over the directory.** Two reasons the
+obvious loop breaks a site:
+
+- **The function cap is a cliff.** Supabase Free allows 100 functions; the repo
+  has ~110. A loop deploys fine up to 100, then every remaining call fails with
+  `402 Max number of functions reached` — and the site is silently missing
+  whichever functions came last in the alphabet. At the cap even *updates to
+  existing functions* are rejected, so you cannot ship a fix until you delete
+  something.
+- **Blanket `--no-verify-jwt` removes the auth gate from admin-only functions.**
+  `supabase/config.toml` sets `verify_jwt` per function for a reason; the CLI
+  reads it, a hand-rolled loop does not.
+
 ```bash
-# Deploy all functions (recommended)
-for func in supabase/functions/*/; do
-  supabase functions deploy $(basename $func) --no-verify-jwt
-done
+npm run cli        # then: /update-funcs
 ```
+
+On a project that has no modules configured yet — a fresh install — it asks
+what the site is and deploys that profile:
+
+| Profile | Functions | What you get |
+|---------|-----------|--------------|
+| `cms` | ~51 | Pages, blog, media, newsletter, surveys, webinars |
+| `crm` | ~67 | CMS + leads, companies, customer 360, sales intelligence, bookings, live support |
+| `erp` | ~110 | Everything — **exceeds the Free cap**, needs a paid plan |
+
+Preset it non-interactively with `FLOWWINK_PROFILE=cms`, or deploy literally
+everything with `FLOWWINK_DEPLOY_ALL=1` (only on a paid plan).
+
+**Enabling more modules later is two steps.** Toggling a module in
+`/admin/modules` seeds its skills immediately, but the browser cannot deploy
+edge functions — re-run `/update-funcs` from the terminal afterwards. The
+Modules page flags "module enabled but its function isn't deployed" when you
+forget.
 
 ### 3. Run Database Migrations
 
@@ -464,28 +498,33 @@ These are the minimum functions needed for pages to work:
    - Click **Deploy**
 5. Repeat for `track-page-view`, `content-api`, and `sitemap-xml`
 
-**Via Supabase CLI:**
+**Via Supabase CLI** — these four are public, so they need `--no-verify-jwt`:
 ```bash
-# Login and link to project
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 
-# Deploy critical functions
-supabase functions deploy get-page
-supabase functions deploy track-page-view
-supabase functions deploy content-api
-supabase functions deploy sitemap-xml
+supabase functions deploy get-page --no-verify-jwt
+supabase functions deploy track-page-view --no-verify-jwt
+supabase functions deploy content-api --no-verify-jwt
+supabase functions deploy sitemap-xml --no-verify-jwt
 ```
 
-**Deploy All Functions:**
+**To (re)deploy everything the site needs**, use the CLI rather than a loop —
+it respects both `config.toml`'s per-function `verify_jwt` and the function cap:
+
 ```bash
-# Deploy all functions at once
-for func in supabase/functions/*/; do
-  func_name=$(basename "$func")
-  echo "Deploying $func_name..."
-  supabase functions deploy "$func_name"
-done
+npm run cli        # then: /update-funcs
 ```
+
+A loop over `supabase/functions/*/` deploys ~110 functions into a 100-function
+Free cap (silently losing the tail) and, if you add `--no-verify-jwt` to all of
+them, strips the auth gate from admin-only functions. If you are on a paid plan
+and genuinely want everything, use `FLOWWINK_DEPLOY_ALL=1 npm run cli` →
+`/update-funcs`.
+
+**If you are already at the cap**, no deploy will succeed — not even an update
+to an existing function. Delete what the site doesn't use first:
+`/update-funcs --prune` removes functions whose modules are disabled.
 
 #### Verify Deployment
 Test the functions after deployment:
