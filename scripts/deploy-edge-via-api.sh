@@ -69,10 +69,29 @@ for f in sorted(seen): print(f)
 PY
 )
 
-echo "Deploying '$FN' to $REF  (verify_jwt=$VERIFY_JWT, ${#FILES[@]} files)"
+# A function may carry its own import map (deno.json) for BARE specifiers —
+# `from "hono"`, `from "mcp-lite"`. Those are not paths, so the closure walker
+# above never sees them; without the map the bundler fails with
+# `Relative import path "x" not prefixed with / or ./ or ../`. Ship the map and
+# tell the API where it is. (Found empirically: mcp-server was undeployable
+# through this script until the map was included.)
+IMPORT_MAP=""
+if [ -f "$FN/deno.json" ]; then
+    IMPORT_MAP="$FN/deno.json"
+    FILES+=("$IMPORT_MAP")
+elif [ -f "$FN/import_map.json" ]; then
+    IMPORT_MAP="$FN/import_map.json"
+    FILES+=("$IMPORT_MAP")
+fi
+
+echo "Deploying '$FN' to $REF  (verify_jwt=$VERIFY_JWT, ${#FILES[@]} files${IMPORT_MAP:+, import map: $IMPORT_MAP})"
 printf '  + %s\n' "${FILES[@]}"
 
-ARGS=(-F "metadata={\"entrypoint_path\":\"$FN/index.ts\",\"name\":\"$FN\",\"verify_jwt\":$VERIFY_JWT};type=application/json")
+META="{\"entrypoint_path\":\"$FN/index.ts\",\"name\":\"$FN\",\"verify_jwt\":$VERIFY_JWT"
+[ -n "$IMPORT_MAP" ] && META="$META,\"import_map_path\":\"$IMPORT_MAP\""
+META="$META}"
+
+ARGS=(-F "metadata=$META;type=application/json")
 for f in "${FILES[@]}"; do ARGS+=(-F "file=@$f;filename=$f"); done
 
 resp=$(curl -s -m 180 -X POST \

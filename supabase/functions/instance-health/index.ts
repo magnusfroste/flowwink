@@ -2,6 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { computeSkillHash, runIntegrityChecks } from '../_shared/integrity.ts';
 import type { HealthCheckResult } from '../_shared/integrity.ts';
+import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
+import { enrichCronHealth, type CronHealthReport } from '../_shared/cron/health.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +16,40 @@ Deno.serve(async (req) => {
   }
 
       const supabase = getServiceClient();
+
+  // ── check=cron — the scheduled-job health report ──────────────────────────
+  // Folded in from the standalone cron-health function (edge-surface B5, the
+  // freeze principle applied retroactively). Body VERBATIM: calls the
+  // cron_health_report() RPC and enriches it with staleness via the SHARED
+  // calculateNextRun, so the admin card and the heartbeat gate read the exact
+  // same brain. Keeps cron-health's own gate: admin-JWT or service-role only.
+  {
+    let check = new URL(req.url).searchParams.get('check') ?? '';
+    if (!check && req.method === 'POST') {
+      try { check = (await req.clone().json())?.check ?? ''; } catch { /* no body */ }
+    }
+    if (check === 'cron') {
+      try {
+        const auth = await requireServiceOrRole(req, supabase, 'admin');
+        if (!auth.authorized) return unauthorized(corsHeaders);
+
+        const { data, error } = await supabase.rpc('cron_health_report');
+        if (error) {
+          return new Response(JSON.stringify({ error: `cron_health_report failed: ${error.message}` }), {
+            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const enriched = enrichCronHealth((data ?? {}) as CronHealthReport);
+        return new Response(JSON.stringify(enriched), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: (e as Error).message }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+  }
 
   try {
     let checksTotal = 0;

@@ -40,6 +40,30 @@ print_section() {
     echo ""
 }
 
+# Supabase Management API token, wherever the CLI put it.
+#
+# NB: the CLI does NOT always use ~/.supabase/access-token. On macOS it stores
+# the token in the login keychain, so that file simply does not exist — and
+# reading it blindly (as this script used to) yielded an empty token, which
+# silently disabled everything gated on it: the selective-deploy filter, the
+# pre-bootstrap SQL and the install-profile prompt. The symptom was a deploy
+# that tried to push every function into a 100-function cap.
+# Order: explicit env var → file (Linux/CI) → macOS keychain.
+supabase_access_token() {
+    if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+        printf '%s' "$SUPABASE_ACCESS_TOKEN"
+        return 0
+    fi
+    if [ -s "$HOME/.supabase/access-token" ]; then
+        cat "$HOME/.supabase/access-token"
+        return 0
+    fi
+    if command -v security >/dev/null 2>&1; then
+        security find-generic-password -s "Supabase CLI" -w 2>/dev/null && return 0
+    fi
+    return 0   # empty — callers already handle "no token" by falling back
+}
+
 require_link() {
     if [ -z "$PROJECT_REF" ]; then
         echo -e "  ${RED}✗ No project linked.${NC} Run ${CYAN}/link${NC} first."
@@ -91,6 +115,7 @@ cmd_help() {
     echo -e "  ${BOLD}── Update existing installation ──────────────────────${NC}"
     echo -e "  ${CYAN}/update-db${NC}       Push new database migrations to linked project"
     echo -e "  ${CYAN}/update-funcs${NC}    Deploy edge functions for enabled modules (--prune removes unused; FLOWWINK_DEPLOY_ALL=1 for all)"
+    echo -e "                   ${DIM}On a fresh project it asks for a profile (cms/crm/erp) — FLOWWINK_PROFILE= to preset${NC}"
     echo -e "  ${CYAN}/set-keys${NC}        Add or rotate API keys & Supabase secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create a new admin user account"
     echo -e "  ${CYAN}/patch-flowpilot${NC} (deprecated) FlowPilot is now seeded via /admin/modules"
@@ -209,7 +234,7 @@ pre_bootstrap_sql() {
     # so every historical migration finds the function via search_path.
     # Idempotent and safe to re-run.
     local token
-    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    token=$(supabase_access_token)
     if [ -z "$token" ]; then
         echo -e "  ${DIM}Skipping pre-bootstrap (no Supabase access token found)${NC}"
         return 0
@@ -278,6 +303,134 @@ cmd_update_db() {
 }
 
 
+# ── Install profile ─────────────────────────────────────────────────────────
+# Picks what a FRESH site starts as (CMS / CRM / ERP), writes site_settings.
+# modules, and echoes the resulting JSON so the selective-deploy filter can use
+# it. Profiles live in supabase/seed/install-profiles.json — data, not code.
+# Non-interactive: set FLOWWINK_PROFILE=cms|crm|erp.
+# Returns non-zero (aborting the deploy) if the operator cancels.
+choose_install_profile() {
+    local token="$1"
+    local prof_file="supabase/seed/install-profiles.json"
+    local map_file="supabase/seed/edge-function-map.json"
+    [ -f "$prof_file" ] || { echo "" ; return 0; }   # no profiles → old fail-open behaviour
+
+    local profile="${FLOWWINK_PROFILE:-}"
+    if [ -z "$profile" ]; then
+        echo "" >&2
+        echo -e "  ${BOLD}This project has no modules configured yet — a fresh site.${NC}" >&2
+        echo -e "  ${DIM}What should it start as? You can change any module later in /admin/modules.${NC}" >&2
+        echo "" >&2
+        local keys=() labels=() k
+        while IFS= read -r k; do
+            keys+=("$k")
+            local label count
+            label=$(jq -r --arg k "$k" '.profiles[$k].label' "$prof_file")
+            count=$(profile_function_count "$k")
+            labels+=("$(printf '%-52s %3d functions' "$label" "$count")")
+        done < <(jq -r '.profiles | keys_unsorted[]' "$prof_file")
+
+        _fw_select "${labels[@]}" >&2
+        [ "$_FW_IDX" -lt 0 ] && { echo -e "  ${DIM}Cancelled — nothing deployed.${NC}" >&2; return 1; }
+        profile="${keys[$_FW_IDX]}"
+    fi
+
+    jq -e --arg p "$profile" '.profiles[$p]' "$prof_file" >/dev/null 2>&1 || {
+        echo -e "  ${RED}✗ Unknown profile '${profile}'. Valid: $(jq -r '.profiles|keys_unsorted|join(", ")' "$prof_file")${NC}" >&2
+        return 1
+    }
+
+    # ── Cap guard ────────────────────────────────────────────────────────────
+    # The Supabase function cap is a CLIFF, not a gradient: at the limit EVERY
+    # deploy is rejected with 402 — including updates to functions that already
+    # exist. Never walk into it silently.
+    local want limit
+    want=$(profile_function_count "$profile")
+    limit=$(jq -r '.plan_limits.free // 100' "$map_file")
+    if [ "$want" -gt "$limit" ]; then
+        echo "" >&2
+        echo -e "  ${RED}⚠ Profile '${profile}' needs ${want} functions; the Free plan allows ${limit}.${NC}" >&2
+        echo -e "  ${DIM}At the cap every deploy is rejected — including updates to existing${NC}" >&2
+        echo -e "  ${DIM}functions. Upgrade the project's plan, or pick a smaller profile and${NC}" >&2
+        echo -e "  ${DIM}enable the extra modules afterwards (then re-run /update-funcs).${NC}" >&2
+        echo "" >&2
+        local go
+        read -e -p "  Continue anyway? [y/N]: " go >&2
+        [[ ! "$go" =~ ^[Yy]$ ]] && return 1
+    elif [ "$want" -gt $((limit - 8)) ]; then
+        echo -e "  ${YELLOW}⚠ ${want}/${limit} functions — little headroom left for new modules.${NC}" >&2
+    fi
+
+    local modules_row
+    modules_row=$(profile_modules_row "$profile")
+
+    # Persist it. If this write fails the deploy still proceeds with the
+    # computed set, but the admin UI would show defaults — so say so loudly.
+    local wresp
+    wresp=$(curl -s -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
+        -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
+        -d "$(jq -n --arg v "$modules_row" '{query:("insert into site_settings (key, value) values ('"'"'modules'"'"', " + ($v|@json) + "::jsonb) on conflict (key) do update set value = excluded.value")}')" 2>/dev/null || echo "")
+    if echo "$wresp" | jq -e '.message // .error' >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠ Could not persist the modules row — deploying the profile anyway.${NC}" >&2
+        echo -e "  ${DIM}Set the modules manually in /admin/modules after install.${NC}" >&2
+    else
+        echo -e "  ${GREEN}✓ Profile '${profile}' — modules configured${NC}" >&2
+    fi
+
+    echo "$modules_row"
+}
+
+# The module ids a profile enables, following its `extends` chain.
+# "*" means every module the function map knows about.
+profile_modules() {
+    local p="$1"
+    local sel
+    sel=$(jq -r --arg p "$p" '
+        (.profiles) as $P
+        | def expand($k): ($P[$k].modules) as $m
+            | (if $P[$k].extends then expand($P[$k].extends) else [] end)
+              + (if $m == "*" then [] else $m end);
+        (if $P[$p].modules == "*" then "ALL" else "SET" end)
+    ' supabase/seed/install-profiles.json 2>/dev/null)
+
+    if [ "$sel" = "ALL" ]; then
+        jq -c '.modules | keys' supabase/seed/edge-function-map.json
+    else
+        jq -c --arg p "$p" '
+            (.profiles) as $P
+            | def expand($k): ($P[$k].modules) as $m
+                | (if $P[$k].extends then expand($P[$k].extends) else [] end)
+                  + (if $m == "*" then [] else $m end);
+            expand($p) | unique
+        ' supabase/seed/install-profiles.json
+    fi
+}
+
+# A partial {module: {enabled}} row for site_settings.modules. Modules NOT in
+# the profile are written as explicitly false — the selective-deploy filter
+# only skips a function when EVERY owning module is explicitly disabled, so
+# absent keys would deploy everything. The frontend merges this with
+# defaultModulesSettings, so name/description/structural fields come from code.
+profile_modules_row() {
+    local on all
+    on=$(profile_modules "$1")
+    all=$(jq -c '.modules | keys' supabase/seed/edge-function-map.json)
+    jq -c -n --argjson on "$on" --argjson all "$all" '
+        ($all + $on | unique) as $keys
+        | reduce $keys[] as $k ({}; .[$k] = { enabled: (($on | index($k)) != null) })
+    '
+}
+
+# Function count a profile would deploy (core + its modules' functions).
+profile_function_count() {
+    local mods
+    mods=$(profile_modules "$1")
+    jq -r --argjson mods "$mods" '
+        ((.core + ([.modules | to_entries[] | select(.key as $k | $mods | index($k)) | .value[]]))
+         | unique | length)
+    ' supabase/seed/edge-function-map.json
+}
+
 cmd_update_funcs() {
     echo ""
     print_section "Deploy Edge Functions"
@@ -308,13 +461,23 @@ cmd_update_funcs() {
 
     if [ "${FLOWWINK_DEPLOY_ALL:-0}" != "1" ] && [ -f "$map_file" ]; then
         local token modules_json
-        token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+        token=$(supabase_access_token)
         if [ -n "$token" ]; then
             local resp
             resp=$(curl -s -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
                 -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
                 -d "$(jq -n '{query:"select value from site_settings where key='"'"'modules'"'"' limit 1"}')" 2>/dev/null || echo "")
             modules_json=$(echo "$resp" | jq -c '.[0].value // empty' 2>/dev/null || echo "")
+
+            # ── Fresh install: no modules row yet ────────────────────────────
+            # /update-funcs runs BEFORE /create-admin, so nobody has logged in
+            # to /admin/modules and the row does not exist. Falling open here
+            # meant deploying all ~110 functions against a 100 cap — the deploy
+            # 402s partway through and the site is silently missing functions.
+            # Ask what this site IS, write the row, deploy that profile.
+            if [ -z "$modules_json" ]; then
+                modules_json=$(choose_install_profile "$token") || return 1
+            fi
 
             if [ -n "$modules_json" ]; then
                 # Skip a function ONLY if EVERY owning module is explicitly
@@ -465,7 +628,7 @@ cmd_update_funcs() {
 # Modules page can flag "module enabled but its function isn't deployed".
 record_deployed_functions() {
     local token deployed json
-    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    token=$(supabase_access_token)
     [ -z "$token" ] && return 0
     deployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
         | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")
@@ -815,7 +978,10 @@ cmd_install() {
     echo -e "  ${DIM}Project: ${PROJECT_NAME}${NC}"
     echo ""
     echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/set-keys${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC}"
-    echo -e "  ${DIM}FlowPilot is seeded later via /admin/modules (toggle on).${NC}"
+    echo -e "  ${DIM}/update-funcs asks what this site is (CMS / CRM / ERP) and deploys${NC}"
+    echo -e "  ${DIM}that profile's functions. Enable more modules later in /admin/modules,${NC}"
+    echo -e "  ${DIM}then re-run /update-funcs to deploy what they need.${NC}"
+    echo -e "  ${DIM}FlowPilot is seeded via /admin/modules (toggle on).${NC}"
     echo ""
     read -e -p "  Continue? [y/N]: " confirm
     [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "" && return 0

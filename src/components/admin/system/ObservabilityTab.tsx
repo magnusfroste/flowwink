@@ -296,7 +296,7 @@ function CronHealthCard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['cron-health'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('cron-health');
+      const { data, error } = await supabase.functions.invoke('instance-health', { body: { check: 'cron' } });
       if (error) throw error;
       return data as {
         cron_available: boolean;

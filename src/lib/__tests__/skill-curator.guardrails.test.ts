@@ -25,7 +25,7 @@ const root = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe('skill curator guardrails', () => {
-  const curator = read('supabase/functions/skill-curator/index.ts');
+  const curator = read('supabase/functions/flowpilot-lifecycle/curator.ts');
   const agentExecute = read('supabase/functions/agent-execute/index.ts');
   const seeds = read('src/lib/platform-seeds.ts');
   const migration = read('supabase/migrations/20260712150000_curator-trust-policy.sql');
@@ -74,7 +74,9 @@ describe('skill curator guardrails', () => {
 
   it('curator is seeded as a platform skill with a daily automation', () => {
     expect(seeds).toContain("name: 'run_skill_curator'");
-    expect(seeds).toContain("handler: 'edge:skill-curator'");
+    // B5: curator lives in flowpilot-lifecycle; the seed carries the _skill
+    // that the dispatcher maps to task=curator.
+    expect(seeds).toContain("handler: 'edge:flowpilot-lifecycle'");
     expect(seeds).toContain("name: 'Skill Curator'");
     expect(seeds).toMatch(/'0 4 \* \* \*'/);
   });

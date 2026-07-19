@@ -62,7 +62,7 @@ export function DistilledProposalsPanel() {
   const handleRunDistill = async () => {
     setRunning(true);
     try {
-      const { error } = await supabase.functions.invoke('flowpilot-distill');
+      const { error } = await supabase.functions.invoke('flowpilot-lifecycle', { body: { task: 'distill' } });
       if (error) throw error;
       toast.success('Distill loop ran');
       await refetch();

@@ -191,7 +191,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
               return `${k}: ${val ?? ''}`;
             })
             .join('\n');
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-email`, {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/comms-send?kind=contact_email`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

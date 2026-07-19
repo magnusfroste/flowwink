@@ -32,7 +32,7 @@ describe('flowpilot hermes guardrails', () => {
 
   it('heartbeat runs the follow-through pre-pass and feeds its result into context', () => {
     expect(heartbeat).toContain('runFollowThroughPrePass');
-    expect(heartbeat).toContain('flowpilot-followthrough');
+    expect(heartbeat).toContain('flowpilot-lifecycle?task=followthrough');
     // the result must reach the prompt, not just run silently
     expect(heartbeat).toMatch(/statsContext:.*followThroughCtx/s);
   });

@@ -123,7 +123,7 @@ async function runFollowThroughPrePass(supabaseUrl: string, serviceKey: string, 
   try {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 25_000); // never let the pre-pass eat the heartbeat
-    const resp = await fetch(`${supabaseUrl}/functions/v1/flowpilot-followthrough`, {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/flowpilot-lifecycle?task=followthrough`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
       body: JSON.stringify({ limit: 10, source: 'heartbeat_prepass', trace_id: traceId }),

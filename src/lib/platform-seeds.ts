@@ -24,7 +24,7 @@ export const PLATFORM_SKILLS: SkillSeed[] = [
     description:
       "Generate the daily business briefing: health score, key metrics (visitors, leads, orders, revenue), AI summary and action items. Writes to flowpilot_briefings + admin FlowChat. Use when: scheduled daily run; admin requests today's briefing. NOT for: weekly review (weekly_business_digest); ad-hoc analytics (analyze_analytics).",
     category: 'analytics',
-    handler: 'edge:flowpilot-briefing',
+    handler: 'edge:flowpilot-lifecycle',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -326,7 +326,7 @@ Reads and updates site settings including module configuration, site name, theme
     description:
       'Run the Skill Curator sweep: observe how skills failed recently (failed activities, human-rejected approvals, negative outcomes), draft instruction improvements for the worst offenders, and stage each as an approval in /admin/approvals. Never edits a skill directly. Use when: daily curator cron, "why does the agent keep failing at X — propose a fix", after a QA round produced repeated skill failures. NOT for: applying an improvement (update_skill_instructions after approval), business insights (run_daily_briefing).',
     category: 'system',
-    handler: 'edge:skill-curator',
+    handler: 'edge:flowpilot-lifecycle',
     scope: 'internal',
     tool_definition: {
       type: 'function',

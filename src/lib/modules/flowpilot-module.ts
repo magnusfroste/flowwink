@@ -237,7 +237,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
     name: 'learn_from_data',
     description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institutional knowledge. NOT for: analyzing analytics directly (analyze_analytics); generating business digests (weekly_business_digest).',
     category: 'analytics',
-    handler: 'edge:flowpilot-learn',
+    handler: 'edge:flowpilot-lifecycle',
     scope: 'internal',
     tool_definition: {
       type: 'function',

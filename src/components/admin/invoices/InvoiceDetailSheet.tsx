@@ -150,8 +150,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
       if (fErr || !fresh?.public_token) throw new Error('Missing public token');
 
       const publicUrl = `${window.location.origin}/invoice/${fresh.public_token}`;
-      const { error } = await supabase.functions.invoke('send-invoice-email', {
-        body: { invoice_id: invoice.id, public_url: publicUrl },
+      const { error } = await supabase.functions.invoke('comms-send', { body: { kind: 'invoice_email',  invoice_id: invoice.id, public_url: publicUrl },
       });
       if (error) throw error;
       toast.success('Invoice sent');

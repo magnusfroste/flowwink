@@ -26,12 +26,13 @@ const FUNCTIONS_DIR = join(process.cwd(), 'supabase', 'functions');
 // now agent-execute's own AUTH GATE, which this list still covers.
 const MUST_BE_GATED = [
   'agent-execute',
+  'comms-send',
+  'flowpilot-lifecycle',
   'agent-operate',
   'federation-invite-peer',
   'reconciliation',
   'subscriptions',
   'ai-task',
-  'survey-send',
 ];
 
 // Accept the shared helper OR a hand-rolled gate (service-role compare + a

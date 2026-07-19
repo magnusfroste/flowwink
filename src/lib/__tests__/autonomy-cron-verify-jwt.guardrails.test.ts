@@ -62,7 +62,7 @@ describe('autonomy-cron targets are verify_jwt = false', () => {
     expect(targets).toEqual(
       expect.arrayContaining([
         'flowpilot-heartbeat',
-        'flowpilot-learn',
+        'flowpilot-lifecycle',
       ]),
     );
   });

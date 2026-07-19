@@ -74,7 +74,7 @@ export function useAttachReturnLabel() {
 export function useSendReturnConfirmation() {
   return useMutation({
     mutationFn: async (args: { return_id: string; override_email?: string; custom_instructions?: string }) => {
-      const { data, error } = await supabase.functions.invoke('send-return-confirmation', { body: args });
+      const { data, error } = await supabase.functions.invoke('comms-send', { body: { kind: 'return_confirmation', ...args } });
       if (error) throw error;
       return data as { success: boolean; sent_to: string };
     },

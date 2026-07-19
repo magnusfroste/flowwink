@@ -196,8 +196,7 @@ Return ONLY a JSON object: {"subject": "...", "body": "..."}. No code fences, no
     try {
       // Record the acting human on the comms log row (titthål: agent vs manual)
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.functions.invoke('send-contact-email', {
-        body: {
+      const { data, error } = await supabase.functions.invoke('comms-send', { body: { kind: 'contact_email', 
           to: recipientEmail,
           toName: recipientName || undefined,
           subject: subject.trim(),

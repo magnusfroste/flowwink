@@ -114,7 +114,7 @@ serve(async (req) => {
       const { error } = await supabase.rpc("schedule_cron_job", {
         p_jobname: "flowpilot-learn",
         p_schedule: `0 ${utcHour} * * *`,
-        p_url: `${supabaseUrl}/functions/v1/flowpilot-learn`,
+        p_url: `${supabaseUrl}/functions/v1/flowpilot-lifecycle?task=learn`,
         p_headers: authHeader,
         p_body: JSON.stringify({ time: new Date().toISOString() }),
       });

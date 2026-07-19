@@ -51,30 +51,21 @@ export const DEFAULT_PLAN: SupabasePlan = 'free';
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
   'analyze-brand', 'automation-dispatcher', 'blog-rss', 'browser-fetch',
-  'chat-completion', 'chat-stt', 'check-secrets', 'company-profile', 'composio-proxy',
+  'chat-completion', 'chat-stt', 'check-secrets', 'company-profile', 'comms-send', 'composio-proxy',
   'composio-webhook', 'consultant-checkin', 'content-api',
   'contract-sign', 'create-checkout', 'create-invoice-payment',
-  'create-user', 'csat-dispatch', 'customer-signup', 'demo-cycle',
+  'create-user', 'customer-signup', 'demo-cycle',
   'docs-chat', 'docs-sync', 'document-share', 'document-sign-request',
-  'dunning-processor', 'elevenlabs-account', 'elks46-ingest',
+  'dunning-processor', 'elks46-ingest',
   'email-send', 'email-webhook', 'enrich-company-profile', 'event-dispatcher',
-  'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-image', 'firecrawl-account', 'flowpilot-briefing',
-  'cron-health',
-  'flowpilot-distill', 'flowpilot-followthrough', 'flowpilot-heartbeat', 'flowpilot-learn', 'gatewayapi-ingest', 'skill-curator',
-  'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',
+  'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-image', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
   'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
-  'openai-account', 'openclaw-responses', 'process-image',
+  'openclaw-responses', 'process-image',
   'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'recurring-quotes-cron',
   'consultant-match', 'run-autonomy-tests',
-  'run-platform-tests', 'score-visitor-intent', 'send-booking-confirmation',
-  'send-return-confirmation',
-  'send-booking-reminders',
-  'send-calendar-reminders',
-  'send-webinar-reminders',
-  'send-contact-email', 'send-invoice-email', 'send-order-confirmation', 'send-quote-email',
-  'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
+  'run-platform-tests', 'score-visitor-intent', 'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
   'sla-check', 'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
-  'support-router', 'survey-send', 'system-integrity-check', 'telegram-ingest',
+  'support-router', 'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
   'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
   'web-scrape', 'web-search', 'workspace-chat'];
@@ -97,8 +88,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // `voice-recording` also listed here (fail-open) — the Voicemail panel lives
   // in Live Support and needs recording playback even with the voice module off.
   liveSupport: [
-    'telegram-ingest', 'support-router', 'csat-dispatch',
-    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording'],
+    'telegram-ingest', 'support-router', 'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording'],
   email: ['gmail-oauth-callback'],
   newsletter: ['newsletter'],
 
@@ -114,12 +104,12 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   consultants: ['consultant-match', 'consultant-checkin'],
 
   // ── Commerce / finance ───────────────────────────────────────────────────
-  ecommerce: ['create-checkout', 'send-order-confirmation'],
-  invoicing: ['send-invoice-email', 'generate-invoice-pdf', 'create-invoice-payment'],
-  quotes: ['quote-sign', 'quote-pay', 'send-quote-email', 'quote-expiry-reminders'],
+  ecommerce: ['create-checkout'],
+  invoicing: ['generate-invoice-pdf', 'create-invoice-payment'],
+  quotes: ['quote-sign', 'quote-pay', 'quote-expiry-reminders'],
   contracts: ['contract-sign', 'contract-billing-cron'],
-  bookings: ['send-booking-confirmation', 'send-booking-reminders'],
-  calendar: ['send-calendar-reminders'],
+  bookings: [],
+  calendar: [],
   subscriptions: ['subscriptions', 'subscription-billing-cron', 'dunning-processor'],
   expenses: ['extract-receipt'],
   reconciliation: ['reconciliation'],
@@ -129,8 +119,8 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   fieldService: [],
   visitorIntelligence: ['score-visitor-intent'],
   sla: ['sla-check'],
-  surveys: ['survey-send'],
-  webinars: ['send-webinar-reminders'],
+  surveys: [],
+  webinars: [],
 
   // ── Content / docs / knowledge ───────────────────────────────────────────
   blog: ['blog-rss'],
@@ -142,8 +132,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
 
   // ── Autonomous operator (off by default) ─────────────────────────────────
   flowpilot: [
-    'flowpilot-heartbeat', 'flowpilot-briefing', 'flowpilot-learn', 'flowpilot-distill',
-    'flowpilot-followthrough', 'skill-curator', 'update-autonomy-cron', 'run-autonomy-tests', 'web-search', 'web-scrape'],
+    'flowpilot-heartbeat', 'update-autonomy-cron', 'run-autonomy-tests', 'web-search', 'web-scrape'],
 
   // ── Federation / external agents ─────────────────────────────────────────
   federation: ['a2a', 'agent-card', 'federation-invite-peer', 'openclaw-responses'],

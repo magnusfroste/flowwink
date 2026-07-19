@@ -113,25 +113,7 @@ verify_jwt = false
 [functions.quote-expiry-reminders]
 verify_jwt = false
 
-[functions.send-webinar-reminders]
-verify_jwt = false
-
-[functions.send-booking-confirmation]
-verify_jwt = false
-
-[functions.send-booking-reminders]
-verify_jwt = false
-
-[functions.send-contact-email]
-verify_jwt = false
-
-[functions.send-order-confirmation]
-verify_jwt = false
-
 [functions.consultant-match]
-verify_jwt = false
-
-[functions.send-quote-email]
 verify_jwt = false
 
 [functions.sitemap]
@@ -182,9 +164,6 @@ verify_jwt = false
 [functions.sla-check]
 verify_jwt = false
 
-[functions.survey-send]
-verify_jwt = false
-
 [functions.ai-task]
 verify_jwt = false
 
@@ -194,16 +173,7 @@ verify_jwt = false
 [functions.federation-invite-peer]
 verify_jwt = false
 
-[functions.flowpilot-briefing]
-verify_jwt = false
-
 [functions.flowpilot-heartbeat]
-verify_jwt = false
-
-[functions.skill-curator]
-verify_jwt = false
-
-[functions.flowpilot-learn]
 verify_jwt = false
 
 [functions.migrate-page]
@@ -215,12 +185,6 @@ verify_jwt = false
 [functions.signal-ingest]
 verify_jwt = false
 
-[functions.send-calendar-reminders]
-verify_jwt = false
-
-# Contact Center: support-router is called by chat-completion (handoff), and
-# contact-center is the edge:contact-center multi-skill router called by
-# agent-execute — both server-to-server with the service key.
 [functions.support-router]
 verify_jwt = false
 
@@ -252,11 +216,6 @@ verify_jwt = false
 verify_jwt = false
 
 # Called by pg_cron with the publishable key (verified across the live fleet).
-[functions.flowpilot-followthrough]
-verify_jwt = false
-
-# Invoked by the DB trigger trigger_score_visitor_intent() via pg_net with the
-# instance's anon/publishable key on every lead insert/update — no user JWT.
 [functions.score-visitor-intent]
 verify_jwt = false
 
@@ -266,3 +225,14 @@ verify_jwt = false
 # invoked. If one is ever registered in pg_cron it will be called with the
 # publishable key and MUST be added here first — otherwise it 401s silently
 # (pg_net reports success; only net._http_response shows the truth).
+
+[functions.comms-send]
+# Public flows (checkout/booking/contact) + cron POSTs. The kinds that were
+# JWT-gated as standalone functions (invoice_email, return_confirmation,
+# csat_dispatch) keep equivalent protection via an in-body gate in index.ts.
+verify_jwt = false
+
+[functions.flowpilot-lifecycle]
+# pg_cron POSTs (learn/followthrough) + heartbeat's internal hop. The task
+# that was JWT-gated standalone (distill) keeps an in-body gate in index.ts.
+verify_jwt = false

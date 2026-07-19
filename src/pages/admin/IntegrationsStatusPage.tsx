@@ -248,7 +248,7 @@ function HunterCreditsBadge({ hasKey }: { hasKey: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('hunter-account');
+      const { data, error } = await supabase.functions.invoke('integrations-account', { body: { provider: 'hunter' } });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to read account');
       setInfo({
@@ -295,7 +295,7 @@ function FirecrawlCreditsBadge({ hasKey }: { hasKey: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('firecrawl-account');
+      const { data, error } = await supabase.functions.invoke('integrations-account', { body: { provider: 'firecrawl' } });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to read credits');
       setInfo({
@@ -413,7 +413,7 @@ function ElevenLabsUsageBadge({ hasKey }: { hasKey: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('elevenlabs-account');
+      const { data, error } = await supabase.functions.invoke('integrations-account', { body: { provider: 'elevenlabs' } });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to read usage');
       setInfo({
@@ -545,7 +545,7 @@ function OpenAIUsageBadge({ hasKey, budgetUsd, warnAtPct }: { hasKey: boolean; b
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('openai-account');
+      const { data, error } = await supabase.functions.invoke('integrations-account', { body: { provider: 'openai' } });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to read usage');
       setInfo({
