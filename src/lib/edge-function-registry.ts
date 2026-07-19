@@ -60,6 +60,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'email-send', 'email-webhook', 'enrich-company', 'enrich-company-profile', 'event-dispatcher',
   'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-fx-rates',
   'fetch-image', 'field-service-skill', 'firecrawl-account', 'flowpilot-briefing',
+  'cron-health',
   'flowpilot-distill', 'flowpilot-followthrough', 'flowpilot-heartbeat', 'flowpilot-learn', 'gatewayapi-ingest', 'skill-curator',
   'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-inbox-scan',
   'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',

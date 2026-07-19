@@ -287,6 +287,97 @@ function LoginActivityCard() {
   );
 }
 
+// Scheduled-job health (hardening #1, layer 2). Calls the cron-health edge
+// function (cron_health_report enriched with staleness via the shared parser)
+// and surfaces the failure classes pg_cron's own "succeeded" status hides —
+// foreign_host being the headline signal that caught the July fleet incidents.
+function CronHealthCard() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['cron-health'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('cron-health');
+      if (error) throw error;
+      return data as {
+        cron_available: boolean;
+        self_host: string | null;
+        jobs: Array<{ jobname: string; schedule: string | null; active: boolean; target_host: string | null; foreign_host: boolean; never_ran: boolean; stale: boolean; unparsed_schedule: boolean; red: boolean; last_status: string | null; last_run: string | null; reasons: string[] }>;
+        http_errors_recent: Array<{ status_code: number | null; url: string | null; created: string; error: string | null }>;
+        flags: { jobs_total: number; jobs_red: number; jobs_stale: number; jobs_foreign_host: number; http_errors_24h: number };
+      };
+    },
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
+
+  const redJobs = (data?.jobs ?? []).filter((j) => j.red);
+  const httpErrors = data?.http_errors_recent ?? [];
+  const allGreen = !!data?.cron_available && redJobs.length === 0 && httpErrors.length === 0;
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between space-y-0">
+        <div>
+          <CardTitle className="font-serif flex items-center gap-2 text-base">
+            <Activity className="h-4 w-4 text-sky-500" />
+            Scheduled Jobs
+          </CardTitle>
+          <CardDescription>
+            {isLoading
+              ? '…'
+              : error
+                ? 'health check unavailable'
+                : data?.cron_available === false
+                  ? 'no pg_cron on this instance'
+                  : allGreen
+                    ? `${data?.flags.jobs_total ?? 0} jobs · all healthy`
+                    : `${redJobs.length} need attention · ${httpErrors.length} HTTP error(s) 24h`}
+          </CardDescription>
+        </div>
+        <Link to="/admin/automations" className="text-muted-foreground hover:text-foreground">
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : allGreen ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            Every scheduled job ran on time and self-references this instance.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {redJobs.map((j) => (
+              <div key={j.jobname} className="flex items-start gap-2 text-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{j.jobname}</div>
+                  <div className="text-xs text-muted-foreground">{j.reasons.join(' · ')}</div>
+                </div>
+                {j.foreign_host && (
+                  <Badge variant="destructive" className="text-[10px] shrink-0">foreign host</Badge>
+                )}
+              </div>
+            ))}
+            {httpErrors.length > 0 && (
+              <div className="flex items-start gap-2 text-sm pt-1 border-t">
+                <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <div className="text-xs text-muted-foreground">
+                  {httpErrors.length} HTTP error(s) from cron calls in 24h
+                  {httpErrors[0]?.url ? ` — e.g. ${httpErrors[0].status_code ?? 'ERR'} ${httpErrors[0].url}` : ''}
+                </div>
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground pt-1">
+              Note: a job's "succeeded" status only means pg_cron dispatched the command — an HTTP 404/401 still reads as success there.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ObservabilityTab() {
   return (
     <div className="space-y-4">
@@ -299,6 +390,7 @@ export function ObservabilityTab() {
         <SkillAuditCard />
         <LoginActivityCard />
       </div>
+      <CronHealthCard />
       <div className="pt-4 border-t">
         <div className="mb-3">
           <h3 className="font-serif text-base font-semibold">MCP Activity</h3>

@@ -1,8 +1,8 @@
 {
   "generated_by": "scripts/edge-functions-to-json.ts",
   "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
-  "total": 123,
-  "core_count": 45,
+  "total": 124,
+  "core_count": 46,
   "plan_limits": {
     "free": 100,
     "pro": 500,
@@ -22,6 +22,7 @@
     "content-api",
     "copilot-action",
     "create-user",
+    "cron-health",
     "customer-signup",
     "demo-cycle",
     "document-share",

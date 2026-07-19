@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { enrichCronHealth, formatCronHealthAlert, type CronHealthReport } from '../_shared/cron/health.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -198,6 +199,38 @@ async function runIntegrityGate(supabase: any): Promise<string> {
   }
 }
 
+// Scheduled-job health gate (hardening #1, layer 3). Deterministically detects
+// unhealthy cron jobs (foreign_host / never_ran / stale / unparsed schedule /
+// recent HTTP errors) via the SHARED cron-health brain, and — only when there
+// IS a problem — injects a context block instructing the operator to surface it
+// on River (its Fas 0 voice; post_to_river resolves author_id correctly). Silent
+// when healthy. Deduped: suppressed if a health alert already hit River in the
+// last 6h, so a persistent red state is flagged once, not every heartbeat.
+async function runCronHealthGate(supabase: any): Promise<string> {
+  try {
+    const { data, error } = await supabase.rpc('cron_health_report');
+    if (error || !data) return '';
+    const enriched = enrichCronHealth(data as CronHealthReport);
+    const alert = formatCronHealthAlert(enriched);
+    if (!alert) return '';
+
+    // Dedup: already surfaced on River recently? Then stay quiet this tick.
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    const { data: recent } = await supabase
+      .from('river_posts')
+      .select('id')
+      .ilike('body', '%Scheduled-job health%')
+      .gte('created_at', sixHoursAgo)
+      .limit(1);
+    if (recent && recent.length > 0) return '';
+
+    return `\n\nSCHEDULED-JOB HEALTH (deterministic check — ${enriched.red_count} issue area(s)):\n${alert}\nACTION: this is a material operational issue a colleague would flag — post the alert above to the team via post_to_river now (a single post; do not repeat if already there).`;
+  } catch (chErr) {
+    console.warn('[heartbeat] Cron-health gate failed (non-fatal):', chErr);
+    return '';
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -324,8 +357,9 @@ serve(async (req) => {
     // not CPU-bound: full context-gathering runs locally in a few seconds. The
     // thing that actually broke local full runs was reason()'s tool-array
     // exceeding the provider's 128 cap on a tier reload — fixed in reason.ts.)
-    const [integrityContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+    const [integrityContext, cronHealthContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       light ? Promise.resolve('') : runIntegrityGate(supabase),
+      light ? Promise.resolve('') : runCronHealthGate(supabase),
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase, { unlockedOnly: true }),
@@ -363,7 +397,7 @@ serve(async (req) => {
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,
-      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext + followThroughCtx,
+      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext + cronHealthContext + followThroughCtx,
       automationContext: automationCtx,
       healingReport: healingReport,
       cmsSchemaContext: cmsSchemaCtx,

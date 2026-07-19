@@ -3,19 +3,23 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Guardrail: the automation-dispatcher cron parser must not silently degrade.
- * Two live incidents (liteit, 2026-07-17): a monthly '0 5 1 * *' fell through
- * to the +1h fallback and fired 103 times (hourly, token-burning), and a
- * weekday '30 6 * * 1-5' was parseInt'd to Monday-only, silently skipping the
- * proof week's daily bookkeeping sweep Tue–Fri. The parser must handle the
- * monthly (DOM) shape and day-of-week ranges/lists, and the fallback must LOG.
+ * Guardrail: the cron parser must not silently degrade. Two live incidents
+ * (liteit, 2026-07-17): a monthly '0 5 1 * *' fell through to the +1h fallback
+ * and fired 103 times (hourly, token-burning), and a weekday '30 6 * * 1-5' was
+ * parseInt'd to Monday-only, silently skipping the proof week's daily
+ * bookkeeping sweep Tue–Fri. The parser must handle the monthly (DOM) shape and
+ * day-of-week ranges/lists, and the fallback must LOG.
+ *
+ * The parser was extracted to _shared/cron/next-run.ts (2026-07) so the
+ * dispatcher and the cron-health staleness check share ONE implementation —
+ * this test reads it from that single source of truth.
  *
  * Behaviour is runtime-verified by executing the extracted parser on 12
  * scenarios (monthly, DOM=31 skipping short months, weekday ranges/lists,
  * exact-slot boundaries) — not just source-matched.
  */
 const root = join(__dirname, '../../..');
-const src = readFileSync(join(root, 'supabase/functions/automation-dispatcher/index.ts'), 'utf-8');
+const src = readFileSync(join(root, 'supabase/functions/_shared/cron/next-run.ts'), 'utf-8');
 
 // Extract the two pure functions and strip the TS annotations so they run in vitest.
 function extractParser(): (expr?: string, from?: Date) => string {
