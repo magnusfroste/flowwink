@@ -915,11 +915,15 @@ cmd_status() {
         echo -e "  ${YELLOW}○${NC}  Edge functions    ${DIM}not deployed — run /update-funcs${NC}"
     fi
 
-    # Migrations
+    # Migrations. The list is a LOCAL | REMOTE | TIME table where an unapplied
+    # row simply has an EMPTY remote column — there is no "Not applied" text,
+    # so the old grep filtered nothing and /status reported every local file as
+    # applied even against a half-migrated database (fresh-install finding #7).
+    # Count applied = rows whose REMOTE column carries a version.
     local mig_out total applied pending
     mig_out=$(supabase migration list --linked 2>/dev/null || echo "")
-    total=$(echo "$mig_out" | tail -n +4 | grep -c "^" 2>/dev/null || echo "0")
-    applied=$(echo "$mig_out" | tail -n +4 | grep -v "Not applied" | grep -c "^" 2>/dev/null || echo "0")
+    total=$(echo "$mig_out" | awk -F'|' '$1 ~ /[0-9]{14}/ {n++} END {print n+0}')
+    applied=$(echo "$mig_out" | awk -F'|' '$1 ~ /[0-9]{14}/ && $2 ~ /[0-9]{14}/ {n++} END {print n+0}')
     pending=$((total - applied))
 
     if [ "$pending" -eq 0 ] && [ "$applied" -gt 0 ] 2>/dev/null; then
