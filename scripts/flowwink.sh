@@ -40,6 +40,30 @@ print_section() {
     echo ""
 }
 
+# Supabase Management API token, wherever the CLI put it.
+#
+# NB: the CLI does NOT always use ~/.supabase/access-token. On macOS it stores
+# the token in the login keychain, so that file simply does not exist — and
+# reading it blindly (as this script used to) yielded an empty token, which
+# silently disabled everything gated on it: the selective-deploy filter, the
+# pre-bootstrap SQL and the install-profile prompt. The symptom was a deploy
+# that tried to push every function into a 100-function cap.
+# Order: explicit env var → file (Linux/CI) → macOS keychain.
+supabase_access_token() {
+    if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+        printf '%s' "$SUPABASE_ACCESS_TOKEN"
+        return 0
+    fi
+    if [ -s "$HOME/.supabase/access-token" ]; then
+        cat "$HOME/.supabase/access-token"
+        return 0
+    fi
+    if command -v security >/dev/null 2>&1; then
+        security find-generic-password -s "Supabase CLI" -w 2>/dev/null && return 0
+    fi
+    return 0   # empty — callers already handle "no token" by falling back
+}
+
 require_link() {
     if [ -z "$PROJECT_REF" ]; then
         echo -e "  ${RED}✗ No project linked.${NC} Run ${CYAN}/link${NC} first."
@@ -210,7 +234,7 @@ pre_bootstrap_sql() {
     # so every historical migration finds the function via search_path.
     # Idempotent and safe to re-run.
     local token
-    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    token=$(supabase_access_token)
     if [ -z "$token" ]; then
         echo -e "  ${DIM}Skipping pre-bootstrap (no Supabase access token found)${NC}"
         return 0
@@ -437,7 +461,7 @@ cmd_update_funcs() {
 
     if [ "${FLOWWINK_DEPLOY_ALL:-0}" != "1" ] && [ -f "$map_file" ]; then
         local token modules_json
-        token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+        token=$(supabase_access_token)
         if [ -n "$token" ]; then
             local resp
             resp=$(curl -s -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
@@ -604,7 +628,7 @@ cmd_update_funcs() {
 # Modules page can flag "module enabled but its function isn't deployed".
 record_deployed_functions() {
     local token deployed json
-    token=$(cat "$HOME/.supabase/access-token" 2>/dev/null || true)
+    token=$(supabase_access_token)
     [ -z "$token" ] && return 0
     deployed=$(supabase functions list --project-ref "$PROJECT_REF" --output json 2>/dev/null \
         | jq -r '.[].slug // .[].name' 2>/dev/null || echo "")

@@ -100,3 +100,36 @@ describe('install profiles', () => {
     }
   });
 });
+
+/**
+ * Guardrail: the CLI must find the Supabase token wherever the CLI put it.
+ *
+ * Live finding (2026-07-19): flowwink.sh read ~/.supabase/access-token
+ * directly, but on macOS the CLI stores the token in the login keychain and
+ * that file does not exist. The token came back empty, which silently disabled
+ * EVERY feature gated on it — the selective-deploy filter, the pre-bootstrap
+ * SQL, and the new install-profile prompt — so a fresh install would have
+ * tried to deploy all ~110 functions into a 100-function cap.
+ */
+describe('flowwink.sh token acquisition', () => {
+  const script = readFileSync(join(root, 'scripts/flowwink.sh'), 'utf8');
+
+  it('reads the token through the helper, never the bare file path', () => {
+    const bareReads = script.match(/token=\$\(cat "\$HOME\/\.supabase\/access-token"/g) ?? [];
+    expect(bareReads).toHaveLength(0);
+    expect(script).toMatch(/supabase_access_token\(\)/);
+  });
+
+  it('the helper covers env var, file and macOS keychain', () => {
+    const helper = script.split('supabase_access_token() {')[1]?.split('\n}')[0] ?? '';
+    expect(helper).toMatch(/SUPABASE_ACCESS_TOKEN/);          // explicit env
+    expect(helper).toMatch(/\$HOME\/\.supabase\/access-token/); // Linux / CI
+    expect(helper).toMatch(/security find-generic-password/);   // macOS keychain
+  });
+
+  it('every token consumer goes through the helper', () => {
+    const consumers = script.match(/^\s*token=.*$/gm) ?? [];
+    expect(consumers.length).toBeGreaterThan(0);
+    for (const line of consumers) expect(line).toMatch(/supabase_access_token/);
+  });
+});
