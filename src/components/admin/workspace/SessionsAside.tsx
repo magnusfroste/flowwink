@@ -1,9 +1,11 @@
 /**
- * SessionsAside — collapsible right-side panel listing chat sessions.
+ * SessionsAside — permanent right-side panel listing chat sessions.
  *
- * Used by FlowChat (and reusable for other operator chats) so the
- * conversation history sits beside the chat flow without nesting a
- * second SidebarProvider next to the admin sidebar.
+ * Design decision (mem://design/flowchat-flowwork-layout):
+ * always visible on desktop, hidden on mobile (where the session
+ * picker lives in the chat header dropdown instead). No collapse
+ * toggle — the panel is part of the operator surface, not optional
+ * chrome.
  */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,14 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  ChevronRight,
-  ChevronLeft,
-  MessageSquarePlus,
-  Pencil,
-  Trash2,
-  History,
-} from 'lucide-react';
+import { MessageSquarePlus, Pencil, Trash2, History } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { WorkspaceSession } from '@/hooks/useWorkspaceSessions';
 import { cn } from '@/lib/utils';
@@ -34,7 +29,7 @@ interface Props {
   onNew: () => void;
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
-  /** localStorage key for persisting collapsed state across visits. */
+  /** Deprecated — kept for API compatibility; collapse is no longer supported. */
   storageKey?: string;
 }
 
@@ -45,60 +40,29 @@ export function SessionsAside({
   onNew,
   onRename,
   onDelete,
-  storageKey = 'sessions-aside-collapsed',
 }: Props) {
-  const [collapsed, setCollapsedState] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(storageKey) === '1';
-  });
-  const setCollapsed = (v: boolean) => {
-    setCollapsedState(v);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(storageKey, v ? '1' : '0');
-    }
-  };
-
   const [renameTarget, setRenameTarget] = useState<WorkspaceSession | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   return (
-    <aside
-      className={cn(
-        'hidden md:flex flex-col border-l border-border/40 bg-muted/20 shrink-0 transition-[width] duration-200',
-        collapsed ? 'w-10' : 'w-72',
-      )}
-    >
+    <aside className="hidden md:flex flex-col border-l border-border/40 bg-muted/20 shrink-0 w-72">
       <div className="flex items-center justify-between gap-1 px-2 py-2 border-b border-border/40 shrink-0">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 px-1">
+          <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs font-medium text-muted-foreground truncate">Chats</span>
+        </div>
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? 'Show chats' : 'Hide chats'}
+          onClick={onNew}
+          title="New chat"
         >
-          {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <MessageSquarePlus className="h-4 w-4" />
         </Button>
-        {!collapsed && (
-          <>
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs font-medium text-muted-foreground truncate">Chats</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onNew}
-              title="New chat"
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-            </Button>
-          </>
-        )}
       </div>
 
-      {!collapsed && (
-        <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {sessions.length === 0 ? (
             <div className="px-2 py-6 text-xs text-muted-foreground text-center">
               No saved chats yet
@@ -149,7 +113,8 @@ export function SessionsAside({
             ))
           )}
         </div>
-      )}
+
+
 
       <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
         <DialogContent className="max-w-sm">

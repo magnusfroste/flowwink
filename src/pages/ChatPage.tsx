@@ -27,7 +27,7 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
   const [chatKey, setChatKey] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
   
   // Initial message: prefer ?q= (shareable/refresh-safe), fall back to router state.
   const initialMessage =
@@ -106,18 +106,38 @@ export default function ChatPage() {
       )}
 
       <main className="flex-1 flex min-h-0">
-        {/* Sidebar */}
-        <aside className={cn(
-          'w-72 border-r bg-muted/30 flex flex-col transition-all flex-shrink-0',
-          !sidebarOpen && 'w-0 overflow-hidden'
-        )}>
-          <div className="p-4 border-b">
+        {/* Main chat area */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          <ChatConversation
+            key={chatKey}
+            mode="landing"
+            conversationId={activeConversationId}
+            onNewConversation={handleConversationCreated}
+            skipRestore={chatKey > 0}
+            className="flex-1 min-h-0"
+            initialMessage={!initialMessageProcessed.current ? initialMessage : undefined}
+            onInitialMessageSent={() => {
+              initialMessageProcessed.current = true;
+              navigate(location.pathname, { replace: true, state: {} });
+            }}
+            checkinId={checkinId}
+          />
+        </div>
+        {/* Right-side conversation history — permanent on desktop, hidden on mobile */}
+        <aside className="hidden md:flex w-72 border-l bg-muted/20 flex-col flex-shrink-0">
+          <div className="flex items-center justify-between gap-1 px-3 py-2 border-b">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs font-medium text-muted-foreground truncate">Conversations</span>
+            </div>
             <Button
               onClick={handleNewConversation}
-              className="w-full gap-2"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              title="New conversation"
             >
               <Plus className="h-4 w-4" />
-              New conversation
             </Button>
           </div>
 
@@ -154,24 +174,8 @@ export default function ChatPage() {
             )}
           </ScrollArea>
         </aside>
-        {/* Main chat area */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0">
-          <ChatConversation
-            key={chatKey}
-            mode="landing"
-            conversationId={activeConversationId}
-            onNewConversation={handleConversationCreated}
-            skipRestore={chatKey > 0}
-            className="flex-1 min-h-0"
-            initialMessage={!initialMessageProcessed.current ? initialMessage : undefined}
-            onInitialMessageSent={() => {
-              initialMessageProcessed.current = true;
-              navigate(location.pathname, { replace: true, state: {} });
-            }}
-            checkinId={checkinId}
-          />
-        </div>
       </main>
+
     </div>
   );
 }
