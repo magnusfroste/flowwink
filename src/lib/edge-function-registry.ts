@@ -49,27 +49,24 @@ export const DEFAULT_PLAN: SupabasePlan = 'free';
  * the `shared` helper dir, and `tests`). Guardrail-tested against the filesystem.
  */
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
-  'a2a', 'accounting-vat-return-se', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
+  'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
   'analyze-brand', 'automation-dispatcher', 'blog-rss', 'browser-fetch',
   'chat-completion', 'chat-stt', 'check-secrets', 'company-profile', 'composio-proxy',
-  'composio-webhook', 'consultant-checkin', 'contact-center', 'contact-finder', 'content-api',
-  'contract-sign', 'copilot-action', 'create-checkout', 'create-invoice-payment',
-  'create-user', 'csat-dispatch', 'customer-360', 'customer-signup', 'demo-cycle',
+  'composio-webhook', 'consultant-checkin', 'content-api',
+  'contract-sign', 'create-checkout', 'create-invoice-payment',
+  'create-user', 'csat-dispatch', 'customer-signup', 'demo-cycle',
   'docs-chat', 'docs-sync', 'document-share', 'document-sign-request',
   'dunning-processor', 'elevenlabs-account', 'elks46-ingest',
-  'email-send', 'email-webhook', 'enrich-company', 'enrich-company-profile', 'event-dispatcher',
-  'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-fx-rates',
-  'fetch-image', 'field-service-skill', 'firecrawl-account', 'flowpilot-briefing',
+  'email-send', 'email-webhook', 'enrich-company-profile', 'event-dispatcher',
+  'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-image', 'firecrawl-account', 'flowpilot-briefing',
   'cron-health',
   'flowpilot-distill', 'flowpilot-followthrough', 'flowpilot-heartbeat', 'flowpilot-learn', 'gatewayapi-ingest', 'skill-curator',
-  'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-inbox-scan',
-  'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',
+  'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-oauth-callback', 'hunter-account', 'instance-health', 'invite-employee',
   'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
-  'openai-account', 'openclaw-responses', 'parse-resume', 'process-image',
-  'process-job-application', 'prospect-fit-analysis', 'prospect-research', 'qualify-lead',
-  'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'recurring-quotes-cron',
+  'openai-account', 'openclaw-responses', 'process-image',
+  'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'recurring-quotes-cron',
   'consultant-match', 'run-autonomy-tests',
-  'run-platform-tests', 'sales-profile-setup', 'score-visitor-intent', 'send-booking-confirmation',
+  'run-platform-tests', 'score-visitor-intent', 'send-booking-confirmation',
   'send-return-confirmation',
   'send-booking-reminders',
   'send-calendar-reminders',
@@ -80,8 +77,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'support-router', 'survey-send', 'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
   'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
-  'web-scrape', 'web-search', 'workspace-chat',
-];
+  'web-scrape', 'web-search', 'workspace-chat'];
 
 /**
  * Module → the edge functions it (and only it) needs. A function may appear
@@ -101,21 +97,20 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // `voice-recording` also listed here (fail-open) — the Voicemail panel lives
   // in Live Support and needs recording playback even with the voice module off.
   liveSupport: [
-    'contact-center', 'telegram-ingest', 'support-router', 'csat-dispatch',
-    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording',
-  ],
-  email: ['gmail-inbox-scan', 'gmail-oauth-callback'],
+    'telegram-ingest', 'support-router', 'csat-dispatch',
+    'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording'],
+  email: ['gmail-oauth-callback'],
   newsletter: ['newsletter'],
 
   // ── CRM / sales / leads ──────────────────────────────────────────────────
-  leads: ['contact-finder', 'qualify-lead', 'enrich-company'],
-  companies: ['enrich-company'],
+  leads: [],
+  companies: [],
   companyInsights: ['company-profile', 'enrich-company-profile'],
-  customer360: ['customer-360'],
-  salesIntelligence: ['prospect-research', 'prospect-fit-analysis', 'sales-profile-setup', 'signal-ingest'],
+  customer360: [],
+  salesIntelligence: ['signal-ingest'],
 
   // ── HR / recruitment / consultants ───────────────────────────────────────
-  recruitment: ['parse-resume', 'invite-employee', 'process-job-application'],
+  recruitment: ['invite-employee', 'process-job-application'],
   consultants: ['consultant-match', 'consultant-checkin'],
 
   // ── Commerce / finance ───────────────────────────────────────────────────
@@ -128,10 +123,10 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   subscriptions: ['subscriptions', 'subscription-billing-cron', 'dunning-processor'],
   expenses: ['extract-receipt'],
   reconciliation: ['reconciliation'],
-  multiCurrency: ['fetch-fx-rates'],
+  multiCurrency: [],
 
   // ── Field service / SLA / surveys ────────────────────────────────────────
-  fieldService: ['field-service-skill'],
+  fieldService: [],
   visitorIntelligence: ['score-visitor-intent'],
   sla: ['sla-check'],
   surveys: ['survey-send'],
@@ -148,8 +143,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── Autonomous operator (off by default) ─────────────────────────────────
   flowpilot: [
     'flowpilot-heartbeat', 'flowpilot-briefing', 'flowpilot-learn', 'flowpilot-distill',
-    'flowpilot-followthrough', 'skill-curator', 'update-autonomy-cron', 'run-autonomy-tests', 'web-search', 'web-scrape',
-  ],
+    'flowpilot-followthrough', 'skill-curator', 'update-autonomy-cron', 'run-autonomy-tests', 'web-search', 'web-scrape'],
 
   // ── Federation / external agents ─────────────────────────────────────────
   federation: ['a2a', 'agent-card', 'federation-invite-peer', 'openclaw-responses'],

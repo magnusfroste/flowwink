@@ -31,7 +31,6 @@ verify_jwt = false
 [functions.track-auth-event]
 verify_jwt = false
 
-
 # ─────────────────────────────────────────────────────────────────────
 # Public API endpoints — anon visitors call these with custom auth.
 # verify_jwt=false allows Supabase JWT check to be bypassed; each
@@ -50,16 +49,10 @@ verify_jwt = false
 [functions.chat-completion]
 verify_jwt = false
 
-[functions.contact-finder]
-verify_jwt = false
-
 [functions.content-api]
 verify_jwt = false
 
 [functions.company-profile]
-verify_jwt = false
-
-[functions.customer-360]
 verify_jwt = false
 
 [functions.customer-signup]
@@ -79,9 +72,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.elks46-ingest]
-verify_jwt = false
-
-[functions.enrich-company]
 verify_jwt = false
 
 [functions.enrich-company-profile]
@@ -114,22 +104,10 @@ verify_jwt = false
 [functions.newsletter]
 verify_jwt = false
 
-[functions.parse-resume]
-verify_jwt = false
-
 [functions.process-job-application]
 verify_jwt = false
 
 [functions.process-image]
-verify_jwt = false
-
-[functions.prospect-fit-analysis]
-verify_jwt = false
-
-[functions.prospect-research]
-verify_jwt = false
-
-[functions.qualify-lead]
 verify_jwt = false
 
 [functions.quote-expiry-reminders]
@@ -204,9 +182,6 @@ verify_jwt = false
 [functions.sla-check]
 verify_jwt = false
 
-[functions.field-service-skill]
-verify_jwt = false
-
 [functions.survey-send]
 verify_jwt = false
 
@@ -216,13 +191,7 @@ verify_jwt = false
 [functions.composio-proxy]
 verify_jwt = false
 
-[functions.copilot-action]
-verify_jwt = false
-
 [functions.federation-invite-peer]
-verify_jwt = false
-
-[functions.fetch-fx-rates]
 verify_jwt = false
 
 [functions.flowpilot-briefing]
@@ -237,16 +206,10 @@ verify_jwt = false
 [functions.flowpilot-learn]
 verify_jwt = false
 
-[functions.gmail-inbox-scan]
-verify_jwt = false
-
 [functions.migrate-page]
 verify_jwt = false
 
 [functions.openclaw-responses]
-verify_jwt = false
-
-[functions.sales-profile-setup]
 verify_jwt = false
 
 [functions.signal-ingest]
@@ -261,25 +224,6 @@ verify_jwt = false
 [functions.support-router]
 verify_jwt = false
 
-[functions.contact-center]
-verify_jwt = false
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Functions that must stay OPEN, added after a fresh-install review (2026-07-19).
-#
-# WHY THIS BLOCK EXISTS: 46 of 124 functions had no [functions.*] entry at all.
-# `supabase functions deploy` (no args) defaults a missing entry to
-# verify_jwt = TRUE, so a full deploy on a NEW instance would JWT-gate checkout,
-# invoice payment, quote/contract signing and the inbound webhooks — the public
-# money paths would 401 on day one. The new-format publishable key
-# (sb_publishable_…) is not a JWT, so anything called with it must be listed here.
-#
-# Only functions with POSITIVE evidence of a no-JWT caller are listed. Admin
-# tooling (create-user, setup-database, check-secrets, run-*-tests, *-account,
-# cron-health, document-share/-sign-request) is deliberately left to the
-# verify_jwt = true default.
-
-# Inbound webhooks — the sender is an external service and cannot present a JWT.
 [functions.stripe-webhook]
 verify_jwt = false
 
