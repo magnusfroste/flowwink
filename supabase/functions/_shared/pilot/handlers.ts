@@ -143,20 +143,126 @@ export async function handleMemoryDelete(supabase: any, args: { key: string }) {
 
 // ─── Objective Handlers ───────────────────────────────────────────────────────
 
+/**
+ * Hard evidence for what an objective has ACTUALLY achieved.
+ *
+ * Progress is free prose the model writes; it is not proof. Live proof-week
+ * finding (liteit, 2026-07-19): FlowPilot recorded "Momsdeklarationsutkastet är
+ * framtaget … belopp per ruta dokumenterade och granskningsklara" while
+ * prepare_vat_return had failed twice (missing period argument) and produced
+ * nothing at all. A human trusting that note could miss a filing deadline.
+ *
+ * So we derive the facts instead of parsing the prose (parsing claims would be a
+ * keyword hack; binding state to evidence is structural): plan step tallies, plus
+ * the real success/failure counts for every skill the plan depends on, read from
+ * agent_activity. `unsupported` = plan skills with ZERO successful runs — any
+ * claim resting on those is unproven.
+ */
+export async function collectObjectiveEvidence(supabase: any, objectiveId: string) {
+  const { data: obj } = await supabase
+    .from('agent_objectives').select('progress').eq('id', objectiveId).single();
+
+  const steps: any[] = Array.isArray(obj?.progress?.plan?.steps) ? obj.progress.plan.steps : [];
+  const planSkills: string[] = [...new Set(steps.map((s: any) => s.skill_name).filter(Boolean))];
+
+  const skill_outcomes: Record<string, { ok: number; failed: number; last_error?: string }> = {};
+  if (planSkills.length) {
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data: acts } = await supabase
+      .from('agent_activity')
+      .select('skill_name, status, error_message, output')
+      .in('skill_name', planSkills)
+      .gte('created_at', since);
+    for (const sk of planSkills) skill_outcomes[sk] = { ok: 0, failed: 0 };
+    for (const a of (acts ?? []) as any[]) {
+      const o = skill_outcomes[a.skill_name];
+      if (!o) continue;
+      if (a.status === 'success') o.ok++;
+      else {
+        o.failed++;
+        o.last_error = a.error_message
+          || (a.output && typeof a.output === 'object' ? (a.output as any).error : undefined)
+          || o.last_error;
+      }
+    }
+  }
+
+  return {
+    has_plan: steps.length > 0,
+    steps: {
+      total: steps.length,
+      done: steps.filter((s: any) => s.status === 'done').length,
+      pending: steps.filter((s: any) => s.status === 'pending').length,
+      failed: steps.filter((s: any) => s.status === 'failed').length,
+    },
+    skill_outcomes,
+    // Plan skills with no successful run — claims that rest on these are unproven.
+    unsupported: planSkills.filter((sk) => (skill_outcomes[sk]?.ok ?? 0) === 0),
+    verified_at: new Date().toISOString(),
+  };
+}
+
 export async function handleObjectiveUpdateProgress(supabase: any, args: { objective_id: string; progress: any }) {
+  // Stamp the model's prose with machine-derived facts so the two sit side by side
+  // and any contradiction is visible (and checkable) rather than buried in text.
+  const evidence = await collectObjectiveEvidence(supabase, args.objective_id);
+  const progress = { ...(args.progress || {}), _evidence: evidence };
+
   const { error } = await supabase
-    .from('agent_objectives').update({ progress: args.progress }).eq('id', args.objective_id);
+    .from('agent_objectives').update({ progress }).eq('id', args.objective_id);
   if (error) return { status: 'error', error: error.message };
-  return { status: 'updated', objective_id: args.objective_id };
+
+  // Self-correcting: tell the agent plainly when its note rests on skills that
+  // never succeeded, and what to do about it (same spirit as the PGRST202 hint).
+  if (evidence.unsupported.length) {
+    return {
+      status: 'updated_with_warning',
+      objective_id: args.objective_id,
+      warning: `Progress saved, but these plan skills have NO successful run in the last 24h: ${evidence.unsupported.join(', ')}. Do NOT describe their work as done. Re-run them — the failure is usually a missing required argument, which the error names — or state plainly in progress that the step is blocked.`,
+      skill_outcomes: evidence.skill_outcomes,
+    };
+  }
+  return { status: 'updated', objective_id: args.objective_id, evidence };
 }
 
 export async function handleObjectiveComplete(supabase: any, args: { objective_id: string }) {
+  // An objective may only be closed on evidence, never on the model's say-so.
+  // Only enforceable when there IS a plan to check against; an objective with no
+  // plan is completed but stamped as unverified rather than silently blessed.
+  const evidence = await collectObjectiveEvidence(supabase, args.objective_id);
+
+  if (evidence.has_plan) {
+    const blockers: string[] = [];
+    if (evidence.steps.pending) blockers.push(`${evidence.steps.pending} plan step(s) still pending`);
+    if (evidence.steps.failed) blockers.push(`${evidence.steps.failed} plan step(s) failed`);
+    if (evidence.unsupported.length) {
+      blockers.push(`no successful run for: ${evidence.unsupported.join(', ')}`);
+    }
+    if (blockers.length) {
+      return {
+        status: 'refused',
+        objective_id: args.objective_id,
+        error: `Cannot complete this objective — the work is not evidenced: ${blockers.join('; ')}.`,
+        hint: 'Finish or repair the outstanding steps first. A skill that keeps failing usually reports exactly what it needs (often a missing required argument) — retry with those arguments. If the goal is genuinely unreachable, record that in progress instead of completing it.',
+        evidence,
+      };
+    }
+  }
+
+  // Preserve the accumulated progress notes; only stamp the evidence alongside.
+  const { data: cur } = await supabase
+    .from('agent_objectives').select('progress').eq('id', args.objective_id).single();
+
   const { error } = await supabase
     .from('agent_objectives')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      progress: { ...(cur?.progress || {}), verified: evidence.has_plan, _evidence: evidence },
+    })
     .eq('id', args.objective_id);
   if (error) return { status: 'error', error: error.message };
-  return { status: 'completed', objective_id: args.objective_id };
+  return { status: 'completed', objective_id: args.objective_id, evidence };
 }
 
 export async function handleObjectiveDelete(supabase: any, args: { objective_id: string }) {
