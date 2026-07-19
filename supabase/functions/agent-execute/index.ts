@@ -11784,10 +11784,13 @@ async function executeListCompanyRecords(
   args: Record<string, unknown>,
   table: 'orders' | 'invoices',
 ): Promise<unknown> {
-  const companyId = typeof (args as any)._company_id === 'string' ? (args as any)._company_id : '';
-  if (!companyId) {
-    return { success: false, error: 'You must be signed in as a company contact to see your company records. If you just signed in, your account may not be linked to a company yet — ask your account manager.' };
-  }
+  // Uniform with every other company-scoped handler: resolve scope through the
+  // shared guard (fail-closed on missing _company_id; 'viewer' is the read floor)
+  // rather than an ad-hoc presence check, so the isolation contract is enforced
+  // in exactly one place.
+  const scope = companyScopeGuard(args, 'viewer');
+  if ('error' in scope) return { success: false, error: scope.error };
+  const companyId = scope.companyId;
   const limit = Math.min(Number((args as any).limit) || 20, 50);
 
   if (table === 'orders') {

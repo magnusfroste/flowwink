@@ -23,9 +23,10 @@ describe('rung 3 (B2B) P1 read-rung guardrails', () => {
   it('the handler requires the server-injected _company_id and filters on it', () => {
     const fn = agentExec.slice(agentExec.indexOf('async function executeListCompanyRecords'));
     const body = fn.slice(0, fn.indexOf('\n}\n'));
-    // requires the verified company scope
-    expect(body).toMatch(/_company_id/);
-    expect(body).toMatch(/must be signed in as a company contact/i);
+    // requires the verified company scope, fail-closed via the shared guard
+    // (the guard reads _company_id and returns the "must be signed in" error).
+    expect(body).toMatch(/companyScopeGuard\(args, 'viewer'\)/);
+    expect(body).toMatch(/if \('error' in scope\) return/);
     // the isolation predicate: rows filtered by the injected company id
     expect(body).toMatch(/\.eq\('company_id', companyId\)/);
     // never trusts a model-supplied company/customer field for the lookup
