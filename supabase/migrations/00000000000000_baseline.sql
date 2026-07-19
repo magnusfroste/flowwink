@@ -25124,8 +25124,7 @@ ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."support_escalatio
 
 
 
-SET SESSION AUTHORIZATION "postgres";
-RESET SESSION AUTHORIZATION;
+-- (removed: SET SESSION AUTHORIZATION — pg_dump artifact; fails on non-superuser install paths)
 
 
 
@@ -27686,13 +27685,11 @@ GRANT ALL ON FUNCTION "public"."year_end_readiness"("p_year" integer) TO "servic
 
 
 
-SET SESSION AUTHORIZATION "postgres";
-RESET SESSION AUTHORIZATION;
+-- (removed: SET SESSION AUTHORIZATION — pg_dump artifact; fails on non-superuser install paths)
 
 
 
-SET SESSION AUTHORIZATION "postgres";
-RESET SESSION AUTHORIZATION;
+-- (removed: SET SESSION AUTHORIZATION — pg_dump artifact; fails on non-superuser install paths)
 
 
 
