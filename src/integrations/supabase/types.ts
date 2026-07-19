@@ -20592,6 +20592,7 @@ export type Database = {
         }
         Returns: Json
       }
+      instance_sync_status: { Args: never; Returns: Json }
       inventory_gl_reconciliation: { Args: never; Returns: Json }
       inventory_valuation_report: { Args: { p_limit?: number }; Returns: Json }
       invoice_outstanding: { Args: { p_invoice_id: string }; Returns: number }
