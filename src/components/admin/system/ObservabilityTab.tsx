@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Activity, Zap, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Activity, Zap, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2, Layers } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import instanceManifest from '../../../../supabase/seed/instance-manifest.json';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -378,6 +379,97 @@ function CronHealthCard() {
   );
 }
 
+// Instance Sync (root fix #2): the bundle CARRIES the repo's desired-state
+// manifest (frontend is the one auto-deployed layer, so the expectation is
+// always fresh), and instance_sync_status() returns what this instance
+// actually runs. Diffing the two answers "did that migration/skill-sync
+// actually land?" — a query instead of archaeology.
+function LayerRow({ name, ok, detail }: { name: string; ok: boolean | null; detail: string }) {
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      {ok === null
+        ? <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+        : ok
+          ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+          : <AlertTriangle className="h-4 w-4 text-rose-500 mt-0.5 shrink-0" />}
+      <div className="min-w-0">
+        <span className="font-medium">{name}</span>
+        <span className="text-xs text-muted-foreground ml-2">{detail}</span>
+      </div>
+    </div>
+  );
+}
+
+function InstanceSyncCard() {
+  const expected = instanceManifest.layers;
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['instance-sync-status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('instance_sync_status' as never);
+      if (error) throw error;
+      return data as unknown as {
+        schema: { migration_head: string | null; migrations_count: number | null };
+        skills: { total: number | null; enabled: number | null; last_updated_at: string | null; stamp: { seed_hash?: string; stamped_at?: string } | null };
+      };
+    },
+    staleTime: 60_000,
+    refetchInterval: 300_000,
+  });
+
+  const dbHead = data?.schema?.migration_head ?? null;
+  const schemaOk = dbHead === null ? null : dbHead >= expected.schema.migration_head;
+  const schemaDetail = dbHead === null
+    ? 'ledger unreadable'
+    : dbHead === expected.schema.migration_head
+      ? `ledger at ${dbHead}`
+      : dbHead > expected.schema.migration_head
+        ? `ledger ${dbHead} ahead of this build (${expected.schema.migration_head}) — frontend is older`
+        : `ledger ${dbHead} — MISSING migrations up to ${expected.schema.migration_head}`;
+
+  const stampHash = data?.skills?.stamp?.seed_hash ?? null;
+  const skillsOk = stampHash === null ? null : stampHash === expected.skills.seed_hash;
+  const skillsDetail = stampHash === null
+    ? `${data?.skills?.enabled ?? '…'} enabled — no sync stamp yet (run "Sync skills from code" once to stamp)`
+    : skillsOk
+      ? `bundle in sync (${data?.skills?.enabled ?? 0} enabled)`
+      : 'seed bundle OUT OF DATE — run "Sync skills from code" (hard-refresh /admin/modules first)';
+
+  const allKnownGreen = schemaOk === true && skillsOk === true;
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between space-y-0">
+        <div>
+          <CardTitle className="font-serif flex items-center gap-2 text-base">
+            <Layers className="h-4 w-4 text-teal-500" />
+            Instance Sync
+          </CardTitle>
+          <CardDescription>
+            {isLoading ? '…' : error ? 'status RPC unavailable (migration 20260719210000 not applied?)' : allKnownGreen ? 'all measurable layers in sync with this build' : 'layer drift vs this build'}
+          </CardDescription>
+        </div>
+        <Link to="/admin/modules" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          Modules <ArrowRight className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : error ? (
+          <p className="text-sm text-muted-foreground">Could not read instance state — apply the instance-sync-status migration on this instance.</p>
+        ) : (
+          <div className="space-y-2">
+            <LayerRow name="Schema" ok={schemaOk} detail={schemaDetail} />
+            <LayerRow name="Skills" ok={skillsOk} detail={skillsDetail} />
+            <LayerRow name="Edge functions" ok={null} detail={`${expected.edge_functions.count} expected by this build — actual deploy state is CLI-verified (fleet tooling), not DB-visible`} />
+            <LayerRow name="Frontend" ok={true} detail={`this build (expects schema ${expected.schema.migration_head}, ${expected.skills.skill_count} skills)`} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ObservabilityTab() {
   return (
     <div className="space-y-4">
@@ -390,6 +482,7 @@ export function ObservabilityTab() {
         <SkillAuditCard />
         <LoginActivityCard />
       </div>
+      <InstanceSyncCard />
       <CronHealthCard />
       <div className="pt-4 border-t">
         <div className="mb-3">

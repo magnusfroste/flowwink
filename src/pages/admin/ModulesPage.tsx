@@ -49,6 +49,8 @@ import { edgeFunctionUsage } from "@/lib/edge-function-registry";
 import { moduleRegistry } from "@/lib/module-registry";
 import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
 import { bootstrapPlatform } from "@/lib/platform-seeds";
+import { supabase } from "@/integrations/supabase/client";
+import instanceManifest from "../../../supabase/seed/instance-manifest.json";
 import { runWithConcurrency } from "@/lib/run-with-concurrency";
 import { useToast } from "@/hooks/use-toast";
 import '@/lib/module-bootstraps'; // Register all module bootstraps
@@ -322,6 +324,21 @@ export default function ModulesPage() {
           variant: 'destructive',
         });
       } else {
+        // Stamp the instance with the seed-bundle version that was just applied.
+        // instance_sync_status() returns this stamp; the Instance Sync card
+        // compares it against its own bundled manifest — an exact answer to
+        // "are this instance's skills from the current build?". Only stamped on
+        // a fully clean sync; a partial sync must keep reading as out-of-date.
+        await supabase.from('site_settings').upsert({
+          key: 'instance_manifest_stamp',
+          value: {
+            seed_hash: instanceManifest.layers.skills.seed_hash,
+            skill_count: instanceManifest.layers.skills.skill_count,
+            stamped_at: new Date().toISOString(),
+          },
+        } as never, { onConflict: 'key' }).then(({ error }) => {
+          if (error) console.warn('[ModulesPage] manifest stamp failed (non-fatal):', error.message);
+        });
         toast({ title: `Synced skills from code for all ${targets.length} enabled modules` });
       }
     } finally {
