@@ -285,10 +285,26 @@
               },
               {
                 "id": "bg-heartbeat",
-                "title": "The 6-Hour Heartbeat",
-                "description": "Four times daily, FlowPilot wakes up autonomously: evaluates objectives, plans next actions, advances goals, proposes new ones, checks automations, reflects on outcomes, and persists learnings. Morning briefing lands in your inbox.",
+                "title": "A Heartbeat You Set",
+                "description": "FlowPilot wakes on the cadence you choose — hourly when the day is busy, twice daily when cost matters more than speed. Every beat: evaluate objectives, plan the next action, advance the goal, check automations, reflect on outcomes, persist the learning. Morning briefing lands in your inbox.\n\nThe rhythm is a dial, not a promise in a brochure.",
                 "icon": "Activity",
                 "accentColor": "#F59E0B"
+              },
+              {
+                "id": "bg-portal",
+                "title": "Your Customers Talk to the Business",
+                "description": "A signed-in customer asks \"where is my order?\" and gets the answer — not a form. The assistant is scoped to their account by the verified session, never by what the chat claims.\n\nB2B contacts act for their company by role: a viewer reads, a buyer reorders, an approver accepts the quote, an admin invites colleagues. One company can never reach another's data — enforced on the server, on every single call.",
+                "icon": "UserCheck",
+                "span": "wide",
+                "accentColor": "#8B5CF6"
+              },
+              {
+                "id": "bg-omnichannel",
+                "title": "It Answers the Phone",
+                "description": "Web chat, email, Telegram — and actual phone calls. An incoming call streams live between your telephony provider (46elks, Twilio) and a realtime voice model, so the AI receptionist talks with the caller instead of reading a menu at them.\n\nEvery channel lands in one queue with sentiment and priority, and hands over to a human the moment it should. The receptionist ships switched off — you turn it on when you are ready to be answered for.",
+                "icon": "PhoneCall",
+                "span": "large",
+                "accentColor": "#0EA5E9"
               },
               {
                 "id": "bg-erp",
@@ -498,6 +514,18 @@
                 "icon": "MessageCircle",
                 "title": "Live Support",
                 "description": "Real-time chat handover from FlowPilot to a human operator."
+              },
+              {
+                "id": "mod-voice",
+                "icon": "PhoneCall",
+                "title": "Voice & Telephony",
+                "description": "AI receptionist on real phone calls via 46elks or Twilio. Call log, callbacks, escalation."
+              },
+              {
+                "id": "mod-portal",
+                "icon": "UserCheck",
+                "title": "Customer Portal",
+                "description": "Signed-in customers see their own orders and invoices, open returns, pay. B2B roles per company."
               },
               {
                 "id": "mod-pages",
