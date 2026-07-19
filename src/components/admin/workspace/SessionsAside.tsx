@@ -111,9 +111,8 @@ export function SessionsAside({
                 </Button>
               </div>
             ))
-          )}
         </div>
-      )}
+
 
       <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
         <DialogContent className="max-w-sm">
