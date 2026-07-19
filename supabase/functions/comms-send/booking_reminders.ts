@@ -1,9 +1,9 @@
+// Moved VERBATIM from supabase/functions/send-booking-reminders/index.ts (edge-surface B2).
 // Cron-invoked (see register_flowpilot_cron, job 'booking-reminders', every 15 min):
 // sweeps confirmed bookings starting within ~24h with reminder_sent_at still
 // NULL, emails a reminder, and stamps reminder_sent_at so it is never re-sent.
 // Mirrors send-booking-confirmation's settings lookup + email-send dispatch —
 // this is the same class of transactional email, just a different template.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
@@ -16,7 +16,7 @@ interface EmailConfig {
   fromName: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -152,4 +152,3 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handler);

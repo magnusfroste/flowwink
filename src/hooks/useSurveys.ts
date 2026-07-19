@@ -222,7 +222,7 @@ export function useSendSurvey() {
       campaign_id: string;
       recipients: Array<{ email: string; name?: string; lead_id?: string; related_entity_type?: string; related_entity_id?: string }>;
     }) => {
-      const { data, error } = await supabase.functions.invoke('survey-send', { body: input });
+      const { data, error } = await supabase.functions.invoke('comms-send', { body: { kind: 'survey_send', ...input } });
       if (error) throw error;
       return data;
     },

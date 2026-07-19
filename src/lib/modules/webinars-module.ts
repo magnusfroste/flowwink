@@ -63,7 +63,7 @@ Manages webinars and registrations.
     name: 'send_webinar_reminders',
     description: 'Sweep webinar registrations and send the due reminder emails: registration confirmation, T-24h, T-1h, and post-webinar follow-up (thanks vs missed-you, with recording link when set). Each reminder is sent at most once per registration. Use when: running the periodic webinar-reminder sweep (cron). NOT for: registering attendees (register_webinar) or the webinar lifecycle (publish/start/complete_webinar).',
     category: 'communication',
-    handler: 'edge:send-webinar-reminders',
+    handler: 'edge:comms-send',
     scope: 'internal',
     tool_definition: {
       type: 'function',

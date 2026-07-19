@@ -1,8 +1,8 @@
+// Moved VERBATIM from supabase/functions/send-calendar-reminders/index.ts (edge-surface B2).
 // Cron-invoked (see register_flowpilot_cron, job 'calendar-reminders', every 15 min):
 // sweeps calendar_events with reminder_minutes set that are due within the
 // reminder window and never reminded, emails every attendee, and stamps
 // reminder_sent_at so it is never re-sent. Mirrors send-booking-reminders.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
@@ -17,7 +17,7 @@ interface EmailConfig {
 
 interface Attendee { email?: string; name?: string }
 
-const handler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -151,4 +151,3 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handler);

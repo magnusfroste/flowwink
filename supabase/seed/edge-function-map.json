@@ -1,8 +1,8 @@
 {
   "generated_by": "scripts/edge-functions-to-json.ts",
   "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
-  "total": 107,
-  "core_count": 41,
+  "total": 97,
+  "core_count": 40,
   "plan_limits": {
     "free": 100,
     "pro": 500,
@@ -18,6 +18,7 @@
     "chat-completion",
     "chat-stt",
     "check-secrets",
+    "comms-send",
     "content-api",
     "create-user",
     "cron-health",
@@ -39,8 +40,6 @@
     "process-image",
     "recurring-quotes-cron",
     "run-platform-tests",
-    "send-contact-email",
-    "send-return-confirmation",
     "send-webhook",
     "setup-database",
     "signal-dispatcher",
@@ -56,16 +55,11 @@
     "blog": [
       "blog-rss"
     ],
-    "bookings": [
-      "send-booking-confirmation",
-      "send-booking-reminders"
-    ],
+    "bookings": [],
     "browserControl": [
       "browser-fetch"
     ],
-    "calendar": [
-      "send-calendar-reminders"
-    ],
+    "calendar": [],
     "companies": [],
     "companyInsights": [
       "company-profile",
@@ -89,8 +83,7 @@
       "docs-sync"
     ],
     "ecommerce": [
-      "create-checkout",
-      "send-order-confirmation"
+      "create-checkout"
     ],
     "email": [
       "gmail-oauth-callback"
@@ -122,12 +115,10 @@
     ],
     "invoicing": [
       "create-invoice-payment",
-      "generate-invoice-pdf",
-      "send-invoice-email"
+      "generate-invoice-pdf"
     ],
     "leads": [],
     "liveSupport": [
-      "csat-dispatch",
       "elks46-ingest",
       "gatewayapi-ingest",
       "support-router",
@@ -148,8 +139,7 @@
     "quotes": [
       "quote-expiry-reminders",
       "quote-pay",
-      "quote-sign",
-      "send-quote-email"
+      "quote-sign"
     ],
     "reconciliation": [
       "reconciliation"
@@ -173,9 +163,7 @@
       "subscription-billing-cron",
       "subscriptions"
     ],
-    "surveys": [
-      "survey-send"
-    ],
+    "surveys": [],
     "visitorIntelligence": [
       "score-visitor-intent"
     ],
@@ -183,9 +171,7 @@
       "voice-ingest",
       "voice-recording"
     ],
-    "webinars": [
-      "send-webinar-reminders"
-    ],
+    "webinars": [],
     "workspaceChat": [
       "workspace-chat"
     ]

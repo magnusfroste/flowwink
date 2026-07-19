@@ -88,7 +88,8 @@ const MARKER: Record<Kind, string> = {
   post: 'reminder_post_sent_at',
 };
 
-Deno.serve(async (req: Request) => {
+// Moved VERBATIM from supabase/functions/send-webinar-reminders/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const supabase = getServiceClient();
@@ -186,4 +187,4 @@ Deno.serve(async (req: Request) => {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}

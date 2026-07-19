@@ -1,6 +1,5 @@
 // send-contact-email — thin wrapper that delegates to the central
 // `email-send` router so provider choice (SMTP/Resend) lives in ONE place.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -9,7 +8,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/send-contact-email/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -54,4 +54,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}

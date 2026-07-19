@@ -1,7 +1,6 @@
 // csat-dispatch — finds tickets resolved in the last 7 days without a CSAT
 // survey sent yet, and dispatches the active campaign with trigger='ticket_resolved'.
 // Run on cron every 5-15 min.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -10,7 +9,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/csat-dispatch/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -61,14 +61,17 @@ serve(async (req) => {
 
   let dispatched = 0;
   if (recipients.length > 0) {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/survey-send`, {
+    // B2: survey_send lives in the same function now — direct handler call
+    // instead of an internal HTTP hop. Same service-key auth, same body.
+    const { handler: surveySendHandler } = await import('./survey_send.ts');
+    const res = await surveySendHandler(new Request(`${SUPABASE_URL}/functions/v1/comms-send?kind=survey_send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${SERVICE_KEY}`,
       },
       body: JSON.stringify({ campaign_id: campaign.id, recipients }),
-    });
+    }));
     if (res.ok) {
       dispatched = recipients.length;
       const ids = (tickets ?? []).map((t) => t.id);
@@ -88,4 +91,4 @@ serve(async (req) => {
   return new Response(JSON.stringify({ ok: true, dispatched, candidates: recipients.length }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-});
+}

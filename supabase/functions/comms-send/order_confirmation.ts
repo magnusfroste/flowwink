@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -23,7 +22,8 @@ const formatPrice = (cents: number, currency: string) => {
   }).format(cents / 100);
 };
 
-serve(async (req: Request) => {
+// Moved VERBATIM from supabase/functions/send-order-confirmation/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -204,4 +204,4 @@ serve(async (req: Request) => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
-});
+}

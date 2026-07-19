@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// Moved VERBATIM from supabase/functions/send-booking-confirmation/index.ts (edge-surface B2).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
@@ -16,7 +16,7 @@ interface EmailConfig {
   fromName: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -365,4 +365,3 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-serve(handler);

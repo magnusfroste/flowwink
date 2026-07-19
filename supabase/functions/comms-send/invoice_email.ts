@@ -91,7 +91,8 @@ function buildHtml(opts: {
 </body></html>`;
 }
 
-Deno.serve(async (req) => {
+// Moved VERBATIM from supabase/functions/send-invoice-email/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const body: Body = await req.json();
@@ -210,4 +211,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}

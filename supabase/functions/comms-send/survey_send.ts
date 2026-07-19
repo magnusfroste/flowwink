@@ -1,6 +1,5 @@
 // survey-send — sends a survey to one or more recipients via email-send.
 // Creates survey_sends rows + dispatches branded email with one-click answer link.
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
@@ -69,7 +68,8 @@ const renderHtml = (args: {
   </div>`;
 };
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/survey-send/index.ts (edge-surface B2).
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -189,4 +189,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}

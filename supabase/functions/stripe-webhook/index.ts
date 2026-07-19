@@ -456,7 +456,7 @@ serve(async (req: Request) => {
             // Send order confirmation email
             try {
               const emailResponse = await fetch(
-                `${supabaseUrl}/functions/v1/send-order-confirmation`,
+                `${supabaseUrl}/functions/v1/comms-send?kind=order_confirmation`,
                 {
                   method: "POST",
                   headers: {
