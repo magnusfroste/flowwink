@@ -33,7 +33,11 @@ function loadLatestHandleNewUser(): string {
   files.sort((a, b) => base(a).localeCompare(base(b))); // chronological by filename (timestamp prefix)
   for (let i = files.length - 1; i >= 0; i--) {
     const sql = readFileSync(files[i], 'utf8');
-    if (/FUNCTION\s+"?public"?\."?handle_new_user"?/i.test(sql)) return sql;
+    // Only a real DEFINITION counts — a `CREATE [OR REPLACE] FUNCTION`, not a
+    // trigger's `EXECUTE FUNCTION public.handle_new_user()` reference. Without
+    // the CREATE anchor, migration 20260720020000 (which only attaches the
+    // trigger) was picked as the "latest definition", yielding an empty body.
+    if (/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+"?public"?\."?handle_new_user"?/i.test(sql)) return sql;
   }
   throw new Error('No migration found defining public.handle_new_user');
 }
