@@ -117,8 +117,8 @@ export default function BlogArchivePage() {
                     </div>
                   )}
                   
-                  {/* Regular posts */}
-                  <div className="space-y-4">
+                  {/* Regular posts — 2-col grid on md+ for denser use of the space */}
+                  <div className="grid gap-6 md:grid-cols-2">
                     {regularPosts.map((post) => (
                       <BlogPostCard
                         key={post.id}
@@ -127,6 +127,7 @@ export default function BlogArchivePage() {
                       />
                     ))}
                   </div>
+
                   
                   {/* Pagination */}
                   {data && data.totalPages > 1 && (

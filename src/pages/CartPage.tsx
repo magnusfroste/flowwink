@@ -44,7 +44,7 @@ export default function CartPage() {
       <PublicNavigation />
 
       <main className="min-h-screen bg-background">
-        <div className="container mx-auto px-6 py-8 max-w-4xl">
+        <div className="container mx-auto px-6 py-8 max-w-5xl">
           <h1 className="text-3xl font-serif font-bold tracking-tight mb-8">Your Cart</h1>
 
           <div className="grid gap-8 lg:grid-cols-3">
