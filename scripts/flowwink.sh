@@ -246,6 +246,33 @@ CREATE OR REPLACE FUNCTION public.gen_random_bytes(integer)
 RETURNS bytea LANGUAGE sql VOLATILE AS $$
   SELECT extensions.gen_random_bytes($1)
 $$;
+
+-- cms-images storage bucket + RLS policies (fresh-install seeding, idempotent).
+-- Migrations cannot touch storage.* on managed Supabase, so seed via the
+-- Management API here so image uploads work out of the box after /update-db.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('cms-images', 'cms-images', true)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+DO $do$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='Anyone can view cms images') THEN
+    CREATE POLICY "Anyone can view cms images" ON storage.objects
+      FOR SELECT USING (bucket_id = 'cms-images');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='Authenticated users can upload images') THEN
+    CREATE POLICY "Authenticated users can upload images" ON storage.objects
+      FOR INSERT TO authenticated WITH CHECK (bucket_id = 'cms-images');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='Authenticated users can update images') THEN
+    CREATE POLICY "Authenticated users can update images" ON storage.objects
+      FOR UPDATE TO authenticated USING (bucket_id = 'cms-images');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='Authenticated users can delete images') THEN
+    CREATE POLICY "Authenticated users can delete images" ON storage.objects
+      FOR DELETE TO authenticated USING (bucket_id = 'cms-images');
+  END IF;
+END $do$;
 SQL
 )
     local payload
