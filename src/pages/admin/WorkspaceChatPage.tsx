@@ -554,8 +554,9 @@ export default function WorkspaceChatPage() {
           onNew={handleNewChat}
           onRename={renameSession}
           onDelete={handleDeleteSession}
-          storageKey="flowwork-sessions-aside-collapsed"
+          viewAllHref="/admin/flowwork/sessions"
         />
+
       </div>
     </AdminLayout>
   );
