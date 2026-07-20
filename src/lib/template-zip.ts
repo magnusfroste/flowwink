@@ -202,7 +202,7 @@ async function uploadImage(
   fileName: string,
   data: ArrayBuffer,
   contentType: string
-): Promise<string | null> {
+): Promise<{ url: string | null; error?: string }> {
   try {
     const path = `template-imports/${Date.now()}-${fileName}`;
     
@@ -215,17 +215,20 @@ async function uploadImage(
     
     if (uploadError) {
       logger.error('Upload error:', uploadError);
-      return null;
+      return { url: null, error: uploadError.message };
     }
     
     const { data: urlData } = supabase.storage
       .from('cms-images')
       .getPublicUrl(path);
     
-    return urlData.publicUrl;
+    return { url: urlData.publicUrl };
   } catch (err) {
     logger.error('Failed to upload image:', err);
-    return null;
+    return {
+      url: null,
+      error: err instanceof Error ? err.message : 'Unknown storage error',
+    };
   }
 }
 
@@ -330,14 +333,14 @@ export async function importTemplateFromZip(
         const fileName = imagePath.replace('images/', '');
         const contentType = getContentType(fileName);
         
-        const newUrl = await uploadImage(fileName, data, contentType);
+        const uploadResult = await uploadImage(fileName, data, contentType);
         
-        if (newUrl) {
+        if (uploadResult.url) {
           // Map from local path (as stored in template.json) to new URL
-          urlMapping.set(imagePath, newUrl);
+          urlMapping.set(imagePath, uploadResult.url);
           uploadedCount++;
         } else {
-          warnings.push(`Failed to upload: ${fileName}`);
+          warnings.push(`Failed to upload ${fileName}: ${uploadResult.error || 'Unknown storage error'}`);
         }
       } catch (err) {
         warnings.push(`Error processing: ${imagePath}`);

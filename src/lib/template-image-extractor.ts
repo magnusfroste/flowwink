@@ -6,7 +6,6 @@
  */
 
 import { StarterTemplate, TemplatePage, TemplateBlogPost } from '@/data/templates';
-import { ContentBlock } from '@/types/cms';
 
 export interface ExtractedImage {
   url: string;

@@ -389,6 +389,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Storage is not created by regular public-schema migrations on every
+    // self-hosted stack. Always ensure the image bucket exists, even when the
+    // database tables are already configured.
+    const { error: bucketLookupError } = await supabaseAdmin.storage.getBucket('cms-images');
+    if (bucketLookupError) {
+      const { error: bucketCreateError } = await supabaseAdmin.storage.createBucket('cms-images', {
+        public: true,
+      });
+      if (bucketCreateError && !bucketCreateError.message.toLowerCase().includes('already exists')) {
+        console.error('[setup-database] Failed to create cms-images bucket:', bucketCreateError);
+        return new Response(
+          JSON.stringify({ success: false, error: `Could not create cms-images bucket: ${bucketCreateError.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // First, check if database is already set up
     console.log('[setup-database] Checking existing setup...');
     const { data: existingTables, error: checkError } = await supabaseAdmin
