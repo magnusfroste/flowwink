@@ -1030,8 +1030,8 @@
       "module_count": 68
     },
     "edge_functions": {
-      "count": 89,
-      "shared_hash": "sha256:84b1f3729b52fd9b9c7c7b4fe7f576d9024d5ed442ddfdb9dfb25b148a8a5936",
+      "count": 87,
+      "shared_hash": "sha256:58772ea34cbac289ca0bd12acd1c0f881b84bb558ff4762d89972e6cdd3ab364",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1043,13 +1043,12 @@
         "automation-dispatcher": "sha256:c0ffa7a2c623209bf82030bd4b6feb1ed9ae92baa4ea5a08772eaa3fa912ea3e",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:a180bbc1e810c947c430a4d77a32a039f074f9732ea0880a25af80327588174c",
-        "chat-completion": "sha256:d28d6ee1cfb35c62f1bcaadda77100f7af38c3ddf821798de4757992c4df6dac",
+        "chat-completion": "sha256:00240bb12c645ec8b42e3b4ca576f9d43cc64c094425e7d64ea84faa8f60f489",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:7d51782c0c965937199c1eb471c2664b867a37a32382fba2ecf20f3999bf86aa",
         "comms-send": "sha256:5ae8861e8216d3e5d89ecddcb3d8c63d919280304d11f7c71ebbea3ef1a547c9",
         "composio-proxy": "sha256:2aa93aebca45b8510693556f07ffc12d3991ebf9a0f765a37a244693fe6ace58",
         "composio-webhook": "sha256:36d9ca7c03f0f385b0d5adfe5ef3ff1f01095dd2c7c73d95da71b8b67e2340c2",
-        "consultant-checkin": "sha256:394c87ef2d9e8ccbd6f4c97367b175350e57a2ffcf3d271393e335a3a029208a",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
         "contract-billing-cron": "sha256:bd4af2f1f3c05253ae5635af48686f9f662f40a55b1b3097001c1828b35f898a",
@@ -1108,7 +1107,6 @@
         "stripe-webhook": "sha256:8958c2a437fc3718ba106b4f1c9dbaad1707b9052651045d6f506ebb2c86f5ce",
         "subscription-billing-cron": "sha256:d3a4089951cbc82379b1f667b1d5b98503961e4364ab811617b4c5d5a6036663",
         "subscriptions": "sha256:887203a0eb2a2c5fa2f3876abb0d5c7b0614deea1bc585c2e37d215f48c1bc52",
-        "support-router": "sha256:a6c1e7dd85049038185e818482b6ee147f57fcfe0570da7955523e183cbbfb45",
         "system-integrity-check": "sha256:f90caeeb5634c18d19e681df91c690b5fbee5122fc5b60f8648c96e5cd9ae3cc",
         "telegram-ingest": "sha256:2695f790ba954b7ae7c26b90da11d787e687a2a41af5e83518857fc7f67745aa",
         "test-ai-connection": "sha256:625c280325258458b502ea0d56168b978d7a373057640e58ceaa2884340a5433",

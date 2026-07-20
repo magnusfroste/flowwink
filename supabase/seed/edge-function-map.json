@@ -1,7 +1,7 @@
 {
   "generated_by": "scripts/edge-functions-to-json.ts",
   "note": "Selective-deploy map. Core = always deployed. modules[<id>] = deployed only when that module is enabled. Unknown/new functions: deploy (fail-open).",
-  "total": 89,
+  "total": 87,
   "core_count": 40,
   "plan_limits": {
     "free": 100,
@@ -69,7 +69,6 @@
       "composio-webhook"
     ],
     "consultants": [
-      "consultant-checkin",
       "consultant-match"
     ],
     "contracts": [
@@ -115,7 +114,6 @@
     "liveSupport": [
       "elks46-ingest",
       "gatewayapi-ingest",
-      "support-router",
       "telegram-ingest",
       "twilio-ingest",
       "voice-recording"

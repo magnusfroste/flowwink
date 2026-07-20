@@ -24,6 +24,10 @@ import {
   buildKnowledgeBase,
   loadVisitorContext,
 } from "../_shared/chat-context.ts";
+// Chat-kernel helpers — formerly standalone edge functions called over HTTP
+// (edge-surface B1b): now direct library imports, one hop less each.
+import { routeConversationToAgent } from '../_shared/chat/support-router.ts';
+import { handleConsultantCheckin } from '../_shared/chat/consultant-checkin.ts';
 
 /**
  * Chat Completion — Visitor-facing AI chat
@@ -243,21 +247,15 @@ async function executeChatTool(
     case 'create_escalation': {
       if (!conversationId) return 'Cannot create handoff without a conversation ID.';
       try {
-        const resp = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            conversationId,
-            sentiment: {
-              frustrationLevel: toolName === 'handoff_to_human' ? 8 : 5,
-              urgency: args.urgency || args.priority || 'normal',
-              humanNeeded: true,
-              trigger: args.reason || args.summary || 'User requested',
-            },
-            customerEmail, customerName,
-          }),
-        });
-        const data = await resp.json();
+        const data = await routeConversationToAgent({
+          conversationId,
+          sentiment: {
+            frustrationLevel: toolName === 'handoff_to_human' ? 8 : 5,
+            urgency: args.urgency || args.priority || 'normal',
+            humanNeeded: true,
+            trigger: args.reason || args.summary || 'User requested',
+          },
+        }) as Record<string, any>;
         if (data.action === 'handoff_to_agent') return `HANDOFF_SUCCESS: ${data.message}`;
         if (data.action === 'create_escalation') return `ESCALATION_CREATED: ${data.message}`;
         return data.message || 'Handoff processed.';
@@ -361,13 +359,9 @@ serve(async (req) => {
 
     // Redirect check-in mode to dedicated function
     if (mode === 'checkin' && checkinId) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const resp = await fetch(`${supabaseUrl}/functions/v1/consultant-checkin`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, checkinId }),
-      });
+      // Direct library call — the helper returns a streaming Response
+      // (text/event-stream) which we pass through with our CORS headers.
+      const resp = await handleConsultantCheckin(messages, checkinId);
       return new Response(resp.body, {
         status: resp.status,
         headers: { ...corsHeaders, 'Content-Type': resp.headers.get('Content-Type') || 'text/event-stream' },

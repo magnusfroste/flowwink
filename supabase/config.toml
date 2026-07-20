@@ -176,9 +176,6 @@ verify_jwt = false
 [functions.signal-ingest]
 verify_jwt = false
 
-[functions.support-router]
-verify_jwt = false
-
 [functions.stripe-webhook]
 verify_jwt = false
 

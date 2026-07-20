@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getServiceClient } from "../_shared/supabase-clients.ts";
-import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
+import { getServiceClient } from "../supabase-clients.ts";
+import { resolveAiConfig, isAnthropicProvider } from "../ai-config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,11 +44,20 @@ function sseChunk(content: string): string {
   return `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+// consultant-checkin — chat-kernel helper (edge-surface B1b).
+//
+// Moved from the standalone consultant-checkin edge function. Its ONLY caller
+// was chat-completion, over an internal HTTP hop; it is now a direct library
+// import. The handler still RETURNS A RESPONSE because check-in mode STREAMS
+// (text/event-stream) — chat-completion passes the Response straight through
+// to the browser, exactly as it previously proxied resp.body.
+
+export async function handleConsultantCheckin(
+  messages: ChatMessage[],
+  checkinId: string,
+): Promise<Response> {
 
   try {
-    const { messages, checkinId } = (await req.json()) as Req;
     if (!checkinId || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "checkinId and messages required" }), {
         status: 400,
@@ -271,4 +279,4 @@ YOUR JOB:
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-});
+}

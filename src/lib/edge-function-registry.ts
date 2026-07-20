@@ -52,7 +52,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
   'analyze-brand', 'automation-dispatcher', 'blog-rss', 'browser-fetch',
   'chat-completion', 'chat-stt', 'check-secrets', 'comms-send', 'composio-proxy',
-  'composio-webhook', 'consultant-checkin', 'content-api',
+  'composio-webhook', 'content-api',
   'contract-sign', 'create-checkout', 'create-invoice-payment',
   'create-user', 'customer-signup', 'demo-cycle',
   'docs-chat', 'docs-sync', 'document-share', 'document-sign-request',
@@ -65,7 +65,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'consultant-match', 'run-autonomy-tests',
   'run-platform-tests', 'score-visitor-intent', 'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
   'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
-  'support-router', 'system-integrity-check', 'telegram-ingest',
+  'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
   'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
   'web-scrape', 'web-search', 'workspace-chat'];
@@ -88,7 +88,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // `voice-recording` also listed here (fail-open) — the Voicemail panel lives
   // in Live Support and needs recording playback even with the voice module off.
   liveSupport: [
-    'telegram-ingest', 'support-router', 'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording'],
+    'telegram-ingest', 'elks46-ingest', 'twilio-ingest', 'gatewayapi-ingest', 'voice-recording'],
   email: ['gmail-oauth-callback'],
   newsletter: ['newsletter'],
 
@@ -101,7 +101,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
 
   // ── HR / recruitment / consultants ───────────────────────────────────────
   recruitment: ['invite-employee', 'process-job-application'],
-  consultants: ['consultant-match', 'consultant-checkin'],
+  consultants: ['consultant-match'],
 
   // ── Commerce / finance ───────────────────────────────────────────────────
   ecommerce: ['create-checkout'],
