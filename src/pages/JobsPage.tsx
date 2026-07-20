@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Briefcase, MapPin, ArrowRight } from 'lucide-react';
+import { PublicNavigation } from '@/components/public/PublicNavigation';
+import { PublicFooter } from '@/components/public/PublicFooter';
+
 
 const EMPLOYMENT_LABEL: Record<string, string> = {
   full_time: 'Full-time',
@@ -35,9 +38,11 @@ export default function JobsPage() {
         <title>Open roles — Careers</title>
         <meta name="description" content="Browse our open positions and apply to join the team." />
       </Helmet>
+      <PublicNavigation />
       <main className="min-h-screen bg-background">
         <section className="border-b border-border bg-muted/30">
           <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
+
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Join the team</h1>
             <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
               We're hiring across multiple roles. Find one that fits and apply in minutes.
