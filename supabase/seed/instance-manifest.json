@@ -1025,12 +1025,12 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:eacc869b4be3acd722e145ea57438cd4994527b5c06c715f529a71174203f06d",
-      "skill_count": 507,
+      "seed_hash": "sha256:f277da354ad00688fafc0c1de7a4ef34711f6ef1b901a66158037cee2e208315",
+      "skill_count": 510,
       "module_count": 68
     },
     "edge_functions": {
-      "count": 78,
+      "count": 76,
       "shared_hash": "sha256:861d02dc5123f4e42664c152157af207477648e37f669ce84a68a14dfd377480",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
@@ -1088,16 +1088,14 @@
         "quote-expiry-reminders": "sha256:24aa1a31cde557f25afef96394e6fee6f36c36e2ab29d479157618ea54bdb3b1",
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:c7b303564411e34fef83893c5f615576baa50e657eba64628f403ff386436f78",
-        "recurring-quotes-cron": "sha256:328067fd96999142740370b2d6763892be413fcccaa639206d7162dc4a69d4b3",
         "run-autonomy-tests": "sha256:1686a331e5859a2a70df6961eb9610a75e387c55c333fc89f1edcd412c86cf7c",
-        "run-platform-tests": "sha256:d10a584d1c18845c1ef3221c6e6d79ba4750a296281a906fffb95e1a7ad53a66",
+        "run-platform-tests": "sha256:6587a2e6ed67227c89acbfafd72e40920602acd518e2d4a3abccb0273bac2ad3",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:32dfe4c3c613760f0e64a523404057f5fdf5e2e41af56535f0a66b1bc4d38679",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:1e8edbe511e8b048df1a7b1419aa14a410c83487ed911e0f599871e3b67a752d",
         "sitemap": "sha256:57bfd001304645f70cd359850af19f88d6960918f2dbe5795c8dda40f733daf1",
-        "social-post-scheduler": "sha256:2e9ff1b9eeea0e596164f7a36bdc3f81742b75ad67031285ef42836377be1f1d",
         "stripe-webhook": "sha256:8958c2a437fc3718ba106b4f1c9dbaad1707b9052651045d6f506ebb2c86f5ce",
         "subscription-billing-cron": "sha256:d3a4089951cbc82379b1f667b1d5b98503961e4364ab811617b4c5d5a6036663",
         "subscriptions": "sha256:887203a0eb2a2c5fa2f3876abb0d5c7b0614deea1bc585c2e37d215f48c1bc52",

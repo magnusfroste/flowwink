@@ -61,10 +61,9 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'extract-pdf-text', 'federation-invite-peer', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'generate-invoice-pdf', 'get-page', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
   'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
   'openclaw-responses', 'process-image',
-  'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'recurring-quotes-cron',
-  'consultant-match', 'run-autonomy-tests',
+  'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'consultant-match', 'run-autonomy-tests',
   'run-platform-tests', 'score-visitor-intent', 'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
-  'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
+  'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
   'system-integrity-check', 'telegram-ingest',
   'track-auth-event', 'track-page-view', 'twilio-ingest',
   'voice-ingest', 'voice-recording',
@@ -128,7 +127,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   handbook: [],
   workspaceChat: ['workspace-chat'],
   siteMigration: ['migrate-page'],
-  paidGrowth: ['social-post-scheduler'],
+  paidGrowth: [],
 
   // ── Autonomous operator (off by default) ─────────────────────────────────
   flowpilot: [

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -393,6 +393,33 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Provide subscription_id OR sequence_id. Escalation sets current_step=4 and runs the dunning-processor at once — the customer receives the final notice immediately, so use deliberately.',
   },
+
+  {
+    name: 'run_trial_conversions',
+    description: 'Convert trial subscriptions whose trial period has ended into active subscriptions. Use when: running the daily trial sweep (the Trial Conversion automation calls this). Takes no arguments. NOT for: changing one subscription (manage_subscription).',
+    category: 'subscriptions',
+    handler: 'rpc:run_trial_conversions',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'run_trial_conversions',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Sweep RPC — idempotent: subscriptions already converted are skipped. Run before subscription invoicing so newly-active subscriptions are billed in the same cycle.',
+  },
+];
+
+const SUBSCRIPTIONS_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Trial Conversion',
+    description: 'Every day at 05:00, convert trial subscriptions whose trial period has ended into active subscriptions.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '0 5 * * *', expression: '0 5 * * *' },
+    skill_name: 'run_trial_conversions',
+    skill_arguments: {},
+  },
 ];
 
 export const subscriptionsModule = defineModule<Input, Output>({
@@ -423,7 +450,7 @@ export const subscriptionsModule = defineModule<Input, Output>({
     'list_dunning_sequences',
     'pause_dunning',
     'escalate_dunning',
-  ],
+  , 'run_trial_conversions'],
   data: {
     tables: [
       'subscription_winback_sends',
@@ -434,6 +461,7 @@ export const subscriptionsModule = defineModule<Input, Output>({
     ],
   },
   skillSeeds: SUBSCRIPTIONS_SKILLS,
+  automations: SUBSCRIPTIONS_AUTOMATIONS,
 
   async publish(input: Input): Promise<Output> {
     try {

@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import {
   GrowthCampaignInput,
@@ -365,6 +365,33 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
     },
     instructions: 'Call after the channel confirms the publish. Idempotent (posted_at only set on first call).',
   },
+
+  {
+    name: 'process_due_social_posts',
+    description: 'Process scheduled social posts whose publish time has passed. Use when: running the periodic social-post sweep (the Social Post Scheduler automation calls this). Takes no arguments. NOT for: scheduling a post (manage_social_post).',
+    category: 'growth',
+    handler: 'rpc:process_due_social_posts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'process_due_social_posts',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Sweep RPC. Without per-channel publisher credentials wired, due posts are marked failed with a "no publisher configured" note rather than silently lingering — so the queue never grows unbounded.',
+  },
+];
+
+const GROWTH_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Social Post Scheduler',
+    description: 'Every 15 minutes, process scheduled social posts whose publish time has passed.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *' },
+    skill_name: 'process_due_social_posts',
+    skill_arguments: {},
+  },
 ];
 
 export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutput>({
@@ -388,11 +415,12 @@ export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutp
     'schedule_social_post',
     'list_social_posts',
     'mark_social_post_posted',
-  ],
+  , 'process_due_social_posts'],
   data: {
     tables: ['ad_creatives', 'ad_campaigns', 'content_proposals', 'content_research', 'utm_attributions', 'social_posts'],
   },
   skillSeeds: GROWTH_SKILLS,
+  automations: GROWTH_AUTOMATIONS,
 
   async publish(input: GrowthCampaignInput): Promise<GrowthCampaignOutput> {
     try {

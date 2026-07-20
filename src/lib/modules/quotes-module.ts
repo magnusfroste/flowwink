@@ -8,7 +8,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { defineModule } from '@/lib/module-def';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const quotesInputSchema = z.object({
   action: z.enum([
@@ -154,6 +154,33 @@ const QUOTES_SKILLS: SkillSeed[] = [
     instructions:
       'Runs as a scheduled sweep, no arguments needed. Finds quotes with status=sent, valid_until within [now-3d, now+48h], and expiry_reminder_sent_at IS NULL. Sends one reminder email per quote via send-quote-email (reminder=true) and stamps expiry_reminder_sent_at so it is never sent twice. Scheduled via the "Quote Expiry Reminders" cron automation (every 6 hours) — see migration 20260703130500_quote-expiry-reminders.sql.',
   },
+
+  {
+    name: 'run_recurring_quotes',
+    description: 'Generate the next quote for every recurring-quote schedule that is due. Use when: running the periodic recurring-quote sweep (the Recurring Quotes automation calls this daily). Takes no arguments — the RPC finds what is due. NOT for: creating a single quote (manage_quote).',
+    category: 'commerce',
+    handler: 'rpc:run_recurring_quotes',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'run_recurring_quotes',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions: 'Sweep RPC — idempotent per schedule: a quote already generated for the current period is skipped, so re-running is safe. Returns counts of what was generated.',
+  },
+];
+
+const QUOTES_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Recurring Quotes',
+    description: 'Every day at 06:00, generate the next quote for every recurring-quote schedule that is due.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '0 6 * * *', expression: '0 6 * * *' },
+    skill_name: 'run_recurring_quotes',
+    skill_arguments: {},
+  },
 ];
 
 export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
@@ -168,11 +195,12 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
   tier: 'standard',
   inputSchema: quotesInputSchema,
   outputSchema: quotesOutputSchema,
-  skills: ['manage_quote', 'send_quote_expiry_reminders'],
+  skills: ['manage_quote', 'send_quote_expiry_reminders', 'run_recurring_quotes'],
   data: {
     tables: ['quote_items', 'quote_signatures', 'quote_versions', 'quotes', 'quote_templates'],
   },
   skillSeeds: QUOTES_SKILLS,
+  automations: QUOTES_AUTOMATIONS,
 
   async publish(input: QuotesInput): Promise<QuotesOutput> {
     const v = quotesInputSchema.parse(input);
