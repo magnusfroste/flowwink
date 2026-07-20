@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260720040000",
-      "migrations_count": 253,
+      "migration_head": "20260720120710",
+      "migrations_count": 254,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1017,6 +1017,10 @@
         {
           "version": "20260720040000",
           "name": "service-order-to-invoice"
+        },
+        {
+          "version": "20260720120710",
+          "name": "18d9a35e-6fc0-4ec4-b759-9f60169a373f"
         }
       ]
     },
