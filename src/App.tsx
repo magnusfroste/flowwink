@@ -223,7 +223,9 @@ function AppLayout() {
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    errorElement: <NotFound />,
     children: [
+
       { path: "/", element: <PublicPage /> },
       { path: "/auth", element: <AuthPage /> },
       { path: "/chat", element: <ChatPage /> },
