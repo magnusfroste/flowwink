@@ -123,6 +123,20 @@ export function SessionsAside({
           )}
         </div>
 
+      {viewAllHref && sessions.length > limit && (
+        <div className="border-t border-border/40 px-2 py-1.5 shrink-0">
+          <Link
+            to={viewAllHref}
+            className="flex items-center justify-between gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          >
+            <span>All chats ({sessions.length})</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
+
+
+
 
 
       <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
