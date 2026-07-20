@@ -134,7 +134,9 @@ export default function FlowChatPage() {
           onNew={handleNew}
           onRename={handleRename}
           onDelete={handleDelete}
+          viewAllHref="/admin/flowchat/sessions"
         />
+
       </div>
     </AdminLayout>
   );

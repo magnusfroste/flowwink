@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useIsModuleEnabled } from '@/hooks/useModules';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   ALL_WORKSPACE_SOURCES,
   useWorkspaceChat,
@@ -132,6 +132,21 @@ export default function WorkspaceChatPage() {
     await deleteSession(id);
     if (id === activeSessionId) handleNewChat();
   };
+
+  // Auto-open a session when arriving via /admin/flowwork?session=<id>
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const wanted = searchParams.get('session');
+    if (!wanted || wanted === activeSessionId) return;
+    // Wait until sessions are loaded so we don't select a phantom id
+    if (!sessions.some((s) => s.id === wanted)) return;
+    handleSelectSession(wanted);
+    searchParams.delete('session');
+    setSearchParams(searchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, sessions]);
+
+
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -554,8 +569,9 @@ export default function WorkspaceChatPage() {
           onNew={handleNewChat}
           onRename={renameSession}
           onDelete={handleDeleteSession}
-          storageKey="flowwork-sessions-aside-collapsed"
+          viewAllHref="/admin/flowwork/sessions"
         />
+
       </div>
     </AdminLayout>
   );
