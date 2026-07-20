@@ -22793,6 +22793,10 @@ export type Database = {
         Args: { p_purchase_order_id: string }
         Returns: Json
       }
+      service_order_to_invoice: {
+        Args: { p_due_in_days?: number; p_order_id: string }
+        Returns: Json
+      }
       set_exchange_rate: {
         Args: {
           p_base: string
