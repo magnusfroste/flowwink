@@ -312,6 +312,31 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
     instructions:
       'Generated children are draft orders cloned from the source (lines, links, customer) with parent_order_id set; schedule them normally afterwards. The service-recurring-orders cron runs generate daily at 05:10.',
   },
+  {
+    name: 'service_order_to_invoice',
+    description:
+      'Draft an invoice from a completed service order\'s line items. Use when: a service order is finished and the customer should be billed; the invoice_completed_service_orders automation calls this on service_order.completed. NOT for: timesheet-based billing (invoice_from_timesheets); POS receipts (pos_sale_to_invoice). Idempotent — re-running returns the existing invoice.',
+    category: 'commerce',
+    handler: 'rpc:service_order_to_invoice',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'service_order_to_invoice',
+        parameters: {
+          type: 'object',
+          required: ['p_order_id'],
+          properties: {
+            p_order_id: { type: 'string', format: 'uuid', description: 'Service order to bill' },
+            p_due_in_days: { type: 'number', description: 'Payment terms in days (default 30)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Requires the order to have customer_email and at least one billable line (add them with manage_service_order action=add_line). Creates a DRAFT invoice and stores its id on service_orders.invoice_id, so a second call returns { already_linked: true } instead of double-billing. Send it afterwards with manage_invoice.',
+  },
 ];
 
 const FIELD_SERVICE_AUTOMATIONS: AutomationSeed[] = [
@@ -321,7 +346,7 @@ const FIELD_SERVICE_AUTOMATIONS: AutomationSeed[] = [
       'When a service order is marked completed, draft an invoice from its line items so the customer can be billed quickly.',
     trigger_type: 'event',
     trigger_config: { event: 'service_order.completed' },
-    skill_name: 'create_invoice_from_service_order',
+    skill_name: 'service_order_to_invoice',
     skill_arguments: {},
   },
 ];
