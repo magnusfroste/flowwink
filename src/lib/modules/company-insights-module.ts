@@ -21,7 +21,7 @@ const COMPANY_INSIGHTS_SKILLS: SkillSeed[] = [
     name: 'get_company_profile',
     description: 'Read the FlowWink site\'s Business Identity (company name, ICP, value proposition, services, clients, brand tone, contact info). Use when: you need affärs-/företagskontext before writing content, qualifying leads, or generating outreach. NOT for: agent persona/soul.',
     category: 'crm',
-    handler: 'function:company-profile',
+    handler: 'internal:company_profile',
     scope: 'both',
     tool_definition: {
       type: 'function',
@@ -37,7 +37,7 @@ const COMPANY_INSIGHTS_SKILLS: SkillSeed[] = [
     name: 'update_company_profile',
     description: 'Update the FlowWink site\'s Business Identity. Performs a shallow merge by default. Use when: enriching the profile with newly discovered facts. NOT for: changing agent identity/soul.',
     category: 'crm',
-    handler: 'function:company-profile',
+    handler: 'internal:company_profile',
     scope: 'both',
     tool_definition: {
       type: 'function',

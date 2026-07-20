@@ -52,9 +52,6 @@ verify_jwt = false
 [functions.content-api]
 verify_jwt = false
 
-[functions.company-profile]
-verify_jwt = false
-
 [functions.customer-signup]
 verify_jwt = false
 
@@ -159,9 +156,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.reconciliation]
-verify_jwt = false
-
-[functions.sla-check]
 verify_jwt = false
 
 [functions.ai-task]

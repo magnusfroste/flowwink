@@ -6,7 +6,7 @@
  *
  * Architecture:
  *  - `sla_policies` defines thresholds per entity_type + metric
- *  - `sla_check` (edge:sla-check) sweeps current data and writes/auto-resolves
+ *  - `sla_check` (rpc:run_sla_sweep) sweeps current data and writes/auto-resolves
  *    `sla_violations` rows
  *  - Policies & violations are CRUD'd through generic agent-execute table CRUD
  */

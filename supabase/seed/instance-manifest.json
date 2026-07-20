@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260720040000",
-      "migrations_count": 251,
+      "migrations_count": 253,
       "migrations": [
         {
           "version": "00000000000000",
@@ -995,8 +995,16 @@
           "name": "flowpilot-lifecycle-cron-repoint"
         },
         {
+          "version": "20260720003659",
+          "name": "f9e21817-8e8c-4504-8f52-cdf2967d4acc"
+        },
+        {
           "version": "20260720010000",
           "name": "instance-sync-status"
+        },
+        {
+          "version": "20260720012931",
+          "name": "bb2f0358-289a-42ca-b51a-a97981ddc7e5"
         },
         {
           "version": "20260720020000",
@@ -1013,17 +1021,17 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:17479ad3a43d1c5012cc57e365fc45aabcf5b75ab8d3815316e36531d6e20eee",
+      "seed_hash": "sha256:629192b81fcbe4e2791c280d935e1ed6c04ac79085b8b90cca3ee7980ac01a62",
       "skill_count": 498,
       "module_count": 68
     },
     "edge_functions": {
-      "count": 92,
-      "shared_hash": "sha256:40242dc230201dfa430f42c76e57361d1c5fd6bc11afc47fd5523c2a9611753b",
+      "count": 90,
+      "shared_hash": "sha256:69591d54eb1f11207baa6d6cc35e063934e9bdd5996a7a44b73f48c0af4f5e31",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:e416850a2e8b174886eb9079a57bee05adb58c78c716cadcd5176f9e1c681460",
+        "agent-execute": "sha256:28cc87507cb95e47c492a25dc5698e7ed23851b00989dbc5ca112a5151570cc3",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "agent-reason": "sha256:0ed440de9516635de32e5ddc8dc676f250c40fa8e1764ff9dc81243bcd18daab",
         "ai-task": "sha256:5cc0884b9c7ab08157ee79a5055f847433cb079732200a07bdae3ef2b666f1f6",
@@ -1035,7 +1043,6 @@
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:7d51782c0c965937199c1eb471c2664b867a37a32382fba2ecf20f3999bf86aa",
         "comms-send": "sha256:5ae8861e8216d3e5d89ecddcb3d8c63d919280304d11f7c71ebbea3ef1a547c9",
-        "company-profile": "sha256:e8d712d783ac7f5c4bba8a045a9e11bf18f2fd62e215f1ae45057dd2859d0107",
         "composio-proxy": "sha256:2aa93aebca45b8510693556f07ffc12d3991ebf9a0f765a37a244693fe6ace58",
         "composio-webhook": "sha256:36d9ca7c03f0f385b0d5adfe5ef3ff1f01095dd2c7c73d95da71b8b67e2340c2",
         "consultant-checkin": "sha256:394c87ef2d9e8ccbd6f4c97367b175350e57a2ffcf3d271393e335a3a029208a",
@@ -1090,11 +1097,10 @@
         "run-platform-tests": "sha256:0ea5ed149dd4b3dfea64517d8c95070c802ab2cede2e0ad384d95be81ddd71a8",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:32dfe4c3c613760f0e64a523404057f5fdf5e2e41af56535f0a66b1bc4d38679",
-        "setup-database": "sha256:a55c793f5294fa3ba02a97b28d22a9de5c7d554ae371fd0732d66ec781d45daa",
+        "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:1e8edbe511e8b048df1a7b1419aa14a410c83487ed911e0f599871e3b67a752d",
         "sitemap": "sha256:57bfd001304645f70cd359850af19f88d6960918f2dbe5795c8dda40f733daf1",
-        "sla-check": "sha256:d5523f28b24b0d7bb422413aa964bde305c4d754cf763c34b857453d6e262e63",
         "social-post-scheduler": "sha256:2e9ff1b9eeea0e596164f7a36bdc3f81742b75ad67031285ef42836377be1f1d",
         "stripe-webhook": "sha256:8958c2a437fc3718ba106b4f1c9dbaad1707b9052651045d6f506ebb2c86f5ce",
         "subscription-billing-cron": "sha256:d3a4089951cbc82379b1f667b1d5b98503961e4364ab811617b4c5d5a6036663",

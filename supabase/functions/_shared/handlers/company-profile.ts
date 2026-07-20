@@ -1,13 +1,6 @@
 // Edge function backing get_company_profile + update_company_profile MCP skills.
 // Reads/writes site_settings.company_profile (Business Identity).
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 interface Body {
   action?: "get" | "update";
@@ -17,18 +10,26 @@ interface Body {
   [key: string]: unknown;
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+// company_profile — internal skill handler (get_company_profile /
+// update_company_profile). Moved VERBATIM from the standalone
+// company-profile edge function (edge-surface B1b). The edge: dispatch
+// injected _skill; agent-execute now passes skill.name as a parameter.
+
+export async function executeCompanyProfile(
+  supabase: SupabaseClient,
+  args: Record<string, unknown>,
+  skillName: string,
+): Promise<Record<string, unknown>> {
 
   try {
-    const body = (await req.json().catch(() => ({}))) as Body;
+    const body = args as Body;
     const inferredAction =
       body.action ??
-      (body._skill === "update_company_profile" ? "update" : undefined) ??
-      (body._skill === "get_company_profile" ? "get" : undefined) ??
+      (skillName === "update_company_profile" ? "update" : undefined) ??
+      (skillName === "get_company_profile" ? "get" : undefined) ??
       "get";
 
-    const sb = getServiceClient();
+    const sb = supabase;
 
     if (inferredAction === "get") {
       const { data, error } = await sb
@@ -103,13 +104,12 @@ serve(async (req) => {
       500,
     );
   }
-});
+}
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+// The edge: dispatch parsed the JSON body regardless of HTTP status, so
+// callers only ever saw these objects — status codes are dropped, not lost.
+function json(body: unknown, _status = 200): Record<string, unknown> {
+  return body as Record<string, unknown>;
 }
 
 /**

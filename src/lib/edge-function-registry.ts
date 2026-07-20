@@ -51,7 +51,7 @@ export const DEFAULT_PLAN: SupabasePlan = 'free';
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
   'analyze-brand', 'automation-dispatcher', 'blog-rss', 'browser-fetch',
-  'chat-completion', 'chat-stt', 'check-secrets', 'company-profile', 'comms-send', 'composio-proxy',
+  'chat-completion', 'chat-stt', 'check-secrets', 'comms-send', 'composio-proxy',
   'composio-webhook', 'consultant-checkin', 'content-api',
   'contract-sign', 'create-checkout', 'create-invoice-payment',
   'create-user', 'customer-signup', 'demo-cycle',
@@ -64,7 +64,7 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'reconciliation', 'recurring-quotes-cron',
   'consultant-match', 'run-autonomy-tests',
   'run-platform-tests', 'score-visitor-intent', 'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
-  'sla-check', 'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
+  'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
   'support-router', 'system-integrity-check', 'telegram-ingest',
   'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
   'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
@@ -95,7 +95,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── CRM / sales / leads ──────────────────────────────────────────────────
   leads: [],
   companies: [],
-  companyInsights: ['company-profile', 'enrich-company-profile'],
+  companyInsights: ['enrich-company-profile'],
   customer360: [],
   salesIntelligence: ['signal-ingest'],
 
@@ -118,7 +118,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── Field service / SLA / surveys ────────────────────────────────────────
   fieldService: [],
   visitorIntelligence: ['score-visitor-intent'],
-  sla: ['sla-check'],
+  sla: [],
   surveys: [],
   webinars: [],
 
