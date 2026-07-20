@@ -18,13 +18,23 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const MODULES_DIR = 'src/lib/modules';
+// Platform primitives (search_web, scrape_url, manage_site_settings,
+// run_daily_briefing, …) live OUTSIDE the module dirs by policy — they must be
+// seeded regardless of which modules are toggled on, so they cannot hide behind
+// a module manifest. Scanning only src/lib/modules made all eight look like
+// orphans in the platform test (2026-07-20).
+const EXTRA_SEED_FILES = ['src/lib/platform-seeds.ts'];
 const OUT_PATH = 'supabase/functions/run-platform-tests/_declared-skills.json';
 
 const declared = new Set<string>();
 
-for (const file of readdirSync(MODULES_DIR).sort()) {
-  if (!file.endsWith('.ts')) continue;
-  const src = readFileSync(join(MODULES_DIR, file), 'utf-8');
+const sources = [
+  ...readdirSync(MODULES_DIR).sort().filter((f) => f.endsWith('.ts')).map((f) => join(MODULES_DIR, f)),
+  ...EXTRA_SEED_FILES,
+];
+
+for (const path of sources) {
+  const src = readFileSync(path, 'utf-8');
   // 1) Full skillSeed objects: `name: 'snake'` followed by tool_definition+handler.
   const re = /name:\s*'([a-z_][a-z0-9_]*)'/g;
   let m: RegExpExecArray | null;

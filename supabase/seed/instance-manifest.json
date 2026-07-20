@@ -3,6 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
+<<<<<<< HEAD
       "migration_head": "20260720030000",
       "migrations_count": 250,
       "migrations": [
@@ -1007,6 +1008,10 @@
           "name": "instance-sync-status-name-match"
         }
       ]
+=======
+      "migration_head": "20260720020000",
+      "migrations_count": 249
+>>>>>>> ffcddf8b (fix(platform-tests): the orphan-skill check was crying wolf — 150 false positives)
     },
     "skills": {
       "seed_hash": "sha256:09239aa42eef7b40f6c3d3f50b2b6d7573e7145d55e6b8ca66eabd0636b4298c",
@@ -1083,7 +1088,7 @@
         "reconciliation": "sha256:7148d5dc40a1d04b4db2bbe27f59529f82ee75f8e4b849e26a4b75ead08cb91f",
         "recurring-quotes-cron": "sha256:328067fd96999142740370b2d6763892be413fcccaa639206d7162dc4a69d4b3",
         "run-autonomy-tests": "sha256:1686a331e5859a2a70df6961eb9610a75e387c55c333fc89f1edcd412c86cf7c",
-        "run-platform-tests": "sha256:f01954ea94e55fe29bf43bc65d2f13dcf1968833860f81526d3a373471fcf55b",
+        "run-platform-tests": "sha256:5cd0b5332196a3c2ccf5c217718dfc38895c53587d42e8738987aeac2bf46041",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:32dfe4c3c613760f0e64a523404057f5fdf5e2e41af56535f0a66b1bc4d38679",
         "setup-database": "sha256:a55c793f5294fa3ba02a97b28d22a9de5c7d554ae371fd0732d66ec781d45daa",
