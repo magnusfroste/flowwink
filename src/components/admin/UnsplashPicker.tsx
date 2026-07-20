@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -47,12 +48,8 @@ export function UnsplashPicker({ open, onOpenChange, onSelect }: UnsplashPickerP
     queryFn: async () => {
       if (!debouncedQuery.trim()) return null;
       
-      const { data, error } = await supabase.functions.invoke('unsplash-search', {
-        body: { query: debouncedQuery, perPage: 24 },
-      });
-
-      if (error) throw error;
-      return data as { photos: UnsplashPhoto[]; total: number };
+      const data = await callSkill('search_unsplash', ({ query: debouncedQuery, perPage: 24 }) as Record<string, unknown>);
+            return data as { photos: UnsplashPhoto[]; total: number };
     },
     enabled: open && debouncedQuery.length > 0,
   });

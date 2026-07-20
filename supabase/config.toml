@@ -61,26 +61,13 @@ verify_jwt = false
 [functions.docs-chat]
 verify_jwt = false
 
-[functions.docs-sync]
-verify_jwt = false
-
-# Cron-invoked sweeper (Retrieval Engine); pg_cron sends the anon key.
 [functions.knowledge-indexer]
 verify_jwt = false
 
 [functions.elks46-ingest]
 verify_jwt = false
 
-[functions.enrich-company-profile]
-verify_jwt = false
-
 [functions.extract-pdf-text]
-verify_jwt = false
-
-[functions.extract-receipt]
-verify_jwt = false
-
-[functions.fetch-image]
 verify_jwt = false
 
 [functions.get-page]
@@ -117,9 +104,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.track-page-view]
-verify_jwt = false
-
-[functions.unsplash-search]
 verify_jwt = false
 
 [functions.voice-ingest]

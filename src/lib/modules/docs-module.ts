@@ -94,6 +94,28 @@ In-app docs authoring (separate from GitHub-synced docs).
 - Roll back: manage_docs_page(action:"restore_version", id:"<uuid>", version_no:2)
 Confirm with the user before delete. Slug auto-derives from the title on create.`,
   },
+  {
+    name: 'sync_docs_from_github',
+    description: 'Recursively import markdown docs from a GitHub repo path into the docs pages. Use when: syncing product documentation maintained in GitHub. NOT for: the handbook (sync_handbook_from_github); wiki (manage_wiki_page).',
+    category: 'content',
+    handler: 'internal:sync_docs_from_github',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'sync_docs_from_github',
+        parameters: {
+          type: 'object',
+          properties: {
+            repo_owner: { type: 'string', description: 'GitHub owner (default magnusfroste)' },
+            repo_name: { type: 'string', description: 'Repo name' },
+            path: { type: 'string', description: 'Path within repo' },
+            branch: { type: 'string', description: 'Branch (default main)' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const docsModule = defineModule<DocsInput, DocsOutput>({

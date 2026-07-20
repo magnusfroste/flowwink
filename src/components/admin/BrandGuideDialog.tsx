@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { analyzeBranding, type AnalyzedBranding } from '@/lib/branding-analyzer';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 import { Loader2, Globe, ArrowRight, Check, Sparkles, Save } from 'lucide-react';
@@ -43,12 +44,8 @@ export function BrandGuideDialog({
     setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-brand', {
-        body: { url: url.trim() },
-      });
-
-      if (error) throw error;
-
+      const data = await callSkill('analyze_brand', ({ url: url.trim() }) as Record<string, unknown>);
+      
       if (!data.success) {
         throw new Error(data.error || 'Could not analyze the website');
       }

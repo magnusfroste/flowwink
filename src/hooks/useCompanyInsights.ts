@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { callSkill } from '@/lib/call-skill';
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -205,11 +206,8 @@ export function useCompanyInsights() {
 
   const enrichFromPublicSources = async (identifier: string, currentProfile: CompanyProfile): Promise<CompanyProfile | null> => {
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-company-profile", {
-        body: { identifier: identifier.trim() },
-      });
-      if (error) throw error;
-
+      const data = await callSkill('enrich_company_profile', ({ identifier: identifier.trim() }) as Record<string, unknown>);
+      
       const rawResults = data?.raw_results as Array<{ url?: string; title?: string; content?: string }> | undefined;
       if (!rawResults || rawResults.length === 0) {
         toast.info("No public data found for this identifier");

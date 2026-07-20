@@ -42,7 +42,7 @@ function verifyJwtFalseSet(): Set<string> {
 /** Extract the function names the autonomy-cron writer targets via functions/v1/<name>. */
 function autonomyCronTargets(): string[] {
   const src = readFileSync(
-    'supabase/functions/update-autonomy-cron/index.ts',
+    'supabase/functions/_shared/handlers/update-autonomy-cron.ts',
     'utf8',
   );
   const targets = new Set<string>();

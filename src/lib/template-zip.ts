@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 import JSZip from 'jszip';
 import { StarterTemplate } from '@/data/templates';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { 
   extractTemplateImages, 
   createUrlMapping, 
@@ -49,12 +50,8 @@ export interface ZipImportResult {
 async function downloadImage(url: string): Promise<ArrayBuffer | null> {
   try {
     // Use the process-image edge function to fetch the image
-    const { data, error } = await supabase.functions.invoke('fetch-image', {
-      body: { imageUrl: url },
-    });
-    
-    if (error) {
-      logger.error('Error fetching image:', url, error);
+    const data = await callSkill('fetch_image_base64', ({ imageUrl: url }) as Record<string, unknown>);
+          logger.error('Error fetching image:', url, error);
       return null;
     }
     

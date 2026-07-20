@@ -50,15 +50,15 @@ export const DEFAULT_PLAN: SupabasePlan = 'free';
  */
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'a2a', 'agent-card', 'agent-execute', 'agent-operate', 'agent-reason', 'ai-task',
-  'analyze-brand', 'automation-dispatcher', 'blog-rss', 'browser-fetch',
+  'automation-dispatcher', 'blog-rss', 'browser-fetch',
   'chat-completion', 'chat-stt', 'check-secrets', 'comms-send', 'composio-proxy',
   'composio-webhook', 'content-api',
   'contract-sign', 'create-checkout', 'create-invoice-payment',
   'create-user', 'customer-signup', 'demo-cycle',
-  'docs-chat', 'docs-sync', 'document-share', 'document-sign-request',
+  'docs-chat', 'document-share', 'document-sign-request',
   'dunning-processor', 'elks46-ingest',
-  'email-send', 'email-webhook', 'enrich-company-profile', 'event-dispatcher',
-  'extract-pdf-text', 'extract-receipt', 'federation-invite-peer', 'fetch-image', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'generate-invoice-pdf', 'get-page', 'github-content-sync', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
+  'email-send', 'email-webhook', 'event-dispatcher',
+  'extract-pdf-text', 'federation-invite-peer', 'flowpilot-lifecycle', 'flowpilot-heartbeat', 'gatewayapi-ingest', 'generate-invoice-pdf', 'get-page', 'gmail-oauth-callback', 'integrations-account', 'instance-health', 'invite-employee',
   'knowledge-indexer', 'llms-txt', 'mcp-server', 'media-optimize', 'migrate-page', 'newsletter',
   'openclaw-responses', 'process-image',
   'process-job-application', 'quote-expiry-reminders', 'quote-pay', 'quote-sign', 'recurring-quotes-cron',
@@ -66,8 +66,8 @@ export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'run-platform-tests', 'score-visitor-intent', 'send-webhook', 'setup-database', 'signal-dispatcher', 'signal-ingest', 'sitemap',
   'social-post-scheduler', 'stripe-webhook', 'subscription-billing-cron', 'subscriptions', 'contract-billing-cron',
   'system-integrity-check', 'telegram-ingest',
-  'test-ai-connection', 'track-auth-event', 'track-page-view', 'twilio-ingest',
-  'unsplash-search', 'update-autonomy-cron', 'voice-ingest', 'voice-recording',
+  'track-auth-event', 'track-page-view', 'twilio-ingest',
+  'voice-ingest', 'voice-recording',
   'web-scrape', 'web-search', 'workspace-chat'];
 
 /**
@@ -95,7 +95,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   // ── CRM / sales / leads ──────────────────────────────────────────────────
   leads: [],
   companies: [],
-  companyInsights: ['enrich-company-profile'],
+  companyInsights: [],
   customer360: [],
   salesIntelligence: ['signal-ingest'],
 
@@ -111,7 +111,7 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
   bookings: [],
   calendar: [],
   subscriptions: ['subscriptions', 'subscription-billing-cron', 'dunning-processor'],
-  expenses: ['extract-receipt'],
+  expenses: [],
   reconciliation: [],
   multiCurrency: [],
 
@@ -124,15 +124,15 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
 
   // ── Content / docs / knowledge ───────────────────────────────────────────
   blog: ['blog-rss'],
-  docs: ['docs-chat', 'docs-sync'],
-  handbook: ['github-content-sync'],
+  docs: ['docs-chat'],
+  handbook: [],
   workspaceChat: ['workspace-chat'],
-  siteMigration: ['migrate-page', 'analyze-brand'],
+  siteMigration: ['migrate-page'],
   paidGrowth: ['social-post-scheduler'],
 
   // ── Autonomous operator (off by default) ─────────────────────────────────
   flowpilot: [
-    'flowpilot-heartbeat', 'update-autonomy-cron', 'run-autonomy-tests', 'web-search', 'web-scrape'],
+    'flowpilot-heartbeat', 'run-autonomy-tests', 'web-search', 'web-scrape'],
 
   // ── Federation / external agents ─────────────────────────────────────────
   federation: ['a2a', 'agent-card', 'federation-invite-peer', 'openclaw-responses'],

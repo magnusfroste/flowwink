@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient } from '../supabase-clients.ts';
 
 /**
  * Update Autonomy Cron — Re-registers pg_cron jobs based on admin schedule settings.
@@ -48,7 +47,10 @@ function localHourToUtc(localHour: number, timezone: string): number {
   }
 }
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/update-autonomy-cron/index.ts (edge-surface B1b).
+// Kept as a Request→Response handler; agent-execute adapts args↔Request via
+// callResponseHandler — zero body changes.
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -137,4 +139,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}

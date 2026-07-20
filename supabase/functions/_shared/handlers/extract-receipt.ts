@@ -12,9 +12,9 @@
  * Logged to ai_usage_logs with source='expense-receipt'.
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { getServiceClient } from '../_shared/supabase-clients.ts';
-import { resolveAiConfig } from '../_shared/ai-config.ts';
-import { callAiCompletion } from '../_shared/ai-usage-logger.ts';
+import { getServiceClient } from '../supabase-clients.ts';
+import { resolveAiConfig } from '../ai-config.ts';
+import { callAiCompletion } from '../ai-usage-logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -217,7 +217,10 @@ async function extractPdfText(pdfBytes: Uint8Array, ai: Awaited<ReturnType<typeo
   throw new Error('PDF receipts are not supported by the configured AI provider yet.');
 }
 
-Deno.serve(async (req) => {
+// Moved VERBATIM from supabase/functions/extract-receipt/index.ts (edge-surface B1b).
+// Kept as a Request→Response handler; agent-execute adapts args↔Request via
+// callResponseHandler — zero body changes.
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
@@ -331,4 +334,4 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}

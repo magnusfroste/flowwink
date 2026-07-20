@@ -78,6 +78,26 @@ const COMPANY_INSIGHTS_SKILLS: SkillSeed[] = [
     },
     instructions: 'Update business identity. Shallow merge by default. CRITICAL: services must be an array of {name, description} objects — never raw strings, never {description} without name (UI renders empty placeholders). Strings get coerced; nameless entries are dropped.',
   },
+  {
+    name: 'enrich_company_profile',
+    description: 'Enrich a company insights profile from a public identifier (org number / domain) — writes company facts for the customer-insights views. Use when: filling out a prospect company card. NOT for: CRM company CRUD (manage_company); website scraping enrichment (enrich_company).',
+    category: 'crm',
+    handler: 'internal:enrich_company_profile',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'enrich_company_profile',
+        parameters: {
+          type: 'object',
+          required: ["identifier"],
+          properties: {
+            identifier: { type: 'string', description: 'Org number or company domain' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const companyInsightsModule = defineModule<Input, Output>({

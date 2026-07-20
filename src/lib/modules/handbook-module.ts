@@ -64,6 +64,29 @@ Searches and retrieves chapters from the synced GitHub handbook repository.
 2. Read: handbook_search(slug: "05-heartbeat-protocol") → full chapter
 3. TOC: handbook_search() → list all chapters`,
   },
+  {
+    name: 'sync_handbook_from_github',
+    description: 'Recursively import markdown handbook chapters from a GitHub repo path. Use when: syncing the employee handbook maintained in GitHub. NOT for: product docs (sync_docs_from_github).',
+    category: 'system',
+    handler: 'internal:sync_handbook_from_github',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'sync_handbook_from_github',
+        parameters: {
+          type: 'object',
+          required: ["repo_owner", "repo_name"],
+          properties: {
+            repo_owner: { type: 'string', description: 'GitHub owner' },
+            repo_name: { type: 'string', description: 'Repo name' },
+            path: { type: 'string', description: 'Path (default content/chapters)' },
+            branch: { type: 'string', description: 'Branch (default main)' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const handbookModule = defineModule<HandbookInput, HandbookOutput>({

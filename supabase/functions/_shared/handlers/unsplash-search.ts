@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +23,10 @@ interface UnsplashPhoto {
   height: number;
 }
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/unsplash-search/index.ts (edge-surface B1b).
+// Kept as a Request→Response handler; agent-execute adapts args↔Request via
+// callResponseHandler — zero body changes.
+export async function handler(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -120,4 +122,4 @@ serve(async (req) => {
       }
     );
   }
-});
+}

@@ -55,6 +55,7 @@ import {
 } from "@/hooks/useIntegrations";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { supabase } from "@/integrations/supabase/client";
+import { callSkill } from '@/lib/call-skill';
 
 // Icon mapping
 const iconMap = {
@@ -131,12 +132,8 @@ function TestAIConnectionButton({
     
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('test-ai-connection', {
-        body: { provider }
-      });
-
-      if (error) {
-        toast.error(`Test failed: ${error.message}`);
+      const data = await callSkill('test_ai_connection', ({ provider }) as Record<string, unknown>);
+              toast.error(`Test failed: ${error.message}`);
         return;
       }
 
@@ -195,12 +192,8 @@ function TestConfigConnectionButton({
     
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('test-ai-connection', {
-        body: { provider, config }
-      });
-
-      if (error) {
-        toast.error(`Test failed: ${error.message}`);
+      const data = await callSkill('test_ai_connection', ({ provider, config }) as Record<string, unknown>);
+              toast.error(`Test failed: ${error.message}`);
         return;
       }
 

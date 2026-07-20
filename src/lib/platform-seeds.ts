@@ -365,6 +365,28 @@ Reads and updates site settings including module configuration, site name, theme
     instructions:
       'Read-only, takes no arguments. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds}], http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h} }. THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron.',
   },
+
+  {
+    name: 'test_ai_connection',
+    description: 'Validate an AI provider credential (OpenAI/Gemini/Anthropic/local) by making a probe call. Use when: an admin adds or rotates an AI key and wants to confirm it works. NOT for: sending a real completion (chat-completion).',
+    category: 'system',
+    handler: 'internal:test_ai_connection',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'test_ai_connection',
+        parameters: {
+          type: 'object',
+          required: ["provider"],
+          properties: {
+            provider: { type: 'string', description: 'openai | gemini | anthropic | local' },
+            config: { type: 'object', description: 'Provider config (apiKey, model, apiUrl)' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [

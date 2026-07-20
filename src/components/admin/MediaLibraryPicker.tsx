@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -99,12 +100,8 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
     queryFn: async () => {
       if (!debouncedUnsplashQuery.trim()) return null;
       
-      const { data, error } = await supabase.functions.invoke('unsplash-search', {
-        body: { query: debouncedUnsplashQuery, perPage: 24 },
-      });
-
-      if (error) throw error;
-      return data as { photos: UnsplashPhoto[]; total: number };
+      const data = await callSkill('search_unsplash', ({ query: debouncedUnsplashQuery, perPage: 24 }) as Record<string, unknown>);
+            return data as { photos: UnsplashPhoto[]; total: number };
     },
     enabled: open && activeTab === 'unsplash' && debouncedUnsplashQuery.length > 0,
   });

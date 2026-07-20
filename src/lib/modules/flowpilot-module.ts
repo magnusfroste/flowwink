@@ -376,6 +376,21 @@ Lists platform users with their roles.
 - Shows email, role, and last sign-in.
 - Does not include customers — only platform users.`,
   },
+
+  {
+    name: 'update_autonomy_cadence',
+    description: "Re-register FlowPilot's pg_cron heartbeat jobs from the current autonomy_schedule setting. Use when: the admin changed the autonomy cadence and the cron schedule must be refreshed. Takes no arguments — reads site_settings.autonomy_schedule.",
+    category: 'system',
+    handler: 'internal:update_autonomy_cadence',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'update_autonomy_cadence',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
 ];
 
 export const flowpilotModule = defineModule<Input, Output>({

@@ -299,6 +299,28 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     },
     instructions: 'allowed=false means a hard violation (over the cap or a required receipt is missing). requires_approval=true routes it to manage_approvals before booking. No matching policy → allowed.',
   },
+  {
+    name: 'extract_receipt',
+    description: 'Extract structured expense fields (vendor, date, total, VAT, line items) from a receipt image or PDF via AI. Use when: an employee uploads a receipt to file an expense. NOT for: bank statement OCR (import_bank_image); invoice matching (match_invoice_to_receipt).',
+    category: 'commerce',
+    handler: 'internal:extract_receipt',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'extract_receipt',
+        parameters: {
+          type: 'object',
+          required: ["file_base64", "mime_type"],
+          properties: {
+            file_base64: { type: 'string', description: 'Base64 receipt image/PDF' },
+            mime_type: { type: 'string', description: 'e.g. image/jpeg or application/pdf' },
+            filename: { type: 'string', description: 'Original filename (optional)' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 const EXPENSE_AUTOMATIONS: AutomationSeed[] = [

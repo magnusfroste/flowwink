@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { logger } from '@/lib/logger';
 import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
@@ -97,6 +98,26 @@ Do NOT only summarize or ask follow-up if page creation has not happened yet.
 - Preserve source language unless user asks otherwise
 - Never fabricate blocks; use extracted content only`,
   },
+  {
+    name: 'analyze_brand',
+    description: 'Scrape a website and extract its brand palette, fonts, logo and tone for the brand guide. Use when: setting up a new site brand from an existing URL. NOT for: full page migration (migrate_url); company data enrichment (enrich_company).',
+    category: 'content',
+    handler: 'internal:analyze_brand',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'analyze_brand',
+        parameters: {
+          type: 'object',
+          required: ["url"],
+          properties: {
+            url: { type: 'string', description: 'Site URL to analyze' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigrationOutput>({
@@ -155,11 +176,8 @@ export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigratio
         }
 
         case 'analyze_brand': {
-          const { data, error } = await supabase.functions.invoke('analyze-brand', {
-            body: { url: validated.url },
-          });
-          if (error) return { success: false, error: error.message };
-          return {
+          const data = await callSkill('analyze_brand', ({ url: validated.url }) as Record<string, unknown>);
+                    return {
             success: true,
             branding: data?.branding || data,
             providers: { scraper: 'firecrawl' },

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { callSkill } from '@/lib/call-skill';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
@@ -105,15 +106,12 @@ export function useSyncHandbook() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (config: HandbookConfig) => {
-      const { data, error } = await supabase.functions.invoke('github-content-sync', {
-        body: {
-          repo_owner: config.repoOwner,
-          repo_name: config.repoName,
-          path: config.path,
-          branch: config.branch,
-        },
+      const data = await callSkill('sync_handbook_from_github', {
+        repo_owner: config.repoOwner,
+        repo_name: config.repoName,
+        path: config.path,
+        branch: config.branch,
       });
-      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {

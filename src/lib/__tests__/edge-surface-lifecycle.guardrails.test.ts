@@ -58,7 +58,7 @@ describe('flowpilot-lifecycle consolidation', () => {
     const hb = readFileSync(join(root, 'supabase/functions/flowpilot-heartbeat/index.ts'), 'utf8');
     expect(hb).toContain('flowpilot-lifecycle?task=followthrough');
     expect(hb).not.toContain('/functions/v1/flowpilot-followthrough');
-    const uac = readFileSync(join(root, 'supabase/functions/update-autonomy-cron/index.ts'), 'utf8');
+    const uac = readFileSync(join(root, 'supabase/functions/_shared/handlers/update-autonomy-cron.ts'), 'utf8');
     expect(uac).toContain('flowpilot-lifecycle?task=learn');
     // Wire-name policy: the cron JOBNAME stays 'flowpilot-learn'.
     expect(uac).toContain('p_jobname: "flowpilot-learn"');
@@ -114,6 +114,29 @@ describe('reconciliation sub-path routing', () => {
     const dir = join(root, 'supabase/functions/_shared/handlers');
     for (const f of readdirSync(dir).filter((x) => x.endsWith('.ts'))) {
       expect(readFileSync(join(dir, f), 'utf8'), f).not.toMatch(/from ['"]\.\.\/_shared\//);
+    }
+  });
+});
+
+/**
+ * Guardrail: a handler moved into _shared/handlers/ must reach sibling helpers
+ * with the right depth. Two live boot-failures came from this:
+ *   ../_shared/x.ts  → _shared/_shared/x.ts   (module not found)
+ *   ../shared/x.ts   → _shared/shared/x.ts    (functions/shared is TWO levels up)
+ * A handler needs ../ for _shared siblings and ../../shared/ for functions/shared.
+ */
+describe('handler import depth', () => {
+  const dir = join(root, 'supabase/functions/_shared/handlers');
+  const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
+
+  it('no handler imports ../_shared/ (that doubles to _shared/_shared/)', () => {
+    for (const f of files) expect(readFileSync(join(dir, f), 'utf8'), f).not.toMatch(/from ['"]\.\.\/_shared\//);
+  });
+
+  it('functions/shared is reached with ../../shared/, never ../shared/', () => {
+    for (const f of files) {
+      const src = readFileSync(join(dir, f), 'utf8');
+      expect(src, `${f} uses ../shared/ (resolves to _shared/shared/)`).not.toMatch(/from ['"]\.\.\/shared\//);
     }
   });
 });

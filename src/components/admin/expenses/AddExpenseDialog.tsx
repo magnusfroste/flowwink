@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useCreateExpense } from '@/hooks/useExpenses';
 import { useActiveExpenseRates } from '@/hooks/useExpenseRates';
 import { supabase } from '@/integrations/supabase/client';
+import { callSkill } from '@/lib/call-skill';
 import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose,
@@ -87,11 +88,8 @@ export function AddExpenseDialog() {
     try {
       const buf = await file.arrayBuffer();
       const file_base64 = arrayBufferToBase64(buf);
-      const { data, error } = await supabase.functions.invoke('extract-receipt', {
-        body: { file_base64, mime_type: file.type, filename: file.name },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || 'Extraction failed');
+      const data = await callSkill('extract_receipt', ({ file_base64, mime_type: file.type, filename: file.name }) as Record<string, unknown>);
+            if (!data?.ok) throw new Error(data?.error || 'Extraction failed');
 
       const r = data.data || {};
       if (r.expense_date) setDate(r.expense_date);

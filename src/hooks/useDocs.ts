@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { callSkill } from '@/lib/call-skill';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -76,8 +77,7 @@ export function useSyncDocs() {
   return useMutation({
     mutationFn: async (overrides?: Partial<typeof DEFAULT_REPO>) => {
       const body = { ...DEFAULT_REPO, ...overrides };
-      const { data, error } = await supabase.functions.invoke('docs-sync', { body });
-      if (error) throw error;
+      const data = await callSkill('sync_docs_from_github', body as Record<string, unknown>);
       return data as
         | { synced: number; skipped: number; deleted: number; total: number }
         | { accepted: true; message: string };

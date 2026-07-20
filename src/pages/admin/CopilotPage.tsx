@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { callSkill } from '@/lib/call-skill';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   Info, Save, Loader2, Activity, Target, History, Cpu, BarChart3,
@@ -84,7 +85,7 @@ export default function CopilotPage() {
     setAutonomySaving(true);
     try {
       await updateAutonomy.mutateAsync(autonomyData);
-      await supabase.functions.invoke('update-autonomy-cron');
+      await callSkill('update_autonomy_cadence');
       toast.success('Autonomy schedule saved');
     } catch {
       toast.error('Failed to save autonomy schedule');

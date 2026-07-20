@@ -142,6 +142,49 @@ Returns rows of {source_type, source_id, title, slug}. Empty result = not refere
     instructions: `## media_optimize
 Downloads the original, decodes with ImageScript, uploads JPEG variants, and updates media_assets.variants. Skips the web variant if the original is smaller.`,
   },
+
+  {
+    name: 'search_unsplash',
+    description: 'Search Unsplash for royalty-free stock photos. Use when: finding a hero/blog image by keyword. NOT for: fetching a known image URL (fetch_image_base64); the media library (manage_media).',
+    category: 'content',
+    handler: 'internal:search_unsplash',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_unsplash',
+        parameters: {
+          type: 'object',
+          required: ["query"],
+          properties: {
+            query: { type: 'string', description: 'Search keywords' },
+            page: { type: 'number', description: 'Page (default 1)' },
+            perPage: { type: 'number', description: 'Results per page (default 20)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'fetch_image_base64',
+    description: 'Download an image by URL and return it as base64 (used when exporting a site template so remote images are inlined). Use when: bundling external images. NOT for: searching stock photos (search_unsplash).',
+    category: 'content',
+    handler: 'internal:fetch_image_base64',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'fetch_image_base64',
+        parameters: {
+          type: 'object',
+          required: ["imageUrl"],
+          properties: {
+            imageUrl: { type: 'string', description: 'Image URL to fetch' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const mediaModule = defineModule<MediaModuleInput, MediaModuleOutput>({

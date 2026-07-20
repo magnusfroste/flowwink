@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient } from '../supabase-clients.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +47,10 @@ function slugFromFilename(filename: string): string {
   return filename.replace(/\.md$/, "").replace(/^\d+-/, "");
 }
 
-serve(async (req) => {
+// Moved VERBATIM from supabase/functions/github-content-sync/index.ts (edge-surface B1b).
+// Kept as a Request→Response handler; agent-execute adapts args↔Request via
+// callResponseHandler — zero body changes.
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -173,4 +175,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
