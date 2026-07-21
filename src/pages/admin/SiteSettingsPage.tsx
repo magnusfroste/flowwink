@@ -48,6 +48,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 import { DemoModeCard } from '@/components/admin/DemoModeCard';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { listCountries, countryName } from '@/data/iso-countries';
+import { cn } from '@/lib/utils';
+import { ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
 
 
 function EnvironmentInfoCard() {
