@@ -51,36 +51,6 @@ export function AdminContentHeader() {
   return (
     <div className="h-10 flex items-center gap-1 px-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
 
-      {/* Mode toggle pills */}
-      <div className="flex items-center bg-muted/50 rounded-lg p-0.5 gap-0.5 ml-1 shrink-0">
-        <button
-          onClick={() => navigate('/admin')}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
-            !isCopilotMode
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          <LayoutDashboard className="h-3.5 w-3.5" />
-          Dashboard
-        </button>
-        {fpEnabled && (
-          <button
-            onClick={() => navigate('/admin/flowpilot')}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
-              isCopilotMode
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Zap className="h-3.5 w-3.5" />
-            FlowPilot
-          </button>
-        )}
-      </div>
-
       {/* Pinned favorites — only in dashboard mode */}
       {!isCopilotMode && (
         <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 ml-1">
