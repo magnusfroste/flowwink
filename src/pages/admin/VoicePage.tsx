@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Voicemail, PhoneCall, Settings as SettingsIcon, Headphones, CheckCircle2, AlertCircle } from 'lucide-react';
