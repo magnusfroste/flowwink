@@ -142,6 +142,36 @@ export type Database = {
           },
         ]
       }
+      account_roles: {
+        Row: {
+          account_code: string
+          created_at: string
+          description: string | null
+          id: string
+          locale: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          locale: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          locale?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       accounting_corrections: {
         Row: {
           agent_source: string | null
@@ -19348,6 +19378,7 @@ export type Database = {
           value_out_cents: number
         }[]
       }
+      account_for: { Args: { p_role: string }; Returns: string }
       activate_confirmed_company_contact: {
         Args: { p_email: string; p_user_id: string }
         Returns: undefined
