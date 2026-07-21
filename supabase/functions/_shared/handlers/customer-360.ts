@@ -77,7 +77,7 @@ export async function executeCustomer360(
       select: string,
       emailColumn: string | null,
     ) => {
-      const queries: Promise<any>[] = [];
+      const queries: Array<PromiseLike<any>> = [];
       if (leadId) {
         queries.push(admin.from(table).select(select).eq("lead_id", leadId));
       }
