@@ -112,7 +112,7 @@ describe('account roles', () => {
     expect(sql).toMatch(/RAISE EXCEPTION[\s\S]{0,120}No account mapped to role/);
   });
 
-  it('every role the RPCs resolve is mapped in the shipped pack', () => {
+  it('every role the RPCs resolve is mapped in EVERY shipped pack', () => {
     const conv = readdirSync(migrations).find((x) => x.includes('rpcs-resolve-account-roles'));
     expect(conv, 'the RPC conversion migration is gone').toBeTruthy();
     const used = new Set(
@@ -122,17 +122,31 @@ describe('account roles', () => {
     );
     expect(used.size, 'no roles resolved — the conversion was undone').toBeGreaterThan(10);
 
-    const rolesFile = readdirSync(migrations).find((x) => x.includes('account-roles'))!;
-    const seeded = new Set(
-      Array.from(
-        readFileSync(join(migrations, rolesFile), 'utf8').matchAll(/'se-bas2024',\s*'([a-z_]+)'/g),
-      ).map((m) => m[1]),
-    );
+    // Role mappings across ALL migrations, per locale. A pack that can be
+    // ACTIVATED but not BOOK is not a pack: the agent-provisioning test found
+    // ifrs-generic in exactly that state — country DE resolved to it, the
+    // chart seeded, and the first booking died on an unmapped role. The
+    // fallback pack above all others must be complete, since it is what every
+    // country without its own pack lands on.
+    const byLocale = new Map<string, Set<string>>();
+    for (const f of readdirSync(migrations).filter((x) => x.endsWith('.sql'))) {
+      for (const m of readFileSync(join(migrations, f), 'utf8').matchAll(
+        /\('([a-z0-9-]+)',\s*'([a-z_]+)',\s*'\d{4}'/g,
+      )) {
+        if (!byLocale.has(m[1])) byLocale.set(m[1], new Set());
+        byLocale.get(m[1])!.add(m[2]);
+      }
+    }
+    expect([...byLocale.keys()].sort()).toEqual(['ifrs-generic', 'se-bas2024']);
 
-    const unmapped = [...used].filter((r) => !seeded.has(r));
+    const gaps: string[] = [];
+    for (const [locale, roles] of byLocale) {
+      for (const r of used) if (!roles.has(r)) gaps.push(`${locale}: ${r}`);
+    }
     expect(
-      unmapped,
-      `these roles are resolved by an RPC but no pack defines them:\n${unmapped.join('\n')}`,
+      gaps,
+      `these roles are resolved by an RPC but not mapped in every pack — that pack ` +
+        `activates fine and then fails on its first booking:\n${gaps.join('\n')}`,
     ).toEqual([]);
   });
 
