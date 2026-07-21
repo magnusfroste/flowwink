@@ -95,9 +95,9 @@ export default function LocalePacksPage() {
                 </div>
                 <Button
                   onClick={() => setActive(selected.id)}
-                  disabled={isSaving || selected.id === activeId}
+                  disabled={isSaving || (hasChosen && selected.id === chosenId)}
                 >
-                  {selected.id === activeId ? 'Currently active' : isSaving ? 'Saving…' : 'Set as active'}
+                  {hasChosen && selected.id === chosenId ? 'Currently active' : isSaving ? 'Saving…' : 'Set as active'}
                 </Button>
               </div>
             </CardHeader>
