@@ -438,6 +438,23 @@ export default function SiteSettingsPage() {
             </Card>
 
 
+            {/* Business country — drives accounting locale suggestion */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Business country</CardTitle>
+                <CardDescription>
+                  Determines which accounting locale pack is suggested. Sweden → BAS 2024;
+                  countries without a dedicated pack use the generic IFRS chart. An existing
+                  accounting choice is never overridden.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CountrySelect
+                  value={generalData.country ?? ''}
+                  onChange={(code) => setGeneralData(prev => ({ ...prev, country: code }))}
+                />
+              </CardContent>
+            </Card>
 
 
             {/* Content Workflow */}
