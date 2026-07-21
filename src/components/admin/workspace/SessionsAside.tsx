@@ -73,7 +73,7 @@ export function SessionsAside({
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {sessions.length === 0 ? (
             <div className="px-2 py-6 text-xs text-muted-foreground text-center">
-              No saved chats yet
+              No saved sessions yet
             </div>
           ) : (
             sessions.slice(0, limit).map((s) => (
@@ -129,7 +129,7 @@ export function SessionsAside({
             to={viewAllHref}
             className="flex items-center justify-between gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground"
           >
-            <span>All chats ({sessions.length})</span>
+            <span>All sessions ({sessions.length})</span>
             <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
@@ -142,12 +142,12 @@ export function SessionsAside({
       <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename chat</DialogTitle>
+            <DialogTitle>Rename session</DialogTitle>
           </DialogHeader>
           <Input
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
-            placeholder="Chat title"
+            placeholder="Session title"
             autoFocus
           />
           <DialogFooter>
