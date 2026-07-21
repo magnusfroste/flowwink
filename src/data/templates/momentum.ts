@@ -249,6 +249,7 @@ const momentumPages: StarterTemplate['pages'] = [
 
 export const momentumTemplate: StarterTemplate = {
   id: 'momentum',
+  accountingLocale: 'se-bas2024',
   name: 'Momentum',
   description: 'Stunning single-page template with YC-style dark gradient design. Bold typography, smooth animations, and maximum impact.',
   category: 'startup',

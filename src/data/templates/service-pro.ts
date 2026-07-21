@@ -686,6 +686,7 @@ const serviceProProducts: TemplateProduct[] = [
 
 export const serviceProTemplate: StarterTemplate = {
   id: 'service-pro',
+  accountingLocale: 'se-bas2024',
   name: 'ServicePro',
   description: 'Modern template for service businesses. Features smart booking with real-time availability, service showcase, product catalog, and online scheduling.',
   category: 'startup',

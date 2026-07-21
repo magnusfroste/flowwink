@@ -95,6 +95,15 @@ export interface TemplateBlogPost {
 // Full site template
 export interface StarterTemplate {
   id: string;
+  /**
+   * The accounting locale pack this template ACTIVATES on install (e.g.
+   * 'se-bas2024'). The engine is empty-until-chosen — it never assumes a
+   * country — so the template is where the default choice lives, the way a
+   * WordPress installer preselects a language. Installation writes
+   * site_settings.accounting_locale ONLY if no choice exists yet; it never
+   * overrides one. Omit (blank template) to leave accounting un-activated.
+   */
+  accountingLocale?: string;
   name: string;
   description: string;
   category: 'startup' | 'enterprise' | 'compliance' | 'platform' | 'helpcenter';

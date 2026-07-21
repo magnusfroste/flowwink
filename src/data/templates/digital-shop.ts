@@ -662,6 +662,7 @@ const digitalShopProducts: TemplateProduct[] = [
 
 export const digitalShopTemplate: StarterTemplate = {
   id: 'digital-shop',
+  accountingLocale: 'se-bas2024',
   name: 'Digital Shop',
   description: 'Premium e-commerce template with AI shopping assistant, editorial product showcases, bento grid categories, and Stripe checkout.',
   category: 'platform',

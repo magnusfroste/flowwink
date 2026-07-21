@@ -15,8 +15,10 @@ import { useMediaLibraryCount, useClearMediaLibrary } from '@/hooks/useMediaLibr
 import { useToast } from '@/hooks/use-toast';
 import { extractImagesFromTemplate, updateBlockAtPath, isLocalTemplateImage } from '@/lib/image-extraction';
 import { supabase } from '@/integrations/supabase/client';
+import { topUpLocalePackSeeds } from '@/hooks/useTenantLocalePack';
 import { createDocumentFromText } from '@/lib/tiptap-utils';
 import type { ContentBlock } from '@/types/cms';
+import type { Json } from '@/integrations/supabase/types';
 
 export type InstallStep = 'idle' | 'creating' | 'done';
 
@@ -481,6 +483,34 @@ export function useTemplateInstaller() {
           homepageSlug: template.siteSettings.homepageSlug,
           selectedTemplate: template.id,
         });
+      }
+
+      // Activate the template's accounting locale — the install is where the
+      // default choice lives (the WordPress-installer model), the engine stays
+      // empty-until-chosen. INSERT-if-absent only: switching templates must
+      // never flip the books of a tenant who already picked a pack.
+      if (template.accountingLocale) {
+        const { data: existing } = await supabase
+          .from('site_settings')
+          .select('key')
+          .eq('key', 'accounting_locale')
+          .maybeSingle();
+        if (!existing) {
+          setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Activating accounting locale...' });
+          const { error: locErr } = await supabase
+            .from('site_settings')
+            .insert({ key: 'accounting_locale', value: template.accountingLocale as unknown as Json });
+          if (locErr) {
+            logger.error('[template-install] locale activation failed', locErr);
+          } else {
+            try {
+              await topUpLocalePackSeeds(template.accountingLocale);
+            } catch (seedErr) {
+              // The choice is recorded; the admin-boot top-up retries seeding.
+              logger.error('[template-install] locale seed failed', seedErr);
+            }
+          }
+        }
       }
 
       // Create products + stock

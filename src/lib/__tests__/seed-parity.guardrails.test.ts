@@ -89,6 +89,40 @@ describe('seed parity between the browser path and the CLI', () => {
     );
   });
 
+  it('the default choice lives in the TEMPLATE, and both installers only insert', () => {
+    // Magnus's resolution: Swedish stays the default — but as the WordPress
+    // installer preselects a language, not as an engine assumption. Every
+    // template except blank declares the pack it activates; blank stays
+    // un-activated on purpose (a truly empty start).
+    const { readdirSync } = require('node:fs');
+    const dir = join(root, 'src/data/templates');
+    const files = readdirSync(dir).filter(
+      (f: string) => f.endsWith('.ts') && !['types.ts', 'index.ts'].includes(f),
+    );
+    for (const f of files) {
+      const src = read(`src/data/templates/${f}`);
+      if (!src.includes('StarterTemplate = {')) continue;
+      if (f === 'blank.ts') {
+        expect(src, 'blank must stay un-activated').not.toMatch(/accountingLocale:/);
+      } else {
+        expect(src, `${f} declares no accountingLocale`).toMatch(/accountingLocale: 'se-bas2024'/);
+      }
+    }
+
+    // Both install paths activate insert-if-absent — switching templates must
+    // never flip the books of a tenant who already picked a pack.
+    const ui = read('src/hooks/useTemplateInstaller.ts');
+    const uiBlock = ui.slice(ui.indexOf('template.accountingLocale'));
+    expect(uiBlock).toMatch(/eq\('key', 'accounting_locale'\)/);
+    expect(uiBlock).toMatch(/if \(!existing\)/);
+
+    const ae = read('supabase/functions/agent-execute/index.ts');
+    const aeBlock = ae.slice(ae.indexOf('template.accountingLocale'));
+    expect(aeBlock).toMatch(/if \(!existingLocale\)/);
+    // The agent path seeds the chart from the bundled artifact — no browser.
+    expect(ae).toMatch(/_locale-packs\.json/);
+  });
+
   it('chart presence is checked by account_code alone, in BOTH paths', () => {
     // chart_of_accounts has UNIQUE (account_code). Scoping the presence lookup
     // by locale asks a narrower question than the constraint enforces: liteit

@@ -575,6 +575,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
 
 export const trustcorpTemplate: StarterTemplate = {
   id: 'trustcorp',
+  accountingLocale: 'se-bas2024',
   name: 'TrustCorp',
   description: 'Professional template for established enterprises. Emphasizes trust, scale, and data sovereignty with a prominent private AI assistant.',
   category: 'enterprise',

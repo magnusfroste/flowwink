@@ -342,6 +342,7 @@ const securehealthPages: StarterTemplate['pages'] = [
 
 export const securehealthTemplate: StarterTemplate = {
   id: 'securehealth',
+  accountingLocale: 'se-bas2024',
   name: 'SecureHealth',
   description: 'Compliance-first template for healthcare, legal, and finance. Features a prominent Private AI assistant with HIPAA-compliant messaging.',
   category: 'compliance',

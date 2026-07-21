@@ -20,6 +20,7 @@ import type { StarterTemplate } from './types';
 
 export const flowwinkPlatformTemplate: StarterTemplate = {
   id: 'flowwink-platform',
+  accountingLocale: 'se-bas2024',
   name: 'FlowWink Platform',
   description: 'The Business Operating System — CMS · CRM · ERP run by an autonomous operator. Built-in FlowPilot, or bring your own agent.',
   category: 'platform',

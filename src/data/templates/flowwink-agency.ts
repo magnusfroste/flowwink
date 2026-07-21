@@ -763,6 +763,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
 
 export const flowwinkAgencyTemplate: StarterTemplate = {
   id: 'flowwink-agency',
+  accountingLocale: 'se-bas2024',
   name: 'FlowWink Agency',
   description: 'Agency-focused template for web agencies and consultants. Features ROI calculator, competitor comparisons, and white-label positioning.',
   category: 'platform',

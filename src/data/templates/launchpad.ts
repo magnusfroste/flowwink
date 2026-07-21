@@ -788,6 +788,7 @@ const launchpadPages: StarterTemplate['pages'] = [
 
 export const launchpadTemplate: StarterTemplate = {
   id: 'launchpad',
+  accountingLocale: 'se-bas2024',
   name: 'LaunchPad',
   description: 'Modern, conversion-focused template for SaaS and tech startups. Features bold hero with video support, social proof stats, and a helpful AI chat widget.',
   category: 'startup',

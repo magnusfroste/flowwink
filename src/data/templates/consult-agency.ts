@@ -20,6 +20,7 @@ import { consultAgencyBlogPosts } from '../template-blog-posts';
 
 export const consultAgencyTemplate: StarterTemplate = {
   id: 'consult-agency',
+  accountingLocale: 'se-bas2024',
   name: 'ConsultAgency',
   description: 'Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and connects enterprise systems via A2A.',
   category: 'enterprise',

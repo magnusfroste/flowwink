@@ -25,6 +25,7 @@ import type { StarterTemplate } from './types';
 
 export const demoCompanyTemplate: StarterTemplate = {
   id: 'demo-company',
+  accountingLocale: 'se-bas2024',
   name: 'Demo Company',
   description: 'Public demo stage for FlowWink. Static set + daily reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.',
   category: 'platform',

@@ -126,3 +126,14 @@ writeFileSync(
 console.log(
   `✅ Wrote supabase/seed/locale-packs.json — ${packs.length} pack(s), ${packs.reduce((n, p) => n + p.accounts.length, 0)} accounts`,
 );
+
+// Same artifact, bundled into agent-execute (the way _templates.json is) so
+// install_template can activate a template's accounting locale and seed its
+// chart without a browser session. Edge deploys only bundle the function's own
+// directory, so supabase/seed/ is out of reach there.
+const edgeCopy = join(ROOT, 'supabase', 'functions', 'agent-execute', '_locale-packs.json');
+writeFileSync(
+  edgeCopy,
+  JSON.stringify({ default_pack: lp.DEFAULT_LOCALE_ID ?? null, packs }) + '\n',
+);
+console.log(`  ✅ supabase/functions/agent-execute/_locale-packs.json`);

@@ -216,6 +216,7 @@ const hybridHelpPages: TemplatePage[] = [
 
 export const helpCenterTemplate: StarterTemplate = {
   id: 'helpcenter',
+  accountingLocale: 'se-bas2024',
   name: 'HelpCenter',
   description: 'Flexible help center template with support for traditional KB, AI chat, or hybrid approach. Configure via helpStyle to match your support strategy.',
   category: 'helpcenter',
