@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { prefetchRoute } from "@/lib/route-prefetch";
 import {
   LayoutDashboard,
   BarChart3,
@@ -332,7 +333,7 @@ export function AdminSidebar() {
                               return (
                                 <SidebarMenuItem key={item.name} className="group/pin">
                                   <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                                     <Link to={item.href}>
+                                     <Link to={item.href} onMouseEnter={() => prefetchRoute(item.href)} onFocus={() => prefetchRoute(item.href)}>
                                       <item.icon className="h-4 w-4" />
                                       <span>{item.name}</span>
                                       {item.href === '/admin/approvals' && <PendingApprovalsBadge />}
@@ -387,7 +388,7 @@ export function AdminSidebar() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                                  <Link to={item.href}>
+                                  <Link to={item.href} onMouseEnter={() => prefetchRoute(item.href)} onFocus={() => prefetchRoute(item.href)}>
                                     <item.icon className="h-4 w-4" />
                                     <span>{item.name}</span>
                                     {item.href === '/admin/approvals' && <PendingApprovalsBadge />}

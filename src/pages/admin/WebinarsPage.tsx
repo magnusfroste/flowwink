@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { format, isPast, isFuture } from 'date-fns';
 import { Video, Plus, Pencil, Trash2, Users, Calendar, Clock, ExternalLink, Play, CheckCircle, Eye, Send, Radio, Square, XCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -266,17 +267,17 @@ export default function WebinarsPage() {
             ))}
           </div>
         ) : webinars.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Video className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No webinars yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first webinar to get started</p>
+          <EmptyState
+            icon={Video}
+            title="No webinars yet"
+            description="Create your first webinar to get started"
+            action={
               <Button onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Webinar
               </Button>
-            </CardContent>
-          </Card>
+            }
+          />
         ) : (
           <Tabs defaultValue="upcoming">
             <TabsList>

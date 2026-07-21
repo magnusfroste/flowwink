@@ -52,6 +52,18 @@ describe('seed parity between the browser path and the CLI', () => {
     expect(sync).toMatch(/insert into chart_of_accounts/);
   });
 
+  it('the CLI sync stamps the manifest, so the sync card can tell the truth', () => {
+    // instance_manifest_stamp was written only by ModulesPage — the same
+    // browser-only class as automations and the chart. A CLI-synced instance
+    // reported a stale or missing skills layer no matter how in-sync it was:
+    // www carried a hash from 2026-07-20 and liteit none at all, both freshly
+    // synced. An indicator that is always red stops being read.
+    const sync = read('scripts/sync-skills.ts');
+    expect(sync).toContain("'instance_manifest_stamp'");
+    expect(sync).toMatch(/stamped_by: 'sync-skills-cli'/);
+    expect(sync).toMatch(/on conflict \(key\) do update/);
+  });
+
   it('automations are inserted by name only, never updated', () => {
     // bootstrapModule() deliberately does not update an existing automation:
     // an operator who retunes a cron must keep their schedule. The CLI has to

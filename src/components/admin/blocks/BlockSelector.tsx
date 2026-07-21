@@ -1,4 +1,28 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+
+const RECENT_KEY = 'flowwink.blockSelector.recent';
+const RECENT_MAX = 6;
+
+function loadRecent(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((v) => typeof v === 'string').slice(0, RECENT_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(type: string) {
+  try {
+    const current = loadRecent().filter((t) => t !== type);
+    const next = [type, ...current].slice(0, RECENT_MAX);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota / disabled storage */
+  }
+}
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -484,15 +508,29 @@ interface BlockSelectorProps {
 export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recent, setRecent] = useState<string[]>([]);
   const blockModuleStatus = useAllBlockModuleStatus();
+
+  useEffect(() => {
+    if (open) setRecent(loadRecent());
+  }, [open]);
+
+  const allBlocks = useMemo(() => BLOCK_GROUPS.flatMap((g) => g.blocks), []);
+
+  const recentBlocks = useMemo(() => {
+    if (searchQuery.trim()) return [];
+    return recent
+      .map((t) => allBlocks.find((b) => b.type === t))
+      .filter((b): b is BlockOption => Boolean(b));
+  }, [recent, allBlocks, searchQuery]);
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return BLOCK_GROUPS;
-    
+
     const query = searchQuery.toLowerCase();
     return BLOCK_GROUPS.map(group => ({
       ...group,
-      blocks: group.blocks.filter(block => 
+      blocks: group.blocks.filter(block =>
         block.label.toLowerCase().includes(query) ||
         block.description.toLowerCase().includes(query)
       )
@@ -500,6 +538,7 @@ export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   }, [searchQuery]);
 
   const handleSelect = (type: ContentBlockType) => {
+    pushRecent(type);
     onAdd(type);
     setSearchQuery('');
     setOpen(false);
@@ -541,6 +580,39 @@ export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-140px)]">
           <div className="p-6 space-y-6">
+            {recentBlocks.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Recently used
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {recentBlocks.map((block) => {
+                    const moduleWarning = getModuleWarning(block.type);
+                    return (
+                      <button
+                        key={`recent-${block.type}`}
+                        onClick={() => handleSelect(block.type)}
+                        className={`flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/30 transition-all text-left group relative ${moduleWarning ? 'opacity-75' : ''}`}
+                      >
+                        <div className={`p-2 rounded-md transition-colors ${
+                          moduleWarning
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                        }`}>
+                          {block.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{block.label}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {block.description}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {filteredGroups.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
                 No blocks match your search

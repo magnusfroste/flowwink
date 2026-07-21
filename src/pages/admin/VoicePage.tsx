@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Voicemail, PhoneCall, Settings as SettingsIcon, Headphones, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -186,11 +187,11 @@ function CallActionDialog({ call, open, onOpenChange }: { call: VoiceCallRow | n
 function CallsTable({ calls, onAction }: { calls: VoiceCallRow[]; onAction: (c: VoiceCallRow) => void }) {
   if (calls.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          No calls yet.
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={PhoneCall}
+        title="No calls yet"
+        description="Inbound and outbound calls will appear here once your voice line is active."
+      />
     );
   }
   return (

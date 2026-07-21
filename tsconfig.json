@@ -12,6 +12,7 @@
     "skipLibCheck": true,
     "strictNullChecks": false
   },
+  "exclude": ["supabase/functions"],
   "files": [],
   "references": [
     {

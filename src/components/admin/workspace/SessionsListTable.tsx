@@ -64,15 +64,15 @@ export function SessionsListTable({
             to={backHref}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-3 w-3" /> Back to chat
+            <ArrowLeft className="h-3 w-3" /> Back to sessions
           </Link>
           <h1 className="font-serif text-2xl font-bold text-foreground mt-1">{title}</h1>
           <p className="text-sm text-muted-foreground">
-            {sessions.length} total {sessions.length === 1 ? 'chat' : 'chats'}
+            {sessions.length} total {sessions.length === 1 ? 'session' : 'sessions'}
           </p>
         </div>
         <Button onClick={onNew} size="sm" className="gap-1.5">
-          <MessageSquarePlus className="h-4 w-4" /> New chat
+          <MessageSquarePlus className="h-4 w-4" /> New session
         </Button>
       </div>
 
@@ -81,7 +81,7 @@ export function SessionsListTable({
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search chats…"
+          placeholder="Search sessions…"
           className="pl-8 h-9"
         />
       </div>
@@ -99,7 +99,7 @@ export function SessionsListTable({
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
-                  {query ? 'No matching chats' : 'No chats yet'}
+                  {query ? 'No matching sessions' : 'No sessions yet'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -154,7 +154,7 @@ export function SessionsListTable({
       <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename chat</DialogTitle>
+            <DialogTitle>Rename session</DialogTitle>
           </DialogHeader>
           <Input
             value={renameValue}

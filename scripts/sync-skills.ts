@@ -214,6 +214,29 @@ if (pack && Array.isArray((pack as any).templates)) {
   }
 }
 
+// ── Manifest stamp ──────────────────────────────────────────────────────────
+// The Instance Sync card compares site_settings.instance_manifest_stamp
+// against the bundled manifest's seed_hash. Only ModulesPage wrote it — the
+// same browser-only class as automations and the chart — so an instance
+// synced from the CLI kept reporting a stale or missing skills layer no
+// matter how in-sync it actually was.
+if (APPLY) {
+  const manifest = JSON.parse(
+    readFileSync(resolve(import.meta.dir, '..', 'supabase', 'seed', 'instance-manifest.json'), 'utf8'),
+  );
+  const stamp = {
+    seed_hash: manifest.layers.skills.seed_hash,
+    skill_count: manifest.layers.skills.skill_count,
+    stamped_at: new Date().toISOString(),
+    stamped_by: 'sync-skills-cli',
+  };
+  await c.query(
+    `insert into site_settings (key, value) values ('instance_manifest_stamp', $1)
+     on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify(stamp)],
+  );
+}
+
 await c.end();
 
 console.log(`\n${APPLY ? 'APPLIED' : 'DRY-RUN'} — modules synced: ${stats.modulesSynced}, skipped (disabled): ${stats.modulesSkipped}`);
