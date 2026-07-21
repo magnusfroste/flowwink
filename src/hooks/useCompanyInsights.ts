@@ -243,7 +243,7 @@ export function useCompanyInsights() {
 
       merged.enrichment_log = [
         ...(merged.enrichment_log || []),
-        { source: data.source || "Public records", timestamp: new Date().toISOString(), fields_updated: fieldsUpdated },
+        { source: String((data as any)?.source || "Public records"), timestamp: new Date().toISOString(), fields_updated: fieldsUpdated },
       ];
 
       if (fieldsUpdated.length === 0) {
