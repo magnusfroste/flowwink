@@ -140,7 +140,8 @@ callable by admin UI / external agents), homed in their owning domain modules �
 NOT flowpilot-module.
 
 ### Phase 3 — Curator / learning loop (BR2)  *(SHIPPED 2026-07-12, loop-proven)*
-The **Skill Curator** (`skill-curator` edge fn — platform primitive: better skill metadata
+The **Skill Curator** (originally the `skill-curator` edge fn, since the 2026-07 edge-surface
+consolidation a task on `flowpilot-lifecycle?task=curator` — platform primitive: better skill metadata
 serves every agent, so NOT flowpilot-named) closes the Hermes learning loop by reusing the
 Phase 1+2 machinery end-to-end:
 
@@ -159,8 +160,9 @@ excluded from evidence. Audit-before-overwrite: the previous text is returned + 
 
 **Loop-proven locally:** 5 seeded slug-failures on manage_wiki_page → curator drafted
 "slug is ALWAYS required — find it via search_wiki" → staged → approved → followthrough
-applied it to the live catalog → cooldown blocked re-proposal. `flowpilot-learn` (site
-usage → memory) and `flowpilot-distill` continue unchanged alongside.
+applied it to the live catalog → cooldown blocked re-proposal. The learn task (site
+usage → memory) and the distill task continue unchanged alongside (both now also
+`flowpilot-lifecycle` tasks: `?task=learn`, `?task=distill`).
 
 **Operational note:** an accepted improvement lives in `agent_skills` — a code-seed resync
 restores the bundled text. Promote accepted improvements into the module seeds

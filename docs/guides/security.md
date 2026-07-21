@@ -119,30 +119,31 @@ This is a low-priority optimization, not a security fix.
 
 Not all edge functions require the same level of authentication:
 
+The per-function `verify_jwt` setting in `supabase/config.toml` is the source
+of truth; `src/lib/edge-function-registry.ts` lists the full surface. The
+categories, with current examples:
+
 ### Admin-only functions (require admin role)
 - `check-secrets` — Reads secret presence (not values)
 - `create-user` — Creates new users
-- `generate-text` — AI text generation
-- `chat-completion` — AI chat
-- `newsletter-send` — Sends newsletters
-- `copilot-action` — FlowPilot actions
+- `setup-database`, `system-integrity-check`, `run-*-tests` — ops tooling
+- `integrations-account` — provider API-key management
 - `migrate-page` — Content migration
-- `analyze-brand` — Brand analysis
-- `qualify-lead` — Lead qualification
-- `enrich-company` — Company enrichment
 
 ### Authenticated user functions (any logged-in user)
 - `process-image` — Image processing
-- `unsplash-search` — Stock photo search
+- `workspace-chat` — Flowwork sessions
 
-### Public functions (no auth required)
+### Public functions (no auth required, `verify_jwt = false`)
 - `content-api` — Public content API (read-only)
 - `get-page` — Public page rendering
+- `chat-completion` — Visitor AI chat (anon-key auth)
 - `blog-rss` — RSS feed
 - `llms-txt` — LLM discovery file
-- `sitemap-xml` — Sitemap
+- `sitemap` — Sitemap
 - `track-page-view` — Analytics tracking
-- `newsletter-subscribe` — Newsletter signup
+- `newsletter` — Signup/confirm/track/unsubscribe endpoints
+- Webhooks: `stripe-webhook`, `email-webhook`, `composio-webhook`
 - `newsletter-track` — Email open tracking
 - `newsletter-link` — Link click tracking
 - `stripe-webhook` — Stripe webhook (verified by Stripe signature)

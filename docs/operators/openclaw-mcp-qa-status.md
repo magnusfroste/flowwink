@@ -1,5 +1,12 @@
 # OpenClaw ⇄ MCP-surface QA — session status
 
+> **Point-in-time record (June 2026).** This documents a completed QA
+> campaign; the fixes it describes are merged and live. It is kept for the
+> method (uncoached operator chains + engine-level fixes) and the bug-class
+> catalogue — not as current status. For live drift state, use the instance
+> manifest (`instance_sync_status()` / the Observability sync card) and
+> `scan_beta_findings` on the gateway.
+
 **Goal:** make dev.flowwink.com 100% in sync with a fresh install, and make the
 MCP skill surface fully usable by an autonomous operator (OpenClaw) — "FlowWink
 works only if an OpenClaw can use it as its claws."

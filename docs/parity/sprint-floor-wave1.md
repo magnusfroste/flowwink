@@ -2,10 +2,19 @@
 title: "Sprint — Raise the floor, wave 1 (companies, returns, handbook, calendar)"
 description: Lift the four cheapest bottom-of-matrix modules with column+skill work; defer integration-heavy gaps to community.
 category: concepts
-status: planned
+status: completed
 ---
 
 # Sprint — Raise the floor, wave 1
+
+> **Outcome (verified against the parity matrix 2026-07-21):** all targets
+> exceeded — companies **93%** (target ≥55), returns **100%** (≥50), calendar
+> **92%** (≥40); handbook is now classed as a FlowWink differentiator (no Odoo
+> benchmark) with its skill surface in place. F1–F4 shipped: the B2B company
+> fields + `find_duplicate_companies`, returns reason/fee/inspection +
+> partial refunds, `manage_handbook_section`, and full calendar-event CRUD.
+> Kept for the record of scope and rationale; see
+> [`parity-matrix.md`](./parity-matrix.md) for live scores.
 
 With EPIC-01–04 complete, the fastest path toward "every module ≥ 80%" is the
 bottom of the matrix. This wave targets the modules whose gaps are **cheap

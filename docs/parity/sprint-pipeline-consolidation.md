@@ -2,10 +2,19 @@
 title: "Sprint — EPIC-03 completion + view consolidation"
 description: Migrate leads/deals/tickets to the shared stage engine and consolidate the duplicate pipeline + approval views.
 category: concepts
-status: planned
+status: completed
 ---
 
 # Sprint — EPIC-03 completion + view consolidation
+
+> **Outcome (verified in code + scorecards 2026-07-21):** definition of done
+> met. `deals.custom_stages`, `crm.custom_stages`, `tickets.stage_pipeline`
+> and `deals.probability_weighting` are all **done** (Stage-3 verified, shared
+> `pipeline_stages` + `stage_id`). The UI is consolidated: `/admin/pipelines`
+> redirects to `/admin/pipelines/stages` (stage admin only), and
+> `/admin/approvals/inbox` + `/admin/approvals/chains` redirect into the
+> tabbed `/admin/approvals` page. Kept for the record of the decisions and
+> the sync-keystone design.
 
 Lovable shipped new config-driven admin pages (`/admin/pipelines`, approval inbox/chains)
 that now **coexist** with the older enum-driven views. This sprint finishes EPIC-03
