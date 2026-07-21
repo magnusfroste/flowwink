@@ -198,6 +198,15 @@ export default function LocalePacksPage() {
             </CardContent>
           </Card>
         </div>
+
+        {hasChosen && (
+          <div className="mt-6">
+            <AccountRolesEditor
+              localeId={chosenId!}
+              localeLabel={LOCALE_PACKS[chosenId!]?.label ?? chosenId!}
+            />
+          </div>
+        )}
       </AdminPageContainer>
     </AdminLayout>
   );
