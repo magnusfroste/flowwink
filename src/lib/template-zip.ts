@@ -49,14 +49,9 @@ export interface ZipImportResult {
  */
 async function downloadImage(url: string): Promise<ArrayBuffer | null> {
   try {
-    // Use the process-image edge function to fetch the image
-    const data = await callSkill('fetch_image_base64', ({ imageUrl: url }) as Record<string, unknown>);
-          logger.error('Error fetching image:', url, error);
-      return null;
-    }
-    
+    const data = await callSkill('fetch_image_base64', ({ imageUrl: url }) as Record<string, unknown>) as { base64?: string } | null;
+
     if (data?.base64) {
-      // Convert base64 to ArrayBuffer
       const binary = atob(data.base64);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) {
@@ -64,13 +59,14 @@ async function downloadImage(url: string): Promise<ArrayBuffer | null> {
       }
       return bytes.buffer;
     }
-    
+
     return null;
   } catch (err) {
     logger.error('Failed to download image:', url, err);
     return null;
   }
 }
+
 
 /**
  * Export a template as a ZIP file with all referenced images

@@ -89,11 +89,13 @@ export const navigationGroups: NavGroup[] = [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "FlowChat", href: "/admin/flowchat", icon: MessageSquare },
       { name: "FlowPilot", href: "/admin/flowpilot", icon: Zap, moduleId: "flowpilot" },
+      { name: "Automations", href: "/admin/automations", icon: Timer },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
 
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Growth", href: "/admin/growth", icon: Megaphone, moduleId: "paidGrowth" },
     ],
+
   },
   {
     label: "Content",
@@ -238,12 +240,11 @@ export const navigationGroups: NavGroup[] = [
       { name: "Chat Module", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
       { name: "Templates", href: "/admin/templates", icon: LayoutTemplate, moduleId: "templates" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
-      { name: "Automations", href: "/admin/automations", icon: Zap },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Branding", href: "/admin/branding", icon: Image },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
-      { name: "Skills", href: "/admin/skills", icon: Sparkles },
       { name: "System", href: "/admin/system", icon: Database },
+
 
       { name: "AI Usage", href: "/admin/ai-usage", icon: BarChart3 },
 

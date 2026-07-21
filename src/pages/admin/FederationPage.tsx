@@ -953,12 +953,8 @@ export default function FederationPage() {
               </h2>
               <McpFindings />
             </div>
-            <div>
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-                MCP Activity Log
-              </h2>
-              <McpActivityLog />
-            </div>
+
+
           </TabsContent>
 
           <TabsContent value="tree">

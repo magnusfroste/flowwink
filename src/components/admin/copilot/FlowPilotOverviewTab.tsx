@@ -24,7 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import type { AgentActivity } from '@/types/agent';
-import { OperatorHealthCard } from './OperatorHealthCard';
+
 
 type ExecutorKind = 'flowpilot' | 'chat' | 'mcp' | 'cron' | 'automation' | 'system' | 'unknown';
 
@@ -192,8 +192,8 @@ export function FlowPilotOverviewTab() {
 
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-4">
-      {/* Operator health — 5-second engine status */}
-      <OperatorHealthCard />
+
+
 
       <div className="grid gap-4 lg:grid-cols-3">
       {/* LEFT — briefing + priorities */}

@@ -132,10 +132,7 @@ function TestAIConnectionButton({
     
     setIsTesting(true);
     try {
-      const data = await callSkill('test_ai_connection', ({ provider }) as Record<string, unknown>);
-              toast.error(`Test failed: ${error.message}`);
-        return;
-      }
+      const data = await callSkill('test_ai_connection', ({ provider }) as Record<string, unknown>) as { success?: boolean; model?: string; error?: string } | null;
 
       if (data?.success) {
         const name = provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Gemini' : 'Anthropic';
@@ -143,6 +140,7 @@ function TestAIConnectionButton({
       } else {
         toast.error(`Test failed: ${data?.error || 'Unknown error'}`);
       }
+
     } catch (err) {
       toast.error(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
@@ -192,10 +190,7 @@ function TestConfigConnectionButton({
     
     setIsTesting(true);
     try {
-      const data = await callSkill('test_ai_connection', ({ provider, config }) as Record<string, unknown>);
-              toast.error(`Test failed: ${error.message}`);
-        return;
-      }
+      const data = await callSkill('test_ai_connection', ({ provider, config }) as Record<string, unknown>) as { success?: boolean; model?: string; error?: string } | null;
 
       const providerName = provider === 'local_llm' ? 'Local LLM' : 'N8N';
       if (data?.success) {
@@ -203,6 +198,7 @@ function TestConfigConnectionButton({
       } else {
         toast.error(`Test failed: ${data?.error || 'Unknown error'}`);
       }
+
     } catch (err) {
       toast.error(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {

@@ -44,13 +44,14 @@ export function BrandGuideDialog({
     setResult(null);
 
     try {
-      const data = await callSkill('analyze_brand', ({ url: url.trim() }) as Record<string, unknown>);
+      const data = await callSkill('analyze_brand', ({ url: url.trim() }) as Record<string, unknown>) as { success?: boolean; error?: string; branding?: unknown };
       
       if (!data.success) {
         throw new Error(data.error || 'Could not analyze the website');
       }
 
       const analyzed = analyzeBranding(data.branding);
+
       setResult(analyzed);
       
       toast({

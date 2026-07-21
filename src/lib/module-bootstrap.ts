@@ -128,7 +128,7 @@ export async function ensurePlatformCron(): Promise<{ registered: boolean; error
     });
     if (error) throw error;
     // Retrieval (knowledge-indexer) has its own registrar; absent on older instances.
-    const { error: rErr } = await supabase.rpc('register_retrieval_cron', {
+    const { error: rErr } = await (supabase.rpc as any)('register_retrieval_cron', {
       p_supabase_url: url,
       p_anon_key: key,
     });
