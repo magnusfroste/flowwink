@@ -57,14 +57,14 @@ export function SessionsAside({
       <div className="flex items-center justify-between gap-1 px-2 py-2 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-1.5 flex-1 min-w-0 px-1">
           <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-xs font-medium text-muted-foreground truncate">Chats</span>
+          <span className="text-xs font-medium text-muted-foreground truncate">Sessions</span>
         </div>
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7"
           onClick={onNew}
-          title="New chat"
+          title="New session"
         >
           <MessageSquarePlus className="h-4 w-4" />
         </Button>
