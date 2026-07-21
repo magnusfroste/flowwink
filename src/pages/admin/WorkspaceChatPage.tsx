@@ -35,6 +35,7 @@ import {
   Send,
   Square,
   Sparkles,
+  Workflow,
   MessageSquarePlus,
   Globe,
   Database,
@@ -458,7 +459,9 @@ export default function WorkspaceChatPage() {
             <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
               <div className="w-full max-w-2xl space-y-8 text-center">
                 <div className="space-y-3">
-                  <Sparkles className="h-10 w-10 mx-auto text-primary/80" />
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+                    <Workflow className="h-7 w-7 text-primary" strokeWidth={1.75} />
+                  </div>
                   <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
                     What do you want to work on?
                   </h1>
