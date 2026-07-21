@@ -66,7 +66,10 @@ export const demoCompanyTemplate: StarterTemplate = {
             eyebrow: 'LIVE DEMO · RESETS EVERY DAY',
             eyebrowColor: 'primary',
             title: 'Watch a business run itself.',
-            subtitle: 'FlowWink exposes 60+ modules and 250+ MCP skills. FlowPilot handles leads, quotes, invoices and expenses — or connect your own OpenClaw or Hermes agent and let it run your business. Sign in with demo@flowwink.com / demo1234 and explore.',
+            // No credentials and no module/skill counts here on purpose — the
+            // banner above carries both, and the stat tiles below repeat the
+            // numbers a third time. The hero gets to be about what it does.
+            subtitle: 'FlowPilot handles leads, quotes, invoices and expenses on its own — or connect your own OpenClaw or Hermes agent and let it run the business instead.',
             backgroundType: 'video',
             videoType: 'direct',
             videoUrl: '/videos/hero-demo-ambient.mp4',
