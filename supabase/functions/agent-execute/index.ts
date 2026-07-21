@@ -176,17 +176,28 @@ function acctTemplateBankDirection(tplLines: any[]): 'inflow' | 'outflow' | null
 // COMPOUND prefix/suffix (tåg~tågresa, resa~tjänsteresa) but never a coincidental
 // infix. Confidence leans toward "propose" (human review) over "auto" — a wrong
 // auto-book is the costliest failure.
+// Fold diacritics before matching. Real bank exports are frequently ASCII —
+// MT940 and many CSV feeds strip å/ä/ö — so "ELRAKNING" must match the
+// keyword "elräkning". Found by the 2026-07-21 litmus run: of 12 imported
+// events, exactly the three whose template keywords carry diacritics (el,
+// lön, försäkring) came back unmatched, and the Swish sale lost its scoring
+// duel for the same reason. Unicode NFD + strip combining marks is
+// locale-neutral (ü, é fold the same way) — normalization, not a country
+// branch.
+function acctFold(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function acctTokenize(s: string): string[] {
-  return String(s || '')
-    .toLowerCase()
-    .split(/[^a-zà-ÿ0-9]+/i)
+  return acctFold(String(s || '').toLowerCase())
+    .split(/[^a-z0-9]+/i)
     .filter((w) => w.length >= 2);
 }
 function acctScoreTemplates(
   allTemplates: any[],
   searchTerms: string,
 ): { template: any; score: number; confidence: number; matchDetails: string[] }[] {
-  const terms = (searchTerms || '').toLowerCase().trim();
+  const terms = acctFold((searchTerms || '').toLowerCase().trim());
   const words = acctTokenize(terms);
   const wordSet = new Set(words);
 
@@ -208,7 +219,7 @@ function acctScoreTemplates(
     let score = 0;
     const details: string[] = [];
     for (const kwRaw of (t.keywords || [])) {
-      const kw = String(kwRaw).toLowerCase().trim();
+      const kw = acctFold(String(kwRaw).toLowerCase().trim());
       if (!kw) continue;
       if (kw.includes(' ')) {
         // multi-word phrase keyword ("office supplies") — substring is fine

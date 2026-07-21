@@ -704,7 +704,13 @@ export const BAS_2024_TEMPLATES = [
     template_name: 'Dagskassa/Swish-försäljning 25%',
     description: 'Kontant-/kort-/Swishförsäljning direkt till bank',
     category: 'revenue',
-    keywords: ['swish', 'dagskassa', 'kortförsäljning', 'zettle', 'izettle', 'kontant', 'pos'],
+    // 'butiksförsäljning' added after the 2026-07-21 litmus run: a Swish retail
+    // sale lost the scoring duel to "Inbetalning kundfordran" because nothing
+    // here matched the BUTIKSFORSALJNING token, and the AR template's generic
+    // 'inbetalning' won at 91% — the over-confident-wrong class, worse than a
+    // miss. This keyword is the discriminator: a retail sale names the sale,
+    // an invoice payment names the invoice.
+    keywords: ['swish', 'dagskassa', 'kortförsäljning', 'butiksförsäljning', 'zettle', 'izettle', 'kontant', 'pos'],
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
