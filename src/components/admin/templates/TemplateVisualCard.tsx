@@ -137,6 +137,7 @@ export function TemplateVisualCard({ template, onPreview, onSelect }: TemplateVi
       
       {/* Template name - minimal footer */}
       <div className="p-4 bg-card">
+      <div className="p-4 bg-card space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="font-semibold text-base truncate">
             {template.name}
@@ -151,7 +152,19 @@ export function TemplateVisualCard({ template, onPreview, onSelect }: TemplateVi
 
           </div>
         </div>
+        <AccountingLocaleBadge localeId={template.accountingLocale} />
       </div>
+    </div>
+  );
+}
+
+function AccountingLocaleBadge({ localeId }: { localeId?: string }) {
+  const pack = localeId ? LOCALE_PACKS[localeId] : undefined;
+  const label = pack ? `Activates: ${pack.label}` : "No accounting locale";
+  return (
+    <div className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <Landmark className="h-3 w-3 shrink-0" />
+      <span className="truncate">{label}</span>
     </div>
   );
 }
