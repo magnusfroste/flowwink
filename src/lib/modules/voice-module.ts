@@ -53,7 +53,10 @@ const VOICE_SKILLS: SkillSeed[] = [
     description:
       'Schedule a callback for a missed/voicemail call. Sets callback_status=scheduled and callback_scheduled_at. Use when: agent commits to ring back a caller; UC4 booking-IVR selected a slot. NOT for: marking a callback as completed (mark_voice_callback_done); listing calls (list_voice_calls).',
     category: 'communication',
-    handler: 'db:voice_calls',
+    // Dedicated RPC, not db:voice_calls — 'schedule' is a CREATE verb, so the
+    // generic handler INSERTed a new call row instead of transitioning the
+    // existing one, and failed on voice_calls' NOT NULL columns every time.
+    handler: 'rpc:schedule_voice_callback',
     scope: 'internal',
     tool_definition: {
       type: 'function',
@@ -79,7 +82,11 @@ const VOICE_SKILLS: SkillSeed[] = [
     description:
       'Mark a scheduled callback as completed (after the agent has rung back the caller). Use when: callback attempt is finished. NOT for: scheduling (schedule_voice_callback).',
     category: 'communication',
-    handler: 'db:voice_calls',
+    // Dedicated RPC, not db:voice_calls — 'mark' matched no verb, so the
+    // generic handler fell through to LIST and returned an empty array while
+    // reporting success. It never wrote a row, including the outcome the
+    // instructions below promise.
+    handler: 'rpc:mark_voice_callback_done',
     scope: 'internal',
     tool_definition: {
       type: 'function',

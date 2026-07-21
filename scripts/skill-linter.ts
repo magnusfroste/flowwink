@@ -14,6 +14,34 @@ import { Client } from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * The set of RPCs whose parameters carry a leading underscore, READ from
+ * agent-execute rather than mirrored here.
+ *
+ * This used to be a hand-copied list of three names with a comment telling the
+ * next person to keep it in sync. It drifted: generate_contract_invoice was
+ * added to the dispatcher and never here, so the linter reported a working
+ * skill as broken. Four more went the same way. A linter that cries wolf is
+ * worse than no linter — it is why this one was never wired to CI.
+ */
+let _underscoreParamRpcs: Set<string> | null = null;
+function underscoreParamRpcs(): Set<string> {
+  if (_underscoreParamRpcs) return _underscoreParamRpcs;
+  const src = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+    'utf8',
+  );
+  const m = src.match(/const UNDERSCORE_PARAM_RPCS = new Set<string>\(\[([\s\S]*?)\]\)/);
+  if (!m) {
+    throw new Error(
+      'UNDERSCORE_PARAM_RPCS not found in agent-execute — the dispatcher moved; ' +
+        'fix this reader rather than re-introducing a hand-copied list.',
+    );
+  }
+  _underscoreParamRpcs = new Set(Array.from(m[1].matchAll(/'([^']+)'/g)).map((x) => x[1]));
+  return _underscoreParamRpcs;
+}
+
 type Severity = 'error' | 'warn' | 'info';
 
 interface Finding {
@@ -226,10 +254,7 @@ function lintSingleSkill(skill: AgentSkillRow, ctx: LintCtx): SkillReport {
       // A handful of RPCs keep `_`-prefixed params (called directly by the
       // frontend/cron too); agent-execute maps skill args to `_<name>` for them.
       // Mirror UNDERSCORE_PARAM_RPCS in supabase/functions/agent-execute/index.ts.
-      const UNDERSCORE_PARAM_RPCS = new Set([
-        'create_manual_subscription', 'cancel_manual_subscription', 'generate_subscription_invoice',
-      ]);
-      const prefix = UNDERSCORE_PARAM_RPCS.has(rpcName) ? '_' : 'p_';
+      const prefix = underscoreParamRpcs().has(rpcName) ? '_' : 'p_';
       // Apply mapRpcArgs transform
       const mapped = propNames
         .filter((k) => !k.startsWith('_') && k !== 'trace_id' && k !== 'objective_context')

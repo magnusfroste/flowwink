@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260720151000",
-      "migrations_count": 256,
+      "migration_head": "20260721120000",
+      "migrations_count": 257,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1029,11 +1029,15 @@
         {
           "version": "20260720151000",
           "name": "contract-billing-sweep"
+        },
+        {
+          "version": "20260721120000",
+          "name": "status-transition-rpcs"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:7ad889c90e3805ef73906867ca00a69c7f65c184f37e4a0ce02eefe476405344",
+      "seed_hash": "sha256:cdc39d5fdd583819f6f6c1d8af6a7b1a00076cc8e3a0bfebec6b2eae4e88c06a",
       "skill_count": 512,
       "module_count": 68
     },

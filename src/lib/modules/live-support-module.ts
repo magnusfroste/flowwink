@@ -95,7 +95,10 @@ Lists support conversations filtered by status.
     name: 'support_assign_conversation',
     description: 'Assign or reassign a support conversation to an agent. Use when: a customer query needs agent attention; re-routing a conversation to a specialist; ensuring no support ticket is unassigned. NOT for: listing conversations (support_list_conversations); getting feedback (support_get_feedback).',
     category: 'communication',
-    handler: 'db:chat_conversations',
+    // Dedicated RPC, not db:chat_conversations — 'support' matched no verb, so
+    // the generic handler listed instead of assigning, and the `status` field
+    // below targets a column that is actually named conversation_status.
+    handler: 'rpc:support_assign_conversation',
     scope: 'internal',
     tool_definition: {
       type: 'function',
