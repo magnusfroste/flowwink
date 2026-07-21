@@ -88,10 +88,11 @@ export function AddExpenseDialog() {
     try {
       const buf = await file.arrayBuffer();
       const file_base64 = arrayBufferToBase64(buf);
-      const data = await callSkill('extract_receipt', ({ file_base64, mime_type: file.type, filename: file.name }) as Record<string, unknown>);
-            if (!data?.ok) throw new Error(data?.error || 'Extraction failed');
+      const data = await callSkill('extract_receipt', ({ file_base64, mime_type: file.type, filename: file.name }) as Record<string, unknown>) as { ok?: boolean; error?: string; data?: Record<string, any> } | null;
+      if (!data?.ok) throw new Error(data?.error || 'Extraction failed');
 
-      const r = data.data || {};
+      const r: Record<string, any> = data.data || {};
+
       if (r.expense_date) setDate(r.expense_date);
       if (r.description) setDescription(r.description);
       if (r.vendor) setVendor(r.vendor);
