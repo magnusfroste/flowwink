@@ -15,7 +15,7 @@
 | Module | Role in the process |
 |--------|---------------------|
 | **Booking** | Services, availability windows, blocked dates, the bookings themselves |
-| **Email** | Confirmation on booking (`send-booking-confirmation`) and the 24h reminder sweep (`send-booking-reminders` → `email-send`) |
+| **Email** | Confirmation on booking (`comms-send?kind=booking_confirmation`) and the 24h reminder sweep (`comms-send?kind=booking_reminders` → `email-send`) |
 | **Voice** | Phone intake — booking IVR (UC4): caller picks a slot, callback scheduling pairs with the booking |
 | **Calendar** | Read-only aggregation — bookings appear in the unified `list_events` calendar |
 | **SLA** | Booking-confirmation monitors (`sla_check` / `manage_sla_policy` with `entity_type: booking`) |
@@ -33,7 +33,7 @@ flowchart TD
     C --> D["Slot booked — double-booking rejected<br/>book_appointment_slot"]
     D --> E["Booking created (pending) + confirmation email"]
     E --> F["Confirmed<br/>manage_bookings update_status"]
-    F --> G["Reminder sweep — cron every 15 min, one email, starts within 24h<br/>send-booking-reminders"]
+    F --> G["Reminder sweep — cron every 15 min, one email, starts within 24h<br/>comms-send?kind=booking_reminders"]
     G --> H["Staff assigned<br/>manage_bookings assign_staff"]
     H --> I["Meeting happens"]
     I -->|attended| J["completed"]
@@ -78,8 +78,8 @@ completed / no_show` — `no_show` added by migration `20260703151000`)
 
 | Status | Meaning | Moved forward by | What the transition does |
 |---|---|---|---|
-| `pending` | Requested, awaiting confirmation | visitor (public block), agent (`book_appointment_slot`, `book_appointment`) | Row created; end time derived from service duration; overlap with any non-cancelled booking of the same service rejected (`slot_unavailable`); public-block path invokes `send-booking-confirmation` and fires `booking.submitted` |
-| `confirmed` | Slot is committed | admin / agent (`manage_bookings` `update_status`) | Makes the booking eligible for the reminder sweep (`send-booking-reminders`: starts <24h + `reminder_sent_at IS NULL` → one email, then stamped) and for SLA confirmation monitoring |
+| `pending` | Requested, awaiting confirmation | visitor (public block), agent (`book_appointment_slot`, `book_appointment`) | Row created; end time derived from service duration; overlap with any non-cancelled booking of the same service rejected (`slot_unavailable`); public-block path invokes `comms-send?kind=booking_confirmation` and fires `booking.submitted` |
+| `confirmed` | Slot is committed | admin / agent (`manage_bookings` `update_status`) | Makes the booking eligible for the reminder sweep (`comms-send?kind=booking_reminders`: starts <24h + `reminder_sent_at IS NULL` → one email, then stamped) and for SLA confirmation monitoring |
 | `completed` | Meeting happened | admin / agent (`update_status`) | Terminal bookkeeping — no side effects |
 | `no_show` | Confirmed but customer did not attend | admin / agent (`update_status`, only meaningful for past confirmed bookings — UI gates on `start_time` in the past) | Terminal; keeps the no-show on record for the customer history |
 | `cancelled` | Called off | admin / agent (`manage_bookings` `cancel` or `update_status`) | Stamps `cancelled_at` (+ optional `cancelled_reason`); the slot is freed immediately — overlap checks exclude cancelled bookings |
@@ -112,9 +112,9 @@ assignment, no-show and cancellation run through `manage_bookings`
 | Service setup | ✅ (BookingServicesTab) | ✅ (`manage_booking_availability`) | — |
 | Availability check | — | ✅ (`check_availability` — free_slots) | ✅ Stage-3 verified 2026-07-04 |
 | Booking | ✅ (public block, CreateBookingDialog) | ✅ (`book_appointment_slot`, legacy `book_appointment`) | ✅ Stage-3 verified 2026-07-04 (overlap rejection incl.) |
-| Confirmation email | — | auto (`send-booking-confirmation` on public-block booking) | — |
+| Confirmation email | — | auto (`comms-send?kind=booking_confirmation` on public-block booking) | — |
 | Confirm / status | ✅ | ✅ (`manage_bookings` `update_status`) | ✅ |
-| Reminder | — | auto (`booking-reminders` cron → `send-booking-reminders`) | — |
+| Reminder | — | auto (`booking-reminders` cron → `comms-send?kind=booking_reminders`) | — |
 | Staff assignment | ✅ (BookingsPage) | ✅ (`manage_bookings` `assign_staff`) | ✅ |
 | No-show / complete | ✅ | ✅ (`update_status`) | ✅ |
 | Voice intake | — | ✅ (booking IVR runs the same skills) | — |

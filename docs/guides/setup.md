@@ -509,19 +509,12 @@ When links are shared on social media (Facebook, LinkedIn, Twitter, WhatsApp, Sl
    - `OG Image` - URL to your social sharing image (1200x630px recommended)
    - `Twitter Handle` - Your Twitter/X handle (optional)
 
-2. **Configure nginx** (for production):
-   
-   Edit `nginx.conf` and uncomment the proxy configuration:
-   ```nginx
-   if ($is_social_crawler) {
-       rewrite ^(.*)$ /functions/v1/render-page?path=$1 break;
-       proxy_pass https://YOUR_PROJECT_REF.supabase.co;
-       proxy_set_header Host $proxy_host;
-       proxy_set_header X-Real-IP $remote_addr;
-   }
-   ```
-   
-   Replace `YOUR_PROJECT_REF.supabase.co` with your actual Supabase project URL.
+2. **Crawler-side rendering is currently unavailable.** `nginx.conf` carries a
+   commented-out rewrite to a `render-page` edge function, but that function
+   was never shipped — enabling the rewrite would 404 for crawlers. Leave it
+   commented. The static `index.html` OG tags are what social crawlers see;
+   if per-page crawler meta becomes a requirement, that's a feature request,
+   not a config step.
 
 3. **Test with Facebook Debugger**:
    - Go to [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)

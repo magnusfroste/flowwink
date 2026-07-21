@@ -42,7 +42,7 @@ customer conversation:
   human-only although `allocate_picking`/`confirm_pick`/`ship_picking` and
   partial fulfillment are agent-runnable. Cycle counting just went dual-surface.
 - **register-to-attend.md** said reminders are "event emission only" — the
-  `send-webinar-reminders` sweep now delivers all four windows itself and
+  `comms-send?kind=webinar_reminders` sweep now delivers all four windows itself and
   wires `follow_up_sent`. Bumped L3 → L4; parity 78% → 89% updated.
 - **support-to-resolution.md** listed multi-channel and CSAT as flat missing —
   email→ticket is verified E2E and feedback capture/analysis exists (the doc

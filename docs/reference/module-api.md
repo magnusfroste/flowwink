@@ -696,14 +696,18 @@ External systems can act as modules via webhooks:
 
 ### Inbound Webhook (External → FlowWink)
 
+The inbound endpoint is `signal-ingest` (there is no dedicated
+`module-webhook` function). It accepts signals from any external operator
+(webhooks, browser extension, integrations), stores them in
+`agent_memory`/`agent_activity`, and fires automation signals:
+
 ```
-POST /functions/v1/module-webhook
+POST /functions/v1/signal-ingest
 Content-Type: application/json
-X-Module-Secret: your-secret
+Authorization: Bearer <site_settings.signal_ingest_token>
 
 {
-  "module_id": "external-crm",
-  "action": "lead.created",
+  "note": "signal: lead.created from external-crm",
   "payload": {
     "email": "user@example.com",
     "name": "John Doe"

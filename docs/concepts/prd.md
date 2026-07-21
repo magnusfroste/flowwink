@@ -539,7 +539,7 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 
 - **Tables**: `sla_policies` (entity_type, metric, target_minutes, severity, enabled), `sla_violations` (policy_id, entity_type, entity_id, severity, actual_minutes, target_minutes, resolved_at)
 - **1 skill**: `sla_check` (evaluate all active SLA policies, detect violations, auto-resolve when entities are handled)
-- **Edge Function**: `sla-check` — iterates over active policies, queries entity tables for breaches, upserts violations, and auto-resolves previously violated entities that are now handled
+- **Backing RPC**: `run_sla_sweep` (SQL function, invoked by the `sla_check` skill) — iterates over active policies, queries entity tables for breaches, upserts violations, and auto-resolves previously violated entities that are now handled
 - **Supported entity types**: `ticket`, `order`, `lead`, `booking`
 - **Supported metrics**: `first_response_time`, `resolution_time`, `fulfillment_time`, `follow_up_time`
 - **Severity levels**: `warning` (approaching SLA), `breach` (exceeded SLA), `critical` (2x exceeded)

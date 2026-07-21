@@ -33,9 +33,9 @@ These are **pure transformations** — structured input in, structured data out.
 | `analyze_receipt` | Image → line items, totals, VAT | Pure OCR + extraction |
 | `parse_resume` | PDF → skills, experience, education | Data transformation |
 | `web-scrape` | URL → structured page content | Raw data extraction |
-| `enrich-company` | Domain → company metadata | Deterministic data fetch |
-| `qualify-lead` | Activity data → numeric score | Point-based calculation with fixed rules |
-| `contact-finder` | Domain → email addresses | API lookup, no judgement |
+| `enrich_company` | Domain → company metadata | Deterministic data fetch |
+| `qualify_lead` | Activity data → numeric score | Point-based calculation with fixed rules |
+| `contact_finder` | Domain → email addresses | API lookup, no judgement |
 
 **Characteristics:**
 - Input and output are both structured data
