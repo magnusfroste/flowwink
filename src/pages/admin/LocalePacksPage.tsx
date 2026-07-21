@@ -7,13 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Globe, Coins, Receipt, FileSpreadsheet, Banknote, FileText, BookOpen, Layers } from 'lucide-react';
-import { listPacks, getPack } from '@/lib/locale-packs';
+import { Check, Globe, Coins, Receipt, FileSpreadsheet, Banknote, FileText, BookOpen, Layers, AlertCircle } from 'lucide-react';
+import { listPacks, getPack, LOCALE_PACKS } from '@/lib/locale-packs';
 import { useTenantLocalePack } from '@/hooks/useTenantLocalePack';
+import { AccountRolesEditor } from '@/components/admin/accounting/AccountRolesEditor';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LocalePacksPage() {
   const packs = listPacks();
-  const { activeId, setActive, isSaving } = useTenantLocalePack();
+  const { activeId, chosenId, hasChosen, setActive, isSaving } = useTenantLocalePack();
   const [selectedId, setSelectedId] = useState<string>(activeId);
   const selected = getPack(selectedId);
 
