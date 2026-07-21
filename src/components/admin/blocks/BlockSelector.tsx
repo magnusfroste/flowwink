@@ -508,15 +508,29 @@ interface BlockSelectorProps {
 export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recent, setRecent] = useState<string[]>([]);
   const blockModuleStatus = useAllBlockModuleStatus();
+
+  useEffect(() => {
+    if (open) setRecent(loadRecent());
+  }, [open]);
+
+  const allBlocks = useMemo(() => BLOCK_GROUPS.flatMap((g) => g.blocks), []);
+
+  const recentBlocks = useMemo(() => {
+    if (searchQuery.trim()) return [];
+    return recent
+      .map((t) => allBlocks.find((b) => b.type === t))
+      .filter((b): b is BlockOption => Boolean(b));
+  }, [recent, allBlocks, searchQuery]);
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return BLOCK_GROUPS;
-    
+
     const query = searchQuery.toLowerCase();
     return BLOCK_GROUPS.map(group => ({
       ...group,
-      blocks: group.blocks.filter(block => 
+      blocks: group.blocks.filter(block =>
         block.label.toLowerCase().includes(query) ||
         block.description.toLowerCase().includes(query)
       )
@@ -524,6 +538,7 @@ export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   }, [searchQuery]);
 
   const handleSelect = (type: ContentBlockType) => {
+    pushRecent(type);
     onAdd(type);
     setSearchQuery('');
     setOpen(false);
