@@ -302,4 +302,28 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '8910', account_name: 'Skatt på årets resultat', account_type: 'expense', account_category: 'Skatt', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '8920', account_name: 'Förändring av uppskjuten skatt', account_type: 'expense', account_category: 'Skatt', normal_balance: 'debit', locale: 'se-bas2024' },
   { account_code: '8930', account_name: 'Uppskjuten skatt', account_type: 'expense', account_category: 'Skatt', normal_balance: 'debit', locale: 'se-bas2024' },
+
+  // ============================================================
+  // Konton som RPC:er defaultar till
+  // ============================================================
+  // Dessa saknades i seeden trots att SECURITY DEFINER-funktioner bokför mot
+  // dem som DEFAULT-värde. Följden var att en nyinstallation bokförde mot
+  // konton som inte fanns i kontoplanen — balansräkningen kunde inte
+  // klassificera raderna och rapporterade balanced:false. Två migrationer
+  // hade börjat lappa in enstaka konton (1210, 2641, 7385) en i taget i
+  // stället för att fylla luckan här.
+  //
+  // chart-of-accounts.guardrails.test.ts håller ihop de två: varje konto som
+  // en migration anger som DEFAULT måste finnas i den här listan.
+  { account_code: '1210', account_name: 'Maskiner och andra tekniska anläggningar', account_type: 'asset', account_category: 'Materiella anläggningstillgångar', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '1219', account_name: 'Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar', account_type: 'asset', account_category: 'Materiella anläggningstillgångar', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2090', account_name: 'Balanserad vinst eller förlust', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2641', account_name: 'Debiterad ingående moms', account_type: 'liability', account_category: 'Moms', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '3960', account_name: 'Valutakursvinster på fordringar och skulder av rörelsekaraktär', account_type: 'revenue', account_category: 'Övriga rörelseintäkter', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '3970', account_name: 'Vinst vid avyttring av immateriella och materiella anläggningstillgångar', account_type: 'revenue', account_category: 'Övriga rörelseintäkter', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '7385', account_name: 'Kostnader för skattepliktiga förmåner', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '7720', account_name: 'Nedskrivningar av maskiner och inventarier', account_type: 'expense', account_category: 'Av- och nedskrivningar', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '7788', account_name: 'Återföring av nedskrivningar av maskiner och inventarier', account_type: 'expense', account_category: 'Av- och nedskrivningar', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '7960', account_name: 'Valutakursförluster på fordringar och skulder av rörelsekaraktär', account_type: 'expense', account_category: 'Övriga rörelsekostnader', normal_balance: 'debit', locale: 'se-bas2024' },
+  { account_code: '7970', account_name: 'Förlust vid avyttring av immateriella och materiella anläggningstillgångar', account_type: 'expense', account_category: 'Övriga rörelsekostnader', normal_balance: 'debit', locale: 'se-bas2024' },
 ];

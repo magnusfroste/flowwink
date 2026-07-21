@@ -112,12 +112,22 @@ export function useTenantLocalePack() {
 
   // Boot-time top-up: when the template library grows in a release, seed the
   // missing templates/accounts for the already-active pack (once per session).
+  //
+  // This is why useLocalePackBootstrap() exists — for a long time this hook was
+  // only mounted on two admin pages, so "boot-time" meant "if an admin happens
+  // to open Accounting → Settings". A fresh install where nobody did was left
+  // with a near-empty chart of accounts while the RPCs kept posting to their
+  // hardcoded defaults (1930, 2890, 3970, 7970).
   useEffect(() => {
     if (!activeId || topUpDoneFor === activeId) return;
     topUpDoneFor = activeId;
-    topUpLocalePackSeeds(activeId).catch((err) =>
-      logger.warn('[locale-pack] boot top-up failed', err),
-    );
+    topUpLocalePackSeeds(activeId).catch((err) => {
+      // logger.error, not warn: warn is stripped in production, and a failure
+      // here leaves the books unusable in a way nothing else reports.
+      logger.error('[locale-pack] boot top-up failed', err);
+      // Let the next admin page load retry instead of latching the guard.
+      topUpDoneFor = null;
+    });
   }, [activeId]);
 
   const setActive = useMutation({
@@ -162,4 +172,18 @@ export function useTenantLocalePack() {
     setActive: setActive.mutate,
     isSaving: setActive.isPending,
   };
+}
+
+/**
+ * Seed the active pack's chart of accounts + templates on the first admin
+ * session (idempotent — inserts missing codes only). Mount in AdminLayout,
+ * next to useFlowPilotBootstrap, so EVERY admin page load tops the instance up
+ * rather than only the two pages that happened to consume the pack.
+ *
+ * Purpose-named wrapper: the call site should read as "bootstrap", not as an
+ * unused return value. React Query dedupes the underlying settings query with
+ * the real consumers, so mounting both costs nothing.
+ */
+export function useLocalePackBootstrap(): void {
+  useTenantLocalePack();
 }

@@ -6,6 +6,7 @@ import { AdminContentHeader } from './AdminContentHeader';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
+import { useLocalePackBootstrap } from '@/hooks/useTenantLocalePack';
 import { IncomingCallToaster } from './voice/IncomingCallToaster';
 import Softphone from './voice/Softphone';
 
@@ -24,6 +25,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   // Auto-seed FlowPilot on first admin session (idempotent)
   useFlowPilotBootstrap();
+
+  // Same deal for the accounting locale pack: seed the chart of accounts and
+  // templates the active pack declares. Was previously reachable only from
+  // Accounting → Settings, so a fresh install could run with a near-empty
+  // chart while RPC defaults posted to accounts that did not exist.
+  useLocalePackBootstrap();
 
   useEffect(() => {
     if (!loading && !user) {
