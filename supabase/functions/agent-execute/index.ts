@@ -264,6 +264,15 @@ const UNDERSCORE_PARAM_RPCS = new Set<string>([
   'cancel_manual_subscription',
   'generate_subscription_invoice',
   'generate_contract_invoice',
+  // Added 2026-07-21 by the tool_definition-vs-pg_proc sweep. These three RPCs
+  // also take _-prefixed params but were never listed here, so their skills
+  // were unusable in BOTH directions: an argument named `_post_id` was stripped
+  // as agent-internal, and `post_id` became `p__post_id` / `p_post_id`, neither
+  // of which the function has. agent_activity shows zero calls to any of them
+  // on any instance — which is why nobody noticed.
+  'mark_social_post_posted',
+  'moderate_blog_comment',
+  'utm_attribution_report',
 ]);
 
 interface ExecuteRequest {

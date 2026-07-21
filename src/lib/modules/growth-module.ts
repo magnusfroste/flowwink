@@ -281,7 +281,9 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
         parameters: {
           type: 'object',
           properties: {
-            _since: {
+            // No underscore — see mark_social_post_posted below; the prefix is
+            // added by UNDERSCORE_PARAM_RPCS, not declared here.
+            since: {
               type: 'string',
               description: 'ISO timestamp lower bound (default: 30 days ago).',
             },
@@ -354,11 +356,16 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
         description: 'Set status=posted on a social_posts row.',
         parameters: {
           type: 'object',
-          required: ['_post_id'],
+          // Declared WITHOUT the underscore even though the RPC params carry
+          // one. agent-execute strips every _-prefixed argument before dispatch
+          // (they are agent-internal, e.g. _caller_user_id) and then adds the
+          // prefix back for functions in UNDERSCORE_PARAM_RPCS. Declaring
+          // `_post_id` here meant the value was dropped on the way in.
+          required: ['post_id'],
           properties: {
-            _post_id: { type: 'string' },
-            _external_ref: { type: 'string' },
-            _external_url: { type: 'string' },
+            post_id: { type: 'string' },
+            external_ref: { type: 'string' },
+            external_url: { type: 'string' },
           },
         },
       },

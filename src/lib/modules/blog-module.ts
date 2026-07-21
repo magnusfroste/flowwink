@@ -655,10 +655,13 @@ When generating social posts:
         description: 'Set a blog comment status. Values: approved (publishes it), spam, rejected, pending.',
         parameters: {
           type: 'object',
-          required: ['_comment_id', '_status'],
+          // Declared without the underscore the RPC params carry: agent-execute
+          // strips _-prefixed arguments (they are agent-internal) and re-adds
+          // the prefix for functions listed in UNDERSCORE_PARAM_RPCS.
+          required: ['comment_id', 'status'],
           properties: {
-            _comment_id: { type: 'string', description: 'blog_comments.id (uuid)' },
-            _status: {
+            comment_id: { type: 'string', description: 'blog_comments.id (uuid)' },
+            status: {
               type: 'string',
               enum: ['pending', 'approved', 'spam', 'rejected'],
               description: 'Target moderation status',
