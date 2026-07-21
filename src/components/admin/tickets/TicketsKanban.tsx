@@ -91,6 +91,23 @@ export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
     );
   }
 
+  if (stages.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-10 text-center">
+        <p className="text-sm font-medium">No pipeline stages configured</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          The board view needs pipeline stages for tickets. Configure them to enable Kanban.
+        </p>
+        <a
+          href="/admin/pipelines/stages?entity=ticket"
+          className="mt-4 inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Configure stages
+        </a>
+      </div>
+    );
+  }
+
   return (
     <>
       <DndContext
