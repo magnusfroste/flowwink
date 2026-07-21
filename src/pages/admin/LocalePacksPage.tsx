@@ -27,6 +27,18 @@ export default function LocalePacksPage() {
           description="Accounting locale plugins — chart of accounts, VAT, payroll & bank adapters per market."
         />
 
+        {!hasChosen && (
+          <Alert className="mb-6 border-amber-500/50 bg-amber-500/5">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle>No accounting locale activated</AlertTitle>
+            <AlertDescription>
+              Bookkeeping is disabled until you choose a chart of accounts. Pick a pack
+              below and click <span className="font-medium">Set as active</span> to enable
+              journal entries, VAT reports, and payroll postings.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pack list */}
           <Card className="lg:col-span-1">
