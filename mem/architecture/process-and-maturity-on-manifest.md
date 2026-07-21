@@ -60,5 +60,5 @@ If a module spans multiple processes at different maturities, declare the
 ## Retro-fill script
 
 `scripts/inject-process-maturity.ts` — one-shot idempotent injector used to
-backfill all 63 modules in 2026-05. Kept for reference and re-runs after adding
+backfill all 68 modules in 2026-05. Kept for reference and re-runs after adding
 a new module (script is a no-op for already-tagged modules).

@@ -20,7 +20,7 @@ date: 2026-07-19
 > **SQL** (migrations), and **automations** (agent_automations rows).
 
 This is the generalization of a pattern the codebase already proved:
-`agent-execute` is ONE deploy artifact carrying 300+ skills, toggled entirely
+`agent-execute` is ONE deploy artifact carrying 500+ skills, toggled entirely
 dynamically through DB metadata. Every drift incident of July 2026 (skipped
 migrations aside) was a function living in the deploy layer when it belonged
 in the data layer: the ghost `publish-scheduled-pages` edge fn (now a SQL

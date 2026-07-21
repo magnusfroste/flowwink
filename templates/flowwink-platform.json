@@ -141,7 +141,7 @@
             "items": [
               {
                 "id": "s1",
-                "value": "60+",
+                "value": "68",
                 "label": "Business Modules"
               },
               {
@@ -245,7 +245,7 @@
           "type": "bento-grid",
           "data": {
             "title": "The Autonomous Loop",
-            "subtitle": "Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 300+ skills — a single process engine that acts, not reacts.",
+            "subtitle": "Most stacks bolt CMS, CRM and ERP together with humans as glue. FlowWink unifies all three under one operator with memory, goals, and 500+ skills — a single process engine that acts, not reacts.",
             "eyebrow": "AGENTIC WEB",
             "columns": 3,
             "variant": "glass",
@@ -255,7 +255,7 @@
               {
                 "id": "bg-skills",
                 "title": "Skill Engine",
-                "description": "Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 300+ skills that execute autonomously. FlowPilot doesn't suggest. It acts.",
+                "description": "Content creation, lead qualification, email campaigns, ticket triage, SEO analysis, invoicing, expense booking, timesheet reminders — 500+ skills that execute autonomously. FlowPilot doesn't suggest. It acts.",
                 "icon": "Zap",
                 "span": "wide",
                 "accentColor": "#3B82F6"
@@ -887,7 +887,7 @@
               {
                 "id": "ap-multisaas",
                 "title": "Cross-SaaS Operation",
-                "description": "Connect an external agent to FlowWink + Gmail + Slack + Stripe + Linear and let it operate the whole stack. FlowWink contributes 60+ modules of business operations to whatever agent you already use.\n\n• MCP-native — no proprietary SDK\n• Federation via A2A and OpenResponses\n• Composio for 200+ third-party apps",
+                "description": "Connect an external agent to FlowWink + Gmail + Slack + Stripe + Linear and let it operate the whole stack. FlowWink contributes 68 modules of business operations to whatever agent you already use.\n\n• MCP-native — no proprietary SDK\n• Federation via A2A and OpenResponses\n• Composio for 200+ third-party apps",
                 "icon": "Network",
                 "span": "large",
                 "accentColor": "#F97316"
@@ -3492,7 +3492,7 @@
   "seoSettings": {
     "siteTitle": "FlowWink — The Business Operating System",
     "titleTemplate": "%s | FlowWink",
-    "defaultDescription": "FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 60+ modules and 300+ MCP skills across CRM, finance, ERP, HR, content and commerce.",
+    "defaultDescription": "FlowWink is the first autonomous Business Operating System — self-hosted, open source, AI-native from line one. 68 modules and 500+ MCP skills across CRM, finance, ERP, HR, content and commerce.",
     "robotsIndex": true,
     "robotsFollow": true,
     "developmentMode": false
@@ -3500,7 +3500,7 @@
   "aeoSettings": {
     "enabled": true,
     "organizationName": "FlowWink",
-    "shortDescription": "Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 300+ skills across 60+ modules. Or bring your own agent via MCP.",
+    "shortDescription": "Open-source Business Operating System — CMS · CRM · ERP run by FlowPilot, an autonomous operator with persistent memory and 500+ skills across 68 modules. Or bring your own agent via MCP.",
     "schemaOrgEnabled": true,
     "schemaOrgType": "Organization",
     "faqSchemaEnabled": true,

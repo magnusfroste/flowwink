@@ -73,7 +73,7 @@
     "name": "Demo Company",
     "description": "Public demo stage for FlowWink. Static set + daily reset/seed of dynamic data so visitors can watch FlowPilot operate a live business.",
     "category": "platform",
-    "tagline": "A live business you can poke at — or download and run your own with 250+ MCP skills.",
+    "tagline": "A live business you can poke at — or download and run your own with 500+ MCP skills.",
     "helpStyle": "none",
     "requiredModules": [
       "blog",
@@ -113,7 +113,7 @@
           "cta"
         ],
         "hasMeta": true,
-        "metaDescription": "A public FlowWink instance running a fictional company. 60+ modules and 250+ MCP-exposed skills. Bring your own OpenClaw or Hermes agent and start running your business.",
+        "metaDescription": "A public FlowWink instance running a fictional company. 68 modules and 250+ MCP-exposed skills. Bring your own OpenClaw or Hermes agent and start running your business.",
         "metaTitle": null,
         "titleLength": 4,
         "hasMetaDescription": true,

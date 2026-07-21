@@ -1047,7 +1047,7 @@
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:8a0b96c17c324283a81f5c19f909496d60034914f70a7c0d27a71c5a81318e63",
+        "agent-execute": "sha256:a1cb0db532c43742d3aa5296add58383100275750e63cf9f5aac8e13a32117b6",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:5cc0884b9c7ab08157ee79a5055f847433cb079732200a07bdae3ef2b666f1f6",
         "automation-dispatcher": "sha256:c0ffa7a2c623209bf82030bd4b6feb1ed9ae92baa4ea5a08772eaa3fa912ea3e",
@@ -1089,7 +1089,7 @@
         "invite-employee": "sha256:87bf2502e9d9e67f6d659342ef5abaca3009eb46e0fa9937c833b465f3c4efcd",
         "knowledge-indexer": "sha256:c6f628a21822a011e37b3719ef639f93b0dedab23c5becc0255e0c16e9c31289",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
-        "mcp-server": "sha256:c3aa4b9ac2d5829355d5eeaf25886a638e2a3abb465af7f4da4601886d3a5032",
+        "mcp-server": "sha256:0d98de809c2402fe0712a26e39f515ec9a6f55f71cb8f1739bf894ef7e45d9a3",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
         "migrate-page": "sha256:766be614771b490303abefc25efff5ade8417a833fc8c8ed0fc4e725f84fec81",
         "newsletter": "sha256:5372f558d834384a4f9ff8f1c63134f4ce17e07b42f2050c7e40af0759fb4fa2",
