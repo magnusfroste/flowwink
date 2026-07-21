@@ -25,7 +25,7 @@ import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function SettingsTab() {
   const { locale, setLocale } = useAccountingLocale();
-  const { activePack } = useTenantLocalePack();
+  const { activePack, hasChosen } = useTenantLocalePack();
   const { data: accounts } = useChartOfAccounts();
   const { data: prefs } = useAccountingPreferences();
   const updatePrefs = useUpdateAccountingPreferences();
