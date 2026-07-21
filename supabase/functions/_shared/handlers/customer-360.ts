@@ -283,7 +283,7 @@ export async function executeCustomer360(
     for (const w of webinars) {
       timeline.push({
         id: `web-${w.id}`,
-        ts: w.registered_at || w.created_at,
+        ts: w.registered_at || (w as any).created_at,
         kind: "webinar",
         title: `Webinar registration`,
         status: w.status,
