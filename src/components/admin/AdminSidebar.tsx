@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { prefetchRoute } from "@/lib/route-prefetch";
 import {
   LayoutDashboard,
   BarChart3,
