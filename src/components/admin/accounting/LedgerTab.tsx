@@ -60,10 +60,10 @@ export function LedgerTab() {
     <div className="rounded-lg border bg-card">
       <div className="flex flex-wrap items-center gap-6 px-6 py-4 border-b">
         <div className="text-sm font-medium">{fiscalYear}</div>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <Checkbox checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
-          Show inactive
-        </label>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox id="ledger-show-inactive" checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
+          <label htmlFor="ledger-show-inactive" className="cursor-pointer select-none">Show inactive</label>
+        </div>
         <div className="relative flex-1 min-w-[200px] max-w-md ml-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
