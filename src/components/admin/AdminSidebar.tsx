@@ -186,18 +186,7 @@ export function AdminSidebar() {
     }))
     .filter(group => group.items.length > 0), [roleFilteredGroups, modules, featureFlags, isAdmin, hasAnyRole, allowedModuleIds]);
 
-  // All items for search
-  const allSearchItems = useMemo(() =>
-    filteredGroups.flatMap(group =>
-      group.items.map(item => ({ ...item, group: group.label }))
-    ), [filteredGroups]);
-
-  const handleSearchSelect = (href: string) => {
-    setSearchOpen(false);
-    navigate(href);
-  };
-
-  // Keyboard shortcut for search
+  // Keyboard shortcut for search (⌘K / Ctrl+K)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -209,14 +198,6 @@ export function AdminSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<any>;
-
-  // Focus input when search opens
-  useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [searchOpen]);
 
   return (
     <>
