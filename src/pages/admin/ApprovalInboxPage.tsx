@@ -176,7 +176,7 @@ export function InboxSection() {
               <Badge variant="secondary" className="text-xs">Step {req.current_step}</Badge>
               {req.amount_cents != null && (
                 <span className="text-xs text-muted-foreground">
-                  {(req.amount_cents / 100).toFixed(2)} {req.currency ?? ''}
+                  {formatAmount(req.amount_cents, req.currency)}
                 </span>
               )}
               <span className="text-xs text-muted-foreground ml-auto">
