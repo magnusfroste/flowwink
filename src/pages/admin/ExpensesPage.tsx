@@ -8,9 +8,13 @@ import { ExpenseReportsTab } from '@/components/admin/expenses/ExpenseReportsTab
 import { ExpensePoliciesTab } from '@/components/admin/expenses/ExpensePoliciesTab';
 import { ExpenseRatesTab } from '@/components/admin/expenses/ExpenseRatesTab';
 import { ExpenseDelegationsTab } from '@/components/admin/expenses/ExpenseDelegationsTab';
+import { AddExpenseDialog } from '@/components/admin/expenses/AddExpenseDialog';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 export default function ExpensesPage() {
   const [tab, setTab] = useState('expenses');
+  const [addOpen, setAddOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => { setTab('expenses'); setAddOpen(true); });
 
   return (
     <AdminLayout>
@@ -45,6 +49,7 @@ export default function ExpensesPage() {
             <ExpenseDelegationsTab />
           </TabsContent>
         </Tabs>
+        <AddExpenseDialog open={addOpen} onOpenChange={setAddOpen} />
       </AdminPageContainer>
     </AdminLayout>
   );

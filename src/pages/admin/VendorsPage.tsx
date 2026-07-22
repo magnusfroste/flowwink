@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Edit2, Trash2, Building2, Globe, Mail, Phone } from 'lucide-react';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 interface Vendor {
   id: string;
@@ -45,6 +46,7 @@ export default function VendorsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteName, setDeleteName] = useState('');
+  useOpenOnQueryParam('new', '1', () => { setEditingId(null); setForm(EMPTY_FORM); setDialogOpen(true); });
 
   const { data: vendors = [], isLoading } = useQuery({
     queryKey: ['vendors'],

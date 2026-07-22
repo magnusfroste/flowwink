@@ -16,6 +16,7 @@ import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useComp
 import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { DuplicateCompaniesPanel } from '@/components/admin/companies/DuplicateCompaniesPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -37,6 +38,8 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState('');
   const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>('all');
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setShowCreateDialog(true));
   const { data: companies, isLoading } = useCompanies();
   const { data: stats } = useCompanyStats();
   const deleteCompany = useDeleteCompany();
@@ -84,7 +87,7 @@ export default function CompaniesPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <CreateCompanyDialog />
+            <CreateCompanyDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
           </div>
         </AdminPageHeader>
 

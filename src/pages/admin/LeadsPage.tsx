@@ -27,9 +27,11 @@ import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setShowCreateDialog(true));
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showBulkEmailDialog, setShowBulkEmailDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');

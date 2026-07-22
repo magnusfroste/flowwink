@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useFormatAmount } from '@/lib/format-currency';
 
 interface Request {
   id: string;
@@ -36,6 +37,8 @@ export function InboxSection() {
   const [comment, setComment] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkComment, setBulkComment] = useState('');
+  const formatAmount = useFormatAmount();
+
 
   const { data, isLoading } = useQuery({
     queryKey: ['approval-inbox'],
@@ -173,7 +176,7 @@ export function InboxSection() {
               <Badge variant="secondary" className="text-xs">Step {req.current_step}</Badge>
               {req.amount_cents != null && (
                 <span className="text-xs text-muted-foreground">
-                  {(req.amount_cents / 100).toFixed(2)} {req.currency ?? ''}
+                  {formatAmount(req.amount_cents, req.currency)}
                 </span>
               )}
               <span className="text-xs text-muted-foreground ml-auto">

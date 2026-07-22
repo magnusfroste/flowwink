@@ -44,12 +44,14 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 type Mode = 'receipt' | 'mileage' | 'per_diem';
 
-export function AddExpenseDialog() {
+export function AddExpenseDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
   const createExpense = useCreateExpense();
   const { data: mileageRates } = useActiveExpenseRates('mileage');
   const { data: perDiemRates } = useActiveExpenseRates('per_diem');
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); if (controlledOpen === undefined) setInternalOpen(v); };
   const [mode, setMode] = useState<Mode>('receipt');
 
   // Shared

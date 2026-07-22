@@ -23,8 +23,10 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-export function NewJobDialog() {
-  const [open, setOpen] = useState(false);
+export function NewJobDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); if (controlledOpen === undefined) setInternalOpen(v); };
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [department, setDepartment] = useState('');

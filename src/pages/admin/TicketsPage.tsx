@@ -16,12 +16,15 @@ import { useTickets, useTicketSearch, type Ticket } from "@/hooks/useTickets";
 import { LayoutGrid, List, Search, X, Users, AlarmClock } from "lucide-react";
 import { SavedViewsMenu } from "@/components/admin/SavedViewsMenu";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 
 export default function TicketsPage() {
   const [view, setView] = useState<"kanban" | "table" | "teams" | "rules">("kanban");
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setCreateOpen(true));
   const debouncedSearch = useDebounce(searchInput, 300);
 
   const { data: tickets = [], isLoading } = useTickets();
@@ -91,7 +94,7 @@ export default function TicketsPage() {
               }}
             />
             <CannedResponsesDialog />
-            <CreateTicketDialog />
+            <CreateTicketDialog open={createOpen} onOpenChange={setCreateOpen} />
           </AdminPageHeader>
 
           {/* Search + tag filter (only for queue views) */}
