@@ -29,6 +29,7 @@ export default function QuotesPage() {
   const [view, setView] = useState<'list' | 'recurring'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('id'));
   const [createOpen, setCreateOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setCreateOpen(true));
 
   useEffect(() => {
     const id = searchParams.get('id');
