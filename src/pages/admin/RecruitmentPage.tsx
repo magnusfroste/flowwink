@@ -7,8 +7,12 @@ import { NewJobDialog } from '@/components/admin/recruitment/NewJobDialog';
 import { CandidateKanban } from '@/components/admin/recruitment/CandidateKanban';
 import { useApplications, useJobPostings } from '@/hooks/useRecruitment';
 import { Briefcase, Users, Star } from 'lucide-react';
+import { useState } from 'react';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 export default function RecruitmentPage() {
+  const [newJobOpen, setNewJobOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setNewJobOpen(true));
   const { data: jobs } = useJobPostings();
   const { data: apps } = useApplications();
 
