@@ -148,7 +148,7 @@
                   "content": [
                     {
                       "type": "text",
-                      "text": "Every day at 03:00 UTC, the demo-cycle job runs reset_module_data → seed_module_demo across the pilot modules, then restocks the shop. It only deletes rows it created itself (tracked in demo_run_items) — your admin edits and the static content set are safe."
+                      "text": "Every night at 04:00 UTC the whole sandbox is destroyed and rebuilt: all content and transactions are wiped, extra accounts removed, the shared admin password restored, and this template reinstalled. At 04:30 the demo-cycle seeds a fresh business scenario — leads, quotes, orders, expenses — so the sandbox wakes up clean AND alive. Build anything, break anything: nothing you do survives the night, and that is the point."
                     }
                   ]
                 },
