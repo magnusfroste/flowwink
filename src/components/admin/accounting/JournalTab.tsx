@@ -166,26 +166,23 @@ export function JournalTab() {
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
-          <div className="flex items-center justify-between px-4 py-2 border-b text-xs text-muted-foreground">
-            <span>{filtered.length} entries</span>
-            <span className="font-mono">Total {fmt(grandTotal)}</span>
+          <div className="flex items-center justify-between px-4 py-2.5 border-b text-xs text-muted-foreground">
+            <span>{filtered.length} {filtered.length === 1 ? 'entry' : 'entries'}</span>
+            <span className="font-mono tabular-nums">Total <span className="text-foreground font-medium">{fmt(grandTotal)}</span></span>
           </div>
-
-
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left">
-                  <th className="font-semibold px-4 py-2 w-28">Voucher</th>
-                  <th className="font-semibold px-4 py-2 w-28">Date</th>
-                  <th className="font-semibold px-4 py-2">Description</th>
-                  <th className="font-semibold px-4 py-2 w-24">Journal</th>
-                  <th className="font-semibold px-4 py-2 w-56">Accounts</th>
-                  <th className="font-semibold px-4 py-2 w-32 text-right">Amount</th>
-                  <th className="font-semibold px-4 py-2 w-10 text-center">Bal.</th>
-                  <th className="font-semibold px-4 py-2 w-24">Source</th>
-                  <th className="font-semibold px-4 py-2 w-20">Status</th>
+                <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="font-medium px-4 py-2 w-24">Voucher</th>
+                  <th className="font-medium px-4 py-2 w-24">Date</th>
+                  <th className="font-medium px-4 py-2">Description</th>
+                  <th className="font-medium px-4 py-2 w-20">Journal</th>
+                  <th className="font-medium px-4 py-2 w-48">Accounts</th>
+                  <th className="font-medium px-4 py-2 w-32 text-right">Amount</th>
+                  <th className="font-medium px-4 py-2 w-24">Source</th>
+                  <th className="font-medium px-4 py-2 w-20">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,61 +194,54 @@ export function JournalTab() {
                   return (
                     <tr
                       key={e.id}
-                      className="odd:bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors border-b last:border-b-0"
+                      className="border-t hover:bg-muted/30 cursor-pointer transition-colors"
                       onClick={() => setSelectedId(e.id)}
                     >
-                      <td className="px-4 py-1.5 font-mono text-xs text-muted-foreground">{voucherLabel(e)}</td>
-                      <td className="px-4 py-1.5 font-mono text-xs text-muted-foreground">{e.entry_date}</td>
-                      <td className="px-4 py-1.5">
-                        <div className="truncate max-w-xs">{e.description}</div>
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{voucherLabel(e)}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{fmtDate(e.entry_date)}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate max-w-xs">{e.description}</span>
+                          {!e.is_balanced && (
+                            <span title="Unbalanced entry" className="inline-flex items-center gap-1 text-[10px] text-warning">
+                              <AlertTriangle className="h-3 w-3" /> unbalanced
+                            </span>
+                          )}
+                        </div>
                         {e.reference_number && (
-                          <div className="text-xs text-muted-foreground">Ref: {e.reference_number}</div>
+                          <div className="text-xs text-muted-foreground/70 mt-0.5">Ref: {e.reference_number}</div>
                         )}
                       </td>
-                      <td className="px-4 py-1.5">
+                      <td className="px-4 py-2.5">
                         {journal ? (
-                          <Badge variant="outline" className="text-xs font-mono">{journal.code}</Badge>
+                          <span className="font-mono text-xs text-muted-foreground">{journal.code}</span>
                         ) : (
-                          <span className="text-muted-foreground/50">—</span>
+                          <span className="text-muted-foreground/40">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-1.5">
-                        <div className="flex flex-wrap gap-1">
-                          {codesShown.map((c: string) => (
-                            <span key={c} className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{c}</span>
+                      <td className="px-4 py-2.5">
+                        <div className="flex flex-wrap items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                          {codesShown.map((c: string, i: number) => (
+                            <span key={c}>
+                              {c}{i < codesShown.length - 1 && <span className="text-muted-foreground/40 mx-0.5">·</span>}
+                            </span>
                           ))}
                           {extra > 0 && (
-                            <span className="text-[11px] text-muted-foreground">+{extra}</span>
+                            <span className="text-muted-foreground/60">+{extra}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-1.5 text-right font-mono">{fmt(e.total_cents || 0)}</td>
-                      <td className="px-4 py-1.5 text-center">
-                        {e.is_balanced ? (
-                          <Check className="h-3.5 w-3.5 text-success inline" />
-                        ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-warning inline" />
-                        )}
-                      </td>
-                      <td className="px-4 py-1.5">
-                        <Badge variant="outline" className="text-[10px]">{e.source}</Badge>
-                      </td>
-                      <td className="px-4 py-1.5">
-                        <Badge variant="secondary" className={cn('text-[10px]', STATUS_STYLES[e.status] || '')}>
+                      <td className="px-4 py-2.5 text-right font-mono tabular-nums">{fmt(e.total_cents || 0)}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{e.source}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', STATUS_STYLES[e.status] || 'bg-muted text-muted-foreground')}>
                           {e.status}
-                        </Badge>
+                        </span>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
-              <tfoot>
-                <tr className="bg-foreground text-background">
-                  <td colSpan={5} className="px-4 py-3 font-semibold">Total ({filtered.length} entries)</td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold">{fmt(grandTotal)}</td>
-                  <td colSpan={3} />
-                </tr>
-              </tfoot>
             </table>
           </div>
         </div>
