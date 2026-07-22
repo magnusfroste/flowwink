@@ -29,10 +29,9 @@ export function SandboxBanner() {
   return (
     <div className="flex items-center justify-center gap-2 bg-primary px-4 py-1.5 text-center text-xs font-medium text-primary-foreground">
       <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-      <span>
-        This is the FlowWink sandbox — build anything, break anything. Resets nightly at 04:00 UTC.
-        Sign in with <span className="font-semibold">demo@flowwink.com / demo1234</span>.
-      </span>
+      {/* No credentials here — the template's hero owns those. This bar shows
+          on every page (admin included), so it carries only the rules. */}
+      <span>This is the FlowWink sandbox — build anything, break anything. Resets nightly at 04:00 UTC.</span>
     </div>
   );
 }
