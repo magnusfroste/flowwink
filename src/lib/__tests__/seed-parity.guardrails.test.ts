@@ -45,6 +45,22 @@ describe('seed parity between the browser path and the CLI', () => {
     expect(gen).toMatch(/m\.automations/);
   });
 
+  it('PLATFORM automations travel in the artifact too', () => {
+    // The generator covered platform SKILLS but not PLATFORM_AUTOMATIONS —
+    // Daily Briefing, Skill Curator and Integration Health Check reached
+    // instances only via the browser's bootstrapModule(), the exact gap this
+    // artifact exists to close (found 2026-07-22 when the new health check
+    // never arrived through sync-skills).
+    const gen = read('scripts/skills-to-json.ts');
+    expect(gen).toMatch(/PLATFORM_AUTOMATIONS/);
+    const autos = JSON.parse(read('supabase/seed/module-automations.json'));
+    const platform = autos.modules.find((m: any) => m.moduleId === 'platform');
+    expect(platform, 'no platform entry in the automations artifact').toBeTruthy();
+    const names = platform.automations.map((a: any) => a.name);
+    expect(names).toContain('Integration Health Check');
+    expect(names).toContain('Daily Briefing');
+  });
+
   it('the sync tool applies all three layers', () => {
     const sync = read('scripts/sync-skills.ts');
     expect(sync).toMatch(/insert into agent_skills/);

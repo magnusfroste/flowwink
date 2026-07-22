@@ -114,7 +114,10 @@ const PROBES: Record<string, Probe> = {
     (k) => ({ headers: { Authorization: `Client-ID ${k}` } }),
   ),
 
-  composio: keyProbe('COMPOSIO_API_KEY', 'https://backend.composio.dev/api/v1/apps', (k) => ({
+  // v3 — the platform's composio-proxy runs v2/v3/v3.1; v1 is retired (410).
+  // The first live run of this very probe was fooled by that: it reported
+  // composio failing while the integration itself was fine.
+  composio: keyProbe('COMPOSIO_API_KEY', 'https://backend.composio.dev/api/v3/toolkits?limit=1', (k) => ({
     headers: { 'x-api-key': k },
   })),
 
