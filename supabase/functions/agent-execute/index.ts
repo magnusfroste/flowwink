@@ -5052,7 +5052,18 @@ async function executeBlogAction(
   }
 
   const resolvedTitle = rawTitle.trim();
-  const slug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  const baseSlug = resolvedTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  // blog_posts.slug is UNIQUE — a retried or same-titled post must get a
+  // suffix, not a constraint violation (live failure on autoversio 2026-07-22).
+  let slug = baseSlug;
+  {
+    const { data: taken } = await supabase
+      .from('blog_posts')
+      .select('slug')
+      .like('slug', `${baseSlug}%`);
+    const existing = new Set((taken ?? []).map((r: { slug: string }) => r.slug));
+    for (let n = 2; existing.has(slug); n++) slug = `${baseSlug}-${n}`;
+  }
 
   // Convert markdown content → Tiptap doc
   const tiptapDoc = markdownToTiptap(content);

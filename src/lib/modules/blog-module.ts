@@ -75,6 +75,12 @@ Creates a draft blog post in the CMS with title, topic, tone, and content.
 - User asks to write/create/draft a blog post
 - Content pipeline workflow step (after research_content + generate_content_proposal)
 - NOT for updating existing posts (use manage_blog_posts with action='update')
+### Grounding — research before you write
+If the brief references an external website, company, person, URL, or current
+events: fetch real sources FIRST (search_web, scrape_url, research_content) and
+base the content on what they actually return — never write about a specific
+external subject from memory alone. Link the sources in the post. If fetching
+fails, say so and ask, rather than silently writing from memory.
 ### Parameters
 - **title**: Required. The blog post title.
 - **content**: Required. The full, finished markdown body — generate it in your own reasoning FIRST, then pass it here. This skill is a pure sink: it does NOT generate content from a topic. Use ## for headings, paragraphs, bullets. Do NOT include the title as H1.
@@ -83,7 +89,7 @@ Creates a draft blog post in the CMS with title, topic, tone, and content.
 - **language**: ISO code (en, sv). Defaults to site language.
 ### Edge cases
 - Calling with an empty/missing content fails ("content is required") — write_blog_post no longer generates from a topic. Produce the content via your reasoning loop, then call this.
-- Title must be unique; duplicates get a numeric suffix.
+- Slugs are derived from the title; a duplicate title gets a numeric slug suffix (-2, -3, …) automatically.
 - **status**: Optional. 'draft' (default) or 'published'. Pass 'published' to make the post live in one call — required when the user asks to "draft and publish".`,
   },
   {
