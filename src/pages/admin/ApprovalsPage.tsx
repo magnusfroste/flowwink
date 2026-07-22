@@ -19,6 +19,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useGatedSkills } from '@/hooks/useGatedSkills';
 import { InboxSection } from './ApprovalInboxPage';
 import { ChainsSection, GroupsSection } from './ApprovalChainsPage';
+import { AgentSkillApprovalHeader, AgentSkillApprovalBody } from '@/components/admin/approvals/AgentSkillApprovalCard';
 
 function formatAmount(cents: number | null, currency: string) {
   if (cents == null) return '—';
@@ -146,29 +147,36 @@ export default function ApprovalsPage() {
             const argsPreview = ctx.args ? JSON.stringify(ctx.args, null, 2) : null;
             return (
             <Card key={req.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Badge variant={isAgentSkill ? 'secondary' : 'default'}>{req.entity_type}</Badge>
-                      {isAgentSkill && skillName ? (
-                        <span className="font-mono text-sm">{skillName}</span>
-                      ) : (
+              {isAgentSkill ? (
+                <AgentSkillApprovalHeader
+                  entityId={req.entity_id}
+                  reason={req.reason}
+                  createdAt={req.created_at}
+                  requiredRole={req.required_role}
+                  context={ctx}
+                />
+              ) : (
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Badge variant="default">{req.entity_type}</Badge>
                         <span className="font-mono text-xs text-muted-foreground">{req.entity_id}</span>
-                      )}
-                      {agent && <Badge variant="outline" className="text-xs">via {agent}</Badge>}
-                    </CardTitle>
-                    <CardDescription>
-                      {formatAmount(req.amount_cents, req.currency)} · requires <span className="font-medium">{req.required_role}</span> · requested {formatDistanceToNow(new Date(req.created_at), { addSuffix: true })}
-                    </CardDescription>
+                        {agent && <Badge variant="outline" className="text-xs">via {agent}</Badge>}
+                      </CardTitle>
+                      <CardDescription>
+                        {formatAmount(req.amount_cents, req.currency)} · requires <span className="font-medium">{req.required_role}</span> · requested {formatDistanceToNow(new Date(req.created_at), { addSuffix: true })}
+                      </CardDescription>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
+                </CardHeader>
+              )}
               <CardContent className="space-y-3">
-                {req.reason && <p className="text-sm">{req.reason}</p>}
-                {isAgentSkill && argsPreview && (
+                {!isAgentSkill && req.reason && <p className="text-sm">{req.reason}</p>}
+                {isAgentSkill && <AgentSkillApprovalBody context={ctx} />}
+                {!isAgentSkill && argsPreview && (
                   <details className="rounded-md border bg-muted/30 px-3 py-2 text-xs">
-                    <summary className="cursor-pointer font-medium text-muted-foreground">Skill arguments</summary>
+                    <summary className="cursor-pointer font-medium text-muted-foreground">Arguments</summary>
                     <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap font-mono">{argsPreview}</pre>
                   </details>
                 )}
