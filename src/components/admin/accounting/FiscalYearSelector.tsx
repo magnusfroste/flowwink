@@ -71,9 +71,11 @@ export function FiscalYearSelector() {
   return (
     <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
       <SelectTrigger className="w-[180px] h-9">
-        <div className="flex items-center gap-2">
+        {/* Render our own label instead of <SelectValue /> so the selected
+            item's badge doesn't duplicate the trigger's status pill. */}
+        <div className="flex items-center gap-2 w-full">
           <span className="text-xs text-muted-foreground">FY</span>
-          <SelectValue />
+          <span className="font-medium tabular-nums">{year}</span>
           <span
             className={cn(
               'ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium',
@@ -90,7 +92,7 @@ export function FiscalYearSelector() {
           return (
             <SelectItem key={y} value={String(y)}>
               <span className="inline-flex items-center gap-2">
-                <span>{y}</span>
+                <span className="tabular-nums">{y}</span>
                 <span
                   className={cn(
                     'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
