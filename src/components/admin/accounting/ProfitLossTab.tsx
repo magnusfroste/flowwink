@@ -57,14 +57,14 @@ export function ProfitLossTab() {
     <div className="rounded-lg border bg-card">
       <div className="flex items-center gap-6 px-6 py-4 border-b">
         <div className="text-sm font-medium">{fiscalYear}</div>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <Checkbox checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
-          Show decimals
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <Checkbox checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
-          Show inactive
-        </label>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox id="pl-show-decimals" checked={showDecimals} onCheckedChange={(v) => setShowDecimals(!!v)} />
+          <label htmlFor="pl-show-decimals" className="cursor-pointer select-none">Show decimals</label>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Checkbox id="pl-show-inactive" checked={showInactive} onCheckedChange={(v) => setShowInactive(!!v)} />
+          <label htmlFor="pl-show-inactive" className="cursor-pointer select-none">Show inactive</label>
+        </div>
       </div>
 
       <div className="px-6 pt-6 pb-2">
