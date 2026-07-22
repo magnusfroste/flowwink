@@ -79,11 +79,11 @@ The module's core functionality is **entirely agent-driven**. There is no manual
 | Skill | Handler | Role |
 |-------|---------|------|
 | `prospect_research` | `edge:prospect-research` | Raw data fetch (web scrape + Hunter contacts) |
-| `prospect_fit_analysis` | `edge:prospect-fit-analysis` | Data collection for fit evaluation |
-| `enrich_company` | `edge:enrich-company` | Domain scraping + company enrichment |
-| `qualify_lead` | `edge:qualify-lead` | Deterministic point-based scoring |
-| `contact_finder` | `edge:contact-finder` | Hunter.io contact discovery |
-| `sales_profile_setup` | `edge:sales-profile-setup` | Company/user profile management |
+| `prospect_fit_analysis` | `internal:prospect_fit_analysis` | Data collection for fit evaluation |
+| `enrich_company` | `internal:enrich_company` | Domain scraping + company enrichment |
+| `qualify_lead` | `internal:qualify_lead` | Deterministic point-based scoring |
+| `contact_finder` | `internal:contact_finder` | Hunter.io contact discovery |
+| `sales_profile_setup` | `internal:sales_profile_setup` | Company/user profile management |
 
 **⚠️ Known issue:** `prospect-fit-analysis` currently contains a reasoning-level AI prompt (introduction letters, strategic advice) that should flow through FlowPilot. See [Sensors vs. Reasoning](./sensors-vs-reasoning.md) for details.
 
@@ -161,7 +161,7 @@ New Ticket → ticket_triage
 | `manage_leads` | `module:crm` | List, get, update status/score, delete existing leads |
 | `lead_pipeline_review` | `module:crm` | Audit pipeline by status, score, and days since contact |
 | `lead_nurture_sequence` | `module:newsletter` | Create email drip campaigns for leads |
-| `qualify_lead` | `edge:qualify-lead` | Deterministic point-based lead scoring |
+| `qualify_lead` | `internal:qualify_lead` | Deterministic point-based lead scoring |
 | `crm_task_list` | `db:crm_tasks` | List CRM tasks with lead/deal/priority filters |
 | `crm_task_create` | `db:crm_tasks` | Create follow-up tasks linked to leads or deals |
 | `crm_task_update` | `db:crm_tasks` | Update or complete CRM tasks |

@@ -2,10 +2,18 @@
 title: "Sprint — P1 Subscribe-to-Renew backend (proration + recurring re-score)"
 description: Close the two w3 gaps gating the Subscribe-to-Renew process.
 category: concepts
-status: planned
+status: completed
 ---
 
 # Sprint — P1 Subscribe-to-Renew backend
+
+> **Outcome (verified against the scorecards 2026-07-21):** both gating
+> capabilities are **done** — `invoicing.recurring` (live E2E on the dev
+> instance: `create_manual_subscription` → `generate_subscription_invoice` →
+> `next_invoice_date` advances) and `subscriptions.proration`
+> (`change_subscription` prorates by remaining days; upgrade → draft
+> adjustment invoice, downgrade → credit). Subscriptions sits at 79% parity.
+> Kept for the record of scope and rationale.
 
 [`process-gaps.md`](./process-gaps.md) ranks **Subscribe-to-Renew** as P1, gated by
 `invoicing.recurring` (w3) and `subscriptions.proration` (w3).

@@ -54,7 +54,7 @@ Both paths share the **concepts** below. Everything else (guides, modules, refer
 
 ## Quick links
 
-- **68 modules** registered in `src/lib/modules/` — every one has a page in [`modules/`](./modules/) (alias-aware via `scripts/check-doc-drift.ts`)
+- **67 modules** registered in `src/lib/modules/` — every one has a page in [`modules/`](./modules/) (alias-aware via `scripts/check-doc-drift.ts`)
 - **8 business processes** documented in [`processes/`](./processes/)
 - **6 department-claw playbooks** in [`agents/`](./agents/) for external MCP operators
 - Public docs portal: [/docs](https://flowwink.com/docs) (auto-synced from this folder, with embedded AI chat)
@@ -62,3 +62,5 @@ Both paths share the **concepts** below. Everything else (guides, modules, refer
 ---
 
 *Edit any page on GitHub → push → an admin runs the sync from `/admin/docs` (or wait for the scheduled sync).*
+
+*Convention: docs are updated **in place** to describe the current state. Plan/sprint documents carry a `status` field in their frontmatter (`planned` / `active` / `completed`) plus a dated outcome note when done — we don't archive; we describe what we have now.*

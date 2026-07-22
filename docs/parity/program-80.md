@@ -65,16 +65,18 @@ there is no standing daemon. For scheduled cadence, trigger a session weekly
 via GitHub Actions. The program state lives entirely in this repo (matrix,
 scorecards, epics, reference cards) so any session can resume it.
 
-## Current state (2026-07-04)
+## Current state (2026-07-21)
 
-- Mean parity 60% · 6/54 modules ≥ 80% · worst: shipping 31%
-- **R1 in flight** (see roadmap.md): EPIC-05 verify-sweep (first flip done:
-  booking#duration_rules, Stage-3 live), EPIC-06 content cluster, EPIC-07
-  support-to-resolution, EPIC-08 ops UIs. Projected mean after R1: ~66%.
-- **R2 prep started:** grounding reference cards commissioned for the
-  SMB-priority clusters: quote→contract→sign, e-commerce (including
-  authoring the missing `ecommerce.json` scorecard — the module is
-  currently unscored and invisible to the program), CRM depth.
-- Known blockers being worked with the platform owner: deployed
-  agent-execute missing `sanitizeOrTerm` (P1 defect), external operator's
-  stale MCP session.
+- Mean parity **89%** · 55 benchmarked modules · 10 differentiators (no Odoo
+  benchmark) · worst: contact-center 41%, accounting 58%, analytics 58%,
+  chat 58% (see [`parity-matrix.md`](./parity-matrix.md) for the live table).
+- The three sprints spawned by this program — floor wave 1, P1
+  Subscribe-to-Renew, EPIC-03 completion + view consolidation — are all
+  **completed** (statuses + outcome notes in their respective docs).
+- Remaining below-80 modules are mostly P2/P3 tier (contact-center,
+  accounting depth, manufacturing) where the non-goal rule and community
+  handoff apply; lift happens opportunistically per the round loop above.
+- Earlier blockers (missing `sanitizeOrTerm`, stale operator MCP session,
+  migration-ledger drift) are resolved; drift detection is now structural via
+  the instance manifest (`supabase/seed/instance-manifest.json` +
+  `instance_sync_status()` + the Observability sync card).

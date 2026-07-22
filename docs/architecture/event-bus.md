@@ -63,7 +63,7 @@ also include a snapshot under `data`.
 
 | Event | Source | Payload | Listeners |
 |-------|--------|---------|-----------|
-| `lead.created` | trigger on `leads` | `{ id, data }` | qualify-lead automation |
+| `lead.created` | trigger on `leads` | `{ id, data }` | `qualify_lead` automation (skill) |
 | `deal.created` | trigger on `deals` | `{ id, data }` | webhook fanout |
 | `deal.stage_changed` | trigger on `deals` | `{ id, from, to, data }` | analytics |
 | `deal.won` | trigger on `deals` | `{ id, data }` | invoice draft, contract |
@@ -187,13 +187,14 @@ that should be visible/auditable in `/admin/automations`.
 Insert via the automations UI or seed in a module:
 
 ```ts
+// Real seed from inventory-module.ts:
 {
-  name: 'Send order confirmation',
+  name: 'Auto-allocate picking on order paid',
   trigger_type: 'event',
   trigger_config: { event: 'order.paid' },
   executor: 'platform',          // or 'flowpilot' / 'external'
-  action_type: 'edge_function',
-  action_config: { function: 'send-order-confirmation' },
+  skill_name: 'allocate_picking',   // the dispatcher runs skills via agent-execute
+  skill_arguments: { p_order_id: '{{event.payload.order_id}}' },
   enabled: true,
 }
 ```

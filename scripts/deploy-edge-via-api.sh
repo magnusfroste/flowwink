@@ -18,7 +18,7 @@
 #   bash scripts/deploy-edge-via-api.sh <project-ref> <function-name> [--verify-jwt]
 #
 # Example:
-#   SBP_TOKEN=sbp_xxx bash scripts/deploy-edge-via-api.sh lcztuuaxulxivhbnkcpm ai-task
+#   SBP_TOKEN=sbp_xxx bash scripts/deploy-edge-via-api.sh ydcrzguzfipraofvpegu ai-task
 #
 # Notes:
 #   * Public/agent-called functions deploy with verify_jwt=false by default; pass

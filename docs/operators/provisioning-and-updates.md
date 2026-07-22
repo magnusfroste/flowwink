@@ -207,15 +207,14 @@ function is never momentarily missing. Prune is skipped if the deploy had
 failures. Do NOT blind `delete-all` then redeploy on a live instance — that's a
 multi-minute outage window; `--prune` achieves the same clean state with none.
 
-**Consolidation into domain routers (optional, not done).** If even a
-fully-loaded site (all modules on → full count → needs Pro) must fit Free, fold
-clusters — transactional emails → `email-send`, provider probes → one function.
-`reconciliation` / `a2a` already route sub-paths via `url.pathname`, so the
-pattern exists. **Same lockstep tail as the RPC rename above:** functions are
-invoked by the admin frontend directly and forks don't auto-deploy — ship the
-router additively, migrate all callers, redeploy all frontends, *then* delete the
-old functions. No dead functions to delete outright (zero-reference ones are
-crons/webhooks/test runners). A planned migration, not a quick win.
+**Consolidation into domain routers (DONE, 2026-07).** The edge-surface
+refactor executed exactly this: transactional emails → `comms-send?kind=…`,
+provider probes → `integrations-account`, FlowPilot lifecycle →
+`flowpilot-lifecycle?task=…`, and dozens of thin functions → `internal:` skill
+handlers in `agent-execute`. The surface is now ~75 functions — a fully-loaded
+site fits the Free tier. Cron jobs were repointed host-preservingly by
+migration; see `docs/architecture/edge-surface-classification.md` for the full
+classification and the freeze principle (no new small edge functions).
 3. **Fail loud on migrations.** `scripts/run-migrations.js` swallows errors so a
    Vercel build "succeeds" against a DB that never migrated — a prime drift
    source. Either fail the build, or decouple migrations from the build and run

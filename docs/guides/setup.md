@@ -143,12 +143,12 @@ supabase link --project-ref YOUR_PROJECT_REF
 **Use the CLI for this — don't loop over the directory.** Two reasons the
 obvious loop breaks a site:
 
-- **The function cap is a cliff.** Supabase Free allows 100 functions; the repo
-  has ~110. A loop deploys fine up to 100, then every remaining call fails with
-  `402 Max number of functions reached` — and the site is silently missing
-  whichever functions came last in the alphabet. At the cap even *updates to
-  existing functions* are rejected, so you cannot ship a fix until you delete
-  something.
+- **The function cap is a cliff.** Supabase Free allows 100 functions. Since
+  the 2026-07 edge-surface consolidation the repo ships ~75, so a full deploy
+  fits — but the failure mode is worth knowing: past the cap every remaining
+  call fails with `402 Max number of functions reached` and the site is
+  silently missing whichever functions came last in the alphabet. At the cap
+  even *updates to existing functions* are rejected.
 - **Blanket `--no-verify-jwt` removes the auth gate from admin-only functions.**
   `supabase/config.toml` sets `verify_jwt` per function for a reason; the CLI
   reads it, a hand-rolled loop does not.
@@ -160,14 +160,16 @@ npm run cli        # then: /update-funcs
 On a project that has no modules configured yet — a fresh install — it asks
 what the site is and deploys that profile:
 
-| Profile | Functions | What you get |
-|---------|-----------|--------------|
-| `cms` | ~51 | Pages, blog, media, newsletter, surveys, webinars |
-| `crm` | ~67 | CMS + leads, companies, customer 360, sales intelligence, bookings, live support |
-| `erp` | ~110 | Everything — **exceeds the Free cap**, needs a paid plan |
+| Profile | What you get |
+|---------|--------------|
+| `cms` | Pages, blog, media, newsletter, surveys, webinars |
+| `crm` | CMS + leads, companies, customer 360, sales intelligence, bookings, live support |
+| `erp` | Everything (~75 functions post-consolidation — now fits the Free cap) |
 
 Preset it non-interactively with `FLOWWINK_PROFILE=cms`, or deploy literally
-everything with `FLOWWINK_DEPLOY_ALL=1` (only on a paid plan).
+everything with `FLOWWINK_DEPLOY_ALL=1`. Profiles are data, not code — they
+live in `supabase/seed/install-profiles.json`; the module→function map behind
+them is `src/lib/edge-function-registry.ts`.
 
 **Enabling more modules later is two steps.** Toggling a module in
 `/admin/modules` seeds its skills immediately, but the browser cannot deploy
@@ -320,107 +322,45 @@ See **[DEPLOYMENT.md](./deployment.md)** for deploying to Easypanel, Railway, or
 
 ## Edge Functions Reference
 
-| Function | Purpose | Auth Required | Secrets Required |
-|----------|---------|---------------|------------------|
-| `analyze-brand` | Extract branding from URLs | Yes | `FIRECRAWL_API_KEY` |
-| `blog-rss` | Generate RSS feed | No | - |
-| `chat-completion` | AI chat responses | No | AI API keys (optional) |
-| `check-secrets` | Check secrets configuration status | Yes (Admin) | - |
-| `content-api` | REST/GraphQL API | No | - |
-| `copilot-action` | AI copilot actions | Yes | AI API keys |
-| `create-checkout` | Create Stripe checkout sessions | No | `STRIPE_SECRET_KEY` |
-| `create-user` | Create users programmatically | No | - |
-| `enrich-company` | Enrich company data | Yes | - |
-| `firecrawl-search` | Web scraping search | Yes | `FIRECRAWL_API_KEY` |
-| `generate-text` | AI text generation | Yes | AI API keys |
-| `get-page` | Cached page fetching | No | - |
-| `invalidate-cache` | Clear page cache | Yes | - |
-| `llms-txt` | LLM text processing | Yes | AI API keys |
-| `migrate-page` | AI content migration | Yes | `FIRECRAWL_API_KEY` |
-| `newsletter-confirm` | Double opt-in confirmation | No | - |
-| `newsletter-export` | GDPR export of subscribers | Yes | - |
-| `newsletter-gdpr` | GDPR operations for newsletters | Yes | - |
-| `newsletter-link` | Newsletter link processing | No | - |
-| `newsletter-send` | Send newsletter campaigns | Yes | `RESEND_API_KEY` |
-| `newsletter-subscribe` | Handle newsletter subscriptions | No | - |
-| `newsletter-track` | Track newsletter opens/clicks | No | - |
-| `newsletter-unsubscribe` | Handle unsubscriptions | No | - |
-| `process-image` | WebP conversion | Yes | - |
-| `publish-scheduled-pages` | Cron job for scheduling | No | - |
-| `qualify-lead` | Lead qualification | Yes | AI API keys |
-| `send-booking-confirmation` | Send booking confirmations | Yes | `RESEND_API_KEY` |
-| `send-order-confirmation` | Send order confirmations | Yes | `RESEND_API_KEY` |
-| `send-webhook` | Trigger webhooks for events | Yes | - |
-| `setup-database` | Database setup/initialization | Yes (Admin) | - |
-| `setup-flowpilot` | Bootstrap agentic layer (skills, soul, identity) | Yes (Admin) | - |
-| `flowpilot-heartbeat` | Autonomous heartbeat loop (admin-configurable schedule) | No | AI API keys |
-| `flowpilot-learn` | Analyze usage data → agent memory | No | - |
-| `sitemap-xml` | Generate sitemap | No | - |
-| `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
-| `support-router` | Route support requests | No | - |
-| `test-ai-connection` | Test AI provider connections | Yes | AI API keys |
-| `track-page-view` | Track page analytics | No | - |
-| `unsplash-search` | Search Unsplash for images | Yes | `UNSPLASH_ACCESS_KEY` |
-| `update-kb-feedback` | Update knowledge base feedback | Yes | - |
+The deployable surface is ~75 functions after the 2026-07 edge-surface
+consolidation. The authoritative, guardrail-tested list — including which
+modules own which functions and which are core — is
+**`src/lib/edge-function-registry.ts`**; the operator mental model
+(mandatory vs optional, align-down rule, deploy flags) is
+**`docs/operators/edge-function-tiers.md`**.
+
+A few structural points worth knowing during setup:
+
+- **`chat-completion`** is THE AI endpoint (visitor chat, FlowPilot, all AI
+  calls). Public functions like this deploy with `--no-verify-jwt`.
+- **`agent-execute`** runs every registered skill, including the many
+  `internal:` handlers that used to be standalone edge functions.
+- **`comms-send`** handles all transactional outbound email (booking/order/
+  invoice/quote confirmations, reminders); requires `RESEND_API_KEY`.
+- **`flowpilot-lifecycle`** hosts the operator's lifecycle tasks
+  (`?task=briefing|distill|learn|followthrough|curator`).
+- **`integrations-account`** consolidates the provider-key management
+  endpoints (OpenAI, ElevenLabs, Hunter, Firecrawl, Unsplash).
+- Webhooks (`stripe-webhook`, `email-webhook`, `composio-webhook`) need their
+  respective secrets (`STRIPE_WEBHOOK_SECRET`, …).
 
 ---
 
-## Scheduled Publishing Setup
+## Scheduled jobs (cron)
 
-To enable scheduled publishing, set up a cron job that calls the `publish-scheduled-pages` function:
-
-### Using Supabase pg_cron
-
-```sql
--- Run every minute
-SELECT cron.schedule(
-  'publish-scheduled-pages',
-  '* * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/publish-scheduled-pages',
-    headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
-  );
-  $$
-);
-```
+Scheduled publishing needs **no manual setup**: `publish_scheduled_pages()` is
+a plain SQL function registered on pg_cron by migration (there is no edge
+function involved). Cron jobs in general are registered idempotently by
+migrations and read the instance's own URL/key — never hardcode another
+instance's URL in a cron command; the Observability tab's cron-health card
+flags foreign-host jobs, never-ran jobs, and recent HTTP errors.
 
 ### FlowPilot Autonomous Loop
 
-```sql
--- Heartbeat (default: twice daily — schedule managed via admin Autonomy Settings)
-SELECT cron.schedule(
-  'flowpilot-heartbeat',
-  '0 0,12 * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/flowpilot-heartbeat',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
-    body := concat('{"time": "', now(), '"}')::jsonb
-  ) AS request_id;
-  $$
-);
-
--- Learn from usage data daily at 03:00 UTC
-SELECT cron.schedule(
-  'flowpilot-learn',
-  '0 3 * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/flowpilot-learn',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
-    body := concat('{"time": "', now(), '"}')::jsonb
-  ) AS request_id;
-  $$
-);
-```
-
-### Using External Cron (e.g., cron-job.org)
-
-Set up an HTTP POST request to:
-```
-https://YOUR_PROJECT_REF.supabase.co/functions/v1/publish-scheduled-pages
-```
+The heartbeat schedule is managed from **Admin → Autonomy Settings** (it
+writes the pg_cron entry for `flowpilot-heartbeat`). Lifecycle tasks
+(learn, distill, briefing, curator) run as cron jobs targeting
+`flowpilot-lifecycle?task=<task>` and are likewise registered by migration.
 
 ---
 
@@ -496,7 +436,7 @@ These are the minimum functions needed for pages to work:
    - Name: `get-page`
    - Upload the file: `supabase/functions/get-page/index.ts`
    - Click **Deploy**
-5. Repeat for `track-page-view`, `content-api`, and `sitemap-xml`
+5. Repeat for `track-page-view`, `content-api`, and `sitemap`
 
 **Via Supabase CLI** — these four are public, so they need `--no-verify-jwt`:
 ```bash
@@ -506,7 +446,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 supabase functions deploy get-page --no-verify-jwt
 supabase functions deploy track-page-view --no-verify-jwt
 supabase functions deploy content-api --no-verify-jwt
-supabase functions deploy sitemap-xml --no-verify-jwt
+supabase functions deploy sitemap --no-verify-jwt
 ```
 
 **To (re)deploy everything the site needs**, use the CLI rather than a loop —
@@ -569,19 +509,12 @@ When links are shared on social media (Facebook, LinkedIn, Twitter, WhatsApp, Sl
    - `OG Image` - URL to your social sharing image (1200x630px recommended)
    - `Twitter Handle` - Your Twitter/X handle (optional)
 
-2. **Configure nginx** (for production):
-   
-   Edit `nginx.conf` and uncomment the proxy configuration:
-   ```nginx
-   if ($is_social_crawler) {
-       rewrite ^(.*)$ /functions/v1/render-page?path=$1 break;
-       proxy_pass https://YOUR_PROJECT_REF.supabase.co;
-       proxy_set_header Host $proxy_host;
-       proxy_set_header X-Real-IP $remote_addr;
-   }
-   ```
-   
-   Replace `YOUR_PROJECT_REF.supabase.co` with your actual Supabase project URL.
+2. **Crawler-side rendering is currently unavailable.** `nginx.conf` carries a
+   commented-out rewrite to a `render-page` edge function, but that function
+   was never shipped — enabling the rewrite would 404 for crawlers. Leave it
+   commented. The static `index.html` OG tags are what social crawlers see;
+   if per-page crawler meta becomes a requirement, that's a feature request,
+   not a config step.
 
 3. **Test with Facebook Debugger**:
    - Go to [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)

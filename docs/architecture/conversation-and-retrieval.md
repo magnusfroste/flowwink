@@ -37,7 +37,7 @@ and grounding strategy — none with real retrieval:
 | Docs chat | `docs-chat` | Anonymous | Hand-rolled keyword scoring over `docs_pages` ("CAG"). |
 | Flowwork (workspace) | `workspace-chat` | JWT + role gate (`admin`/`employee`/`manager`). Role-agnostic beyond the gate — every allowed role sees the same sources. | `buildContext()` pulls the **25 most-recent rows** per selected source (documents, contracts, kb, pages, crm, employees, wiki, flowtable — the flowtable source is question-driven keyword search over workspace-shared bases, not most-recent rows) into a 15k-token fair-share budget, with `[N]` inline citations. |
 | FlowPilot Operate / FlowChat | `agent-operate` | JWT, admin | Full pilot core (`_shared/agent-reason.ts`, soul, objectives, memories) + `search_skills` → `execute_skill`. The *acting* agent, not a retrieval surface. |
-| Live support (human) | `support-router` → `route_conversation_to_agent` RPC | — | Human handoff; `chat-completion` already skips AI when a human agent is engaged. |
+| Live support (human) | `route_conversation` skill → `route_conversation_to_agent` RPC | — | Human handoff; `chat-completion` already skips AI when a human agent is engaged. |
 
 Supporting facts that shape the design:
 

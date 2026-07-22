@@ -169,8 +169,8 @@ POST /functions/v1/agent-operate
 → scoreSkillsByIntent() from _shared/skills/
 → execute_skill() via agent-execute
 
-# FlowPilot path (autonomous)
-POST /functions/v1/agent-reason
+# FlowPilot path (autonomous) — in-process, no HTTP hop:
+# flowpilot-heartbeat imports _shared/agent-reason.ts
 → scoreSkillsByIntent() from _shared/pilot/../skills/
 → execute_skill() via agent-execute
 

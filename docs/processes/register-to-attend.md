@@ -89,7 +89,7 @@ completed / cancelled`)
 |---|---|---|---|
 | (created) | Person is registered | visitor (WebinarBlock) / agent (`register_webinar`) | Lead auto-linked by email or created (`source=webinar`, +15 score); upsert on `(webinar_id, email)` — re-registering never duplicates; emits `webinar.registered` |
 | `attended` | Showed up (default false) | admin / agent (`mark_webinar_attendance`) | On `attended=true` with a linked lead: +10 lead score; emits `webinar.attended` |
-| `reminder_confirm/t24/t1/post_sent_at` | Reminder markers | `send-webinar-reminders` sweep ('Webinar Reminders' automation, every 15 min) | **Sends the email** (confirm / T-24h / T-1h / post via `email-send`) and stamps the marker — one send per registration per stage, never re-sent. The `webinar.reminder.*` platform events also fire for custom rules |
+| `reminder_confirm/t24/t1/post_sent_at` | Reminder markers | `comms-send?kind=webinar_reminders` sweep ('Webinar Reminders' automation, every 15 min) | **Sends the email** (confirm / T-24h / T-1h / post via `email-send`) and stamps the marker — one send per registration per stage, never re-sent. The `webinar.reminder.*` platform events also fire for custom rules |
 | `follow_up_sent` | Follow-up done (default false) | the post window of the same sweep | Sends thanks (attended) or missed-you (absent), including the recording link when set, and stamps the flag |
 
 ### Who does what
@@ -126,7 +126,7 @@ visitors, chat and MCP operators all use the same RPC.
 
 ## Known gaps (missing for L4/L5)
 
-- ✅ Reminder **delivery** shipped 2026-07-05 — `send-webinar-reminders` edge
+- ✅ Reminder **delivery** shipped 2026-07-05 — `comms-send?kind=webinar_reminders` (formerly `send-webinar-reminders`) edge
   function sweeps all four windows (confirm / T-24h / T-1h / post) and sends
   the emails itself via `email-send`, stamped once per registration; runs as
   the built-in 'Webinar Reminders' automation every 15 min (skill:

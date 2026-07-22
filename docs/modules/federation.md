@@ -104,11 +104,12 @@ A2A channels are conversation-oriented. Used when:
 - A peer wants to subscribe to events
 - Bidirectional status streaming during long-running work
 
-The reference implementation is the **Agent Bridge** between Claude Code and Lovable:
-- Endpoint: `https://clawstack.froste.eu/api/bridge`
-- Token: `bridge-dev-token`
-- Pattern: `POST` to send, `GET ?since_id=N` to poll
-- **Always poll with `since_id=0`** when reading — never trust "since last read" optimizations during dev. See `mem://development/bridge-polling-protocol`.
+The A2A surface is served by the `a2a` edge function, with peer discovery via
+`agent-card`. The former reference implementation (the "Agent Bridge" on
+`clawstack.froste.eu`) is **decommissioned** — do not use it. The live external
+peer today is OpenClaw (`https://openclaw.liteit.se`), which operates FlowWink
+instances through the outward MCP gateway (`mcp-server`, `?mode=dispatch`)
+rather than A2A.
 
 ---
 

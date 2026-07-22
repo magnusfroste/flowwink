@@ -85,11 +85,11 @@ GEMINI_API_KEY=...
 - **Lead Qualification** - AI-powered lead scoring and summaries
 - **Content Migration** - Import pages from external websites
 
-**Edge Functions:**
-- `generate-text` (text generation)
-- `enrich-company` (company enrichment)
-- `qualify-lead` (lead qualification)
-- `migrate-page` (content migration)
+**Backing services:**
+- `chat-completion` (text generation via the shared AI toolbar)
+- `enrich_company` skill (`internal:` handler run by `agent-execute`)
+- `qualify_lead` skill (`internal:` handler run by `agent-execute`)
+- `migrate-page` edge function (content migration)
 
 **Configuration:**
 - Admin → Site Settings → System AI tab
@@ -111,7 +111,7 @@ GEMINI_API_KEY=...
 
 **Purpose:** Generate, improve, expand, summarize, translate, and continue text content.
 
-**Edge Function:** `generate-text`
+**Backing service:** `chat-completion` (called by the shared `<AITiptapToolbar>` via `useAITextGeneration` — these are utilities, not skills; see Law 3)
 
 **Actions:**
 - **Expand** - Make text longer with more details
@@ -184,9 +184,9 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 
 **Purpose:** Automatically extract company information (description, industry, size, etc.) from company websites.
 
-**Edge Functions:**
-- `enrich-company` (AI extraction)
-- `firecrawl` (web scraping)
+**Backing services:**
+- `enrich_company` skill (`internal:` handler run by `agent-execute`, AI extraction)
+- Firecrawl (web scraping, via `browser-fetch`/`web-scrape`)
 
 **Configuration:**
 - Uses the same AI provider as Chat Settings
@@ -203,7 +203,7 @@ Lottie and SVG animations are imported as "embed" blocks with the animation URL,
 
 **Purpose:** Automatically score and qualify leads based on form submissions and company data.
 
-**Edge Function:** `qualify-lead`
+**Backing service:** `qualify_lead` skill (`internal:` handler run by `agent-execute` — deterministic point-based scoring)
 
 **Configuration:**
 - Uses the same AI provider as Chat Settings
