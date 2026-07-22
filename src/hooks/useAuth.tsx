@@ -25,7 +25,16 @@ interface AuthContextType {
   isWriter: boolean;
   isApprover: boolean;
   isAdmin: boolean;
+  /** True admin status from DB, ignoring any active role preview. */
+  realIsAdmin: boolean;
+  /** Roles the underlying account actually has (unfiltered). */
+  realRoles: AppRole[];
+  /** Non-null when admin is previewing the app as another role set. */
+  previewRoles: AppRole[] | null;
+  /** Admin-only: activate a preview of another role set (visual-only, RLS unchanged). */
+  setPreviewRoles: (roles: AppRole[] | null) => void;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
