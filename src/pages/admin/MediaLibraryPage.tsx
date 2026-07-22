@@ -71,6 +71,18 @@ export default function MediaLibraryPage() {
   const [detailsFor, setDetailsFor] = useState<{ storagePath: string; filename: string; publicUrl: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ⌘K / quick-create wiring: `?upload=1` opens the file picker on mount.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('upload') === '1') {
+      const next = new URLSearchParams(searchParams);
+      next.delete('upload');
+      setSearchParams(next, { replace: true });
+      // Defer to next tick so the input is mounted.
+      setTimeout(() => fileInputRef.current?.click(), 0);
+    }
+  }, [searchParams, setSearchParams]);
+
   const { data: assetMap } = useMediaAssets();
   const upsertMeta = useUpsertMediaAsset();
 
