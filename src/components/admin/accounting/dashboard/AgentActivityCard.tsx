@@ -62,7 +62,7 @@ export function AgentActivityCard() {
               {data.recent.map((r, i) => (
                 <li key={i} className="flex items-center gap-2 min-w-0">
                   <span className="tabular-nums shrink-0">
-                    {new Date(r.entry_date).toLocaleDateString('sv-SE', {
+                    {new Date(r.entry_date).toLocaleDateString('en-US', {
                       day: '2-digit',
                       month: 'short',
                     })}

@@ -72,27 +72,22 @@ export default function HRPage() {
         </div>
 
         <Tabs defaultValue="employees">
-          {/* 14 tabs overflow the viewport on all but the widest screens — wrap
-              in an x-scrollable band so Compensation/Training/Disciplinary/Shifts
-              stay reachable without a redesign. */}
-          <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-max">
-              <TabsTrigger value="employees">Employees</TabsTrigger>
-              <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
-              <TabsTrigger value="allocations">Allocations</TabsTrigger>
-              <TabsTrigger value="balances">Balances</TabsTrigger>
-              <TabsTrigger value="payroll">Payroll</TabsTrigger>
-              <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-              <TabsTrigger value="attendance">Attendance</TabsTrigger>
-              <TabsTrigger value="skills">Skills & Certs</TabsTrigger>
-              <TabsTrigger value="contracts">Contracts</TabsTrigger>
-              <TabsTrigger value="compensation">Compensation</TabsTrigger>
-              <TabsTrigger value="training">Training</TabsTrigger>
-              <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
-              <TabsTrigger value="shifts">Shifts</TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="leave">Leave Requests{pendingLeave > 0 && ` (${pendingLeave})`}</TabsTrigger>
+            <TabsTrigger value="allocations">Allocations</TabsTrigger>
+            <TabsTrigger value="balances">Balances</TabsTrigger>
+            <TabsTrigger value="payroll">Payroll</TabsTrigger>
+            <TabsTrigger value="orgchart">Org Chart</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="skills">Skills & Certs</TabsTrigger>
+            <TabsTrigger value="contracts">Contracts</TabsTrigger>
+            <TabsTrigger value="compensation">Compensation</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
+            <TabsTrigger value="shifts">Shifts</TabsTrigger>
+          </TabsList>
           <TabsContent value="employees">
             <Card>
               <CardContent className="pt-6">

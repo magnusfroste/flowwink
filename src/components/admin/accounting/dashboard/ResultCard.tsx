@@ -41,7 +41,7 @@ export function ResultCard() {
   const now = new Date();
   const isCurrent = year === now.getFullYear();
   const endLabel = isCurrent
-    ? now.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
+    ? now.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     : 'Dec 31';
 
   return (

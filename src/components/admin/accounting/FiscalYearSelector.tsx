@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFiscalYear } from './FiscalYearContext';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +71,8 @@ export function FiscalYearSelector() {
   return (
     <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
       <SelectTrigger className="w-[180px] h-9">
+        {/* Render our own label instead of <SelectValue /> so the selected
+            item's badge doesn't duplicate the trigger's status pill. */}
         <div className="flex items-center gap-2 w-full">
           <span className="text-xs text-muted-foreground">FY</span>
           <span className="font-medium tabular-nums">{year}</span>
