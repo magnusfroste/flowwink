@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260722200000",
-      "migrations_count": 263,
+      "migration_head": "20260723030000",
+      "migrations_count": 264,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1057,6 +1057,10 @@
         {
           "version": "20260722200000",
           "name": "sandbox-reset"
+        },
+        {
+          "version": "20260723030000",
+          "name": "secure-demo-seed-rpcs"
         }
       ]
     },
