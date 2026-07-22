@@ -89,14 +89,20 @@ export function ProfitLossTab() {
         <TotalRow label="Total operating expenses" amount={fmt(-report.totalExpenses)} />
       </div>
 
-      <div className="px-6 pt-6 pb-2">
-        <SectionTitle title="Operating result" period={fiscalYear} />
-        <TotalRow label="Total operating result" amount={fmt(report.netResult)} />
-      </div>
-
-      <div className="px-6 pt-6 pb-6">
-        <SectionTitle title="Calculated result" period={fiscalYear} />
-        <TotalRow label="Calculated result" amount={fmt(report.netResult)} strong />
+      <div className="px-6 pt-8 pb-6">
+        <div className="flex items-baseline justify-between border-t-2 border-foreground/80 pt-3">
+          <div className="font-serif text-lg">Result for the year</div>
+          <div
+            className={`font-mono tabular-nums text-lg font-semibold ${
+              report.netResult >= 0
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : 'text-destructive'
+            }`}
+          >
+            {fmt(report.netResult)}
+          </div>
+        </div>
+        <div className="mt-1 text-xs text-muted-foreground">{fiscalYear}</div>
       </div>
     </div>
     </div>
