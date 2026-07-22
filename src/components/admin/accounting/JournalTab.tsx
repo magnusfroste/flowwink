@@ -63,6 +63,13 @@ export function JournalTab() {
     return e.reference_number || '—';
   };
 
+  const fmtDate = (iso: string) => {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   const filtered = useMemo(() => {
     return (entries || []).filter((e) => {
       if (dateFrom && e.entry_date < dateFrom) return false;
