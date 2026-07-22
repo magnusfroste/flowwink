@@ -72,14 +72,8 @@ import {
 } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +85,7 @@ import {
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
 import { PendingApprovalsBadge } from './PendingApprovalsBadge';
+import { AdminSearchCommand } from './AdminSearchCommand';
 import { useNavFeatureFlags, isFeatureFlagOn } from '@/hooks/useNavFeatureFlags';
 import { useRoleModuleAccess } from '@/hooks/useRoleModuleAccess';
 import type { AppRole } from '@/types/cms';
@@ -191,18 +186,7 @@ export function AdminSidebar() {
     }))
     .filter(group => group.items.length > 0), [roleFilteredGroups, modules, featureFlags, isAdmin, hasAnyRole, allowedModuleIds]);
 
-  // All items for search
-  const allSearchItems = useMemo(() =>
-    filteredGroups.flatMap(group =>
-      group.items.map(item => ({ ...item, group: group.label }))
-    ), [filteredGroups]);
-
-  const handleSearchSelect = (href: string) => {
-    setSearchOpen(false);
-    navigate(href);
-  };
-
-  // Keyboard shortcut for search
+  // Keyboard shortcut for search (⌘K / Ctrl+K)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -214,14 +198,6 @@ export function AdminSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<any>;
-
-  // Focus input when search opens
-  useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [searchOpen]);
 
   return (
     <>
@@ -259,56 +235,9 @@ export function AdminSidebar() {
           </div>
         )}
 
-        {/* Full-panel search (replaces navigation + footer when active) */}
-        {searchOpen ? (
-          <SidebarContent className="px-2 pt-1 pb-2 flex-1">
-            <Command className="flex flex-col h-full bg-transparent text-sidebar-foreground shadow-none [&_[cmdk-group-heading]]:text-sidebar-foreground/50 [&_[cmdk-input-wrapper]]:border-sidebar-border [&_[cmdk-input-wrapper]_svg]:text-sidebar-foreground/50">
-              <div className="px-1 pb-2">
-                <CommandInput
-                  ref={searchInputRef}
-                  placeholder="Search pages..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setSearchOpen(false);
-                    }
-                  }}
-                  className="h-8 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40"
-                />
-              </div>
-              <CommandList className="flex-1 max-h-none overflow-y-auto">
-                <CommandEmpty className="py-6 text-center text-xs text-sidebar-foreground/50">No results found.</CommandEmpty>
-                {Object.entries(
-                  allSearchItems.reduce<Record<string, typeof allSearchItems>>((acc, item) => {
-                    (acc[item.group] ??= []).push(item);
-                    return acc;
-                  }, {})
-                ).map(([groupLabel, items]) => (
-                  <CommandGroup key={groupLabel} heading={groupLabel}>
-                    {items.map((item) => (
-                      <CommandItem
-                        key={item.href}
-                        onSelect={() => handleSearchSelect(item.href)}
-                        className="cursor-pointer text-sm text-sidebar-foreground/80 hover:text-sidebar-foreground aria-selected:bg-sidebar-accent aria-selected:text-sidebar-accent-foreground"
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.name}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-            </Command>
-            <button
-              onClick={() => setSearchOpen(false)}
-              className="mt-2 w-full py-1.5 text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/60 transition-colors"
-            >
-              Press Esc to close
-            </button>
-          </SidebarContent>
-        ) : (
-        <>
-        {/* Navigation */}
+        {/* Navigation (always visible; search opens as dialog overlay) */}
         <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2">
+
           {filteredGroups.map((group, index) => {
             const hasActiveItem = group.items.some(item => isItemActive(item.href));
 
@@ -506,9 +435,8 @@ export function AdminSidebar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>
-        </>
-        )}
       </Sidebar>
+      <AdminSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }
