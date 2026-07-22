@@ -46,6 +46,7 @@ export default function VendorsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteName, setDeleteName] = useState('');
+  useOpenOnQueryParam('new', '1', () => { setEditingId(null); setForm(EMPTY_FORM); setDialogOpen(true); });
 
   const { data: vendors = [], isLoading } = useQuery({
     queryKey: ['vendors'],
