@@ -19,6 +19,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useGatedSkills } from '@/hooks/useGatedSkills';
 import { InboxSection } from './ApprovalInboxPage';
 import { ChainsSection, GroupsSection } from './ApprovalChainsPage';
+import { AgentSkillApprovalHeader, AgentSkillApprovalBody } from '@/components/admin/approvals/AgentSkillApprovalCard';
 
 function formatAmount(cents: number | null, currency: string) {
   if (cents == null) return '—';
