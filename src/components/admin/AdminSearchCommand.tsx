@@ -89,12 +89,16 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: 'New blog post',       href: '/admin/blog/new',              icon: Newspaper,     moduleId: 'blog',        roles: ['marketing'] },
   { label: 'New page',            href: '/admin/pages/new',             icon: FileCode,      moduleId: 'pages',       roles: ['marketing'] },
   { label: 'New campaign',        href: '/admin/campaigns?new=1',       icon: Megaphone,     moduleId: 'paidGrowth',  roles: ['marketing'] },
+  { label: 'New media upload',    href: '/admin/media?upload=1',      icon: ImageIcon,     moduleId: 'media',       roles: ['marketing'] },
   // Projects
   { label: 'New project',         href: '/admin/projects?new=1',        icon: Briefcase,     moduleId: 'projects',    roles: ['projects'] },
   { label: 'New task',            href: '/admin/projects?new=task',           icon: CalendarPlus,  moduleId: 'projects',    roles: ['projects', 'sales', 'support'] },
+  { label: 'New time entry',      href: '/admin/timesheets?tab=entries&new=1', icon: Clock,      moduleId: 'projects',    roles: ['projects', 'hr', 'sales'] },
   // Warehouse / purchasing
   { label: 'New product',         href: '/admin/products?new=1',        icon: Package,       moduleId: 'ecommerce',   roles: ['warehouse', 'sales'] },
   { label: 'New vendor',          href: '/admin/vendors?new=1',         icon: Truck,         moduleId: 'purchasing',  roles: ['purchasing', 'warehouse'] },
+  // Accounting
+  { label: 'New journal entry',   href: '/admin/accounting?tab=journal&new=1', icon: BookOpen,   moduleId: 'accounting',  roles: ['accounting'] },
 ];
 
 interface SearchHit {
