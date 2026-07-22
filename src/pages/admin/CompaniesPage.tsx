@@ -37,6 +37,8 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState('');
   const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>('all');
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setShowCreateDialog(true));
   const { data: companies, isLoading } = useCompanies();
   const { data: stats } = useCompanyStats();
   const deleteCompany = useDeleteCompany();
