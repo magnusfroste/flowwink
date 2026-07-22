@@ -178,6 +178,8 @@ export default function AccountingPage() {
           <TabsContent value="settings"><SettingsTab /></TabsContent>
           </FiscalYearProvider>
         </Tabs>
+
+        <NewJournalEntryDialog open={showCreate} onOpenChange={setShowCreate} />
       </AdminPageContainer>
     </AdminLayout>
   );
