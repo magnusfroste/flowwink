@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { generateHTML } from '@tiptap/react';
+import { generateHTML, generateJSON } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 
@@ -296,8 +296,21 @@ export function getEditorContent(content: string | TiptapDocument | undefined): 
 export function renderToHtml(content: unknown): string {
   if (!content) return '';
   
-  // Handle string content - convert markdown to Tiptap JSON, then render
+  // Handle string content. Two legacy shapes exist: markdown strings AND raw
+  // HTML strings. HTML must NOT go through the markdown parser — it has no
+  // HTML handling, so tags land in text nodes and generateHTML escapes them,
+  // showing literal "<p>…</p>" to visitors (while the editor, which parses
+  // HTML natively, looks fine — the exact asymmetry behind the "blog preview
+  // shows raw HTML" report).
   if (typeof content === 'string') {
+    if (/^\s*</.test(content)) {
+      try {
+        return generateHTML(generateJSON(content, [StarterKit, Link]), [StarterKit, Link]);
+      } catch (e) {
+        logger.error('Failed to render legacy HTML content:', e);
+        return '';
+      }
+    }
     const doc = createDocumentFromMarkdown(content);
     try {
       return generateHTML(doc, [StarterKit, Link]);

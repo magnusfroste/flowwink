@@ -13,6 +13,7 @@ import { InvoiceDetailSheet } from '@/components/admin/invoices/InvoiceDetailShe
 import { CreateInvoiceDialog } from '@/components/admin/invoices/CreateInvoiceDialog';
 import { InvoiceFromTimesheetsDialog } from '@/components/admin/invoices/InvoiceFromTimesheetsDialog';
 import { ArAgingReportTab } from '@/components/admin/invoices/ArAgingReportTab';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -29,6 +30,7 @@ export default function InvoicesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [timesheetOpen, setTimesheetOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setCreateOpen(true));
 
   const { data: invoices = [], isLoading } = useInvoices(
     statusFilter === 'all' ? undefined : statusFilter

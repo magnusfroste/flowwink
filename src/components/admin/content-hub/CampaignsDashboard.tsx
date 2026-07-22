@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { Plus, Sparkles, Calendar, Filter, LayoutGrid, List } from 'lucide-react';
 import { useContentProposals, useDeleteProposal, useApproveProposal, ContentProposal } from '@/hooks/useContentProposals';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ export function CampaignsDashboard() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  useOpenOnQueryParam('new', '1', () => setShowAIDialog(true));
 
   const { data: proposals, isLoading } = useContentProposals();
   const deleteProposal = useDeleteProposal();

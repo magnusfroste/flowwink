@@ -31,6 +31,8 @@ const INDUSTRIES = [
 interface CreateCompanyDialogProps {
   trigger?: React.ReactNode;
   onCreated?: (companyId: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function useUserOptions() {
@@ -48,8 +50,13 @@ function useUserOptions() {
   });
 }
 
-export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CreateCompanyDialog({ trigger, onCreated, open: controlledOpen, onOpenChange }: CreateCompanyDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    if (controlledOpen === undefined) setInternalOpen(v);
+  };
   const [name, setName] = useState('');
   const [domain, setDomain] = useState('');
   const [industry, setIndustry] = useState('');

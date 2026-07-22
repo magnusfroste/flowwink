@@ -12,11 +12,13 @@ import { VendorInvoicesPanel } from '@/components/admin/purchasing/VendorInvoice
 import { VendorScorecardsPanel } from '@/components/admin/purchasing/VendorScorecardsPanel';
 import { VendorDisputesPanel } from '@/components/admin/purchasing/VendorDisputesPanel';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 export default function PurchaseOrdersPage() {
   const [tab, setTab] = useState('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const fpEnabled = useIsModuleEnabled('flowpilot');
+  useOpenOnQueryParam('new', '1', () => { setEditingId(null); setTab('editor'); });
 
   const openEditor = (id: string | null) => {
     setEditingId(id);

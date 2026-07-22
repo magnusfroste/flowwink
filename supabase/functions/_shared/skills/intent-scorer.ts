@@ -172,7 +172,12 @@ export function scoreSkillsByIntent(
   const alwaysInclude = new Set(options.alwaysInclude || []);
   const usageBoost = options.usageBoost || {};
 
-  if (skills.length <= maxSkills) return skills;
+  // Small pools skip scoring ONLY when there is no intent to rank by. With a
+  // real query the caller (e.g. search_skills) expects relevance ORDER, not
+  // seed order — an external operator reading the top of an unranked list saw
+  // "irrelevant skills ranked high" (OpenClaw, 2026-07-22). Everything still
+  // gets returned; ranking just has to actually happen.
+  if (skills.length <= maxSkills && !userMessage.trim()) return skills;
 
   const msg = userMessage.toLowerCase();
   const msgWords = msg.split(/\s+/).filter(w => w.length > 1);

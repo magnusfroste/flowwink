@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,8 +33,10 @@ const PROJECT_STATUS_COLORS: Record<string, string> = {
   on_hold: "bg-yellow-100 text-yellow-800",
 };
 
-function NewProjectDialog() {
-  const [open, setOpen] = useState(false);
+function NewProjectDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); if (controlledOpen === undefined) setInternalOpen(v); };
   const create = useCreateProject();
   const [form, setForm] = useState({ name: "", description: "", client_name: "", deadline: "" });
 
@@ -434,12 +437,17 @@ function ProjectCard({ project, selected, onSelect }: { project: Project; select
 export default function ProjectsPage() {
   const { data: projects, isLoading } = useProjects();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  // `?new=1` and `?new=task` both open the project create dialog — there is no
+  // standalone "new task" flow at this level (tasks are created inside a project).
+  useOpenOnQueryParam('new', '1', () => setNewProjectOpen(true));
+  useOpenOnQueryParam('new', 'task', () => setNewProjectOpen(true));
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader title="Projects" description="Manage projects, tasks, and track progress">
-          <NewProjectDialog />
+          <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
         </AdminPageHeader>
 
         {isLoading ? (

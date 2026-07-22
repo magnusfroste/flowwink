@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { useCreateEmployee, useEmployees } from "@/hooks/useEmployees";
 
-export function NewEmployeeDialog() {
-  const [open, setOpen] = useState(false);
+export function NewEmployeeDialog({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); if (controlledOpen === undefined) setInternalOpen(v); };
   const create = useCreateEmployee();
   const { data: existing } = useEmployees();
   const [form, setForm] = useState({

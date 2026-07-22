@@ -61,10 +61,18 @@ for (const exported of Object.values(modules)) {
 // they must exist on every instance regardless of module toggles. Emit them as
 // the pseudo-module `platform` so sync-skills / fleet drift detection cover them
 // (previously they were invisible to the CLI sync path — a drift hole).
-const platformSeeds = await import(join(ROOT, 'src', 'lib', 'platform-seeds.ts')) as { PLATFORM_SKILLS?: unknown[] };
+const platformSeeds = await import(join(ROOT, 'src', 'lib', 'platform-seeds.ts')) as { PLATFORM_SKILLS?: unknown[]; PLATFORM_AUTOMATIONS?: unknown[] };
 if (Array.isArray(platformSeeds.PLATFORM_SKILLS) && platformSeeds.PLATFORM_SKILLS.length > 0) {
   out.push({ moduleId: 'platform', skills: platformSeeds.PLATFORM_SKILLS });
   total += platformSeeds.PLATFORM_SKILLS.length;
+}
+// Platform AUTOMATIONS travel the same way — before this they were reachable
+// only via bootstrapModule() in the browser, the exact class of gap this
+// artifact exists to close (found 2026-07-22 when Integration Health Check
+// never reached the fleet through sync-skills).
+if (Array.isArray(platformSeeds.PLATFORM_AUTOMATIONS) && platformSeeds.PLATFORM_AUTOMATIONS.length > 0) {
+  autos.push({ moduleId: 'platform', automations: platformSeeds.PLATFORM_AUTOMATIONS });
+  autoTotal += platformSeeds.PLATFORM_AUTOMATIONS.length;
 }
 out.sort((a, b) => a.moduleId.localeCompare(b.moduleId));
 

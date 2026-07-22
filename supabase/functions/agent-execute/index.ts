@@ -42,6 +42,7 @@ import { handler as hUnsplashSearch } from '../_shared/handlers/unsplash-search.
 import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
+import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -723,6 +724,9 @@ serve(async (req) => {
 
       } else if (handler === 'internal:fetch_ecb_rates') {
         result = await executeFetchFxRates(supabase);
+
+      } else if (handler === 'internal:check_integrations') {
+        result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
 
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });

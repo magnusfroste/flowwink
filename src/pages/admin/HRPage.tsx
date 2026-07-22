@@ -21,10 +21,14 @@ import { TrainingPanel } from "@/components/admin/hr/TrainingPanel";
 import { DisciplinaryPanel } from "@/components/admin/hr/DisciplinaryPanel";
 import { ShiftsPanel } from "@/components/admin/hr/ShiftsPanel";
 import { Users, CalendarOff, AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 
 export default function HRPage() {
   const { data: employees, isLoading: empLoading } = useEmployees();
   const { data: leaveRequests, isLoading: leaveLoading } = useLeaveRequests();
+  const [newEmployeeOpen, setNewEmployeeOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setNewEmployeeOpen(true));
 
   const activeCount = employees?.filter((e) => e.status === "active").length || 0;
   const onLeaveCount = employees?.filter((e) => e.status === "on_leave").length || 0;
@@ -34,7 +38,7 @@ export default function HRPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="HR & Employees">
-          <NewEmployeeDialog />
+          <NewEmployeeDialog open={newEmployeeOpen} onOpenChange={setNewEmployeeOpen} />
         </AdminPageHeader>
 
         <div className="grid gap-4 sm:grid-cols-3">

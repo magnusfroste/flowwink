@@ -20,11 +20,8 @@ import { useGatedSkills } from '@/hooks/useGatedSkills';
 import { InboxSection } from './ApprovalInboxPage';
 import { ChainsSection, GroupsSection } from './ApprovalChainsPage';
 import { AgentSkillApprovalHeader, AgentSkillApprovalBody } from '@/components/admin/approvals/AgentSkillApprovalCard';
+import { useFormatAmount } from '@/lib/format-currency';
 
-function formatAmount(cents: number | null, currency: string) {
-  if (cents == null) return '—';
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(cents / 100);
-}
 
 export default function ApprovalsPage() {
   const { data: pending, isLoading: pendingLoading } = usePendingApprovals();
@@ -32,6 +29,7 @@ export default function ApprovalsPage() {
   const { decide } = useApprovals();
   const [comment, setComment] = useState<Record<string, string>>({});
   const qc = useQueryClient();
+  const formatAmount = useFormatAmount();
 
   const handleDecide = async (id: string, decision: 'approve' | 'reject') => {
     try {

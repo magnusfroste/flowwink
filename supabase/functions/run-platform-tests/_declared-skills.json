@@ -58,6 +58,7 @@
     "change_subscription",
     "check_approval_escalations",
     "check_availability",
+    "check_integrations",
     "check_mo_availability",
     "check_order_status",
     "check_technician_availability",

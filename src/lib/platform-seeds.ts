@@ -51,6 +51,44 @@ Scheduled daily 07:00 UTC via the "Daily Briefing" automation in /admin/automati
 - Email to the owner if Resend is configured`,
   },
   {
+    name: 'check_integrations',
+    description:
+      "Probe every enabled integration (SearXNG, Firecrawl, Resend, OpenAI, Gemini, Unsplash, Composio, local LLM) with a cheap live call and report per-integration ok/fail with a diagnostic. Use when: an integration-backed feature behaves oddly (search falls back, mail not sending); after changing integration config or rotating a key; a scheduled health sweep. NOT for: testing AI chat quality (test_ai_connection); full platform test suites (run_platform_tests).",
+    category: 'system',
+    handler: 'internal:check_integrations',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'check_integrations',
+        description:
+          'Probe every enabled integration with a cheap live call (auth check / trivial read, never a billable write) and report per-integration status with a diagnostic and likely fix. Read-only sensor.',
+        parameters: {
+          type: 'object',
+          properties: {
+            source: {
+              type: 'string',
+              description: "Trigger source label. When 'automation', failures are posted to admin FlowChat.",
+            },
+          },
+        },
+      },
+    },
+    instructions: `## check_integrations
+### What
+Read-only sensor: probes each ENABLED integration from site_settings.integrations with a bounded (6s) live call and returns { healthy, summary, failing[], integrations[] } where every entry has status ok/fail/skipped plus a diagnostic detail.
+### When to use
+- An integration-backed feature misbehaves (web search silently falling back to another provider, mail not arriving, image search empty)
+- After editing integration config or rotating an API key — verify before moving on
+- Scheduled: the "Integration health check" automation runs this daily and raises a notification when something fails
+### Reading the result
+- Diagnostics name the likely fix when the failure shape is known, e.g. SearXNG "403 on format=json" → enable the json format in the instance's settings.yml; "0 results" → the engines block the server's IP, enable qwant/mojeek.
+- 'skipped' means disabled in settings or nothing server-side to probe (google_analytics is a client-side snippet) — not a failure.
+### Origin
+Built after the 2026-07-22 incident where the fleet's SearXNG was misconfigured for days and web search silently fell back to Firecrawl — the failure was invisible until someone read provider fields in agent_activity.`,
+  },
+  {
     name: 'search_web',
     description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',
@@ -397,6 +435,16 @@ export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [
     trigger_type: 'cron',
     trigger_config: { cron: '0 7 * * *', timezone: 'UTC' },
     skill_name: 'run_daily_briefing',
+    skill_arguments: { source: 'automation' },
+    executor: 'platform',
+  },
+  {
+    name: 'Integration Health Check',
+    description:
+      'Platform automation. Probes every enabled integration daily at 06:30 UTC (before the briefing) and posts a warning to admin FlowChat when one fails. Born from the 2026-07-22 SearXNG incident: a broken integration must never fail silently behind a fallback.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '30 6 * * *', timezone: 'UTC' },
+    skill_name: 'check_integrations',
     skill_arguments: { source: 'automation' },
     executor: 'platform',
   },

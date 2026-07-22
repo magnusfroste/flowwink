@@ -86,3 +86,29 @@ describe('Skill Relevance Engine ranking guardrails', () => {
     expect(rankOf(skills, 'send an email to this lead', 'send_email_to_lead')).toBe(1);
   });
 });
+
+describe('small-pool ranking (OpenClaw finding, 2026-07-22)', () => {
+  // The scorer used to short-circuit whenever the pool fit under maxSkills,
+  // returning skills in SEED ORDER with no ranking at all. An external
+  // operator calling search_skills against a small dispatch scope read the
+  // top of that unranked list as "irrelevant skills ranked high" — correctly.
+  // With a real query, ranking must happen regardless of pool size.
+  it('ranks a small pool when a query is present', () => {
+    const skills = [
+      { function: { name: 'manage_pages', description: 'Manage site pages. Use when: editing pages.' } },
+      { function: { name: 'manage_orders', description: 'Manage orders. Use when: handling orders.' } },
+      { function: { name: 'write_blog_post', description: 'Write and publish a blog post. Use when: creating blog content.' } },
+    ];
+    const result = scoreSkillsByIntent(skills, 'write a blog post', { maxSkills: 25 });
+    expect(result[0].function.name).toBe('write_blog_post');
+  });
+
+  it('still passes a small pool through untouched when there is no query', () => {
+    const skills = [
+      { function: { name: 'a_first', description: 'A.' } },
+      { function: { name: 'b_second', description: 'B.' } },
+    ];
+    const result = scoreSkillsByIntent(skills, '', { maxSkills: 25 });
+    expect(result.map((s: any) => s.function.name)).toEqual(['a_first', 'b_second']);
+  });
+});

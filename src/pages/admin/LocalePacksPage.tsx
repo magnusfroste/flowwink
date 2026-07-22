@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -17,7 +17,16 @@ export default function LocalePacksPage() {
   const packs = listPacks();
   const { activeId, chosenId, hasChosen, setActive, isSaving } = useTenantLocalePack();
   const [selectedId, setSelectedId] = useState<string>(activeId);
+  // activeId resolves async (site_settings query) — useState only reads the
+  // initial value, so a tenant whose active pack isn't the default opened the
+  // detail panel on the WRONG pack until they clicked. Track until the user
+  // makes their own selection.
+  const [userPicked, setUserPicked] = useState(false);
+  useEffect(() => {
+    if (!userPicked) setSelectedId(activeId);
+  }, [activeId, userPicked]);
   const selected = getPack(selectedId);
+  const pick = (id: string) => { setUserPicked(true); setSelectedId(id); };
 
   return (
     <AdminLayout>
@@ -55,7 +64,7 @@ export default function LocalePacksPage() {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setSelectedId(p.id)}
+                    onClick={() => pick(p.id)}
                     className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
                     }`}

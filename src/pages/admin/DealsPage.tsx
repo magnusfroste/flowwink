@@ -51,6 +51,7 @@ import { DealTemplatesPanel } from '@/components/admin/deals/DealTemplatesPanel'
 import { useDealTeams, useLatestExchangeRates, useBaseCurrency, convertAmount } from '@/hooks/useDealsParity';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 type ViewMode = 'kanban' | 'table';
 
@@ -62,6 +63,7 @@ export default function DealsPage() {
   const { data: baseCurrency = 'SEK' } = useBaseCurrency();
   const updateDeal = useUpdateDeal();
   const [dialogOpen, setDialogOpen] = useState(false);
+  useOpenOnQueryParam('new', '1', () => setDialogOpen(true));
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState<string>('all');

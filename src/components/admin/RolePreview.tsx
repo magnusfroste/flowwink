@@ -1,4 +1,4 @@
-import { Eye, X } from 'lucide-react';
+import { Eye, ExternalLink, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ROLE_LABELS, type AppRole } from '@/types/cms';
 
+// Operator roles only. `customer` lives in /account (customer portal) — previewing
+// it inside /admin would just render an empty admin shell. Use the "Open customer
+// portal" shortcut below to jump to the real customer surface instead.
 const PREVIEWABLE_ROLES: AppRole[] = [
   'sales',
   'accounting',
@@ -21,7 +24,6 @@ const PREVIEWABLE_ROLES: AppRole[] = [
   'marketing',
   'purchasing',
   'projects',
-  'customer',
 ];
 
 /**
@@ -83,6 +85,16 @@ export function RolePreviewSwitcher({ collapsed }: { collapsed?: boolean }) {
             </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          Customer view lives in the portal
+        </DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <a href="/account" target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open customer portal
+          </a>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
