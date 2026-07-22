@@ -403,6 +403,12 @@ serve(async (req) => {
     } else {
       delete (args as any)._caller_email;
     }
+    // Server-set channel flag: is this a PUBLIC-CHAT caller (a website visitor,
+    // possibly anonymous) rather than an internal operator (FlowPilot heartbeat,
+    // admin UI via callSkill, external MCP)? A `scope:'both'` skill uses this to
+    // decide whether an absent _caller_email means "sign in first" (public chat)
+    // or "look up any record" (internal). Model output can never set it.
+    (args as any)._public_chat = agent_type === 'chat';
     // Verified active company + role (rung 3). Same rule as _caller_email:
     // server-injected only, forced over anything the model put in args, so a
     // company-scoped skill can never be tricked into acting for another company.
@@ -5856,25 +5862,68 @@ async function executeOrdersAction(
     return { error: `Unknown orders action: ${action}` };
   }
 
-  // check_order / lookup_order — original handler
-  // Accepts full UUID OR an 8-char prefix (e.g. "e2c09094") for human convenience.
+  // check_order / lookup_order — customer self-service order status.
+  //
+  // Two bugs fixed 2026-07-22 after a signed-in customer asked FlowChat about
+  // an order and got "there was an issue looking up your order":
+  //
+  //   1. The prefix branch did `.ilike('id::text', …)`. PostgREST does not read
+  //      `id::text` as a cast — it sends `id ~~* …` against a uuid column, and
+  //      "operator does not exist: uuid ~~* unknown" crashed EVERY prefix
+  //      lookup. The account UI shows customers an 8-char prefix (#ce8d1746),
+  //      so this was the ONLY id form a real customer would ever paste. Prefix
+  //      matching now happens in JS over the caller's own rows, exactly like
+  //      request_return.
+  //
+  //   2. No identity scoping. It queried all orders and trusted a model-
+  //      supplied `email`. A signed-in customer must reach only their OWN
+  //      orders, by the JWT-verified _caller_email — never by what the chat
+  //      claims. Same rule as request_return / get_customer_360.
+  //
+  // scope:'both' — two callers, two rules:
+  //   • public chat (a website visitor): may only see their OWN orders, by the
+  //     JWT-verified _caller_email. No email = ask them to sign in. Never a
+  //     global lookup, never trusting an email typed into chat.
+  //   • internal (FlowPilot, admin UI, MCP operator): may look up ANY order by
+  //     id or email — that is the whole point of an operator tool.
   const { order_id, email } = args as any;
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  let query = supabase.from('orders').select('id, status, total_cents, currency, created_at, customer_email');
-  if (order_id) {
-    const oid = String(order_id).trim();
-    if (UUID_RE.test(oid)) {
-      query = query.eq('id', oid);
-    } else {
-      // Treat as prefix — cast id to text for ILIKE matching
-      query = query.ilike('id::text', `${oid}%`);
-    }
-  } else if (email) {
-    query = query.eq('customer_email', email);
+  const callerEmail =
+    typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email.toLowerCase().trim() : '';
+  const isPublicChat = (args as any)._public_chat === true;
+
+  if (isPublicChat && !callerEmail) {
+    return {
+      orders: [],
+      error: 'Please sign in to your account to see your orders — I look them up from your verified session, not from an email typed in chat.',
+    };
   }
-  const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
+
+  // The email an internal caller may search by; a public-chat caller is pinned
+  // to their verified own email regardless of what the model passed.
+  const scopeEmail = callerEmail || (!isPublicChat && typeof email === 'string' ? email.toLowerCase().trim() : '');
+
+  let query = supabase
+    .from('orders')
+    .select('id, status, total_cents, currency, created_at, customer_email')
+    .order('created_at', { ascending: false })
+    .limit(scopeEmail ? 50 : 5);
+  if (scopeEmail) query = query.eq('customer_email', scopeEmail);
+  const { data, error } = await query;
   if (error) throw new Error(`Order lookup failed: ${error.message}`);
-  return { orders: data || [], matched_by: order_id ? (UUID_RE.test(String(order_id).trim()) ? 'uuid' : 'prefix') : 'email' };
+
+  let orders = data ?? [];
+  let matched_by: 'uuid' | 'prefix' | 'email' | 'all' = scopeEmail ? 'email' : 'all';
+  if (order_id) {
+    // Match a full id or the short prefix customers see (#ce8d1746), in JS —
+    // avoids the uuid-ILIKE crash and, when scoped, reveals nothing cross-account.
+    const ref = String(order_id).trim().replace(/^#/, '').toLowerCase();
+    orders = orders.filter((o: any) => o.id.toLowerCase() === ref || o.id.toLowerCase().startsWith(ref));
+    matched_by = ref.length === 36 ? 'uuid' : 'prefix';
+    if (orders.length === 0) {
+      return { orders: [], matched_by, note: `No order matching "${order_id}" was found${scopeEmail ? ' on your account' : ''}.` };
+    }
+  }
+  return { orders: orders.slice(0, 5), matched_by };
 }
 
 function groupBy(items: any[], key: string): Record<string, number> {

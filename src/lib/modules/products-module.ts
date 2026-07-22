@@ -328,7 +328,7 @@ Manages product inventory: list stock levels, update quantities, check low-stock
   },
   {
     name: 'lookup_order',
-    description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
+    description: 'Look up order status. A signed-in customer sees only their OWN orders (resolved from the verified session — never ask for or trust an email typed in chat); pass order_id to filter to one, or omit it to list recent. Internal callers (FlowPilot, admin) may also pass email to look up any customer. Use when: a customer asks about their order; support checks order progress. NOT for: managing orders (manage_orders); browsing products (browse_products).',
     category: 'crm',
     handler: 'module:orders',
     scope: 'both',
@@ -336,7 +336,7 @@ Manages product inventory: list stock levels, update quantities, check low-stock
       type: 'function',
       function: {
         name: 'lookup_order',
-        description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
+        description: 'Look up order status. A signed-in customer sees only their OWN orders (resolved from the verified session — never ask for or trust an email typed in chat); pass order_id to filter to one, or omit it to list recent. Internal callers (FlowPilot, admin) may also pass email to look up any customer. Use when: a customer asks about their order; support checks order progress. NOT for: managing orders (manage_orders); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -354,18 +354,16 @@ Manages product inventory: list stock levels, update quantities, check low-stock
     },
     instructions: `## lookup_order
 ### What
-Looks up order status by order ID or customer email.
+Order status for the caller. Identity is enforced by the server, not by you.
 ### When to use
-- Visitor asks about their order status in chat
-- Admin needs to check a specific order
-- CRM workflow needs order context
+- A customer asks about their order in chat
+- FlowPilot/admin needs order context
 ### Parameters
-- **order_id**: Direct lookup by UUID.
-- **email**: Lookup all orders for a customer email.
-- At least one parameter should be provided.
+- **order_id** (optional): full id OR the short prefix the customer sees (e.g. "ce8d1746" or "#ce8d1746"). Omit to list the caller's recent orders.
+- **email** (internal callers only): look up a specific customer's orders. IGNORED for public chat — a signed-in customer is always pinned to their own verified email, and an anonymous visitor is asked to sign in. Never ask a chat visitor for their email to look up orders.
 ### Edge cases
-- Returns multiple orders when searching by email — present the most recent first.
-- Sensitive data: only share order details with the order owner in visitor chat.`,
+- Public chat + not signed in → returns a sign-in prompt, not a lookup.
+- Prefix that matches nothing on the account → a clear "no order found" note, not an error.`,
   },
   {
     name: 'manage_orders',
