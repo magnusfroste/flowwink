@@ -19,7 +19,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 
 export default function TicketsPage() {
-  const [view, setView] = useState<"kanban" | "table" | "teams" | "rules">("kanban");
+  // Default to the list view: it works without pipeline-stage configuration,
+  // so a fresh install never lands on an empty "configure stages" screen.
+  const [view, setView] = useState<"kanban" | "table" | "teams" | "rules">("table");
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);

@@ -52,7 +52,7 @@ const PRIMARY: { id: TabId; label: string }[] = [
   { id: 'pnl', label: 'Profit & Loss' },
   { id: 'balance', label: 'Balance Sheet' },
   { id: 'vat', label: 'VAT' },
-  { id: 'momsdekl', label: 'Momsdeklaration' },
+  { id: 'momsdekl', label: 'VAT Declaration' },
   { id: 'tax', label: 'Tax' },
 ];
 
