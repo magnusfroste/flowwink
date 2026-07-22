@@ -25,7 +25,16 @@ interface AuthContextType {
   isWriter: boolean;
   isApprover: boolean;
   isAdmin: boolean;
+  /** True admin status from DB, ignoring any active role preview. */
+  realIsAdmin: boolean;
+  /** Roles the underlying account actually has (unfiltered). */
+  realRoles: AppRole[];
+  /** Non-null when admin is previewing the app as another role set. */
+  previewRoles: AppRole[] | null;
+  /** Admin-only: activate a preview of another role set (visual-only, RLS unchanged). */
+  setPreviewRoles: (roles: AppRole[] | null) => void;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -37,12 +46,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [previewRoles, setPreviewRolesState] = useState<AppRole[] | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('flowwink.rolePreview');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as AppRole[];
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    } catch { return null; }
+  });
+
+  const setPreviewRoles = (next: AppRole[] | null) => {
+    setPreviewRolesState(next);
+    try {
+      if (next && next.length > 0) {
+        sessionStorage.setItem('flowwink.rolePreview', JSON.stringify(next));
+      } else {
+        sessionStorage.removeItem('flowwink.rolePreview');
+      }
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
 
         // Defer profile fetch with setTimeout to avoid deadlock
         if (session?.user) {
@@ -179,22 +210,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAdmin = roles.includes('admin');
-  // Legacy gates: writer/approver are deprecated. Treat them as admin so existing
-  // CMS publish-flow checks still grant access. New code should use hasRole/hasAnyRole.
-  const isWriter = isAdmin || roles.includes('writer') || roles.includes('approver') || roles.length > 0;
-  const isApprover = isAdmin || roles.includes('approver');
+  const realRoles = roles;
+  const realIsAdmin = realRoles.includes('admin');
 
-  const hasRole = (r: AppRole) => isAdmin || roles.includes(r);
-  const hasAnyRole = (rs: AppRole[]) => isAdmin || rs.some(r => roles.includes(r));
+  // If admin has an active preview, use those roles for all downstream checks.
+  // Preview is a visual-only override — server-side RLS uses the real JWT.
+  const effectiveRoles: AppRole[] = realIsAdmin && previewRoles && previewRoles.length > 0
+    ? previewRoles
+    : realRoles;
+  const effectivePrimary: AppRole | null = effectiveRoles.includes('admin')
+    ? 'admin'
+    : (effectiveRoles[0] ?? null);
+
+  const isAdmin = effectiveRoles.includes('admin');
+  const isWriter = isAdmin || effectiveRoles.includes('writer') || effectiveRoles.includes('approver') || effectiveRoles.length > 0;
+  const isApprover = isAdmin || effectiveRoles.includes('approver');
+
+  const hasRole = (r: AppRole) => isAdmin || effectiveRoles.includes(r);
+  const hasAnyRole = (rs: AppRole[]) => isAdmin || rs.some(r => effectiveRoles.includes(r));
 
   return (
     <AuthContext.Provider value={{
       user,
       session,
       profile,
-      role,
-      roles,
+      role: effectivePrimary,
+      roles: effectiveRoles,
       loading,
       signIn,
       signUp,
@@ -205,11 +246,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isWriter,
       isApprover,
       isAdmin,
+      realIsAdmin,
+      realRoles,
+      previewRoles: realIsAdmin ? previewRoles : null,
+      setPreviewRoles,
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   const context = useContext(AuthContext);

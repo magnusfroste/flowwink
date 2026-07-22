@@ -9,6 +9,8 @@ import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
 import { useLocalePackBootstrap } from '@/hooks/useTenantLocalePack';
 import { IncomingCallToaster } from './voice/IncomingCallToaster';
 import Softphone from './voice/Softphone';
+import { RolePreviewBanner } from './RolePreview';
+
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -79,15 +81,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex-1 flex flex-col min-w-0">
           {isCopilotMode ? (
             // FlowPilot cockpit: edge-to-edge, owns its own header + chrome
-            children
+            <>
+              <RolePreviewBanner />
+              {children}
+            </>
           ) : (
             <>
+              <RolePreviewBanner />
               <AdminContentHeader />
               <main className="flex-1 overflow-auto animate-fade-in p-8">
                 {children}
               </main>
             </>
           )}
+
         </div>
         <IncomingCallToaster />
         <Softphone floating />
