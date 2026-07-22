@@ -121,7 +121,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             items: [
               { id: 's1', value: '68', label: 'Business Modules' },
-              { id: 's2', value: '300+', label: 'MCP-Exposed Skills' },
+              { id: 's2', value: '500+', label: 'MCP-Exposed Skills' },
               { id: 's3', value: 'BYO', label: 'Agent (FlowPilot or external)' },
               { id: 's4', value: '100%', label: 'Self-Hostable & Open Source' },
             ],
@@ -491,7 +491,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 price: 'Free',
                 period: 'forever',
                 description: 'Full FlowPilot agent. Your servers. Your LLM. Complete data sovereignty.',
-                features: ['Full Business OS + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '300+ agent skills', 'Persistent memory & objectives', 'Community support'],
+                features: ['Full Business OS + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '500+ agent skills', 'Persistent memory & objectives', 'Community support'],
                 buttonText: 'View on GitHub',
                 buttonUrl: 'https://github.com/magnusfroste/flowwink',
               },
@@ -708,7 +708,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'features-skills',
           type: 'features',
           data: {
-            title: '300+ Autonomous Skills',
+            title: '500+ Autonomous Skills',
             subtitle: 'Each skill is a capability FlowPilot — or any external MCP agent — can execute independently. From content and CRM to year-end accounting, POS sessions, and federated agent coordination.',
             features: [
               { id: 'sk-blog', icon: 'FileText', title: 'blog_write', description: 'Research topics, write posts in brand voice, add SEO metadata, schedule for publishing.' },

@@ -140,3 +140,23 @@ describe('advertised counts', () => {
     );
   });
 });
+
+describe('template skill claims', () => {
+  it('no template still advertises 300+ skills', () => {
+    // The brand sweep (2026-07-22) fixed live pages and most template copy
+    // but missed three spots in flowwink-platform — which the sandbox reset
+    // then faithfully reinstalled onto sandbox.flowwink.com. Templates are a
+    // claim surface too: every reset republishes them.
+    const { readdirSync } = require('node:fs');
+    const dir = join(root, 'src/data/templates');
+    for (const f of readdirSync(dir).filter((x: string) => x.endsWith('.ts'))) {
+      const src = readFileSync(join(dir, f), 'utf8');
+      // Proximity, not same-line: template lines are long, and "300+
+      // consultants … community skills" on one line is not a skill claim.
+      const m = src.match(/300\+[^,.\n]{0,40}skills?|skills?[^,.\n]{0,40}300\+/gi) ?? [];
+      if (m.length > 0) {
+        throw new Error(`${f}: stale "300+" skill claim: ${m[0].slice(0, 100)}`);
+      }
+    }
+  });
+});

@@ -147,7 +147,7 @@
               },
               {
                 "id": "s2",
-                "value": "300+",
+                "value": "500+",
                 "label": "MCP-Exposed Skills"
               },
               {
@@ -1065,7 +1065,7 @@
                   "Full Business OS + FlowPilot",
                   "Unlimited autonomous operations",
                   "Private LLM support (Ollama)",
-                  "300+ agent skills",
+                  "500+ agent skills",
                   "Persistent memory & objectives",
                   "Community support"
                 ],
@@ -1666,7 +1666,7 @@
           "id": "features-skills",
           "type": "features",
           "data": {
-            "title": "300+ Autonomous Skills",
+            "title": "500+ Autonomous Skills",
             "subtitle": "Each skill is a capability FlowPilot — or any external MCP agent — can execute independently. From content and CRM to year-end accounting, POS sessions, and federated agent coordination.",
             "features": [
               {
