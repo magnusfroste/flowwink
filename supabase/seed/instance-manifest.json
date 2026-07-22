@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260723030000",
+      "migration_head": "20260723040000",
       "migrations_count": 265,
       "migrations": [
         {
@@ -1056,15 +1056,15 @@
         },
         {
           "version": "20260722200000",
-          "name": "cron-http-timeout-sweep"
-        },
-        {
-          "version": "20260722200000",
           "name": "sandbox-reset"
         },
         {
           "version": "20260723030000",
           "name": "secure-demo-seed-rpcs"
+        },
+        {
+          "version": "20260723040000",
+          "name": "cron-http-timeout-sweep"
         }
       ]
     },
