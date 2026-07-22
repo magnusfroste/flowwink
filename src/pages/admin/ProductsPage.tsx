@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useIsStripeConfigured } from '@/hooks/useIntegrationStatus';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
+import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 
 export default function ProductsPage() {
   const { data: products = [], isLoading } = useProducts();
