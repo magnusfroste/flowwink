@@ -89,6 +89,40 @@ Read-only sensor: probes each ENABLED integration from site_settings.integration
 Built after the 2026-07-22 incident where the fleet's SearXNG was misconfigured for days and web search silently fell back to Firecrawl — the failure was invisible until someone read provider fields in agent_activity.`,
   },
   {
+    name: 'reset_sandbox',
+    description:
+      "SANDBOX ONLY — destroy and rebuild this instance: wipe all content/transaction data (seeded layers, config and the shared admin survive), reset the shared admin password, reinstall the sandbox template. Hard-gated on site_settings.sandbox_mode; refuses on any other instance. Use when: the nightly sandbox rebuild runs; an operator wants a fresh sandbox now. NOT for: clearing one module's demo data (reset_module_data via demo-cycle); uninstalling a template (install_template).",
+    category: 'system',
+    handler: 'internal:reset_sandbox',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'reset_sandbox',
+        description:
+          'Destroy-and-rebuild for the public sandbox instance. Triple-gated (sandbox_mode flag, SQL confirm token, service/admin caller); a non-sandbox instance always refuses. Wipes content + extra users, resets the shared admin credential, reinstalls the configured template.',
+        parameters: {
+          type: 'object',
+          properties: {
+            source: { type: 'string', description: 'Trigger source label (cron, manual).' },
+          },
+        },
+      },
+    },
+    instructions: `## reset_sandbox
+### What
+Full sandbox rebuild: sandbox_reset_wipe() truncates every public table except the seeded layers (agent_skills, agent_automations, chart_of_accounts, account_roles, accounting_templates, locale_packs), config (site_settings), identity (profiles, user_roles) and api_keys — then deletes every auth user except the shared sandbox admin, resets its password to the published demo credential, and reinstalls the template from site_settings.sandbox_template (default flowwink-platform).
+### Gates (why it is safe to exist fleet-wide)
+- site_settings.sandbox_mode must be true — only ever set on the sandbox instance; everywhere else the skill answers with a refusal.
+- The SQL function additionally requires the literal confirm token and a service_role/admin caller, and is atomic: a wipe that would damage a keep-table rolls back entirely.
+### When to use
+- Scheduled nightly rebuild (cron on the sandbox)
+- An operator wants a clean sandbox immediately
+### After a reset
+FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycle re-seeds its module scenario on its next run.`,
+  },
+  {
     name: 'search_web',
     description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',

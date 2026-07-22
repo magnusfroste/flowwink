@@ -423,6 +423,7 @@
     "research_content",
     "reserve_stock",
     "reset_module_data",
+    "reset_sandbox",
     "resolve_finding",
     "resolve_pricelist_price",
     "resolve_vendor_price",

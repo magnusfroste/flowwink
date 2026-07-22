@@ -9,6 +9,7 @@ import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
 import { AccountIndicator } from './AccountIndicator';
+import { SandboxBanner } from '@/components/SandboxBanner';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
@@ -257,6 +258,8 @@ export function PublicNavigation() {
   };
 
   return (
+    <>
+    <SandboxBanner />
     <header className={getBackgroundClasses()}>
       {/* Mega Menu Dropdowns - Rendered at header level for full width */}
       {isMegaMenuVariant && customNavItems.map((item) => (
@@ -635,6 +638,7 @@ export function PublicNavigation() {
         )}
       </div>
     </header>
+    </>
   );
 }
 

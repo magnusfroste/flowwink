@@ -728,6 +728,9 @@ serve(async (req) => {
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:reset_sandbox') {
+        result = await executeResetSandbox(supabase, args as Record<string, unknown>);
+
       } else if (handler === 'internal:qualify_lead') {
         result = await executeQualifyLead(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
 
@@ -1932,6 +1935,59 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
         ? 'Template settings (branding/SEO/homepage/modules) were merged into site_settings.'
         : 'Site settings untouched — re-run with apply_settings=true to also apply branding/SEO/homepage/modules.',
     ],
+  };
+}
+
+// reset_sandbox — the nightly destroy-and-rebuild for sandbox.flowwink.com.
+//
+// Sequence: sandbox_reset_wipe() (SQL, triple-gated, atomic) → tplInstall()
+// with the instance's configured sandbox template. FlowPilot's soul and
+// objectives are NOT seeded here on purpose — the flowpilot auto-bootstrap
+// owns those and re-seeds its defaults on the next heartbeat/app load.
+// The gate is checked here TOO (belt and braces with the SQL function): a
+// non-sandbox instance answers with a refusal, never a wipe.
+async function executeResetSandbox(supabase: any, args: Record<string, unknown>): Promise<unknown> {
+  const { data: flag } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'sandbox_mode')
+    .maybeSingle();
+  const isSandbox = flag?.value === true || (flag?.value as any)?.enabled === true;
+  if (!isSandbox) {
+    return {
+      error: 'reset_sandbox refused: this instance is not a sandbox (site_settings.sandbox_mode is not true). This skill exists only for sandbox.flowwink.com.',
+    };
+  }
+
+  const { data: wipe, error: wipeErr } = await supabase.rpc('sandbox_reset_wipe', {
+    p_confirm: 'WIPE-SANDBOX',
+  });
+  if (wipeErr) return { error: `Sandbox wipe failed (nothing changed — the wipe is atomic): ${wipeErr.message}` };
+
+  const { data: tplSetting } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'sandbox_template')
+    .maybeSingle();
+  const templateId =
+    (typeof tplSetting?.value === 'string' ? tplSetting.value : (tplSetting?.value as any)?.id) ||
+    'flowwink-platform';
+
+  const install = await tplInstall(supabase, {
+    template_id: templateId,
+    publish: true,
+    apply_settings: true,
+  });
+  const installFailed = (install as any)?.error;
+
+  return {
+    reset: 'complete',
+    wipe,
+    template: templateId,
+    install: installFailed ? { error: installFailed } : install,
+    note: installFailed
+      ? 'Wipe succeeded but the template install reported an error — the sandbox is empty; re-run install_template.'
+      : 'Sandbox rebuilt. FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat.',
   };
 }
 

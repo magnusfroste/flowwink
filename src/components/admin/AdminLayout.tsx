@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { SandboxBanner } from '@/components/SandboxBanner';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
 import { Loader2 } from 'lucide-react';
@@ -82,11 +83,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {isCopilotMode ? (
             // FlowPilot cockpit: edge-to-edge, owns its own header + chrome
             <>
+              <SandboxBanner />
               <RolePreviewBanner />
               {children}
             </>
           ) : (
             <>
+              <SandboxBanner />
               <RolePreviewBanner />
               <AdminContentHeader />
               <main className="flex-1 overflow-auto animate-fade-in p-8">
