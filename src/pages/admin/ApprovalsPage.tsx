@@ -29,6 +29,7 @@ export default function ApprovalsPage() {
   const { decide } = useApprovals();
   const [comment, setComment] = useState<Record<string, string>>({});
   const qc = useQueryClient();
+  const formatAmount = useFormatAmount();
 
   const handleDecide = async (id: string, decision: 'approve' | 'reject') => {
     try {
