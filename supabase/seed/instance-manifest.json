@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260723030000",
-      "migrations_count": 264,
+      "migrations_count": 265,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1053,6 +1053,10 @@
         {
           "version": "20260721220000",
           "name": "generic-pack-account-roles"
+        },
+        {
+          "version": "20260722200000",
+          "name": "cron-http-timeout-sweep"
         },
         {
           "version": "20260722200000",
