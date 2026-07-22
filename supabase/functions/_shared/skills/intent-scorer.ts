@@ -143,14 +143,18 @@ function buildNameIdf(skills: any[]): (word: string) => number {
  * it catches table⊂flowtable while rejecting book⊂bookkeeping (a bookkeeping
  * skill is not a booking result), which a plain includes() got wrong.
  */
-function nameWordHit(expandedMsg: string, msgWords: string[], w: string): boolean {
-  if (expandedMsg.includes(w)) return true;
-  if (w.length > 3) {
-    for (const mw of msgWords) {
-      if (mw.length > 3 && (w.endsWith(mw) || mw.endsWith(w))) return true;
-    }
-  }
-  return false;
+// 1.0 = the user literally typed the word (or a compound of it); 0.5 = only a
+// SYNONYM expansion matched. Synonym hits used to count at full weight, which
+// let multi-word names harvest expansion terms: "create lead" expands lead →
+// pipeline, so lead_pipeline_review collected TWO full name hits and outranked
+// add_lead — the skill the user actually meant (OpenClaw sandbox smoke,
+// 2026-07-22). Direct evidence must beat associative evidence.
+function nameWordHit(expandedMsg: string, msgWords: string[], w: string): number {
+  const direct = msgWords.includes(w) ||
+    (w.length > 3 && msgWords.some(mw => mw.length > 3 && (w.endsWith(mw) || mw.endsWith(w))));
+  if (direct) return 1;
+  if (expandedMsg.includes(w)) return 0.5;
+  return 0;
 }
 
 interface ScoreOptions {
@@ -211,13 +215,13 @@ export function scoreSkillsByIntent(
     // 1. Skill name word matching against expanded terms, IDF-weighted.
     const nameWords = name.split(' ').filter(w => w.length > 1);
     for (const w of nameWords) {
-      if (nameWordHit(expandedMsg, msgWords, w)) score += 12 * idf(w);
+      score += 12 * idf(w) * nameWordHit(expandedMsg, msgWords, w);
     }
 
     // 2. Function name parts (underscore-separated), IDF-weighted.
     const fnParts = functionName.split('_').filter(w => w.length > 1);
     for (const w of fnParts) {
-      if (nameWordHit(expandedMsg, msgWords, w)) score += 8 * idf(w);
+      score += 8 * idf(w) * nameWordHit(expandedMsg, msgWords, w);
     }
 
     // 3. "Use when:" trigger matching

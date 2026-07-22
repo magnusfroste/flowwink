@@ -14,7 +14,7 @@ import {
 const CRM_SKILLS: SkillSeed[] = [
   {
     name: 'add_lead',
-    description: 'Add a new lead to the CRM. Use when: capturing a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
+    description: 'Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
     category: 'crm',
     handler: 'module:crm',
     scope: 'both',
@@ -22,7 +22,7 @@ const CRM_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'add_lead',
-        description: 'Add a new lead to the CRM. Use when: capturing a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
+        description: 'Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
         parameters: {
           type: 'object',
           properties: {

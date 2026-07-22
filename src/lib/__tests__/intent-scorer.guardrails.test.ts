@@ -112,3 +112,26 @@ describe('small-pool ranking (OpenClaw finding, 2026-07-22)', () => {
     expect(result.map((s: any) => s.function.name)).toEqual(['a_first', 'b_second']);
   });
 });
+
+describe('create-verb intent (OpenClaw sandbox smoke, 2026-07-22)', () => {
+  // "create lead" ranked add_lead #5 behind manage_deal: the synonym map
+  // expands lead → deal (giving manage_deal name points), while add_lead got
+  // no credit for "create" — no create→add synonym, and its Use-when said
+  // "capturing", not "create". Fix is metadata + a generic verb synonym,
+  // never routing (Law 1).
+  const crm = [
+    tool('add_lead', "Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing records (manage_leads); qualifying (qualify_lead)."),
+    tool('manage_leads', 'Manage existing leads: list, get, update, delete. Use when: updating lead status; listing leads. NOT for: adding a new lead (add_lead).'),
+    tool('manage_deal', 'Create and manage deals in the pipeline. Use when: creating a deal; moving a deal between stages. NOT for: leads (add_lead, manage_leads).'),
+    tool('lead_pipeline_review', 'Review the lead pipeline with forecast. Use when: reviewing pipeline health; forecasting. NOT for: editing leads.'),
+    tool('qualify_lead', 'AI-qualify an existing lead. Use when: scoring a lead. NOT for: creating leads (add_lead).'),
+  ];
+
+  it('"create lead" ranks add_lead first', () => {
+    expect(rankOf([...crm, ...padding], 'create lead', 'add_lead')).toBe(1);
+  });
+
+  it('"create a deal" still ranks manage_deal first (no overcorrection)', () => {
+    expect(rankOf([...crm, ...padding], 'create a deal for this customer', 'manage_deal')).toBe(1);
+  });
+});
