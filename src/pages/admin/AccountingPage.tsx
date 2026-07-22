@@ -90,7 +90,14 @@ const ALL_IDS = new Set<TabId>([
 ]);
 
 export default function AccountingPage() {
-  const [tab, setTab] = useState<TabId>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') as TabId | null;
+  const initialTab = urlTab && ALL_IDS.has(urlTab) ? urlTab : 'overview';
+  const [tab, setTab] = useState<TabId>(initialTab);
+  const [showCreate, setShowCreate] = useState(false);
+
+  useOpenOnQueryParam('new', '1', () => setShowCreate(true));
+
   const inPrimary = PRIMARY.some((t) => t.id === tab);
   const activeMore = !inPrimary
     ? MORE.flatMap((g) => g.items).find((i) => i.id === tab)
