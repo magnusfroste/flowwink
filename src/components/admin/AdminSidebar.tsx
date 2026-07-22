@@ -358,7 +358,9 @@ export function AdminSidebar() {
         </SidebarContent>
 
         {/* User section */}
-        <SidebarFooter className="border-t border-sidebar-border p-2">
+        <SidebarFooter className="border-t border-sidebar-border p-2 space-y-1">
+          <RolePreviewSwitcher collapsed={isCollapsed} />
+
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
