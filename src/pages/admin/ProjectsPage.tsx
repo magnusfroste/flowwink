@@ -437,12 +437,17 @@ function ProjectCard({ project, selected, onSelect }: { project: Project; select
 export default function ProjectsPage() {
   const { data: projects, isLoading } = useProjects();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  // `?new=1` and `?new=task` both open the project create dialog — there is no
+  // standalone "new task" flow at this level (tasks are created inside a project).
+  useOpenOnQueryParam('new', '1', () => setNewProjectOpen(true));
+  useOpenOnQueryParam('new', 'task', () => setNewProjectOpen(true));
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader title="Projects" description="Manage projects, tasks, and track progress">
-          <NewProjectDialog />
+          <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
         </AdminPageHeader>
 
         {isLoading ? (
