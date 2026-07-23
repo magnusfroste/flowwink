@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { callSkill } from '@/lib/call-skill';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
-  Info, Save, Loader2, Activity, Target, History, Cpu, BarChart3,
+  Info, Save, Loader2, Activity, Target, History, Cpu, BarChart3, GitBranch,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminContentHeader } from '@/components/admin/AdminContentHeader';
