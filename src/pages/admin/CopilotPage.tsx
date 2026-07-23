@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { callSkill } from '@/lib/call-skill';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
-  Info, Save, Loader2, Activity, Target, History, Cpu, BarChart3,
+  Info, Save, Loader2, Activity, Target, History, Cpu, BarChart3, GitBranch,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminContentHeader } from '@/components/admin/AdminContentHeader';
@@ -32,6 +32,8 @@ import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { AutonomyScheduleTab } from '@/components/admin/AutonomyScheduleTab';
 import { FlowPilotStatusBar } from '@/components/admin/copilot/FlowPilotStatusBar';
 import { FlowPilotOverviewTab } from '@/components/admin/copilot/FlowPilotOverviewTab';
+import { FlowPilotTraceTab } from '@/components/admin/copilot/FlowPilotTraceTab';
+
 import {
   useAutonomyScheduleSettings,
   useUpdateAutonomyScheduleSettings,
@@ -41,15 +43,17 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-type FlowPilotTab = 'overview' | 'objectives' | 'sessions' | 'memory' | 'analytics';
+type FlowPilotTab = 'overview' | 'objectives' | 'trace' | 'sessions' | 'memory' | 'analytics';
 
 const TABS: { id: FlowPilotTab; label: string; icon: typeof Activity }[] = [
   { id: 'overview', label: 'Overview', icon: Activity },
   { id: 'objectives', label: 'Objectives', icon: Target },
+  { id: 'trace', label: 'Trace', icon: GitBranch },
   { id: 'sessions', label: 'Sessions', icon: History },
   { id: 'memory', label: 'Memory & Persona', icon: Cpu },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
+
 
 export default function CopilotPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -138,7 +142,10 @@ export default function CopilotPage() {
             </ScrollArea>
           )}
 
+          {tabParam === 'trace' && <FlowPilotTraceTab />}
+
           {tabParam === 'sessions' && (
+
             <ScrollArea className="h-full">
               <div className="p-4 space-y-4 max-w-7xl mx-auto">
                 <Card>

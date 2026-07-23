@@ -346,6 +346,8 @@ const router = createBrowserRouter([
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
       { path: "/admin/flowpilot", element: <CopilotPage /> },
       { path: "/admin/flowpilot/engine", element: <Navigate to="/admin/flowpilot" replace /> },
+      { path: "/admin/flowpilot/trace", element: <Navigate to="/admin/flowpilot?tab=trace" replace /> },
+
       { path: "/admin/flowchat", element: <FlowChatPage /> },
       { path: "/admin/flowchat/sessions", element: <FlowChatSessionsPage /> },
 
