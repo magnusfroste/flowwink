@@ -1128,7 +1128,7 @@
         "openclaw-responses": "sha256:70efb4b23cd1fb08427337148ccd47097d30a0e746bb27ad17120b39498dec3b",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
         "process-job-application": "sha256:559beb704d521c604e18ae8766fff1eb3c279441365a96eb48a661132b6f0c21",
-        "quote-expiry-reminders": "sha256:24aa1a31cde557f25afef96394e6fee6f36c36e2ab29d479157618ea54bdb3b1",
+        "quote-expiry-reminders": "sha256:6d9b763668aefb9948af581d5d54f52879814f964f61f8cca345db4e57805034",
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:c7b303564411e34fef83893c5f615576baa50e657eba64628f403ff386436f78",
         "run-autonomy-tests": "sha256:1686a331e5859a2a70df6961eb9610a75e387c55c333fc89f1edcd412c86cf7c",

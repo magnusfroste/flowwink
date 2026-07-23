@@ -34,7 +34,7 @@ FLEET_JSON="$(dirname "$0")/fleet.json"
 # Edge functions changed in the current release. Override via EDGE_FNS=… .
 # All are agent/server/webhook/cron-invoked → must deploy with --no-verify-jwt
 # (an interactive admin JWT is never present on these call paths).
-EDGE_FNS="${EDGE_FNS:-agent-execute ai-task composio-proxy composio-webhook survey-send update-autonomy-cron}"
+EDGE_FNS="${EDGE_FNS:-agent-execute ai-task composio-proxy composio-webhook}"
 
 ref_for() {
   node -e "const f=require('$FLEET_JSON');const i=f.instances.find(x=>x.name==='$1');if(!i){console.error('unknown instance: $1');process.exit(1)}process.stdout.write(i.ref)"
