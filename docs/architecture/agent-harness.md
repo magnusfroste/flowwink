@@ -75,7 +75,7 @@ one named system, discoverable in one place.
 | H8 | **Escalation (HIL)** | Approval queue + staged operations for anything above the trust threshold | `approval_requests`, staged-op handshake | shipped |
 | H9 | **Learning** | The Curator analyses failures → proposes better skill instructions → parks for human approval | `run_skill_curator`, Curator automation | shipped (BR2) |
 | H10 | **Observability** | Every action + verbatim input/output/outcome, token + trace records | `agent_activity`, `_shared/trace.ts`, `_shared/agent-audit.ts`, `token-tracking.ts` | **data layer only — no product surface (§4)** |
-| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | — | **the one real functional gap (§5)** |
+| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | approval-resumption shipped (§0.A of [`agent-resumption.md`](./agent-resumption.md)); run-resumption designed | **design done — build queued** |
 
 **Reading of the table:** ten of eleven components are built. The two open rows are the
 whole of the next phase — one is a *legibility* gap (H10 has no UI), one is a *functional*
