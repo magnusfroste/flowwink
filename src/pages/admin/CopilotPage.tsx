@@ -43,15 +43,17 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-type FlowPilotTab = 'overview' | 'objectives' | 'sessions' | 'memory' | 'analytics';
+type FlowPilotTab = 'overview' | 'objectives' | 'trace' | 'sessions' | 'memory' | 'analytics';
 
 const TABS: { id: FlowPilotTab; label: string; icon: typeof Activity }[] = [
   { id: 'overview', label: 'Overview', icon: Activity },
   { id: 'objectives', label: 'Objectives', icon: Target },
+  { id: 'trace', label: 'Trace', icon: GitBranch },
   { id: 'sessions', label: 'Sessions', icon: History },
   { id: 'memory', label: 'Memory & Persona', icon: Cpu },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
+
 
 export default function CopilotPage() {
   const [searchParams, setSearchParams] = useSearchParams();
