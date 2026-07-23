@@ -5,6 +5,8 @@
 
 ---
 
+> **See also:** [`agent-harness.md`](./agent-harness.md) generalises this plan from *FlowPilot the operator* to *the harness both FlowPilot and external agents run on* — the named platform spine, its component map, and the Trace surface.
+
 ## 1. Where we stand (the honest picture)
 
 Tonight's campaign hardened **13 SMB processes** and the money core (idempotency, abort

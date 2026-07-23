@@ -25,6 +25,7 @@ Both paths share the **concepts** below. Everything else (guides, modules, refer
 | Doc | Why |
 |---|---|
 | [`concepts/elevator-pitch.md`](./concepts/elevator-pitch.md) | One-page positioning |
+| [`architecture/agent-harness.md`](./architecture/agent-harness.md) | **The agent harness** — the named platform spine (loop, skill-select, policy, verify, self-correct, escalate, learn, observe) that FlowPilot *and* external agents run on |
 | [`concepts/operator-strategy.md`](./concepts/operator-strategy.md) | Why FlowPilot is a module, not the core |
 | [`concepts/openclaw-law.md`](./concepts/openclaw-law.md) | The 10 inviolable agentic laws |
 | [`concepts/flowchat-vs-flowpilot.md`](./concepts/flowchat-vs-flowpilot.md) | Utility AI vs operator AI |

@@ -167,6 +167,16 @@ All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-bas
 - `ai-call.ts`, `ai-config.ts`, `ai-providers.ts` — AI provider abstraction
 - `token-tracking.ts`, `trace.ts`, `agent-audit.ts` — observability
 
+### The Agent Harness (platform spine)
+
+The components above plus the ReAct loop, Skill Relevance Engine, trust dial, cadence/
+evidence guards, self-correcting errors and the Curator together form **the FlowWink Agent
+Harness** — the named platform spine that both FlowPilot (internal operator) and external
+agents (via the MCP gateway) run on. It is platform-level, NOT a flowpilot-module feature.
+When adding agent-reliability behaviour, place it by harness component, not by module. Full
+component map, ownership ruling, and the Trace/resumption build plan:
+**[docs/architecture/agent-harness.md](docs/architecture/agent-harness.md)**.
+
 ### MCP Server (external agent access)
 
 `mcp-server` exposes FlowWink skills to external agents. It runs on Supabase Edge Functions, so the transport is **Streamable HTTP** (not stdio — there is no long-lived local process). This is a consequence of serverless deployment, not Deno.
