@@ -48,6 +48,26 @@ export async function handler(req: Request): Promise<Response> {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
+  // Expire approvals that aged out of the follow-through window WITHOUT being
+  // executed, so an approval never strands silently in status='approved'
+  // forever (the graveyard problem: liteit/www carried such rows for weeks).
+  // Expiring is SAFE and correct — an aged-out approval must not be re-run: it
+  // is either stale (a 6-week-old social_post_batch) or superseded (a Curator
+  // instruction fix a newer ship already replaced). The window protects against
+  // re-execution; this makes the aged-out ones a terminal, visible 'expired'
+  // instead of an invisible pile. (resumption Phase 0, agent-resumption.md §0.A)
+  const expiredBefore = new Date(Date.now() - windowHours * 3_600_000).toISOString();
+  const { data: expiredRows } = await supabase
+    .from("agent_activity")
+    .update({
+      status: "expired",
+      error_message: `Approved but not executed within the ${windowHours}h follow-through window; expired, not run (re-execution unsafe: stale or superseded).`,
+    })
+    .eq("status", "approved")
+    .lt("created_at", expiredBefore)
+    .select("id");
+  const expiredCount = (expiredRows ?? []).length;
+
   const { data: pending, error: selErr } = await supabase.rpc("flowpilot_approved_pending", { p_window_hours: windowHours });
   if (selErr) {
     await recordPulse(supabase, false, `selector failed: ${selErr.message}`, { candidates: 0, resumed: 0, failed: 0 });
@@ -104,9 +124,10 @@ export async function handler(req: Request): Promise<Response> {
     candidates: rows.length,
     resumed,
     failed,
+    expired: expiredCount,
   });
 
-  return new Response(JSON.stringify({ candidates: rows.length, resumed, failed, results }),
+  return new Response(JSON.stringify({ candidates: rows.length, resumed, failed, expired: expiredCount, results }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 

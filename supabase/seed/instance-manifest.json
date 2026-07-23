@@ -1115,7 +1115,7 @@
         "extract-pdf-text": "sha256:96f98e21532f261f3e41dc8843dee623e9a010a6106d4e40d3664d743df46304",
         "federation-invite-peer": "sha256:ea8c2c09c4f6cd1839da87a93932794086ff5a37f7e9419864b38928f5d61bac",
         "flowpilot-heartbeat": "sha256:b63e2029bfb8ceb9a19e997454a2775f04cd5529d533825f688a91e682389719",
-        "flowpilot-lifecycle": "sha256:4e133600886f67552cfa1501ce2116b72414c07ced34fca927d9a2188770a365",
+        "flowpilot-lifecycle": "sha256:a1c94e8aafd038cc16991f4f235e1d32730eb764fd1dd2eb55eb72ea431d9777",
         "gatewayapi-ingest": "sha256:9daeb71012e0b49d3eee1583d2511a50224cec4e1b69de46a471e1a63d7f066a",
         "generate-invoice-pdf": "sha256:806a69f2634cf908d4291332f5595f5ec3c1c6c3f7fb27b4ef9e820eaf8a8f23",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",

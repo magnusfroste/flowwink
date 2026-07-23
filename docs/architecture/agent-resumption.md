@@ -23,11 +23,24 @@ of approved-but-never-run actions on dev). It is built:
   the cycle's context, is idempotent, and never retries failures.
 - A 5-min cron does the low-latency sweep; the pre-pass makes the loop self-contained.
 
-**Empirical state today:** liteit 1, www 2 `status='approved'` rows still stuck — all
-`update_skill_instructions` from before the follow-through shipped (Curator's own approvals).
-**Concrete first fix (Phase 0 below):** the follow-through executor doesn't route
-`update_skill_instructions`, so Curator-approved instruction changes never apply. Small,
-verifiable, and it clears the last stuck rows fleet-wide.
+**Empirical state (corrected after Phase 0 recon, 2026-07-23):** liteit 1, www 2 rows were
+stuck in `status='approved'`. The follow-through selector has **no skill filter** — it would
+route any skill. The real cause was the **48h window**: the rows (liteit's
+`update_skill_instructions` from 07-16, www's `social_post_batch` from 06-09/10) had aged out
+before a sweep ran, and nothing terminal-states an aged-out approval, so they lingered.
+
+Crucially, re-running them would be **wrong**, which is why the window is correct:
+- www's 6-week-old `social_post_batch` is **stale** — it would post old content now.
+- liteit's `update_skill_instructions` is **superseded** — a newer ship (this week's grounding
+  + slug + cadence fixes) already replaced write_blog_post's instructions; re-applying the
+  Curator's 07-16 text would *regress* them.
+
+**Phase 0 (shipped 2026-07-23):** each follow-through sweep now terminal-states approvals
+older than its window as `expired` — safe (never re-runs a stale/superseded action) and
+visible (no silent graveyard). The 3 legacy rows were expired fleet-wide; the sweep keeps it
+clear going forward, and surfaces an `expired` count in its pulse. Lesson for §2: an aged-out
+approval is not resumable — resumption is for *paused* runs (window/rate-limit), not for
+approvals that outlived their validity.
 
 ### B. Multi-step run resumption — **NOT built** (this doc's subject)
 FINDING 2: a novel plan (an objective's `plan.steps`, e.g. P2P's 7 steps) is held **across
@@ -126,7 +139,7 @@ point of naming the harness.
 
 | Phase | Scope | Owner |
 |-------|-------|-------|
-| **0 · Close the last stuck approvals** | Route `update_skill_instructions` (and any other Curator-approved skills) through the follow-through executor; clear the liteit/www stuck rows; guardrail. | backend |
+| **0 · Close the last stuck approvals** ✅ | The follow-through sweep expires approvals aged past its window (safe, visible); legacy rows cleared fleet-wide; guardrail. *(shipped 2026-07-23)* | backend |
 | **1 · `agent_runs` + checkpoint** | Migration (idempotent, forward-dated); loop writes cursor/status after each step; reconstruct-on-first-sight. | backend |
 | **2 · Resumer pre-pass** | Extend `flowpilot-lifecycle?task=followthrough` to resume paused runs from cursor; idempotent, bounded, never-retry-failures (same contract as today). | backend |
 | **3 · Trace shows run state** | Surface `status` + `cursor` in the Trace read model and the Trace UI (the surface Lovable is building). | backend + Lovable |
