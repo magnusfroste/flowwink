@@ -15,6 +15,8 @@ export const defaultVoiceSettings: VoiceSettings = {
   welcomeGreetingUrl: undefined,
   ringTimeoutSeconds: 20,
   smsReplyEnabled: false,
+  softphoneEnabled: false,
+
   autoScheduleCallbacks: false,
   autoScheduleSms: false,
   callbackTimezone: 'Europe/Stockholm',

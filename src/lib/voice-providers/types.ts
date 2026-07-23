@@ -103,6 +103,13 @@ export interface VoiceSettings {
    * fasta nummer blockeras med en notis i tråden.
    */
   smsReplyEnabled?: boolean;
+  /**
+   * Mount the in-browser WebRTC softphone widget for admins/agents. Off = the
+   * floating dialer is hidden and calls are forwarded to mobile / handled by
+   * AI receptionist / voicemail. Requires a provider with `capabilities.webrtc`.
+   */
+  softphoneEnabled?: boolean;
+
 
   // ── Callback auto-scheduler (opt-in) ───────────────────────────────────────
   /**
