@@ -80,7 +80,22 @@ function lastDayOfMonth(y: number, m: number) { return new Date(y, m, 0).getDate
 export function resolvePeriod(input: any): { from: string; to: string } {
   if (input?.from && input?.to) return { from: input.from, to: input.to };
   const y = Number(input?.year);
-  if (!y || !Number.isFinite(y)) throw new Error("Provide {from,to} or {year,month|quarter}");
+  if (!y || !Number.isFinite(y)) {
+    // Self-correcting error (CLAUDE.md): the model is usually told to prepare
+    // "the current VAT period" but has no reliable notion of today's date, so
+    // it called with no period at all (liteit heartbeat, 2026-07-19, ×3).
+    // Name the concrete current periods so the next turn passes explicit args —
+    // a statutory draft must never silently assume a period.
+    const now = new Date();
+    const cy = now.getUTCFullYear();
+    const cm = now.getUTCMonth() + 1;
+    const cq = Math.floor((cm - 1) / 3) + 1;
+    throw new Error(
+      `A VAT period is required. Pass {from,to} (ISO dates) or {year,month} or {year,quarter}. ` +
+      `For the CURRENT period: this month = {year:${cy}, month:${cm}}; this quarter = {year:${cy}, quarter:${cq}}; ` +
+      `this year = {year:${cy}}. Pick the one matching the company's reporting frequency.`,
+    );
+  }
   if (input?.month) {
     const m = Number(input.month);
     return { from: `${y}-${pad2(m)}-01`, to: `${y}-${pad2(m)}-${pad2(lastDayOfMonth(y, m))}` };
