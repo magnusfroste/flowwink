@@ -63,7 +63,10 @@ describe('prepare_vat_return internal handler', () => {
 
   it('missing period → contract error (also accepts p_-prefixed args)', async () => {
     const res = await executeVatReturnSe(stubDb(), {});
-    expect(res).toEqual({ error: 'Provide {from,to} or {year,month|quarter}' });
+    // Self-correcting error (2026-07-19): names the concrete current periods
+    // so a model with no sense of "today" can retry with explicit args.
+    expect((res as any).error).toMatch(/A VAT period is required/);
+    expect((res as any).error).toMatch(/reporting frequency/);
     const ok = await executeVatReturnSe(stubDb({ data: [] }), { p_year: 2026, p_month: 1 });
     expect((ok as any).period).toEqual({ from: '2026-01-01', to: '2026-01-31' });
   });
