@@ -567,6 +567,7 @@ export type Database = {
           skill_name: string | null
           status: Database["public"]["Enums"]["agent_activity_status"]
           token_usage: Json | null
+          trace_id: string | null
         }
         Insert: {
           agent?: Database["public"]["Enums"]["agent_type"]
@@ -587,6 +588,7 @@ export type Database = {
           skill_name?: string | null
           status?: Database["public"]["Enums"]["agent_activity_status"]
           token_usage?: Json | null
+          trace_id?: string | null
         }
         Update: {
           agent?: Database["public"]["Enums"]["agent_type"]
@@ -607,6 +609,7 @@ export type Database = {
           skill_name?: string | null
           status?: Database["public"]["Enums"]["agent_activity_status"]
           token_usage?: Json | null
+          trace_id?: string | null
         }
         Relationships: [
           {
