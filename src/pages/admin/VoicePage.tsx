@@ -302,6 +302,21 @@ function VoiceSettingsCard() {
 
         <div className="flex items-center justify-between rounded-md border p-3">
           <div>
+            <Label className="text-sm font-medium">Browser softphone for agents</Label>
+            <p className="text-xs text-muted-foreground">
+              Show the floating WebRTC dialer in the admin so agents can take and place calls in the browser.
+              Off = calls are forwarded to mobile / AI receptionist / voicemail and the widget is hidden.
+              Requires a per-agent WebRTC account with the provider.
+            </p>
+          </div>
+          <Switch
+            checked={settings.softphoneEnabled ?? false}
+            onCheckedChange={(v) => set('softphoneEnabled', v)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
             <Label className="text-sm font-medium">Reply to voicemail by SMS</Label>
             <p className="text-xs text-muted-foreground">
               Let an agent answer a voice message with an SMS to the caller (e.g. “I’ll call you back at 10:30”).
@@ -313,6 +328,7 @@ function VoiceSettingsCard() {
             onCheckedChange={(v) => set('smsReplyEnabled', v)}
           />
         </div>
+
 
         <div className="flex items-center justify-between rounded-md border p-3">
           <div>

@@ -10,6 +10,9 @@ import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
 import { useLocalePackBootstrap } from '@/hooks/useTenantLocalePack';
 import { IncomingCallToaster } from './voice/IncomingCallToaster';
 import Softphone from './voice/Softphone';
+import { useVoiceSettings } from '@/hooks/useVoice';
+import { getVoiceProvider } from '@/lib/voice-providers';
+
 import { RolePreviewBanner } from './RolePreview';
 
 
@@ -21,6 +24,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, loading, isWriter } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: voiceSettings } = useVoiceSettings();
+  const softphoneVisible = Boolean(
+    voiceSettings?.softphoneEnabled &&
+    voiceSettings?.provider &&
+    getVoiceProvider(voiceSettings.provider)?.capabilities.webrtc,
+  );
+
 
   // Only FlowPilot cockpit renders edge-to-edge (morning briefing chrome).
   // FlowChat is a regular admin page — keeps pinned-pages header.
@@ -100,7 +110,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         </div>
         <IncomingCallToaster />
-        <Softphone floating />
+        {softphoneVisible && <Softphone floating />}
+
 
       </div>
     </SidebarProvider>
