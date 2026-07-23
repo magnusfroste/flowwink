@@ -329,8 +329,11 @@ Creates and manages agent automations (cron jobs, event triggers, signal handler
 - **trigger_type**: cron, event, signal, manual.
 - **trigger_config**: Trigger-specific config (cron expression, event name, etc.).
 - **enabled**: Boolean. New automations default to disabled per LAW 7.
+### Generative skills are NOT automations
+An automation fires its skill with STATIC arguments — there is no reasoning loop on any executor. So a skill that needs model-produced content each run (write_blog_post, generate_content_proposal — anything requiring a \`content\`/\`title\` you must reason out) CANNOT be an automation: a cron fire either errors (missing required args) or republishes frozen text. For recurring generative work create a recurring OBJECTIVE with \`constraints.cadence\` instead (create_objective) — that runs through FlowPilot's loop and produces fresh content. Automations are for deterministic skills (send reminders, sync data, dispatch a signal) whose required args are fully known up front. Incident 2026-07-23: a "daily blog" automation on a live instance errored at 07:00 every day, and another republished one frozen post weekly.
 ### Edge cases
 - skill_name must reference a DATABASE skill, not a built-in tool.
+- Cron/manual automations are rejected at create if skill_arguments omits a required parameter of the target skill.
 - Cron expressions use standard format: minute hour day month weekday.
 - New automations are disabled by default — admin must explicitly enable.`,
   },

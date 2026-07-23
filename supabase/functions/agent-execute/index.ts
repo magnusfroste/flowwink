@@ -1190,7 +1190,29 @@ async function executeModuleAction(
 
       // Look up skill_id from skill_name
       const { data: skillRef } = await supabase.from('agent_skills')
-        .select('id').eq('name', targetSkill).eq('enabled', true).limit(1).maybeSingle();
+        .select('id, tool_definition').eq('name', targetSkill).eq('enabled', true).limit(1).maybeSingle();
+
+      // A cron/manual automation fires its skill with STATIC arguments — there
+      // is no reasoning loop on any executor path (see automation-dispatcher).
+      // So every REQUIRED parameter of the target skill must be supplied here,
+      // as a literal or an {{event}} template. Without this check a generative
+      // skill like write_blog_post (requires model-produced title+content)
+      // silently fails on every fire — a "daily blog" automation on liteit
+      // errored at 07:00 every day for a week (2026-07-23). Signal/event
+      // automations are exempt: their payload fills args at runtime.
+      if (action === 'create' && (trigger_type === 'cron' || trigger_type === 'manual')) {
+        const req: string[] = skillRef?.tool_definition?.function?.parameters?.required ?? [];
+        const supplied = new Set(Object.keys(skill_arguments ?? {}));
+        const missing = req.filter((p) => !supplied.has(p));
+        if (missing.length) {
+          throw new Error(
+            `Cannot create this automation: "${targetSkill}" requires ${missing.map((m) => `"${m}"`).join(', ')}, ` +
+            `but a ${trigger_type} automation fires with only the static skill_arguments you provide — there is no reasoning loop to generate them. ` +
+            `If "${targetSkill}" needs model-produced content each run (e.g. a fresh blog post), it cannot be an automation: create a recurring OBJECTIVE with constraints.cadence instead, which runs through FlowPilot's loop. ` +
+            `Otherwise add the missing arguments.`,
+          );
+        }
+      }
 
       const { data, error } = await supabase.from('agent_automations').insert({
         name,
