@@ -205,3 +205,19 @@ verify_jwt = false
 # pg_cron POSTs (learn/followthrough) + heartbeat's internal hop. The task
 # that was JWT-gated standalone (distill) keeps an in-body gate in index.ts.
 verify_jwt = false
+
+[functions.document-share]
+# Anon-callable: resolves a share token and streams/redirects to the file.
+# Auth is the share token itself, not a JWT. Was silently verify_jwt=true
+# (default) → 401 for every share-link recipient on sb_publishable_ keys.
+verify_jwt = false
+
+[functions.agent-card]
+# Public federation discovery card — external peers probe it anonymously.
+# Advertises capabilities (Cache-Control: public). Must be anon-reachable.
+verify_jwt = false
+
+[functions.chat-stt]
+# Public chat-widget speech-to-text (publishable key). Stateless Whisper
+# transcription, no DB access. Was 401ing on sb_publishable_ keys.
+verify_jwt = false

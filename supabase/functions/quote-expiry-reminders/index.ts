@@ -68,11 +68,11 @@ Deno.serve(async (req: Request) => {
       }
       const url = `${origin}/quote/${token}`;
       try {
-        const { data: sendData, error: sendErr } = await supabase.functions.invoke('send-quote-email', {
-          body: { quote_id: q.id, public_url: url, reminder: true },
+        const { data: sendData, error: sendErr } = await supabase.functions.invoke('comms-send', {
+          body: { kind: 'quote_email', quote_id: q.id, public_url: url, reminder: true },
         });
         if (sendErr) throw new Error(sendErr.message);
-        if (!sendData?.success) throw new Error(sendData?.error || 'send-quote-email returned failure');
+        if (!sendData?.success) throw new Error(sendData?.error || 'comms-send quote_email returned failure');
 
         await supabase.from('quotes')
           .update({ expiry_reminder_sent_at: new Date().toISOString() })
