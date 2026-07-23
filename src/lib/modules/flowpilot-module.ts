@@ -199,7 +199,7 @@ const FLOWPILOT_SKILLS: SkillSeed[] = [
             },
             constraints: {
               type: 'object',
-              description: 'Guardrails for the objective',
+              description: 'Guardrails for the objective. If the goal recurs on a rhythm ("daily", "every day", "varje dag", "per week"), you MUST include a structured cadence or the objective runs on EVERY heartbeat and floods — e.g. constraints.cadence = { "counts": "write_blog_post", "max": 1, "per": "day" }. counts is the skill whose successful runs are counted; per is "day" or "week". Without it a "daily" goal produces ~8 items a day.',
             },
             success_criteria: {
               type: 'object',
@@ -221,8 +221,12 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
 - System integrity issues require a tracked fix
 ### Parameters
 - **goal**: Required. Clear, measurable goal text.
-- **constraints**: Optional guardrails (e.g., no_destructive_actions, deadline, max budget).
+- **constraints**: Optional guardrails (e.g., no_destructive_actions, deadline, max budget). **Cadence is mandatory for recurring goals** — see below.
 - **success_criteria**: Optional measurable criteria for completion.
+### Cadence — REQUIRED for any recurring goal
+If the goal delivers on a rhythm (a blog post "every day", a digest "each week", "varje dag", "per vecka"), the rhythm MUST live in structured data, not just the goal text. Set:
+  constraints.cadence = { "counts": "<skill_name>", "max": <n>, "per": "day" | "week" }
+where **counts** is the skill whose successful runs are counted (e.g. write_blog_post) and **max** is how many per period. The heartbeat runs every few hours; a recurring goal WITHOUT cadence fires on every heartbeat and over-produces (a real incident: a "daily" blog objective published ~8 posts/day on a live customer instance). The goal text alone is invisible to the cadence guard.
 ### Edge cases
 - Check existing objectives first to avoid duplicates (query agent_objectives table).
 - Objectives drive heartbeat behavior — be specific in goal text.
