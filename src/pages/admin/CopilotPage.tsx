@@ -142,7 +142,10 @@ export default function CopilotPage() {
             </ScrollArea>
           )}
 
+          {tabParam === 'trace' && <FlowPilotTraceTab />}
+
           {tabParam === 'sessions' && (
+
             <ScrollArea className="h-full">
               <div className="p-4 space-y-4 max-w-7xl mx-auto">
                 <Card>
