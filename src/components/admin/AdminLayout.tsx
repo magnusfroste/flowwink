@@ -28,8 +28,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const softphoneVisible = Boolean(
     voiceSettings?.softphoneEnabled &&
     voiceSettings?.provider &&
-    getVoiceProvider(voiceSettings.provider)?.capabilities.webrtc,
+    getVoiceProvider(voiceSettings.provider)?.metadata.capabilities.webrtc,
   );
+
 
 
   // Only FlowPilot cockpit renders edge-to-edge (morning briefing chrome).
