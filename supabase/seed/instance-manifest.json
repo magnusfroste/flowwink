@@ -1113,7 +1113,7 @@
         "flowpilot-heartbeat": "sha256:b63e2029bfb8ceb9a19e997454a2775f04cd5529d533825f688a91e682389719",
         "flowpilot-lifecycle": "sha256:4e133600886f67552cfa1501ce2116b72414c07ced34fca927d9a2188770a365",
         "gatewayapi-ingest": "sha256:9daeb71012e0b49d3eee1583d2511a50224cec4e1b69de46a471e1a63d7f066a",
-        "generate-invoice-pdf": "sha256:806a69f2634cf908d4291332f5595f5ec3c1c6c3f7fb27b4ef9e820eaf8a8f23",
+        "generate-invoice-pdf": "sha256:7884b26bb71e22e6e89a1b4429fc9f47a9bac20826008abca71ad213fb365901",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",
         "gmail-oauth-callback": "sha256:d218314ac81ba20bd9aa009f41a06112e30c504f7d99b4affb4df90046740606",
         "instance-health": "sha256:19ed2278f4b6656d7923caf70627fe107e529a53ac7f3c5327117bccc55cbf1a",

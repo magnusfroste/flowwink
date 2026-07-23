@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
@@ -14,22 +15,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { invoice_id } = await req.json();
-    if (!invoice_id) {
-      return new Response(JSON.stringify({ error: "invoice_id required" }), {
+    // Two access paths, mirroring the rest of the invoice surface:
+    //  • public_token → the unguessable per-invoice token (invoices.public_token,
+    //    same gate as get_invoice_by_token / create-invoice-payment). Anon OK.
+    //  • invoice_id   → admin/service only. WITHOUT this gate the function fetched
+    //    ANY invoice by id with the service client (RLS off) for any caller with
+    //    the publishable key — an open financial-document leak. (2026-07-23 fix.)
+    const { invoice_id, public_token } = await req.json();
+    if (!invoice_id && !public_token) {
+      return new Response(JSON.stringify({ error: "invoice_id or public_token required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-            const supabase = getServiceClient();
+    const supabase = getServiceClient();
 
-    // Fetch invoice with lead
-    const { data: invoice, error: invErr } = await supabase
-      .from("invoices")
-      .select("*, leads(id, name, email, company_id, companies(name))")
-      .eq("id", invoice_id)
-      .single();
+    // Resolve + authorize the invoice.
+    let invoice: any = null;
+    let invErr: { message: string } | null = null;
+    if (public_token) {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("*, leads(id, name, email, company_id, companies(name))")
+        .eq("public_token", public_token)
+        .maybeSingle();
+      invoice = data; invErr = error;
+    } else {
+      // invoice_id path — must be an admin or the service role.
+      const auth = await requireServiceOrRole(req, supabase, "admin");
+      if (!auth.authorized) return unauthorized(corsHeaders);
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("*, leads(id, name, email, company_id, companies(name))")
+        .eq("id", invoice_id)
+        .single();
+      invoice = data; invErr = error;
+    }
 
     if (invErr || !invoice) {
       return new Response(

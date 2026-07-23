@@ -221,3 +221,9 @@ verify_jwt = false
 # Public chat-widget speech-to-text (publishable key). Stateless Whisper
 # transcription, no DB access. Was 401ing on sb_publishable_ keys.
 verify_jwt = false
+
+[functions.generate-invoice-pdf]
+# Public path uses the per-invoice public_token (anon, unguessable); the
+# invoice_id path is admin/service-gated in-body (requireServiceOrRole). Kept
+# --no-verify-jwt so the public token path reaches it with the publishable key.
+verify_jwt = false
