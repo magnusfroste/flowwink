@@ -51,6 +51,44 @@ Scheduled daily 07:00 UTC via the "Daily Briefing" automation in /admin/automati
 - Email to the owner if Resend is configured`,
   },
   {
+    name: 'get_agent_trace',
+    description:
+      "Read the harness Trace — the decision log of autonomous runs. Call with no arguments to list recent runs (heartbeat, cron, chat, gateway), each summarised with health, step count and skills touched; call with a run's trace_id for its full ordered steps, each carrying the verbatim arguments the caller sent, the result, outcome and any approval it was gated to. Read-only. Use when: debugging why FlowPilot did something; auditing an autonomous action; reviewing what an agent actually ran (not what it claims). NOT for: live metrics (analyze_analytics); integration status (check_integrations).",
+    category: 'system',
+    handler: 'internal:get_agent_trace',
+    scope: 'both',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'get_agent_trace',
+        description:
+          'Read-only view over the harness\'s own run logs. No args → list recent runs; {trace_id} → one run with ordered steps and verbatim inputs. The evidence trail, not the model\'s account.',
+        parameters: {
+          type: 'object',
+          properties: {
+            trace_id: { type: 'string', description: 'A run id (e.g. hb_… from a listing). Omit to list recent runs.' },
+            agent: { type: 'string', description: 'Filter the listing by driver: heartbeat, cron, chat, mcp, flowpilot, automation.' },
+            limit: { type: 'integer', description: 'Max runs to list (default 40, max 200).' },
+            since_hours: { type: 'integer', description: 'Look-back window in hours for the listing (default 72).' },
+          },
+        },
+      },
+    },
+    instructions: `## get_agent_trace
+### What
+The read-only Trace over agent_activity, grouped into RUNS by trace_id. A run is one harness execution — a heartbeat, a cron fire, a chat turn, or a gateway session — and its steps all share the trace_id the reason loop stamps.
+### When to use
+- "Why did FlowPilot do X?" — find the run, read the ordered steps.
+- Auditing an autonomous action for a human ("show me what the agent actually did").
+- Debugging a failure: the step's \`input\` is the VERBATIM arguments the caller sent — read it, never ask the agent what it sent.
+### Two shapes
+- **No arguments** → recent runs, newest first: { trace_id, agent, health (ok/degraded/failed), step_count, skills[] }.
+- **{ trace_id }** → that run in full, with \`steps[]\` in order (skill, status, input, output, error, outcome, approval link).
+### Why it exists
+The harness records everything; this is the surface that makes it legible. It renders what already happened — it never changes a run. See docs/architecture/agent-harness.md.`,
+  },
+  {
     name: 'check_integrations',
     description:
       "Probe every enabled integration (SearXNG, Firecrawl, Resend, OpenAI, Gemini, Unsplash, Composio, local LLM) with a cheap live call and report per-integration ok/fail with a diagnostic. Use when: an integration-backed feature behaves oddly (search falls back, mail not sending); after changing integration config or rotating a key; a scheduled health sweep. NOT for: testing AI chat quality (test_ai_connection); full platform test suites (run_platform_tests).",

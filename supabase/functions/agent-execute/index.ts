@@ -43,6 +43,7 @@ import { handler as hFetchImage } from '../_shared/handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
+import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
 // read a Request and return a Response; this adapter closes the gap so the
@@ -728,6 +729,9 @@ serve(async (req) => {
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
 
+      } else if (handler === 'internal:get_agent_trace') {
+        result = await executeAgentTrace(supabase, args as Record<string, unknown>);
+
       } else if (handler === 'internal:reset_sandbox') {
         result = await executeResetSandbox(supabase, args as Record<string, unknown>);
 
@@ -945,6 +949,7 @@ serve(async (req) => {
       status: handlerFailed ? 'failed' : 'success', conversation_id,
       duration_ms: Date.now() - startTime,
       error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
+      trace_id: trace_id || undefined,
     });
 
     // 5b. Outcome tracking: leave outcome_status as NULL
@@ -11622,6 +11627,7 @@ async function logActivity(
     conversation_id?: string;
     duration_ms: number;
     error_message?: string;
+    trace_id?: string;
   },
 ): Promise<string | null> {
   const { data, error } = await supabase.from('agent_activity').insert({
@@ -11634,6 +11640,9 @@ async function logActivity(
     conversation_id: activity.conversation_id || null,
     duration_ms: activity.duration_ms,
     error_message: activity.error_message || null,
+    // Trace column mirrors input.trace_id so a harness run groups on an
+    // indexed column, not a jsonb path. See agent-harness.md §4.
+    trace_id: activity.trace_id || (activity.input?.trace_id as string | undefined) || null,
   }).select('id').single();
 
   if (error) console.error('Failed to log activity:', error);

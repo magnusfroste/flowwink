@@ -138,6 +138,7 @@
     "generate_site_from_identity",
     "generate_social_post",
     "generate_subscription_invoice",
+    "get_agent_trace",
     "get_attribution_report",
     "get_blog_rss_url",
     "get_chat_transcript",
