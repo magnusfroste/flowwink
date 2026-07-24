@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 // -----------------------------------------------------------------------------
 
 type Health = 'ok' | 'degraded' | 'failed';
+type Lifecycle = 'running' | 'paused' | 'completed' | 'failed';
 
 interface TraceRunSummary {
   trace_id: string;
@@ -40,6 +41,9 @@ interface TraceRunSummary {
   failed_count: number;
   health: Health;
   skills: string[];
+  lifecycle?: string;
+  paused_reason?: string | null;
+  cursor?: number | null;
 }
 
 interface TraceStep {
