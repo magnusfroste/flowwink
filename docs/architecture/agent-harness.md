@@ -75,7 +75,7 @@ one named system, discoverable in one place.
 | H8 | **Escalation (HIL)** | Approval queue + staged operations for anything above the trust threshold | `approval_requests`, staged-op handshake | shipped |
 | H9 | **Learning** | The Curator analyses failures → proposes better skill instructions → parks for human approval | `run_skill_curator`, Curator automation | shipped (BR2) |
 | H10 | **Observability** | Every action + verbatim input/output/outcome, token + trace records | `agent_activity`, `_shared/trace.ts`, `_shared/agent-audit.ts`, `token-tracking.ts` | **data layer only — no product surface (§4)** |
-| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | Phases 0–2 shipped; Phase 4 proof caught a double-fire → directives GATED OFF, reconcile-only live; Phase 2.5 hard-guard designed | **partial — reconcile live, directives gated** |
+| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | Phases 0–2 + 2.5 shipped. Phase 4 proof caught a double-fire (a model re-ran completed non-idempotent steps); Phase 2.5 hard guard now emits a resume directive ONLY when every completed step is idempotent (fail-closed allowlist), else `needs_review`/paused. Phase 3 (Trace UI) at Lovable | **live — idempotent plans auto-resume, the rest reconcile-and-surface** |
 
 **Reading of the table:** ten of eleven components are built. The two open rows are the
 whole of the next phase — one is a *legibility* gap (H10 has no UI), one is a *functional*
@@ -181,8 +181,13 @@ safe"* should find a concrete, implemented answer — not a claim. The framing t
 - **"Bring your own agent."** The harness serves external operators through the same gateway
   — the reliability isn't locked to FlowPilot.
 
-**Do not** over-claim H11 until it ships: resumption is "in build", not "done". The harness
-story is strong *because* it's true — keep it that way.
+**H11 status (2026-07-24):** resumption's autonomous half is live and honest — a killed run
+never zombies (reconcile), and it auto-resumes only when re-running the completed prefix is
+provably harmless (idempotent-plan guard); everything else surfaces for a human instead of
+being re-driven. The one remaining piece is Phase 3, the Trace UI at Lovable, which makes a
+paused/`needs_review` run *visible*. Claim resumption as "reconcile + idempotent auto-resume
+live; full-plan resume for non-idempotent chains is the upgrade path" — accurate, not
+over-claimed.
 
 ---
 

@@ -143,11 +143,13 @@ point of naming the harness.
 | **1 · `agent_runs` + checkpoint** ✅ | agent_runs (RLS); reason loop checkpoints running→completed/failed (never-throw contract); Trace overlays durable lifecycle. Live-verified: a heartbeat run checkpoints and the Trace shows lifecycle=completed. *(shipped 2026-07-23)* | backend |
 | **2 · Resumer pre-pass** ✅ | New `?task=resume`: reconciles interrupted runs (running+stale → paused) and injects a cursor-aware resume directive into the heartbeat, alongside follow-through. Live-verified: a 30-min-stale run reconciled and produced "plan 2/4 done, continue from step 3". *(shipped 2026-07-23)* | backend |
 | **3 · Trace shows run state** | Surface `status` + `cursor` in the Trace read model and the Trace UI (the surface Lovable is building). | backend + Lovable |
-| **4 · Sim proof** ❌ FOUND A REAL FLAW → directives gated | Live-heartbeat proof on sandbox (2026-07-23): reconcile + directive were correct, but the model IGNORED "do NOT repeat completed steps" and RE-RAN both completed write_blog_post steps (0→2 posts). A soft directive is insufficient for non-idempotent skills. **Response:** directive injection is now GATED OFF by default (`site_settings.resumption.directives`); reconcile stays on (safe). Phase 2.5 must add a HARD no-repeat guard before directives can drive plans unattended. | backend |
+| **4 · Sim proof** ❌ FOUND A REAL FLAW → directives gated | Live-heartbeat proof on sandbox (2026-07-23): reconcile + directive were correct, but the model IGNORED "do NOT repeat completed steps" and RE-RAN both completed write_blog_post steps (0→2 posts). A soft directive is insufficient for non-idempotent skills. **Response:** directive injection was GATED OFF by default; reconcile stays on (safe). Phase 2.5 must add a HARD no-repeat guard before directives can drive plans unattended. | backend |
+| **2.5 · Hard no-repeat guard** ✅ | `buildResumeDirective` now returns a discriminated `ResumeOutcome`. It emits a `resume` directive **only** when every completed step is provably safe to re-run (`isPlanResumeSafe` — every completed step's skill is in the fail-closed `IDEMPOTENT_SKILLS` allowlist). A non-idempotent or unclassified completed step (write_blog_post — the Phase 4 case) yields `needs_review`: the run stays paused and surfaces in the Trace, never auto-driven. The opt-in flag is retired — the guard **is** the gate. *(shipped 2026-07-24)* | backend |
 
 Phase 0 is a small, immediate win (clears real stuck rows). Phases 1–2 are the substrate.
 Phase 4 is the acceptance gate — resumption is "done" only when the sim proves a killed run
-resumes without double-firing.
+resumes without double-firing. Phase 2.5 makes that guarantee structural: the Phase 4 double-
+fire plan can no longer produce a directive at all, so no model is in the loop to disobey.
 
 ---
 
@@ -166,11 +168,21 @@ hard guard, to design next:
 - **Cursor as a hard filter.** The resumer strips already-done steps from the
   plan it hands the loop, so the model never sees a completed step to re-run.
   Cheaper, and it matches the "continue, not restart" intent.
-- **Resume only idempotent plans.** Classify a plan as resumable only when its
-  steps are idempotent; otherwise reconcile-and-notify, don't auto-resume.
+- **Resume only idempotent plans.** ✅ **CHOSEN (shipped 2026-07-24).** Classify a
+  plan as resumable only when every completed step is idempotent; otherwise
+  reconcile-and-notify (`needs_review`), don't auto-resume. Fail-closed: the
+  `IDEMPOTENT_SKILLS` allowlist (money core + reads) is the only path to an
+  auto-driven directive; everything else — write_blog_post, any send_*, unknown
+  skills — stays paused for a human. Cheapest guard that eliminates the Phase 4
+  failure structurally: the double-fire plan never yields a directive, so no
+  model is in the loop to disobey. Lives in `resume-logic.ts` (pure, unit-tested).
 
-Until one ships, directives stay opt-in. The reconcile half (no zombie runs) is
-already safe and on everywhere.
+The other two options remain the upgrade path: a declared `idempotent` property on
+each skill (retires the hand-curated allowlist), then cursor-as-hard-filter or
+per-step keys (lets even non-idempotent plans resume safely). The allowlist is the
+pragmatic Phase 2.5 guard for the multi-step processes where resumption actually
+matters (P2P, bookkeeping). The reconcile half (no zombie runs) is safe and on
+everywhere regardless.
 
 ---
 

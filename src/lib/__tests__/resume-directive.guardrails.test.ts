@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isInterrupted, buildResumeDirective } from '../../../supabase/functions/flowpilot-lifecycle/resume-logic';
+import { isInterrupted, buildResumeDirective, isPlanResumeSafe, IDEMPOTENT_SKILLS } from '../../../supabase/functions/flowpilot-lifecycle/resume-logic';
 
 /**
  * Guardrail: the resumer (agent-resumption.md §2.3, Phase 2).
@@ -28,30 +28,51 @@ describe('resumer pure logic', () => {
     expect(isInterrupted(done, 15 * 60_000, now)).toBe(false);
   });
 
-  it('resumes from the first step lacking a result — completed steps marked done', () => {
+  it('resumes an IDEMPOTENT plan from the first pending step', () => {
     const obj = {
       id: 'o1',
-      goal: 'Run the P2P chain',
+      goal: 'Prepare the VAT period',
       progress: { plan: { steps: [
-        { step: 'create PO', result: { ok: true } },
-        { step: 'receive goods', result: { ok: true } },
-        { step: 'match invoice' },          // ← cursor here
-        { step: 'schedule payment' },
+        { skill: 'prepare_vat_return', step: 'prepare_vat_return for Q2', result: { ok: true } },
+        { skill: 'accounting_reports', step: 'accounting_reports balance check', result: { ok: true } },
+        { skill: 'manage_journal_entry', step: 'manage_journal_entry the VAT payment' }, // ← cursor
       ] } },
     };
-    const built = buildResumeDirective(obj);
-    expect(built).not.toBeNull();
-    expect(built!.cursor).toBe(2);
-    expect(built!.total).toBe(4);
-    expect(built!.directive).toMatch(/do NOT repeat completed steps/);
-    expect(built!.directive).toMatch(/create PO — done/);
-    expect(built!.directive).toMatch(/Continue from step 3: match invoice/);
+    const out = buildResumeDirective(obj);
+    expect(out.kind).toBe('resume');
+    if (out.kind === 'resume') {
+      expect(out.cursor).toBe(2);
+      expect(out.directive).toMatch(/Continue from step 3/);
+    }
   });
 
-  it('returns null when the plan is complete or absent (nothing to resume)', () => {
-    expect(buildResumeDirective({ id: 'o', goal: 'g', progress: { plan: { steps: [{ step: 'a', result: 1 }] } } })).toBeNull();
-    expect(buildResumeDirective({ id: 'o', goal: 'g', progress: {} })).toBeNull();
-    expect(buildResumeDirective({ id: 'o', goal: 'g' })).toBeNull();
+  it('REFUSES a plan whose completed step is non-idempotent (the Phase 4 case)', () => {
+    const obj = {
+      id: 'o2',
+      goal: 'publish two posts then summarise',
+      progress: { plan: { steps: [
+        { skill: 'write_blog_post', step: 'write_blog_post topic A', result: { ok: true } },
+        { skill: 'write_blog_post', step: 'write_blog_post topic B', result: { ok: true } },
+        { skill: 'summarise', step: 'summarise the two posts' }, // ← cursor
+      ] } },
+    };
+    const out = buildResumeDirective(obj);
+    // write_blog_post is not idempotent → hard guard refuses, surfaces for review.
+    expect(out.kind).toBe('needs_review');
+    expect(isPlanResumeSafe(obj.progress.plan.steps, 2)).toBe(false);
+  });
+
+  it('the idempotency allowlist covers the money core, not generative skills', () => {
+    expect(IDEMPOTENT_SKILLS.has('manage_journal_entry')).toBe(true);
+    expect(IDEMPOTENT_SKILLS.has('reconciliation')).toBe(true);
+    expect(IDEMPOTENT_SKILLS.has('write_blog_post')).toBe(false);
+    expect(IDEMPOTENT_SKILLS.has('send_newsletter')).toBe(false);
+  });
+
+  it('returns nothing when the plan is complete or absent', () => {
+    expect(buildResumeDirective({ id: 'o', goal: 'g', progress: { plan: { steps: [{ skill: 'manage_journal_entry', result: 1 }] } } }).kind).toBe('nothing');
+    expect(buildResumeDirective({ id: 'o', goal: 'g', progress: {} }).kind).toBe('nothing');
+    expect(buildResumeDirective({ id: 'o', goal: 'g' }).kind).toBe('nothing');
   });
 });
 
@@ -75,14 +96,15 @@ describe('resumer wiring', () => {
     expect(r).toMatch(/\.lt\("updated_at", staleBefore\)/);
   });
 
-  it('directive injection is GATED OFF by default (Phase 4 double-fire finding)', () => {
-    // The live-heartbeat gate proved a soft directive re-runs completed
-    // non-idempotent steps. Reconcile stays on; directives need explicit
-    // opt-in until a hard no-repeat guard (Phase 2.5) exists.
+  it('the handler only auto-drives resume outcomes, never needs_review (Phase 2.5)', () => {
+    // Phase 4 proved a soft directive re-runs completed non-idempotent steps.
+    // The hard guard replaces the opt-in flag: only out.kind === 'resume' pushes
+    // a directive; 'needs_review' is counted and LEFT PAUSED, never re-driven.
     const r = read('supabase/functions/flowpilot-lifecycle/resume.ts');
-    expect(r).toMatch(/const directivesEnabled = \(flag\?\.value as any\)\?\.directives === true/);
-    // When gated, it still reconciles but returns no directive.
-    expect(r).toMatch(/if \(!directivesEnabled\)/);
-    expect(r).toMatch(/directives_gated: true/);
+    expect(r).toMatch(/out\.kind === "resume"/);
+    expect(r).toMatch(/out\.kind === "needs_review"/);
+    expect(r).toMatch(/needs_review: needsReview/);
+    // The old opt-in gate is gone — the guard itself is the gate now.
+    expect(r).not.toMatch(/directives_gated/);
   });
 });

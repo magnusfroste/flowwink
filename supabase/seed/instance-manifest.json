@@ -1119,7 +1119,7 @@
         "extract-pdf-text": "sha256:96f98e21532f261f3e41dc8843dee623e9a010a6106d4e40d3664d743df46304",
         "federation-invite-peer": "sha256:ea8c2c09c4f6cd1839da87a93932794086ff5a37f7e9419864b38928f5d61bac",
         "flowpilot-heartbeat": "sha256:477a5bb13fdfad2125a628e2e211b3ac7ffe2be7c53482c2cca5118fa64f7cb0",
-        "flowpilot-lifecycle": "sha256:b063d640e439d567589f9e59bde6aaa9a97e4d884fa818ce90fde11fad229ae5",
+        "flowpilot-lifecycle": "sha256:20c6bac5c94f45a31ba1ff9e2ab838a1d2b6a51b60d313b3c7ac5a192a60fdaa",
         "gatewayapi-ingest": "sha256:9daeb71012e0b49d3eee1583d2511a50224cec4e1b69de46a471e1a63d7f066a",
         "generate-invoice-pdf": "sha256:7884b26bb71e22e6e89a1b4429fc9f47a9bac20826008abca71ad213fb365901",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",

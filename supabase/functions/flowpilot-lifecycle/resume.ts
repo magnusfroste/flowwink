@@ -65,26 +65,13 @@ export async function handler(req: Request): Promise<Response> {
     .select("trace_id, objective_id");
   const reconciledCount = (reconciled ?? []).length;
 
-  // 2. Build resume directives — GATED OFF BY DEFAULT.
-  //
-  // Phase 4 acceptance-gate finding (2026-07-23): a soft directive ("do NOT
-  // repeat completed steps") is NOT enough. A live heartbeat, handed the
-  // directive for a 2/4-done plan, RE-RAN both completed write_blog_post steps
-  // (0 → 2 posts) instead of continuing from step 3. For an idempotent skill
-  // (money core: p_reference, status guards) a double-fire is harmless; for a
-  // non-idempotent generative skill it duplicates real work. So directive-
-  // driven resume must not run unattended until a HARD no-repeat guard exists
-  // (Phase 2.5). The reconcile above is always safe and stays on; directives
-  // require an explicit opt-in (site_settings.resumption.directives = true).
-  const { data: flag } = await supabase
-    .from('site_settings').select('value').eq('key', 'resumption').maybeSingle();
-  const directivesEnabled = (flag?.value as any)?.directives === true;
-  if (!directivesEnabled) {
-    await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: 0 });
-    return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: 0, context: "", directives_gated: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
-
+  // 2. Build resume directives — governed by the HARD no-repeat guard (Phase
+  // 2.5), not by trust in the model. Phase 4 proved a soft directive isn't
+  // binding (a model re-ran completed write_blog_post steps → 0→2 posts). Now
+  // buildResumeDirective auto-resumes ONLY when every completed step is
+  // idempotent-safe (fail-closed); a non-idempotent or unclassified completed
+  // step yields 'needs_review' — reconciled to paused, surfaced, never
+  // auto-driven. No opt-in flag needed: the guard IS the gate.
   const { data: paused } = await supabase
     .from("agent_runs")
     .select("trace_id, objective_id")
@@ -95,6 +82,7 @@ export async function handler(req: Request): Promise<Response> {
 
   const directives: string[] = [];
   const resumingTraceIds: string[] = [];
+  let needsReview = 0;
   for (const run of paused ?? []) {
     const { data: obj } = await supabase
       .from("agent_objectives")
@@ -102,10 +90,15 @@ export async function handler(req: Request): Promise<Response> {
       .eq("id", run.objective_id)
       .maybeSingle();
     if (!obj || obj.status !== "active") continue;
-    const built = buildResumeDirective(obj as any);
-    if (!built) continue;
-    directives.push(built.directive);
-    resumingTraceIds.push(run.trace_id);
+    const out = buildResumeDirective(obj as any);
+    if (out.kind === "resume") {
+      directives.push(out.directive);
+      resumingTraceIds.push(run.trace_id);
+    } else if (out.kind === "needs_review") {
+      // Hard guard refused auto-resume — leave the run paused (do NOT re-run it)
+      // so it surfaces in the Trace for a human. Never silently drop it.
+      needsReview++;
+    }
   }
 
   // Mark the runs we are handing to this cycle as 'running' again (resumed), so
@@ -116,13 +109,13 @@ export async function handler(req: Request): Promise<Response> {
       .in("trace_id", resumingTraceIds);
   }
 
-  await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: directives.length });
+  await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview });
 
   const context = directives.length
     ? `RESUMPTION (${directives.length} interrupted run(s) picked up this cycle):\n${directives.join("\n\n")}`
     : "";
 
-  return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: directives.length, context }),
+  return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: directives.length, needs_review: needsReview, context }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
