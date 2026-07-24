@@ -119,10 +119,12 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
               loading={i === 0 ? 'eager' : 'lazy'}
             />
 
-            {/* Overlay */}
+            {/* Overlay (semantic DS 2026 token) */}
             <div
               className="absolute inset-0"
-              style={{ background: `linear-gradient(to top, rgba(0,0,0,${overlay / 100}), rgba(0,0,0,${overlay / 200}))` }}
+              style={{
+                backgroundImage: `linear-gradient(to top, hsl(var(--hero-overlay) / ${overlay / 100}), hsl(var(--hero-overlay) / ${overlay / 200}))`,
+              }}
             />
 
             {/* Content */}
@@ -132,15 +134,15 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
             )}>
               <div className="max-w-2xl space-y-4">
                 {slide.subtitle && (
-                  <p className="text-sm md:text-base font-medium uppercase tracking-[0.2em] text-white/70">
+                  <p className="text-sm md:text-base font-medium uppercase tracking-[0.2em] text-on-image-muted">
                     {slide.subtitle}
                   </p>
                 )}
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-on-image">
                   {slide.title}
                 </h2>
                 {slide.description && (
-                  <p className="text-base md:text-lg text-white/80 leading-relaxed max-w-xl">
+                  <p className="text-base md:text-lg leading-relaxed max-w-xl text-on-image-muted">
                     {slide.description}
                   </p>
                 )}
@@ -150,10 +152,10 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
                     className={cn(
                       'inline-flex items-center px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300 mt-2',
                       slide.ctaVariant === 'outline'
-                        ? 'border-2 border-white text-white hover:bg-white hover:text-black'
+                        ? 'border-2 border-current text-on-image hover:bg-background hover:text-foreground'
                         : slide.ctaVariant === 'secondary'
-                        ? 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'
-                        : 'bg-white text-black hover:bg-white/90',
+                        ? 'bg-background/20 backdrop-blur-sm text-on-image hover:bg-background/30'
+                        : 'bg-background text-foreground hover:bg-background/90',
                     )}
                   >
                     {slide.ctaLabel}
