@@ -1087,7 +1087,7 @@
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:d4d834954e5e12b5169b9d8c93e3f7c2ecf938fb43e21ed74fcf3fc10731ae78",
+        "agent-execute": "sha256:9f3846011e396f5882bbc33cd0bed5c95fd459fd7a7baec1bdf91246df1d9bfb",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:5cc0884b9c7ab08157ee79a5055f847433cb079732200a07bdae3ef2b666f1f6",
         "automation-dispatcher": "sha256:c0ffa7a2c623209bf82030bd4b6feb1ed9ae92baa4ea5a08772eaa3fa912ea3e",

@@ -6757,8 +6757,22 @@ async function executeSendInvoiceForOrder(
   let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
   if (RESEND_API_KEY) {
     const fromEmail = await resolveResendFrom(supabase);
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const pdfUrl = `${supabaseUrl}/functions/v1/generate-invoice-pdf?invoice_id=${invoice.id}`;
+    // Link to the PUBLIC invoice page, which has a working "Download PDF" that
+    // posts public_token. The old generate-invoice-pdf?invoice_id= link was a
+    // GET with a query param the handler never read, and after the invoice-PDF
+    // security gate it 403s for the customer anyway. (cloud review finding #2)
+    let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
+    if (!origin) {
+      const { data: gs } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
+      const v: any = gs?.value || {};
+      origin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+    }
+    let publicToken = (invoice as any).public_token;
+    if (!publicToken) {
+      const { data: inv } = await supabase.from('invoices').select('public_token').eq('id', invoice.id).maybeSingle();
+      publicToken = inv?.public_token;
+    }
+    const invoiceUrl = origin && publicToken ? `${origin.replace(/\/$/, '')}/invoice/${publicToken}` : '';
     const fmt = (cents: number) =>
       new Intl.NumberFormat('sv-SE', { style: 'currency', currency: order.currency || 'SEK' }).format(cents / 100);
 
@@ -6766,8 +6780,8 @@ async function executeSendInvoiceForOrder(
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">
         <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
         <p>Hi ${order.customer_name || 'there'},</p>
-        <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong> below.</p>
-        <p><a href="${pdfUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice</a></p>
+        <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.</p>
+        ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice &amp; download PDF</a></p>` : ''}
         <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>
       </div>`;
 
@@ -7306,15 +7320,14 @@ async function executeDbAction(
         summary.rules_tagged = rulesErr ? `error: ${rulesErr.message}` : (tagged ?? 0);
       } catch (e) { summary.rules_tagged = `error: ${(e as Error).message}`; }
 
-      // 2. Auto-match against invoices/expenses/orders (edge fn, non-fatal).
+      // 2. Auto-match against invoices/expenses/orders. Direct internal call —
+      // the `reconciliation` edge fn was removed in the edge-surface refactor
+      // (B1b); the logic lives in _shared/handlers/reconciliation.ts. The old
+      // fetch 404'd and swallowed it into summary.auto_matched="HTTP 404", so
+      // bank transactions silently never auto-matched. (cloud review finding #1)
       try {
-        const matchResp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/reconciliation/auto-match`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
-          body: JSON.stringify({}),
-        });
-        const matchOut = await matchResp.json().catch(() => ({}));
-        summary.auto_matched = matchResp.ok ? (matchOut?.matched ?? matchOut?.matches ?? matchOut) : `HTTP ${matchResp.status}`;
+        const matchOut = await executeReconciliation('auto-match', {}) as any;
+        summary.auto_matched = matchOut?.error ? `error: ${matchOut.error}` : (matchOut?.matched ?? matchOut?.matches ?? matchOut);
       } catch (e) { summary.auto_matched = `error: ${(e as Error).message}`; }
 
       // 3. Propose bookings for what remains unbooked.
