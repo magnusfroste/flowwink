@@ -422,12 +422,14 @@ function RunsList({
         >
           <div className="flex items-center gap-2 flex-wrap">
             <HealthDot health={r.health} />
+            <LifecycleBadge lifecycle={lifecycleOf(r)} />
             <span className="font-mono text-xs">{r.trace_id}</span>
             <AgentChip agent={r.agent} />
             <span className="ml-auto text-[11px] text-muted-foreground">
               {relTime(r.started_at)}
             </span>
           </div>
+          {lifecycleOf(r) === 'paused' && <PausedLine run={r} />}
           <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
             <span>{r.step_count} steps</span>
             {r.failed_count > 0 && (
