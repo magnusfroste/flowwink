@@ -82,6 +82,20 @@
     --shadow-premium: 0 25px 50px -12px hsl(220 25% 12% / 0.15);
     --shadow-float: 0 10px 40px -10px hsl(var(--primary) / 0.3);
     --shadow-glow: 0 0 40px hsl(var(--primary) / 0.15);
+    --shadow-block-hover: 0 20px 40px -20px hsl(220 25% 12% / 0.18);
+
+    /* Design System 2026: Block system tokens */
+    --radius-block: 1rem;
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--muted) / 0.4), transparent);
+    --hero-overlay: 220 25% 8%;
+    --hero-overlay-opacity: 0.42;
+
+    /* Motion tokens */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-bounce-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --duration-fast: 180ms;
+    --duration-normal: 320ms;
+    --duration-slow: 560ms;
   }
 
   .dark {
@@ -231,6 +245,21 @@
 
 .status-archived {
   @apply bg-secondary text-secondary-foreground;
+}
+
+/* Design System 2026: Text-on-image utility.
+   Canonical overlay + light text pair for hero / carousel / parallax blocks.
+   Uses semantic token so light/dark themes stay consistent. */
+.text-on-image {
+  color: hsl(0 0% 100%);
+  text-shadow: 0 1px 2px hsl(220 25% 8% / 0.35);
+}
+.text-on-image-muted {
+  color: hsl(0 0% 100% / 0.82);
+  text-shadow: 0 1px 2px hsl(220 25% 8% / 0.35);
+}
+.bg-hero-overlay {
+  background-color: hsl(var(--hero-overlay) / var(--hero-overlay-opacity));
 }
 
 /* Smooth page transitions */
