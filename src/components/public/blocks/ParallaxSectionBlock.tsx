@@ -91,7 +91,7 @@ export function ParallaxSectionBlock({ data }: ParallaxSectionBlockProps) {
             <h2
               className={cn(
                 'text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight font-serif',
-                isLight ? 'text-white' : 'text-foreground'
+                isLight ? 'text-on-image' : 'text-foreground'
               )}
             >
               {data.title}
@@ -104,7 +104,7 @@ export function ParallaxSectionBlock({ data }: ParallaxSectionBlockProps) {
                 'text-lg md:text-xl max-w-2xl leading-relaxed',
                 'opacity-0 translate-y-4 transition-all duration-700 delay-200 ease-out',
                 isVisible && 'opacity-100 translate-y-0',
-                isLight ? 'text-white/80' : 'text-muted-foreground',
+                isLight ? 'text-on-image-muted' : 'text-muted-foreground',
                 alignment === 'center' && 'mx-auto'
               )}
             >

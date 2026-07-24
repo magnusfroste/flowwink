@@ -122,12 +122,12 @@ export function HeroBlock({ data }: HeroBlockProps) {
   
   if (!data.title) return null;
   
-  // Get overlay color classes
+  // Get overlay color classes (semantic tokens — DS 2026)
   const getOverlayClasses = () => {
     switch (overlayColor) {
-      case 'light': return 'bg-white';
+      case 'light': return 'bg-background';
       case 'primary': return 'bg-primary';
-      default: return 'bg-black';
+      default: return 'bg-[hsl(var(--hero-overlay))]';
     }
   };
   
@@ -135,13 +135,13 @@ export function HeroBlock({ data }: HeroBlockProps) {
   const textTheme = data.textTheme || 'auto';
   const getTextColorClasses = () => {
     // Manual override takes precedence
-    if (textTheme === 'light') return 'text-white';
+    if (textTheme === 'light') return 'text-on-image';
     if (textTheme === 'dark') return 'text-foreground';
     // Auto: derive from overlay color
     switch (overlayColor) {
       case 'light': return 'text-foreground';
       case 'primary': return 'text-primary-foreground';
-      default: return 'text-white';
+      default: return 'text-on-image';
     }
   };
   
@@ -240,14 +240,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
       <div className="absolute bottom-8 right-8 z-20 flex gap-2">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
-          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          className="p-2 rounded-full bg-[hsl(var(--hero-overlay)/0.5)] hover:bg-[hsl(var(--hero-overlay)/0.7)] text-on-image transition-colors"
           aria-label={isPlaying ? 'Pause video' : 'Play video'}
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
         </button>
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          className="p-2 rounded-full bg-[hsl(var(--hero-overlay)/0.5)] hover:bg-[hsl(var(--hero-overlay)/0.7)] text-on-image transition-colors"
           aria-label={isMuted ? 'Unmute video' : 'Mute video'}
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -477,7 +477,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
             <a
               href={data.secondaryButton.url}
               onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
-              className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
+              className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-foreground/10 transition-colors"
             >
               {data.secondaryButton.text}
             </a>
