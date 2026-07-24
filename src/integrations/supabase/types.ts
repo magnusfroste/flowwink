@@ -939,6 +939,45 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_runs: {
+        Row: {
+          agent: string
+          cursor: number
+          objective_id: string | null
+          paused_reason: string | null
+          plan: Json | null
+          resume_after: string | null
+          started_at: string
+          status: string
+          trace_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent?: string
+          cursor?: number
+          objective_id?: string | null
+          paused_reason?: string | null
+          plan?: Json | null
+          resume_after?: string | null
+          started_at?: string
+          status?: string
+          trace_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent?: string
+          cursor?: number
+          objective_id?: string | null
+          paused_reason?: string | null
+          plan?: Json | null
+          resume_after?: string | null
+          started_at?: string
+          status?: string
+          trace_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_skill_packs: {
         Row: {
           created_at: string
