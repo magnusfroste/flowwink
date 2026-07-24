@@ -108,12 +108,51 @@ function AgentChip({ agent }: { agent: string }) {
   );
 }
 
+function lifecycleOf(run: { lifecycle?: string; health?: Health }): Lifecycle {
+  const l = run.lifecycle;
+  if (l === 'running' || l === 'paused' || l === 'completed' || l === 'failed') return l;
+  return run.health === 'failed' ? 'failed' : 'completed';
+}
+
+const LIFECYCLE_STYLES: Record<Lifecycle, string> = {
+  running: 'border-primary/40 bg-primary/10 text-primary animate-pulse',
+  paused: 'border-warning/40 bg-warning/10 text-warning',
+  completed: 'border-border bg-muted text-muted-foreground',
+  failed: 'border-destructive/40 bg-destructive/10 text-destructive',
+};
+
+const LIFECYCLE_LABELS: Record<Lifecycle, string> = {
+  running: 'Running',
+  paused: 'Paused',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+function LifecycleBadge({ lifecycle }: { lifecycle: Lifecycle }) {
+  return (
+    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', LIFECYCLE_STYLES[lifecycle])}>
+      {LIFECYCLE_LABELS[lifecycle]}
+    </Badge>
+  );
+}
+
+/** Secondary line for a paused run: why it paused and how far it got. */
+function PausedLine({ run }: { run: TraceRunSummary }) {
+  return (
+    <div className="mt-1.5 text-[11px] text-warning">
+      Paused · {run.paused_reason ?? 'awaiting continuation'} · step {run.cursor ?? 0}/{run.step_count}
+    </div>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Data hooks
 // -----------------------------------------------------------------------------
 
 const AGENTS = ['all', 'heartbeat', 'cron', 'chat', 'mcp', 'flowpilot', 'automation'] as const;
 type AgentFilter = typeof AGENTS[number];
+const LIFECYCLES = ['all', 'running', 'paused', 'completed', 'failed'] as const;
+type LifecycleFilter = typeof LIFECYCLES[number];
 type WindowKey = '24' | '72' | '168';
 
 function useRuns(agent: AgentFilter, windowHours: WindowKey) {
