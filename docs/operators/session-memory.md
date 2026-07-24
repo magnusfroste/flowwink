@@ -250,6 +250,47 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — from the 2026-07-23 architecture review (cloud session)
+
+Cloud session ran a 4-agent holistic review and shipped the fixes that were in
+its domain (P0 anon-writable demo-seed RPCs #134, dead-edge-refs + verify_jwt +
+table-ownership guardrail #136, invoice-PDF token gate #137 — all merged). The
+following three findings live in **your exclusive files** (`agent-execute/index.ts`,
+`src/lib/modules/*`), so they were **reported, not touched**. Each is verified,
+not a guess:
+
+1. **`agent-execute/index.ts:7284` calls the deleted `reconciliation` edge fn.**
+   `fetch(.../functions/v1/reconciliation/auto-match)` — that function was removed
+   in B1b; the logic now lives in `_shared/handlers/reconciliation.ts`, dispatched
+   as `executeReconciliation('auto-match', {})` (see the internal: dispatch ~line
+   764). The 404 is swallowed into `summary.auto_matched = "HTTP 404"`, so bank
+   transactions silently never auto-match. **Fix:** replace the fetch with a direct
+   `await executeReconciliation('auto-match', {})`.
+
+2. **`agent-execute/index.ts:6756` emails the customer a broken PDF link.**
+   `const pdfUrl = .../generate-invoice-pdf?invoice_id=${invoice.id}` — a GET link
+   with a query param. The handler only reads a POST body, so it never worked; and
+   after the #137 security fix the `invoice_id` path is admin-gated, so it will 403
+   for the customer regardless. **Fix:** email the public invoice page instead —
+   `${origin}/invoice/${invoice.public_token}` (the page already offers a working
+   "Download PDF" that posts `public_token`).
+
+3. **`src/lib/modules/site-migration-module.ts:146` + `src/hooks/useCopilot.ts:1183`
+   invoke the deleted `firecrawl-map` edge fn.** No `supabase/functions/firecrawl-map/`
+   exists; the module contract's `discover` action + Copilot "discover pages" both
+   404. **Fix:** re-home onto an existing surface (e.g. a `mode:'map'` in `web-scrape`)
+   and update both call sites, or restore the function + register it. (`useCopilot.ts`
+   is cloud's to touch — coordinate so the module contract and the hook move together.)
+
+Also FYI, not blocking: a new guardrail `table-ownership.guardrails.test.ts` now
+fails CI on any NEW cross-module raw `.from(foreign_table)` from an admin domain
+dir (today's 11 offenders grandfathered). If you add a skill whose `db:` handler
+crosses into another module's table, declare co-ownership in that module's
+`data.tables` or route via a skill. 21/67 modules still lack `data.tables` — worth
+completing so the ownership map is total.
+
+---
+
 0. ~~Flowtable/Flowwork deploy nudge on rzhj~~ **DONE 2026-07-14** — all
    layers deployed, user-field resolve + schema skills (#120) Stage-3
    verified live via the gateway (see the arc section).
