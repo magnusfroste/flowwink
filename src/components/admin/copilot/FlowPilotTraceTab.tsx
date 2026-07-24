@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 // -----------------------------------------------------------------------------
 
 type Health = 'ok' | 'degraded' | 'failed';
+type Lifecycle = 'running' | 'paused' | 'completed' | 'failed';
 
 interface TraceRunSummary {
   trace_id: string;
@@ -40,6 +41,9 @@ interface TraceRunSummary {
   failed_count: number;
   health: Health;
   skills: string[];
+  lifecycle?: string;
+  paused_reason?: string | null;
+  cursor?: number | null;
 }
 
 interface TraceStep {
@@ -104,12 +108,51 @@ function AgentChip({ agent }: { agent: string }) {
   );
 }
 
+function lifecycleOf(run: { lifecycle?: string; health?: Health }): Lifecycle {
+  const l = run.lifecycle;
+  if (l === 'running' || l === 'paused' || l === 'completed' || l === 'failed') return l;
+  return run.health === 'failed' ? 'failed' : 'completed';
+}
+
+const LIFECYCLE_STYLES: Record<Lifecycle, string> = {
+  running: 'border-primary/40 bg-primary/10 text-primary animate-pulse',
+  paused: 'border-warning/40 bg-warning/10 text-warning',
+  completed: 'border-border bg-muted text-muted-foreground',
+  failed: 'border-destructive/40 bg-destructive/10 text-destructive',
+};
+
+const LIFECYCLE_LABELS: Record<Lifecycle, string> = {
+  running: 'Running',
+  paused: 'Paused',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+function LifecycleBadge({ lifecycle }: { lifecycle: Lifecycle }) {
+  return (
+    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', LIFECYCLE_STYLES[lifecycle])}>
+      {LIFECYCLE_LABELS[lifecycle]}
+    </Badge>
+  );
+}
+
+/** Secondary line for a paused run: why it paused and how far it got. */
+function PausedLine({ run }: { run: TraceRunSummary }) {
+  return (
+    <div className="mt-1.5 text-[11px] text-warning">
+      Paused · {run.paused_reason ?? 'awaiting continuation'} · step {run.cursor ?? 0}/{run.step_count}
+    </div>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Data hooks
 // -----------------------------------------------------------------------------
 
 const AGENTS = ['all', 'heartbeat', 'cron', 'chat', 'mcp', 'flowpilot', 'automation'] as const;
 type AgentFilter = typeof AGENTS[number];
+const LIFECYCLES = ['all', 'running', 'paused', 'completed', 'failed'] as const;
+type LifecycleFilter = typeof LIFECYCLES[number];
 type WindowKey = '24' | '72' | '168';
 
 function useRuns(agent: AgentFilter, windowHours: WindowKey) {
@@ -311,11 +354,13 @@ function RunDetailPanel({ traceId }: { traceId: string | null }) {
       <div className="border-b p-4 space-y-2 bg-background">
         <div className="flex items-center gap-2 flex-wrap">
           <HealthDot health={run.health} />
+          <LifecycleBadge lifecycle={lifecycleOf(run)} />
           <span className="font-mono text-xs">{run.trace_id}</span>
           <AgentChip agent={run.agent} />
           <span className="text-xs text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground">{relTime(run.started_at)}</span>
         </div>
+        {lifecycleOf(run) === 'paused' && <PausedLine run={run} />}
         <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
           <span>{run.step_count} steps</span>
           <span>{run.failed_count} failed</span>
@@ -379,12 +424,14 @@ function RunsList({
         >
           <div className="flex items-center gap-2 flex-wrap">
             <HealthDot health={r.health} />
+            <LifecycleBadge lifecycle={lifecycleOf(r)} />
             <span className="font-mono text-xs">{r.trace_id}</span>
             <AgentChip agent={r.agent} />
             <span className="ml-auto text-[11px] text-muted-foreground">
               {relTime(r.started_at)}
             </span>
           </div>
+          {lifecycleOf(r) === 'paused' && <PausedLine run={r} />}
           <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
             <span>{r.step_count} steps</span>
             {r.failed_count > 0 && (
@@ -421,10 +468,17 @@ function RunsList({
 
 export function FlowPilotTraceTab() {
   const [agent, setAgent] = useState<AgentFilter>('all');
+  const [lifecycle, setLifecycle] = useState<LifecycleFilter>('all');
   const [windowHours, setWindowHours] = useState<WindowKey>('72');
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const { data: runs = [], isLoading, error } = useRuns(agent, windowHours);
+  const { data: allRuns = [], isLoading, error } = useRuns(agent, windowHours);
+
+  // Lifecycle filtering is client-side — the fields ride along on the same payload.
+  const runs = useMemo(
+    () => (lifecycle === 'all' ? allRuns : allRuns.filter((r) => lifecycleOf(r) === lifecycle)),
+    [allRuns, lifecycle],
+  );
 
   // Auto-select first run when list loads and nothing is selected
   const firstId = runs[0]?.trace_id ?? null;
@@ -458,6 +512,21 @@ export function FlowPilotTraceTab() {
                     {AGENTS.map((a) => (
                       <SelectItem key={a} value={a} className="text-xs">
                         {a === 'all' ? 'All agents' : a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Lifecycle</span>
+                <Select value={lifecycle} onValueChange={(v) => setLifecycle(v as LifecycleFilter)}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LIFECYCLES.map((l) => (
+                      <SelectItem key={l} value={l} className="text-xs">
+                        {l === 'all' ? 'All states' : LIFECYCLE_LABELS[l]}
                       </SelectItem>
                     ))}
                   </SelectContent>
