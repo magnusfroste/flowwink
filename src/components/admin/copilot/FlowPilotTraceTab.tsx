@@ -468,10 +468,17 @@ function RunsList({
 
 export function FlowPilotTraceTab() {
   const [agent, setAgent] = useState<AgentFilter>('all');
+  const [lifecycle, setLifecycle] = useState<LifecycleFilter>('all');
   const [windowHours, setWindowHours] = useState<WindowKey>('72');
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const { data: runs = [], isLoading, error } = useRuns(agent, windowHours);
+  const { data: allRuns = [], isLoading, error } = useRuns(agent, windowHours);
+
+  // Lifecycle filtering is client-side — the fields ride along on the same payload.
+  const runs = useMemo(
+    () => (lifecycle === 'all' ? allRuns : allRuns.filter((r) => lifecycleOf(r) === lifecycle)),
+    [allRuns, lifecycle],
+  );
 
   // Auto-select first run when list loads and nothing is selected
   const firstId = runs[0]?.trace_id ?? null;
