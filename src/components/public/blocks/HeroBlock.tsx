@@ -122,12 +122,12 @@ export function HeroBlock({ data }: HeroBlockProps) {
   
   if (!data.title) return null;
   
-  // Get overlay color classes
+  // Get overlay color classes (semantic tokens — DS 2026)
   const getOverlayClasses = () => {
     switch (overlayColor) {
-      case 'light': return 'bg-white';
+      case 'light': return 'bg-background';
       case 'primary': return 'bg-primary';
-      default: return 'bg-black';
+      default: return 'bg-[hsl(var(--hero-overlay))]';
     }
   };
   
@@ -135,13 +135,13 @@ export function HeroBlock({ data }: HeroBlockProps) {
   const textTheme = data.textTheme || 'auto';
   const getTextColorClasses = () => {
     // Manual override takes precedence
-    if (textTheme === 'light') return 'text-white';
+    if (textTheme === 'light') return 'text-on-image';
     if (textTheme === 'dark') return 'text-foreground';
     // Auto: derive from overlay color
     switch (overlayColor) {
       case 'light': return 'text-foreground';
       case 'primary': return 'text-primary-foreground';
-      default: return 'text-white';
+      default: return 'text-on-image';
     }
   };
   
