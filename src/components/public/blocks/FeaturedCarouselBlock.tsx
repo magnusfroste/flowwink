@@ -198,7 +198,7 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
               aria-label={`Go to slide ${i + 1}`}
               className={cn(
                 'h-2 rounded-full transition-all duration-300',
-                i === current ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/60',
+                i === current ? 'w-8 bg-background' : 'w-2 bg-background/40 hover:bg-background/60',
               )}
             />
           ))}
@@ -207,9 +207,9 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
 
       {/* Progress bar */}
       {autoPlay && count > 1 && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 h-0.5 bg-white/10">
+        <div className="absolute bottom-0 left-0 right-0 z-20 h-0.5 bg-background/10">
           <div
-            className="h-full bg-white/60 transition-all ease-linear"
+            className="h-full bg-background/60 transition-all ease-linear"
             style={{
               width: `${((current + 1) / count) * 100}%`,
               transitionDuration: `${interval}ms`,
