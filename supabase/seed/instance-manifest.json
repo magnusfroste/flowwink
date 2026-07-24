@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260723160000",
-      "migrations_count": 266,
+      "migration_head": "20260723180000",
+      "migrations_count": 267,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1069,6 +1069,10 @@
         {
           "version": "20260723160000",
           "name": "agent-activity-trace-id"
+        },
+        {
+          "version": "20260723180000",
+          "name": "agent-runs"
         }
       ]
     },
@@ -1079,7 +1083,7 @@
     },
     "edge_functions": {
       "count": 75,
-      "shared_hash": "sha256:5733c77f004e781fda87970efac1406ddad18e799bb9415a991f4b7841eb97e2",
+      "shared_hash": "sha256:f40aa72864232e29bdba199b4043b9d98b1982d5fa828d41cc8572ec3c23ce61",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",

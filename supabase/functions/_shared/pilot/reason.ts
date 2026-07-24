@@ -13,6 +13,7 @@ import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToo
 import { resolveAiConfig } from '../ai-config.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
+import { checkpointRun } from '../trace/checkpoint.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
@@ -899,6 +900,16 @@ export async function reason(
     }
   }
 
+  // Resumption Phase 1: durable run lifecycle. Checkpoint 'running' at start,
+  // terminal status in finally. Bookkeeping only — wrapped so it can NEVER
+  // break a run (a run's success can't depend on recording that it succeeded).
+  let runOutcome: 'completed' | 'failed' = 'failed';
+  await checkpointRun(supabase, {
+    traceId,
+    agent: config.lockOwner || 'flowpilot',
+    status: 'running',
+  }).catch(() => {});
+
   try {
     const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabase, config.tier || 'fast');
     const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
@@ -1203,6 +1214,7 @@ export async function reason(
 
     console.log(`[reason] trace=${traceId} Complete: ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens, ${Date.now() - startTime}ms`);
 
+    runOutcome = 'completed'; // reached the clean end — an exception below leaves 'failed'
     return {
       response: finalResponse,
       actionsExecuted,
@@ -1215,5 +1227,7 @@ export async function reason(
     if (lane) {
       await releaseLock(supabase, lane);
     }
+    // Terminal checkpoint on every exit path (including a thrown error).
+    await checkpointRun(supabase, { traceId, status: runOutcome }).catch(() => {});
   }
 }
