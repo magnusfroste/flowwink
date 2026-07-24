@@ -240,14 +240,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
       <div className="absolute bottom-8 right-8 z-20 flex gap-2">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
-          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          className="p-2 rounded-full bg-[hsl(var(--hero-overlay)/0.5)] hover:bg-[hsl(var(--hero-overlay)/0.7)] text-on-image transition-colors"
           aria-label={isPlaying ? 'Pause video' : 'Play video'}
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
         </button>
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          className="p-2 rounded-full bg-[hsl(var(--hero-overlay)/0.5)] hover:bg-[hsl(var(--hero-overlay)/0.7)] text-on-image transition-colors"
           aria-label={isMuted ? 'Unmute video' : 'Mute video'}
         >
           {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
