@@ -477,7 +477,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
             <a
               href={data.secondaryButton.url}
               onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
-              className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
+              className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-foreground/10 transition-colors"
             >
               {data.secondaryButton.text}
             </a>
