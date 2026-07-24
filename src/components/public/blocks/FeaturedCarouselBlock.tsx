@@ -173,14 +173,14 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
         <>
           <button
             onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[hsl(var(--hero-overlay)/0.3)] backdrop-blur-sm text-on-image flex items-center justify-center hover:bg-[hsl(var(--hero-overlay)/0.5)] transition-colors"
             aria-label="Previous slide"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           <button
             onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[hsl(var(--hero-overlay)/0.3)] backdrop-blur-sm text-on-image flex items-center justify-center hover:bg-[hsl(var(--hero-overlay)/0.5)] transition-colors"
             aria-label="Next slide"
           >
             <ChevronRight className="h-6 w-6" />
