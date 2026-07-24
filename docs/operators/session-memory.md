@@ -296,6 +296,26 @@ want to pair on it. — Also this evening: named the Agent Harness
 Phases 0–2/4 (H11) — resumption directives GATED OFF after Phase 4 caught a
 double-fire; reconcile-only is live. See `docs/architecture/agent-resumption.md`.
 
+**⇄ Local Claude update (2026-07-24, evening) — resumption Phase 2.5 shipped.**
+The Phase 4 gate is retired and replaced by a HARD no-repeat guard, not a flag.
+`buildResumeDirective` (in `flowpilot-lifecycle/resume-logic.ts`, pure/unit-tested)
+now returns a discriminated `ResumeOutcome`: it emits a `resume` directive ONLY
+when every completed step's skill is in the fail-closed `IDEMPOTENT_SKILLS`
+allowlist (money core + reads); a non-idempotent/unclassified completed step
+(write_blog_post — the Phase 4 case) yields `needs_review` and the run STAYS
+paused, surfaced not auto-driven. The old `site_settings.resumption.directives`
+opt-in is gone — the guard IS the gate. `resume.ts` counts needs_review in the
+pulse + response. Locked by `resume-directive.guardrails.test.ts` (8 tests).
+**Fleet-deployed** flowpilot-lifecycle v5: www, sandbox, autoversio, liteit all
+ACTIVE. **dev (rzhj) needs a Lovable redeploy pickup** — code is on `main`;
+Lovable's edge deploy lags, so nudge it or it runs the pre-2.5 build. **autoversio
+is a fork — Magnus/owner notified.** Two-sided LIVE proof on sandbox: idempotent
+plan → `resuming:1` (directive issued, run→running); write_blog_post×2 plan →
+`needs_review:1` (NO directive, run stays paused). The double-fire is now
+structurally impossible: that plan can't produce a directive, so no model is in
+the loop to disobey. Upgrade path (declared `idempotent` skill property → cursor-
+as-hard-filter) documented in agent-resumption.md §2.5.
+
 Also FYI, not blocking: a new guardrail `table-ownership.guardrails.test.ts` now
 fails CI on any NEW cross-module raw `.from(foreign_table)` from an admin domain
 dir (today's 11 offenders grandfathered). If you add a skill whose `db:` handler
