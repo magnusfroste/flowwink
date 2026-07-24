@@ -518,6 +518,21 @@ export function FlowPilotTraceTab() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Lifecycle</span>
+                <Select value={lifecycle} onValueChange={(v) => setLifecycle(v as LifecycleFilter)}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LIFECYCLES.map((l) => (
+                      <SelectItem key={l} value={l} className="text-xs">
+                        {l === 'all' ? 'All states' : LIFECYCLE_LABELS[l]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Window</span>
                 <ToggleGroup
                   type="single"
