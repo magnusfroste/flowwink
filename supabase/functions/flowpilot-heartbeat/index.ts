@@ -144,6 +144,30 @@ async function runFollowThroughPrePass(supabaseUrl: string, serviceKey: string, 
   }
 }
 
+// Resumption Phase 2: reconcile interrupted runs and pick up paused ones,
+// returning a resume directive to inject into this cycle's context. Same safe
+// pre-pass shape as follow-through — additive, bounded, never fatal.
+async function runResumePrePass(supabaseUrl: string, serviceKey: string, traceId: string): Promise<string> {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 15_000);
+    const resp = await fetch(`${supabaseUrl}/functions/v1/flowpilot-lifecycle?task=resume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ source: 'heartbeat_prepass', trace_id: traceId }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(to);
+    const out = await resp.json().catch(() => ({}));
+    if (!resp.ok || out?.skipped || !out?.context) return '';
+    console.log(`[heartbeat] trace=${traceId} Resume pre-pass: reconciled ${out.reconciled ?? 0}, resuming ${out.resuming ?? 0}`);
+    return `\n\n${out.context}`;
+  } catch (e) {
+    console.warn(`[heartbeat] trace=${traceId} Resume pre-pass failed (non-fatal):`, e);
+    return '';
+  }
+}
+
 // ─── Integrity gate ───────────────────────────────────────────────────────────
 
 async function runIntegrityGate(supabase: any): Promise<string> {
@@ -328,6 +352,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const followThroughCtx = await runFollowThroughPrePass(supabaseUrl, serviceKey, traceId);
+    // Resume pre-pass runs alongside follow-through; its directive joins the
+    // cycle context so the operator continues interrupted plans from the cursor.
+    const resumeCtx = await runResumePrePass(supabaseUrl, serviceKey, traceId);
 
     // Idle short-circuit (cost lever 3): a heartbeat with NO active
     // objectives and NO follow-through output has no standing work — skip
@@ -335,7 +362,7 @@ serve(async (req) => {
     // iterations to conclude "nothing to do". An emptiness check, not
     // intent routing (Law 1 safe). Dial off per instance with
     // heartbeat_overrides.idleShortCircuit=false.
-    if (ov?.idleShortCircuit !== false && !followThroughCtx) {
+    if (ov?.idleShortCircuit !== false && !followThroughCtx && !resumeCtx) {
       const { count: activeObjectiveCount } = await supabase
         .from('agent_objectives')
         .select('id', { count: 'exact', head: true })
@@ -397,7 +424,7 @@ serve(async (req) => {
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,
-      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext + cronHealthContext + followThroughCtx,
+      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext + cronHealthContext + followThroughCtx + resumeCtx,
       automationContext: automationCtx,
       healingReport: healingReport,
       cmsSchemaContext: cmsSchemaCtx,

@@ -38,10 +38,11 @@ import { handler as briefing } from './briefing.ts';
 import { handler as distill } from './distill.ts';
 import { handler as learn } from './learn.ts';
 import { handler as followthrough } from './followthrough.ts';
+import { handler as resume } from './resume.ts';
 import { handler as curator } from './curator.ts';
 
 const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
-  briefing, distill, learn, followthrough, curator,
+  briefing, distill, learn, followthrough, resume, curator,
 };
 
 // Tasks whose standalone function was JWT-gated (verify_jwt=true).
