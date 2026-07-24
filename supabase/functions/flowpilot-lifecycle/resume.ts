@@ -65,7 +65,26 @@ export async function handler(req: Request): Promise<Response> {
     .select("trace_id, objective_id");
   const reconciledCount = (reconciled ?? []).length;
 
-  // 2. Build resume directives for paused runs whose objective plan is incomplete.
+  // 2. Build resume directives — GATED OFF BY DEFAULT.
+  //
+  // Phase 4 acceptance-gate finding (2026-07-23): a soft directive ("do NOT
+  // repeat completed steps") is NOT enough. A live heartbeat, handed the
+  // directive for a 2/4-done plan, RE-RAN both completed write_blog_post steps
+  // (0 → 2 posts) instead of continuing from step 3. For an idempotent skill
+  // (money core: p_reference, status guards) a double-fire is harmless; for a
+  // non-idempotent generative skill it duplicates real work. So directive-
+  // driven resume must not run unattended until a HARD no-repeat guard exists
+  // (Phase 2.5). The reconcile above is always safe and stays on; directives
+  // require an explicit opt-in (site_settings.resumption.directives = true).
+  const { data: flag } = await supabase
+    .from('site_settings').select('value').eq('key', 'resumption').maybeSingle();
+  const directivesEnabled = (flag?.value as any)?.directives === true;
+  if (!directivesEnabled) {
+    await recordPulse(supabase, true, null, { reconciled: reconciledCount, resuming: 0 });
+    return new Response(JSON.stringify({ reconciled: reconciledCount, resuming: 0, context: "", directives_gated: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
   const { data: paused } = await supabase
     .from("agent_runs")
     .select("trace_id, objective_id")

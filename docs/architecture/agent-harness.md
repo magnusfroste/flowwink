@@ -75,7 +75,7 @@ one named system, discoverable in one place.
 | H8 | **Escalation (HIL)** | Approval queue + staged operations for anything above the trust threshold | `approval_requests`, staged-op handshake | shipped |
 | H9 | **Learning** | The Curator analyses failures → proposes better skill instructions → parks for human approval | `run_skill_curator`, Curator automation | shipped (BR2) |
 | H10 | **Observability** | Every action + verbatim input/output/outcome, token + trace records | `agent_activity`, `_shared/trace.ts`, `_shared/agent-audit.ts`, `token-tracking.ts` | **data layer only — no product surface (§4)** |
-| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | Phases 0–2 shipped (approval-expiry · durable lifecycle · resumer + directive); sim proof (Phase 4) is the acceptance gate | **shipped, sim-gating** |
+| H11 | **Resumption** | Pause a multi-step chain and resume exactly where it stopped | Phases 0–2 shipped; Phase 4 proof caught a double-fire → directives GATED OFF, reconcile-only live; Phase 2.5 hard-guard designed | **partial — reconcile live, directives gated** |
 
 **Reading of the table:** ten of eleven components are built. The two open rows are the
 whole of the next phase — one is a *legibility* gap (H10 has no UI), one is a *functional*

@@ -74,4 +74,15 @@ describe('resumer wiring', () => {
     expect(r).toMatch(/\.eq\("status", "running"\)/);
     expect(r).toMatch(/\.lt\("updated_at", staleBefore\)/);
   });
+
+  it('directive injection is GATED OFF by default (Phase 4 double-fire finding)', () => {
+    // The live-heartbeat gate proved a soft directive re-runs completed
+    // non-idempotent steps. Reconcile stays on; directives need explicit
+    // opt-in until a hard no-repeat guard (Phase 2.5) exists.
+    const r = read('supabase/functions/flowpilot-lifecycle/resume.ts');
+    expect(r).toMatch(/const directivesEnabled = \(flag\?\.value as any\)\?\.directives === true/);
+    // When gated, it still reconciles but returns no directive.
+    expect(r).toMatch(/if \(!directivesEnabled\)/);
+    expect(r).toMatch(/directives_gated: true/);
+  });
 });

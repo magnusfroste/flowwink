@@ -143,11 +143,34 @@ point of naming the harness.
 | **1 · `agent_runs` + checkpoint** ✅ | agent_runs (RLS); reason loop checkpoints running→completed/failed (never-throw contract); Trace overlays durable lifecycle. Live-verified: a heartbeat run checkpoints and the Trace shows lifecycle=completed. *(shipped 2026-07-23)* | backend |
 | **2 · Resumer pre-pass** ✅ | New `?task=resume`: reconciles interrupted runs (running+stale → paused) and injects a cursor-aware resume directive into the heartbeat, alongside follow-through. Live-verified: a 30-min-stale run reconciled and produced "plan 2/4 done, continue from step 3". *(shipped 2026-07-23)* | backend |
 | **3 · Trace shows run state** | Surface `status` + `cursor` in the Trace read model and the Trace UI (the surface Lovable is building). | backend + Lovable |
-| **4 · Sim proof** ⏳ ACCEPTANCE GATE | `flowpilot:sim`: kill a real plan mid-run, assert the next heartbeat resumes at the cursor and completes WITHOUT re-firing prior steps through the live reason loop. Phase 2 is deployed but the directive-follows-correctly property is model-dependent — this sim is the gate before resumption drives real customer plans unattended. | backend |
+| **4 · Sim proof** ❌ FOUND A REAL FLAW → directives gated | Live-heartbeat proof on sandbox (2026-07-23): reconcile + directive were correct, but the model IGNORED "do NOT repeat completed steps" and RE-RAN both completed write_blog_post steps (0→2 posts). A soft directive is insufficient for non-idempotent skills. **Response:** directive injection is now GATED OFF by default (`site_settings.resumption.directives`); reconcile stays on (safe). Phase 2.5 must add a HARD no-repeat guard before directives can drive plans unattended. | backend |
 
 Phase 0 is a small, immediate win (clears real stuck rows). Phases 1–2 are the substrate.
 Phase 4 is the acceptance gate — resumption is "done" only when the sim proves a killed run
 resumes without double-firing.
+
+---
+
+## 2.5 The hard no-repeat guard (opened by Phase 4)
+
+Phase 4 proved the soft directive is not enough: told "steps 1–2 are done,
+continue from 3", a live model re-ran steps 1–2 anyway. For an idempotent skill
+that is harmless (the money core's `p_reference`/status guards absorb it); for a
+non-idempotent one (write_blog_post creates a new row each call) it duplicates
+real work. So resumption cannot rely on the model's obedience. Options for the
+hard guard, to design next:
+
+- **Per-step idempotency keys.** A plan step carries a key; the loop refuses to
+  re-execute a step whose key already succeeded. Strongest, but needs every
+  resumable skill to accept a key.
+- **Cursor as a hard filter.** The resumer strips already-done steps from the
+  plan it hands the loop, so the model never sees a completed step to re-run.
+  Cheaper, and it matches the "continue, not restart" intent.
+- **Resume only idempotent plans.** Classify a plan as resumable only when its
+  steps are idempotent; otherwise reconcile-and-notify, don't auto-resume.
+
+Until one ships, directives stay opt-in. The reconcile half (no zombie runs) is
+already safe and on everywhere.
 
 ---
 
