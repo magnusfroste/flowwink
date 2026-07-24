@@ -247,6 +247,21 @@
   @apply bg-secondary text-secondary-foreground;
 }
 
+/* Design System 2026: Text-on-image utility.
+   Canonical overlay + light text pair for hero / carousel / parallax blocks.
+   Uses semantic token so light/dark themes stay consistent. */
+.text-on-image {
+  color: hsl(0 0% 100%);
+  text-shadow: 0 1px 2px hsl(220 25% 8% / 0.35);
+}
+.text-on-image-muted {
+  color: hsl(0 0% 100% / 0.82);
+  text-shadow: 0 1px 2px hsl(220 25% 8% / 0.35);
+}
+.bg-hero-overlay {
+  background-color: hsl(var(--hero-overlay) / var(--hero-overlay-opacity));
+}
+
 /* Smooth page transitions */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
