@@ -91,7 +91,7 @@ export function ParallaxSectionBlock({ data }: ParallaxSectionBlockProps) {
             <h2
               className={cn(
                 'text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight font-serif',
-                isLight ? 'text-white' : 'text-foreground'
+                isLight ? 'text-on-image' : 'text-foreground'
               )}
             >
               {data.title}
