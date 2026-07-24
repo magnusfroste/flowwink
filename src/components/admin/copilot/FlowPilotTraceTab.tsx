@@ -354,11 +354,13 @@ function RunDetailPanel({ traceId }: { traceId: string | null }) {
       <div className="border-b p-4 space-y-2 bg-background">
         <div className="flex items-center gap-2 flex-wrap">
           <HealthDot health={run.health} />
+          <LifecycleBadge lifecycle={lifecycleOf(run)} />
           <span className="font-mono text-xs">{run.trace_id}</span>
           <AgentChip agent={run.agent} />
           <span className="text-xs text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground">{relTime(run.started_at)}</span>
         </div>
+        {lifecycleOf(run) === 'paused' && <PausedLine run={run} />}
         <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
           <span>{run.step_count} steps</span>
           <span>{run.failed_count} failed</span>
