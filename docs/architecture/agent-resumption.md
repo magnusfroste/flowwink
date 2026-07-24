@@ -141,9 +141,9 @@ point of naming the harness.
 |-------|-------|-------|
 | **0 · Close the last stuck approvals** ✅ | The follow-through sweep expires approvals aged past its window (safe, visible); legacy rows cleared fleet-wide; guardrail. *(shipped 2026-07-23)* | backend |
 | **1 · `agent_runs` + checkpoint** ✅ | agent_runs (RLS); reason loop checkpoints running→completed/failed (never-throw contract); Trace overlays durable lifecycle. Live-verified: a heartbeat run checkpoints and the Trace shows lifecycle=completed. *(shipped 2026-07-23)* | backend |
-| **2 · Resumer pre-pass** | Extend `flowpilot-lifecycle?task=followthrough` to resume paused runs from cursor; idempotent, bounded, never-retry-failures (same contract as today). | backend |
+| **2 · Resumer pre-pass** ✅ | New `?task=resume`: reconciles interrupted runs (running+stale → paused) and injects a cursor-aware resume directive into the heartbeat, alongside follow-through. Live-verified: a 30-min-stale run reconciled and produced "plan 2/4 done, continue from step 3". *(shipped 2026-07-23)* | backend |
 | **3 · Trace shows run state** | Surface `status` + `cursor` in the Trace read model and the Trace UI (the surface Lovable is building). | backend + Lovable |
-| **4 · Sim proof** | `flowpilot:sim` fast-forward: start a 7-step plan, kill the heartbeat mid-run, assert the next heartbeat resumes at the cursor and completes without re-firing prior steps. | backend |
+| **4 · Sim proof** ⏳ ACCEPTANCE GATE | `flowpilot:sim`: kill a real plan mid-run, assert the next heartbeat resumes at the cursor and completes WITHOUT re-firing prior steps through the live reason loop. Phase 2 is deployed but the directive-follows-correctly property is model-dependent — this sim is the gate before resumption drives real customer plans unattended. | backend |
 
 Phase 0 is a small, immediate win (clears real stuck rows). Phases 1–2 are the substrate.
 Phase 4 is the acceptance gate — resumption is "done" only when the sim proves a killed run
