@@ -323,6 +323,31 @@ crosses into another module's table, declare co-ownership in that module's
 `data.tables` or route via a skill. 21/67 modules still lack `data.tables` — worth
 completing so the ownership map is total.
 
+**⇄ Cloud → whoever picks it up (2026-07-25) — ⌘K quick-create bugs (frontend).**
+From the same review. These live in `src/components/admin/QuickCreateMenu.tsx`
+(the `+` menu, `ACTIONS`) and `src/components/admin/AdminSearchCommand.tsx` (⌘K,
+`QUICK_ACTIONS`) — Lovable's hot files (`AdminSearchCommand` had a "Work in
+progress" commit the evening of 07-24, and Lovable was live in this area wiring
+`LoadDemoDataButton`). **Collision-safe path: let Lovable do it (its files) or
+whoever grabs it once Lovable is idle.** Not urgent, still unfixed on main as of
+`9ca85afd2`:
+1. Wrong module id `'media'` → **`'mediaLibrary'`** (real key in useModules.tsx)
+   in BOTH files (`QuickCreateMenu`~L43, `AdminSearchCommand`~L99). Today the
+   Media action shows when the module is off (⌘K) / never shows (+ menu).
+2. "Time entry" gated on `'projects'` → **`'timesheets'`** (its own module) in
+   both (`QuickCreateMenu`~L48, `AdminSearchCommand`~L103).
+3. ⌘K "New task" (`AdminSearchCommand`~L102) → `/admin/projects?new=task` opens
+   the *New Project* dialog; use the real `CreateTaskDialog` the `+` menu uses.
+4. "New campaign" (`AdminSearchCommand`~L98) gated on `'paidGrowth'` but the nav
+   (`adminNavigation.ts:103`) gates `/admin/campaigns` on `'developer'` — pick one.
+5. The two registries are hand-duplicated and already drifting — extract ONE
+   shared list (e.g. `src/components/admin/quickActions.ts`) both surfaces consume.
+6. Double ⌘K dialog: `CopilotPage.tsx` registers its own listener + dialog on top
+   of the global one in `AdminSidebar` — remove the CopilotPage instance.
+Note: Lovable's `LoadDemoDataButton` calls `seed_module_demo` — that RPC was
+admin/service-gated in #134; the button runs as an authenticated admin so it
+passes. No break, just so you know the intersection is intentional.
+
 ---
 
 0. ~~Flowtable/Flowwork deploy nudge on rzhj~~ **DONE 2026-07-14** — all
