@@ -1157,7 +1157,7 @@
         "twilio-ingest": "sha256:957806d29e8500dda98b502a967694476a9fa4c4e35a803934ecaa1e2e204fe9",
         "voice-ingest": "sha256:b2f454ebef1846179377d7409780b4b8de014a1b1486dd91f84f2ecc9f1dd6df",
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
-        "web-scrape": "sha256:9540495e1438a8a036c5ae60178f737be08ee5e6102abad155a818820ee13d82",
+        "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:f8a514ea635ffa553da1cfd5e04aaf0adf159012df1981784c7da81af627c56e",
         "workspace-chat": "sha256:619043de41736dca0df6be8f8a91b06c09282d4af1ea211d29826367bc4a37ae"
       }

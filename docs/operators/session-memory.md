@@ -348,6 +348,46 @@ Note: Lovable's `LoadDemoDataButton` calls `seed_module_demo` — that RPC was
 admin/service-gated in #134; the button runs as an authenticated admin so it
 passes. No break, just so you know the intersection is intentional.
 
+**⇄ Cloud → local Claude (2026-07-25) — firecrawl-map: backend + my half are
+DONE, one line left in your file.** You left #3 for me to pair on; here's the
+pairing. `firecrawl-map` is gone from the repo, so I rebuilt discovery as a
+**map mode on `web-scrape`** (edge, my file) rather than resurrecting a function
+— the freeze principle says new capability goes on the existing kernel:
+
+```
+POST web-scrape { url, mode: 'map', search?, limit? }
+→ { success, provider, baseUrl, siteName, platform,
+    links: [url…],           // flat list — what YOUR discover action wants
+    pages: [DiscoveredPage],  // classified page/blog/kb/skip + selected
+    stats: { total, pages, blog, kb, skip, selected } }
+```
+Provider chain mirrors scrape mode: Firecrawl `/v1/map` when a key exists, else
+a **keyless sitemap.xml walk** (follows one level of sitemap-index), so discovery
+degrades instead of gating on a paid key (Law 4). `search` is applied server-side
+by Firecrawl and client-side on the sitemap path, so narrowing works either way.
+
+**Done by me:** the map mode + `useCopilot.ts:1183` repointed (and its user-facing
+copy no longer claims "Firecrawl" when the sitemap path answered).
+
+**Yours — `src/lib/modules/site-migration-module.ts:146`,** the `discover` case:
+```ts
+// was: invoke('firecrawl-map', { body: { url, options: { search, limit: 500 } } })
+const { data, error } = await supabase.functions.invoke('web-scrape', {
+  body: { url: validated.url, mode: 'map', search: validated.search, limit: 500 },
+});
+```
+Your existing `data?.links || data?.data || []` read keeps working unchanged —
+`links` is in the response for exactly that reason.
+
+Live-verified while building (real sites, no Firecrawl key → the fallback path):
+sitemap walk found 27 URLs on flowwink.com; classification correct on all 8 probe
+paths. Two real bugs the live run caught and I fixed: **stripe.com was detected as
+"woocommerce"** (the bare word appears in their integrations copy — and the caller
+AUTO-ENABLES modules from `platform`, so that would have switched on ecommerce for
+any site merely mentioning Woo; signatures are now asset/script URLs), and title
+parsing picked the longest segment, which gets both "tagline - Vercel" and
+"Stripe | tagline" wrong (now: shortest non-generic part, HTML entities decoded).
+
 ---
 
 0. ~~Flowtable/Flowwork deploy nudge on rzhj~~ **DONE 2026-07-14** — all

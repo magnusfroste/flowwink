@@ -1174,14 +1174,16 @@ export function useCopilot(): UseCopilotReturn {
     const discoverMessage: CopilotMessage = {
       id: generateId(),
       role: 'assistant',
-      content: `🔍 Discovering pages on ${url}...\n\nUsing Firecrawl Map to find all URLs.`,
+      content: `🔍 Discovering pages on ${url}...\n\nMapping the site to find all URLs.`,
       createdAt: new Date(),
     };
     setMessages(prev => [...prev, discoverMessage]);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('firecrawl-map', {
-        body: { url, options: { limit: 100 } },
+      // `firecrawl-map` was removed in the edge-surface consolidation; discovery
+      // now lives as web-scrape's map mode (Firecrawl → sitemap.xml fallback).
+      const { data, error: fnError } = await supabase.functions.invoke('web-scrape', {
+        body: { url, mode: 'map', limit: 100 },
       });
 
       if (fnError) throw new Error(fnError.message);
