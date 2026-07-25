@@ -259,6 +259,24 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   'article-grid':     { required: [] },
   'bento-grid':       { required: [['items']] },
   'notification-toast': { required: [['notifications']] },
+  // Were only in the test mirror — synced back so the runtime gate matches it.
+  popup:              { required: [] },
+  'latest-posts':     { required: [] },
+  // Added 2026-07-25: these became importable without contracts, which left the
+  // import gate skipping them entirely (and CI red). Permissive where the block
+  // has a designed empty state or auto-fetches its own data; a data requirement
+  // only where the block renders nothing at all without it (same convention as
+  // features/stats/testimonials above).
+  'parallax-section': { required: [['title', 'backgroundImage']] },
+  'section-divider':  { required: [] },   // pure layout (shape/colour), like `separator`
+  'featured-carousel': { required: [['slides']] },
+  'sticky-scroll':    { required: [['chapters']] },
+  'ai-faq':           { required: [] },   // has emptyStateText — empty is a designed state
+  'pricing-calculator': { required: [['variables', 'basePrice']] },
+  'quick-links':      { required: [['links']] },
+  'chat-launcher':    { required: [] },   // auto-connects to the chat endpoint
+  'ai-assistant':     { required: [] },   // auto-connects to the chat endpoint
+  contact:            { required: [] },   // renders a form; title/subtitle optional
 };
 
 /**

@@ -19,6 +19,8 @@
  * because that module uses Deno-style imports incompatible with vitest.
  */
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { BLOCK_REFERENCE, getImportableBlockTypes } from "@/lib/block-reference";
 
 // ─── Mirrored from _shared/normalize-blocks.ts ────────────────────────────────
@@ -208,6 +210,17 @@ const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string
   'latest-posts':     { required: [] },
   'bento-grid':       { required: [['items']] },
   'notification-toast': { required: [['notifications']] },
+  // Added 2026-07-25 — mirror of normalize-blocks.ts (keep the two in sync).
+  'parallax-section': { required: [['title', 'backgroundImage']] },
+  'section-divider':  { required: [] },
+  'featured-carousel': { required: [['slides']] },
+  'sticky-scroll':    { required: [['chapters']] },
+  'ai-faq':           { required: [] },
+  'pricing-calculator': { required: [['variables', 'basePrice']] },
+  'quick-links':      { required: [['links']] },
+  'chat-launcher':    { required: [] },
+  'ai-assistant':     { required: [] },
+  contact:            { required: [] },
 };
 
 function validateBlockContracts(blocks: Record<string, unknown>[]): void {
@@ -1188,6 +1201,34 @@ describe("Block schema coverage — contracts and tiptap fields align with block
       orphaned,
       `Orphaned BLOCK_CONTRACTS entries for non-importable types: ${orphaned.join(', ')}`,
     ).toHaveLength(0);
+  });
+
+  // The mirror above is hand-maintained. It HAD silently drifted (it carried
+  // `popup` and `latest-posts` entries the runtime gate never had), which is
+  // invisible because every other test here reads the mirror, not the source.
+  // This asserts the two key sets match, so updating one without the other fails.
+  it("the BLOCK_CONTRACTS mirror matches normalize-blocks.ts (no silent drift)", () => {
+    const source = readFileSync(
+      resolve(__dirname, '../../../supabase/functions/_shared/normalize-blocks.ts'),
+      'utf8',
+    );
+    const seg = source.slice(
+      source.indexOf('export const BLOCK_CONTRACTS'),
+      source.indexOf('export function validateBlockContracts'),
+    );
+    const sourceKeys = new Set(
+      [...seg.matchAll(/^\s+('?[a-zA-Z][a-zA-Z-]*'?):\s*\{\s*required/gm)]
+        .map(m => m[1].replace(/'/g, '')),
+    );
+    const mirrorKeys = new Set(Object.keys(BLOCK_CONTRACTS));
+    const missingFromMirror = [...sourceKeys].filter(k => !mirrorKeys.has(k));
+    const missingFromSource = [...mirrorKeys].filter(k => !sourceKeys.has(k));
+    expect(
+      { missingFromMirror, missingFromSource },
+      `BLOCK_CONTRACTS drift between normalize-blocks.ts and this mirror — ` +
+      `add to mirror: [${missingFromMirror.join(', ')}]; ` +
+      `add to normalize-blocks.ts: [${missingFromSource.join(', ')}]`,
+    ).toEqual({ missingFromMirror: [], missingFromSource: [] });
   });
 
   it("every top-level tiptap field in BLOCK_REFERENCE is covered by TIPTAP_FIELDS", () => {
