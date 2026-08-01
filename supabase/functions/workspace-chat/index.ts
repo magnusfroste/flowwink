@@ -367,7 +367,7 @@ const WEB_SEARCH_TOOL = {
 };
 
 async function runWebSearch(supabaseUrl: string, serviceKey: string, query: string, limit = 4) {
-  const resp = await fetch(`${supabaseUrl}/functions/v1/firecrawl-search`, {
+  const resp = await fetch(`${supabaseUrl}/functions/v1/web-search`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

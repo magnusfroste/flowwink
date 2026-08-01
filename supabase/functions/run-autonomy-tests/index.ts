@@ -592,15 +592,21 @@ async function layer4Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     }
   }));
 
-  // 10. Bootstrap function is deployed and callable
-  results.push(await runTest("L4: setup-flowpilot endpoint responds", 4 as any, async () => {
-    const resp = await fetch(`${supabaseUrl}/functions/v1/setup-flowpilot`, {
-      method: "POST", headers,
-      body: JSON.stringify({ dry_run: true }),
-    });
-    const text = await resp.text();
-    // Should not 500 — either 200 or a controlled error
-    if (resp.status >= 500) throw new Error(`setup-flowpilot returned ${resp.status}: ${text.slice(0, 200)}`);
+  // 10. Skill bootstrap surface is reachable.
+  // WAS: a POST to `setup-flowpilot`, asserting only `status < 500`. That
+  // function does not exist in this codebase, so the probe 404'd — and 404 < 500,
+  // so the test passed while asserting nothing. Bootstrap now runs from the admin
+  // Modules page / flowwink.sh, not an edge function, so the honest check is that
+  // skills are actually seeded and reachable.
+  results.push(await runTest("L4: skills are bootstrapped (agent_skills populated)", 4 as any, async () => {
+    const { count, error } = await supabase
+      .from("agent_skills")
+      .select("id", { count: "exact", head: true })
+      .eq("enabled", true);
+    if (error) throw new Error(`agent_skills query failed: ${error.message}`);
+    if (!count || count < 50) {
+      throw new Error(`Only ${count ?? 0} enabled skills — bootstrap did not run (expected 50+)`);
+    }
   }));
 
   // 11. Instance health endpoint responds with valid shape

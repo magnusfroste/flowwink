@@ -85,18 +85,25 @@ serve(async (req: Request) => {
       if (step.template && sub?.customer_email) {
         try {
           const messageId = `dunning-${seq.id}-step${stepIdx}`;
-          const { error: emailErr } = await supabase.functions.invoke("send-transactional-email", {
+          // `send-transactional-email` does not exist (it never did in this
+          // history) — dunning mail therefore threw on every attempt and landed
+          // as an `email_failed` action. email-send is the live sender and does
+          // template rendering itself: `template_name` + `variables` are
+          // substituted from `email_templates`.
+          const { error: emailErr } = await supabase.functions.invoke("email-send", {
             body: {
-              templateName: step.template,
-              recipientEmail: sub.customer_email,
-              idempotencyKey: messageId,
-              templateData: {
-                name: sub.customer_name ?? "there",
-                productName: sub.product_name ?? "your subscription",
-                amountCents: seq.mrr_at_risk_cents,
-                currency: seq.currency,
-                failureReason: seq.failure_reason,
-                attemptCount: seq.attempt_count,
+              template_name: step.template,
+              to: sub.customer_email,
+              tags: { kind: "dunning", sequence_id: String(seq.id), message_id: messageId },
+              // email-send declares variables/tags as Record<string, string> and
+              // substitutes {{token}} literally — coerce, don't pass numbers.
+              variables: {
+                name: String(sub.customer_name ?? "there"),
+                productName: String(sub.product_name ?? "your subscription"),
+                amountCents: String(seq.mrr_at_risk_cents ?? ""),
+                currency: String(seq.currency ?? ""),
+                failureReason: String(seq.failure_reason ?? ""),
+                attemptCount: String(seq.attempt_count ?? ""),
               },
             },
           });

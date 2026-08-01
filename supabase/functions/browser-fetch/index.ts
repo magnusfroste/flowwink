@@ -92,13 +92,13 @@ serve(async (req) => {
       });
     }
 
-    // ─── Path C: Public URL → delegate to scrape-url (Firecrawl) ───────
-    console.log(`[browser-fetch] Public URL, delegating to scrape-url: ${targetUrl}`);
+    // ─── Path C: Public URL → delegate to web-scrape (Firecrawl → Jina) ───────
+    console.log(`[browser-fetch] Public URL, delegating to web-scrape: ${targetUrl}`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    const scrapeResp = await fetch(`${supabaseUrl}/functions/v1/scrape-url`, {
+    const scrapeResp = await fetch(`${supabaseUrl}/functions/v1/web-scrape`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

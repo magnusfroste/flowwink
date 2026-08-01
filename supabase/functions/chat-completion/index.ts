@@ -228,7 +228,7 @@ async function executeChatTool(
   switch (toolName) {
     case 'firecrawl_search': {
       try {
-        const resp = await fetch(`${supabaseUrl}/functions/v1/firecrawl-search`, {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/web-search`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${serviceKey}`, 'apikey': serviceKey, 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: args.query, limit: 3 }),
