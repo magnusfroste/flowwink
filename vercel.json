@@ -6,7 +6,7 @@
     { "src": "/robots\\.txt", "dest": "/api/robots" },
     { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
     {
-      "src": "/(.*)",
+      "src": "^/(?!api/)(?!assets/)(?!.*\\.[a-zA-Z0-9]{2,5}$)(.*)$",
       "has": [
         {
           "type": "header",
