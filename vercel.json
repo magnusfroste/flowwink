@@ -2,11 +2,13 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "rewrites": [
-    { "source": "/robots.txt", "destination": "/api/robots" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+  "routes": [
+    { "src": "/robots\\.txt", "dest": "/api/robots" },
+    { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
+
     {
-      "source": "/(.*)",
+      "//": "Social crawlers get the prerendered head from /api/og. This MUST run before the filesystem phase: with `rewrites` it did not, because rewrites only apply when no static file matches — and `/` matches the built index.html. Net effect was that every deep link previewed correctly on LinkedIn/Slack while the homepage, the most-shared link of all, showed the brandless placeholder <title>Website</title>. Verified 2026-08-04: /platform, /mcp, /for-ecommerce and blog posts all returned real titles to a bot UA; / returned 'Website'.",
+      "src": "/(.*)",
       "has": [
         {
           "type": "header",
@@ -14,11 +16,11 @@
           "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Pinterest|redditbot|vkShare|Embedly|Iframely|SkypeUriPreview).*"
         }
       ],
-      "destination": "/api/og?path=/$1"
+      "dest": "/api/og?path=/$1"
     },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+
+    { "handle": "filesystem" },
+
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
