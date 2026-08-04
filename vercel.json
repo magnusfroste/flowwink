@@ -5,9 +5,7 @@
   "routes": [
     { "src": "/robots\\.txt", "dest": "/api/robots" },
     { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
-
     {
-      "//": "Social crawlers get the prerendered head from /api/og. This MUST run before the filesystem phase: with `rewrites` it did not, because rewrites only apply when no static file matches — and `/` matches the built index.html. Net effect was that every deep link previewed correctly on LinkedIn/Slack while the homepage, the most-shared link of all, showed the brandless placeholder <title>Website</title>. Verified 2026-08-04: /platform, /mcp, /for-ecommerce and blog posts all returned real titles to a bot UA; / returned 'Website'.",
       "src": "/(.*)",
       "has": [
         {
@@ -18,9 +16,7 @@
       ],
       "dest": "/api/og?path=/$1"
     },
-
     { "handle": "filesystem" },
-
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
