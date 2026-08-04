@@ -23,9 +23,9 @@ category: reference
 | **voice** | VoIP (Asterisk/OnSIP connector, voip.call) | L1 → L3 | `██████░░░░` 64% | 3/3/1 | — |
 | **maintenance** | Maintenance (maintenance.equipment / maintenance.request) | L3 → L4 | `███████░░░` 65% | 3/1/3 | — |
 | **booking** | Appointments (calendar.appointment) | L3 → L4 | `███████░░░` 68% | 13/0/6 | — |
-| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 68% | 12/1/6 | EPIC-08 |
 | **newsletter** | Email Marketing (mailing.mailing) | L4 → L4 | `███████░░░` 68% | 5/2/2 | — |
 | **flowtable** | Studio (custom app builder) / Spreadsheet Dashboard | L1 → L2 | `███████░░░` 71% | 6/0/3 | — |
+| **manufacturing** | Manufacturing (mrp.production) | L2 → L4 | `███████░░░` 72% | 13/0/6 | — |
 | **purchasing** | Purchase (purchase.order) | L3 → L4 | `███████░░░` 73% | 12/3/3 | — |
 | **quotes** | Sales (sale.order quotation) | L3 → L4 | `███████░░░` 73% | 14/1/3 | EPIC-04 |
 | **subscriptions** | Subscriptions (sale.subscription) | L3 → L4 | `████████░░` 79% | 11/0/3 | — |
