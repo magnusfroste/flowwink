@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Website
@@ -71,6 +71,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/pages-module.ts` |
 | Hook | `src/hooks/usePages.tsx` |
 | Migration | `supabase/migrations/20260708090000_pages-parity-r8.sql` |
+| Migration | `supabase/migrations/20260717110000_fix-publish-scheduled-pages-cron.sql` |
 
 ## Contributing
 

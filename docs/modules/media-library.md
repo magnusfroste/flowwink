@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Media Library
 
 > Manage media assets and files
 
-Ships with **4 agent skills**, an **admin UI**.
+Ships with **6 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **4 agent skills**, an **admin UI**.
 | **Autonomy** | config-required |
 | **Core** | Yes |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 4 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | — |
 
 ## Skills
@@ -38,6 +38,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `media_set_alt_text` | internal | Set or update the accessibility alt text for a media asset in the library. Use when: an image needs alt text for screen readers or SEO; auditing accessibility. NOT for: renaming files, editing imag… |
 | `media_find_usage` | internal | Find where a media asset is referenced across pages, blog posts, KB articles, and products. Use when: checking whether an image is safe to delete; auditing what uses a file. NOT for: full-text cont… |
 | `media_optimize` | internal | Generate optimized image variants (thumbnail + web size) for a media asset. Use when: an uploaded image lacks thumbnails; preparing images for fast page loads. NOT for: cropping (use the image edit… |
+| `search_unsplash` | internal | Search Unsplash for royalty-free stock photos. Use when: finding a hero/blog image by keyword. NOT for: fetching a known image URL (fetch_image_base64); the media library (manage_media). |
+| `fetch_image_base64` | internal | Download an image by URL and return it as base64 (used when exporting a site template so remote images are inlined). Use when: bundling external images. NOT for: searching stock photos (search_unsp… |
 
 ## File Map
 

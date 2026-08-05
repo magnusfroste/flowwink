@@ -8,6 +8,8 @@
     { "id": "prospect_research", "name": "AI prospect research", "odoo": false, "status": "done", "weight": 1, "verify": "prospect_research skillSeed (edge:prospect-research); SalesIntelligencePage + ResearchResultCards/ResearchHistory" },
     { "id": "competitor_monitor", "name": "Competitor monitoring", "odoo": false, "status": "done", "weight": 1, "verify": "competitor_monitor skill (seed in crm-module.ts, listed in salesIntelligence skills array)" },
     { "id": "signals", "name": "Buying-signal processing", "odoo": false, "status": "done", "weight": 1, "verify": "process_signal skillSeed (edge:signal-ingest); SalesIntelligencePage signal handling" },
-    { "id": "sales_profile", "name": "Sales profile setup (company + user)", "odoo": false, "status": "done", "weight": 1, "verify": "sales_profile_setup skillSeed; SalesProfileSetup.tsx admin component", "notes": "Added capability." }
+    { "id": "sales_profile", "name": "Sales profile setup (sender context)", "odoo": false, "status": "done", "weight": 1, "verify": "sales_profile_setup skillSeed (type=user); SalesProfileSetup.tsx admin component", "notes": "Sender-only. ICP/positioning lives in Business Identity." },
+    { "id": "icp_fit_ai", "name": "AI fit scoring against ICP", "odoo": false, "status": "done", "weight": 2, "verify": "prospect_fit_analysis handler returns our_context (ICP from site_settings.company_profile + sender profile); useProspectFit.ts scores via chat-completion; SalesIntelligenceReadiness.tsx surfaces AI + ICP dependencies" }
+
   ]
 }

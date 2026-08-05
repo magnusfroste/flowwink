@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Companies
 
 > Create and manage company records with optional AI enrichment
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 10 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,6 +36,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_company` | internal | Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a com… |
 | `find_duplicate_companies` | internal | Find likely duplicate companies by name similarity or identical domain (read-only). Use when: cleaning the CRM, before creating a company that might already exist. NOT for: merging (manual for now)… |
+| `list_company_orders` | external | Max orders to return (default 20, max 50). |
+| `list_company_invoices` | external | Max invoices to return (default 20, max 50). |
+| `request_company_return` | external | Free-text detail (optional). |
+| `approve_company_quote` | external | The quote number (or id) to accept. |
+| `manage_company_contacts` | external | Default list. |
+| `reorder_company_order` | external | The earlier company order id (or its short prefix) to repeat. |
+| `request_company_quote` | external | What the company would like a quote for — products/services, quantities, timeline. |
+| `initiate_company_invoice_payment` | external | The invoice number (or id) to pay. |
 
 ## Used in Processes
 

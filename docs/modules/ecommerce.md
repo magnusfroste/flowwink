@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Products
@@ -45,7 +45,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `convert_uom` | internal | Convert a quantity between two units of measure in the same category (e.g. 2500 g → 2.5 kg). Use when: normalizing quantities for stock, pricing or shipping weight. NOT for: listing/creating units … |
 | `manage_inventory` | internal | Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing pro… |
 | `inventory_report` | internal | Generates product inventory status report. Use when: checking stock levels, reviewing inventory health. NOT for: updating inventory (use manage_inventory), managing products (use manage_product). |
-| `lookup_order` | both | Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage… |
+| `lookup_order` | both | Look up order status. A signed-in customer sees only their OWN orders (resolved from the verified session — never ask for or trust an email typed in chat); pass order_id to filter to one, or omit i… |
 | `manage_orders` | internal | Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_st… |
 | `place_order` | external | Place an order as a customer — resolves products server-side, creates the order + line items. Accepts product_id or product_name per item. Use when: external agent creates an order programmatically… |
 | `check_order_status` | external | Check the status of an existing order by ID. Use when: a user inquires about their purchase; verifying order progress; providing delivery updates. NOT for: managing orders (manage_orders); looking … |

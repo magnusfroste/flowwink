@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Business Identity
 
 > Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **3 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -40,6 +40,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `get_company_profile` | both | Read the FlowWink site\ |
 | `update_company_profile` | both | Update the FlowWink site\ |
+| `enrich_company_profile` | internal | Enrich a company insights profile from a public identifier (org number / domain) — writes company facts for the customer-insights views. Use when: filling out a prospect company card. NOT for: CRM … |
 
 ## Module API Contract
 

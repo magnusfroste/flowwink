@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,9 +105,15 @@ export function SalesProfileSetup() {
             <CompletionBadge score={userScore} />
           </div>
           <CardDescription>
-            Personal sender context for outreach drafts (separate from company-wide positioning)
+            Personal sender context for outreach drafts — name, pitch, tone and signature.
+            Company positioning and the Ideal Customer Profile (ICP) live in{" "}
+            <Link to="/admin/company-insights" className="underline underline-offset-2">
+              Business Identity
+            </Link>{" "}
+            and are used for fit scoring.
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-3">
           {USER_FIELDS.map(field => (
             <div key={field.key} className="space-y-1">

@@ -14,8 +14,11 @@ import { ResearchResultCards } from "@/components/admin/sales-intelligence/Resea
 import { FitAnalysisCard } from "@/components/admin/sales-intelligence/FitAnalysisCard";
 import { SalesProfileSetup } from "@/components/admin/sales-intelligence/SalesProfileSetup";
 import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchHistory";
+import { SalesIntelligenceReadiness } from "@/components/admin/sales-intelligence/SalesIntelligenceReadiness";
+import { useProspectFit } from "@/hooks/useProspectFit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
+
 
 function normalizeFitAnalysisResult(payload: Record<string, any>): FitAnalysisResult {
   if (typeof payload.fit_score === "number") {
@@ -73,6 +76,8 @@ export default function SalesIntelligencePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [fitResult, setFitResult] = useState<FitAnalysisResult | null>(null);
+  const { analyzeFit } = useProspectFit();
+
 
   const handleResearch = async () => {
     if (!companyName.trim()) {
@@ -99,6 +104,9 @@ export default function SalesIntelligencePage() {
     }
   };
 
+  // Fit scoring goes through FlowPilot (which calls the prospect_fit_analysis
+  // skill for prospect data + our ICP from Business Identity). If the reasoning
+  // layer is unavailable, fall back to the raw skill payload as a data snapshot.
   const handleFitAnalysis = async () => {
     if (!result?.company?.id) {
       toast.error("No company to analyze");
@@ -108,17 +116,23 @@ export default function SalesIntelligencePage() {
     setIsAnalyzing(true);
 
     try {
-      const data = await callSkill("prospect_fit_analysis", { company_id: result.company.id });
-
-      const normalized = normalizeFitAnalysisResult((data ?? {}) as Record<string, any>);
-      setFitResult(normalized);
-      toast.success(`Fit score: ${normalized.fit_score}/100`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fit analysis failed");
+      const scored = await analyzeFit({ company_id: result.company.id });
+      setFitResult(scored);
+      toast.success(`Fit score: ${scored.fit_score}/100`);
+    } catch {
+      try {
+        const data = await callSkill("prospect_fit_analysis", { company_id: result.company.id });
+        const normalized = normalizeFitAnalysisResult((data ?? {}) as Record<string, any>);
+        setFitResult(normalized);
+        toast.warning("Scored from data coverage only — FlowPilot reasoning unavailable");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Fit analysis failed");
+      }
     } finally {
       setIsAnalyzing(false);
     }
   };
+
 
   return (
     <AdminLayout>
@@ -132,8 +146,11 @@ export default function SalesIntelligencePage() {
           <TabsList>
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="profiles">Sales Profile</TabsTrigger>
+            <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
+
+
 
           <TabsContent value="research" className="space-y-4">
             {/* Research Input */}
@@ -227,6 +244,11 @@ export default function SalesIntelligencePage() {
           <TabsContent value="profiles" className="space-y-4">
             <SalesProfileSetup />
           </TabsContent>
+
+          <TabsContent value="setup" className="space-y-4">
+            <SalesIntelligenceReadiness />
+          </TabsContent>
+
 
           <TabsContent value="history" className="space-y-4">
             <ResearchHistory />

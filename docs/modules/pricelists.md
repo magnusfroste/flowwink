@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Pricelists

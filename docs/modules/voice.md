@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Voice
@@ -58,6 +58,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Migration | `supabase/migrations/20260709080000_invoice-partially-paid-status.sql` |
 | Migration | `supabase/migrations/20260710000000_timesheet-invoice-number-series.sql` |
 | Migration | `supabase/migrations/20260710030000_no-cancel-paid-invoice.sql` |
+| … | _1 more migration_ |
 
 ## Contributing
 

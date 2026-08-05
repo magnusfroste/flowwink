@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Contracts
 
 > Contract lifecycle management with renewal tracking and document storage
 
-Ships with **9 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **9 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 9 |
+| **MCP-exposed skills** | 10 |
 | **Owns tables** | — |
 
 ## Skills
@@ -43,6 +43,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `search_contracts` | internal | Free-text search across contracts (title, counterparty, body content). Use when: admin or operator asks "find the contract with X", "which contracts mention the Y clause?", "search NDA with ACME". … |
 | `send_contract_for_signature` | internal | Generate a public signing link for a contract and mark it as pending_signature. Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current … |
 | `list_contract_documents` | internal | List all documents linked to a specific contract. Use when: admin or agent asks "which documents are attached to contract X?", or wants to verify that a signed PDF is attached. NOT for: uploading n… |
+| `run_contract_billing` | internal | Invoice every active billing-enabled contract whose billing date has arrived. Use when: running the daily contract billing sweep — the Contract Billing automation calls this. Takes no arguments. NO… |
 
 ## Module API Contract
 

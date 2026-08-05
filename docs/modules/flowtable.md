@@ -5,14 +5,14 @@ version: "0.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Flowtable
 
 > Airtable-style flexible tables for lists, prospect sheets, content backlogs. CSV import/export + push-to-CRM bridge.
 
-Ships with **5 agent skills**, an **admin UI**.
+Ships with **7 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **5 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | — |
-| **MCP-exposed skills** | 5 |
+| **MCP-exposed skills** | 7 |
 | **Owns tables** | — |
 
 ## Skills
@@ -39,6 +39,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_flowtable_tables` | internal | Discover the tables + field schema inside a Flowtable base (Airtable-style). Use when: an agent found a base (list_flowtable_bases) and needs to know which tables it holds + their field keys before… |
 | `query_flowtable` | internal | Query a Flowtable table server-side: filter on field values (eq/neq/ilike pushed to the DB; gt/gte/lt/lte numeric, is_empty/not_empty), free-text search across all fields, sort by a field, and coun… |
 | `manage_flowtable_record` | internal | Create, update, delete or get a single Flowtable record. Update MERGES the given values into the existing row by default (merge=false replaces). Use when: correcting or enriching rows in an importe… |
+| `manage_flowtable_table` | internal | Create, rename or delete a TABLE inside a Flowtable base — schema management, so an agent can build up a base (e.g. "set up a table for supplier contacts"), not just fill one. Create accepts an inl… |
+| `manage_flowtable_field` | internal | Create, update or delete a FIELD (column) on a Flowtable table — including relation fields (link/lookup/rollup), user assignment fields, and select choices. Use when: a table needs a new column (e.… |
 
 ## Module API Contract
 

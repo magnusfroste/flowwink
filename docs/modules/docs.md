@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Docs
 
 > Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators.
 
-Ships with **2 agent skills**.
+Ships with **3 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **2 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read` |
-| **MCP-exposed skills** | 2 |
+| **MCP-exposed skills** | 3 |
 | **Owns tables** | — |
 
 ## Skills
@@ -36,6 +36,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `docs_search` | both | Search and read public Flowwink documentation pages (synced from the magnusfroste/flowwink GitHub repo). Use when: a visitor or evaluator asks how Flowwink works, what modules exist, how a process … |
 | `manage_docs_page` | internal | Author and maintain documentation pages in-app (not via GitHub sync): create, update, delete, or restore a previous version. Use when: writing a new docs page from inside the platform, editing an e… |
+| `sync_docs_from_github` | internal | Recursively import markdown docs from a GitHub repo path into the docs pages. Use when: syncing product documentation maintained in GitHub. NOT for: the handbook (sync_handbook_from_github); wiki (… |
 
 ## Module API Contract
 

@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Agentic Handbook
 
 > Agentic methodology handbook with search and reader capabilities
 
-Ships with **1 agent skill**, an **admin UI**.
+Ships with **2 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **1 agent skill**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read` |
-| **MCP-exposed skills** | 1 |
+| **MCP-exposed skills** | 2 |
 | **Owns tables** | — |
 
 ## Skills
@@ -35,6 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `handbook_search` | both | Search and read chapters from the synced handbook (Agentic Handbook / Clawable). Use when: visitor asks about AI agents, FlowPilot architecture, agentic design, OpenClaw, heartbeat protocol, skills… |
+| `sync_handbook_from_github` | internal | Recursively import markdown handbook chapters from a GitHub repo path. Use when: syncing the employee handbook maintained in GitHub. NOT for: product docs (sync_docs_from_github). |
 
 ## Module API Contract
 

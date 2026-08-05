@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Field Service
 
 > Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion.
 
-Ships with **8 agent skills**, an **admin UI**.
+Ships with **9 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **8 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 8 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Skills
@@ -42,6 +42,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_service_package` | internal | Reusable service package templates (predefined labor/material line bundles) and applying them to orders. Use when: standard jobs like "AC install" or "annual boiler service" should prefill order li… |
 | `link_service_order` | internal | Link a service order to a contract, project and/or deal (or unlink). Use when: on-site work is covered by a service contract, belongs to a project, or originates from a deal. NOT for: creating cont… |
 | `manage_recurring_service_order` | internal | Recurring service orders: set a recurrence rule on an order and auto-generate the next occurrences (daily cron). Use when: maintenance repeats weekly/monthly/quarterly/yearly. NOT for: recurring in… |
+| `service_order_to_invoice` | internal | Draft an invoice from a completed service order\ |
 
 ## Module API Contract
 

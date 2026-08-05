@@ -303,7 +303,7 @@ export const defaultModulesSettings: ModulesSettings = {
   salesIntelligence: {
     enabled: false,
     name: 'Sales Intelligence',
-    description: 'Prospect research, fit analysis, and AI-powered introduction letters — enhanced by FlowPilot for autonomous prospecting chains',
+    description: 'Prospect research, ICP fit scoring and personal outreach drafts. Scores against the Ideal Customer Profile in Business Identity; Hunter.io adds contact discovery',
     icon: 'Target',
     category: 'data',
     autonomy: 'agent-capable',
@@ -312,6 +312,7 @@ export const defaultModulesSettings: ModulesSettings = {
     enhancedByFlowPilot: true,
     optionalIntegrations: ['hunter', 'jina', 'firecrawl', 'openai', 'gemini'],
   },
+
   consultants: {
     enabled: false,
     name: 'Consultants',
