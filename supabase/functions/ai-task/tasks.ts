@@ -28,6 +28,7 @@
 import { z } from "https://esm.sh/zod@3.23.8";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { AiTier } from "../_shared/ai-config.ts";
+import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 
 export interface TaskSpec<I = unknown, O = unknown> {
   name: string;
@@ -486,8 +487,15 @@ const contentResearchTask: TaskSpec<z.infer<typeof contentResearchInput>, any> =
     "Deep content research for a topic — audience insights, content angles, hooks, competitive landscape, recommended structure, SEO. Returns a structured ContentResearch object.",
   tier: "reasoning",
   inputSchema: contentResearchInput,
-  system: () =>
-    `You are an expert content strategist. Produce deep, specific, non-generic research for the given brief and return it via the submit_content_research tool. Ground angles and hooks in real audience psychology; avoid filler and platitudes. Tailor angles to the requested channels.`,
+  // A cron automation hands this task the SAME topic every cycle. Without the
+  // site's own back-catalogue in the prompt, every cycle produces the same
+  // angles — 16 near-identical posts on flowwink.com. See
+  // _shared/domains/content-memory.ts.
+  load: async (_input, supabase) => ({
+    existing_coverage: await loadContentMemoryBlock(supabase, { limit: 15 }),
+  }),
+  system: (input) =>
+    `You are an expert content strategist. Produce deep, specific, non-generic research for the given brief and return it via the submit_content_research tool. Ground angles and hooks in real audience psychology; avoid filler and platitudes. Tailor angles to the requested channels.${(input as any).existing_coverage ?? ""}`,
   user: (input) =>
     `## Brief\n${JSON.stringify({
       topic: (input as any).topic,
@@ -608,8 +616,11 @@ const contentProposalTask: TaskSpec<z.infer<typeof contentProposalInput>, any> =
     "Generate a multi-channel content proposal from a topic — a pillar piece plus channel-adapted variants (blog, newsletter, linkedin, x). Returns pillar_content + channel_variants.",
   tier: "reasoning",
   inputSchema: contentProposalInput,
+  load: async (_input, supabase) => ({
+    existing_coverage: await loadContentMemoryBlock(supabase, { limit: 15 }),
+  }),
   system: (input) =>
-    `You are an expert multi-channel content strategist. From the brief, write ONE strong pillar piece and adapt it into native variants for ONLY the requested channels, returning everything via the submit_content_proposal tool. Match the brand voice and tone. Per channel shape: blog = {title, excerpt, body (markdown), seo_keywords[]}; newsletter = {subject, preview_text, content}; linkedin = {text, hashtags[]}; x = {thread[] (each item one tweet)}. Requested channels: ${JSON.stringify((input as any).target_channels ?? [])}. No filler or platitudes.`,
+    `You are an expert multi-channel content strategist. From the brief, write ONE strong pillar piece and adapt it into native variants for ONLY the requested channels, returning everything via the submit_content_proposal tool. Match the brand voice and tone. Per channel shape: blog = {title, excerpt, body (markdown), seo_keywords[]}; newsletter = {subject, preview_text, content}; linkedin = {text, hashtags[]}; x = {thread[] (each item one tweet)}. Requested channels: ${JSON.stringify((input as any).target_channels ?? [])}. No filler or platitudes.${(input as any).existing_coverage ?? ""}`,
   user: (input) =>
     `## Brief\n${JSON.stringify({
       topic: (input as any).topic,
@@ -678,8 +689,11 @@ const seoContentBriefTask: TaskSpec<z.infer<typeof seoBriefInput>, any> = {
     "SEO content brief for a topic — primary/secondary keywords, search intent, title options, meta description, a heading outline, People-Also-Ask questions, competitor gaps, and a word-count target.",
   tier: "reasoning",
   inputSchema: seoBriefInput,
-  system: () =>
-    `You are an expert SEO content strategist. From the topic, produce an actionable, specific content brief a writer can execute against, returning it via the submit_seo_content_brief tool. Ground keywords and questions in real search behavior; the outline must be logically ordered H2/H3s; competitor_gaps are angles competitors miss. No filler.`,
+  load: async (_input, supabase) => ({
+    existing_coverage: await loadContentMemoryBlock(supabase, { limit: 15 }),
+  }),
+  system: (input) =>
+    `You are an expert SEO content strategist. From the topic, produce an actionable, specific content brief a writer can execute against, returning it via the submit_seo_content_brief tool. Ground keywords and questions in real search behavior; the outline must be logically ordered H2/H3s; competitor_gaps are angles competitors miss. No filler.${(input as any).existing_coverage ?? ""}`,
   user: (input) =>
     `## Brief request\n${JSON.stringify({
       topic: (input as any).topic,

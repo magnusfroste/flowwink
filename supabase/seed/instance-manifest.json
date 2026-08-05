@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260805090000",
-      "migrations_count": 290,
+      "migrations_count": 291,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1163,6 +1163,10 @@
           "name": "seed-role-module-access-defaults"
         },
         {
+          "version": "20260805003142",
+          "name": "e56aef5d-db4d-418f-b0d0-f54e80719265"
+        },
+        {
           "version": "20260805090000",
           "name": "kb-article-visibility"
         }
@@ -1175,13 +1179,13 @@
     },
     "edge_functions": {
       "count": 75,
-      "shared_hash": "sha256:ab90858a0c0f96af9caec616f9b0169b5f5cd70a1819b953c1af70daa3a259ea",
+      "shared_hash": "sha256:e6f55eb20e3ec24ebd8dd38c6271cd000497ea29ccfce098cddf62e584f5aa28",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
         "agent-execute": "sha256:82739d8e4bd4822d5e9e0bfd9529008df47b4c515b82c033fd6e577d07afbc97",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
-        "ai-task": "sha256:5cc0884b9c7ab08157ee79a5055f847433cb079732200a07bdae3ef2b666f1f6",
+        "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
         "automation-dispatcher": "sha256:c0ffa7a2c623209bf82030bd4b6feb1ed9ae92baa4ea5a08772eaa3fa912ea3e",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
@@ -1210,7 +1214,7 @@
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
         "extract-pdf-text": "sha256:96f98e21532f261f3e41dc8843dee623e9a010a6106d4e40d3664d743df46304",
         "federation-invite-peer": "sha256:ea8c2c09c4f6cd1839da87a93932794086ff5a37f7e9419864b38928f5d61bac",
-        "flowpilot-heartbeat": "sha256:477a5bb13fdfad2125a628e2e211b3ac7ffe2be7c53482c2cca5118fa64f7cb0",
+        "flowpilot-heartbeat": "sha256:21acbb3522ba6b2d9a117ac63fbfb548bd21ea282715bc5d032047d9f9b310cd",
         "flowpilot-lifecycle": "sha256:01398e7de05ded81c439fa20d3fff9480aae9096fabe2c16add31a8c63c5c143",
         "gatewayapi-ingest": "sha256:9daeb71012e0b49d3eee1583d2511a50224cec4e1b69de46a471e1a63d7f066a",
         "generate-invoice-pdf": "sha256:7884b26bb71e22e6e89a1b4429fc9f47a9bac20826008abca71ad213fb365901",

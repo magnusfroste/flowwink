@@ -24,6 +24,7 @@ import {
 } from "../_shared/agent-reason.ts";
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
+import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
 import type { TokenUsage } from "../_shared/types.ts";
 
 /**
@@ -78,21 +79,17 @@ async function loadSiteStats(supabase: any): Promise<string> {
 
   // Recent output titles — the operator must SEE what it already produced, or a
   // recurring content objective degenerates into the same artifact re-worded
-  // daily (observed in fast-sim: 6 near-identical blog titles in 6 days).
-  const { data: recentPosts } = await supabase
-    .from("blog_posts")
-    .select("title, created_at")
-    .order("created_at", { ascending: false })
-    .limit(10);
-  const recentTitles = (recentPosts || [])
-    .map((p: any) => `  - ${String(p.title || "").slice(0, 100)}`)
-    .join("\n");
+  // daily (observed in fast-sim: 6 near-identical blog titles in 6 days; then
+  // for real on flowwink.com, 16 in six weeks). Shared with the ai-task content
+  // path, which is where the real duplicates came from — see
+  // _shared/domains/content-memory.ts.
+  const contentMemory = await loadContentMemoryBlock(supabase, { limit: 10 });
 
   return `\n\nSite stats (7 days):
 - Page views: ${views.count ?? 0}
 - New leads: ${leads.count ?? 0}
 - Blog posts published: ${posts.count ?? 0}
-- Total confirmed subscribers: ${subscribers.count ?? 0}${recentTitles ? `\n\nYour recent blog output (newest first) — new content must take a DIFFERENT angle, audience or format than these; never re-word an existing one:\n${recentTitles}` : ""}`;
+- Total confirmed subscribers: ${subscribers.count ?? 0}${contentMemory}`;
 }
 
 async function loadLinkedAutomations(supabase: any): Promise<string> {

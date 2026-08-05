@@ -54,8 +54,12 @@ describe('flowpilot hermes guardrails', () => {
   });
 
   it('heartbeat context includes recent blog titles (content differentiation)', () => {
-    expect(heartbeat).toMatch(/recent blog output/i);
-    expect(heartbeat).toMatch(/from\("blog_posts"\)[\s\S]*?select\("title/);
+    // The titles now come from the shared Content Memory primitive, so the same
+    // memory reaches the ai-task/cron path — which is where the real duplicates
+    // came from. See supabase/functions/_shared/domains/content-memory.ts and
+    // src/lib/__tests__/content-memory.test.ts.
+    expect(heartbeat).toMatch(/loadContentMemoryBlock\(supabase/);
+    expect(heartbeat).toMatch(/from ["'].*_shared\/domains\/content-memory\.ts["']/);
   });
 
   it('completion pass merges results so the heartbeat log reflects both passes', () => {
