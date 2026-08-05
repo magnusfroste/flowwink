@@ -42,6 +42,10 @@ jobs:
   evaluate:
     name: Evaluate main
     runs-on: ubuntu-latest
+    # Hard bound on the grace-window wait below. Comfortably above the default
+    # 30-minute window plus margin; a larger grace_minutes is capped by this,
+    # which fails safe (no alert) rather than holding a runner indefinitely.
+    timeout-minutes: 45
     steps:
       - name: Checkout (decision logic only)
         uses: actions/checkout@v4
@@ -55,7 +59,7 @@ jobs:
           GRACE_MINUTES: ${{ github.event.inputs.grace_minutes || '30' }}
         with:
           script: |
-            const { decide, issueBody } = await import(
+            const { decide, issueBody, waitStepMs } = await import(
               `${process.env.GITHUB_WORKSPACE}/scripts/main-red-alert.mjs`
             );
 
@@ -65,19 +69,42 @@ jobs:
 
             // Completed CI runs on main, newest first. Only push events —
             // a PR run says nothing about the state of main itself.
-            const { data } = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'ci.yml',
-              branch: 'main',
-              event: 'push',
-              status: 'completed',
-              per_page: 30,
-            });
+            const fetchRuns = async () => {
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'ci.yml',
+                branch: 'main',
+                event: 'push',
+                status: 'completed',
+                per_page: 30,
+              });
+              return data.workflow_runs;
+            };
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-            const verdict = decide(data.workflow_runs, Date.now(), grace);
+            let verdict = decide(await fetchRuns(), Date.now(), grace);
             core.info(`main is ${verdict.state}` +
               (verdict.minutesRed !== null ? ` (${verdict.minutesRed} min, streak ${verdict.streak})` : ''));
+
+            // Wait out the grace window in THIS run rather than handing the
+            // decisive check to the cron. On 5 Aug main was red 43 minutes and
+            // nothing opened: every workflow_run check fell inside the window,
+            // and the "every 15 minutes" cron actually delivered 72 minutes
+            // apart, straddling the entire red period. GitHub's scheduled
+            // triggers are best-effort; the grace window cannot depend on them.
+            //
+            // Bounded by the window itself plus a small margin, and only ever
+            // entered while main is ALREADY red — so a green repo costs nothing.
+            const deadline = Date.now() + (grace + 5) * 60_000;
+            while (verdict.state === 'grace' && Date.now() < deadline) {
+              const step = waitStepMs(verdict, grace);
+              core.info(`Red for ${verdict.minutesRed}/${grace} min — re-checking in ${Math.round(step / 1000)}s.`);
+              await sleep(step);
+              verdict = decide(await fetchRuns(), Date.now(), grace);
+              core.info(`main is ${verdict.state}` +
+                (verdict.minutesRed !== null ? ` (${verdict.minutesRed} min, streak ${verdict.streak})` : ''));
+            }
 
             const open = await github.rest.issues.listForRepo({
               owner: context.repo.owner,

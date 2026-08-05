@@ -6,8 +6,10 @@
  * and staying quiet through a genuine outage because the API returned nothing.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 // plain .mjs helper, consumed by the workflow via github-script
-import { decide, issueBody } from '../../../scripts/main-red-alert.mjs';
+import { decide, issueBody, remainingGraceMs, waitStepMs } from '../../../scripts/main-red-alert.mjs';
 
 const NOW = Date.parse('2026-08-05T12:00:00Z');
 const minutesAgo = (m: number) => new Date(NOW - m * 60000).toISOString();
@@ -135,5 +137,118 @@ describe('issueBody', () => {
     const body = issueBody({ minutesRed: 31, sha: 'a', url: 'u', streak: 1, redSince: 'x' });
     expect(body).toContain('1 consecutive failing run');
     expect(body).not.toContain('failing runs');
+  });
+});
+
+// ─── The grace-window wait ──────────────────────────────────────────────────
+// On 5 Aug main was red for 43 minutes and no issue opened. The logic was right
+// every time it ran — it was never asked at the right moment. Every
+// workflow_run check landed inside the window (main went quiet after the last
+// failing push), and the cron, despite a 15-minute schedule, delivered 72
+// minutes apart: 20:42 and 21:54, straddling the entire red period.
+//
+// So the run that sees `grace` waits the window out itself instead of handing
+// the decisive check to GitHub's least reliable trigger.
+describe('remainingGraceMs — how long until the verdict can change', () => {
+  it('is the rest of the window for a verdict still in grace', () => {
+    expect(remainingGraceMs({ state: 'grace', minutesRed: 25 }, 30)).toBe(5 * 60_000);
+    expect(remainingGraceMs({ state: 'grace', minutesRed: 0 }, 30)).toBe(30 * 60_000);
+  });
+
+  it('is zero for any verdict that is not waiting', () => {
+    for (const state of ['green', 'red', 'unknown']) {
+      expect(remainingGraceMs({ state, minutesRed: 5 }, 30)).toBe(0);
+    }
+    expect(remainingGraceMs(null as never, 30)).toBe(0);
+    expect(remainingGraceMs(undefined as never, 30)).toBe(0);
+  });
+
+  it('never goes negative when the window has already passed', () => {
+    // decide() would not return 'grace' here, but the helper must not produce a
+    // negative sleep if it ever did.
+    expect(remainingGraceMs({ state: 'grace', minutesRed: 45 }, 30)).toBe(0);
+  });
+
+  it('treats a missing elapsed time as "just started", not as done', () => {
+    // Rounding down to zero would make the loop spin instead of waiting.
+    expect(remainingGraceMs({ state: 'grace', minutesRed: null }, 30)).toBe(30 * 60_000);
+  });
+});
+
+describe('waitStepMs — poll cadence while waiting', () => {
+  it('caps each sleep so a main that goes green mid-wait is noticed promptly', () => {
+    // 25 minutes left, but we look again within the minute.
+    expect(waitStepMs({ state: 'grace', minutesRed: 5 }, 30)).toBe(60_000);
+  });
+
+  it('overshoots the boundary slightly rather than waking a hair early', () => {
+    // Only reachable once the remaining window is under the poll cap: 30 s left
+    // → sleep 35 s, so the next look is definitely PAST the boundary. Waking a
+    // hair early would burn a whole loop iteration for nothing.
+    expect(waitStepMs({ state: 'grace', minutesRed: 29.5 }, 30)).toBe(35_000);
+  });
+
+  it('the cap wins while the window is still wide', () => {
+    // 2 minutes left is still more than the 60 s cap, so we look again in 60 s
+    // — frequent checks matter more than sleeping exactly to the boundary.
+    expect(waitStepMs({ state: 'grace', minutesRed: 28 }, 30)).toBe(60_000);
+    // Raise the cap and the boundary-aware value shows through.
+    expect(waitStepMs({ state: 'grace', minutesRed: 28 }, 30, 10 * 60_000)).toBe(2 * 60_000 + 5_000);
+  });
+
+  it('returns zero when there is nothing to wait for, so the loop exits', () => {
+    expect(waitStepMs({ state: 'green', minutesRed: null }, 30)).toBe(0);
+    expect(waitStepMs({ state: 'red', minutesRed: 31 }, 30)).toBe(0);
+    expect(waitStepMs({ state: 'grace', minutesRed: 30 }, 30)).toBe(0);
+  });
+
+  it('always makes progress — no zero-length sleep while still in grace', () => {
+    // A step of 0 with state still 'grace' would spin the loop against the API.
+    for (let elapsed = 0; elapsed < 30; elapsed++) {
+      const step = waitStepMs({ state: 'grace', minutesRed: elapsed }, 30);
+      expect(step, `elapsed=${elapsed} produced a ${step}ms sleep`).toBeGreaterThan(0);
+    }
+  });
+
+  it('the whole wait is bounded by the window, not by the number of checks', () => {
+    // Worst case: start at 0 elapsed, sleep 60s at a time. The loop can never
+    // run longer than the window itself — which is what timeout-minutes: 45
+    // in the workflow backstops.
+    let elapsed = 0;
+    let total = 0;
+    for (let i = 0; i < 100 && elapsed < 30; i++) {
+      total += waitStepMs({ state: 'grace', minutesRed: elapsed }, 30);
+      elapsed += 1;
+    }
+    expect(total).toBeLessThanOrEqual(30 * 60_000 + 5_000);
+  });
+});
+
+// ─── Wiring ─────────────────────────────────────────────────────────────────
+// The helpers above are only worth anything if the workflow actually uses them.
+// Deleting the loop would leave them as dead code and silently restore the
+// 5 Aug behaviour — right logic, never asked at the right moment.
+describe('the workflow waits out the grace window itself', () => {
+  const workflow = readFileSync(
+    join(process.cwd(), '.github/workflows/main-red-alert.yml'),
+    'utf-8',
+  );
+
+  it('imports and uses the wait helper', () => {
+    expect(workflow).toMatch(/waitStepMs/);
+  });
+
+  it('loops while the verdict is grace, re-fetching each time', () => {
+    expect(workflow).toMatch(/while \(verdict\.state === 'grace'/);
+    // Re-deciding on stale runs would spin forever; the loop must re-fetch.
+    expect(workflow).toMatch(/verdict = decide\(await fetchRuns\(\)/);
+  });
+
+  it('bounds the wait — in code and with a job timeout', () => {
+    // Two independent bounds: the deadline in the loop, and timeout-minutes as
+    // the backstop if a larger grace_minutes is dispatched.
+    expect(workflow).toMatch(/const deadline = Date\.now\(\)/);
+    expect(workflow).toMatch(/Date\.now\(\) < deadline/);
+    expect(workflow).toMatch(/timeout-minutes:\s*\d+/);
   });
 });

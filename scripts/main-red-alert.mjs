@@ -71,6 +71,41 @@ export function decide(runs, nowMs, graceMinutes = 30) {
   };
 }
 
+/**
+ * How long until this verdict's grace window expires, in ms. Zero for anything
+ * that is not waiting.
+ *
+ * The alert evaluates on two triggers: CI completing on main, and a cron
+ * schedule nominally set to every 15 minutes. On 5 Aug main was red for 43 minutes and NO issue opened — the logic
+ * was right every time it ran, but it was never asked at the right moment. The
+ * `workflow_run` checks all landed inside the window (main went quiet after the
+ * last failing push), and the cron — despite its 15-minute schedule — actually
+ * delivered 72 minutes apart: 20:42 and 21:54, straddling the whole red period.
+ *
+ * GitHub's scheduled triggers are best-effort and throttle hard under load, so
+ * a 30-minute grace window cannot be guaranteed an evaluation by cron at all.
+ * The run that sees `grace` therefore waits the window out itself and
+ * re-decides, instead of handing the decisive check to the least reliable
+ * trigger we have.
+ */
+export function remainingGraceMs(verdict, graceMinutes = 30) {
+  if (!verdict || verdict.state !== 'grace') return 0;
+  const elapsed = typeof verdict.minutesRed === 'number' ? verdict.minutesRed : 0;
+  return Math.max(0, (graceMinutes - elapsed) * 60_000);
+}
+
+/**
+ * Poll interval while waiting out a grace window. Short enough that a main
+ * which goes green mid-wait ends the job promptly, capped so we never sleep
+ * past the moment the window expires.
+ */
+export function waitStepMs(verdict, graceMinutes = 30, maxStepMs = 60_000) {
+  const remaining = remainingGraceMs(verdict, graceMinutes);
+  if (remaining === 0) return 0;
+  // +5s so the next look happens just AFTER the boundary, never a hair before.
+  return Math.min(maxStepMs, remaining + 5_000);
+}
+
 /** Issue body. Rebuilt on every check so the issue always shows current state. */
 export function issueBody({ minutesRed, sha, url, streak, redSince }) {
   return [
