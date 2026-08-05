@@ -250,6 +250,82 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — the blog duplicate corpus (2026-08-05, cloud session)
+
+**What happened.** flowwink.com published **16 near-identical blog posts**
+between 8 Jun and 23 Jul 2026 — the same "MCP + open source AI agents + BOS"
+article re-worded, across Swedish and English, one titled with a literal
+"(2)". Timestamps are 00:00 and 12:00 UTC, twice daily: a **cron automation
+carrying a static topic** through the default content chain
+(`research_content` → `generate_content_proposal` → `write_blog_post`,
+`src/data/flowpilotDefaults.ts:45-47`).
+
+**What the cloud session fixed (merged/branch `claude/project-review-22lava`).**
+Content memory existed since fb223b553 (12 Jul) but was inlined in the
+**flowpilot-heartbeat prompt only** — the duplicates came from
+`automation-dispatcher → agent-execute → ai-task`, which never sees that
+prompt, so they kept landing 11 more days. Promoted to
+`supabase/functions/_shared/domains/content-memory.ts` and wired into the
+`load` hook of `content_research`, `content_proposal` and `seo_content_brief`,
+plus the heartbeat. Guardrails in `src/lib/__tests__/content-memory.test.ts`.
+
+**Two fixes remain, both in YOUR files — reported, not touched:**
+
+1. **`write_blog_post` has no sink-level duplicate check**
+   (`supabase/functions/agent-execute/index.ts:5184-5195`). Worse, the one
+   mechanism that could have caught it was repurposed to *permit* duplication:
+   the slug loop appends `-2`, `-3` on collision so a re-run of the same title
+   inserts cleanly instead of failing. Prompt-level memory is advisory; a sink
+   guard is not. Suggested shape — **warn, don't hard-reject** (a deliberate
+   rewrite is legitimate):
+
+   ```ts
+   import { loadRecentContent, findSimilarTitles }
+     from '../_shared/domains/content-memory.ts';
+
+   // after resolvedTitle, before insert
+   const recent = await loadRecentContent(supabase, { limit: 25 });
+   const similar = findSimilarTitles(resolvedTitle, recent);   // threshold 0.6
+   // ...include in the return value so the operator sees it next turn:
+   //   duplicate_warning: similar.length
+   //     ? `This site has already published ${similar.length} post(s) on this
+   //        subject. Take a different angle or update the existing post via
+   //        manage_blog_posts instead.`
+   //     : undefined,
+   //   similar_posts: similar.map(s => ({ title: s.item.title,
+   //                                      similarity: +s.similarity.toFixed(2) })),
+   ```
+
+   `titleSimilarity` is containment over diacritic-folded, stopword-stripped
+   words — calibrated against the real corpus: duplicates 0.67–1.00, worst
+   false positive 0.17. Tests already cover it; no new measure needed.
+
+2. **Slugs drop every non-ASCII letter.**
+   `title.toLowerCase().replace(/[^a-z0-9]+/g, '-')` runs *before* any
+   transliteration, so "Varför öppna vikters" → `varf-r-ppna-vikters`. On a
+   Swedish-first product that is every slug on the site. Six occurrences in
+   `agent-execute/index.ts` (lines 4084, 4620, 5122, 5135, 5184, 11909) and
+   **ten more in `src/` (cloud session's side — say the word and it ships
+   with a shared `slugify()` both sides import).** The fix is one
+   NFD-normalize plus the Nordic pairs that don't decompose:
+
+   ```ts
+   s.toLowerCase()
+    .replace(/[åäæ]/g, 'a').replace(/[öø]/g, 'o').replace(/ß/g, 'ss')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+   ```
+
+   (Nordic pairs first: `å`/`ä`/`ö` decompose to `a`/`a`/`o` under NFD anyway,
+   but `ø` and `æ` do not.) Changing existing slugs breaks live URLs — apply to
+   **new** slugs only, or pair it with a redirect.
+
+**Also worth a look, not blocking:** the default workflow in
+`flowpilotDefaults.ts:47` passes `write_blog_post` a `proposal:` argument. The
+skill takes `title` + `content` and rejects anything else ("content is
+required"), so that seeded chain cannot have been working as written.
+
+
 ### ⇄ Handoff to local Claude — from the 2026-07-23 architecture review (cloud session)
 
 Cloud session ran a 4-agent holistic review and shipped the fixes that were in
