@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { BlogTag } from '@/types/cms';
 import { useToast } from '@/hooks/use-toast';
+import { slugify } from '@/lib/slugify';
 
 export function useBlogTags() {
   return useQuery({
@@ -144,11 +145,7 @@ export function useGetOrCreateBlogTag() {
   
   return useMutation({
     mutationFn: async (name: string) => {
-      const slug = name.toLowerCase()
-        .replace(/[åä]/g, 'a')
-        .replace(/ö/g, 'o')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const slug = slugify(name);
       
       // Check if tag exists
       const { data: existing } = await supabase

@@ -16,6 +16,7 @@ import { useBlogSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
 import NotFound from "./NotFound";
+import { slugify } from '@/lib/slugify';
 
 export default function BlogPostPage() {
   const t = useUiText();
@@ -216,7 +217,7 @@ export default function BlogPostPage() {
                 <Link
                   to={`/blog/author/${
                     post.author.full_name
-                      ? post.author.full_name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+                      ? slugify(post.author.full_name)
                       : post.author.id
                   }`}
                   className="text-sm text-primary hover:underline"

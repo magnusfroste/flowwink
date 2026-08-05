@@ -33,14 +33,10 @@ import {
   useDeleteBlogTag,
 } from "@/hooks/useBlogTags";
 import type { BlogTag } from "@/types/cms";
+import { slugify } from '@/lib/slugify';
 
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[åä]/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  return slugify(name);
 }
 
 export default function BlogTagsPage() {

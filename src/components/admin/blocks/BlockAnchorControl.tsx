@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { slugify } from '@/lib/slugify';
 
 interface BlockAnchorControlProps {
   anchorId?: string;
@@ -23,12 +24,7 @@ export function BlockAnchorControl({ anchorId, onChange }: BlockAnchorControlPro
 
   // Sanitize anchor ID: lowercase, no spaces, no special chars except hyphens
   const sanitizeAnchorId = (value: string): string => {
-    return value
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/--+/g, '-')
-      .replace(/^-|-$/g, '');
+    return slugify(value);
   };
 
   const handleChange = (value: string) => {

@@ -8,6 +8,7 @@ import { SeoHead } from '@/components/public/SeoHead';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BlogPostCard } from '@/components/public/BlogPostCard';
 import NotFound from './NotFound';
+import { slugify } from '@/lib/slugify';
 
 interface AuthorProfile {
   id: string;
@@ -19,13 +20,6 @@ interface AuthorProfile {
   show_as_author?: boolean | null;
 }
 
-function slugify(v: string): string {
-  return v
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function useAuthorBySlug(slug: string | undefined) {
   return useQuery({

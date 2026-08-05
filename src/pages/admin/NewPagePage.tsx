@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCreatePage } from '@/hooks/usePages';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { slugify } from '@/lib/slugify';
 
 const pageSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
@@ -24,15 +25,7 @@ export default function NewPagePage() {
   const createPage = useCreatePage();
   const { toast } = useToast();
 
-  const generateSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/å/g, 'a')
-      .replace(/ä/g, 'a')
-      .replace(/ö/g, 'o')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
+  const generateSlug = (text: string) => slugify(text);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);

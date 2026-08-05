@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useKbCategories, useCreateKbCategory, useUpdateKbCategory } from "@/hooks/useKnowledgeBase";
+import { slugify } from '@/lib/slugify';
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -82,12 +83,7 @@ export function KbCategoryDialog({ open, onOpenChange, categoryId }: KbCategoryD
   const watchName = form.watch("name");
   useEffect(() => {
     if (!isEditing && watchName) {
-      const slug = watchName
-        .toLowerCase()
-        .replace(/[åä]/g, "a")
-        .replace(/ö/g, "o")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const slug = slugify(watchName);
       form.setValue("slug", slug);
     }
   }, [watchName, isEditing, form]);

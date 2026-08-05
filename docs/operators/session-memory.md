@@ -316,9 +316,28 @@ plus the heartbeat. Guardrails in `src/lib/__tests__/content-memory.test.ts`.
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
    ```
 
-   (Nordic pairs first: `å`/`ä`/`ö` decompose to `a`/`a`/`o` under NFD anyway,
-   but `ø` and `æ` do not.) Changing existing slugs breaks live URLs — apply to
-   **new** slugs only, or pair it with a redirect.
+   **Update (same day): the frontend half shipped.** `src/lib/slugify.ts` is now
+   the single generator — transliterate the non-decomposing letters (ø æ ß þ ð
+   ł đ), NFKD-decompose the rest, drop combining marks, *then* collapse to
+   ASCII. Doing the ASCII collapse first is what threw the information away.
+   Nineteen call sites in `src/` now import it (the first grep found nine; a
+   guardrail found ten more, including four blog/KB pages that each had their
+   own partial å/ä/ö-only variant). Import it in `agent-execute` too rather
+   than re-deriving:
+
+   ```ts
+   import { slugify } from '../_shared/…';  // or copy src/lib/slugify.ts logic
+   const baseSlug = slugify(resolvedTitle, { fallback: `post-${Date.now()}` });
+   ```
+
+   Changing existing slugs breaks live URLs — apply to **new** slugs only, or
+   pair it with a redirect.
+
+3. **`src/lib/modules/helpers.ts` `generateSlug()` has the same bug**
+   (`.replace(/[^a-z0-9\s-]/g, '')` with no transliteration). That file is in
+   your exclusive territory so it is grandfathered in
+   `src/lib/__tests__/slugify.test.ts` rather than fixed — swap it for
+   `slugify` from `@/lib/slugify` and drop the GRANDFATHERED entry.
 
 **Also worth a look, not blocking:** the default workflow in
 `flowpilotDefaults.ts:47` passes `write_blog_post` a `proposal:` argument. The

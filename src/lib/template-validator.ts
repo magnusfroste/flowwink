@@ -7,6 +7,7 @@
 
 import { StarterTemplate, TemplatePage, TemplateBlogPost } from '@/data/templates';
 import { ContentBlock, ContentBlockType } from '@/types/cms';
+import { slugify } from '@/lib/slugify';
 
 export interface ValidationResult {
   valid: boolean;
@@ -136,7 +137,7 @@ export function validateTemplate(template: Partial<StarterTemplate>): Validation
     errors.push({
       path: 'id',
       message: 'Template ID must be lowercase with dashes only',
-      suggestion: `Use "${template.id.toLowerCase().replace(/[^a-z0-9-]/g, '-')}"`,
+      suggestion: `Use "${slugify(template.id)}"`,
     });
   }
 
@@ -262,7 +263,7 @@ function validatePage(page: TemplatePage, path: string): ValidationResult {
     errors.push({
       path: `${path}.slug`,
       message: 'Page slug must be lowercase with dashes only',
-      suggestion: `Use "${page.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')}"`,
+      suggestion: `Use "${slugify(page.slug)}"`,
     });
   }
 

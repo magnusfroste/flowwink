@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { slugify as sharedSlugify, fieldKey as sharedFieldKey } from '@/lib/slugify';
 
 export type FlowtableFieldType =
   | 'text'
@@ -109,22 +110,10 @@ export interface FlowtableRecord {
 }
 
 export const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 60) || `item-${Date.now().toString(36)}`;
+  sharedSlugify(s, { maxLength: 60, fallback: `item-${Date.now().toString(36)}` });
 
 export const fieldKeyify = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 40) || `field_${Math.random().toString(36).slice(2, 6)}`;
+  sharedFieldKey(s, { maxLength: 40, fallback: `field_${Math.random().toString(36).slice(2, 6)}` });
 
 // ---------- Bases ----------
 export function useFlowtableBases() {

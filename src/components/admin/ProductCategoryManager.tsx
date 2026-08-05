@@ -23,6 +23,7 @@ import {
   type CostingMethod,
 } from '@/hooks/useProductCategories';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { slugify } from '@/lib/slugify';
 
 interface CategoryForm {
   name: string;
@@ -38,9 +39,6 @@ const emptyForm: CategoryForm = {
   name: '', slug: '', description: '', image_url: '', is_active: true, sort_order: 0, costing_method: 'average',
 };
 
-function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
 
 export function ProductCategoryManager() {
   const { data: categories = [], isLoading } = useProductCategories();

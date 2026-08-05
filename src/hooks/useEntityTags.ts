@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { slugify } from '@/lib/slugify';
 
 const sb = supabase as unknown as {
   from: (table: string) => any;
@@ -88,7 +89,7 @@ export function useCreateTag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { name: string; color?: string; scope?: string }) => {
-      const slug = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const slug = slugify(input.name);
       const { data, error } = await sb
         .from('tags')
         .insert({ name: input.name, slug, color: input.color ?? '#64748b', scope: input.scope ?? '*' })

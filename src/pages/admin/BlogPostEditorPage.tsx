@@ -42,14 +42,10 @@ import { useBlogCategories } from "@/hooks/useBlogCategories";
 import { useBlogTags, useGetOrCreateBlogTag } from "@/hooks/useBlogTags";
 import { useBlogSettings, useGeneralSettings } from "@/hooks/useSiteSettings";
 import type { PageStatus, BlogPostMeta, TiptapDocument } from "@/types/cms";
+import { slugify } from '@/lib/slugify';
 
 function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[åä]/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  return slugify(title);
 }
 
 export default function BlogPostEditorPage() {

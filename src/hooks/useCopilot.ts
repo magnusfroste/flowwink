@@ -9,6 +9,7 @@ import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
 import { toast } from 'sonner';
 import type { ContentBlock, ContentBlockType } from '@/types/cms';
 import { extractImageUrls, updateBlockAtPath, isExternalUrl } from '@/lib/image-extraction';
+import { slugify } from '@/lib/slugify';
 
 // Block-to-Module mapping for auto-enabling modules
 const BLOCK_MODULE_MAP: Record<string, keyof ModulesSettings> = {
@@ -395,12 +396,9 @@ export function useCopilot(): UseCopilotReturn {
           const path = new URL(url).pathname;
           const segments = path.split('/').filter(Boolean);
           const lastSegment = segments[segments.length - 1] || 'home';
-          pageSlug = lastSegment
-            .replace(/\.(html|php|aspx?)$/i, '')
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-|-$/g, '') || 'home';
+          pageSlug = slugify(lastSegment.replace(/\.(html|php|aspx?)$/i, ''), {
+            fallback: 'home',
+          });
         } catch {
           pageSlug = 'page';
         }
@@ -509,14 +507,7 @@ export function useCopilot(): UseCopilotReturn {
 
   // Helper: Generate slug from title
   const generateSlug = (title: string): string => {
-    return title
-      .toLowerCase()
-      .replace(/[äå]/g, 'a')
-      .replace(/ö/g, 'o')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+    return slugify(title);
   };
 
   const approveMigrationBlock = useCallback(async () => {

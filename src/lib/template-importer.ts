@@ -8,6 +8,7 @@
 import { StarterTemplate, TemplatePage, TemplateBlogPost } from '@/data/templates/types';
 import { validateJsonTemplate } from '@/lib/template-json-loader';
 import { ContentBlock } from '@/types/cms';
+import { slugify } from '@/lib/slugify';
 
 export interface ImportResult {
   success: boolean;
@@ -168,10 +169,7 @@ export function modifyTemplate(
  * Generate a unique ID for an imported template
  */
 export function generateTemplateId(baseName: string): string {
-  const slug = baseName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  const slug = slugify(baseName);
   
   const timestamp = Date.now().toString(36).slice(-4);
   return `${slug}-${timestamp}`;

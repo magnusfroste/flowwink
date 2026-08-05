@@ -35,6 +35,7 @@ import { AITextAssistant } from "@/components/admin/AITextAssistant";
 import { KbVersionHistoryCard } from "@/components/admin/kb/KbVersionHistoryCard";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
+import { slugify } from '@/lib/slugify';
 
 export default function KbArticleEditorPage() {
   const { id } = useParams();
@@ -108,12 +109,7 @@ export default function KbArticleEditorPage() {
   // Auto-generate slug from title
   useEffect(() => {
     if (isNew && formData.title) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[åä]/g, "a")
-        .replace(/ö/g, "o")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const slug = slugify(formData.title);
       setFormData(prev => ({ ...prev, slug }));
     }
   }, [formData.title, isNew]);
