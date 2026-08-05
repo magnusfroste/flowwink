@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { callSkill } from "@/lib/call-skill";
 import { toast } from "sonner";
 import { Search, Loader2, Target, Sparkles } from "lucide-react";
@@ -14,63 +13,16 @@ import { ResearchResultCards } from "@/components/admin/sales-intelligence/Resea
 import { FitAnalysisCard } from "@/components/admin/sales-intelligence/FitAnalysisCard";
 import { SalesProfileSetup } from "@/components/admin/sales-intelligence/SalesProfileSetup";
 import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchHistory";
+import { SalesIntelligenceReadiness } from "@/components/admin/sales-intelligence/SalesIntelligenceReadiness";
+import { useProspectFit } from "@/hooks/useProspectFit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
-
-function normalizeFitAnalysisResult(payload: Record<string, any>): FitAnalysisResult {
-  if (typeof payload.fit_score === "number") {
-    return {
-      success: true,
-      fit_score: payload.fit_score,
-      fit_advice: payload.fit_advice ?? "Fit analysis completed.",
-      problem_mapping: Array.isArray(payload.problem_mapping) ? payload.problem_mapping : [],
-      introduction_letter: payload.introduction_letter ?? "",
-      email_subject: payload.email_subject ?? "",
-      decision_maker: payload.decision_maker ?? null,
-      leads_updated: typeof payload.leads_updated === "number" ? payload.leads_updated : 0,
-    };
-  }
-
-  const completeness = payload.data_completeness ?? {};
-  const signalCount = [
-    completeness.has_website,
-    completeness.has_domain,
-    completeness.has_industry,
-    completeness.has_size,
-    completeness.is_enriched,
-  ].filter(Boolean).length;
-  const fitScore = Math.round((signalCount / 5) * 100);
-  const missingSignals = [
-    !completeness.has_industry ? "industry" : null,
-    !completeness.has_size ? "company size" : null,
-    !completeness.has_website ? "website" : null,
-    !completeness.has_domain ? "domain" : null,
-  ].filter(Boolean);
-
-  const companyName = payload.company?.name ?? "this prospect";
-  const leadCount = Number(completeness.lead_count ?? 0);
-  const dealCount = Number(completeness.deal_count ?? 0);
-  const fitAdvice = missingSignals.length > 0
-    ? `Snapshot ready for ${companyName}. Data coverage is partial — add ${missingSignals.join(", ")} to sharpen the fit assessment.`
-    : `Snapshot ready for ${companyName}. Core company signals are present and the prospect is ready for manual qualification.`;
-
-  return {
-    success: true,
-    fit_score: fitScore,
-    fit_advice: `${fitAdvice} CRM context: ${leadCount} related lead${leadCount === 1 ? "" : "s"}, ${dealCount} related deal${dealCount === 1 ? "" : "s"}.`,
-    problem_mapping: [],
-    introduction_letter: "",
-    email_subject: "",
-    decision_maker: null,
-    leads_updated: 0,
-  };
-}
 
 export default function SalesIntelligencePage() {
   const [companyName, setCompanyName] = useState("");
   const [companyUrl, setCompanyUrl] = useState("");
   const [isResearching, setIsResearching] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { analyze, isAnalyzing } = useProspectFit();
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [fitResult, setFitResult] = useState<FitAnalysisResult | null>(null);
 
@@ -105,18 +57,18 @@ export default function SalesIntelligencePage() {
       return;
     }
 
-    setIsAnalyzing(true);
-
     try {
-      const data = await callSkill("prospect_fit_analysis", { company_id: result.company.id });
-
-      const normalized = normalizeFitAnalysisResult((data ?? {}) as Record<string, any>);
-      setFitResult(normalized);
-      toast.success(`Fit score: ${normalized.fit_score}/100`);
+      const outcome = await analyze({ company_id: result.company.id });
+      setFitResult(outcome.fit);
+      if (outcome.aiScored) {
+        toast.success(`Fit score: ${outcome.fit.fit_score}/100`);
+      } else {
+        toast.warning(
+          "Scored from data only — connect an AI provider and define your ICP for a real fit assessment.",
+        );
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Fit analysis failed");
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -133,6 +85,7 @@ export default function SalesIntelligencePage() {
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="profiles">Sales Profile</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="setup">Setup</TabsTrigger>
           </TabsList>
 
           <TabsContent value="research" className="space-y-4">
@@ -230,6 +183,10 @@ export default function SalesIntelligencePage() {
 
           <TabsContent value="history" className="space-y-4">
             <ResearchHistory />
+          </TabsContent>
+
+          <TabsContent value="setup" className="space-y-4">
+            <SalesIntelligenceReadiness />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260806000000",
-      "migrations_count": 297,
+      "migration_head": "20260806090000",
+      "migrations_count": 299,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1193,21 +1193,29 @@
         {
           "version": "20260806000000",
           "name": "agent-tasks-work-queue"
+        },
+        {
+          "version": "20260806080000",
+          "name": "flowtable-base-skill"
+        },
+        {
+          "version": "20260806090000",
+          "name": "flowtable-bulk-and-csv"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:adabbe560f3c23d18ce468375e4f029c77a7fa62c938024e623950afac9ad158",
-      "skill_count": 520,
+      "seed_hash": "sha256:43be2ca68271453be610818632d6b1e5ca67d209301afccb65d8012c336b4fff",
+      "skill_count": 523,
       "module_count": 68
     },
     "edge_functions": {
       "count": 75,
-      "shared_hash": "sha256:be751f599ce2018e7a2452df8a7a5310d3deaa4856d39d0e65917c7f5040fc2f",
+      "shared_hash": "sha256:b930275f047eb4ebde0d64f0a8ad2cc03b93f52fcd6fb0cda74dbedeb4f6819c",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:82739d8e4bd4822d5e9e0bfd9529008df47b4c515b82c033fd6e577d07afbc97",
+        "agent-execute": "sha256:18078760de89fd3386043cff721067234d27ccc4586636aa6e7b80c5edd226f2",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
         "automation-dispatcher": "sha256:3aadb1691ff56ce16d56de93b989f3f96f7f6831bb787dd6d03dbaf5e4a80d2d",
@@ -1260,7 +1268,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:c7b303564411e34fef83893c5f615576baa50e657eba64628f403ff386436f78",
         "run-autonomy-tests": "sha256:d326b88ef0d263ed7604ba1eb75a770126d785e26211888b2093fcb325cc8c22",
-        "run-platform-tests": "sha256:1dfa0027158070668e44506da2f41b25ece842f159a3105bcfe8c90c2c34da86",
+        "run-platform-tests": "sha256:1d7b51c9136698964316926ebcfaefab42368ed8a511349b3c50073f5816f68c",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

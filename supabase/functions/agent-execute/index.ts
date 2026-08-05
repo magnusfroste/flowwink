@@ -743,7 +743,7 @@ serve(async (req) => {
         result = await executeEnrichCompany(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
 
       } else if (handler === 'internal:prospect_fit_analysis') {
-        result = await executeProspectFitAnalysis(supabase, args);
+        result = await executeProspectFitAnalysis(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });
 
       } else if (handler === 'internal:sales_profile_setup') {
         result = await executeSalesProfileSetup(supabase, args, { supabaseUrl, serviceKey, callerUserId: caller_user_id });

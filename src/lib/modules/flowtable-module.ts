@@ -55,6 +55,85 @@ const FLOWTABLE_SKILLS: SkillSeed[] = [
     },
   },
   {
+    name: 'manage_flowtable_base',
+    description: 'Create or update a Flowtable BASE — the top-level container tables live in. Use when: starting a new data surface (e.g. "put product info in a table" on an instance with no suitable base); renaming or re-describing a base. Idempotent: creating an existing slug returns that base instead of an error. NOT for: tables inside a base (manage_flowtable_table); records (manage_flowtable_record); deleting a base (UI-only by design).',
+    category: 'crm',
+    handler: 'rpc:manage_flowtable_base',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_flowtable_base',
+        description: 'Create or update a Flowtable base. create needs name (slug derived); update identifies the base by slug or id and changes only the fields you pass.',
+        parameters: {
+          type: 'object',
+          required: ['action'],
+          properties: {
+            action: { type: 'string', enum: ['create', 'update'] },
+            name: { type: 'string', description: 'Base display name (required for create)' },
+            slug: { type: 'string', description: 'Optional slug; derived from name if omitted' },
+            description: { type: 'string', description: 'What the base holds — write it for a colleague finding it later' },
+            icon: { type: 'string', description: 'Lucide icon name, default Table' },
+            color: { type: 'string', description: 'Accent color, default blue' },
+            base: { type: 'string', description: 'For update: the base slug or id' },
+          },
+        },
+      },
+    },
+    instructions: 'Typical flow on a fresh instance: manage_flowtable_base create → manage_flowtable_table create (with fields) → manage_flowtable_record. Agent-created bases are workspace-shared so colleagues see them. The create response includes already_existed — true means the slug was taken and you got the existing base; check its tables before assuming it is empty.',
+  },
+  {
+    name: 'bulk_upsert_flowtable_records',
+    description: 'Write MANY Flowtable records in one call, upserting by a natural key field (sku, name, …) so re-runs update instead of duplicating. Returns per-row results (created/updated/failed with reasons). Use when: loading or refreshing a dataset — product catalogues, price updates, any batch beyond a handful of rows. NOT for: single records (manage_flowtable_record); raw CSV text (import_csv_to_flowtable).',
+    category: 'crm',
+    handler: 'rpc:bulk_upsert_flowtable_records',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'bulk_upsert_flowtable_records',
+        description: 'Upsert up to 500 records into a Flowtable table. records = array of objects keyed by FIELD KEY. key_field enables update-by-match; without it every row inserts.',
+        parameters: {
+          type: 'object',
+          required: ['table', 'records'],
+          properties: {
+            table: { type: 'string', description: 'Table name, slug or id' },
+            records: { type: 'array', items: { type: 'object' }, description: 'Array of {field_key: value} objects, max 500' },
+            key_field: { type: 'string', description: 'Field key to match existing records on (case-insensitive). Omit = insert-only.' },
+            base: { type: 'string', description: 'Base slug/name/id — only needed if the table name is ambiguous' },
+          },
+        },
+      },
+    },
+    instructions: 'ALWAYS pass key_field when the data has a natural identifier — it is what makes a re-run safe. Report from the RESULT: created/updated/failed counts and any per-row errors, not from what you sent. Unknown keys in a record are dropped per-row and listed as ignored_keys (fix by creating the field first with manage_flowtable_field). Batches over 500: split and loop.',
+  },
+  {
+    name: 'import_csv_to_flowtable',
+    description: 'Import raw CSV text straight into a Flowtable table — headers are matched to field names/keys, the delimiter is auto-detected (comma or semicolon; Swedish Excel exports use semicolons), quoted cells are handled. Use when: someone provides a CSV (supplier price list, export from another system) to load or refresh a table. NOT for: already-structured data (bulk_upsert_flowtable_records); creating the table itself (manage_flowtable_table).',
+    category: 'crm',
+    handler: 'rpc:import_csv_to_flowtable',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'import_csv_to_flowtable',
+        description: 'Parse CSV text (header row + up to 500 data rows) and upsert into a table. Headers map to field names or keys, case-insensitively.',
+        parameters: {
+          type: 'object',
+          required: ['table', 'csv'],
+          properties: {
+            table: { type: 'string', description: 'Table name, slug or id' },
+            csv: { type: 'string', description: 'The raw CSV text including the header row' },
+            key_field: { type: 'string', description: 'Field key to upsert on — pass it whenever the CSV has an id/sku/name column' },
+            base: { type: 'string', description: 'Base slug/name/id if the table name is ambiguous' },
+            delimiter: { type: 'string', description: 'Force "," or ";" — omit to auto-detect from the header row' },
+          },
+        },
+      },
+    },
+    instructions: 'Check unmapped_headers in the result: those CSV columns were dropped because no field matched — create the fields first if they matter, then re-import (idempotent with key_field). Quoted cells with embedded newlines are NOT supported; if the import row count looks wrong, that is the first thing to check.',
+  },
+  {
     name: 'list_flowtable_records',
     description:
       'List records inside a Flowtable table. Use when: reading rows from a user-owned ad-hoc table (call lists, prospect sheets). Each record has a free-form `values` JSONB matching the table\'s field keys.',
