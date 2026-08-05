@@ -1,0 +1,158 @@
+# main went red three times in ten days and every time it was found by the next
+# gate to run, not by anyone noticing. CI already runs on every push to main —
+# the result just goes unwatched.
+#
+# Required checks would close the gap too, but they also block the
+# direct-to-main flow Lovable uses, which is deliberate. Watching the result
+# costs nothing and changes nobody's workflow.
+#
+# Opens ONE issue when main has been red past the grace window, keeps it
+# current, and closes it the moment a run on main succeeds. The streak logic
+# lives in scripts/main-red-alert.mjs so it can be unit-tested
+# (src/lib/__tests__/main-red-alert.test.ts).
+name: main-red alert
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    # Only CI runs whose head branch is main — a PR's CI says nothing about main.
+    branches: [main]
+  schedule:
+    # Safety net: catches a red that started while no push was happening, and
+    # re-checks a failure still inside its grace window.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      grace_minutes:
+        description: 'Minutes main may stay red before alerting'
+        required: false
+        default: '30'
+
+permissions:
+  actions: read
+  issues: write
+
+# Never let two evaluations race to create the same issue.
+concurrency:
+  group: main-red-alert
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Evaluate main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (decision logic only)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/main-red-alert.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Evaluate and alert
+        uses: actions/github-script@v7
+        env:
+          GRACE_MINUTES: ${{ github.event.inputs.grace_minutes || '30' }}
+        with:
+          script: |
+            const { decide, issueBody } = await import(
+              `${process.env.GITHUB_WORKSPACE}/scripts/main-red-alert.mjs`
+            );
+
+            const LABEL = 'main-red';
+            const TITLE = '🔴 main is red';
+            const grace = Number(process.env.GRACE_MINUTES) || 30;
+
+            // Completed CI runs on main, newest first. Only push events —
+            // a PR run says nothing about the state of main itself.
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              branch: 'main',
+              event: 'push',
+              status: 'completed',
+              per_page: 30,
+            });
+
+            const verdict = decide(data.workflow_runs, Date.now(), grace);
+            core.info(`main is ${verdict.state}` +
+              (verdict.minutesRed !== null ? ` (${verdict.minutesRed} min, streak ${verdict.streak})` : ''));
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: LABEL,
+              per_page: 5,
+            });
+            const existing = open.data[0];
+
+            if (verdict.state === 'unknown') {
+              // An empty API response looks exactly like "all is well". Alerting
+              // on it would train everyone to ignore this issue.
+              core.info('No conclusive CI runs found — taking no action.');
+              return;
+            }
+
+            if (verdict.state === 'green') {
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existing.number,
+                  body: `✅ main is green again as of \`${verdict.sha}\`.\n\n${verdict.url}`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existing.number, state: 'closed',
+                });
+                core.info(`Closed #${existing.number}.`);
+              }
+              return;
+            }
+
+            if (verdict.state === 'grace') {
+              core.info(`Red for ${verdict.minutesRed} min — inside the ${grace} min grace window, staying quiet.`);
+              return;
+            }
+
+            // state === 'red'
+            const body = issueBody(verdict);
+
+            if (!existing) {
+              // Create the label if it is missing. issues.create is documented
+              // to create unknown labels, but a colour and description make the
+              // issue list readable and this costs one call on first alert only.
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  name: LABEL, color: 'b60205',
+                  description: 'main has been failing CI past the grace window',
+                });
+              } catch (e) {
+                if (e.status !== 422) throw e; // 422 = already exists
+              }
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: TITLE, body, labels: [LABEL],
+              });
+              core.info('Opened the alert issue.');
+              return;
+            }
+
+            // Keep the body current on every check, but only comment when a NEW
+            // commit landed and main is STILL red — that is news; a ticking
+            // clock is not.
+            const previouslyReported = /Latest failing commit: `([^`]+)`/.exec(existing.body || '')?.[1];
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: existing.number, body,
+            });
+            if (previouslyReported && previouslyReported !== verdict.sha) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number,
+                body: `Still red after a new commit — \`${verdict.sha}\` also failed.\n\n${verdict.url}`,
+              });
+            }
+            core.info(`Updated #${existing.number}.`);
