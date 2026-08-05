@@ -232,7 +232,7 @@ export default function KnowledgeBasePage() {
                             {isExpanded && (
                               <div className="px-5 pb-5 pl-13">
                                 <div 
-                                  className="prose prose-sm max-w-none text-muted-foreground"
+                                  className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
                                   dangerouslySetInnerHTML={{ 
                                     __html: renderTiptapContent(article.answer_json as any) 
                                   }}

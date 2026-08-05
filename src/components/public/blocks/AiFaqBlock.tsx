@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useUiText } from '@/lib/ui-text';
 import { Sparkles, Search, Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export function AiFaqBlock({ data }: Props) {
+  const t = useUiText();
   const {
     title = 'Frequently asked questions',
     subtitle,
@@ -73,10 +75,6 @@ export function AiFaqBlock({ data }: Props) {
     setError(null);
     setAiAnswer('');
     try {
-      const context = items
-        .slice(0, 20)
-        .map((i) => `Q: ${i.question}\nA: ${i.answer}`)
-        .join('\n\n');
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-completion`,
         {
@@ -87,19 +85,17 @@ export function AiFaqBlock({ data }: Props) {
           },
           body: JSON.stringify({
             messages: [
-              {
-                role: 'system',
-                // A hint, not a cage. chat-completion builds the real system
-                // prompt — identity, soul, and knowledge retrieved from the
-                // whole KB — so pinning the model to these few FAQ entries
-                // would make the block dumber than the site's own chat and
-                // unable to answer anything outside the visible list, which
-                // is the entire reason a visitor presses "ask".
-                content:
-                  `The visitor is reading an FAQ section and asked a question that may not be in it. ` +
-                  `Answer concisely (2-4 sentences) from the site's knowledge. Say plainly when you do not know.` +
-                  (context ? `\n\n### Questions already answered on this page\n${context}` : ''),
-              },
+              // No system message and no FAQ context. Sending the visible
+              // entries as "the site's knowledge" made the model reason about
+              // that short list instead of the retrieved material: asked
+              // whether a waterworks falls under the Swedish cybersecurity act
+              // it answered "the information on the page does not cover this"
+              // while five KB articles saying exactly that sat in the index.
+              // The same question through chat-completion with no context was
+              // answered correctly. The FAQ items are part of the page and are
+              // already indexed, so passing them again only competed with
+              // retrieval — a block that builds its own context is a pipeline,
+              // and the platform is supposed to be the intelligence.
               { role: 'user', content: q },
             ],
           }),
@@ -203,7 +199,7 @@ export function AiFaqBlock({ data }: Props) {
               <p className="text-sm text-muted-foreground mb-4">{emptyStateText}</p>
               <Button variant="outline" onClick={askAi} disabled={!query.trim()}>
                 <Sparkles className="h-4 w-4 mr-2" />
-                Ask the assistant
+                {t('faq.askAssistant', 'Ask the assistant')}
               </Button>
             </div>
           )}
@@ -215,14 +211,14 @@ export function AiFaqBlock({ data }: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              Assistant answer
+              {t('faq.answerTitle', 'Assistant answer')}
             </DialogTitle>
             <DialogDescription className="italic">"{query}"</DialogDescription>
           </DialogHeader>
           <div className="min-h-[80px]">
             {loading ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
+                <Loader2 className="h-4 w-4 animate-spin" /> {t('faq.thinking', 'Thinking…')}
               </div>
             ) : error ? (
               <p className="text-sm text-destructive">{error}</p>
@@ -234,7 +230,7 @@ export function AiFaqBlock({ data }: Props) {
           </div>
           <div className="pt-2 flex justify-end">
             <Button variant="outline" size="sm" onClick={() => setDialogOpen(false)}>
-              Close
+              {t('common.close', 'Close')}
             </Button>
           </div>
         </DialogContent>
