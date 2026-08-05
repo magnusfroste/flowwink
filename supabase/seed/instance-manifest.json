@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260806090000",
-      "migrations_count": 299,
+      "migration_head": "20260806100000",
+      "migrations_count": 300,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1201,6 +1201,10 @@
         {
           "version": "20260806090000",
           "name": "flowtable-bulk-and-csv"
+        },
+        {
+          "version": "20260806100000",
+          "name": "billing-into-work-queue"
         }
       ]
     },

@@ -147,24 +147,67 @@ describe('the dispatcher lane decides nothing', () => {
 });
 
 describe('the queue ships empty', () => {
-  it('no migration enqueues anything yet', () => {
-    // Step 1 is machinery only: zero behaviour change, fully reversible. The
-    // first family moves in its own migration, with its own verification.
-    const dir = join(root, 'supabase/migrations');
-    const callers = readdirSync(dir)
-      .filter((f) => f.endsWith('.sql'))
-      .filter((f) => /enqueue_task\s*\(/.test(readFileSync(join(dir, f), 'utf-8')))
-      .filter((f) => !f.includes('agent-tasks-work-queue')); // the definition itself
-    expect(
-      callers,
-      `these migrations enqueue work — the queue is meant to ship empty:\n${callers.join('\n')}`,
-    ).toEqual([]);
+  it('the machinery migration itself enqueues nothing', () => {
+    // Step 1 was machinery only. Families move in their own migrations, each
+    // with its own verification — never bundled into the definition.
+    const body = migration.slice(migration.indexOf('FUNCTION public.enqueue_task'));
+    const afterDefinition = body.slice(body.indexOf('$function$;'));
+    expect(afterDefinition).not.toMatch(/SELECT public\.enqueue_task/);
   });
 
-  it('no cron job or automation was removed in the same change', () => {
-    // Coexistence is the migration path: the queue lands next to the existing
-    // jobs and they move one at a time, each with before/after verification.
+  it('the machinery migration removed no cron job or automation', () => {
     expect(migration).not.toMatch(/cron\.unschedule/);
     expect(migration).not.toMatch(/DELETE FROM (public\.)?agent_automations/i);
+  });
+});
+
+// ─── Moved families ─────────────────────────────────────────────────────────
+// The rule the doc states: a moved job may not leave its old trigger behind, or
+// the sweep and the queue both do the work. For billing they could not actually
+// double-charge — generate_subscription_invoice RAISES when the period is
+// already invoiced — but "two things own billing" is how the next incident
+// starts.
+describe('billing moved into the queue, and only into the queue', () => {
+  const billing = read('supabase/migrations/20260806100000_billing-into-work-queue.sql');
+
+  it('retires the sweep it replaces', () => {
+    expect(billing).toMatch(/UPDATE public\.agent_automations/);
+    expect(billing).toMatch(/SET enabled = false/);
+    expect(billing).toMatch(/skill_name = 'run_subscription_billing'/);
+  });
+
+  it('disables rather than deletes — bootstrap only inserts what is missing', () => {
+    // A DELETE would let module bootstrap re-create the automation enabled on
+    // the next sync, silently restoring the double-owner.
+    expect(billing).not.toMatch(/DELETE FROM public\.agent_automations/i);
+  });
+
+  it('enqueues at the subscription\'s own due date, never "now"', () => {
+    // due_at is the entire point. Enqueuing everything at now() turns the queue
+    // back into a sweep that happens to have rows.
+    expect(billing).toMatch(/p_due_at\s*=>\s*GREATEST\(_sub\.next_invoice_date/);
+  });
+
+  it('passes the parameter name the skill actually declares', () => {
+    // Verified live against the gateway: tool_definition exposes
+    // `subscription_id`. A wrong name here fails every task, and the failure
+    // would look like a queue bug rather than a mapping typo.
+    expect(billing).toMatch(/jsonb_build_object\('subscription_id'/);
+  });
+
+  it('schedules the enqueuer in-database, with no HTTP hop', () => {
+    // A pure SQL cron call cannot 404 on a deleted function, cannot carry
+    // another instance's host, and cannot time out on DNS — the three ways
+    // scheduled work broke this month.
+    expect(billing).toMatch(/cron\.schedule\(\s*'enqueue-subscription-billing-tasks'/);
+    expect(billing).toMatch(/SELECT public\.enqueue_subscription_billing_tasks\(\)/);
+    expect(billing).not.toMatch(/net\.http_post|functions\/v1/);
+  });
+
+  it('the enqueuer is idempotent by construction — it goes through enqueue_task', () => {
+    // Writing straight to agent_tasks would bypass the open-task guard and let
+    // a re-run double-enqueue.
+    expect(billing).toMatch(/public\.enqueue_task\(/);
+    expect(billing).not.toMatch(/INSERT INTO public\.agent_tasks/i);
   });
 });
