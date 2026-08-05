@@ -250,6 +250,73 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — deploy send-webhook to the rest of the fleet (2026-08-05, cloud session)
+
+**Only optic is done.** The cloud session holds a Supabase token scoped to
+`dhitpytulqrvterkatiq` only, and the other instances live under **different
+Supabase accounts** — so www / liteit / autoversio cannot be reached from there
+at all. They are yours.
+
+**What shipped and why it matters.** Event automations had *three* independent
+kill switches. Two are now fixed in main; both are edge-function changes, so
+they reach an instance only on deploy:
+
+| # | switch | fix | state |
+|---|---|---|---|
+| 1 | `send-webhook` matched `trigger_config.event_name` while every seed writes `{event: ...}` | #148 | main + optic v9 |
+| 2 | `dispatch_automation_event` reads empty `vault.decrypted_secrets` (DB-trigger lane) | — | **yours, open** |
+| 3 | `webhooks.events` is an ENUM; a non-enum event name made the lookup throw a plain object → 500 before the automations lane ran | #149 | main + optic v10 |
+
+Switch 3 is the nasty one: **the events the six seeded automations listen on are
+all outside the enum** (`email.received`, `invoice.registered`,
+`mo.shortage_detected`, `service_order.completed`, `approval.assigned`), as are
+the fire-and-forget emits in `agent-execute` (`vendor.created`,
+`purchase_order.*`, `goods_receipt.created`). Every one of those calls has been
+dying at the door.
+
+**The deploy, per instance:**
+
+```bash
+supabase functions deploy send-webhook --no-verify-jwt --project-ref <ref>
+```
+
+Two things that will bite otherwise:
+
+1. **Two files must go up.** `send-webhook/index.ts` imports
+   `_shared/supabase-clients.ts`. A deploy missing the second one boots broken.
+2. **The CLI may fail with `TransportError`** where Docker isn't available. The
+   Management API works directly and is what optic was deployed with:
+   ```
+   POST https://api.supabase.com/v1/projects/<ref>/functions/deploy?slug=send-webhook
+   multipart: metadata={"entrypoint_path":"supabase/functions/send-webhook/index.ts",
+                        "name":"send-webhook","verify_jwt":false}
+              + file=supabase/functions/send-webhook/index.ts
+              + file=supabase/functions/_shared/supabase-clients.ts
+   ```
+
+**Verify with a NON-enum event — this is the test that separates a real deploy
+from one that merely looks successful:**
+
+```bash
+curl -X POST https://<ref>.supabase.co/functions/v1/send-webhook \
+  -H 'Content-Type: application/json' \
+  -d '{"event":"operator.selftest","data":{"probe":"x"}}'
+```
+
+- before the fix: `HTTP 500 {"error":"Unknown error"}`
+- after: `HTTP 200 {"message":"No webhooks registered for this event", ...}`
+
+For a full end-to-end check, create a throwaway automation with
+`trigger_config: {event: "operator.selftest"}` first — a correct deploy answers
+`automations_dispatched: 1` and the row gets `run_count: 1, last_error: null`.
+Delete it afterwards (optic's was cleaned up).
+
+**Note the ordering with switch 2.** `inbound_email_to_ticket` and its siblings
+need BOTH this deploy *and* the vault fix — their events are born in the DB
+trigger, not in the client. Deploying send-webhook alone will not bring them to
+life, and their continued silence afterwards is not evidence this deploy failed.
+
+
 ### ⇄ Handoff to local Claude — the blog duplicate corpus (2026-08-05, cloud session)
 
 **What happened.** flowwink.com published **16 near-identical blog posts**
