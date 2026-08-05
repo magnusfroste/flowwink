@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Tickets
@@ -34,7 +34,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_ticket` | both | List, view, update, resolve/close, reopen, reassign, or re-prioritize helpdesk tickets. Use when: closing a resolved ticket, changing status/priority, assigning a ticket to an agent, or reviewing t… |
+| `manage_ticket` | both | Create, list, view, update, resolve/close, reopen, reassign, or re-prioritize helpdesk tickets — including setting the owner (assigned_to), the team/queue and the requester (contact/company/lead). … |
 | `search_tickets` | both | Full-text search across ticket subjects, descriptions and tags, ranked by relevance. Use when: finding tickets about a topic ("all tickets mentioning login errors"), locating a customer issue witho… |
 | `manage_canned_response` | internal | CRUD for canned responses (reusable reply templates for support tickets). Use when: creating a standard answer for a recurring question, updating template wording, retiring an outdated template. NO… |
 | `ticket_triage` | both | Auto-classify a helpdesk ticket: set priority + category, attach up to 3 relevant KB article suggestions, write a 1-sentence internal summary. Use when: a new ticket needs triage, an existing ticke… |
@@ -66,7 +66,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/tickets-module.ts` |
 | Hook | `src/hooks/useTickets.ts` |
 | Admin page | `src/pages/admin/TicketsPage.tsx` |
-| Migration | `supabase/migrations/20260707120000_parity-r3-shipping-tickets-subscriptions.sql` |
+| Migration | `supabase/migrations/20260707120001_parity-r3-shipping-tickets-subscriptions.sql` |
 
 ## Contributing
 

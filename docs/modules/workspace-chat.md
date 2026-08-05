@@ -5,7 +5,7 @@ version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Flowwork
@@ -38,7 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `post_to_cowork_chat` | internal | Post a message into Flowwork (the internal team chat) as the agent — heartbeat insights, daily summaries, "I just did X" notices for the team. Use when: FlowPilot wants to proactively tell the team… |
+| `post_to_cowork_chat` | internal | LEGACY log channel (cowork_messages) — no longer surfaced in the Flowwork UI. Use when: an automation or integration explicitly targets this channel for compatibility. NOT for: telling the team som… |
 
 ## Module API Contract
 

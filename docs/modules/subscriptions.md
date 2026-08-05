@@ -5,14 +5,14 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Subscriptions
 
 > Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back
 
-Ships with **15 agent skills**, **1 database table**, an **admin UI**.
+Ships with **17 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **15 agent skills**, **1 database table**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 15 |
+| **MCP-exposed skills** | 17 |
 | **Owns tables** | 1 |
 
 ## Integrations
@@ -53,6 +53,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_dunning_sequences` | internal | List dunning sequences (failed-payment recovery runs) with MRR at risk, sorted highest first. Use when: reviewing payment-failure recovery, weekly revenue-risk briefing, deciding whom to contact pe… |
 | `pause_dunning` | internal | Pause an active dunning sequence for a subscription (stop retry emails for N days). Use when: customer promised to pay, dispute in progress, goodwill grace period. NOT for: permanently stopping rec… |
 | `escalate_dunning` | internal | Escalate a dunning sequence to its final step immediately (last-notice email + imminent cancellation). Use when: repeated failures with no customer response, high-risk account needs resolution now.… |
+| `run_trial_conversions` | internal | Convert trial subscriptions whose trial period has ended into active subscriptions. Use when: running the daily trial sweep (the Trial Conversion automation calls this). Takes no arguments. NOT for… |
+| `run_subscription_billing` | internal | Invoice every manual subscription whose next invoice date has arrived (runs trial conversions first). Use when: running the daily subscription billing sweep — the Subscription Billing automation ca… |
 
 ## Data Model
 
@@ -83,7 +85,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/subscriptions-module.ts` |
 | Hook | `src/hooks/useSubscriptions.ts` |
 | Admin page | `src/pages/admin/SubscriptionsPage.tsx` |
-| Migration | `supabase/migrations/20260707120000_parity-r3-shipping-tickets-subscriptions.sql` |
+| Migration | `supabase/migrations/20260707120001_parity-r3-shipping-tickets-subscriptions.sql` |
 
 ## Contributing
 

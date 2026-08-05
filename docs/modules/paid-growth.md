@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Paid Growth
 
 > Manage ad campaigns and track paid growth performance
 
-Ships with **8 agent skills**.
+Ships with **9 agent skills**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **8 agent skills**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 8 |
+| **MCP-exposed skills** | 9 |
 | **Owns tables** | — |
 
 ## Integrations
@@ -47,6 +47,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `schedule_social_post` | internal | Create or schedule an organic social post (linkedin/x/instagram/facebook). If scheduled_at is set, status becomes "scheduled"; otherwise "draft". Actual channel publish requires per-channel credent… |
 | `list_social_posts` | internal | List organic social posts filtered by status/channel — inspect the calendar or moderation queue. |
 | `mark_social_post_posted` | internal | Mark an organic social post as posted with the external ref/url returned by the channel. |
+| `process_due_social_posts` | internal | Process scheduled social posts whose publish time has passed. Use when: running the periodic social-post sweep (the Social Post Scheduler automation calls this). Takes no arguments. NOT for: schedu… |
 
 ## File Map
 

@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # CRM
 
 > Create and manage leads
 
-Ships with **17 agent skills**, an **admin UI**.
+Ships with **20 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **17 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 17 |
+| **MCP-exposed skills** | 20 |
 | **Owns tables** | — |
 
 ## Skills
@@ -34,10 +34,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `add_lead` | both | Add a new lead to the CRM. Use when: capturing a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying lea… |
+| `add_lead` | both | Create a new lead in the CRM. Use when: create or add a new lead; capture a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (ma… |
 | `qualify_lead` | internal | Score and qualify a lead based on activities and engagement data. Use when: evaluating lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); mana… |
 | `enrich_company` | internal | Scrape a company website to enrich its record with website, phone, and description. Use when: needing more details about a prospect; automatically populating company data. NOT for: researching indi… |
 | `manage_leads` | internal | Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qua… |
+| `assign_lead` | internal | Assign a lead to a person — set who the seller/owner is. Takes the lead\ |
+| `assign_company` | internal | Set the account owner of a company — who is responsible for the account. Takes the company\ |
+| `crm_followup_report` | internal | What has slipped through the cracks: stale leads (no activity for N days), unassigned leads, and overdue project tasks — each with the responsible person\ |
 | `crm_task_list` | internal | List CRM tasks with optional filters for lead, deal, priority, and completion status. Use when: reviewing upcoming tasks; checking tasks for a specific lead; auditing task completion. NOT for: crea… |
 | `crm_task_create` | internal | Create a new CRM task with title, description, due date, priority, and optional lead/deal link. Use when: needing to follow up on a lead; assigning a task related to a deal; reminding agents about … |
 | `crm_task_update` | internal | Update an existing CRM task — change title, description, priority, due date, or mark as completed. Use when: modifying a pending task; marking a task as done; rescheduling a deadline. NOT for: crea… |

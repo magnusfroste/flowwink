@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Blog
@@ -38,7 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). Use when: wr… |
+| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. Pass status="published" to publish immediately in one call (recommended when the user asks to "draft and publish"). If the brief… |
 | `research_content` | internal | Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; … |
 | `generate_content_proposal` | internal | Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strate… |
 | `publish_scheduled_content` | internal | Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue… |

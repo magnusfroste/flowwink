@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Knowledge Base
@@ -35,7 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `search_kb` | both | Search the knowledge base across title, question and answer text — the same reach as the public KB search box, server-side. Returns published articles ranked featured-first then by views. Use when:… |
-| `manage_kb_article` | internal | Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: a… |
+| `manage_kb_article` | internal | Manage knowledge base articles: list, get, create, update, publish, unpublish. Every article has an audience: visibility="public" (visitors and the site chat) or "internal" (staff only — support pl… |
 | `kb_article_history` | internal | Version history for KB articles: list revisions, read an old revision, restore one. Every title/question/answer edit and every delete is captured automatically. Use when: reviewing what changed in … |
 | `kb_feedback_report` | internal | KB article feedback analytics: which articles get thumbs up/down from readers, which are auto-flagged as needing improvement, and clearing the flag after a rewrite. Use when: prioritizing KB rework… |
 

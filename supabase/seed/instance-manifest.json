@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260805230000",
-      "migrations_count": 295,
+      "migrations_count": 296,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1175,6 +1175,10 @@
           "name": "ingest-form-lead-rpc"
         },
         {
+          "version": "20260805205615",
+          "name": "7da16d8e-4e90-4b0d-9b29-3291495d44f7"
+        },
+        {
           "version": "20260805210000",
           "name": "crm-follow-through"
         },
@@ -1189,13 +1193,13 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:adabbe560f3c23d18ce468375e4f029c77a7fa62c938024e623950afac9ad158",
+      "seed_hash": "sha256:24b353bf347ce00c13b62041f5daf1eeb3344d1627c4686cf84d51463ee96860",
       "skill_count": 520,
       "module_count": 68
     },
     "edge_functions": {
       "count": 75,
-      "shared_hash": "sha256:be751f599ce2018e7a2452df8a7a5310d3deaa4856d39d0e65917c7f5040fc2f",
+      "shared_hash": "sha256:caede088fa617efd1dc055d56fe36912909ba80a1e7b12a9fab84e4954a55ec2",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1217,7 +1221,7 @@
         "contract-sign": "sha256:06401c288a209dafe9d0aee05e9f8902fd98ff155617271dbee27d5e54135e8f",
         "create-checkout": "sha256:c0321cfa6df8cf1df5ccfa2401e67b78265fedb4adb0a0c6b4f870236a50e915",
         "create-invoice-payment": "sha256:917c78b89d0131f426ed5c6109eea67d8020604def81f1179eba2e5bb0c8bea6",
-        "create-user": "sha256:1b5bbd2f3920153310411571a6493ab5e5052bf6b6015ac2b09b9cc449ae38cf",
+        "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
         "demo-cycle": "sha256:ae99ce60cbb68aec05a9dfbb9b4bde332ff41cd9d85b6b8f6fcb803cfb8dfaf0",
         "docs-chat": "sha256:8a78fddb7cba24df21044920daaea0ad9798ec970ecdb334d4845124ed7550eb",

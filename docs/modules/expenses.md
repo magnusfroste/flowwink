@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Expense Reporting
 
 > Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot
 
-Ships with **10 agent skills**, an **admin UI**.
+Ships with **11 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **10 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 10 |
+| **MCP-exposed skills** | 11 |
 | **Owns tables** | — |
 
 ## Skills
@@ -44,6 +44,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_expense_reports` | internal | List expense reports filtered by status (draft / submitted / approved / booked / paid) and optionally by employee. Use when: admin reviews pending approvals, FlowPilot scans for reports to advance … |
 | `manage_expense_policy` | internal | Configure expense spend policies per category (max amount, receipt requirement, approval threshold). Use when: setting company expense rules. NOT for: checking one expense (evaluate_expense_policy)… |
 | `evaluate_expense_policy` | internal | Check a prospective expense against the policies — returns allowed, requires_approval, and any violations (over_limit, missing_receipt, needs_approval). Use when: validating an expense before submi… |
+| `extract_receipt` | internal | Extract structured expense fields (vendor, date, total, VAT, line items) from a receipt image or PDF via AI. Use when: an employee uploads a receipt to file an expense. NOT for: bank statement OCR … |
 
 ## Module API Contract
 

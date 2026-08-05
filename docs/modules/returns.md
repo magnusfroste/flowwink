@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Returns / RMA
 
 > Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing. Customers see their own returns; staff manages all.
 
-Ships with **7 agent skills**, an **admin UI**.
+Ships with **8 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **7 agent skills**, an **admin UI**.
 | **Autonomy** | view-required |
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
-| **MCP-exposed skills** | 7 |
+| **MCP-exposed skills** | 8 |
 | **Owns tables** | — |
 
 ## Skills
@@ -35,6 +35,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `create_return` | internal | Create a new return (RMA) for an order. Use when: customer or support agent requests a return/refund. NOT for: approving (use approve_return) or processing the refund (use refund_return). |
+| `request_return` | external | Categorized return reason |
 | `manage_return_item` | internal | Add/edit/remove line items on an existing return. Use when: specifying which order items are being returned and in what condition. |
 | `approve_return` | internal | Approve a requested return so the customer can ship it back. Use when: support/admin signs off on the RMA. NOT for: actually receiving goods (use receive_return). |
 | `receive_return` | internal | Mark an approved return as received. Auto-emits stock.movement event for items flagged restock=true. Use when: warehouse confirms the package arrived. |

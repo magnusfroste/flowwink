@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # WebMeet

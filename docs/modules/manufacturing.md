@@ -5,14 +5,14 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Manufacturing
 
 > MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.
 
-Ships with **13 agent skills**, an **admin UI**.
+Ships with **14 agent skills**, an **admin UI**.
 
 ## Quick Facts
 
@@ -24,7 +24,7 @@ Ships with **13 agent skills**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 13 |
+| **MCP-exposed skills** | 14 |
 | **Owns tables** | — |
 
 ## Skills
@@ -46,6 +46,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_work_center` | internal | Manage work centers (production resources with an hourly cost + capacity). Use when: defining the shop floor (cutting, assembly, packing), setting labor rates. NOT for: routing steps (manage_routin… |
 | `manage_routing_operation` | internal | Manage the ordered routing operations of a BOM (which work center, how many minutes per unit). Use when: defining how a product is made step by step. NOT for: work centers (manage_work_center) or g… |
 | `generate_mo_work_orders` | internal | Materialise a manufacturing order\ |
+| `progress_work_order` | internal | Run a manufacturing work order on the shop floor: start, pause, finish or cancel it, recording actual minutes and actual labor cost. Use when: reporting shop-floor progress or time spent on an oper… |
 | `mrp_reorder_run` | internal | Scan manufactured products (those with an active BOM) at/below their reorder point and create draft manufacturing orders to replenish. Use when: MRP planning, auto-replenishing made-in-house stock.… |
 
 ## Module API Contract

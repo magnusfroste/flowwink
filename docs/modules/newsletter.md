@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Newsletter
@@ -59,6 +59,7 @@ This module participates in the following end-to-end business processes:
 | Module definition | `src/lib/modules/newsletter-module.ts` |
 | Admin page | `src/pages/admin/NewsletterPage.tsx` |
 | Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
+| Migration | `supabase/migrations/20260718090000_fix-newsletter-cron-self-reference.sql` |
 
 ## Contributing
 

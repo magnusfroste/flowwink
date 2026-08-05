@@ -5,12 +5,12 @@ version: "2.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-07-13"
+generated_at: "2026-08-05"
 ---
 
 # Sales Intelligence
 
-> Prospect research, fit analysis, profile management, and introduction letter generation
+> Prospect research (web + Hunter contacts), ICP fit scoring against Business Identity, and personal outreach drafts
 
 Ships with **4 agent skills**, an **admin UI**.
 
@@ -41,7 +41,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `prospect_research` | internal | Research a company — search web, scrape website, find contacts via Hunter.io. Returns raw data for FlowPilot to analyze. Use when: preparing for outreach; gathering intelligence on a prospect; buil… |
 | `prospect_fit_analysis` | internal | Collect company data, related leads, and deals to evaluate prospect fit. Returns raw data for FlowPilot to analyze. Use when: evaluating a new prospect; scoring company fit before outreach; compari… |
 | `process_signal` | internal | Process an incoming signal from Chrome extension or external webhook. Analyzes content and determines next actions. Use when: a website event is detected; an external system sends an update; respon… |
-| `sales_profile_setup` | internal | Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use … |
+| `sales_profile_setup` | internal | Set up or update the personal sender profile used for outreach drafts (name, title, pitch, tone, signature). Use when: configuring who the outreach comes from. NOT for: company positioning or the I… |
 
 ## Module API Contract
 

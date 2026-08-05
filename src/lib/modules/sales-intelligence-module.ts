@@ -112,13 +112,22 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
               type: 'string',
               description: 'Company name (if no ID)',
             },
+            user_id: {
+              type: 'string',
+              description: 'Optional user UUID — loads that sender profile (pitch, tone, signature) for outreach drafting',
+            },
           },
         },
+
       },
     },
     instructions: `## prospect_fit_analysis
 ### What
-Analyzes how well a prospect company fits your ideal customer profile using AI.
+Collects BOTH sides of the fit equation and returns them for you to reason over:
+the prospect (company record, related leads, related deals) and \`our_context\`
+(ICP, value proposition, differentiators, target industries, services — read from
+Business Identity / site_settings.company_profile — plus the sender profile from
+sales_intelligence_profiles).
 ### When to use
 - After prospect_research, to score the fit
 - Admin asks "is this a good prospect?"
@@ -126,9 +135,16 @@ Analyzes how well a prospect company fits your ideal customer profile using AI.
 ### Parameters
 - **company_id**: UUID from companies table. Preferred.
 - **company_name**: Fallback if no UUID.
+- **user_id**: Optional. Loads that user's sender profile for outreach tone/signature.
+### How to score
+Score against \`our_context.icp\` — NOT against data completeness. If
+\`our_context.icp_defined\` is false, say so and score conservatively; the fix is
+to define the ICP in Business Identity (manage_business_identity /
+update_company_profile), not to guess.
 ### Edge cases
 - Works best when the company has been enriched first (enrich_company).
-- Returns a fit score and reasoning — use for deal prioritization.`,
+- Contact discovery (Hunter.io) belongs to prospect_research, not here.`,
+
   },
   {
     name: 'process_signal',
@@ -188,7 +204,8 @@ This skill is primarily triggered by automations, not directly by users.
   },
   {
     name: 'sales_profile_setup',
-    description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity).',
+    description: 'Set up or update the personal sender profile used for outreach drafts (name, title, pitch, tone, signature). Use when: configuring who the outreach comes from. NOT for: company positioning or the Ideal Customer Profile — those live in Business Identity (update_company_profile / manage_business_identity).',
+
     category: 'crm',
     handler: 'internal:sales_profile_setup',
     scope: 'internal',
@@ -205,7 +222,7 @@ This skill is primarily triggered by automations, not directly by users.
           properties: {
             data: {
               type: 'object',
-              description: 'Profile data. For company: icp, value_proposition, differentiators, competitors, pricing_notes, industry. For user: full_name, title, email, personal_pitch, tone, signature.',
+              description: 'Profile data. For user (recommended): full_name, title, email, personal_pitch, tone, signature. For company (legacy): icp, value_proposition, differentiators, competitors, pricing_notes, industry — prefer update_company_profile in Business Identity instead, which is the source read by fit scoring.',
             },
             type: {
               enum: [
@@ -213,14 +230,15 @@ This skill is primarily triggered by automations, not directly by users.
                 'user',
               ],
               type: 'string',
-              description: 'Profile type: company (shared business profile) or user (personal sales profile)',
+              description: 'Profile type: user (personal sender profile — preferred) or company (legacy; use Business Identity instead)',
             },
           },
         },
-        description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity).',
+        description: 'Set up or update the personal sender profile used for outreach drafts (name, title, pitch, tone, signature). Use when: configuring who the outreach comes from. NOT for: company positioning or the Ideal Customer Profile — those live in Business Identity (update_company_profile / manage_business_identity).',
       },
     },
-    instructions: 'Use this skill when the user wants to set up their Sales Intelligence profile. For company profiles, ask about: ICP (ideal customer profile), value proposition, key differentiators, competitors, pricing strategy. For user profiles, ask about: their name, title, personal pitch, preferred tone, and email signature. Always confirm the data before saving.',
+    instructions: 'Use this skill for the PERSONAL sender profile (type=user): name, title, personal pitch, preferred tone, email signature. The Ideal Customer Profile and company positioning are NOT stored here — they live in Business Identity (site_settings.company_profile) and are read by prospect_fit_analysis; route those requests to update_company_profile. type=company is legacy and is not read by fit scoring. Always confirm the data before saving.',
+
   },
 ];
 
@@ -230,7 +248,7 @@ export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, Sale
   version: '2.0.0',
   processes: ['lead-to-customer'],
   maturity: 'L4',
-  description: 'Prospect research, fit analysis, profile management, and introduction letter generation',
+  description: 'Prospect research (web + Hunter contacts), ICP fit scoring against Business Identity, and personal outreach drafts',
   capabilities: ['data:read', 'data:write'],
   tier: 'standard',
   inputSchema: salesIntelligenceInputSchema,
