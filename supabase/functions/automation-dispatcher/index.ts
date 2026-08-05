@@ -224,6 +224,95 @@ serve(async (req) => {
       results.push({ id: wf.id, name: wf.name, status, type: "workflow", error: lastError ?? undefined });
     }
 
+    // ─── 6. Drain the work queue ───────────────────────────────────────
+    // The second lane. It decides NOTHING: no business logic, no per-feature
+    // branches. What to do lives in the skill, when to do it lives in due_at.
+    // See docs/architecture/work-queue.md.
+    //
+    // Ships inert — agent_tasks is empty until a family is migrated, so this
+    // block is two no-op RPCs per tick until then.
+    try {
+      // Reap first: a run that died mid-flight left its row 'running' with an
+      // expired lease. Without this it would sit there forever looking busy.
+      const { data: reaped, error: reapError } = await supabase.rpc("reap_stale_task_leases");
+      if (reapError) {
+        // Pre-migration instances have no queue yet — that is not an error worth
+        // failing the whole tick over. Everything else is.
+        console.warn("[dispatcher] reap_stale_task_leases unavailable:", reapError.message);
+      } else if (reaped?.requeued || reaped?.failed) {
+        console.log(`[dispatcher] reaped ${reaped.requeued} requeued, ${reaped.failed} gave up`);
+        results.push({ id: "reaper", name: "stale task leases", status: "success", type: "task_reaper" });
+      }
+
+      // FOR UPDATE SKIP LOCKED inside claim_due_tasks makes overlapping ticks
+      // take disjoint rows — no lock needed here.
+      const { data: claimed, error: claimError } = await supabase.rpc("claim_due_tasks", {
+        p_limit: 10,
+        p_lease_seconds: 300,
+      });
+      if (claimError) {
+        console.warn("[dispatcher] claim_due_tasks unavailable:", claimError.message);
+      } else {
+        for (const task of (claimed || [])) {
+          let taskError: string | null = null;
+          let outcome = "";
+
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceKey}`,
+              },
+              body: JSON.stringify({
+                skill_name: task.skill_name,
+                arguments: task.skill_arguments || {},
+                agent_type: "task",
+                conversation_id: null,
+              }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || body?.error) {
+              taskError = body?.error || `HTTP ${res.status}`;
+            } else {
+              // The outcome sentence is the receipt. Prefer whatever the skill
+              // reported; fall back to naming the skill so the row is never
+              // "done" with nothing to show for it.
+              outcome = typeof body?.result?.message === "string"
+                ? body.result.message
+                : `${task.skill_name} completed.`;
+            }
+          } catch (err) {
+            taskError = (err as Error).message || "Task execution error";
+          }
+
+          if (taskError) {
+            await supabase.rpc("fail_task", {
+              p_task_id: task.id,
+              p_error: taskError,
+              p_retry_in_seconds: 60,
+            });
+          } else {
+            await supabase.rpc("complete_task", {
+              p_task_id: task.id,
+              p_outcome: outcome.slice(0, 500),
+            });
+          }
+
+          results.push({
+            id: task.id,
+            name: `${task.skill_name}${task.subject_id ? ` (${task.subject_type})` : ""}`,
+            status: taskError ? "failed" : "success",
+            type: "task",
+            error: taskError ?? undefined,
+          });
+        }
+      }
+    } catch (err) {
+      // The queue lane must never take the automation lane down with it.
+      console.error("[dispatcher] task lane error:", (err as Error).message);
+    }
+
     console.log(`Dispatcher: executed ${results.length} items`, results);
 
     return new Response(

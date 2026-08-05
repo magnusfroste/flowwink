@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260805230000",
-      "migrations_count": 295,
+      "migration_head": "20260806000000",
+      "migrations_count": 297,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1175,6 +1175,10 @@
           "name": "ingest-form-lead-rpc"
         },
         {
+          "version": "20260805205615",
+          "name": "7da16d8e-4e90-4b0d-9b29-3291495d44f7"
+        },
+        {
           "version": "20260805210000",
           "name": "crm-follow-through"
         },
@@ -1185,6 +1189,10 @@
         {
           "version": "20260805230000",
           "name": "form-lead-visitor-stitch"
+        },
+        {
+          "version": "20260806000000",
+          "name": "agent-tasks-work-queue"
         }
       ]
     },
@@ -1202,7 +1210,7 @@
         "agent-execute": "sha256:82739d8e4bd4822d5e9e0bfd9529008df47b4c515b82c033fd6e577d07afbc97",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
-        "automation-dispatcher": "sha256:c0ffa7a2c623209bf82030bd4b6feb1ed9ae92baa4ea5a08772eaa3fa912ea3e",
+        "automation-dispatcher": "sha256:3aadb1691ff56ce16d56de93b989f3f96f7f6831bb787dd6d03dbaf5e4a80d2d",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:dbb10e660cc8e976a35829d60c2d61edf1b9dc9c46175bef9bb9ce2e316cb471",
@@ -1217,7 +1225,7 @@
         "contract-sign": "sha256:06401c288a209dafe9d0aee05e9f8902fd98ff155617271dbee27d5e54135e8f",
         "create-checkout": "sha256:c0321cfa6df8cf1df5ccfa2401e67b78265fedb4adb0a0c6b4f870236a50e915",
         "create-invoice-payment": "sha256:917c78b89d0131f426ed5c6109eea67d8020604def81f1179eba2e5bb0c8bea6",
-        "create-user": "sha256:1b5bbd2f3920153310411571a6493ab5e5052bf6b6015ac2b09b9cc449ae38cf",
+        "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
         "demo-cycle": "sha256:ae99ce60cbb68aec05a9dfbb9b4bde332ff41cd9d85b6b8f6fcb803cfb8dfaf0",
         "docs-chat": "sha256:8a78fddb7cba24df21044920daaea0ad9798ec970ecdb334d4845124ed7550eb",
