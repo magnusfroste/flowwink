@@ -224,7 +224,12 @@ Deno.serve(async (req) => {
           .eq('trigger_type', 'event')
 
         const matching = (eventAutomations || []).filter((a: any) => {
-          return a.trigger_config?.event_name === event
+          // Seeds and the admin UI write {event: ...}; older docs said
+          // {event_name: ...} — accept both, same fix event-dispatcher already
+          // carries. Before this, NO seeded event automation ever matched here.
+          const cfg = a.trigger_config as any
+          const cfgEvent = cfg?.event_name ?? cfg?.event
+          return cfgEvent === event
         })
 
         for (const auto of matching) {
@@ -290,8 +295,12 @@ Deno.serve(async (req) => {
         .eq('trigger_type', 'event')
 
       const matching = (eventAutomations || []).filter((a: any) => {
-        const eventName = a.trigger_config?.event_name
-        return eventName === event
+        // Seeds and the admin UI write {event: ...}; older docs said
+        // {event_name: ...} — accept both, same fix event-dispatcher already
+        // carries. Before this, NO seeded event automation ever matched here.
+        const cfg = a.trigger_config as any
+        const cfgEvent = cfg?.event_name ?? cfg?.event
+        return cfgEvent === event
       })
 
       if (matching.length > 0) {

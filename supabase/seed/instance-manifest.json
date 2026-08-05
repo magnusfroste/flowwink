@@ -1242,7 +1242,7 @@
         "run-autonomy-tests": "sha256:d326b88ef0d263ed7604ba1eb75a770126d785e26211888b2093fcb325cc8c22",
         "run-platform-tests": "sha256:5e6f5077b9516d47a6f8d0619d3af8f85c927c58ca25d824b364375fad13e04c",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
-        "send-webhook": "sha256:32dfe4c3c613760f0e64a523404057f5fdf5e2e41af56535f0a66b1bc4d38679",
+        "send-webhook": "sha256:cc64c3fbaa4e36628bd87661bafaf9c1a5e71b151b4d02703bb792779d44de28",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
         "signal-ingest": "sha256:1e8edbe511e8b048df1a7b1419aa14a410c83487ed911e0f599871e3b67a752d",
