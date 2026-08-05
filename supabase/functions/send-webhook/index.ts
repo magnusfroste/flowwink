@@ -207,11 +207,18 @@ Deno.serve(async (req) => {
       .contains('events', [event])
 
     if (webhooksError) {
-      console.error('[send-webhook] Error fetching webhooks:', webhooksError)
-      throw webhooksError
+      // webhooks.events is webhook_event[] — an ENUM of 31 CMS/commerce names.
+      // Any event outside it (email.received, vendor.created, purchase_order.*,
+      // every custom event) makes PostgREST reject the cast, and this used to
+      // `throw webhooksError` — a plain object, not an Error, so the top-level
+      // catch answered 500 "Unknown error" BEFORE the automations lane ran.
+      // Event automations accept arbitrary event names by design; only outbound
+      // webhooks are enum-gated. Treat the failed lookup as "no webhooks
+      // subscribed" and keep going.
+      console.warn(`[send-webhook] Webhooks lookup failed for "${event}" (likely non-enum event name) — continuing to automations:`, webhooksError.message ?? webhooksError)
     }
 
-    if (!webhooks || webhooks.length === 0) {
+    if (webhooksError || !webhooks || webhooks.length === 0) {
       console.log(`[send-webhook] No webhooks registered for event: ${event}`)
       
       // Still check for event automations even if no webhooks
