@@ -7,7 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreateDocument } from "@/hooks/useDocuments";
+import { useCreateDocument, type DocumentVisibility } from "@/hooks/useDocuments";
+import type { AppRole } from "@/types/cms";
+
+/**
+ * Roles a document can be scoped to. Deliberately not the full app_role enum:
+ * `admin` sees everything anyway, and `customer` is not a colleague — offering
+ * either would produce a setting that reads meaningfully and does nothing.
+ */
+const RESTRICTABLE_ROLES: AppRole[] = [
+  "hr", "accounting", "sales", "support", "marketing",
+  "purchasing", "warehouse", "projects",
+];
 import { toast } from "sonner";
 import { UploadCloud, FileText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +48,11 @@ export function AddDocumentDialog({
   const [category, setCategory] = useState(defaultCategory);
   const [folder, setFolder] = useState("");
   const [description, setDescription] = useState("");
+  // Shared is the default on purpose: a business operating system earns most of
+  // its value from everyone having the same picture, so the friction belongs on
+  // restricting rather than on sharing. The opposite of Flowtable, deliberately.
+  const [visibility, setVisibility] = useState<DocumentVisibility>("shared");
+  const [visibleToRole, setVisibleToRole] = useState<AppRole>("hr");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
@@ -98,6 +114,11 @@ export function AddDocumentDialog({
         related_entity_type: relatedEntityType ?? null,
         related_entity_id: relatedEntityId ?? null,
         uploaded_by: user.id,
+        visibility,
+        // Only meaningful for `role`; a NULL here with visibility='role' is
+        // rejected by a CHECK constraint rather than silently becoming a
+        // document nobody but an admin can see.
+        visible_to_role: visibility === "role" ? visibleToRole : null,
       });
 
       setProgress(100);
@@ -186,6 +207,36 @@ export function AddDocumentDialog({
             <div className="space-y-1.5">
               <Label htmlFor="doc-folder">Folder (optional)</Label>
               <Input id="doc-folder" value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="e.g. 2026/Q1" />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="doc-visibility">Who can see this</Label>
+              <div className="flex gap-2">
+                <Select value={visibility} onValueChange={(v) => setVisibility(v as DocumentVisibility)}>
+                  <SelectTrigger id="doc-visibility" className="flex-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="shared">Everyone in the workspace</SelectItem>
+                    <SelectItem value="role">Only a specific team</SelectItem>
+                    <SelectItem value="private">Only me</SelectItem>
+                  </SelectContent>
+                </Select>
+                {visibility === "role" && (
+                  <Select value={visibleToRole} onValueChange={(v) => setVisibleToRole(v as AppRole)}>
+                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {RESTRICTABLE_ROLES.map((r) => (
+                        <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              {visibility !== "shared" && (
+                <p className="text-xs text-muted-foreground">
+                  {visibility === "role"
+                    ? `Visible to everyone with the ${visibleToRole} role, plus you and admins.`
+                    : "Visible only to you and admins."}
+                </p>
+              )}
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="doc-desc">Description (optional)</Label>

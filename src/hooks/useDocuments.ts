@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { AppRole } from "@/types/cms";
 
 export type Document = {
   id: string;
@@ -18,7 +19,22 @@ export type Document = {
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+  /**
+   * Who can read this. `shared` is the default and the common case — a business
+   * operating system earns most of its value from everyone having the same
+   * picture. The other two exist because some documents genuinely must not be
+   * shared: HR filing an employment contract as a PDF is the case that exposed
+   * the gap, back when the SELECT policy was simply `true`.
+   *
+   * Enforced by RLS, not by this type — see
+   * 20260808140000_documents-visibility.sql.
+   */
+  visibility: DocumentVisibility;
+  /** Required when visibility is `role`; ignored otherwise. */
+  visible_to_role: AppRole | null;
 };
+
+export type DocumentVisibility = 'shared' | 'role' | 'private';
 
 export function useDocuments(category?: string) {
   return useQuery({
