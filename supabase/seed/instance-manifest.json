@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260807140000",
-      "migrations_count": 303,
+      "migration_head": "20260807150000",
+      "migrations_count": 304,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1217,6 +1217,10 @@
         {
           "version": "20260807140000",
           "name": "public-contract-by-token"
+        },
+        {
+          "version": "20260807150000",
+          "name": "contract-billing-into-work-queue"
         }
       ]
     },

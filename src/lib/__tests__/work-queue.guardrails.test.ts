@@ -167,13 +167,18 @@ describe('the queue ships empty', () => {
 // double-charge — generate_subscription_invoice RAISES when the period is
 // already invoiced — but "two things own billing" is how the next incident
 // starts.
-describe('billing moved into the queue, and only into the queue', () => {
-  const billing = read('supabase/migrations/20260806220000_billing-into-work-queue.sql');
+describe.each([
+  ['subscriptions', 'supabase/migrations/20260806220000_billing-into-work-queue.sql',
+   'run_subscription_billing', 'subscription_id', '_sub.next_invoice_date', 'enqueue-subscription-billing-tasks'],
+  ['contracts', 'supabase/migrations/20260807150000_contract-billing-into-work-queue.sql',
+   'run_contract_billing', 'contract_id', '_c.billing_next_date', 'enqueue-contract-billing-tasks'],
+])('%s moved into the queue, and only into the queue', (_family, path, sweepSkill, paramName, dueColumn, jobName) => {
+  const billing = read(path);
 
   it('retires the sweep it replaces', () => {
     expect(billing).toMatch(/UPDATE public\.agent_automations/);
     expect(billing).toMatch(/SET enabled = false/);
-    expect(billing).toMatch(/skill_name = 'run_subscription_billing'/);
+    expect(billing).toContain(`skill_name = '${sweepSkill}'`);
   });
 
   it('disables rather than deletes — bootstrap only inserts what is missing', () => {
@@ -182,25 +187,27 @@ describe('billing moved into the queue, and only into the queue', () => {
     expect(billing).not.toMatch(/DELETE FROM public\.agent_automations/i);
   });
 
-  it('enqueues at the subscription\'s own due date, never "now"', () => {
+  it('enqueues at the document\'s own due date, never "now"', () => {
     // due_at is the entire point. Enqueuing everything at now() turns the queue
-    // back into a sweep that happens to have rows.
-    expect(billing).toMatch(/p_due_at\s*=>\s*GREATEST\(_sub\.next_invoice_date/);
+    // back into a sweep that happens to have rows. Checked per family — a
+    // shared test name would hide which one regressed.
+    expect(billing).toMatch(new RegExp(`p_due_at\\s*=>\\s*GREATEST\\(${dueColumn.replace('.', '\\.')}`));
   });
 
   it('passes the parameter name the skill actually declares', () => {
     // Verified live against the gateway: tool_definition exposes
     // `subscription_id`. A wrong name here fails every task, and the failure
     // would look like a queue bug rather than a mapping typo.
-    expect(billing).toMatch(/jsonb_build_object\('subscription_id'/);
+    expect(billing).toContain(`jsonb_build_object('${paramName}'`);
   });
 
   it('schedules the enqueuer in-database, with no HTTP hop', () => {
     // A pure SQL cron call cannot 404 on a deleted function, cannot carry
     // another instance's host, and cannot time out on DNS — the three ways
     // scheduled work broke this month.
-    expect(billing).toMatch(/cron\.schedule\(\s*'enqueue-subscription-billing-tasks'/);
-    expect(billing).toMatch(/SELECT public\.enqueue_subscription_billing_tasks\(\)/);
+    expect(billing).toContain(`cron.schedule(
+      '${jobName}'`);
+    expect(billing).toMatch(/SELECT public\.enqueue_\w+_billing_tasks\(\)/);
     expect(billing).not.toMatch(/net\.http_post|functions\/v1/);
   });
 
