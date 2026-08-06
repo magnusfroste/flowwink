@@ -286,17 +286,47 @@ only place in `normalizeFlowtableFieldOptions` that silently drops rather than
 errors — `link`, `lookup` and `rollup` all validate properly, so this is a hole
 in one branch, not a design choice.
 
+**Re-probe it yourself before and after — the whole point is the response, not
+the stored row.** Against any instance, `POST /functions/v1/mcp-server/rest/execute`
+with `{"tool":"manage_flowtable_field","arguments":{…}}`:
+
+| `arguments` | today | wanted |
+|---|---|---|
+| `{action:'update', table:…, key:…, options:{choices:['A','B']}}` | ✅ works | unchanged |
+| `{…, options:{choices:'A,B'}}` | `success`, `options:{}` | error |
+| `{…, options:{choices:[{label:'A',value:'a'}]}}` | `success`, `choices:['[object Object]']` | error |
+| `{…, choices:['A','B']}` (outside `options`) | ✅ `"Nothing to update"` | unchanged — this is the model |
+
+**STATUS 2026-08-06 (later the same day): not urgent, still real.** OpenClaw
+went back and set the remaining fields itself, correctly — it even improved two
+of my guesses (`prissatt` → `Satt / Ej satt / Ej tillämpligt`, and it knew the
+right order for `produkt`). Optic is verified clean: **0** orphaned select
+values, **0** multiselect values outside their list, **0** fields with empty or
+`[object Object]` options. So nothing is on fire.
+
+What that does NOT change: the handler still answers `success` for a wrong
+shape. OpenClaw got it right this time; the next agent that guesses gets the
+same silent confirmation, and the only thing that caught it was a human noticing
+empty dropdowns. Fix the response, not the data.
+
 **Two halves already shipped from here**, so don't redo them:
-- `20260808180000` makes `list_flowtable_tables` emit `options`. The RPC was the
-  only schema-discovery surface an external agent has and it returned
-  `{key,name,type}` — so a configured select and an unconfigured one looked
-  identical from outside, and read-back (the only way to catch a silent write)
-  was impossible. Applied to optic; the other four instances need it.
+- `20260808190000_flowtable-list-tables-expose-options.sql` makes
+  `list_flowtable_tables` emit `options`. The RPC was the only schema-discovery
+  surface an external agent has and it returned `{key,name,type}` — so a
+  configured select and an unconfigured one looked identical from outside, and
+  read-back (the only way to catch a silent write) was impossible. **Applied to
+  optic only; the other four instances need it.** (Renumbered from `…180000`
+  late — main had picked up `20260808180000_terms-url-token.sql` with the same
+  stamp. Timestamp collisions between the three of us are now a real thing;
+  `scripts/check-migration-forward-dated.ts` catches them.)
 - `FlowtablePage.tsx` no longer hides a select value that is not among its
   choices. It rendered `<select value="Månadsavgift">` with no matching
   `<option>` → blank cell, and the fallback list offered `New / In progress /
   Done`, so the obvious repair overwrote good data with a meaningless value. The
   multiselect renderer had handled this all along; single select did not.
+  Guardrails in `src/lib/__tests__/flowtable-select-choices.guardrails.test.ts`
+  (negative-tested: restoring the old logic fails 6 of 15).
+
 
 Optic's data is now clean: all 12 select/multiselect fields carry choices, zero
 values fall outside their own list (verified by query, not by reading code).
