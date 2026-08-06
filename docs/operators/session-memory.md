@@ -263,8 +263,8 @@ they reach an instance only on deploy:
 
 | # | switch | fix | state |
 |---|---|---|---|
-| 1 | `send-webhook` matched `trigger_config.event_name` while every seed writes `{event: ...}` | #148 | main + optic v9 |
-| 2 | `dispatch_automation_event` reads empty `vault.decrypted_secrets` (DB-trigger lane) | — | **yours, open** |
+| 1 | `send-webhook` matched `trigger_config.event_name` while every seed writes `{event: ...}` | #148 | main + optic v9 → **whole fleet 2026-08-06** |
+| 2 | `dispatch_automation_event` reads empty `vault.decrypted_secrets` (DB-trigger lane) | `20260806210000` | **CLOSED 2026-08-06, all five live-verified** |
 | 3 | `webhooks.events` is an ENUM; a non-enum event name made the lookup throw a plain object → 500 before the automations lane ran | #149 | main + optic v10 |
 
 Switch 3 is the nasty one: **the events the six seeded automations listen on are
@@ -315,6 +315,32 @@ Delete it afterwards (optic's was cleaned up).
 need BOTH this deploy *and* the vault fix — their events are born in the DB
 trigger, not in the client. Deploying send-webhook alone will not bring them to
 life, and their continued silence afterwards is not evidence this deploy failed.
+
+**⇄ Done (local session, 2026-08-06).** Both switches are closed on all five
+instances. `send-webhook` deployed everywhere (liteit needed the Management API
+— its token is the new `sbp_v0_` format, which the CLI rejects outright), and
+switch 2 is fixed by migration `20260806210000_platform-base-url-self-heal.sql`:
+
+- **The vault was empty on every instance, and nothing could ever have seeded
+  it** — the URL differs per instance, so a migration can't carry it. Now the
+  layer that *knows* the value writes it: `automation-dispatcher` (already on a
+  per-minute cron everywhere) calls `ensure_platform_secret('SUPABASE_URL', …)`
+  with its own `Deno.env`. A fresh install heals within a minute; there is no
+  runbook step to forget.
+- **The service key is no longer a gate.** All four dispatch targets are
+  `verify_jwt=false`, so requiring `SUPABASE_SERVICE_ROLE_KEY` only added a
+  second way to fail. It is now sent when present, omitted when not.
+- **The silence is gone.** A skipped emit writes to
+  `platform_dispatch_failures` instead of a `RAISE WARNING` nobody reads.
+
+Live-verified on all five with the non-enum event probe: `automations_dispatched:
+1`, `run_count: 1`, `last_error: null`. Guardrails in
+`src/lib/__tests__/event-rail-config.guardrails.test.ts` (negative-tested).
+
+**Bycatch worth knowing about:** optic's `newsletter-dispatch-scheduled` cron job
+was firing at **dev's** URL with **dev's** publishable key — 288 cross-instance
+calls a day, a fork artifact from cloning the schema. Repointed. A fleet-wide
+scan found no others, but check `cron.job` for foreign refs after every fork.
 
 
 ### ⇄ Handoff to local Claude — the blog duplicate corpus (2026-08-05, cloud session)

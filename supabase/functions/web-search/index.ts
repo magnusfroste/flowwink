@@ -223,8 +223,16 @@ serve(async (req) => {
 
     console.log(`[web-search] Found ${results.length} results via ${provider} (chain: ${chain.join('→')})`);
 
+    // provider 'none' means every candidate failed — not that the web is empty.
+    // Callers (prospect_research among them) treated the two as the same thing
+    // and reported confident emptiness about a company nobody had looked up.
     return new Response(JSON.stringify({
       success: true, provider, results, query,
+      ...(provider === 'none' ? {
+        search_unavailable: true,
+        providers_tried: chain,
+        note: 'No search provider returned results. This is a provider failure, not evidence that nothing exists — do not report the subject as unknown or dormant on this basis.',
+      } : {}),
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

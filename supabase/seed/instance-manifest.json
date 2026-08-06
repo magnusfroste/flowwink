@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260806100000",
-      "migrations_count": 300,
+      "migration_head": "20260806210000",
+      "migrations_count": 301,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1205,6 +1205,10 @@
         {
           "version": "20260806100000",
           "name": "billing-into-work-queue"
+        },
+        {
+          "version": "20260806210000",
+          "name": "platform-base-url-self-heal"
         }
       ]
     },
@@ -1215,14 +1219,14 @@
     },
     "edge_functions": {
       "count": 75,
-      "shared_hash": "sha256:b930275f047eb4ebde0d64f0a8ad2cc03b93f52fcd6fb0cda74dbedeb4f6819c",
+      "shared_hash": "sha256:f9ae2449759278a645bd61f6b883117da04333802b65b59957d9706f1d6e1c0a",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
         "agent-execute": "sha256:18078760de89fd3386043cff721067234d27ccc4586636aa6e7b80c5edd226f2",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
-        "automation-dispatcher": "sha256:3aadb1691ff56ce16d56de93b989f3f96f7f6831bb787dd6d03dbaf5e4a80d2d",
+        "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:dbb10e660cc8e976a35829d60c2d61edf1b9dc9c46175bef9bb9ce2e316cb471",
@@ -1290,7 +1294,7 @@
         "voice-ingest": "sha256:b2f454ebef1846179377d7409780b4b8de014a1b1486dd91f84f2ecc9f1dd6df",
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
-        "web-search": "sha256:f8a514ea635ffa553da1cfd5e04aaf0adf159012df1981784c7da81af627c56e",
+        "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
         "workspace-chat": "sha256:357dcc372b82c181c9f865576891c2b20511bd2672afc5d52accbfa16d8e832e"
       }
     },

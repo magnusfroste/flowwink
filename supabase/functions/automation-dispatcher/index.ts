@@ -31,6 +31,21 @@ serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = getServiceClient();
 
+  // Push the project URL down into the database vault. dispatch_automation_event
+  // builds its pg_net calls from it, and the DB has no other way to learn it —
+  // an empty vault is why every trigger-born event on the fleet was silently
+  // dropped. This runs on the per-minute cron, so a fresh install heals itself
+  // instead of waiting for someone to remember a runbook step. Idempotent:
+  // writes only when the value is missing or has changed.
+  try {
+    await supabase.rpc("ensure_platform_secret", {
+      p_name: "SUPABASE_URL",
+      p_value: supabaseUrl,
+    });
+  } catch (e) {
+    console.warn("ensure_platform_secret(SUPABASE_URL) failed:", (e as Error).message);
+  }
+
   try {
     // 1. Find due cron automations (including ones with NULL next_run_at that need initialization)
     const now = new Date().toISOString();

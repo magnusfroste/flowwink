@@ -156,8 +156,26 @@ export async function executeProspectResearch(
     }
 
     // Step 6: Build UI-friendly payload (matches ResearchResult)
+    const sources = {
+      search: !!searchResult?.results?.length,
+      scrape: !!scrapeResult?.content,
+      contacts: savedContacts.length > 0,
+    };
+    // Every source silent means we researched nothing — the CRM row got created
+    // either way, so an unqualified success:true reads as "researched, found
+    // nothing about them" when the truth is "could not look". Say which.
+    const researched = sources.search || sources.scrape || sources.contacts;
+
     const result = {
       success: true,
+      researched,
+      ...(researched ? {} : {
+        warning:
+          'No data source responded — this is not a finding about the company. ' +
+          'Search, scrape and contact lookup all returned nothing, so nothing was ' +
+          'enriched. Check that a search provider (SearXNG/Firecrawl) and ' +
+          'HUNTER_API_KEY are configured before treating this as a dead prospect.',
+      }),
       company: {
         id: companyId ?? undefined,
         name: company_name,
@@ -179,11 +197,7 @@ export async function executeProspectResearch(
         website_content: scrapeResult?.content?.substring(0, 3000) || null,
         website_metadata: scrapeResult?.metadata || null,
       },
-      data_sources: {
-        search: !!searchResult?.results?.length,
-        scrape: !!scrapeResult?.content,
-        contacts: savedContacts.length > 0,
-      },
+      data_sources: sources,
     };
 
     console.log(
