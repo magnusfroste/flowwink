@@ -168,7 +168,7 @@ describe('the queue ships empty', () => {
 // already invoiced — but "two things own billing" is how the next incident
 // starts.
 describe('billing moved into the queue, and only into the queue', () => {
-  const billing = read('supabase/migrations/20260806100000_billing-into-work-queue.sql');
+  const billing = read('supabase/migrations/20260806220000_billing-into-work-queue.sql');
 
   it('retires the sweep it replaces', () => {
     expect(billing).toMatch(/UPDATE public\.agent_automations/);
