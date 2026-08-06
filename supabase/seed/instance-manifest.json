@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808150000",
-      "migrations_count": 308,
+      "migration_head": "20260808170000",
+      "migrations_count": 310,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1237,6 +1237,14 @@
         {
           "version": "20260808150000",
           "name": "contract-render-org-number"
+        },
+        {
+          "version": "20260808160000",
+          "name": "documents-visibility"
+        },
+        {
+          "version": "20260808170000",
+          "name": "document-files-follow-visibility"
         }
       ]
     },

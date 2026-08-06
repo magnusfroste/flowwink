@@ -16,9 +16,24 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
-const migration = read('supabase/migrations/20260808140000_documents-visibility.sql');
+const migration = read('supabase/migrations/20260808160000_documents-visibility.sql');
+const storage = read('supabase/migrations/20260808170000_document-files-follow-visibility.sql');
 const dialog = read('src/components/admin/documents/AddDocumentDialog.tsx');
 const hook = read('src/hooks/useDocuments.ts');
+
+/**
+ * The body of one CREATE POLICY statement, comments stripped.
+ *
+ * Slicing to the first `;` is not enough: a `--` comment inside the policy can
+ * contain one, which truncated the body mid-clause and failed a guard that
+ * should have passed. Reading the SQL rather than the prose about it is the
+ * entire point of these tests.
+ */
+const policyBody = (sql: string, name: string): string => {
+  const from = sql.slice(sql.indexOf(`CREATE POLICY "${name}"`));
+  const stripped = from.replace(/--[^\n]*/g, '');
+  return stripped.slice(0, stripped.indexOf(';'));
+};
 
 describe('the permissive policy is removed, not merely joined', () => {
   it('drops the `true` SELECT policy', () => {
@@ -30,8 +45,7 @@ describe('the permissive policy is removed, not merely joined', () => {
   });
 
   it('replaces it with one that reads the visibility field', () => {
-    const policy = migration.slice(migration.indexOf('CREATE POLICY "Documents are visible per their visibility setting"'));
-    const body = policy.slice(0, policy.indexOf(';'));
+    const body = policyBody(migration, 'Documents are visible per their visibility setting');
     expect(body).toMatch(/visibility = 'shared'/);
     expect(body).toMatch(/visibility = 'role'/);
     expect(body).toMatch(/visibility = 'private'/);
@@ -39,9 +53,72 @@ describe('the permissive policy is removed, not merely joined', () => {
   });
 
   it('never leaves a bare `true` in the documents SELECT policy', () => {
-    const policy = migration.slice(migration.indexOf('CREATE POLICY "Documents are visible per their visibility setting"'));
-    const body = policy.slice(0, policy.indexOf(';'));
+    const body = policyBody(migration, 'Documents are visible per their visibility setting');
     expect(/USING\s*\(\s*true\s*\)/i.test(body)).toBe(false);
+  });
+});
+
+describe('the file follows the row — restricting one and not the other is the whole bug', () => {
+  // Two migrations landed the same day from different threads of work.
+  // `20260808100000_documents-bucket-in-repo.sql` granted every authenticated
+  // user SELECT on the entire `documents` bucket; the row-level fix above
+  // restricted the table. Together they produced a control that reads as
+  // protection and is bypassable one layer down — the storage API lists
+  // objects directly, so nobody even has to guess a path.
+  //
+  // Proven live on optic in three directions: a real `sales` user saw only the
+  // shared file; the same person with `hr` added saw both; and restoring the
+  // old bucket-wide policy inside a rolled-back transaction made the HR file
+  // reappear — so the leak was real, not inferred.
+  it('drops the bucket-wide SELECT that made the row policy decorative', () => {
+    expect(storage).toMatch(
+      /DROP POLICY IF EXISTS "Authenticated users can view documents" ON storage\.objects/,
+    );
+  });
+
+  it('defers to the table policy instead of restating the rules', () => {
+    // RLS on a table referenced inside another policy's expression is evaluated
+    // as the querying user, so this EXISTS succeeds only when that user could
+    // see the row. Restating `visibility = 'role' AND has_role(...)` here would
+    // work today and drift the first time the table policy changes.
+    const body = policyBody(storage, `Document files follow their document's visibility`);
+    expect(body).toMatch(/EXISTS\s*\(\s*SELECT 1 FROM public\.documents d WHERE d\.file_url = storage\.objects\.name\s*\)/);
+    expect(body).not.toMatch(/visibility = 'role'/);
+  });
+
+  it('never leaves bucket membership as the only condition', () => {
+    // `USING (bucket_id = 'documents')` is exactly what the leak looked like.
+    for (const name of [
+      `Document files follow their document's visibility`,
+      'Uploaders and admins can overwrite document files',
+    ]) {
+      const body = policyBody(storage, name);
+      expect(/USING\s*\(\s*bucket_id = 'documents'\s*\)/.test(body)).toBe(false);
+      expect(body).toMatch(/has_role\(auth\.uid\(\), 'admin'/);
+    }
+  });
+
+  it('keeps the uploader able to read back a file whose row does not exist yet', () => {
+    // The client uploads the file BEFORE inserting the row. Without the
+    // own-folder clause, the uploader cannot read their own file during that
+    // window and an abandoned upload becomes unreachable by anyone.
+    expect(storage).toMatch(/\(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/);
+  });
+
+  it('closes overwriting too, not only reading', () => {
+    // Same hole in the other direction: replacing an employment contract with a
+    // different PDF while the row, its title and its audit trail stay untouched.
+    expect(storage).toMatch(
+      /DROP POLICY IF EXISTS "Authenticated users can update documents" ON storage\.objects/,
+    );
+    expect(storage).toMatch(/CREATE POLICY "Uploaders and admins can overwrite document files"/);
+  });
+
+  it('is dated after the migration that opened the bucket', () => {
+    // A back-dated fix is silently skipped by the ledger on every instance
+    // already past that timestamp — the exact drift this repo has been bitten
+    // by. The guard script enforces this globally; this pins the pair.
+    expect(20260808170000).toBeGreaterThan(20260808100000);
   });
 });
 
@@ -66,8 +143,7 @@ describe('the defaults keep existing installs working', () => {
 
   it('keeps the uploader able to see their own role-scoped file', () => {
     // Someone in sales filing something for HR must not lose their own upload.
-    const policy = migration.slice(migration.indexOf('CREATE POLICY "Documents are visible per their visibility setting"'));
-    const body = policy.slice(0, policy.indexOf(';'));
+    const body = policyBody(migration, 'Documents are visible per their visibility setting');
     expect(body).toMatch(/uploaded_by = auth\.uid\(\)/);
   });
 });

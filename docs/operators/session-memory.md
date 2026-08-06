@@ -250,6 +250,44 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — documents can be marked sensitive, and the FILE follows the row (2026-08-06, cloud session)
+
+Peter (COO/CFO) asked before getting his login: **if HR starts using the
+platform, does the salesperson see the employment contracts?** For the
+structured version the answer was already good (`employment_contracts` is
+scoped to admin or the employee). For the file it was not — `documents` had a
+SELECT policy whose qual was literally `true` and no visibility field at all.
+
+`20260808160000` adds `visibility` (`shared | role | private`) + `visible_to_role`,
+**shared by default** — deliberately the mirror image of Flowtable's
+private-by-default, because a BOS's value is everyone having the same picture;
+the friction belongs on restricting, not on sharing.
+
+**The part worth reading twice.** `20260808100000_documents-bucket-in-repo.sql`
+landed the same day from a different thread of work and granted every
+authenticated user `SELECT ... USING (bucket_id = 'documents')` on
+`storage.objects`. Both migrations are individually correct; together they
+produce a visibility control that **reads as protection and is bypassable one
+layer down** — the storage API lists objects directly, so a salesperson does not
+even have to guess a path. `20260808170000` closes it, and does NOT restate the
+rules: RLS on a table referenced inside another policy's expression is evaluated
+as the querying user, so `EXISTS (SELECT 1 FROM public.documents …)` makes the
+file inherit the row's visibility by construction. The UPDATE policy had the
+same shape (any authenticated user could overwrite any file while the row, its
+title and its audit trail stayed untouched) and is scoped too.
+
+Proven live on optic in three directions, all inside rolled-back transactions:
+a real `sales` user saw only the shared file; the same person with `hr` added
+saw both; and **restoring the old bucket-wide policy made the HR file reappear**
+— so the leak was demonstrated, not inferred. Both migrations are already
+applied to optic; the other four instances get them on your next migration pass.
+
+**This is a bridge, not a destination**, recorded in the migration header so it
+survives us: an employment contract can be a `contract` with signatures and a
+lifecycle exactly like a customer agreement. HR is not there yet, so files must
+be safe meanwhile — without this becoming the permanent answer to where
+sensitive documents live.
+
 ### ⇄ Handoff to local Claude — the event lane is finally live (2026-08-06, cloud session)
 
 **Four kill switches sat on the same lane. All four are now closed**, and the
