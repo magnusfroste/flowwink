@@ -250,6 +250,90 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — the agent surface, swept live (2026-08-06, cloud session)
+
+`scripts/agent-surface-sweep.ts` now drives all 258 probeable skills against a
+live gateway and compares to `supabase/seed/agent-surface-baseline.json`. Run it
+with `FW_URL` + `FW_KEY`; ~11 minutes. It fails on **regression**, not on
+absolute failure count, so the debt below is recorded rather than blocking.
+
+**Read this before acting on the list: I got it wrong the first time.** My
+initial report claimed ten skills require `action` without enumerating valid
+values. False. All 144 action-shaped skills declare a precise enum
+(`list_stock`, `list_categories`, `list_hours`, `list_breaches`, `list_plans`,
+`list_courses`); the prober guessed `list` and ignored the schema. That finding
+is resolved as a false positive in `beta_test_findings`. What follows survived
+re-checking against the source.
+
+#### 2 genuinely broken — cannot run at all
+
+| skill | why |
+|---|---|
+| `get_blog_rss_url` | handler is `builtin:site_meta`; the string `builtin:` appears **nowhere** in `agent-execute`, so it always falls to "Unknown handler type". Registered, discoverable via `search_skills`, unrunnable. |
+| `auto_mark_invoice_paid` | `Could not find the function public.auto_mark_invoice_paid without parameters in the schema cache` — yet `pg_proc` says it exists in `public` with zero args, it is `SECURITY DEFINER`, `service_role` has EXECUTE, and the skill declares zero parameters. `NOTIFY pgrst, 'reload schema'` did not fix it. Cause undetermined; four static checks pass and the call still fails. |
+
+#### 3 fail with no message at all
+
+`manage_disciplinary`, `ad_optimize`, `manage_salary_advance` return
+`status: failed` with nothing attached. An agent receiving that cannot
+self-correct — the entire reason the RPC errors elsewhere were enriched.
+
+#### 31 contract gaps — the schema does not describe what the runtime demands
+
+Almost all are **either/or** requirements, which JSON Schema's `required` cannot
+express. The fix is a sentence in `description` — and `prepare_vat_return`
+already does exactly that, so it is demonstrably expressible:
+
+> *"A VAT period is required. Pass {from,to} (ISO dates) or {year,month} or {year,quarter}."*
+
+Seven of eight I checked by hand (`get_customer_360`, `predict_lead_score`,
+`enrich_company`, `confirm_fulfillment`, `extract_pdf_text`, `manage_variant`,
+`prospect_fit_analysis`) state the requirement **nowhere** — not in the skill
+description, not in any parameter description. Law 2 says a skill must carry
+enough metadata to be selected and called correctly; these do not.
+
+| skill | module | what the runtime says |
+|---|---|---|
+| `confirm_fulfillment` | `federation` | Either order_id or purchase_order_id is required |
+| `create_return_label` | `shipping` | RPC create_return_label failed: shipment_id or order_id is required |
+| `enrich_company` | `leads` | Domain or companyId is required |
+| `extract_pdf_text` | `documents` | file_url or storage_path is required |
+| `get_customer_360` | `customer360` | Provide lead_id or email |
+| `import_bank_image` | `reconciliation` | contentBase64 and mimeType required |
+| `kb_article_history` | `knowledgeBase` | RPC kb_article_history failed: list requires p_slug or p_article_id |
+| `list_flowtable_tables` | `flowtable` | RPC list_flowtable_tables failed: Provide p_base_id or a valid p_base_slug |
+| `manage_automations` | `flowpilot` | Handler exception: name and skill_name are required for action=create |
+| `manage_carrier_pickup` | `shipping` | RPC manage_carrier_pickup failed: pickup_id is required |
+| `manage_consultant_assignment` | `consultants` | RPC manage_consultant_assignment failed: assignment_id is required |
+| `manage_contract_template` | `contracts` | Template not found: (none passed). Run list_contract_templates to see the names. |
+| `manage_document` | `documents` | Unknown action 'search' for table documents. Supported: list, get, create, update, del |
+| `manage_employee` | `hr` | Unknown action 'search' for table employees. Supported: list, get, create, update, del |
+| `manage_flowtable_record` | `flowtable` | id is required for get |
+| `manage_gift_card` | `pos` | RPC manage_gift_card failed: Gift card <NULL> not found |
+| `manage_job_offer` | `recruitment` | RPC manage_job_offer failed: offer_id is required |
+| `manage_loyalty` | `pos` | RPC manage_loyalty failed: customer_email is required |
+| `manage_project` | `projects` | Unknown action 'search' for table projects. Supported: list, get, create, update, dele |
+| `manage_site_settings` | `platform` | Handler exception: key is required |
+| `manage_variant` | `ecommerce` | RPC manage_product_variant failed: product_id is required for list |
+| `onboarding_checklist` | `hr` | Unknown action 'get_status' for table onboarding_checklists. Supported: list, get, cre |
+| `pause_dunning` | `subscriptions` | Provide either subscription_id or sequence_id |
+| `predict_lead_score` | `leads` | RPC predict_lead_score failed: Provide p_lead_id or p_email |
+| `prepare_vat_return` | `accounting` | A VAT period is required. Pass {from,to} (ISO dates) or {year,month} or {year,quarter} |
+| `process_signal` | `salesIntelligence` | Either url or content is required |
+| `prospect_fit_analysis` | `salesIntelligence` | company_id or company_name is required |
+| `query_flowtable` | `flowtable` | table_id or table (name/slug) is required |
+| `reindex_consultants` | `consultants` | Job description is required (min 10 chars) |
+| `update_purchase_order` | `purchasing` | Handler exception: purchase_order_id required |
+| `wiki_page_history` | `wiki` | RPC wiki_page_history failed: list requires p_slug |
+
+Every one of these lives in `src/lib/modules/*` — your files — so none were
+touched. The error text for each is also in the baseline JSON under `details`,
+so this table can be regenerated rather than trusted.
+
+**When they are fixed**, re-run with `--update-baseline` and the count drops on
+its own; the sweep reports each as a `recovery` without failing the run.
+
+
 ### ⇄ Handoff to local Claude — deploy send-webhook to the rest of the fleet (2026-08-05, cloud session)
 
 **Only optic is done.** The cloud session holds a Supabase token scoped to
