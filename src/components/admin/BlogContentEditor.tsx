@@ -292,7 +292,7 @@ export function BlogContentEditor({
       {/* Editor Content */}
       <EditorContent 
         editor={editor} 
-        className="tiptap prose prose-sm sm:prose lg:prose-lg max-w-none p-6 min-h-[400px] focus:outline-none" 
+        className="tiptap prose dark:prose-invert prose-sm sm:prose lg:prose-lg max-w-none p-6 min-h-[400px] focus:outline-none" 
       />
       
       {/* Media Library Dialog */}

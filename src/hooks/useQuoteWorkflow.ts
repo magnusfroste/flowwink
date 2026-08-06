@@ -191,13 +191,21 @@ export function usePublicQuote(token: string | undefined) {
     queryKey: ['public-quote', token],
     queryFn: async () => {
       if (!token) return null;
+      // Via RPC, not a table read: quotes has admin-only policies, so the
+      // direct query returned nothing for the one audience this page exists
+      // for — the customer following the emailed link. Every internal test
+      // passed because the tester was an admin in the same browser. The RPC
+      // also returns the items (table when populated, line_items jsonb as
+      // fallback) and stamps viewed_at, which the anon client never could.
       const { data, error } = await supabase
-        .from('quotes')
-        .select('*')
-        .eq('accept_token', token)
-        .maybeSingle();
+        .rpc('get_public_quote' as never, { p_token: token } as never);
       if (error) throw error;
-      return data;
+      const payload = data as unknown as {
+        quote: Record<string, unknown>;
+        items: unknown[];
+      } | null;
+      if (!payload?.quote) return null;
+      return { ...payload.quote, _public_items: payload.items ?? [] } as never;
     },
     enabled: !!token,
   });

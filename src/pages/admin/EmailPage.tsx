@@ -179,7 +179,7 @@ function ThreadsTab() {
                       <span>{m.sent_at ? formatDistanceToNow(new Date(m.sent_at), { addSuffix: true }) : ''}</span>
                     </div>
                     <div className="font-medium mt-1">{m.subject ?? '(no subject)'}</div>
-                    <div className="mt-2 text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: m.body_html ?? m.body_text ?? '' }} />
+                    <div className="mt-2 text-sm prose dark:prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: m.body_html ?? m.body_text ?? '' }} />
                   </div>
                 ))}
               </div>

@@ -2,6 +2,9 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { renderTiptapContent } from "@/lib/tiptap-utils";
+import type { KbArticle } from "@/hooks/useKnowledgeBase";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -51,6 +54,9 @@ export default function KnowledgeBasePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  // Read view: internal articles have no public page, so before this the EDIT
+  // form was the only way for a salesperson to read what the operator wrote.
+  const [readingArticle, setReadingArticle] = useState<KbArticle | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'category' | 'article'; id: string } | null>(null);
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
 
@@ -328,12 +334,13 @@ export default function KnowledgeBasePage() {
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <Link
-                              to={`/admin/knowledge-base/${article.id}`}
-                              className="font-medium hover:underline truncate"
+                            <button
+                              type="button"
+                              onClick={() => setReadingArticle(article)}
+                              className="font-medium hover:underline truncate text-left"
                             >
                               {article.title}
-                            </Link>
+                            </button>
                             {article.visibility === 'internal' && (
                               <Badge className="shrink-0 bg-warning/15 text-warning border-warning/30 hover:bg-warning/15">
                                 <Lock className="h-3 w-3 mr-1" />
@@ -440,6 +447,45 @@ export default function KnowledgeBasePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Read view — consume the article the way a reader would, edit one click away. */}
+      <Sheet open={!!readingArticle} onOpenChange={(o) => !o && setReadingArticle(null)}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          {readingArticle && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2 text-left">
+                  {readingArticle.title}
+                  {readingArticle.visibility === 'internal' && (
+                    <Badge className="shrink-0 bg-warning/15 text-warning border-warning/30 hover:bg-warning/15">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Internal
+                    </Badge>
+                  )}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-muted-foreground">{readingArticle.question}</p>
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: renderTiptapContent(readingArticle.answer_json as never) }}
+                />
+                <div className="pt-4 border-t flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {readingArticle.category?.name}
+                  </span>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to={`/admin/knowledge-base/${readingArticle.id}`}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 }

@@ -77,7 +77,7 @@ function TabItemEditor({
             <AITiptapToolbar editor={editor} context="tab content" />
           </div>
         )}
-        <EditorContent editor={editor} className="tiptap prose prose-sm max-w-none p-3 min-h-[100px]" />
+        <EditorContent editor={editor} className="tiptap prose dark:prose-invert prose-sm max-w-none p-3 min-h-[100px]" />
       </div>
     </Card>
   );

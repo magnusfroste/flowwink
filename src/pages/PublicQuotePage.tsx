@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { CheckCircle2, XCircle, FileText, Clock, ShieldCheck, CreditCard } from 'lucide-react';
+import { CheckCircle2, XCircle, FileText, Clock, ShieldCheck, CreditCard, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,20 +102,14 @@ export default function PublicQuotePage() {
     setPayPending(false);
   };
 
-  const itemsKey = ['public-quote-items', quote?.id];
-  const { data: items = [] } = useQuery({
-    queryKey: itemsKey,
-    queryFn: async () => {
-      if (!quote?.id) return [];
-      const { data } = await supabase
-        .from('quote_items')
-        .select('*')
-        .eq('quote_id', quote.id)
-        .order('position', { ascending: true });
-      return data || [];
-    },
-    enabled: !!quote?.id,
-  });
+  // Items arrive with the quote from get_public_quote — the anon client has no
+  // read on the quote_items table, and admin-composed quotes keep their lines
+  // in the line_items jsonb the RPC falls back to. One fetch, one truth.
+  const items = ((quote as { _public_items?: unknown[] } | null)?._public_items ?? []) as {
+    id: string; description: string; quantity: number; unit?: string;
+    unit_price_cents: number; line_total_cents: number;
+    is_optional?: boolean; selected_by_customer?: boolean;
+  }[];
 
   const toggleOptional = async (itemId: string, selected: boolean) => {
     if (!token) return;
@@ -123,7 +117,8 @@ export default function PublicQuotePage() {
       _accept_token: token, _item_id: itemId, _selected: selected,
     } as never);
     if (!error) {
-      qc.invalidateQueries({ queryKey: itemsKey });
+      // Items travel inside the public-quote payload now — refetching the
+      // quote refreshes them and the recalculated totals together.
       refetch();
     }
   };
@@ -225,7 +220,13 @@ export default function PublicQuotePage() {
                   )}
                 </div>
               </div>
-              <Badge variant={isFinal ? 'secondary' : 'default'}>{status}</Badge>
+              <div className="flex items-center gap-2 print:hidden">
+                <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
+                  <Download className="h-4 w-4" />
+                  Save as PDF
+                </Button>
+                <Badge variant={isFinal ? 'secondary' : 'default'}>{status}</Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
@@ -279,6 +280,20 @@ export default function PublicQuotePage() {
               <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{fmt(subtotal)}</span></div>
               <div className="flex justify-between"><span>Tax</span><span className="font-mono">{fmt(tax)}</span></div>
               <div className="flex justify-between font-medium text-base border-t pt-1"><span>Total</span><span className="font-mono">{fmt(total)}</span></div>
+
+              <div className="hidden print:block border-t pt-4 mt-4 text-xs text-muted-foreground">
+                <p>
+                  Quote {(quote as { quote_number: string }).quote_number} — status: {status}
+                  {(quote as { accepted_at?: string | null }).accepted_at
+                    ? ` — accepted ${new Date((quote as { accepted_at: string }).accepted_at).toLocaleString('sv-SE')}`
+                    : ''}
+                  {validUntil ? ` — valid until ${validUntil}` : ''}
+                </p>
+                <p>
+                  Rendered from the live quote on {new Date().toLocaleString('sv-SE')}. The web page
+                  is the authoritative copy; this PDF is a snapshot of it.
+                </p>
+              </div>
             </div>
 
             {validUntil && (
@@ -304,7 +319,7 @@ export default function PublicQuotePage() {
 
             {/* Signing */}
             {!isFinal && mode === 'view' && (
-              <div className="border-t pt-4 flex flex-wrap gap-2">
+              <div className="print:hidden border-t pt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setMode('accept')} disabled={isExpired} className="gap-2">
                   <CheckCircle2 className="h-4 w-4" /> Accept Quote
                 </Button>
@@ -315,7 +330,7 @@ export default function PublicQuotePage() {
             )}
 
             {!isFinal && mode !== 'view' && (
-              <div className="border-t pt-4 space-y-3">
+              <div className="print:hidden border-t pt-4 space-y-3">
                 <h3 className="font-medium">{mode === 'accept' ? 'Confirm acceptance' : 'Decline this quote'}</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1">

@@ -49,7 +49,9 @@ export function QuoteAttachmentsPanel({ quoteId }: Props) {
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : attachments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No attachments. Add spec PDFs, drawings, or terms — they follow the quote when sent.
+            No attachments. For third-party files only — manufacturer spec sheets, drawings,
+            certificates. Our own quote and agreement text lives on the web page the customer
+            opens (they can save it as PDF there); never attach a rendered copy of it.
           </p>
         ) : (
           attachments.map((a) => (

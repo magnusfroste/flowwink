@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { CheckCircle2, XCircle, FileSignature, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, FileSignature, ShieldCheck, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,9 +29,10 @@ export default function PublicContractPage() {
   const [mode, setMode] = useState<'view' | 'accept' | 'reject'>('view');
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
 
+  const contractId = (contract as { id?: string } | null)?.id;
   useEffect(() => {
-    if (contract?.id) markContractViewed(contract.id).catch(() => {});
-  }, [contract?.id]);
+    if (contractId) markContractViewed(contractId).catch(() => {});
+  }, [contractId]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading…</p></div>;
@@ -52,6 +53,7 @@ export default function PublicContractPage() {
     title: string;
     counterparty_name: string;
     status: string;
+    version?: number | null;
     body_markdown: string | null;
     signed_at: string | null;
   };
@@ -90,7 +92,13 @@ export default function PublicContractPage() {
                   <p className="text-muted-foreground mt-1">Between you and {c.counterparty_name}</p>
                 </div>
               </div>
-              <Badge variant={isFinal ? 'secondary' : 'default'}>{c.status.replace('_', ' ')}</Badge>
+              <div className="flex items-center gap-2 print:hidden">
+                <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
+                  <Download className="h-4 w-4" />
+                  Save as PDF
+                </Button>
+                <Badge variant={isFinal ? 'secondary' : 'default'}>{c.status.replace('_', ' ')}</Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
@@ -102,8 +110,19 @@ export default function PublicContractPage() {
               )}
             </article>
 
+            <div className="hidden print:block border-t pt-4 text-xs text-muted-foreground">
+              <p>
+                {c.title} — version {c.version ?? 1} — status: {c.status.replace('_', ' ')}
+                {c.signed_at ? ` — signed ${new Date(c.signed_at).toLocaleString('sv-SE')}` : ''}
+              </p>
+              <p>
+                Rendered from the live agreement on {new Date().toLocaleString('sv-SE')}. The web
+                page is the authoritative copy; this PDF is a snapshot of it.
+              </p>
+            </div>
+
             {!isFinal && mode === 'view' && (
-              <div className="border-t pt-4 flex flex-wrap gap-2">
+              <div className="print:hidden border-t pt-4 flex flex-wrap gap-2">
                 <Button onClick={() => setMode('accept')} className="gap-2">
                   <CheckCircle2 className="h-4 w-4" /> Accept & Sign
                 </Button>
@@ -114,7 +133,7 @@ export default function PublicContractPage() {
             )}
 
             {!isFinal && mode !== 'view' && (
-              <div className="border-t pt-4 space-y-3">
+              <div className="print:hidden border-t pt-4 space-y-3">
                 <h3 className="font-medium">{mode === 'accept' ? 'Confirm acceptance' : 'Decline this contract'}</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1">

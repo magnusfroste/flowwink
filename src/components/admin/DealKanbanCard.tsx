@@ -14,7 +14,7 @@ interface DealKanbanCardProps {
 }
 
 export function DealKanbanCard({ deal }: DealKanbanCardProps) {
-  const { formatDate } = usePlatformFormat();
+  const { formatDate, formatCurrency } = usePlatformFormat();
   const {
     attributes,
     listeners,

@@ -245,7 +245,7 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
       </div>
       <EditorContent 
         editor={editor} 
-        className="tiptap min-h-[200px] prose prose-sm max-w-none p-4" 
+        className="tiptap min-h-[200px] prose dark:prose-invert prose-sm max-w-none p-4" 
       />
       
       {/* Media Library Dialog */}

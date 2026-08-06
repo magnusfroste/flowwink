@@ -68,7 +68,7 @@ export default function KbArticleEditorPage() {
     content: "",
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none min-h-[200px] focus:outline-none p-4",
+        class: "prose dark:prose-invert prose-sm max-w-none min-h-[200px] focus:outline-none p-4",
       },
     },
   });

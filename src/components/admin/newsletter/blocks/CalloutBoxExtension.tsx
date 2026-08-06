@@ -47,7 +47,7 @@ const CalloutBoxComponent = ({ node, updateAttributes, deleteNode, selected }: N
                   {title}
                 </div>
               )}
-              <NodeViewContent className="prose prose-sm max-w-none [&>p]:m-0" />
+              <NodeViewContent className="prose dark:prose-invert prose-sm max-w-none [&>p]:m-0" />
             </div>
           </div>
         </div>

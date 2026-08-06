@@ -24,6 +24,9 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from '@/components/ui/sheet';
+import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from '@/components/ui/command';
 import { useIsModuleEnabled } from '@/hooks/useModules';
@@ -31,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Table2, Plus, Download, Upload, MoreHorizontal, Trash2, ChevronDown, LayoutGrid, List as ListIcon, Rows3,
   Send, Users, X, Database, PanelLeft, PanelRight, Filter, ArrowUpDown, Columns3, GripVertical,
+  Maximize2, ChevronLeft, ChevronRight, WrapText,
 } from 'lucide-react';
 import {
   useFlowtableBases, useCreateBase, useUpdateBase, useDeleteBase,
@@ -89,6 +93,176 @@ const FILTER_OPS: { value: FlowtableViewFilter['op']; label: string; needsValue:
 
 // Apply a view's filters + sort to the loaded records (client-side; records for
 // a table are already in memory). Feeds grid, list, card and kanban alike.
+// ─── Expanded record view ────────────────────────────────────────────────────
+// Agent-written rows carry paragraphs, not cells — a grid truncates them into
+// unreadability. This is the Airtable pattern: one record as a vertical form,
+// stepped with prev/next (or arrow keys), every field readable at full height.
+function RecordSheet({ open, onClose, records, fields, index, setIndex, onUpdate }: {
+  open: boolean;
+  onClose: () => void;
+  records: FlowtableRecord[];
+  fields: FlowtableField[];
+  index: number;
+  setIndex: (i: number) => void;
+  onUpdate: (id: string, values: Record<string, unknown>) => void;
+}) {
+  const rec = records[index];
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Don't steal arrows from an input the user is typing in.
+      const t = e.target as HTMLElement;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return;
+      if (e.key === 'ArrowLeft' && index > 0) setIndex(index - 1);
+      if (e.key === 'ArrowRight' && index < records.length - 1) setIndex(index + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, index, records.length, setIndex]);
+
+  if (!rec) return null;
+  const write = (key: string, v: unknown) => onUpdate(rec.id, { ...rec.values, [key]: v });
+  const primary = fields[0];
+  const title = String(rec.values?.[primary?.key ?? ''] ?? '') || 'Untitled record';
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetHeader>
+          <div className="flex items-center justify-between gap-3 pr-8">
+            <SheetTitle className="truncate text-left">{title}</SheetTitle>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {index + 1} / {records.length}
+              </span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={index === 0}
+                onClick={() => setIndex(index - 1)} aria-label="Previous record">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={index >= records.length - 1}
+                onClick={() => setIndex(index + 1)} aria-label="Next record">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4 pb-8">
+          {fields.map((f) => {
+            const v = rec.values?.[f.key];
+            const label = (
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                {f.name}
+              </Label>
+            );
+            if (f.type === 'longtext') {
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <Textarea key={rec.id + f.id} defaultValue={(v as string) ?? ''} rows={6}
+                    className="resize-y"
+                    onBlur={(e) => e.target.value !== ((v as string) ?? '') && write(f.key, e.target.value)} />
+                </div>
+              );
+            }
+            if (f.type === 'checkbox') {
+              return (
+                <div key={f.id} className="flex items-center gap-2">
+                  <Checkbox checked={!!v} onCheckedChange={(c) => write(f.key, !!c)} />
+                  {label}
+                </div>
+              );
+            }
+            if (f.type === 'select') {
+              const choices = ((f.options?.choices as string[]) ?? []).length
+                ? (f.options?.choices as string[]) : ['New', 'In progress', 'Done'];
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <select value={(v as string) ?? ''} onChange={(e) => write(f.key, e.target.value || null)}
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm">
+                    <option value=""></option>
+                    {choices.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              );
+            }
+            if (f.type === 'multiselect') {
+              const choices = (f.options?.choices as string[]) ?? [];
+              const current = Array.isArray(v) ? (v as string[]) : [];
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <div className="flex flex-wrap gap-2">
+                    {choices.map((c) => {
+                      const on = current.includes(c);
+                      return (
+                        <button key={c} type="button"
+                          onClick={() => write(f.key, on ? current.filter((x) => x !== c) : [...current, c])}
+                          className={`text-xs px-2 py-1 rounded-full border transition-colors ${on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}>
+                          {c}
+                        </button>
+                      );
+                    })}
+                    {current.filter((c) => !choices.includes(c)).map((c) => (
+                      <span key={c} className="text-xs px-2 py-1 rounded-full border bg-muted">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            if (f.type === 'number' || f.type === 'currency') {
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <div className="flex items-center gap-2">
+                    <Input key={rec.id + f.id} type="number" defaultValue={(v as number | undefined) ?? ''}
+                      onBlur={(e) => {
+                        const n = e.target.value === '' ? null : Number(e.target.value);
+                        if (n !== ((v as number | null) ?? null)) write(f.key, n);
+                      }} />
+                    {f.type === 'currency' && (
+                      <span className="text-xs text-muted-foreground">{(f.options?.currency_code as string) || 'SEK'}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            if (f.type === 'date') {
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <Input key={rec.id + f.id} type="date" defaultValue={toDateInputValue(v)}
+                    onBlur={(e) => e.target.value !== toDateInputValue(v) && write(f.key, e.target.value || null)} />
+                </div>
+              );
+            }
+            if (f.type === 'link' || f.type === 'user' || f.type === 'lookup' || f.type === 'rollup') {
+              // Relations are edited in the grid where their pickers live; here
+              // they are read-only so the reading flow stays uninterrupted.
+              const display = Array.isArray(v) ? v.join(', ') : String(v ?? '—');
+              return (
+                <div key={f.id} className="space-y-1.5">
+                  {label}
+                  <p className="text-sm text-muted-foreground">{display || '—'} <span className="text-xs opacity-60">(edit in grid)</span></p>
+                </div>
+              );
+            }
+            return (
+              <div key={f.id} className="space-y-1.5">
+                {label}
+                <Input key={rec.id + f.id} defaultValue={(v as string) ?? ''}
+                  onBlur={(e) => e.target.value !== ((v as string) ?? '') && write(f.key, e.target.value)} />
+              </div>
+            );
+          })}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function applyViewConfig(records: FlowtableRecord[], cfg?: FlowtableViewConfig): FlowtableRecord[] {
   let out = records;
   const filters = cfg?.filters ?? [];
@@ -156,6 +330,10 @@ export default function FlowtablePage() {
 
   const { data: fields = [] } = useFlowtableFields(activeTable?.id);
   const { data: records = [] } = useFlowtableRecords(activeTable?.id);
+  // Expanded record view: index into displayedRecords (the filtered/sorted set
+  // the user is actually looking at), so prev/next steps what the eye expects.
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [density, setDensity] = useState<'compact' | 'comfortable'>('compact');
   const displayedRecords = useMemo(
     () => applyViewConfig(records, activeTable?.view_config),
     [records, activeTable?.view_config],
@@ -460,6 +638,15 @@ export default function FlowtablePage() {
                           </button>
                         );
                       })}
+                      <Button
+                        variant={density === 'comfortable' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-7 px-2"
+                        title="Fit row height to text"
+                        onClick={() => setDensity(density === 'comfortable' ? 'compact' : 'comfortable')}
+                      >
+                        <WrapText className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                     <ViewToolbar
                       fields={fields}
@@ -542,6 +729,7 @@ export default function FlowtablePage() {
                       <CardView
                         fields={fields}
                         records={displayedRecords}
+                        onExpand={setExpandedIndex}
                         onUpdate={(id, values) =>
                           updateRecord.mutate({ id, table_id: activeTable.id, values })
                         }
@@ -552,6 +740,7 @@ export default function FlowtablePage() {
                         records={displayedRecords}
                         selected={selected}
                         setSelected={setSelected}
+                        onExpand={setExpandedIndex}
                         onUpdate={(id, values) =>
                           updateRecord.mutate({ id, table_id: activeTable.id, values })
                         }
@@ -563,6 +752,8 @@ export default function FlowtablePage() {
                         tables={tables}
                         selected={selected}
                         setSelected={setSelected}
+                        density={density}
+                        onExpand={setExpandedIndex}
                         onUpdateRecord={(id, values) =>
                           updateRecord.mutate({ id, table_id: activeTable.id, values })
                         }
@@ -629,6 +820,18 @@ export default function FlowtablePage() {
           />
         </DialogContent>
       </Dialog>
+
+      {activeTable && expandedIndex !== null && (
+        <RecordSheet
+          open={expandedIndex !== null}
+          onClose={() => setExpandedIndex(null)}
+          records={displayedRecords}
+          fields={fields}
+          index={Math.min(expandedIndex, Math.max(displayedRecords.length - 1, 0))}
+          setIndex={setExpandedIndex}
+          onUpdate={(id, values) => updateRecord.mutate({ id, table_id: activeTable.id, values })}
+        />
+      )}
     </AdminLayout>
   );
 }
@@ -640,6 +843,8 @@ function GridView(props: {
   tables: FlowtableTable[];
   selected: Set<string>;
   setSelected: (s: Set<string>) => void;
+  density?: 'compact' | 'comfortable';
+  onExpand?: (index: number) => void;
   onUpdateRecord: (id: string, values: Record<string, unknown>) => void;
   onAddField: (name: string, type: FlowtableFieldType, options: Record<string, unknown>) => void;
   onConfigureField: (id: string, patch: Partial<FlowtableField>) => void;
@@ -755,9 +960,9 @@ function GridView(props: {
             const isSelected = selected.has(r.id);
             return (
             <tr key={r.id} className="group hover:bg-muted/30">
-              <td className="border-r border-b w-10 p-0">
-                <div className="h-9 flex items-center justify-center">
-                  {/* Airtable-style: row number by default, checkbox on hover or when selected */}
+              <td className="border-r border-b w-16 p-0">
+                <div className="h-9 flex items-center justify-center gap-1">
+                  {/* Airtable-style: row number by default, checkbox + expand on hover */}
                   <span
                     className={`text-xs text-muted-foreground tabular-nums ${
                       isSelected ? 'hidden' : 'group-hover:hidden'
@@ -770,6 +975,16 @@ function GridView(props: {
                     checked={isSelected}
                     onCheckedChange={() => toggleOne(r.id)}
                   />
+                  {props.onExpand && (
+                    <button
+                      type="button"
+                      className="hidden group-hover:inline-flex text-muted-foreground hover:text-foreground"
+                      title="Open record"
+                      onClick={() => props.onExpand!(idx)}
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </td>
               {fields.map((f) => (
@@ -779,6 +994,7 @@ function GridView(props: {
                   value={r.values?.[f.key]}
                   record={r}
                   fields={fields}
+                  density={props.density}
                   onChange={(v) => props.onUpdateRecord(r.id, { ...r.values, [f.key]: v })}
                 />
               ))}
@@ -1069,12 +1285,13 @@ function FieldConfigDialog({ field, tables, fields, onClose, onSave }: {
   );
 }
 
-function CellEditor({ field, value, record, fields, onChange }: {
+function CellEditor({ field, value, record, fields, onChange, density = 'compact' }: {
   field: FlowtableField;
   value: unknown;
   record?: FlowtableRecord;
   fields?: FlowtableField[];
   onChange: (v: unknown) => void;
+  density?: 'compact' | 'comfortable';
 }) {
   const common = 'h-9 w-full px-2 bg-transparent border-0 outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background';
   const cellStyle = { width: field.width, minWidth: field.width } as const;
@@ -1099,7 +1316,7 @@ function CellEditor({ field, value, record, fields, onChange }: {
         <Textarea
           defaultValue={(value as string) ?? ''}
           onBlur={(e) => e.target.value !== (value ?? '') && onChange(e.target.value)}
-          rows={1}
+          rows={density === 'comfortable' ? 4 : 1}
           className="border-0 rounded-none min-h-9 resize-y focus-visible:ring-2 focus-visible:ring-offset-0"
         />
       </td>
@@ -1728,16 +1945,17 @@ function KanbanCard({ id, record, titleField, bodyFields }: {
 }
 
 // ---------- List view ----------
-function ListView({ fields, records, selected, setSelected, onUpdate }: {
+function ListView({ fields, records, selected, setSelected, onUpdate, onExpand }: {
   fields: FlowtableField[]; records: FlowtableRecord[];
   selected: Set<string>; setSelected: (s: Set<string>) => void;
   onUpdate: (id: string, values: Record<string, unknown>) => void;
+  onExpand?: (index: number) => void;
 }) {
   const primary = fields[0];
   return (
     <div className="divide-y">
-      {records.map((r) => (
-        <div key={r.id} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30">
+      {records.map((r, idx) => (
+        <div key={r.id} className="group flex items-start gap-3 px-4 py-3 hover:bg-muted/30">
           <Checkbox
             checked={selected.has(r.id)}
             onCheckedChange={() => {
@@ -1762,6 +1980,13 @@ function ListView({ fields, records, selected, setSelected, onUpdate }: {
               })}
             </div>
           </div>
+          {onExpand && (
+            <button type="button" title="Open record"
+              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground mt-1"
+              onClick={() => onExpand(idx)}>
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -1769,20 +1994,28 @@ function ListView({ fields, records, selected, setSelected, onUpdate }: {
 }
 
 // ---------- Card view ----------
-function CardView({ fields, records, onUpdate }: {
+function CardView({ fields, records, onUpdate, onExpand }: {
   fields: FlowtableField[]; records: FlowtableRecord[];
   onUpdate: (id: string, values: Record<string, unknown>) => void;
+  onExpand?: (index: number) => void;
 }) {
   const primary = fields[0];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4">
-      {records.map((r) => (
-        <Card key={r.id} className="p-3 space-y-2">
+      {records.map((r, idx) => (
+        <Card key={r.id} className="group relative p-3 space-y-2">
+          {onExpand && (
+            <button type="button" title="Open record"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+              onClick={() => onExpand(idx)}>
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
           <input
             defaultValue={primary ? (r.values?.[primary.key] as string) ?? '' : ''}
             onBlur={(e) => primary && e.target.value !== (r.values?.[primary.key] ?? '') && onUpdate(r.id, { ...r.values, [primary.key]: e.target.value })}
             placeholder="Untitled"
-            className="font-semibold text-sm bg-transparent border-0 outline-none w-full"
+            className="font-semibold text-sm bg-transparent border-0 outline-none w-full pr-6"
           />
           <div className="space-y-1 text-xs">
             {fields.slice(1).map((f) => {

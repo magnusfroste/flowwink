@@ -151,7 +151,7 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
             </div>
             <EditorContent 
               editor={editor} 
-              className="prose prose-sm max-w-none min-h-[80px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring bg-background"
+              className="prose dark:prose-invert prose-sm max-w-none min-h-[80px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring bg-background"
             />
           </>
         )}

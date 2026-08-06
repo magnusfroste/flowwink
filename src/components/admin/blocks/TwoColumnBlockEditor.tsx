@@ -410,7 +410,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                 <div onClick={handleEditorClick} className="cursor-text">
                   <EditorContent 
                     editor={editor} 
-                    className="prose prose-sm max-w-none min-h-[200px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring"
+                    className="prose dark:prose-invert prose-sm max-w-none min-h-[200px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring"
                   />
                 </div>
               </>

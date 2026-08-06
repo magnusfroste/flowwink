@@ -51,6 +51,7 @@ interface KanbanColumnProps {
 }
 
 function KanbanColumn({ stage, index, deals, totalValue, startCollapsed }: KanbanColumnProps) {
+  const { formatCurrency } = usePlatformFormat();
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const [collapsed, setCollapsed] = useState(startCollapsed);
   const isClosed = stage.is_won || stage.is_lost;
