@@ -250,6 +250,75 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — the event lane is finally live (2026-08-06, cloud session)
+
+**Four kill switches sat on the same lane. All four are now closed**, and the
+lane was proven end to end with a live call rather than by reading code — an
+event emitted from the database was processed within the minute and its
+automation fired (`run_count: 1`, no error). Worth knowing exactly which was
+which, so nobody re-debugs a working path:
+
+| # | switch | closed by |
+|---|---|---|
+| 1 | `send-webhook` matched `trigger_config.event_name` while every seed writes `{event: ...}` | #148 (cloud) |
+| 2 | a non-enum event name made the webhooks lookup throw *before* the automations lane ran | #149 (cloud) |
+| 3 | `dispatch_automation_event` read an empty vault, so DB-born events never left the database | `5e850949a` (you) |
+| 4 | **nothing drained `agent_events`** — `event-dispatcher` is deployed and ACTIVE, its dual-key matcher was fixed deliberately, and no migration in the repo had ever scheduled it | #156 (cloud) |
+
+Switch 4 was not instance drift: the schedule was absent from the repo, so the
+function had never run anywhere. On optic the table held 32 rows, every one
+unprocessed, the oldest from 4 August.
+
+**The backlog was NOT replayed**, and checking what was in it changed that call:
+the 9 `email.received` were all automated sender mail (Unsplash marketing,
+GitHub notifications, a Google account notice), the 20 `lead.created` were
+mostly `manage_deal`'s auto-generated placeholder leads, and one
+`subscription.created`. Draining it would have produced nine junk tickets from
+newsletters. Marked `processed_at`, not deleted — a deliberate replay is one
+`UPDATE ... SET processed_at = NULL` away.
+
+#### The payload shape, for when you wire lead→deal automations
+
+I nearly filed "lead.created carries no email" as a finding. **It does** — the
+payload is a full row snapshot one level deeper than the obvious path:
+
+```jsonc
+{ "id": "<lead uuid>", "data": { "id": ..., "email": ..., "name": ..., "status": ... } }
+```
+
+So an automation template wants `{{event.payload.data.email}}`, not
+`{{event.payload.email}}`. Reading it wrong yields an empty string rather than
+an error, which is the same silent shape as the `inbound_email_to_ticket`
+mapping bug already pinned by `event-automation-payload.guardrails.test.ts` —
+worth extending that guard to `lead.created` when the first listener lands.
+
+#### The rest of the billing family — designed, not built
+
+Subscriptions (#152) and contracts (#156) are in the queue. The remaining two
+are **different work, not more of the same**, which is why they were left:
+
+**Recurring quotes.** There is no `generate_quote_from_template(template_id)` —
+the per-template logic is inlined in `run_recurring_quotes`, so there is nothing
+to name in a task. Extracting one touches `document_counters`, and that counter
+is monotonic by design for the gapless numbering Bokföringslagen requires. A
+refactor with its own risk surface, not a move.
+
+**Dunning / invoice reminders.** `send_dunning_reminders` sweeps unpaid invoices
+and sends at `due_date + N` for several N — so one invoice needs *several*
+tasks, one per step. The queue's unique index on
+`(subject_type, subject_id, skill_name)` would then block step 2 while step 1 is
+open. It needs a per-step key: either `subject_type = 'invoice_dunning_step_2'`
+or a distinct skill per step. And it is the only member of the family where a
+wrong task **sends something to a customer**.
+
+#### Still open from earlier handoffs
+
+The 31 contract gaps, 2 broken skills and 3 silent failures from the agent-surface
+sweep are listed in the handoff immediately below, with the exact runtime error per
+skill. `supabase/seed/agent-surface-baseline.json` carries the same text under
+`details`, so that table is regenerable rather than trusted.
+
+
 ### ⇄ Handoff to local Claude — the agent surface, swept live (2026-08-06, cloud session)
 
 `scripts/agent-surface-sweep.ts` now drives all 258 probeable skills against a
