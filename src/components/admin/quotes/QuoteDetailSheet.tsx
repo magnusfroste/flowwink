@@ -437,6 +437,9 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
           counterparty_email: quote.leads?.email || '',
           value_cents: quote.total_cents,
           title: `Avtal — ${quote.quote_number}`,
+          // The link, not just the label. The title has always mentioned the
+          // quote; nothing could query on it.
+          quote_id: quote.id,
         }}
       />
     </Sheet>

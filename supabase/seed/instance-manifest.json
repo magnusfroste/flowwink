@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808210000",
-      "migrations_count": 315,
+      "migration_head": "20260808220000",
+      "migrations_count": 316,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1265,6 +1265,10 @@
         {
           "version": "20260808210000",
           "name": "contract-supplier-tokens"
+        },
+        {
+          "version": "20260808220000",
+          "name": "contracts-quote-link-and-number"
         }
       ]
     },

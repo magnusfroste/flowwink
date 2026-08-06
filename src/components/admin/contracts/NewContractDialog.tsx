@@ -15,8 +15,21 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contract?: Contract;
-  /** Prefill when the contract starts from a quote or a lead. */
-  prefill?: { counterparty_name?: string; counterparty_email?: string; value_cents?: number; title?: string };
+  /**
+   * Prefill when the contract starts from a quote or a lead.
+   *
+   * `quote_id` is the link itself, not a convenience: before it existed the
+   * handoff copied values and encoded the origin as prose in the title
+   * (`Avtal — QUO-2026-00005`), so nothing downstream could answer which quote
+   * became which agreement.
+   */
+  prefill?: {
+    counterparty_name?: string;
+    counterparty_email?: string;
+    value_cents?: number;
+    title?: string;
+    quote_id?: string;
+  };
 }
 
 const NO_TEMPLATE = '__blank__';
@@ -147,6 +160,8 @@ export function NewContractDialog({ open, onOpenChange, contract, prefill }: Pro
             end_date: data.end_date || undefined,
             value_cents: Math.round(data.value_cents * 100),
             currency: data.currency,
+            // Carried through so the agreement records the quote it came from.
+            quote_id: prefill?.quote_id || undefined,
           },
         });
         if (error) throw error;
