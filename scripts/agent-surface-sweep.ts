@@ -59,7 +59,7 @@ const DESTRUCTIVE = [
   'execute', 'approve', 'reject', 'publish', 'archive', 'restock',
 ];
 
-export type Outcome = 'ok' | 'broken' | 'contract_gap' | 'environment' | 'unprobed';
+export type Outcome = 'ok' | 'broken' | 'contract_gap' | 'environment' | 'silent_failure' | 'unprobed';
 
 export interface SkillResult {
   module: string;
@@ -86,8 +86,17 @@ export function classify(errorText: string | null | undefined): Outcome {
 
   // This instance lacks a connected integration or a user session. Not a defect
   // — a fresh install legitimately has no Gmail and no portal login.
-  if (/not connected|No user_id|signed in as a company contact|not configured|missing .*API key/i.test(e)) {
+  // Calibrated against the first full sweep: "No bot_token provided or stored"
+  // and "No base currency configured" are unconfigured instances, not defects.
+  if (/not connected|No user_id|signed in as a company contact|not configured|missing .*API key|No \w+ provided or stored|No base currency/i.test(e)) {
     return 'environment';
+  }
+
+  // status=failed with nothing to act on. Its own class because it is its own
+  // defect: three skills answer this way, and an agent that receives it cannot
+  // self-correct — the whole point of the enriched RPC errors elsewhere.
+  if (/^(None|null|undefined|unknown failure)$/i.test(e.trim())) {
+    return 'silent_failure';
   }
 
   // The schema did not describe what the runtime demands: an action the enum
@@ -95,7 +104,7 @@ export function classify(errorText: string | null | undefined): Outcome {
   // this way on the first sweep, and every one of their error messages listed
   // the valid values — the information existed, just not where an agent reads
   // it before calling. Law 2.
-  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||is required|Provide |required for/i.test(e)) {
+  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||is required|are required|and \w+ required|Provide |required for|must be provided/i.test(e)) {
     return 'contract_gap';
   }
 
@@ -131,7 +140,7 @@ export function diffAgainstBaseline(
       // A skill nobody has swept before. Arriving already broken is a
       // regression against the repo, even though it is not one against the
       // baseline — otherwise every new broken skill enters for free.
-      if (r.outcome === 'broken' || r.outcome === 'contract_gap') newlyBroken.push(r);
+      if (r.outcome === 'broken' || r.outcome === 'contract_gap' || r.outcome === 'silent_failure') newlyBroken.push(r);
       continue;
     }
     if (was === 'ok' && r.outcome !== 'ok' && r.outcome !== 'environment') regressions.push(r);
@@ -210,10 +219,17 @@ async function main() {
 
   if (update) {
     const baseline = Object.fromEntries(results.map((r) => [r.skill, r.outcome]));
+    // Details for everything that is not ok — so the classifier can be
+    // recalibrated from the file instead of a fresh ten-minute sweep, and so a
+    // reader can see WHY a skill is in the baseline rather than just that it is.
+    const details = Object.fromEntries(
+      results.filter((r) => r.outcome !== 'ok' && r.detail).map((r) => [r.skill, r.detail]),
+    );
     writeFileSync(baselinePath(), JSON.stringify({
       note: 'Recorded outcomes per skill. The sweep fails on REGRESSION against this, not on absolute failure count — see scripts/agent-surface-sweep.ts.',
       swept: results.length,
       baseline,
+      details,
     }, null, 2) + '\n');
     console.log(`Baseline written: ${results.length} skills.`);
     return;

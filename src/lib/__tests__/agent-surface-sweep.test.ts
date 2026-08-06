@@ -55,6 +55,25 @@ describe('classify — a defect versus a fact about the instance', () => {
     expect(classify('')).toBe('ok');
   });
 
+  it('recognises the calibration cases the first full sweep exposed', () => {
+    // My first classifier called all of these broken. A live run over 262
+    // skills showed otherwise — the instrument needed calibrating against
+    // reality, exactly like the duplicate-title threshold.
+    expect(classify('No bot_token provided or stored.')).toBe('environment');
+    expect(classify('RPC mcp_revalue_open_balances failed: No base currency configured')).toBe('environment');
+    expect(classify('contentBase64 and mimeType required')).toBe('contract_gap');
+  });
+
+  it('gives a failure with no message its own name', () => {
+    // Three skills answer status=failed with nothing attached. An agent
+    // receiving that cannot self-correct, which is the entire reason the RPC
+    // errors elsewhere were enriched. Calling it "broken" would hide it among
+    // the missing-function cases; it is a different defect.
+    expect(classify('None')).toBe('silent_failure');
+    expect(classify('null')).toBe('silent_failure');
+    expect(classify('unknown failure')).toBe('silent_failure');
+  });
+
   it('defaults an unrecognised failure to broken, not to ok', () => {
     // Silence is the dangerous direction. An unclassifiable failure should
     // surface, not disappear.
@@ -115,6 +134,11 @@ describe('diffAgainstBaseline — regression, not absolute failure', () => {
     // ok → environment means someone disconnected Gmail, not that we broke it.
     const { regressions } = diffAgainstBaseline(base, [r('alpha', 'environment')]);
     expect(regressions).toEqual([]);
+  });
+
+  it('counts a new silent failure as newly broken too', () => {
+    const { newlyBroken } = diffAgainstBaseline(base, [r('theta', 'silent_failure')]);
+    expect(newlyBroken.map((x: never) => (x as { skill: string }).skill)).toEqual(['theta']);
   });
 
   it('flags a NEW skill that arrives already broken', () => {
