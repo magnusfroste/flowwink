@@ -250,6 +250,130 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — lead→contract, rehearsed live (2026-08-06 evening, cloud session)
+
+Magnus demos the lead→contract process tomorrow, so the whole chain was run
+end to end against optic through the gateway — lead → deal → quote → sent →
+customer accept (anonymous) → contract from template — and the test rows
+deleted afterwards. **Read the "already fixed" list first so nothing is redone.**
+
+#### Already fixed and deployed — do NOT redo
+
+| what | where | state |
+|---|---|---|
+| supplier name / org.nr / address never reached the contract body | `20260808210000` | main + optic |
+| `contracts.quote_id` + `contract_number` (`AGR-YYYY-NNNNN`, trigger-assigned) | `20260808220000` | **#161 open**, applied to optic |
+| `create_contract_from_template` declared the wrong return type | `20260808210000` | main + optic |
+
+**The other four instances have neither migration.** Both are idempotent and
+forward-dated; `20260808210000` DROPs the function first, so it lands on either
+lineage.
+
+#### 1. `manage_deal` manufactures a junk lead and calls it success
+
+Its own parameter doc says *"lead_id: Required for create UNLESS company_id or
+company_name is supplied"*. Passing **none of the three** does not error:
+
+```
+{action:'create', title:'Kontraktstest', value_cents:100}
+→ status: success, auto_created_lead: true
+→ leads row: name "Auto-generated lead", email deal-auto-generated-lead-<ts>@auto.flowwink.local
+```
+
+This is where the `lead.created` placeholder rows in `agent_events` came from.
+In a CRM demo it shows up as rows nobody created on purpose. The fallback should
+fire only when `company_id`/`company_name` IS supplied — which is what the
+contract already promises. Same family as the flowtable `choices` bug: the guard
+exists in the description and nowhere in the code.
+
+#### 2. Two quote number series, and a comment that documents the past
+
+`manage_quote create` produced `QUO-0006` while the admin UI produces
+`QUO-2026-00006`. The generator in `agent-execute` carries this comment:
+
+> `// quotes.quote_number is NOT NULL with no default — the admin UI generates`
+> `// QUO-NNNN client-side, so the skill path must too or create always fails.`
+
+`grep -rn "QUO-" src/` returns **nothing**. The UI moved to
+`next_document_number('quote','QUO')` (→ `QUO-YYYY-NNNNN`) and the skill path
+was left behind, with the comment still asserting the old alignment — which is
+why it reads as correct.
+
+Worse than cosmetic: the skill path scans the last 50 rows for a trailing
+integer and adds one, **without touching `document_number_counters`**. So the
+agent and the UI hand out the same ordinal independently. Today the formats
+differ so they do not collide as strings; aligning the formats (the obvious
+"fix") would turn this into a hard duplicate. The real fix is to call
+`next_document_number` from the skill path too.
+
+#### 3. One line so the agent can link a contract to its quote
+
+`create_contract_from_template` now accepts `quote_id` in `p_overrides`, and the
+admin dialog passes it. `agent-execute` builds overrides from a fixed list:
+
+```ts
+for (const k of ['title', 'start_date', 'end_date', 'value_cents', 'currency'])
+```
+
+Add `'quote_id'` (and `'company_id'`, which the RPC has always accepted and the
+skill has never sent). The skill's `tool_definition` needs the parameter too.
+
+#### 4. Contract placeholders still unfilled — what each one actually needs
+
+25 bracket placeholders / 164 occurrences across the 15 templates. After
+`20260808210000` and `20260808220000`, what remains and why:
+
+- **`[BELOPP]` (15), `[ANTAL]` (34), `[MODELL]`, `[PRIS]`** — per-line figures in
+  fee and capacity tables, not the contract total (which already has
+  `{{value}}`). Needs a mapping from `quote_items` now that `quote_id` exists.
+  Guessing which line is "Etableringsavgift" puts wrong money in a signed
+  agreement, so this wants an explicit per-template line map, not heuristics.
+- **`[HUVUDAVTALETS NUMMER]`** — the DPA annex pointing at its PARENT agreement.
+  Needs a parent-contract link, a different relationship from `quote_id`.
+- **`[ORT]`, `[SN 0 / SN 1 / SN 2]`, `[A1/A2]`, `[STRÄCKANS BENÄMNING]`,
+  `[DATUM]`** — choices and measurements per deal. Data points nobody has
+  modelled; they belong on the deal/quote as structured attributes.
+- **`[BEVAKNINGSBOLAG]`, `[JOURBOLAG]`, `[STÄDBOLAG]`** — the same three
+  subcontractors for every customer. This is a GDPR subprocessor register. As
+  free text you cannot answer "which agreements name our old security provider"
+  when you switch.
+- **`[TITEL]`, `[MÅNAD ÅR]`** — deliberately NOT derived. The profile stores a
+  `ceo` name and no title, and the CPI base month usually but not always equals
+  the start month; a wrong number there silently changes what the customer pays
+  every year.
+
+#### 5. What worked, so nobody goes looking
+
+The public quote page renders anonymously with its lines; `accept_behavior:
+'contract'` correctly creates **no** invoice (first real run — the one accepted
+quote on optic predates the fix by five minutes); `{{terms_url}}` resolves to
+`https://www.optictunnels.eu/villkor` and that page serves 5 terms documents to
+an anonymous visitor.
+
+Also by design, not a bug: **accept does not create a contract.** "Draft
+contract" is a button in `QuoteDetailSheet`. Accept expresses intent, the
+signature binds.
+
+#### 6. Repo/live drift lesson worth keeping
+
+`20260808180000_terms-url-token.sql` declares
+`RETURNS TABLE(id uuid, title text, status text)`. The deployed function returns
+`TABLE(contract_id uuid, title text, status contract_status)`, and
+`agent-execute` reads `row?.contract_id`. So that migration **cannot apply to any
+existing instance** (`42P13: cannot change return type`) and on a fresh install
+would make `manage_contract` answer `contract_id: undefined`. Neither is visible
+in either file alone. `20260808210000` DROPs first and settles on the consumer's
+shape. When changing an RPC's signature, check what reads it — `pg_proc` on a
+live instance and the caller, not the migration you are editing.
+
+#### CI state as of this handoff
+
+GitHub Actions stopped running at **15:39** — no run on main or any branch
+since. The red on main (`e2589514`) is `Build` failing at step 1 "Set up job"
+(runner allocation), while all 13 real checks passed in the same run. The
+main-red alert opened **#160** correctly at 16:10, its first live firing. The
+cloud session's token cannot re-run jobs (403 on `rerun-failed-jobs`).
+
 ### ⇄ Handoff to local Claude — `manage_flowtable_field` accepts bad `choices` and reports success (2026-08-06, cloud session)
 
 **Your file (`agent-execute`), so untouched — but this is the highest-value fix
