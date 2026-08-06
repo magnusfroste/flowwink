@@ -250,6 +250,57 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — `manage_flowtable_field` accepts bad `choices` and reports success (2026-08-06, cloud session)
+
+**Your file (`agent-execute`), so untouched — but this is the highest-value fix
+in the batch.** Magnus reported that OpenClaw could not set dropdown options
+over MCP. It can: 6 of 12 select fields on Optic's `produkter` base were
+correctly configured, and I set the other 6 live through the gateway. What is
+broken is what happens when the agent gets the shape slightly wrong.
+
+`normalizeFlowtableFieldOptions` (agent-execute, ~line 10569):
+
+```ts
+if (type === 'select' || type === 'multiselect') {
+  const out: Record<string, unknown> = {};
+  if (Array.isArray(opts.choices)) out.choices = opts.choices.map((c: any) => String(c));
+  return { options: out };
+}
+```
+
+Two failure modes, both live-reproduced through the gateway:
+
+| sent | result | should be |
+|---|---|---|
+| `options: {choices: "Ej satt,Ej tillämpligt"}` | `status: success`, `updated: true`, `options: {}` | error naming the expected shape |
+| `options: {choices: [{label:"Aktiv",value:"aktiv"}]}` | `status: success`, `options: {choices: ["[object Object]"]}` | error — `String(obj)` is never a choice |
+
+The first is the one that produced the report: **an agent that formats `choices`
+as a string is told it succeeded and the column stays empty.** The third shape
+I tried — `choices` at top level instead of inside `options` — errors correctly
+(*"Nothing to update"*), which is the behaviour the other two should have.
+
+Suggested fix, both in the same branch: reject a non-array `choices`, and reject
+entries that are not strings/numbers, naming what was received. `select` is the
+only place in `normalizeFlowtableFieldOptions` that silently drops rather than
+errors — `link`, `lookup` and `rollup` all validate properly, so this is a hole
+in one branch, not a design choice.
+
+**Two halves already shipped from here**, so don't redo them:
+- `20260808180000` makes `list_flowtable_tables` emit `options`. The RPC was the
+  only schema-discovery surface an external agent has and it returned
+  `{key,name,type}` — so a configured select and an unconfigured one looked
+  identical from outside, and read-back (the only way to catch a silent write)
+  was impossible. Applied to optic; the other four instances need it.
+- `FlowtablePage.tsx` no longer hides a select value that is not among its
+  choices. It rendered `<select value="Månadsavgift">` with no matching
+  `<option>` → blank cell, and the fallback list offered `New / In progress /
+  Done`, so the obvious repair overwrote good data with a meaningless value. The
+  multiselect renderer had handled this all along; single select did not.
+
+Optic's data is now clean: all 12 select/multiselect fields carry choices, zero
+values fall outside their own list (verified by query, not by reading code).
+
 ### ⇄ Handoff to local Claude — documents can be marked sensitive, and the FILE follows the row (2026-08-06, cloud session)
 
 Peter (COO/CFO) asked before getting his login: **if HR starts using the

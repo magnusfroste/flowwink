@@ -93,6 +93,38 @@ const APP_ROLE_FILTERS = [
 const TYPES_WITH_OPTIONS = new Set<FlowtableFieldType>(['select', 'multiselect', 'link', 'lookup', 'rollup', 'user', 'currency']);
 const ROLLUP_AGGS = ['count', 'sum', 'avg', 'min', 'max'] as const;
 
+/**
+ * The choices a select/multiselect cell should offer, given what it currently holds.
+ *
+ * A stored value that is not among the configured choices used to render as an
+ * empty dropdown: `<select value="Månadsavgift">` with no matching `<option>`
+ * shows blank, so the data looked missing — and touching the control replaced a
+ * correct value with whatever the list did offer. That is a silent edit of good
+ * data, and it happens exactly when an agent fills rows before anyone configures
+ * the column. The multiselect renderer already kept out-of-list values visible;
+ * single select did not. Same idea, two renderers, one of them wrong.
+ *
+ * The old fallback made it worse: an unconfigured select offered
+ * `New / In progress / Done` regardless of the column's meaning, so a
+ * "Debiteringsform" column invited you to set a row to "In progress". The
+ * starter set is now only used when the column is BOTH unconfigured and empty —
+ * a genuinely new column, which is what it was for.
+ */
+export function selectChoices(
+  configured: string[] | undefined,
+  present: string[],
+  starterWhenEmpty: string[] = [],
+): string[] {
+  // Blanks are dropped first: `String(values?.[key] ?? '')` yields '' for unset
+  // cells, and counting those as data would deny a genuinely empty column its
+  // starter set.
+  const held = present.filter(Boolean);
+  const base = configured?.length ? configured : (held.length ? [] : starterWhenEmpty);
+  // Deduped: the result is rendered as `<option key={c}>`, so a repeated value
+  // would both warn and show twice.
+  return [...new Set([...base, ...held])];
+}
+
 const FILTER_OPS: { value: FlowtableViewFilter['op']; label: string; needsValue: boolean }[] = [
   { value: 'eq', label: 'is', needsValue: true },
   { value: 'neq', label: 'is not', needsValue: true },
@@ -187,8 +219,11 @@ function RecordSheet({ open, onClose, records, fields, index, setIndex, onUpdate
               );
             }
             if (f.type === 'select') {
-              const choices = ((f.options?.choices as string[]) ?? []).length
-                ? (f.options?.choices as string[]) : ['New', 'In progress', 'Done'];
+              const choices = selectChoices(
+                f.options?.choices as string[] | undefined,
+                v ? [String(v)] : [],
+                ['New', 'In progress', 'Done'],
+              );
               return (
                 <div key={f.id} className="space-y-1.5">
                   {label}
@@ -1380,10 +1415,14 @@ function CellEditor({ field, value, record, fields, onChange, rowHeight = 'short
   }
 
   if (field.type === 'select') {
-    // User-defined choices from options; only fall back to a starter set when
-    // the field was never configured (keeps old select columns working).
-    const configured = field.options?.choices as string[] | undefined;
-    const choices = (configured && configured.length) ? configured : ['New', 'In progress', 'Done'];
+    // The current value is always offered, even when it is not among the
+    // configured choices — otherwise the cell renders blank and editing any
+    // other cell in the column silently overwrites good data. See selectChoices.
+    const choices = selectChoices(
+      field.options?.choices as string[] | undefined,
+      value ? [String(value)] : [],
+      ['New', 'In progress', 'Done'],
+    );
     return (
       <td className="border-r border-b p-0 align-top" style={cellStyle}>
         <select
@@ -1927,7 +1966,14 @@ function KanbanView({ fields, records, config, onChangeConfig, onUpdate }: {
     if (!groupField) return [];
     let values: string[];
     if (groupField.type === 'select' || groupField.type === 'multiselect') {
-      values = ((groupField.options?.choices as string[]) ?? []);
+      // Configured choices set the column ORDER; values in the data that are not
+      // configured still get a column rather than collapsing into Uncategorized.
+      // Without this, grouping by an unconfigured select produced a board with
+      // exactly one column — every card in "Uncategorized".
+      values = selectChoices(
+        groupField.options?.choices as string[] | undefined,
+        [...new Set(records.map((r) => String(r.values?.[groupField.key] ?? '')).filter(Boolean))],
+      );
     } else {
       values = [...new Set(records.map((r) => String(r.values?.[groupField.key] ?? '')).filter(Boolean))];
     }

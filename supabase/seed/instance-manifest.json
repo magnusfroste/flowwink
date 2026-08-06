@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808180000",
-      "migrations_count": 312,
+      "migration_head": "20260808190000",
+      "migrations_count": 313,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1253,6 +1253,10 @@
         {
           "version": "20260808180000",
           "name": "terms-url-token"
+        },
+        {
+          "version": "20260808190000",
+          "name": "flowtable-list-tables-expose-options"
         }
       ]
     },
