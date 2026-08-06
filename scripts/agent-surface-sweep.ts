@@ -104,7 +104,7 @@ export function classify(errorText: string | null | undefined): Outcome {
   // this way on the first sweep, and every one of their error messages listed
   // the valid values — the information existed, just not where an agent reads
   // it before calling. Law 2.
-  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||is required|are required|and \w+ required|Provide |required for|must be provided/i.test(e)) {
+  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||is required|are required|and \w+ required|\brequires\b|Provide |required for|must be provided/i.test(e)) {
     return 'contract_gap';
   }
 

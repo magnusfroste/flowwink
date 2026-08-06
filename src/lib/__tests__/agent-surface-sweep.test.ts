@@ -62,6 +62,12 @@ describe('classify — a defect versus a fact about the instance', () => {
     expect(classify('No bot_token provided or stored.')).toBe('environment');
     expect(classify('RPC mcp_revalue_open_balances failed: No base currency configured')).toBe('environment');
     expect(classify('contentBase64 and mimeType required')).toBe('contract_gap');
+    // Third calibration: "requires" is not "required". These two read as
+    // missing functions on one probe and as undeclared parameters on another,
+    // depending on the arguments sent — the error text is the only signal, so
+    // the pattern has to cover both spellings.
+    expect(classify('RPC kb_article_history failed: list requires p_slug or p_article_id')).toBe('contract_gap');
+    expect(classify('RPC wiki_page_history failed: list requires p_slug')).toBe('contract_gap');
   });
 
   it('gives a failure with no message its own name', () => {
