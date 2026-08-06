@@ -170,7 +170,7 @@ describe('the queue ships empty', () => {
 describe.each([
   ['subscriptions', 'supabase/migrations/20260806220000_billing-into-work-queue.sql',
    'run_subscription_billing', 'subscription_id', '_sub.next_invoice_date', 'enqueue-subscription-billing-tasks'],
-  ['contracts', 'supabase/migrations/20260807150000_contract-billing-into-work-queue.sql',
+  ['contracts', 'supabase/migrations/20260808140000_contract-billing-into-work-queue.sql',
    'run_contract_billing', 'contract_id', '_c.billing_next_date', 'enqueue-contract-billing-tasks'],
 ])('%s moved into the queue, and only into the queue', (_family, path, sweepSkill, paramName, dueColumn, jobName) => {
   const billing = read(path);

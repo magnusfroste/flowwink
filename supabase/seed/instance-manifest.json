@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808120000",
-      "migrations_count": 306,
+      "migration_head": "20260808140000",
+      "migrations_count": 307,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1219,16 +1219,20 @@
           "name": "public-contract-by-token"
         },
         {
-          "version": "20260807150000",
-          "name": "contract-billing-into-work-queue"
-        },
-        {
           "version": "20260808100000",
           "name": "documents-bucket-in-repo"
         },
         {
           "version": "20260808120000",
           "name": "public-quote-by-token"
+        },
+        {
+          "version": "20260808130000",
+          "name": "schedule-event-dispatcher"
+        },
+        {
+          "version": "20260808140000",
+          "name": "contract-billing-into-work-queue"
         }
       ]
     },
