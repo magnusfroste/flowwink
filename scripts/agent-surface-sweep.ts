@@ -59,7 +59,7 @@ const DESTRUCTIVE = [
   'execute', 'approve', 'reject', 'publish', 'archive', 'restock',
 ];
 
-export type Outcome = 'ok' | 'broken' | 'contract_gap' | 'environment' | 'silent_failure' | 'unprobed';
+export type Outcome = 'ok' | 'broken' | 'contract_gap' | 'environment' | 'silent_failure' | 'transient' | 'unprobed';
 
 export interface SkillResult {
   module: string;
@@ -76,6 +76,16 @@ export interface SkillResult {
 export function classify(errorText: string | null | undefined): Outcome {
   if (!errorText) return 'ok';
   const e = String(errorText);
+
+  // Infrastructure flapped: a 502 from the gateway, or HTML where JSON belongs
+  // (which is the same thing seen through a parser). NOT a defect, and — more
+  // importantly — it must never enter a baseline. Three skills answered 502 on
+  // one run and fine on the next; baking that in makes the following run report
+  // a false recovery and the one after it a false regression. A baseline that
+  // contains flicker is worse than no baseline.
+  if (/50[0-9] Bad Gateway|Execution failed \(5\d\d\)|Unrecognized token '<'|<html|timed out|fetch failed|ECONNRESET/i.test(e)) {
+    return 'transient';
+  }
 
   // The skill cannot run at all: no handler, or the function it names is gone.
   // This is the class that broke get_blog_rss_url (handler `builtin:` exists
@@ -104,7 +114,7 @@ export function classify(errorText: string | null | undefined): Outcome {
   // this way on the first sweep, and every one of their error messages listed
   // the valid values — the information existed, just not where an agent reads
   // it before calling. Law 2.
-  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||is required|are required|and \w+ required|\brequires\b|Provide |required for|must be provided/i.test(e)) {
+  if (/[Uu]nknown .*action|action must be|Supported:|Use create|use set\||\brequired\b|\brequires\b|Provide |must be provided|not found: \(none passed\)|<NULL> not found/i.test(e)) {
     return 'contract_gap';
   }
 
@@ -120,8 +130,23 @@ export function probeFor(skill: { name: string; tool_definition?: any }): string
   const required: string[] = params.required ?? [];
 
   if (required.length === 0) return '{}';
-  if (required.length === 1 && required[0] === 'action' && props.action) return '{"action":"list"}';
-  if (required.length === 1 && required[0] === 'p_action' && props.p_action) return '{"p_action":"list"}';
+
+  // Action-shaped skills: READ THE ENUM. The first version of this guessed
+  // "list" for every one of them and reported ten schemas as under-described.
+  // They were not — every schema declared a precise enum (list_stock,
+  // list_categories, list_hours, list_breaches…), and the prober had ignored
+  // it. The instrument was wrong, confidently, and only checking against the
+  // source caught it. Exactly the failure mode this sweep exists to find.
+  for (const key of ['action', 'p_action'] as const) {
+    if (required.length !== 1 || required[0] !== key || !props[key]) continue;
+    const values: string[] = props[key].enum ?? [];
+    // Only a read-shaped action is safe to fire blind. Picking an arbitrary
+    // enum value could approve, cancel or enrol something.
+    const readAction = values.find((v) => /^(list|get|status|summary|search|browse)/.test(v));
+    if (!readAction) return null;
+    return JSON.stringify({ [key]: readAction });
+  }
+
   return null; // needs an entity we would have to invent — out of scope for a sweep
 }
 
@@ -143,6 +168,10 @@ export function diffAgainstBaseline(
       if (r.outcome === 'broken' || r.outcome === 'contract_gap' || r.outcome === 'silent_failure') newlyBroken.push(r);
       continue;
     }
+    // A transient tells us nothing about the skill — neither a regression nor a
+    // recovery. Silently ignoring it in BOTH directions is what keeps the
+    // baseline free of flicker.
+    if (r.outcome === 'transient' || was === 'transient') continue;
     if (was === 'ok' && r.outcome !== 'ok' && r.outcome !== 'environment') regressions.push(r);
     if (was !== 'ok' && r.outcome === 'ok') recoveries.push(r);
   }
@@ -208,8 +237,17 @@ async function main() {
         outcome = classify(err);
         if (err) detail = err;
       } catch (e) {
-        outcome = 'broken';
+        outcome = 'transient';
         detail = `probe failed: ${(e as Error).message}`;
+      }
+      // One retry before believing a transient, so a single flap does not
+      // leave a skill unmeasured for a whole run.
+      if (outcome === 'transient') {
+        try {
+          const err = await callSkill(url, key, skill.name, args);
+          outcome = classify(err);
+          detail = err ?? undefined;
+        } catch { /* keep the transient verdict */ }
       }
       results.push({ module: mod.moduleId, skill: skill.name, outcome, detail });
       if (!asJson) process.stderr.write(outcome === 'ok' ? '.' : outcome === 'environment' ? 'e' : 'X');
