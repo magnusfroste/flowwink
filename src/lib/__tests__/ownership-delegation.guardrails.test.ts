@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { applyLens } from '@/lib/ownership';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
-const sql = read('supabase/migrations/20260808320000_ownership-delegations.sql');
+const sql = read('supabase/migrations/20260808330000_ownership-delegations.sql');
 const hook = read('src/hooks/useOwnershipLens.ts');
 const chip = read('src/components/admin/OwnerChip.tsx');
 const dialog = read('src/components/admin/CoverageDialog.tsx');
