@@ -250,6 +250,62 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — fleet migration pass, prepared (2026-08-07, cloud session)
+
+Magnus asked for the week's migrations on the rest of the fleet. The cloud
+token reaches **optic only** (verified: `GET /v1/projects` lists one project),
+so the run is yours — everything below is verified prep, not guesswork.
+
+**Optic is DONE and its ledger is now honest.** All migrations through
+`20260808290000` applied and verified in substance; the ledger row for
+`…290000` (applied via Management API, which does not record) was inserted
+manually, so ledger HEAD = repo HEAD = `20260808290000`. `delete-user` v2 is
+deployed there.
+
+**Per instance (www / liteit / autoversio / dev), two layers:**
+
+```bash
+supabase db push --include-all --project-ref <ref>   # schema
+supabase functions deploy delete-user --project-ref <ref>   # NOT --no-verify-jwt (admin fn)
+```
+
+`--include-all` matters: several of the week's files are now BELOW each
+instance's likely ledger HEAD (three actors share one timestamp line), and a
+plain push skips out-of-order files.
+
+**⚠️ Version collision, will skip silently:** two files share
+`20260808170000` — `document-files-follow-visibility` (storage policy) and
+`public-terms` (RPC). The ledger keys on version, so once one of them is
+recorded the other is skipped WITHOUT ERROR on every future push. After each
+instance, verify both in substance:
+
+```sql
+select
+  (select count(*) from pg_policies where policyname like 'Document files follow%') as doc_files_policy,  -- want 1
+  (select count(*) from pg_proc where proname='get_public_terms') as public_terms_fn;                     -- want 1
+```
+
+If either is 0, apply the missing file's SQL directly (both are idempotent).
+Going forward: never reuse a timestamp — the forward-dating guard compares
+against MAX, so it cannot catch an exact tie.
+
+**Post-pass probes (one line per instance, all should be non-zero/true):**
+
+```sql
+select
+  (select count(*) from pg_proc where proname='detach_user_references')                       as detach_fn,
+  (select confdeltype='n' from pg_constraint where conname='flowtable_bases_owner_id_fkey')   as cascade_defused,
+  (select count(*) from pg_proc where proname='create_contract_from_template')                as contract_renderer,
+  (select count(*) from pg_trigger where tgname='contracts_assign_number')                    as agr_trigger,
+  (select count(*) from pg_policies where tablename='documents'
+     and policyname='Documents are visible per their visibility setting')                     as doc_visibility;
+```
+
+Lovable-managed dev (rzhj): the runner skips anything ≤ its ledger HEAD, so if
+push misbehaves there, apply the gap files via Management API and insert their
+ledger rows — the optic precedent above.
+
+
 ### ⇄ Handoff to local Claude — user deletion, both FK families (2026-08-07 evening, cloud session)
 
 **⚠️ First: a force-push ate a merged commit.** `848e93ae4` (PR #163, the
