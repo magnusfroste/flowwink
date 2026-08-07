@@ -8,6 +8,7 @@ import type { Deal } from '@/hooks/useDeals';
 import { cn } from '@/lib/utils';
 import { NextStepChip } from './crm/NextStepChip';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
+import { OwnerChip } from './OwnerChip';
 
 interface DealKanbanCardProps {
   deal: Deal;
@@ -63,14 +64,17 @@ export function DealKanbanCard({ deal }: DealKanbanCardProps) {
               {formatCurrency(deal.value_cents, deal.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
           </div>
-          <button
-            type="button"
-            className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 text-muted-foreground hover:text-foreground shrink-0"
-            aria-label="Drag deal"
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <button
+              type="button"
+              className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 text-muted-foreground hover:text-foreground"
+              aria-label="Drag deal"
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <OwnerChip entity="deals" recordId={deal.id} ownerId={deal.owner_id} compact />
+          </div>
         </div>
 
         {productName && (

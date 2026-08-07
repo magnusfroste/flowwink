@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { OwnerChip } from '@/components/admin/OwnerChip';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -184,6 +185,7 @@ export default function CompaniesPage() {
                   <TableHead>Industry</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Owner</TableHead>
                   <TableHead>Customer Since</TableHead>
                   <TableHead className="w-[100px]"></TableHead>
                 </TableRow>
@@ -264,6 +266,9 @@ export default function CompaniesPage() {
                           </a>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <OwnerChip entity="companies" recordId={company.id} ownerId={company.account_owner} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {company.customer_since

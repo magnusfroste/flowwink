@@ -24,6 +24,7 @@ import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
+import { OwnerChip } from '@/components/admin/OwnerChip';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -428,6 +429,7 @@ interface LeadCardProps {
     ai_summary: string | null;
     needs_review: boolean;
     created_at: string;
+    assigned_to?: string | null;
   };
   showStatus?: boolean;
   onClick?: () => void;
@@ -485,6 +487,7 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect }: LeadC
             )}
           </div>
           <div className="flex flex-col items-end gap-1">
+            <OwnerChip entity="leads" recordId={lead.id} ownerId={lead.assigned_to} compact />
             <Badge variant="outline" className="font-mono">
               {lead.score}p
             </Badge>
