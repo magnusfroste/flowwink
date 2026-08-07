@@ -126,3 +126,36 @@ describe('the link actually reaches the database from the UI', () => {
     expect(overrides).toMatch(/quote_id: prefill\?\.quote_id \|\| undefined/);
   });
 });
+
+describe('the number and the origin are visible to a human', () => {
+  // The dual-surface law from CLAUDE.md: a capability needs the agent skill AND
+  // an admin surface. `contract_number` shipped in the database and was rendered
+  // nowhere — the `Contract` type did not even declare it, so the two places
+  // that referenced `c.contract_number` (the field-service and consultant
+  // pickers) had been reading `undefined` since before the column existed.
+  const list = read('src/components/admin/contracts/ContractsList.tsx');
+  const detail = read('src/components/admin/contracts/ContractDetailDialog.tsx');
+  const hook = read('src/hooks/useContracts.ts');
+
+  it('declares both new columns on the type', () => {
+    expect(hook).toMatch(/contract_number: string \| null;/);
+    expect(hook).toMatch(/quote_id: string \| null;/);
+  });
+
+  it('joins the quote so a contract can show where it came from', () => {
+    // Verified against the live PostgREST embed, not just the string:
+    // AGR-2026-00015 → QUO-2026-00008, while the pre-link AGR-2026-00004
+    // correctly returns nothing.
+    expect(hook).toMatch(/\.select\('\*, quotes\(quote_number\)'\)/);
+  });
+
+  it('renders the number in the list and in the detail header', () => {
+    expect(list).toMatch(/\{contract\.contract_number\}/);
+    expect(detail).toMatch(/\{contract\.contract_number\}/);
+  });
+
+  it('renders the originating quote number, not just the title string', () => {
+    // The title has always said "Avtal — QUO-…". That is prose; this is the row.
+    expect(list).toMatch(/contract\.quotes\?\.quote_number/);
+  });
+});

@@ -108,6 +108,13 @@ export function ContractsList({ statusFilter }: Props) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {/* The agreement's own number, ahead of the title: it is
+                            what people quote to each other on the phone. */}
+                        {contract.contract_number && (
+                          <span className="font-mono text-xs text-muted-foreground shrink-0">
+                            {contract.contract_number}
+                          </span>
+                        )}
                         <h3 className="font-semibold truncate">{contract.title}</h3>
                         <Badge variant="outline" className={STATUS_COLORS[contract.status]}>
                           {contract.status.replace('_', ' ')}
@@ -125,6 +132,8 @@ export function ContractsList({ statusFilter }: Props) {
                       <p className="text-sm text-muted-foreground mb-2">
                         {contract.counterparty_name}
                         {contract.counterparty_email && ` · ${contract.counterparty_email}`}
+                        {/* Where it came from, as data rather than a title string. */}
+                        {contract.quotes?.quote_number && ` · från ${contract.quotes.quote_number}`}
                       </p>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">

@@ -32,6 +32,11 @@ export function ContractDetailDialog({ contract, open, onOpenChange }: Props) {
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 flex-wrap">
+            {contract.contract_number && (
+              <span className="font-mono text-xs text-muted-foreground shrink-0">
+                {contract.contract_number}
+              </span>
+            )}
             <DialogTitle className="truncate">{contract.title}</DialogTitle>
             <Badge variant="outline" className={STATUS_COLORS[contract.status]}>
               {contract.status.replace("_", " ")}

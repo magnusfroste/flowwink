@@ -22,6 +22,12 @@ export interface Contract {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** AGR-YYYY-NNNNN, assigned on insert. Null only on rows predating the series. */
+  contract_number: string | null;
+  /** The quote this was drafted from, when there was one. */
+  quote_id: string | null;
+  /** Joined, not stored — the quote's own number, for showing the origin. */
+  quotes?: { quote_number: string | null } | null;
 }
 
 export interface ContractDocument {
@@ -41,7 +47,9 @@ export function useContracts(statusFilter?: string) {
     queryFn: async () => {
       let query = supabase
         .from('contracts')
-        .select('*')
+        // The quote is joined so a contract can show where it came from. Before
+        // `quote_id` existed the origin lived only as prose in the title.
+        .select('*, quotes(quote_number)')
         .order('updated_at', { ascending: false });
       if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter as 'draft' | 'pending_signature' | 'active' | 'expired' | 'terminated');
