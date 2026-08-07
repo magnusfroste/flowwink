@@ -39,3 +39,28 @@ export type OwnedEntity = keyof typeof OWNERSHIP;
 export function ownerColumn(entity: OwnedEntity): string {
   return OWNERSHIP[entity].column;
 }
+
+/**
+ * The Mina/Alla lens, applied where it belongs: in the query result, never in
+ * a policy. "Mine" means the owner column equals my uid — an unassigned record
+ * is nobody's and disappears under the lens, which is honest: if it should be
+ * yours, assign it (one chip click).
+ *
+ * Client-side today because no CRM list paginates yet; when one does, the same
+ * map drives an `.eq(column, uid)` server-side instead. The lens NEVER touches
+ * aggregates — a KPI that silently shows "mine" while claiming to show the
+ * pipeline is how two people report different revenue.
+ */
+export type OwnershipLens = 'all' | 'mine';
+
+export function applyLens<T extends Record<string, unknown>>(
+  rows: T[] | undefined,
+  entity: OwnedEntity,
+  lens: OwnershipLens,
+  uid: string | null | undefined,
+): T[] {
+  if (!rows) return [];
+  if (lens !== 'mine' || !uid) return rows;
+  const col = OWNERSHIP[entity].column;
+  return rows.filter((r) => r[col] === uid);
+}

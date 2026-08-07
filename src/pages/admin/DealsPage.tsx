@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { LensToggle } from '@/components/admin/LensToggle';
+import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { applyLens } from '@/lib/ownership';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { StatCard } from '@/components/admin/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,7 +77,10 @@ export default function DealsPage() {
   const [scheduleFor, setScheduleFor] = useState<{ deal: any; stage: DealStage } | null>(null);
   const [lostFor, setLostFor] = useState<string | null>(null);
 
-  const deals = teamFilter === 'all' ? rawDeals : rawDeals.filter((d: any) => (d as any).team_id === teamFilter);
+  const { lens, uid } = useOwnershipLens();
+  // Lens composes with the team filter; stat cards stay unlensed on purpose.
+  const teamDeals = teamFilter === 'all' ? rawDeals : rawDeals.filter((d: any) => (d as any).team_id === teamFilter);
+  const deals = applyLens(teamDeals, 'deals', lens, uid);
 
   const maybePromptScheduler = (dealId: string, newStage: DealStage) => {
     if (newStage !== 'closed_won' && newStage !== 'closed_lost') return;
@@ -102,6 +108,7 @@ export default function DealsPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="Deals">
+          <LensToggle />
           <div className="flex items-center gap-2">
             <ToggleGroup 
               type="single" 

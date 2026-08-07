@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { LensToggle } from '@/components/admin/LensToggle';
+import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { applyLens } from '@/lib/ownership';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,14 +53,17 @@ export default function QuotesPage() {
     }
   };
 
-  const { data: quotes = [], isLoading } = useQuotes(
+  const { data: rawQuotes = [], isLoading } = useQuotes(
     statusFilter === 'all' ? undefined : statusFilter
   );
+  const { lens, uid } = useOwnershipLens();
+  const quotes = applyLens(rawQuotes, 'quotes', lens, uid);
 
   return (
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="Quotes">
+          <LensToggle />
           <Button size="sm" variant="outline" onClick={() => setProcessOpen(true)}>
             <Settings2 className="h-4 w-4 mr-1" /> Process
           </Button>

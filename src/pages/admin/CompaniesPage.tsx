@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { LensToggle } from '@/components/admin/LensToggle';
+import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { applyLens } from '@/lib/ownership';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -48,7 +51,9 @@ export default function CompaniesPage() {
   const exportCompanies = useExportCompanies();
   const importCompanies = useImportCompanies();
 
-  const filteredCompanies = companies?.filter((company) => {
+  const { lens, uid } = useOwnershipLens();
+  const lensedCompanies = applyLens(companies, 'companies', lens, uid);
+  const filteredCompanies = lensedCompanies?.filter((company) => {
     const matchesSearch =
       company.name.toLowerCase().includes(search.toLowerCase()) ||
       company.domain?.toLowerCase().includes(search.toLowerCase()) ||
@@ -71,6 +76,7 @@ export default function CompaniesPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="Companies">
+          <LensToggle />
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

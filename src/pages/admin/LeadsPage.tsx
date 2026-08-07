@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { LensToggle } from '@/components/admin/LensToggle';
+import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { applyLens } from '@/lib/ownership';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +44,12 @@ export default function LeadsPage() {
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const { data: stats, isLoading: statsLoading } = useLeadStats();
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
-  const { data: leads, isLoading: leadsLoading } = useLeads();
-  const { data: reviewLeads } = useLeads({ needsReview: true });
+  const { data: rawLeads, isLoading: leadsLoading } = useLeads();
+  const { data: rawReviewLeads } = useLeads({ needsReview: true });
+  const { lens, uid } = useOwnershipLens();
+  // The lens narrows the lists only — stat cards keep showing everything.
+  const leads = applyLens(rawLeads, 'leads', lens, uid);
+  const reviewLeads = applyLens(rawReviewLeads, 'leads', lens, uid);
   const navigate = useNavigate();
   const exportLeads = useExportLeads();
   const importLeads = useImportLeads();
@@ -125,6 +132,7 @@ export default function LeadsPage() {
           description="Manage contacts and view pipeline"
         >
           <div className="flex items-center gap-2">
+            <LensToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
