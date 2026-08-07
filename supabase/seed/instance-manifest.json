@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808280000",
-      "migrations_count": 322,
+      "migration_head": "20260808290000",
+      "migrations_count": 323,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1293,6 +1293,10 @@
         {
           "version": "20260808280000",
           "name": "approver-legacy-to-staff"
+        },
+        {
+          "version": "20260808290000",
+          "name": "detach-user-references"
         }
       ]
     },
@@ -1327,7 +1331,7 @@
         "create-invoice-payment": "sha256:917c78b89d0131f426ed5c6109eea67d8020604def81f1179eba2e5bb0c8bea6",
         "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
-        "delete-user": "sha256:942a1d859452c372fac7d27d89e2f312524fb01139a90a6bf1c31326e46647d3",
+        "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
         "demo-cycle": "sha256:ae99ce60cbb68aec05a9dfbb9b4bde332ff41cd9d85b6b8f6fcb803cfb8dfaf0",
         "docs-chat": "sha256:8a78fddb7cba24df21044920daaea0ad9798ec970ecdb334d4845124ed7550eb",
         "document-share": "sha256:16c5281eb83fc8409d0b8c2906bb05ee74a7956786497e3eeaa7f2883067dd67",

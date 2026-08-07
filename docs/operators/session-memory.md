@@ -250,6 +250,74 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Handoff to local Claude — user deletion, both FK families (2026-08-07 evening, cloud session)
+
+**⚠️ First: a force-push ate a merged commit.** `848e93ae4` (PR #163, the
+`auth.users` FK map) was on main and is gone — this file's history now jumps
+from #161 straight past it. Content restored here. When branching, branch from
+fresh `origin/main` and never force-push a branch that was cut before your own
+latest merge; this doc has a history-rewrite scar from July for the same reason.
+
+**Second: your sweep numbers were right and my retraction was wrong.** I
+measured 0/7 leads for the sales role, then withdrew it as a measurement
+artifact because `user_roles` was being rewritten under me (your delete tests).
+Your `20260808280000` found the real cause — 64 tables gating on `approver`, a
+legacy role zero users hold. The finding stood; my retraction did not.
+
+#### delete-user: the gap, and the fix that shipped (20260808290000)
+
+Your detach list — `leads.assigned_to`, `project_tasks.created_by`,
+`support_escalations.resolved_by` — is exactly the 3 NO ACTION columns that
+reference **profiles**: 3 of 3 for that family. But there are two families.
+**27 more NO ACTION columns reference `auth.users` directly**, none handled.
+Live on optic while reviewing: the admin held `contract_versions.created_by=2`,
+`projects.created_by=1` — deleting any colleague who had actually worked failed
+on an FK error. Deleting one who never created anything succeeded, which is how
+the gap survives testing.
+
+Shipped from here, live-verified on optic in rolled-back transactions:
+
+- **`detach_user_references(p_user_id)`** walks `pg_constraint` at execution
+  time — every NO ACTION FK to `auth.users` or `profiles`, nulled when
+  nullable (all 30 are today), reported **by name** when NOT NULL. No list to
+  drift. Guarded `service_role OR admin`, no postgres escape hatch;
+  negative-tested live (sales claims → rejected).
+- **`delete-user` now calls it** instead of the three hardcoded detaches.
+  Deployed to optic as **v2**; other instances get it on function deploy.
+- **The flowtable cascade is defused.** `flowtable_bases.owner_id` was NOT NULL
+  + ON DELETE CASCADE → tables → fields/records: deleting optic's admin would
+  have silently destroyed the Produkter base (3 tables, 24 rows) the sales
+  conversation reads from. Now nullable + SET NULL, and the owner-only
+  UPDATE/DELETE policies gained the admin path (an ownerless base was
+  unmanageable — the old policies had no admin clause at all).
+- E2E proof: detach → real `DELETE FROM auth.users` → both bases survive
+  ownerless, 25 rows and 3 contracts intact → rollback restores everything.
+
+**Open decision for you:** authorship is NULLED, never reassigned (history
+keeps the row, loses the name). If a future column arrives NOT NULL, the
+function names it and blocks — that error is the prompt for a schema decision,
+not a bug.
+
+#### The rest of the auth.users map, for reference
+
+16 CASCADE (15 correct: auth internals, profiles, user_roles, wishlist,
+project_members, customer_addresses — the 16th was flowtable_bases, fixed
+above). 32 already SET NULL. `documents.uploaded_by` has **no FK at all** —
+after deletion a `private` document becomes admin-only (probably right, but it
+is a decision, not an accident), and the uploader-folder clause in the storage
+policy points at a uid that no longer exists (file stays reachable via the
+documents row / admin).
+
+#### Ownership groundwork ("Mina/Alla")
+
+Both sessions measured this independently the same evening and converged —
+same numbers (0/7, 0/5, 0/2), same order (assign → backfill → lens defaulting
+to "all"). The full write-up is your own "Ownership scoping" section at the
+bottom of this file; the one thing to carry over from this side: Magnus wants
+the lens in query filters + `profiles.preferences`, **never in RLS** — and no
+one should start it while the other is mid-role-sweep; two agents in the same
+role tables produced false findings twice today.
+
 ### ⇄ Handoff to local Claude — lead→contract, rehearsed live (2026-08-06 evening, cloud session)
 
 Magnus demos the lead→contract process tomorrow, so the whole chain was run

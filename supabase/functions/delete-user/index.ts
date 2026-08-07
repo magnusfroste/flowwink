@@ -76,19 +76,25 @@ serve(async (req: Request) => {
 
     // Detach business references. The rows are business history and are KEPT
     // — the link to the person is what goes. NO ACTION constraints make the
-    // deletion fail otherwise; SET NULL/CASCADE columns handle themselves.
-    const detached: Record<string, number> = {};
-    const detach = async (table: string, column: string) => {
-      const { count } = await admin
-        .from(table)
-        .update({ [column]: null })
-        .eq(column, user_id)
-        .select("*", { count: "exact", head: false });
-      if (count) detached[`${table}.${column}`] = count;
-    };
-    await detach("leads", "assigned_to");
-    await detach("project_tasks", "created_by");
-    await detach("support_escalations", "resolved_by");
+    // deletion fail otherwise.
+    //
+    // Not a hardcoded list. The first version detached exactly the 3 columns
+    // referencing `profiles` — correct for that family, while 27 more NO ACTION
+    // columns referencing `auth.users` directly went unhandled (live case:
+    // contract_versions.created_by=2, projects.created_by=1 on the reviewing
+    // instance's admin — deleting any colleague who had actually worked failed
+    // on an FK error). detach_user_references() walks pg_constraint at
+    // execution time, so a new created_by column can never silently re-open
+    // the gap; NOT NULL columns are reported by name instead of failing
+    // generically. Migration: 20260808290000.
+    const { data: detachedData, error: detachErr } = await admin.rpc(
+      "detach_user_references",
+      { p_user_id: user_id },
+    );
+    if (detachErr) {
+      return json({ error: `Detach failed: ${detachErr.message}` }, 500);
+    }
+    const detached = (detachedData ?? {}) as Record<string, number>;
 
     // Orphan cleanup — these tables have no FK to auth.users, so nothing
     // cascades. Explicit, in dependency order.
