@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808300000",
-      "migrations_count": 324,
+      "migration_head": "20260808310000",
+      "migrations_count": 325,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1301,6 +1301,10 @@
         {
           "version": "20260808300000",
           "name": "ownership-on-create"
+        },
+        {
+          "version": "20260808310000",
+          "name": "ownership-inheritance"
         }
       ]
     },

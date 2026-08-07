@@ -30,6 +30,7 @@ export interface Quote {
   accepted_at: string | null;
   rejected_at: string | null;
   created_by: string | null;
+  owner_id?: string | null;
   created_at: string;
   updated_at: string;
   leads: InvoiceLead | null;

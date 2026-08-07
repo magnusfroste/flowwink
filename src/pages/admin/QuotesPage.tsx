@@ -10,6 +10,7 @@ import { QuoteProcessSettingsDialog } from '@/components/admin/quotes/QuoteProce
 import { useQuotes, getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName, type QuoteStatus } from '@/hooks/useQuotes';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { OwnerChip } from '@/components/admin/OwnerChip';
 import { QuoteDetailSheet } from '@/components/admin/quotes/QuoteDetailSheet';
 import { CreateQuoteDialog } from '@/components/admin/quotes/CreateQuoteDialog';
 import { RecurringQuotesTab } from '@/components/admin/quotes/RecurringQuotesTab';
@@ -95,6 +96,7 @@ export default function QuotesPage() {
                 <TableHead>Number</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Valid Until</TableHead>
                 <TableHead>Created</TableHead>
@@ -103,13 +105,13 @@ export default function QuotesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : quotes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No quotes yet
                   </TableCell>
                 </TableRow>
@@ -134,6 +136,9 @@ export default function QuotesPage() {
                         <Badge variant="secondary" className={STATUS_COLORS[q.status]}>
                           {q.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <OwnerChip entity="quotes" recordId={q.id} ownerId={q.owner_id} />
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatCurrency(q.total_cents, q.currency)}
