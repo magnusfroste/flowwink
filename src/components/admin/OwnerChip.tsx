@@ -17,6 +17,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useTeamProfiles, type TeamProfile } from '@/hooks/useFlowtable';
+import { useActiveDelegations } from '@/hooks/useOwnershipLens';
 import { OWNERSHIP, type OwnedEntity } from '@/lib/ownership';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,13 @@ export function OwnerChip({ entity, recordId, ownerId, compact, className }: Own
 
   const owner = team?.find((p) => p.id === ownerId) ?? null;
 
+  // Transparency over substitution: the chip keeps showing the OWNER, with a
+  // hint that someone acts for them right now. A silently swapped name would
+  // hide exactly the fact colleagues need — who actually holds the account.
+  const { data: delegations } = useActiveDelegations();
+  const coverage = ownerId ? delegations?.find((d) => d.from_user === ownerId) : undefined;
+  const coverer = coverage ? team?.find((p) => p.id === coverage.to_user) : undefined;
+
   const reassign = useMutation({
     mutationFn: async (newOwner: string | null) => {
       const { column } = OWNERSHIP[entity];
@@ -74,7 +82,12 @@ export function OwnerChip({ entity, recordId, ownerId, compact, className }: Own
           // open the record it sits on.
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          title={owner ? `Owner: ${owner.full_name || owner.email}` : 'Unassigned — click to assign'}
+          title={
+            owner
+              ? `Owner: ${owner.full_name || owner.email}` +
+                (coverer ? ` — covered by ${coverer.full_name || coverer.email} until ${coverage!.ends_on}` : '')
+              : 'Unassigned — click to assign'
+          }
           className={cn(
             'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs transition-colors',
             owner
@@ -88,7 +101,12 @@ export function OwnerChip({ entity, recordId, ownerId, compact, className }: Own
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-semibold">
                 {initials(owner)}
               </span>
-              {!compact && <span className="max-w-[110px] truncate">{owner.full_name || owner.email}</span>}
+              {!compact && (
+                <span className="max-w-[140px] truncate">
+                  {owner.full_name || owner.email}
+                  {coverer && <span className="text-muted-foreground"> ⇄ {(coverer.full_name || coverer.email).split(' ')[0]}</span>}
+                </span>
+              )}
             </>
           ) : (
             <>

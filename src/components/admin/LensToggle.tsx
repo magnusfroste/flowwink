@@ -8,10 +8,12 @@
  */
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useOwnershipLens } from '@/hooks/useOwnershipLens';
+import { CoverageDialog } from '@/components/admin/CoverageDialog';
 
 export function LensToggle() {
-  const { lens, setLens } = useOwnershipLens();
+  const { lens, setLens, coveredUids } = useOwnershipLens();
   return (
+    <div className="flex items-center gap-1">
     <ToggleGroup
       type="single"
       size="sm"
@@ -24,7 +26,12 @@ export function LensToggle() {
       aria-label="Ownership lens"
     >
       <ToggleGroupItem value="all" className="px-3">All</ToggleGroupItem>
-      <ToggleGroupItem value="mine" className="px-3">Mine</ToggleGroupItem>
+      <ToggleGroupItem value="mine" className="px-3">
+        {/* "+N": I am covering N colleagues right now, and Mine includes them. */}
+        Mine{coveredUids.length > 0 ? ` (+${coveredUids.length})` : ''}
+      </ToggleGroupItem>
     </ToggleGroup>
+    <CoverageDialog />
+    </div>
   );
 }

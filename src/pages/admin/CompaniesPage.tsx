@@ -51,8 +51,8 @@ export default function CompaniesPage() {
   const exportCompanies = useExportCompanies();
   const importCompanies = useImportCompanies();
 
-  const { lens, uid } = useOwnershipLens();
-  const lensedCompanies = applyLens(companies, 'companies', lens, uid);
+  const { lens, uid, coveredUids } = useOwnershipLens();
+  const lensedCompanies = applyLens(companies, 'companies', lens, uid, coveredUids);
   const filteredCompanies = lensedCompanies?.filter((company) => {
     const matchesSearch =
       company.name.toLowerCase().includes(search.toLowerCase()) ||

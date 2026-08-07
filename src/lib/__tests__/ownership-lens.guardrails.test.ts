@@ -63,10 +63,10 @@ describe('the preference follows the user, not the browser', () => {
 
 describe('the lens narrows lists, never stats, never policies', () => {
   it('is wired into all four list surfaces', () => {
-    expect(read('src/pages/admin/LeadsPage.tsx')).toMatch(/applyLens\(rawLeads, 'leads', lens, uid\)/);
-    expect(read('src/pages/admin/DealsPage.tsx')).toMatch(/applyLens\(teamDeals, 'deals', lens, uid\)/);
-    expect(read('src/pages/admin/CompaniesPage.tsx')).toMatch(/applyLens\(companies, 'companies', lens, uid\)/);
-    expect(read('src/pages/admin/QuotesPage.tsx')).toMatch(/applyLens\(rawQuotes, 'quotes', lens, uid\)/);
+    expect(read('src/pages/admin/LeadsPage.tsx')).toMatch(/applyLens\(rawLeads, 'leads', lens, uid, coveredUids\)/);
+    expect(read('src/pages/admin/DealsPage.tsx')).toMatch(/applyLens\(teamDeals, 'deals', lens, uid, coveredUids\)/);
+    expect(read('src/pages/admin/CompaniesPage.tsx')).toMatch(/applyLens\(companies, 'companies', lens, uid, coveredUids\)/);
+    expect(read('src/pages/admin/QuotesPage.tsx')).toMatch(/applyLens\(rawQuotes, 'quotes', lens, uid, coveredUids\)/);
   });
 
   it('deal stats stay unlensed', () => {

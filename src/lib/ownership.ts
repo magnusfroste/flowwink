@@ -63,9 +63,22 @@ export function applyLens<T>(
   entity: OwnedEntity,
   lens: OwnershipLens,
   uid: string | null | undefined,
+  /**
+   * Owners I currently cover (active ownership_delegations). Under "mine",
+   * their records count as mine for the duration — Anna's lens grows Björn's
+   * pipeline for two vacation weeks and shrinks back on its own. Nothing is
+   * reassigned, so nothing can be forgotten.
+   */
+  covered?: ReadonlyArray<string>,
 ): T[] {
   if (!rows) return [];
   if (lens !== 'mine' || !uid) return rows;
   const col = OWNERSHIP[entity].column;
-  return rows.filter((r) => (r as Record<string, unknown>)[col] === uid);
+  const mine = new Set<string>([uid, ...(covered ?? [])]);
+  // Narrow cast at the one access site — T stays unconstrained per the note
+  // above (local's fix: concrete row interfaces have no index signature).
+  return rows.filter((r) => {
+    const v = (r as Record<string, unknown>)[col];
+    return typeof v === 'string' && mine.has(v);
+  });
 }

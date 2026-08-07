@@ -46,10 +46,10 @@ export default function LeadsPage() {
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: rawLeads, isLoading: leadsLoading } = useLeads();
   const { data: rawReviewLeads } = useLeads({ needsReview: true });
-  const { lens, uid } = useOwnershipLens();
+  const { lens, uid, coveredUids } = useOwnershipLens();
   // The lens narrows the lists only — stat cards keep showing everything.
-  const leads = applyLens(rawLeads, 'leads', lens, uid);
-  const reviewLeads = applyLens(rawReviewLeads, 'leads', lens, uid);
+  const leads = applyLens(rawLeads, 'leads', lens, uid, coveredUids);
+  const reviewLeads = applyLens(rawReviewLeads, 'leads', lens, uid, coveredUids);
   const navigate = useNavigate();
   const exportLeads = useExportLeads();
   const importLeads = useImportLeads();

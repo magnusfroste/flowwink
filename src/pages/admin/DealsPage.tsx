@@ -77,10 +77,10 @@ export default function DealsPage() {
   const [scheduleFor, setScheduleFor] = useState<{ deal: any; stage: DealStage } | null>(null);
   const [lostFor, setLostFor] = useState<string | null>(null);
 
-  const { lens, uid } = useOwnershipLens();
+  const { lens, uid, coveredUids } = useOwnershipLens();
   // Lens composes with the team filter; stat cards stay unlensed on purpose.
   const teamDeals = teamFilter === 'all' ? rawDeals : rawDeals.filter((d: any) => (d as any).team_id === teamFilter);
-  const deals = applyLens(teamDeals, 'deals', lens, uid);
+  const deals = applyLens(teamDeals, 'deals', lens, uid, coveredUids);
 
   const maybePromptScheduler = (dealId: string, newStage: DealStage) => {
     if (newStage !== 'closed_won' && newStage !== 'closed_lost') return;

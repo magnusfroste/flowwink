@@ -56,8 +56,8 @@ export default function QuotesPage() {
   const { data: rawQuotes = [], isLoading } = useQuotes(
     statusFilter === 'all' ? undefined : statusFilter
   );
-  const { lens, uid } = useOwnershipLens();
-  const quotes = applyLens(rawQuotes, 'quotes', lens, uid);
+  const { lens, uid, coveredUids } = useOwnershipLens();
+  const quotes = applyLens(rawQuotes, 'quotes', lens, uid, coveredUids);
 
   return (
     <AdminLayout>
