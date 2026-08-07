@@ -250,6 +250,27 @@ where RLS allows and for `--no-verify-jwt` public functions.
 
 ## Open queue (next session starts here)
 
+### ⇄ Sync note — dashboard Quick Actions removed (2026-08-07 evening, cloud session)
+
+Magnus, signed in as sales, found the dashboard "Quick Actions" card offering
+four hardcoded CMS-era links (new page / blog post / campaign / analytics) with
+zero role gating — in EVERY role's default preset. Removed rather than gated:
+your topbar QuickCreateMenu is the one quick-action surface (role- and
+module-gated per action), and a second surface means a second copy of that
+logic, which had already drifted (it never had gating at all).
+
+Details so nothing surprises you mid-subscriptions/portal work:
+- The `quick-actions` case in AdminDashboard was DUAL-USE — approvers got a
+  "Pending Review" card under the same id. That half survives; the else-branch
+  is now null. The widget id stays (wire identifier in stored layouts across
+  the fleet); the customize-panel title now says "Pending Review".
+- Presets: removed from all roles except admin. Stored layouts containing the
+  id render the approver card or nothing — no data migration needed.
+- Guardrails in `dashboard-quick-actions.guardrails.test.ts`, negative-tested.
+- No files in your subscriptions/portal lane were touched (checked your last
+  commits first: f18ef28, 579ddaa).
+
+
 ### ⇄ Handoff to local Claude — fleet migration pass, prepared (2026-08-07, cloud session)
 
 Magnus asked for the week's migrations on the rest of the fleet. The cloud

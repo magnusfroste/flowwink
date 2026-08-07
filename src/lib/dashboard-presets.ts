@@ -35,7 +35,11 @@ export const DASHBOARD_WIDGETS: DashboardWidgetMeta[] = [
   { id: 'automation-health', title: 'Automation Health', description: 'Automation run counts and error rates' },
   { id: 'flowpilot', title: 'FlowPilot', description: 'AI agent activity and goals' },
   { id: 'recent-pages', title: 'Recent Pages', description: 'Recently updated pages', roles: ['marketing'] },
-  { id: 'quick-actions', title: 'Quick Actions', description: 'Common shortcuts' },
+  // Wire id kept ('quick-actions' lives in stored layouts); the ungated
+  // shortcut card it once named was removed — the top bar's QuickCreateMenu is
+  // the one quick-action surface, role- and module-gated. What remains under
+  // this id is the approver's Pending Review card.
+  { id: 'quick-actions', title: 'Pending Review', description: 'Pages awaiting approval (approvers)' },
 ];
 
 export const WIDGET_META: Record<string, DashboardWidgetMeta> = Object.fromEntries(
@@ -51,14 +55,14 @@ export const DEFAULT_WIDGET_ORDER = DASHBOARD_WIDGETS.map((w) => w.id);
  */
 export const ROLE_PRESETS: Partial<Record<AppRole | 'admin', string[]>> = {
   admin: ['my-day', 'business-pulse', 'needs-attention', 'finance', 'tickets', 'approvals', 'content-overview', 'leads', 'live-support', 'flowpilot', 'automation-health', 'chat-analytics', 'chat-feedback', 'aeo', 'recent-pages', 'quick-actions'],
-  sales: ['my-day', 'needs-attention', 'leads', 'finance', 'business-pulse', 'quick-actions'],
-  marketing: ['my-day', 'content-overview', 'aeo', 'leads', 'chat-analytics', 'chat-feedback', 'recent-pages', 'quick-actions'],
-  support: ['my-day', 'needs-attention', 'tickets', 'live-support', 'chat-analytics', 'chat-feedback', 'quick-actions'],
-  accounting: ['my-day', 'needs-attention', 'finance', 'approvals', 'business-pulse', 'quick-actions'],
-  hr: ['my-day', 'needs-attention', 'hr', 'approvals', 'quick-actions'],
-  warehouse: ['my-day', 'needs-attention', 'inventory', 'quick-actions'],
-  purchasing: ['my-day', 'needs-attention', 'purchasing', 'approvals', 'inventory', 'quick-actions'],
-  projects: ['my-day', 'needs-attention', 'projects', 'quick-actions'],
+  sales: ['my-day', 'needs-attention', 'leads', 'finance', 'business-pulse'],
+  marketing: ['my-day', 'content-overview', 'aeo', 'leads', 'chat-analytics', 'chat-feedback', 'recent-pages'],
+  support: ['my-day', 'needs-attention', 'tickets', 'live-support', 'chat-analytics', 'chat-feedback'],
+  accounting: ['my-day', 'needs-attention', 'finance', 'approvals', 'business-pulse'],
+  hr: ['my-day', 'needs-attention', 'hr', 'approvals'],
+  warehouse: ['my-day', 'needs-attention', 'inventory'],
+  purchasing: ['my-day', 'needs-attention', 'purchasing', 'approvals', 'inventory'],
+  projects: ['my-day', 'needs-attention', 'projects'],
 };
 
 /** Roles that may see a widget, taking admin's super-role into account. */

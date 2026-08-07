@@ -393,40 +393,7 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
-        ) : (
-          <Card key={widgetId}>
-            <CardHeader>
-              <CardTitle className="font-serif">Quick Actions</CardTitle>
-              <CardDescription>Common actions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild className="w-full justify-start" variant="outline">
-                <Link to="/admin/pages/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create new page
-                </Link>
-              </Button>
-              <Button asChild className="w-full justify-start" variant="outline">
-                <Link to="/admin/blog/new">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Write blog post
-                </Link>
-              </Button>
-              <Button asChild className="w-full justify-start" variant="outline">
-                <Link to="/admin/campaigns">
-                  <Megaphone className="h-4 w-4 mr-2" />
-                  Create campaign
-                </Link>
-              </Button>
-              <Button asChild className="w-full justify-start" variant="outline">
-                <Link to="/admin/analytics">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View analytics
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        );
+        ) : null;
 
       default:
         return null;
