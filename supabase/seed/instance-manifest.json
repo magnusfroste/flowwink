@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260808380000",
-      "migrations_count": 333,
+      "migrations_count": 334,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1225,6 +1225,10 @@
         {
           "version": "20260808120000",
           "name": "public-quote-by-token"
+        },
+        {
+          "version": "20260808122458",
+          "name": "e6325575-1159-48d9-a899-3dc774cdfc36"
         },
         {
           "version": "20260808130000",
