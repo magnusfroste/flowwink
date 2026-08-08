@@ -2093,18 +2093,46 @@ async function executeResetSandbox(supabase: any, args: Record<string, unknown>)
   };
 }
 
-// export_site_template — read-only mirror of useTemplateExport.fetchSiteData +
-// exportSiteAsTemplate + validateTemplate.
+/**
+ * export_site_template — the live site, read back as a template.
+ *
+ * This used to serialize and stop: it handed back JSON, and whoever wanted to
+ * keep it had to feed that JSON into manage_site_template by hand. That gap was
+ * invisible until an agent actually built a site over MCP — having just authored
+ * nine pages, saving them meant transcribing its own work back through a second
+ * skill. So `save_as` closes the loop here rather than adding a second verb
+ * somewhere else: three skill descriptions already point at this name for
+ * "export the current site", and a surface with two words for one job grows two
+ * half-working generations.
+ *
+ * Two other things changed, for the same reason the site sensor changed:
+ *  - KB and products can be included. They were silently absent before, and a
+ *    caller could not tell "this site has none" from "export does not carry them".
+ *  - the response names what it skipped, and counts the image URLs that will
+ *    still resolve to THIS instance after the template is installed elsewhere.
+ *    A template whose pictures point home is a mirror, not a template.
+ *
+ * Validation is NOT reimplemented here. _site_template_structure_report is the
+ * one the RPC enforces on write; calling it means the preview cannot disagree
+ * with the refusal.
+ */
 async function tplExportSite(supabase: any, args: Record<string, unknown>): Promise<unknown> {
   const a = args as any;
+  const saveAs = typeof a.save_as === 'string' ? a.save_as.trim() : '';
+  const include: string[] = Array.isArray(a.include)
+    ? a.include.map((x: unknown) => String(x).toLowerCase())
+    : ['pages', 'blog'];
+
   const meta = {
-    id: String(a.id || a.template_id || 'site-export').toLowerCase().replace(/\s+/g, '-'),
-    name: String(a.name || 'Site Export'),
+    id: String(a.id || a.template_id || saveAs || 'site-export').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    name: String(a.name || saveAs || 'Site Export'),
     description: String(a.description || 'Template exported from the current site.'),
     category: String(a.category || 'enterprise'),
     icon: String(a.icon || 'Sparkles'),
     tagline: String(a.tagline || ''),
   };
+
+  const skipped: Array<{ section: string; count: number; how: string }> = [];
 
   const { data: pages, error: pagesError } = await supabase
     .from('pages')
@@ -2114,16 +2142,71 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     .order('menu_order');
   if (pagesError) return { error: `Failed to fetch pages: ${pagesError.message}` };
 
+  // A draft is work in progress. Shipping it inside a template publishes it on
+  // somebody else's instance — so it is excluded, and said out loud.
+  const { count: draftCount } = await supabase
+    .from('pages').select('id', { count: 'exact', head: true })
+    .neq('status', 'published').is('deleted_at', null);
+  if (draftCount) {
+    skipped.push({
+      section: 'draft pages', count: draftCount,
+      how: 'Publish them first — a template seeds content, and an unpublished draft has not been approved for anyone to see.',
+    });
+  }
+
   const { data: settingsRows, error: settingsError } = await supabase
     .from('site_settings').select('key, value');
   if (settingsError) return { error: `Failed to fetch site settings: ${settingsError.message}` };
   const settings: Record<string, any> = {};
   for (const row of settingsRows ?? []) settings[row.key] = row.value;
 
-  const { data: blogPosts } = await supabase
-    .from('blog_posts')
-    .select('title, slug, excerpt, featured_image, featured_image_alt, content_json')
-    .eq('status', 'published');
+  const wantBlog = include.includes('blog');
+  const { data: blogPosts } = wantBlog
+    ? await supabase
+        .from('blog_posts')
+        .select('title, slug, excerpt, featured_image, featured_image_alt, content_json, meta_json')
+        .eq('status', 'published')
+    : { data: [] as any[] };
+
+  // ── Knowledge base (opt-in) ───────────────────────────────────────────────
+  let kbCategories: any[] = [];
+  if (include.includes('kb')) {
+    const { data: cats } = await supabase
+      .from('kb_categories').select('id, name, slug, description, icon, sort_order')
+      .eq('is_active', true).order('sort_order');
+    const { data: arts } = await supabase
+      .from('kb_articles')
+      .select('category_id, title, slug, question, answer_text, is_featured, include_in_chat, sort_order')
+      .eq('is_published', true).order('sort_order');
+    kbCategories = (cats ?? []).map((c: any) => ({
+      name: c.name, slug: c.slug, description: c.description || undefined, icon: c.icon || undefined,
+      articles: (arts ?? []).filter((x: any) => x.category_id === c.id).map((x: any) => ({
+        title: x.title, slug: x.slug, question: x.question || '',
+        answer_text: x.answer_text || '',
+        is_featured: x.is_featured || undefined, include_in_chat: x.include_in_chat || undefined,
+      })),
+    }));
+  } else {
+    const { count } = await supabase
+      .from('kb_articles').select('id', { count: 'exact', head: true }).eq('is_published', true);
+    if (count) skipped.push({ section: 'KB articles', count, how: 'Add "kb" to include.' });
+  }
+
+  // ── Products (opt-in: commerce data is its own decision) ──────────────────
+  let products: any[] | undefined;
+  if (include.includes('products')) {
+    const { data: rows } = await supabase
+      .from('products').select('name, description, price_cents, currency, type, image_url')
+      .eq('is_active', true).order('name');
+    products = (rows ?? []).map((p: any) => ({
+      name: p.name, description: p.description || '', price_cents: p.price_cents,
+      currency: p.currency, type: p.type, image_url: p.image_url || undefined,
+    }));
+  } else {
+    const { count } = await supabase
+      .from('products').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    if (count) skipped.push({ section: 'products', count, how: 'Add "products" to include.' });
+  }
 
   const homepageSlug = settings.general?.homepageSlug || 'home';
   const templatePages = (pages ?? []).map((p: any) => ({
@@ -2158,34 +2241,120 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
     headerSettings: settings.header,
     footerSettings: settings.footer,
     seoSettings: settings.seo,
+    aeoSettings: settings.aeo,
     cookieBannerSettings: settings.cookie_banner,
+    accountingLocale: settings.accounting_locale || undefined,
     siteSettings: { homepageSlug },
   };
+  if (kbCategories.length) template.kbCategories = kbCategories;
+  if (products) template.products = products;
+
   const enabledModules = Object.entries(settings.modules ?? {})
     .filter(([, cfg]: [string, any]) => cfg?.enabled)
     .map(([k]) => k);
   if (enabledModules.length) (template as any).requiredModules = enabledModules;
 
-  // Validation — mirrors validateTemplate in src/lib/template-exporter.ts.
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  if (!templatePages.length) errors.push('Template must have at least one page');
-  if (templatePages.length && !templatePages.some((p: any) => p.slug === homepageSlug)) {
-    errors.push(`Homepage slug "${homepageSlug}" does not match any page`);
+  // ── Assets: what will still point HERE after the template travels ─────────
+  const assetHosts: Record<string, number> = {};
+  for (const m of JSON.stringify(template).matchAll(/https?:\/\/([^"/\s]+)[^"\s]*\.(?:png|jpe?g|webp|gif|svg|avif)/gi)) {
+    assetHosts[m[1]] = (assetHosts[m[1]] ?? 0) + 1;
   }
-  for (const p of templatePages) {
-    if (!Array.isArray(p.blocks) || !p.blocks.length) warnings.push(`Page "${p.title}": has no content blocks`);
+  const assetCount = Object.values(assetHosts).reduce((a, b) => a + b, 0);
+
+  // ── Validation: the SAME function the write enforces ──────────────────────
+  // A preview that validates differently from the refusal is worse than no
+  // preview at all.
+  let validation: any;
+  const { data: report, error: reportError } = await supabase
+    .rpc('_site_template_structure_report', { p_template: template });
+  if (reportError || !report) {
+    validation = {
+      valid: false,
+      errors: [`Could not validate: ${reportError?.message ?? 'no report returned'}`],
+      warnings: [],
+      note: 'Validation runs in the database (_site_template_structure_report) so the preview cannot disagree with the write.',
+    };
+  } else {
+    validation = report;
   }
-  if (!meta.tagline) warnings.push('No tagline defined - consider adding one for template gallery');
+
+  // ── Save (only when asked) ────────────────────────────────────────────────
+  let saved: any = null;
+  if (saveAs) {
+    const { data: existing } = await supabase
+      .from('site_templates').select('id, template_json').ilike('name', saveAs).maybeSingle();
+
+    // An update REPLACES the body. Re-exporting with a narrower `include` than
+    // last time therefore drops sections the stored template had — caught live:
+    // a re-save without include turned 12 products into 0. The write is still
+    // correct (replace is what update means), but a caller who is not told has
+    // no way to notice.
+    const removed: Array<{ section: string; was: number }> = [];
+    if (existing?.template_json) {
+      const before = existing.template_json as Record<string, unknown>;
+      for (const [key, label] of [['products', 'products'], ['kbCategories', 'KB categories'], ['blogPosts', 'blog posts']] as const) {
+        const had = Array.isArray(before[key]) ? (before[key] as unknown[]).length : 0;
+        const now = Array.isArray((template as any)[key]) ? ((template as any)[key] as unknown[]).length : 0;
+        if (had > 0 && now === 0) removed.push({ section: label, was: had });
+      }
+    }
+    const { data: writeResult, error: writeError } = await supabase.rpc('manage_site_template', {
+      p_action: existing ? 'update' : 'create',
+      p_template: existing ? String(existing.id) : null,
+      p_name: saveAs,
+      p_description: meta.description,
+      p_category: meta.category,
+      p_icon: meta.icon,
+      p_tagline: meta.tagline,
+      p_template_json: template,
+    });
+    if (writeError) {
+      return {
+        success: false,
+        error: `Export succeeded but the save was refused: ${writeError.message}`,
+        template, validation,
+        hint: 'A refused save means the structure report found errors — fix those and call again with the same save_as.',
+      };
+    }
+    saved = {
+      template_id: (writeResult as any)?.template_id ?? existing?.id ?? null,
+      created: !existing,
+      updated: !!existing,
+      name: saveAs,
+      removed_from_stored_template: removed.length ? removed : undefined,
+      removal_note: removed.length
+        ? 'An update REPLACES the stored body. These sections were in the saved template and are not in this export — re-run with a wider `include` if you meant to keep them.'
+        : undefined,
+    };
+  }
 
   return {
     success: true,
     template,
-    validation: { valid: errors.length === 0, errors, warnings },
+    validation,
+    saved,
     stats: {
       pages: templatePages.length,
       blocks: templatePages.reduce((acc: number, p: any) => acc + (Array.isArray(p.blocks) ? p.blocks.length : 0), 0),
       blog_posts: (blogPosts ?? []).length,
+      kb_categories: kbCategories.length,
+      products: products?.length ?? 0,
+      required_modules: enabledModules.length,
+    },
+    export_report: {
+      included: include,
+      homepage_slug: homepageSlug,
+      skipped,
+      assets: {
+        absolute_image_urls: assetCount,
+        hosts: Object.entries(assetHosts).map(([host, count]) => ({ host, count })),
+        note: assetCount
+          ? 'These URLs are absolute: installed on another instance they keep resolving to their current host, and break the day it goes away. Copy the files into the target instance\'s storage if the new site must stand alone.'
+          : 'No absolute image URLs — nothing points outside the installed instance.',
+      },
+      note: saved
+        ? 'Saved. install_template with this name reproduces the site on any instance.'
+        : 'Nothing was written — this is a preview. Call again with save_as="<template name>" to store it.',
     },
   };
 }

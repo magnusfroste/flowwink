@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260808500000",
-      "migrations_count": 355,
+      "migration_head": "20260809100000",
+      "migrations_count": 356,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1425,11 +1425,15 @@
         {
           "version": "20260808500000",
           "name": "site-templates-authorable"
+        },
+        {
+          "version": "20260809100000",
+          "name": "revert-site-template-capture"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:66531d61b74bc1c85b0e93d54a694194b55890458292eae149295891bba3fe74",
+      "seed_hash": "sha256:6df222322c5b98274b5313015bfed9069c653f3442a3c56887929bbda039db97",
       "skill_count": 527,
       "module_count": 68
     },
@@ -1439,7 +1443,7 @@
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:002f11c8e5add5f2fc0d1962992a12ef914317db94fcbc2572f5a7eb1b68ae49",
+        "agent-execute": "sha256:46f1f441ed4f0bda515f9915d28db48690ec07be57598063da3b443622dd78a4",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",

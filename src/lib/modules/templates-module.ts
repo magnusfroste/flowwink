@@ -18,6 +18,22 @@ const templatesOutputSchema = z.object({
 type TemplatesInput = z.infer<typeof templatesInputSchema>;
 type TemplatesOutput = z.infer<typeof templatesOutputSchema>;
 
+/**
+ * export_site_template is where "save the live site as a template" lives.
+ *
+ * The gap Magnus named: templates had import and export, but the export landed
+ * nowhere — an agent that had just built a site over MCP would have had to
+ * transcribe its own work back through manage_site_template by hand. save_as
+ * closes that here rather than adding a second verb elsewhere: three other
+ * skill descriptions already point at THIS name for "export the current site",
+ * and a surface with two words for one job grows two half-working generations.
+ *
+ * The behaviour rules live in the description, not only the instructions — the
+ * description is the tier an agent reads BEFORE choosing the call.
+ */
+const EXPORT_SITE_TEMPLATE_DESCRIPTION =
+  'Read the live site back as a reusable StarterTemplate — published pages with their blocks, blog posts, branding/header/footer/SEO/cookie settings, homepage slug and enabled modules — and optionally SAVE it: pass save_as=<name> to store it in site_templates (idempotent on the name), so install_template reproduces this site on another instance. Without save_as nothing is written. include=[pages,blog,kb,products] controls what is carried; whatever exists on the site but is not included is listed in export_report.skipped with the flag that would include it, so an omitted section never reads as an empty one. export_report.assets counts the ABSOLUTE image URLs — those are referenced, not copied, and keep resolving to this instance after the template is installed elsewhere. Use when: saving a site an agent or admin just built, cloning a site to another instance, backing up the site structure, or inspecting what a template of this site would contain. NOT for: installing a template (install_template), authoring a template body by hand (manage_site_template), or exporting media files.';
+
 const TEMPLATE_SKILLS: SkillSeed[] = [
   {
     name: 'list_templates',
@@ -102,6 +118,8 @@ COMPOSITION:
 
 WHAT BELONGS WHERE: branding, header, footer, SEO and cookie settings are template-level, not page blocks — a logo pasted into a hero is not a header. \`requiredModules\` lists what the template's pages actually need (a booking block needs the booking module); it is a declaration, not a switch.
 
+FROM THE LIVE SITE INSTEAD: if the site already exists — you just built it, or an admin did — do NOT transcribe it into \`template_json\` by hand. \`export_site_template save_as=<name>\` reads it back and stores it in one call. Compose here only when there is no site to read.
+
 MECHANICS: \`create\` is idempotent on name — an existing name returns \`already_existed: true\`; use \`action=update\` to change a body. Every create/update returns \`validation\` — a non-empty \`errors\` list means the write was refused; \`warnings\` are advice worth reading. \`archive\` deactivates; templates are not deleted, because an installed site's provenance points back at them.`,
   },
 
@@ -148,8 +166,7 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
   },
   {
     name: 'export_site_template',
-    description:
-      'Export the current site as a reusable StarterTemplate JSON: serializes published pages (with blocks + meta), published blog posts, branding/chat/header/footer/SEO/cookie settings, homepage slug and enabled modules, and validates the result. Read-only — nothing is written. Use when: asked to "export this site as a template", back up the site structure, clone the site to another instance, or inspect what a template of this site would contain. NOT for: installing templates (use install_template), listing the catalog (use list_templates), or exporting media files (images are referenced by URL only).',
+    description: EXPORT_SITE_TEMPLATE_DESCRIPTION,
     category: 'system',
     handler: 'module:templates',
     scope: 'internal',
@@ -157,12 +174,21 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
       type: 'function',
       function: {
         name: 'export_site_template',
-        description: 'Serialize the current site (pages, posts, settings) into StarterTemplate JSON.',
+        description: EXPORT_SITE_TEMPLATE_DESCRIPTION,
         parameters: {
           type: 'object',
           properties: {
-            id: { type: 'string', description: "Template id for the export (lowercase-hyphens, default 'site-export')." },
-            name: { type: 'string', description: "Template display name (default 'Site Export')." },
+            save_as: {
+              type: 'string',
+              description: 'Store the export as a reusable template under this name, instead of only returning the JSON. Idempotent: an existing name is UPDATED, never duplicated. Omit for a read-only preview. This is what closes the loop — install_template then reproduces the site from this name on any instance.',
+            },
+            include: {
+              type: 'array',
+              items: { type: 'string', enum: ['pages', 'blog', 'kb', 'products'] },
+              description: "What to carry. Default ['pages','blog']. Anything present on the site but not included is listed in export_report.skipped with the flag that would include it — an absent section never silently reads as an empty one.",
+            },
+            id: { type: 'string', description: "Template id for the export (lowercase-hyphens, default 'site-export' or a slug of save_as)." },
+            name: { type: 'string', description: "Template display name (defaults to save_as, else 'Site Export')." },
             description: { type: 'string', description: 'Template description.' },
             category: {
               type: 'string',
@@ -175,8 +201,43 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
         },
       },
     },
-    instructions:
-      'Returns { template, validation: { valid, errors, warnings }, stats: { pages, blocks, blog_posts } }. The template object matches the StarterTemplate shape consumed by install_template / the admin Template Import tab, so the output can be re-imported on any FlowWink instance. Only PUBLISHED pages and blog posts are included; KB articles and products are not part of the export (same as the admin export page). Image URLs are referenced, not embedded.',
+    instructions: `## What comes back
+\`{ template, validation, saved, stats, export_report }\`. The \`template\` object is
+a StarterTemplate — the same shape install_template and the admin Import tab
+consume — so it re-imports on any FlowWink instance.
+
+## Saving
+Without \`save_as\` this is a PREVIEW: nothing is written. With \`save_as\` the
+template is stored in \`site_templates\` under that name (existing name → updated,
+never duplicated) and \`saved.template_id\` comes back. That is the whole loop:
+
+  build the site (manage_page + create_page_block)
+    → export_site_template save_as="Customer starter"
+    → install_template template_id="Customer starter" on the next instance
+
+## What it takes, and what it admits it left
+Always: published pages with their blocks and meta, branding, chat, header,
+footer, SEO, AEO, cookie banner, homepage slug, accounting locale, and the list
+of enabled modules as \`requiredModules\`. Optional via \`include\`: \`blog\`
+(default on), \`kb\`, \`products\`. Drafts are never included — a template seeds
+content, and an unpublished draft has not been approved for anyone to see.
+
+\`export_report.skipped\` lists every section that exists on this site but is not
+in the template, with the flag that would include it. Read it before you save: a
+template that quietly omits 34 products looks identical to one from a site that
+has none.
+
+## The images
+\`export_report.assets\` counts the ABSOLUTE image URLs in the body and groups them
+by host. Those URLs are not copied — installed elsewhere they keep resolving to
+their current host, and break the day it goes away. A template whose pictures
+point home is a mirror, not a template. Copy the files into the target
+instance's storage when the new site has to stand alone.
+
+## Validation
+\`validation\` comes from the same database function the write enforces, so a
+preview can never disagree with a refusal. A non-empty \`errors\` list means a
+\`save_as\` call WOULD BE or WAS refused; \`warnings\` are advice.`,
   },
 ];
 
