@@ -12,574 +12,19 @@ import {
   validateBlockContracts,
   stripRemovedBlocks,
 } from '../_shared/normalize-blocks.ts';
+import {
+  detectPlatform, extractVideos, extractLottieAnimations, extractSvgAnimations,
+  extractImagesFromHtml, extractNavLinks, shouldExcludeUrl, fetchSitemap, categorizeUrl,
+} from '../_shared/site-scrape.ts';
+import {
+  assessRender, buildPageObservation, buildSiteSurvey, siteNameFrom,
+  type RenderReport, type RenderStrategy,
+} from '../_shared/site-sensor.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
-
-// Detect platform from HTML/metadata
-function detectPlatform(html: string, metadata: Record<string, unknown>): string {
-  const htmlLower = html.toLowerCase();
-  const generator = String(metadata.generator || '').toLowerCase();
-  
-  if (generator.includes('wordpress') || htmlLower.includes('wp-content') || htmlLower.includes('wp-includes')) {
-    return 'wordpress';
-  }
-  if (htmlLower.includes('wix.com') || htmlLower.includes('wixsite') || htmlLower.includes('_wix')) {
-    return 'wix';
-  }
-  if (htmlLower.includes('squarespace') || htmlLower.includes('sqsp')) {
-    return 'squarespace';
-  }
-  if (htmlLower.includes('shopify') || htmlLower.includes('cdn.shopify')) {
-    return 'shopify';
-  }
-  if (htmlLower.includes('webflow.com') || htmlLower.includes('w-') && htmlLower.includes('data-w-id')) {
-    return 'webflow';
-  }
-  if (htmlLower.includes('ghost.io') || generator.includes('ghost')) {
-    return 'ghost';
-  }
-  if (htmlLower.includes('hubspot') || htmlLower.includes('hs-sites')) {
-    return 'hubspot';
-  }
-  if (htmlLower.includes('drupal') || generator.includes('drupal')) {
-    return 'drupal';
-  }
-  if (htmlLower.includes('sitevision') || htmlLower.includes('sv-') && htmlLower.includes('sv-portlet')) {
-    return 'sitevision';
-  }
-  if (htmlLower.includes('episerver') || htmlLower.includes('optimizely')) {
-    return 'episerver';
-  }
-  
-  return 'unknown';
-}
-
-// Extract video URLs from HTML - supports HTML5 video, YouTube, and Vimeo
-function extractVideos(html: string): { type: string; url: string; id?: string; poster?: string; isHeroCandidate?: boolean }[] {
-  const videos: { type: string; url: string; id?: string; poster?: string; isHeroCandidate?: boolean }[] = [];
-  const seenUrls = new Set<string>();
-  
-  // 1. HTML5 <video> tags with source - PRIORITY for hero videos
-  const videoTagRegex = /<video[^>]*>[\s\S]*?<\/video>/gi;
-  let videoMatch;
-  while ((videoMatch = videoTagRegex.exec(html)) !== null) {
-    const videoBlock = videoMatch[0];
-    
-    // Check if this looks like a hero/background video
-    const isHero = /hero|banner|background|fullscreen|cover/i.test(videoBlock) || 
-                   /autoplay|muted|loop|playsinline/i.test(videoBlock);
-    
-    // Extract poster image
-    const posterMatch = videoBlock.match(/poster=["']([^"']+)["']/i);
-    const poster = posterMatch ? posterMatch[1] : undefined;
-    
-    // Extract MP4 source
-    const mp4Match = videoBlock.match(/src=["']([^"']+\.mp4[^"']*)["']/i) ||
-                     videoBlock.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/i);
-    if (mp4Match && !seenUrls.has(mp4Match[1])) {
-      seenUrls.add(mp4Match[1]);
-      videos.push({ 
-        type: 'direct', 
-        url: mp4Match[1],
-        poster,
-        isHeroCandidate: isHero
-      });
-    }
-    
-    // Extract WebM source
-    const webmMatch = videoBlock.match(/src=["']([^"']+\.webm[^"']*)["']/i) ||
-                      videoBlock.match(/<source[^>]+src=["']([^"']+\.webm[^"']*)["']/i);
-    if (webmMatch && !seenUrls.has(webmMatch[1])) {
-      seenUrls.add(webmMatch[1]);
-      videos.push({ 
-        type: 'direct', 
-        url: webmMatch[1],
-        poster,
-        isHeroCandidate: isHero
-      });
-    }
-  }
-  
-  // 2. Direct video file URLs in attributes (data-src, data-video, etc.)
-  const directVideoRegex = /(?:src|data-src|data-video|href)=["']([^"']+\.(mp4|webm|mov)[^"']*)["']/gi;
-  while ((videoMatch = directVideoRegex.exec(html)) !== null) {
-    const url = videoMatch[1];
-    if (!seenUrls.has(url)) {
-      seenUrls.add(url);
-      videos.push({ 
-        type: 'direct', 
-        url,
-        isHeroCandidate: /hero|banner|background|cover/i.test(html.substring(Math.max(0, videoMatch.index - 500), videoMatch.index + 500))
-      });
-    }
-  }
-  
-  // 3. Background video in style or inline
-  const bgVideoRegex = /background(?:-video)?:\s*url\(['"]?([^'")\s]+\.(mp4|webm)[^'")\s]*)['"]?\)/gi;
-  while ((videoMatch = bgVideoRegex.exec(html)) !== null) {
-    const url = videoMatch[1];
-    if (!seenUrls.has(url)) {
-      seenUrls.add(url);
-      videos.push({ 
-        type: 'direct', 
-        url,
-        isHeroCandidate: true
-      });
-    }
-  }
-  
-  // 4. YouTube patterns
-  const youtubePatterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/)([a-zA-Z0-9_-]{11})/gi,
-    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/gi,
-  ];
-  
-  for (const pattern of youtubePatterns) {
-    let match;
-    while ((match = pattern.exec(html)) !== null) {
-      const videoId = match[1];
-      if (!videos.find(v => v.id === videoId && v.type === 'youtube')) {
-        videos.push({ 
-          type: 'youtube', 
-          url: `https://www.youtube.com/watch?v=${videoId}`,
-          id: videoId,
-          isHeroCandidate: false
-        });
-      }
-    }
-  }
-  
-  // 5. Vimeo patterns
-  const vimeoPatterns = [
-    /vimeo\.com\/(\d+)/gi,
-    /player\.vimeo\.com\/video\/(\d+)/gi,
-  ];
-  
-  for (const pattern of vimeoPatterns) {
-    let match;
-    while ((match = pattern.exec(html)) !== null) {
-      const videoId = match[1];
-      if (!videos.find(v => v.id === videoId && v.type === 'vimeo')) {
-        videos.push({ 
-          type: 'vimeo', 
-          url: `https://vimeo.com/${videoId}`,
-          id: videoId,
-          isHeroCandidate: false
-        });
-      }
-    }
-  }
-  
-  return videos;
-}
-
-// Extract Lottie animations from HTML
-function extractLottieAnimations(html: string): { src: string; type: 'lottie' | 'dotlottie'; context?: string }[] {
-  const animations: { src: string; type: 'lottie' | 'dotlottie'; context?: string }[] = [];
-  const seenUrls = new Set<string>();
-  
-  // 1. lottie-player web component
-  const lottiePlayerRegex = /<lottie-player[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match;
-  while ((match = lottiePlayerRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (!seenUrls.has(src)) {
-      seenUrls.add(src);
-      const context = html.substring(Math.max(0, match.index - 200), match.index).match(/class=["'][^"']*["']/i)?.[0] || '';
-      animations.push({ src, type: 'lottie', context });
-    }
-  }
-  
-  // 2. dotlottie-player and dotlottie-wc web components
-  const dotlottieRegex = /<(?:dotlottie-player|dotlottie-wc)[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  while ((match = dotlottieRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (!seenUrls.has(src)) {
-      seenUrls.add(src);
-      animations.push({ src, type: 'dotlottie' });
-    }
-  }
-  
-  // 3. amp-bodymovin-animation (AMP)
-  const ampRegex = /<amp-bodymovin-animation[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  while ((match = ampRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (!seenUrls.has(src)) {
-      seenUrls.add(src);
-      animations.push({ src, type: 'lottie' });
-    }
-  }
-  
-  // 4. lottie.loadAnimation or bodymovin.loadAnimation in scripts
-  const scriptLoadRegex = /(?:lottie|bodymovin)\.loadAnimation\s*\(\s*\{[^}]*(?:path|animationData)\s*:\s*["']([^"']+\.json)["'][^}]*\}/gi;
-  while ((match = scriptLoadRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (!seenUrls.has(src)) {
-      seenUrls.add(src);
-      animations.push({ src, type: 'lottie' });
-    }
-  }
-  
-  // 5. Direct .lottie or .json lottie file URLs in data attributes
-  const dataAttrRegex = /(?:data-animation|data-lottie|data-src)=["']([^"']+\.(?:lottie|json))["']/gi;
-  while ((match = dataAttrRegex.exec(html)) !== null) {
-    const src = match[1];
-    // Only add if it looks like a Lottie file (not any JSON)
-    if (!seenUrls.has(src) && (src.includes('lottie') || src.includes('animation'))) {
-      seenUrls.add(src);
-      animations.push({ src, type: src.endsWith('.lottie') ? 'dotlottie' : 'lottie' });
-    }
-  }
-  
-  // 6. lottie.host URLs (common hosting platform)
-  const lottieHostRegex = /https?:\/\/(?:lottie\.host|assets\d*\.lottiefiles\.com)\/[^"'\s)]+/gi;
-  while ((match = lottieHostRegex.exec(html)) !== null) {
-    const src = match[0];
-    if (!seenUrls.has(src)) {
-      seenUrls.add(src);
-      animations.push({ src, type: src.endsWith('.lottie') ? 'dotlottie' : 'lottie' });
-    }
-  }
-  
-  return animations;
-}
-
-// Extract SVG animations from HTML
-function extractSvgAnimations(html: string): { svg: string; type: 'inline' | 'external'; src?: string; hasAnimation: boolean }[] {
-  const svgAnimations: { svg: string; type: 'inline' | 'external'; src?: string; hasAnimation: boolean }[] = [];
-  
-  // 1. External SVG files (check for common animation patterns in URL/class)
-  const externalSvgRegex = /<(?:img|object|embed)[^>]+(?:src|data)=["']([^"']+\.svg[^"']*)["'][^>]*>/gi;
-  let match;
-  while ((match = externalSvgRegex.exec(html)) !== null) {
-    const src = match[1];
-    const context = match[0].toLowerCase();
-    // Look for animation hints in class names or surrounding context
-    const hasAnimationHint = /anim|motion|loader|spinner|pulse|bounce/i.test(context) ||
-                             /class=["'][^"']*(?:anim|motion|loader|spinner)[^"']*["']/i.test(html.substring(Math.max(0, match.index - 100), match.index + 100));
-    
-    if (hasAnimationHint) {
-      svgAnimations.push({ 
-        svg: '', 
-        type: 'external', 
-        src, 
-        hasAnimation: true 
-      });
-    }
-  }
-  
-  // 2. Inline SVG with SMIL animations (<animate>, <animateTransform>, <animateMotion>)
-  const inlineSvgRegex = /<svg[^>]*>[\s\S]*?<\/svg>/gi;
-  while ((match = inlineSvgRegex.exec(html)) !== null) {
-    const svgContent = match[0];
-    const hasSmilAnimation = /<animate(?:Transform|Motion)?[^>]*>/i.test(svgContent);
-    const hasCssAnimation = /animation:|@keyframes/i.test(svgContent);
-    
-    if (hasSmilAnimation || hasCssAnimation) {
-      // Truncate very large SVGs for the preview
-      const truncatedSvg = svgContent.length > 5000 ? svgContent.substring(0, 5000) + '...' : svgContent;
-      svgAnimations.push({ 
-        svg: truncatedSvg, 
-        type: 'inline', 
-        hasAnimation: true 
-      });
-    }
-  }
-  
-  return svgAnimations;
-}
-
-// Extract images from HTML with better pattern matching
-function extractImagesFromHtml(html: string): { src: string; alt?: string }[] {
-  const images: { src: string; alt?: string }[] = [];
-  const seenUrls = new Set<string>();
-  
-  // Match img tags
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi;
-  let match;
-  while ((match = imgRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (src.startsWith('http') && !seenUrls.has(src)) {
-      seenUrls.add(src);
-      images.push({ src, alt: match[2] || undefined });
-    }
-  }
-  
-  // Match background-image in style
-  const bgRegex = /background(?:-image)?:\s*url\(['"]?([^'")\s]+)['"]?\)/gi;
-  while ((match = bgRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (src.startsWith('http') && !seenUrls.has(src)) {
-      seenUrls.add(src);
-      images.push({ src });
-    }
-  }
-  
-  // Match data-src (lazy loading)
-  const dataSrcRegex = /data-src=["']([^"']+)["']/gi;
-  while ((match = dataSrcRegex.exec(html)) !== null) {
-    const src = match[1];
-    if (src.startsWith('http') && !seenUrls.has(src)) {
-      seenUrls.add(src);
-      images.push({ src });
-    }
-  }
-  
-  return images;
-}
-
-// Extract navigation links from HTML - enhanced to include header, footer, and main nav
-function extractNavLinks(html: string, baseUrl: string): { label: string; url: string; source: 'nav' | 'header' | 'footer' }[] {
-  const links: { label: string; url: string; source: 'nav' | 'header' | 'footer' }[] = [];
-  const seenUrls = new Set<string>();
-  
-  // Helper to normalize URL for deduplication
-  const normalizeForDedup = (url: string): string => {
-    try {
-      const u = new URL(url);
-      u.search = '';
-      u.hash = '';
-      let path = u.pathname.toLowerCase();
-      if (path.length > 1 && path.endsWith('/')) {
-        path = path.slice(0, -1);
-      }
-      u.pathname = path;
-      return u.href;
-    } catch {
-      return url.toLowerCase();
-    }
-  };
-  
-  // Helper to extract links from HTML content
-  const extractLinksFromContent = (content: string, source: 'nav' | 'header' | 'footer') => {
-    const linkRegex = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-    let linkMatch;
-    while ((linkMatch = linkRegex.exec(content)) !== null) {
-      let href = linkMatch[1].trim();
-      // Clean up label - remove HTML tags and whitespace
-      const label = linkMatch[2].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-      
-      // Skip invalid links
-      if (!href || !label || label.length < 2 || label.length > 100) continue;
-      if (href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
-      if (href.startsWith('#')) continue;
-      
-      // Skip common non-content links
-      if (/\/(wp-login|wp-admin|feed|rss|login|logout|cart|checkout|account|search|privacy|cookie|gdpr)/i.test(href)) continue;
-      
-      // Convert relative URLs to absolute
-      try {
-        const absoluteUrl = new URL(href, baseUrl).href;
-        const normalizedUrl = normalizeForDedup(absoluteUrl);
-        
-        // Only include same-domain links that haven't been seen
-        if (absoluteUrl.startsWith(baseUrl) && !seenUrls.has(normalizedUrl)) {
-          seenUrls.add(normalizedUrl);
-          links.push({ label, url: absoluteUrl, source });
-        }
-      } catch {
-        // Invalid URL, skip
-      }
-    }
-  };
-  
-  // 1. Extract from <nav> elements (highest priority - main navigation)
-  const navRegex = /<nav[^>]*>([\s\S]*?)<\/nav>/gi;
-  let navMatch;
-  while ((navMatch = navRegex.exec(html)) !== null) {
-    extractLinksFromContent(navMatch[1], 'nav');
-  }
-  
-  // 2. Extract from <header> elements (often contains main menu)
-  const headerRegex = /<header[^>]*>([\s\S]*?)<\/header>/gi;
-  let headerMatch;
-  while ((headerMatch = headerRegex.exec(html)) !== null) {
-    extractLinksFromContent(headerMatch[1], 'header');
-  }
-  
-  // 3. Extract from <footer> elements (often has important links)
-  const footerRegex = /<footer[^>]*>([\s\S]*?)<\/footer>/gi;
-  let footerMatch;
-  while ((footerMatch = footerRegex.exec(html)) !== null) {
-    extractLinksFromContent(footerMatch[1], 'footer');
-  }
-  
-  // 4. Look for common menu class patterns (WordPress, etc.)
-  const menuPatterns = [
-    /<(?:div|ul)[^>]*class="[^"]*(?:menu|navigation|nav-menu|main-menu|primary-menu)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|ul)>/gi,
-    /<(?:div|ul)[^>]*id="[^"]*(?:menu|navigation|nav)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|ul)>/gi,
-  ];
-  
-  for (const pattern of menuPatterns) {
-    let menuMatch;
-    while ((menuMatch = pattern.exec(html)) !== null) {
-      extractLinksFromContent(menuMatch[1], 'nav');
-    }
-  }
-  
-  return links;
-}
-
-// Fetch and parse sitemap.xml
-// Filter out URLs that look like archives, pagination, or low-value pages
-function shouldExcludeUrl(url: string, baseUrl: string): boolean {
-  const path = url.replace(baseUrl, '').toLowerCase();
-  
-  // Exclude pagination
-  if (/\/page\/\d+\/?$/.test(path)) return true;
-  
-  // Exclude archive pages (year/month archives without article)
-  if (/^\/\d{4}\/?$/.test(path)) return true; // /2023/
-  if (/^\/\d{4}\/\d{2}\/?$/.test(path)) return true; // /2023/05/
-  
-  // Exclude feed/rss URLs
-  if (/\/(feed|rss|atom)\/?/.test(path)) return true;
-  
-  // Exclude attachment/media pages
-  if (/\/attachment\//.test(path)) return true;
-  
-  // Exclude login/admin pages
-  if (/\/(wp-admin|wp-login|admin|login|logout|dashboard)\/?/.test(path)) return true;
-  
-  // Exclude search results
-  if (/\/search\//.test(path) || /[\?&]s=/.test(path)) return true;
-  
-  // Exclude print pages
-  if (/\/print\/?$/.test(path)) return true;
-  
-  // Exclude empty or single-char paths that aren't home
-  if (path.length > 0 && path !== '/' && path.length <= 2) return true;
-  
-  return false;
-}
-
-// Check if lastmod date is within acceptable range (last 2 years by default)
-function isRecentEnough(lastmod: string | undefined, maxAgeMonths: number = 24): boolean {
-  if (!lastmod) return true; // No date = include by default
-  
-  try {
-    const modDate = new Date(lastmod);
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - maxAgeMonths);
-    return modDate >= cutoff;
-  } catch {
-    return true; // Invalid date = include
-  }
-}
-
-async function fetchSitemap(baseUrl: string): Promise<{ url: string; title?: string; lastmod?: string }[]> {
-  const pages: { url: string; title?: string; lastmod?: string }[] = [];
-  
-  try {
-    // Try common sitemap locations
-    const sitemapUrls = [
-      `${baseUrl}/sitemap.xml`,
-      `${baseUrl}/sitemap_index.xml`,
-      `${baseUrl}/sitemap-index.xml`,
-    ];
-    
-    for (const sitemapUrl of sitemapUrls) {
-      try {
-        const response = await fetch(sitemapUrl, { 
-          headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
-          signal: AbortSignal.timeout(5000)
-        });
-        
-        if (!response.ok) continue;
-        
-        const xml = await response.text();
-        
-        // Check if it's a sitemap index (contains other sitemaps)
-        if (xml.includes('<sitemapindex')) {
-          // Extract sitemap URLs from index
-          const sitemapLocRegex = /<sitemap>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi;
-          let sitemapMatch;
-          const childSitemaps: string[] = [];
-          while ((sitemapMatch = sitemapLocRegex.exec(xml)) !== null) {
-            childSitemaps.push(sitemapMatch[1].trim());
-          }
-          
-          // Fetch first few child sitemaps (limit to avoid timeout)
-          for (const childUrl of childSitemaps.slice(0, 3)) {
-            try {
-              const childResponse = await fetch(childUrl, { 
-                headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
-                signal: AbortSignal.timeout(3000)
-              });
-              if (childResponse.ok) {
-                const childXml = await childResponse.text();
-                extractUrlsFromSitemap(childXml, pages, baseUrl);
-              }
-            } catch {
-              // Skip this child sitemap
-            }
-          }
-        } else {
-          // Regular sitemap
-          extractUrlsFromSitemap(xml, pages, baseUrl);
-        }
-        
-        // If we found pages, stop trying other sitemap URLs
-        if (pages.length > 0) break;
-        
-      } catch {
-        // Try next sitemap URL
-      }
-    }
-  } catch (error) {
-    console.error('Sitemap fetch error:', error);
-  }
-  
-  return pages;
-}
-
-function extractUrlsFromSitemap(
-  xml: string, 
-  pages: { url: string; title?: string; lastmod?: string }[],
-  baseUrl: string
-): void {
-  const urlRegex = /<url>[\s\S]*?<loc>([^<]+)<\/loc>(?:[\s\S]*?<lastmod>([^<]+)<\/lastmod>)?[\s\S]*?<\/url>/gi;
-  let match;
-  while ((match = urlRegex.exec(xml)) !== null) {
-    const url = match[1].trim();
-    const lastmod = match[2]?.trim();
-    
-    // Only include same-domain URLs that pass filters
-    if (url.startsWith(baseUrl) && !shouldExcludeUrl(url, baseUrl) && isRecentEnough(lastmod)) {
-      pages.push({ url, lastmod });
-    }
-  }
-}
-
-// Categorize URL by type - platform-aware
-function categorizeUrl(url: string, baseUrl: string, platform: string = 'unknown'): 'page' | 'blog' | 'kb' {
-  const path = url.replace(baseUrl, '').toLowerCase();
-  
-  // WordPress-specific: date-based URLs are blog posts (/YYYY/MM/DD/post-name/)
-  if (platform === 'wordpress' && /^\/\d{4}\/\d{2}(\/\d{2})?\//.test(path)) {
-    return 'blog';
-  }
-  
-  // WordPress category/tag/author pages are blog archives
-  if (platform === 'wordpress' && /^\/(category|tag|author|arkiv)\//.test(path)) {
-    return 'blog';
-  }
-  
-  // Blog patterns (generic)
-  if (/^\/(blog|news|articles|aktuellt|nyheter|insights|journal|posts?)(?:\/|$)/i.test(path)) {
-    return 'blog';
-  }
-  
-  // Knowledge base patterns
-  if (/^\/(help|faq|support|knowledge|kb|docs|documentation|hjalp|vanliga-fragor)(?:\/|$)/i.test(path)) {
-    return 'kb';
-  }
-  
-  return 'page';
-}
 
 // Analyze full site structure
 async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<{
@@ -883,6 +328,186 @@ serve(async (req) => {
       }
     }
 
+    // ─── SENSOR ACTIONS ────────────────────────────────────────────────────
+    // survey + read report what a site CONTAINS. They run no model, write
+    // nothing, and return no blocks — composition is the agent's job. See
+    // _shared/site-sensor.ts for why the split exists.
+
+    /**
+     * The rendering ladder. A single Firecrawl pass with waitFor:1000 is what
+     * made restagard.se's subpages come back as empty shells: the site paints
+     * after load. So: try, measure, wait longer, and only then ask for a real
+     * browser. Every rung is reported in render.strategy — a caller must always
+     * be able to see HOW the page was read.
+     */
+    async function scrapeForSensor(targetUrl: string): Promise<{
+      markdown: string; html: string; metadata: Record<string, unknown>;
+      rawBranding: FirecrawlBranding | null; strategy: RenderStrategy; report: RenderReport;
+    }> {
+      const firecrawlPass = async (waitFor: number, strategy: RenderStrategy) => {
+        const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${firecrawlKey!}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: targetUrl,
+            formats: ['markdown', 'rawHtml', 'branding'],
+            onlyMainContent: false,
+            waitFor,
+            excludeTags: ['script', 'noscript', 'style'],
+          }),
+          signal: AbortSignal.timeout(waitFor + 30000),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || `Firecrawl ${res.status}`);
+        const d = data.data || data;
+        const html = d.rawHtml || d.html || '';
+        const markdown = d.markdown || '';
+        return {
+          markdown, html,
+          metadata: (d.metadata || {}) as Record<string, unknown>,
+          rawBranding: (d.branding || null) as FirecrawlBranding | null,
+          strategy,
+          report: assessRender(html, markdown, strategy),
+        };
+      };
+
+      if (useFirecrawl) {
+        try {
+          const first = await firecrawlPass(1500, 'firecrawl');
+          if (first.report.confidence !== 'shell') return first;
+          // Rung 2: same scraper, longer paint window. Cheap, unattended, and
+          // it fixes the common case (a framework that needs a second).
+          console.log('[migrate-page] shell detected, retrying with a longer render wait');
+          const second = await firecrawlPass(6000, 'firecrawl-retry');
+          return second.report.text_chars > first.report.text_chars ? second : first;
+        } catch (e) {
+          console.warn('[migrate-page] Firecrawl failed, falling back to Jina:', e);
+        }
+      }
+
+      let jina;
+      try {
+        jina = await jinaFallback(targetUrl);
+      } catch (e) {
+        // Name the rung that failed and what to do — a bare "429" tells an agent
+        // nothing about whether to retry, slow down, or give up.
+        const msg = e instanceof Error ? e.message : String(e);
+        const rateLimited = /\b429\b/.test(msg);
+        throw new Error(
+          rateLimited
+            ? `${msg}. The reader is rate-limiting this instance${useFirecrawl ? '' : ' (no FIRECRAWL_API_KEY configured, so there is no faster path)'}. Wait ~30s and read one page at a time, or supply a browser result via relay_result.`
+            : `${msg}. Every server-side read strategy failed for this URL. Read it through a browser and pass the result back: migrate_url({url, action:'read', relay_result:{title, html, content}}).`,
+        );
+      }
+      const html = jina.rawHtml || jina.html || '';
+      return {
+        markdown: jina.markdown, html,
+        metadata: jina.metadata,
+        rawBranding: null,
+        strategy: 'jina',
+        report: assessRender(html, jina.markdown, 'jina'),
+      };
+    }
+
+    if (action === 'survey' || action === 'read') {
+      let formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      // ── read: one page, observed ──
+      if (action === 'read') {
+        // A browser result handed back to us (the extension relay, or any agent
+        // with a browser) skips the ladder entirely — it IS the top rung.
+        const relay = body.relay_result;
+        if (relay) {
+          const html = relay.html || '';
+          const markdown = relay.markdown || relay.content || '';
+          return new Response(JSON.stringify({
+            success: true,
+            ...buildPageObservation({
+              url: formattedUrl, html, markdown,
+              metadata: { title: relay.title, description: relay.description },
+              platform: detectPlatform(html, {}),
+              strategy: 'relay',
+              videos: extractVideos(html),
+              siteName: body.site_name,
+            }),
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const scraped = await scrapeForSensor(formattedUrl);
+        const observation = buildPageObservation({
+          url: formattedUrl,
+          html: scraped.html,
+          markdown: scraped.markdown,
+          metadata: scraped.metadata,
+          platform: detectPlatform(scraped.html, scraped.metadata),
+          strategy: scraped.strategy,
+          rawBranding: scraped.rawBranding,
+          videos: extractVideos(scraped.html),
+          siteName: body.site_name,
+        });
+
+        // Blind on this page. Speak the same envelope browser_fetch uses, so the
+        // admin panel's extension relay picks it up without knowing what a
+        // migration is — and an unattended agent still gets an honest refusal
+        // plus whatever little we did see.
+        if (observation.render.confidence === 'shell') {
+          return new Response(JSON.stringify({
+            success: false,
+            action: 'relay_required',
+            url: formattedUrl,
+            message: observation.render.reason,
+            relay_instruction: { type: 'navigate_and_scrape', url: formattedUrl },
+            partial_observation: observation,
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        return new Response(JSON.stringify({ success: true, ...observation }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // ── survey: the whole site, inventoried ──
+      const urlObj = new URL(formattedUrl);
+      const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+      const home = await scrapeForSensor(baseUrl);
+      const platform = detectPlatform(home.html, home.metadata);
+      const navLinks = extractNavLinks(home.html, baseUrl);
+      const sitemapPages = await fetchSitemap(baseUrl);
+
+      const seen = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
+      for (const link of navLinks) {
+        if (shouldExcludeUrl(link.url, baseUrl)) continue;
+        seen.set(link.url, { url: link.url, title: link.label, type: categorizeUrl(link.url, baseUrl, platform), source: 'nav' });
+      }
+      for (const page of sitemapPages) {
+        if (shouldExcludeUrl(page.url, baseUrl) || seen.has(page.url)) continue;
+        const slug = page.url.replace(baseUrl, '').split('/').filter(Boolean).pop() || 'home';
+        seen.set(page.url, {
+          url: page.url,
+          title: page.title || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          type: categorizeUrl(page.url, baseUrl, platform),
+          source: 'sitemap',
+        });
+      }
+
+      const siteName = siteNameFrom(home.html, baseUrl);
+
+      return new Response(JSON.stringify({
+        success: true,
+        ...buildSiteSurvey({
+          baseUrl, siteName, platform,
+          html: home.html, markdown: home.markdown, strategy: home.strategy,
+          pages: Array.from(seen.values()),
+          navigation: navLinks.map((l) => ({ label: l.label, url: l.url })),
+          rawBranding: home.rawBranding,
+        }),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ─── COMPOSE (the original one-shot path) ──────────────────────────────
     // Resolve AI provider via unified Layer 1 config — reuse supabase client
     let aiConfig;
     try {

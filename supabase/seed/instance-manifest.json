@@ -1429,13 +1429,13 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:6006ac8a6d0b82b77ee5061f65adc6d4991f22411df8685de083f235cb45740a",
+      "seed_hash": "sha256:66531d61b74bc1c85b0e93d54a694194b55890458292eae149295891bba3fe74",
       "skill_count": 527,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:e4c1cb940d12c9e9716a14dc753f943aa7ca1dc3dda6f0e9076b99fd1043e567",
+      "shared_hash": "sha256:921bf7c67587bd38b18c5c040b2df7d146b70b17d7121374454e7ed2b9879244",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1485,7 +1485,7 @@
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:3cb3f630ad868ee15eb2c559e50af08449af876d3856ba0557f9c2ab9300d2b4",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
-        "migrate-page": "sha256:766be614771b490303abefc25efff5ade8417a833fc8c8ed0fc4e725f84fec81",
+        "migrate-page": "sha256:7542943c7e86e548039ed47ddcad6b1319ea9c5b83fcc581303267cf8ade7a76",
         "newsletter": "sha256:48b37b233cdfed2433269c8fc89518f77a5539d872b140f8db1dc5b5aaebfc31",
         "openclaw-responses": "sha256:70efb4b23cd1fb08427337148ccd47097d30a0e746bb27ad17120b39498dec3b",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
