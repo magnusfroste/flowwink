@@ -25,7 +25,7 @@ import { TIPTAP_NESTED_FIELDS } from './block-schema.ts';
 // leftColumn/rightColumn are what TwoColumnBlock actually reads for its
 // two-text mode. leftContent/rightContent match no renderer — kept only so any
 // stored legacy rows keep normalizing, but do not write new content to them.
-export const TIPTAP_FIELDS = ['content', 'leftColumn', 'rightColumn', 'leftContent', 'rightContent', 'body', 'answer'];
+export const TIPTAP_FIELDS = ['content', 'leftColumn', 'rightColumn', 'leftContent', 'rightContent', 'body', 'answer', 'secondaryContent'];
 
 /** Convert a raw HTML/plain-text string into a minimal valid Tiptap doc. */
 export function htmlToTiptap(html: string): Record<string, unknown> {

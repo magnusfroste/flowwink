@@ -54,7 +54,7 @@ const LEAKY_EXPORT = {
 };
 
 describe('the identity fields do not travel', () => {
-  const { template, identity } = applyIdentityPolicy(LEAKY_EXPORT as never, true);
+  const { template, identity } = applyIdentityPolicy(LEAKY_EXPORT as unknown as Record<string, unknown>, true);
 
   it('removes the field that carried a password', () => {
     expect((template.chatSettings as Record<string, unknown>).welcomeMessage).toBeUndefined();
@@ -99,7 +99,7 @@ describe('the identity fields do not travel', () => {
 });
 
 describe('keeping identity is a choice made out loud', () => {
-  const { template, identity } = applyIdentityPolicy(LEAKY_EXPORT as never, false);
+  const { template, identity } = applyIdentityPolicy(LEAKY_EXPORT as unknown as Record<string, unknown>, false);
 
   it('keeps everything when asked', () => {
     expect((template.branding as Record<string, unknown>).organizationName).toBe('FlowWink Demo');
@@ -148,7 +148,7 @@ describe('the scan is the half that survives new fields', () => {
 
   it('reports rather than deletes — a false positive must not eat real content', () => {
     const body = { pages: [{ blocks: [{ data: { text: 'Skriv till info@restagard.se' } }] }] };
-    const { template, identity } = applyIdentityPolicy(body as never, true);
+    const { template, identity } = applyIdentityPolicy(body as unknown as Record<string, unknown>, true);
     expect(JSON.stringify(template)).toContain('info@restagard.se');
     expect(identity.possible_secrets.length).toBe(1);
   });

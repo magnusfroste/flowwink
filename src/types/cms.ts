@@ -584,7 +584,14 @@ export interface TwoColumnBlockData {
   // Text-Text layout (alternative to image+text)
   leftColumn?: RichTextContent;
   rightColumn?: RichTextContent;
-  layout?: '50-50' | '60-40' | '40-60';
+  /**
+   * Legacy/alternate text-text authoring shape: `content` + `secondaryContent`
+   * with layout 'text-text'. Rendered as two text columns (no image slot).
+   */
+  secondaryContent?: RichTextContent;
+  layout?: '50-50' | '60-40' | '40-60' | 'text-text';
+  /** Primary CTA button (alternative to ctaText/ctaUrl). */
+  primaryButton?: { text: string; url: string };
   // Note/caption below image
   note?: string;
 }

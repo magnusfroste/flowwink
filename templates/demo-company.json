@@ -363,7 +363,9 @@
           "data": {
             "title": "Demo Shop",
             "subtitle": "Add anything to your cart. Checkout is in sandbox mode — no card needed. Your order will appear in /admin/orders and FlowPilot will fulfill it.",
-            "backgroundType": "color",
+            "backgroundType": "image",
+            "backgroundImage": "/templates/hero/digital-shop-hero.jpg",
+            "overlayOpacity": 60,
             "heightMode": "compact",
             "contentAlignment": "center"
           }
@@ -437,7 +439,9 @@
           "data": {
             "title": "A live business, reset every day.",
             "subtitle": "This is the same FlowWink you would self-host — 68 modules and 500+ MCP skills. Connect your own agent and let it run the business.",
-            "backgroundType": "color",
+            "backgroundType": "image",
+            "backgroundImage": "/templates/hero/data-abstract.jpg",
+            "overlayOpacity": 65,
             "heightMode": "compact",
             "contentAlignment": "center"
           }

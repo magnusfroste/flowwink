@@ -308,9 +308,12 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'secondImageAlt', type: 'string', required: false, description: 'Second image alt text' },
       { name: 'stickyColumn', type: 'string', required: false, description: 'Column that stays pinned while the other scrolls', default: 'none', options: ['none', 'image', 'text'] },
       { name: 'backgroundColor', type: 'string', required: false, description: 'Section background override' },
-      { name: 'layout', type: 'string', required: false, description: 'Legacy: two-text-column mode instead of text+image' },
-      { name: 'leftColumn', type: 'tiptap', required: false, description: 'Legacy two-text mode: left column content' },
-      { name: 'rightColumn', type: 'tiptap', required: false, description: 'Legacy two-text mode: right column content' },
+      { name: 'layout', type: 'string', required: false, description: 'Column split, or two-text-column mode instead of text+image', default: '50-50', options: ['50-50', '60-40', '40-60', 'text-text'] },
+      { name: 'leftColumn', type: 'tiptap', required: false, description: 'Two-text mode: left column content' },
+      { name: 'rightColumn', type: 'tiptap', required: false, description: 'Two-text mode: right column content' },
+      { name: 'secondaryContent', type: 'tiptap', required: false, description: "Two-text mode (layout 'text-text'): right column content, paired with content as the left column" },
+      { name: 'primaryButton', type: 'object', required: false, description: 'CTA as an object ({ text, url }) — alternative to ctaText/ctaUrl' },
+
     ],
   },
   {

@@ -23,7 +23,15 @@ const typographyScale = {
 
 export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   const { branding } = useBranding();
-  const isTextTextLayout = !!(data.leftColumn || data.rightColumn);
+  // Text-text mode covers two authoring shapes: leftColumn/rightColumn, and the
+  // alternate content/secondaryContent pair with layout 'text-text'. Without the
+  // second shape the block fell back to image+text and rendered an empty image
+  // column (half-blank section) whenever no imageSrc was set.
+  const isTextTextLayout = !!(
+    data.leftColumn ||
+    data.rightColumn ||
+    (data.layout === 'text-text' && data.secondaryContent)
+  );
   const imageFirst = data.imagePosition === 'left';
   const stickyColumn = data.stickyColumn || 'none';
   const titleSize = data.titleSize || 'default';
@@ -72,8 +80,8 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   
   // Use the shared tiptap-utils for consistent rendering
   const htmlContent = renderToHtml(data.content);
-  const leftHtml = isTextTextLayout ? renderToHtml(data.leftColumn) : '';
-  const rightHtml = isTextTextLayout ? renderToHtml(data.rightColumn) : '';
+  const leftHtml = isTextTextLayout ? renderToHtml(data.leftColumn ?? data.content) : '';
+  const rightHtml = isTextTextLayout ? renderToHtml(data.rightColumn ?? data.secondaryContent) : '';
 
   // Build title with optional accent text
   const renderTitle = () => {
@@ -111,8 +119,11 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
     }
   };
 
-  // Check if CTA is internal or external link
-  const isInternalLink = data.ctaUrl?.startsWith('/');
+  // CTA: ctaText/ctaUrl is canonical; primaryButton is an alternate shape used
+  // by some templates. Both layout branches read the same fields.
+  const ctaText = data.ctaText || data.primaryButton?.text;
+  const ctaUrl = data.ctaUrl || data.primaryButton?.url;
+  const isInternalLink = ctaUrl?.startsWith('/');
 
   // Layout grid class for text-text mode
   const layoutGridClass = (() => {
@@ -159,19 +170,19 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             <p className="mt-6 text-sm text-muted-foreground italic">{data.note}</p>
           )}
           {/* CTA */}
-          {data.ctaText && data.ctaUrl && (
+          {ctaText && ctaUrl && (
             <div className="mt-8">
               {isInternalLink ? (
-                <Link to={data.ctaUrl} className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
-                  <span>{data.ctaText}</span>
+                <Link to={ctaUrl!} className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
+                  <span>{ctaText}</span>
                   <span className="flex items-center gap-2">
                     <span className="w-8 h-px bg-current" />
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </Link>
               ) : (
-                <a href={data.ctaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
-                  <span>{data.ctaText}</span>
+                <a href={ctaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
+                  <span>{ctaText}</span>
                   <span className="flex items-center gap-2">
                     <span className="w-8 h-px bg-current" />
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -267,14 +278,14 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
             )}
 
             {/* CTA Link */}
-            {data.ctaText && data.ctaUrl && (
+            {ctaText && ctaUrl && (
               <div className="mt-8">
                 {isInternalLink ? (
                   <Link
-                    to={data.ctaUrl}
+                    to={ctaUrl}
                     className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity"
                   >
-                    <span>{data.ctaText}</span>
+                    <span>{ctaText}</span>
                     <span className="flex items-center gap-2">
                       <span className="w-8 h-px bg-current" />
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -282,12 +293,12 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
                   </Link>
                 ) : (
                   <a 
-                    href={data.ctaUrl}
+                    href={ctaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity"
                   >
-                    <span>{data.ctaText}</span>
+                    <span>{ctaText}</span>
                     <span className="flex items-center gap-2">
                       <span className="w-8 h-px bg-current" />
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

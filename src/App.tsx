@@ -191,7 +191,30 @@ const UnitsOfMeasurePage = lazy(() => import("./pages/admin/UnitsOfMeasurePage")
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 
-const queryClient = new QueryClient();
+/**
+ * TanStack Query's own defaults are tuned for a page that mounts a handful of
+ * queries. FlowWink has 151 query hooks, and with `staleTime: 0` every one of
+ * them is stale the moment it resolves — so returning to the tab refetches the
+ * whole admin surface. 30 seconds is short enough that FlowPilot's autonomous
+ * writes still surface on the next focus, and long enough that switching
+ * between two admin pages does not re-run their queries.
+ *
+ * This is a floor, not a ceiling: the 54 hooks that already declare their own
+ * staleTime keep it. Mutations invalidate explicitly (`qc.invalidateQueries`)
+ * throughout, so freshness after a write never depended on staleTime anyway.
+ *
+ * `retry: 1` because three retries with exponential backoff hides a genuine
+ * failure for ~7 seconds behind a spinner — in an operator console, being told
+ * quickly beats being told completely.
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
 
 const withPageFallback = (element: JSX.Element) => (
   <Suspense

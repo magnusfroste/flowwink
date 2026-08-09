@@ -189,7 +189,7 @@
                 }
               ]
             },
-            "image": "/templates/products/creator-toolkit.jpg",
+            "imageSrc": "/templates/products/creator-toolkit.jpg",
             "imageAlt": "Creator Toolkit — 50+ premium templates",
             "imageSide": "left",
             "imageAspectRatio": "4:5",
@@ -242,7 +242,7 @@
                 "id": "bento-templates",
                 "title": "Templates",
                 "description": "Professional pitch decks, brand kits, and social media packs used by 10,000+ creators. Download once, use forever.",
-                "image": "/templates/products/creator-toolkit.jpg",
+                "imageSrc": "/templates/products/creator-toolkit.jpg",
                 "colSpan": 2,
                 "rowSpan": 2,
                 "ctaText": "Browse Templates",
@@ -377,7 +377,7 @@
                 }
               ]
             },
-            "image": "/templates/misc/money-growth.jpg",
+            "imageSrc": "/templates/misc/money-growth.jpg",
             "imageAlt": "Pro Membership — unlock everything",
             "imageSide": "right",
             "imageAspectRatio": "4:5",
@@ -699,7 +699,7 @@
                 }
               ]
             },
-            "image": "/templates/blog/team-brainstorming.jpg",
+            "imageSrc": "/templates/blog/team-brainstorming.jpg",
             "imageAlt": "Our team collaborating",
             "imageSide": "right",
             "imageAspectRatio": "3:2",
