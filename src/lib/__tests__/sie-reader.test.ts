@@ -34,21 +34,31 @@ describe('CP437 is not Latin-1, and guessing loses data', () => {
     expect(decodeCp437(new Uint8Array([0x86, 0x84, 0x94, 0x8f, 0x8e, 0x99]))).toBe('åäöÅÄÖ');
   });
 
-  it('the same byte gives three different wrong answers, and none of them throws', () => {
+  it('the same byte gives different wrong answers, and none of them throws', () => {
     // "för" as a CP437 writer emits it: 66 94 72.
     const bytes = new Uint8Array([0x66, 0x94, 0x72]);
     expect(decodeCp437(bytes)).toBe('för');
-    // "Latin-1" is not even one thing: every WHATWG runtime maps that label to
-    // windows-1252, where 0x94 is a curly quote. So the ö becomes ”.
-    expect(new TextDecoder('latin1').decode(bytes)).toBe('f”r');
-    expect(new TextDecoder('iso-8859-1').decode(bytes)).toBe('f”r');
-    // UTF-8 at least leaves a visible scar.
+
+    // "Latin-1" is not even one thing, and this test learned that the hard way.
+    // WHATWG maps the label to windows-1252 (0x94 = ”) and a full-ICU Node does
+    // exactly that — but CI runs a build where it decodes as true ISO-8859-1
+    // (0x94 = the U+0094 control character). Asserting either as universal is
+    // asserting a property of the machine. What is invariant is the part that
+    // matters: the ö is gone, silently, and the runtime is happy about it.
+    for (const label of ['latin1', 'iso-8859-1']) {
+      const out = new TextDecoder(label).decode(bytes);
+      expect(out).toHaveLength(3);
+      expect(out).not.toBe('för');
+      expect(out).not.toContain('\uFFFD'); // no replacement char = no visible damage
+    }
+
+    // UTF-8 at least leaves a scar you can see.
     expect(new TextDecoder('utf-8').decode(bytes)).toBe('f\uFFFDr');
 
-    // The dangerous one is Latin-1: f”r looks like a stray quote, a typo, a
-    // formatting glitch — anything but an encoding failure. Which is why the
-    // adapter comment calling CP437 "Latin-1" pointed at the failure mode
-    // nobody would have investigated.
+    // Which is why Latin-1 is the dangerous guess: whatever the runtime turns
+    // 0x94 into, the result reads as a typo or a formatting glitch — anything
+    // but an encoding failure. The adapter comment that called CP437 "Latin-1"
+    // pointed straight at the failure mode nobody would investigate.
   });
 });
 
