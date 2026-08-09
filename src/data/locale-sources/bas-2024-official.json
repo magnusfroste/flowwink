@@ -1,0 +1,4900 @@
+{
+ "_source": "https://www.bas.se/wp-content/uploads/2024/01/Kontoplan-BAS-2024.xlsx",
+ "_title": "Kontoplan – BAS 2024 v 1.0",
+ "_publisher": "BAS-intressenternas Förening",
+ "_sha256": "ae0e5c7ce469dc0570ed83c2950e65d74b054ea889f73e5f38d8d122ac49dbd1",
+ "_downloaded": "2026-08-09",
+ "_note": "Generated from the official workbook. \"core\" marks the accounts BAS itself flags with ■ — the selection it says is sufficient for basic bookkeeping in most companies. Regenerate with scripts/bas-xlsx-to-json.py against a fresh download; never hand-edit.",
+ "_count": 1222,
+ "_core_count": 341,
+ "accounts": {
+  "1010": {
+   "name": "Utvecklingsutgifter",
+   "core": false
+  },
+  "1011": {
+   "name": "Balanserade utgifter för forskning och utveckling",
+   "core": false
+  },
+  "1012": {
+   "name": "Balanserade utgifter för programvaror",
+   "core": false
+  },
+  "1018": {
+   "name": "Ackumulerade nedskrivningar på balanserade utgifter",
+   "core": false
+  },
+  "1019": {
+   "name": "Ackumulerade avskrivningar på balanserade utgifter",
+   "core": false
+  },
+  "1020": {
+   "name": "Koncessioner m.m.",
+   "core": false
+  },
+  "1028": {
+   "name": "Ackumulerade nedskrivningar på koncessioner m.m.",
+   "core": false
+  },
+  "1029": {
+   "name": "Ackumulerade avskrivningar på koncessioner m.m.",
+   "core": false
+  },
+  "1030": {
+   "name": "Patent",
+   "core": true
+  },
+  "1038": {
+   "name": "Ackumulerade nedskrivningar på patent",
+   "core": false
+  },
+  "1039": {
+   "name": "Ackumulerade avskrivningar på patent",
+   "core": true
+  },
+  "1040": {
+   "name": "Licenser",
+   "core": false
+  },
+  "1048": {
+   "name": "Ackumulerade nedskrivningar på licenser",
+   "core": false
+  },
+  "1049": {
+   "name": "Ackumulerade avskrivningar på licenser",
+   "core": false
+  },
+  "1050": {
+   "name": "Varumärken",
+   "core": false
+  },
+  "1058": {
+   "name": "Ackumulerade nedskrivningar på varumärken",
+   "core": false
+  },
+  "1059": {
+   "name": "Ackumulerade avskrivningar på varumärken",
+   "core": false
+  },
+  "1060": {
+   "name": "Hyresrätter, tomträtter och liknande",
+   "core": true
+  },
+  "1068": {
+   "name": "Ackumulerade nedskrivningar på hyresrätter, tomträtter och liknande",
+   "core": false
+  },
+  "1069": {
+   "name": "Ackumulerade avskrivningar på hyresrätter, tomträtter och liknande",
+   "core": true
+  },
+  "1070": {
+   "name": "Goodwill",
+   "core": false
+  },
+  "1078": {
+   "name": "Ackumulerade nedskrivningar på goodwill",
+   "core": false
+  },
+  "1079": {
+   "name": "Ackumulerade avskrivningar på goodwill",
+   "core": false
+  },
+  "1080": {
+   "name": "Förskott för immateriella anläggningstillgångar",
+   "core": false
+  },
+  "1081": {
+   "name": "Pågående projekt för immateriella anläggningstillgångar",
+   "core": false
+  },
+  "1088": {
+   "name": "Förskott för immateriella anläggningstillgångar",
+   "core": false
+  },
+  "1110": {
+   "name": "Byggnader",
+   "core": true
+  },
+  "1111": {
+   "name": "Byggnader på egen mark",
+   "core": false
+  },
+  "1112": {
+   "name": "Byggnader på annans mark",
+   "core": false
+  },
+  "1118": {
+   "name": "Ackumulerade nedskrivningar på byggnader",
+   "core": false
+  },
+  "1119": {
+   "name": "Ackumulerade avskrivningar på byggnader",
+   "core": true
+  },
+  "1120": {
+   "name": "Förbättringsutgifter på annans fastighet",
+   "core": false
+  },
+  "1129": {
+   "name": "Ackumulerade avskrivningar på förbättringsutgifter på annans fastighet",
+   "core": false
+  },
+  "1130": {
+   "name": "Mark",
+   "core": true
+  },
+  "1140": {
+   "name": "Tomter och obebyggda markområden",
+   "core": false
+  },
+  "1150": {
+   "name": "Markanläggningar",
+   "core": true
+  },
+  "1158": {
+   "name": "Ackumulerade nedskrivningar på markanläggningar",
+   "core": false
+  },
+  "1159": {
+   "name": "Ackumulerade avskrivningar på markanläggningar",
+   "core": true
+  },
+  "1180": {
+   "name": "Pågående nyanläggningar och förskott för byggnader och mark",
+   "core": false
+  },
+  "1181": {
+   "name": "Pågående ny-, till- och ombyggnad",
+   "core": false
+  },
+  "1188": {
+   "name": "Förskott för byggnader och mark",
+   "core": false
+  },
+  "1210": {
+   "name": "Maskiner och andra tekniska anläggningar",
+   "core": true
+  },
+  "1211": {
+   "name": "Maskiner",
+   "core": false
+  },
+  "1213": {
+   "name": "Andra tekniska anläggningar",
+   "core": false
+  },
+  "1218": {
+   "name": "Ackumulerade nedskrivningar på maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "1219": {
+   "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar",
+   "core": true
+  },
+  "1220": {
+   "name": "Inventarier och verktyg",
+   "core": true
+  },
+  "1221": {
+   "name": "Inventarier",
+   "core": false
+  },
+  "1222": {
+   "name": "Byggnadsinventarier",
+   "core": false
+  },
+  "1223": {
+   "name": "Markinventarier",
+   "core": false
+  },
+  "1225": {
+   "name": "Verktyg",
+   "core": false
+  },
+  "1228": {
+   "name": "Ackumulerade nedskrivningar på inventarier och verktyg",
+   "core": false
+  },
+  "1229": {
+   "name": "Ackumulerade avskrivningar på inventarier och verktyg",
+   "core": true
+  },
+  "1230": {
+   "name": "Installationer",
+   "core": false
+  },
+  "1231": {
+   "name": "Installationer på egen fastighet",
+   "core": false
+  },
+  "1232": {
+   "name": "Installationer på annans fastighet",
+   "core": false
+  },
+  "1238": {
+   "name": "Ackumulerade nedskrivningar på installationer",
+   "core": false
+  },
+  "1239": {
+   "name": "Ackumulerade avskrivningar på installationer",
+   "core": false
+  },
+  "1240": {
+   "name": "Bilar och andra transportmedel",
+   "core": true
+  },
+  "1241": {
+   "name": "Personbilar",
+   "core": false
+  },
+  "1242": {
+   "name": "Lastbilar",
+   "core": false
+  },
+  "1243": {
+   "name": "Truckar",
+   "core": false
+  },
+  "1244": {
+   "name": "Arbetsmaskiner",
+   "core": false
+  },
+  "1245": {
+   "name": "Traktorer",
+   "core": false
+  },
+  "1246": {
+   "name": "Motorcyklar, mopeder och skotrar",
+   "core": false
+  },
+  "1247": {
+   "name": "Båtar, flygplan och helikoptrar",
+   "core": false
+  },
+  "1248": {
+   "name": "Ackumulerade nedskrivningar på bilar och andra transportmedel",
+   "core": false
+  },
+  "1249": {
+   "name": "Ackumulerade avskrivningar på bilar och andra transportmedel",
+   "core": true
+  },
+  "1250": {
+   "name": "Datorer",
+   "core": true
+  },
+  "1251": {
+   "name": "Datorer, företaget",
+   "core": false
+  },
+  "1257": {
+   "name": "Datorer, personal",
+   "core": false
+  },
+  "1258": {
+   "name": "Ackumulerade nedskrivningar på datorer",
+   "core": false
+  },
+  "1259": {
+   "name": "Ackumulerade avskrivningar på datorer",
+   "core": true
+  },
+  "1260": {
+   "name": "Leasade tillgångar",
+   "core": false
+  },
+  "1269": {
+   "name": "Ackumulerade avskrivningar på leasade tillgångar",
+   "core": false
+  },
+  "1280": {
+   "name": "Pågående nyanläggningar och förskott för maskiner och inventarier",
+   "core": false
+  },
+  "1281": {
+   "name": "Pågående nyanläggningar, maskiner och inventarier",
+   "core": false
+  },
+  "1288": {
+   "name": "Förskott för maskiner och inventarier",
+   "core": false
+  },
+  "1290": {
+   "name": "Övriga materiella anläggningstillgångar",
+   "core": true
+  },
+  "1291": {
+   "name": "Konst och liknande tillgångar",
+   "core": true
+  },
+  "1292": {
+   "name": "Djur som klassificeras som anläggningstillgång",
+   "core": false
+  },
+  "1298": {
+   "name": "Ackumulerade nedskrivningar på övriga materiella anläggningstillgångar",
+   "core": false
+  },
+  "1299": {
+   "name": "Ackumulerade avskrivningar på övriga materiella anläggningstillgångar",
+   "core": true
+  },
+  "1310": {
+   "name": "Andelar i koncernföretag",
+   "core": false
+  },
+  "1311": {
+   "name": "Aktier i noterade svenska koncernföretag",
+   "core": false
+  },
+  "1312": {
+   "name": "Aktier i onoterade svenska koncernföretag",
+   "core": false
+  },
+  "1313": {
+   "name": "Aktier i noterade utländska koncernföretag",
+   "core": false
+  },
+  "1314": {
+   "name": "Aktier i onoterade utländska koncernföretag",
+   "core": false
+  },
+  "1316": {
+   "name": "Andra andelar i svenska koncernföretag",
+   "core": false
+  },
+  "1317": {
+   "name": "Andra andelar i utländska koncernförertag",
+   "core": false
+  },
+  "1318": {
+   "name": "Ackumulerade nedskrivningar av andelar i koncernföretag",
+   "core": false
+  },
+  "1320": {
+   "name": "Långfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "1321": {
+   "name": "Långfristiga fordringar hos moderföretag",
+   "core": false
+  },
+  "1322": {
+   "name": "Långfristiga fordringar hos dotterföretag",
+   "core": false
+  },
+  "1323": {
+   "name": "Långfristiga fordringar hos andra koncernföretag",
+   "core": false
+  },
+  "1328": {
+   "name": "Ackumulerade nedskrivningar av långfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "1330": {
+   "name": "Andelar i intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1331": {
+   "name": "Andelar i intresseföretag",
+   "core": false
+  },
+  "1332": {
+   "name": "Ackumulerade nedskrivningar av andelar i intresseföretag",
+   "core": false
+  },
+  "1333": {
+   "name": "Andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "1334": {
+   "name": "Ackumulerade nedskrivningar av andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "1336": {
+   "name": "Andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1337": {
+   "name": "Ackumulerade nedskrivningar av andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1338": {
+   "name": "Ackumulerade nedskrivningar av andelar i intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1340": {
+   "name": "Långfristiga fordringar hos intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1341": {
+   "name": "Långfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "1342": {
+   "name": "Ackumulerade nedskrivningar av långfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "1343": {
+   "name": "Långfristiga fordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "1344": {
+   "name": "Ackumulerade nedskrivningar av långfristiga fordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "1346": {
+   "name": "Långfristiga fordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1347": {
+   "name": "Ackumulerade nedskrivningar av långfristiga fordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1348": {
+   "name": "Ackumulerade nedskrivningar av långfristiga fordringar hos intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1350": {
+   "name": "Andelar och värdepapper i andra företag",
+   "core": true
+  },
+  "1351": {
+   "name": "Andelar i noterade företag",
+   "core": false
+  },
+  "1352": {
+   "name": "Andra andelar",
+   "core": false
+  },
+  "1353": {
+   "name": "Andelar i bostadsrättsföreningar",
+   "core": false
+  },
+  "1354": {
+   "name": "Obligationer",
+   "core": false
+  },
+  "1356": {
+   "name": "Andelar i ekonomiska föreningar, övriga företag",
+   "core": false
+  },
+  "1357": {
+   "name": "Andelar i handelsbolag, andra företag",
+   "core": false
+  },
+  "1358": {
+   "name": "Ackumulerade nedskrivningar av andra andelar och värdepapper",
+   "core": false
+  },
+  "1360": {
+   "name": "Lån till delägare eller närstående enligt ABL, långfristig del",
+   "core": false
+  },
+  "1369": {
+   "name": "Ackumulerade nedskrivningar av lån till delägare eller närstående enligt ABL, långfristig del",
+   "core": false
+  },
+  "1370": {
+   "name": "Uppskjuten skattefordran",
+   "core": false
+  },
+  "1380": {
+   "name": "Andra långfristiga fordringar",
+   "core": true
+  },
+  "1381": {
+   "name": "Långfristiga reversfordringar",
+   "core": false
+  },
+  "1382": {
+   "name": "Långfristiga fordringar hos anställda",
+   "core": false
+  },
+  "1383": {
+   "name": "Lämnade depositioner, långfristiga",
+   "core": false
+  },
+  "1384": {
+   "name": "Derivat",
+   "core": false
+  },
+  "1385": {
+   "name": "Kapitalförsäkring",
+   "core": false
+  },
+  "1387": {
+   "name": "Långfristiga kontraktsfordringar",
+   "core": false
+  },
+  "1388": {
+   "name": "Långfristiga kundfordringar",
+   "core": false
+  },
+  "1389": {
+   "name": "Ackumulerade nedskrivningar av andra långfristiga fordringar",
+   "core": false
+  },
+  "1410": {
+   "name": "Lager av råvaror",
+   "core": true
+  },
+  "1419": {
+   "name": "Förändring av lager av råvaror",
+   "core": true
+  },
+  "1420": {
+   "name": "Lager av tillsatsmaterial och förnödenheter",
+   "core": false
+  },
+  "1429": {
+   "name": "Förändring av lager av tillsatsmaterial och förnödenheter",
+   "core": false
+  },
+  "1440": {
+   "name": "Produkter i arbete",
+   "core": true
+  },
+  "1449": {
+   "name": "Förändring av produkter i arbete",
+   "core": true
+  },
+  "1450": {
+   "name": "Lager av färdiga varor",
+   "core": true
+  },
+  "1459": {
+   "name": "Förändring av lager av färdiga varor",
+   "core": true
+  },
+  "1460": {
+   "name": "Lager av handelsvaror",
+   "core": true
+  },
+  "1465": {
+   "name": "Lager av varor VMB",
+   "core": false
+  },
+  "1466": {
+   "name": "Nedskrivning av varor VMB",
+   "core": false
+  },
+  "1467": {
+   "name": "Lager av varor VMB förenklad",
+   "core": false
+  },
+  "1469": {
+   "name": "Förändring av lager av handelsvaror",
+   "core": true
+  },
+  "1470": {
+   "name": "Pågående arbeten",
+   "core": true
+  },
+  "1471": {
+   "name": "Pågående arbeten, nedlagda kostnader",
+   "core": false
+  },
+  "1478": {
+   "name": "Pågående arbeten, fakturering",
+   "core": false
+  },
+  "1479": {
+   "name": "Förändring av pågående arbeten",
+   "core": true
+  },
+  "1480": {
+   "name": "Förskott för varor och tjänster",
+   "core": true
+  },
+  "1481": {
+   "name": "Remburser",
+   "core": false
+  },
+  "1489": {
+   "name": "Övriga förskott till leverantörer",
+   "core": false
+  },
+  "1490": {
+   "name": "Övriga lagertillgångar",
+   "core": true
+  },
+  "1491": {
+   "name": "Lager av värdepapper",
+   "core": false
+  },
+  "1492": {
+   "name": "Lager av fastigheter",
+   "core": false
+  },
+  "1493": {
+   "name": "Djur som klassificeras som omsättningstillgång",
+   "core": false
+  },
+  "1510": {
+   "name": "Kundfordringar",
+   "core": true
+  },
+  "1511": {
+   "name": "Kundfordringar",
+   "core": false
+  },
+  "1512": {
+   "name": "Belånade kundfordringar (factoring)",
+   "core": false
+  },
+  "1513": {
+   "name": "Kundfordringar – delad faktura",
+   "core": true
+  },
+  "1516": {
+   "name": "Tvistiga kundfordringar",
+   "core": false
+  },
+  "1518": {
+   "name": "Ej reskontraförda kundfordringar",
+   "core": false
+  },
+  "1519": {
+   "name": "Nedskrivning av kundfordringar",
+   "core": true
+  },
+  "1520": {
+   "name": "Växelfordringar",
+   "core": false
+  },
+  "1525": {
+   "name": "Osäkra växelfordringar",
+   "core": false
+  },
+  "1529": {
+   "name": "Nedskrivning av växelfordringar",
+   "core": false
+  },
+  "1530": {
+   "name": "Kontraktsfordringar",
+   "core": false
+  },
+  "1531": {
+   "name": "Kontraktsfordringar",
+   "core": false
+  },
+  "1532": {
+   "name": "Belånade kontraktsfordringar",
+   "core": false
+  },
+  "1536": {
+   "name": "Tvistiga kontraktsfordringar",
+   "core": false
+  },
+  "1539": {
+   "name": "Nedskrivning av kontraktsfordringar",
+   "core": false
+  },
+  "1550": {
+   "name": "Konsignationsfordringar",
+   "core": false
+  },
+  "1560": {
+   "name": "Kundfordringar hos koncernföretag",
+   "core": false
+  },
+  "1561": {
+   "name": "Kundfordringar hos moderföretag",
+   "core": false
+  },
+  "1562": {
+   "name": "Kundfordringar hos dotterföretag",
+   "core": false
+  },
+  "1563": {
+   "name": "Kundfordringar hos andra koncernföretag",
+   "core": false
+  },
+  "1568": {
+   "name": "Ej reskontraförda kundfordringar hos koncernföretag",
+   "core": false
+  },
+  "1569": {
+   "name": "Nedskrivning av kundfordringar hos koncernföretag",
+   "core": false
+  },
+  "1570": {
+   "name": "Kundfordringar hos intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1571": {
+   "name": "Kundfordringar hos intresseföretag",
+   "core": false
+  },
+  "1572": {
+   "name": "Kundfordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "1573": {
+   "name": "Kundfordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1580": {
+   "name": "Fordringar för kontokort och kuponger",
+   "core": true
+  },
+  "1610": {
+   "name": "Kortfristiga fordringar hos anställda",
+   "core": true
+  },
+  "1611": {
+   "name": "Reseförskott",
+   "core": false
+  },
+  "1612": {
+   "name": "Kassaförskott",
+   "core": false
+  },
+  "1613": {
+   "name": "Övriga förskott",
+   "core": false
+  },
+  "1614": {
+   "name": "Tillfälliga lån till anställda",
+   "core": false
+  },
+  "1619": {
+   "name": "Övriga fordringar hos anställda",
+   "core": false
+  },
+  "1620": {
+   "name": "Upparbetad men ej fakturerad intäkt",
+   "core": false
+  },
+  "1630": {
+   "name": "Avräkning för skatter och avgifter (skattekonto)",
+   "core": true
+  },
+  "1640": {
+   "name": "Skattefordringar",
+   "core": true
+  },
+  "1650": {
+   "name": "Momsfordran",
+   "core": true
+  },
+  "1660": {
+   "name": "Kortfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "1661": {
+   "name": "Kortfristiga fordringar hos moderföretag",
+   "core": false
+  },
+  "1662": {
+   "name": "Kortfristiga fordringar hos dotterföretag",
+   "core": false
+  },
+  "1663": {
+   "name": "Kortfristiga fordringar hos andra koncernföretag",
+   "core": false
+  },
+  "1670": {
+   "name": "Kortfristiga fordringar hos intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1671": {
+   "name": "Kortfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "1672": {
+   "name": "Kortfristiga fordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "1673": {
+   "name": "Kortfristiga fordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "1680": {
+   "name": "Andra kortfristiga fordringar",
+   "core": true
+  },
+  "1681": {
+   "name": "Utlägg för kunder",
+   "core": false
+  },
+  "1682": {
+   "name": "Kortfristiga lånefordringar",
+   "core": false
+  },
+  "1683": {
+   "name": "Derivat",
+   "core": false
+  },
+  "1684": {
+   "name": "Kortfristiga fordringar hos leverantörer",
+   "core": false
+  },
+  "1685": {
+   "name": "Kortfristiga fordringar hos delägare eller närstående",
+   "core": false
+  },
+  "1687": {
+   "name": "Kortfristig del av långfristiga fordringar",
+   "core": false
+  },
+  "1688": {
+   "name": "Fordran arbetsmarknadsförsäkringar",
+   "core": false
+  },
+  "1689": {
+   "name": "Övriga kortfristiga fordringar",
+   "core": false
+  },
+  "1690": {
+   "name": "Fordringar för tecknat men ej inbetalt aktiekapital",
+   "core": false
+  },
+  "1710": {
+   "name": "Förutbetalda hyreskostnader",
+   "core": true
+  },
+  "1720": {
+   "name": "Förutbetalda leasingavgifter",
+   "core": true
+  },
+  "1730": {
+   "name": "Förutbetalda försäkringspremier",
+   "core": true
+  },
+  "1740": {
+   "name": "Förutbetalda räntekostnader",
+   "core": true
+  },
+  "1750": {
+   "name": "Upplupna hyresintäkter",
+   "core": true
+  },
+  "1760": {
+   "name": "Upplupna ränteintäkter",
+   "core": true
+  },
+  "1770": {
+   "name": "Tillgångar av kostnadsnatur",
+   "core": false
+  },
+  "1780": {
+   "name": "Upplupna avtalsintäkter",
+   "core": false
+  },
+  "1790": {
+   "name": "Övriga förutbetalda kostnader och upplupna intäkter",
+   "core": true
+  },
+  "1810": {
+   "name": "Andelar i börsnoterade företag",
+   "core": true
+  },
+  "1820": {
+   "name": "Obligationer",
+   "core": false
+  },
+  "1830": {
+   "name": "Konvertibla skuldebrev",
+   "core": false
+  },
+  "1860": {
+   "name": "Andelar i koncernföretag, kortfristigt",
+   "core": false
+  },
+  "1880": {
+   "name": "Andra kortfristiga placeringar",
+   "core": true
+  },
+  "1886": {
+   "name": "Derivat",
+   "core": false
+  },
+  "1889": {
+   "name": "Andelar i övriga företag",
+   "core": false
+  },
+  "1890": {
+   "name": "Nedskrivning av kortfristiga placeringar",
+   "core": true
+  },
+  "1910": {
+   "name": "Kassa",
+   "core": true
+  },
+  "1911": {
+   "name": "Huvudkassa",
+   "core": false
+  },
+  "1912": {
+   "name": "Kassa 2",
+   "core": false
+  },
+  "1913": {
+   "name": "Kassa 3",
+   "core": false
+  },
+  "1920": {
+   "name": "PlusGiro",
+   "core": true
+  },
+  "1930": {
+   "name": "Företagskonto/checkkonto/affärskonto",
+   "core": true
+  },
+  "1940": {
+   "name": "Övriga bankkonton",
+   "core": true
+  },
+  "1950": {
+   "name": "Bankcertifikat",
+   "core": false
+  },
+  "1960": {
+   "name": "Koncernkonto moderföretag",
+   "core": false
+  },
+  "1970": {
+   "name": "Särskilda bankkonton",
+   "core": false
+  },
+  "1972": {
+   "name": "Upphovsmannakonto",
+   "core": false
+  },
+  "1973": {
+   "name": "Skogskonto",
+   "core": false
+  },
+  "1974": {
+   "name": "Spärrade bankmedel",
+   "core": false
+  },
+  "1979": {
+   "name": "Övriga särskilda bankkonton",
+   "core": false
+  },
+  "1980": {
+   "name": "Valutakonton",
+   "core": false
+  },
+  "1990": {
+   "name": "Redovisningsmedel",
+   "core": false
+  },
+  "2010": {
+   "name": "Eget kapital",
+   "core": true
+  },
+  "2011": {
+   "name": "Egna varuuttag",
+   "core": true
+  },
+  "2013": {
+   "name": "Övriga egna uttag",
+   "core": true
+  },
+  "2017": {
+   "name": "Årets kapitaltillskott",
+   "core": true
+  },
+  "2018": {
+   "name": "Övriga egna insättningar",
+   "core": true
+  },
+  "2019": {
+   "name": "Årets resultat, delägare 1",
+   "core": true
+  },
+  "2020": {
+   "name": "Eget kapital",
+   "core": true
+  },
+  "2021": {
+   "name": "Egna varuuttag",
+   "core": true
+  },
+  "2023": {
+   "name": "Övriga egna uttag",
+   "core": true
+  },
+  "2027": {
+   "name": "Årets kapitaltillskott",
+   "core": true
+  },
+  "2028": {
+   "name": "Övriga egna insättningar",
+   "core": true
+  },
+  "2029": {
+   "name": "Årets resultat, delägare 2",
+   "core": true
+  },
+  "2030": {
+   "name": "Eget kapital",
+   "core": true
+  },
+  "2031": {
+   "name": "Egna varuuttag",
+   "core": true
+  },
+  "2033": {
+   "name": "Övriga egna uttag",
+   "core": true
+  },
+  "2037": {
+   "name": "Årets kapitaltillskott",
+   "core": true
+  },
+  "2038": {
+   "name": "Övriga egna insättningar",
+   "core": true
+  },
+  "2039": {
+   "name": "Årets resultat, delägare 3",
+   "core": true
+  },
+  "2040": {
+   "name": "Eget kapital",
+   "core": true
+  },
+  "2041": {
+   "name": "Egna varuuttag",
+   "core": true
+  },
+  "2043": {
+   "name": "Övriga egna uttag",
+   "core": true
+  },
+  "2047": {
+   "name": "Årets kapitaltillskott",
+   "core": true
+  },
+  "2048": {
+   "name": "Övriga egna insättningar",
+   "core": true
+  },
+  "2049": {
+   "name": "Årets resultat, delägare 4",
+   "core": true
+  },
+  "2050": {
+   "name": "Avsättning till expansionsfond",
+   "core": false
+  },
+  "2060": {
+   "name": "Eget kapital i ideella föreningar, stiftelser och registrerade trossamfund",
+   "core": true
+  },
+  "2061": {
+   "name": "Eget kapital/stiftelsekapital/grundkapital",
+   "core": false
+  },
+  "2065": {
+   "name": "Förändring i fond för verkligt värde",
+   "core": false
+  },
+  "2066": {
+   "name": "Värdesäkringsfond",
+   "core": false
+  },
+  "2067": {
+   "name": "Balanserad vinst eller förlust/balanserat kapital",
+   "core": false
+  },
+  "2068": {
+   "name": "Vinst eller förlust från föregående år",
+   "core": false
+  },
+  "2069": {
+   "name": "Årets resultat",
+   "core": false
+  },
+  "2070": {
+   "name": "Ändamålsbestämda medel",
+   "core": true
+  },
+  "2071": {
+   "name": "Ändamål 1",
+   "core": false
+  },
+  "2072": {
+   "name": "Ändamål 2",
+   "core": false
+  },
+  "2080": {
+   "name": "Bundet eget kapital",
+   "core": false
+  },
+  "2081": {
+   "name": "Aktiekapital",
+   "core": true
+  },
+  "2082": {
+   "name": "Ej registrerat aktiekapital",
+   "core": false
+  },
+  "2083": {
+   "name": "Medlemsinsatser",
+   "core": true
+  },
+  "2084": {
+   "name": "Förlagsinsatser",
+   "core": false
+  },
+  "2085": {
+   "name": "Uppskrivningsfond",
+   "core": false
+  },
+  "2086": {
+   "name": "Reservfond",
+   "core": true
+  },
+  "2087": {
+   "name": "Bunden överkursfond",
+   "core": false
+  },
+  "2088": {
+   "name": "Fond för yttre underhåll",
+   "core": false
+  },
+  "2089": {
+   "name": "Fond för utvecklingsutgifter",
+   "core": false
+  },
+  "2090": {
+   "name": "Fritt eget kapital",
+   "core": true
+  },
+  "2091": {
+   "name": "Balanserad vinst eller förlust",
+   "core": true
+  },
+  "2092": {
+   "name": "Mottagna/lämnade koncernbidrag",
+   "core": false
+  },
+  "2093": {
+   "name": "Erhållna aktieägartillskott",
+   "core": false
+  },
+  "2094": {
+   "name": "Egna aktier",
+   "core": false
+  },
+  "2095": {
+   "name": "Fusionsresultat",
+   "core": false
+  },
+  "2096": {
+   "name": "Fond för verkligt värde",
+   "core": false
+  },
+  "2097": {
+   "name": "Fri överkursfond",
+   "core": false
+  },
+  "2098": {
+   "name": "Vinst eller förlust från föregående år",
+   "core": true
+  },
+  "2099": {
+   "name": "Årets resultat",
+   "core": true
+  },
+  "2110": {
+   "name": "Periodiseringsfonder",
+   "core": false
+  },
+  "2120": {
+   "name": "Periodiseringsfond 2020",
+   "core": true
+  },
+  "2121": {
+   "name": "Periodiseringsfond 2021",
+   "core": true
+  },
+  "2122": {
+   "name": "Periodiseringsfond 2022",
+   "core": true
+  },
+  "2123": {
+   "name": "Periodiseringsfond 2023",
+   "core": true
+  },
+  "2124": {
+   "name": "Periodiseringsfond 2024",
+   "core": true
+  },
+  "2125": {
+   "name": "Periodiseringsfond 2025",
+   "core": true
+  },
+  "2127": {
+   "name": "Periodiseringsfond 2017",
+   "core": true
+  },
+  "2128": {
+   "name": "Periodiseringsfond 2018",
+   "core": true
+  },
+  "2129": {
+   "name": "Periodiseringsfond 2019",
+   "core": true
+  },
+  "2130": {
+   "name": "Periodiseringsfond 2020 – nr 2",
+   "core": false
+  },
+  "2131": {
+   "name": "Periodiseringsfond 2021 – nr 2",
+   "core": false
+  },
+  "2132": {
+   "name": "Periodiseringsfond 2022 – nr 2",
+   "core": false
+  },
+  "2133": {
+   "name": "Periodiseringsfond 2023 – nr 2",
+   "core": false
+  },
+  "2134": {
+   "name": "Periodiseringsfond 2024 – nr 2",
+   "core": false
+  },
+  "2135": {
+   "name": "Periodiseringsfond 2025 - nr 2",
+   "core": false
+  },
+  "2137": {
+   "name": "Periodiseringsfond 2017 – nr 2",
+   "core": false
+  },
+  "2138": {
+   "name": "Periodiseringsfond 2018 – nr 2",
+   "core": false
+  },
+  "2139": {
+   "name": "Periodiseringsfond 2019 – nr 2",
+   "core": false
+  },
+  "2150": {
+   "name": "Ackumulerade överavskrivningar",
+   "core": true
+  },
+  "2151": {
+   "name": "Ackumulerade överavskrivningar på immateriella anläggningstillgångar",
+   "core": false
+  },
+  "2152": {
+   "name": "Ackumulerade överavskrivningar på byggnader och markanläggningar",
+   "core": false
+  },
+  "2153": {
+   "name": "Ackumulerade överavskrivningar på maskiner och inventarier",
+   "core": false
+  },
+  "2160": {
+   "name": "Ersättningsfond",
+   "core": false
+  },
+  "2161": {
+   "name": "Ersättningsfond maskiner och inventarier",
+   "core": false
+  },
+  "2162": {
+   "name": "Ersättningsfond byggnader och markanläggningar",
+   "core": false
+  },
+  "2164": {
+   "name": "Ersättningsfond för djurlager i jordbruk och renskötsel",
+   "core": false
+  },
+  "2190": {
+   "name": "Övriga obeskattade reserver",
+   "core": false
+  },
+  "2196": {
+   "name": "Lagerreserv",
+   "core": false
+  },
+  "2199": {
+   "name": "Övriga obeskattade reserver",
+   "core": false
+  },
+  "2210": {
+   "name": "Avsättningar för pensioner enligt tryggandelagen",
+   "core": true
+  },
+  "2220": {
+   "name": "Avsättningar för garantier",
+   "core": true
+  },
+  "2230": {
+   "name": "Övriga avsättningar för pensioner och liknande förpliktelser",
+   "core": false
+  },
+  "2240": {
+   "name": "Avsättningar för uppskjutna skatter",
+   "core": false
+  },
+  "2250": {
+   "name": "Övriga avsättningar för skatter",
+   "core": false
+  },
+  "2252": {
+   "name": "Avsättningar för tvistiga skatter",
+   "core": false
+  },
+  "2253": {
+   "name": "Avsättningar särskild löneskatt, deklarationspost",
+   "core": false
+  },
+  "2290": {
+   "name": "Övriga avsättningar",
+   "core": true
+  },
+  "2310": {
+   "name": "Obligations- och förlagslån",
+   "core": false
+  },
+  "2320": {
+   "name": "Konvertibla lån och liknande",
+   "core": false
+  },
+  "2321": {
+   "name": "Konvertibla lån",
+   "core": false
+  },
+  "2322": {
+   "name": "Lån förenade med optionsrätt",
+   "core": false
+  },
+  "2323": {
+   "name": "Vinstandelslån",
+   "core": false
+  },
+  "2324": {
+   "name": "Kapitalandelslån",
+   "core": false
+  },
+  "2330": {
+   "name": "Checkräkningskredit",
+   "core": true
+  },
+  "2331": {
+   "name": "Checkräkningskredit 1",
+   "core": false
+  },
+  "2332": {
+   "name": "Checkräkningskredit 2",
+   "core": false
+  },
+  "2340": {
+   "name": "Byggnadskreditiv",
+   "core": false
+  },
+  "2350": {
+   "name": "Andra långfristiga skulder till kreditinstitut",
+   "core": true
+  },
+  "2351": {
+   "name": "Fastighetslån, långfristig del",
+   "core": false
+  },
+  "2355": {
+   "name": "Långfristiga lån i utländsk valuta från kreditinstitut",
+   "core": false
+  },
+  "2359": {
+   "name": "Övriga långfristiga lån från kreditinstitut",
+   "core": false
+  },
+  "2360": {
+   "name": "Långfristiga skulder till koncernföretag",
+   "core": false
+  },
+  "2361": {
+   "name": "Långfristiga skulder till moderföretag",
+   "core": false
+  },
+  "2362": {
+   "name": "Långfristiga skulder till dotterföretag",
+   "core": false
+  },
+  "2363": {
+   "name": "Långfristiga skulder till andra koncernföretag",
+   "core": false
+  },
+  "2370": {
+   "name": "Långfristiga skulder till intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2371": {
+   "name": "Långfristiga skulder till intresseföretag",
+   "core": false
+  },
+  "2372": {
+   "name": "Långfristiga skulder till gemensamt styrda företag",
+   "core": false
+  },
+  "2373": {
+   "name": "Långfristiga skulder till övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2390": {
+   "name": "Övriga långfristiga skulder",
+   "core": true
+  },
+  "2391": {
+   "name": "Avbetalningskontrakt, långfristig del",
+   "core": false
+  },
+  "2392": {
+   "name": "Villkorliga långfristiga skulder",
+   "core": false
+  },
+  "2393": {
+   "name": "Lån från närstående personer, långfristig del",
+   "core": true
+  },
+  "2394": {
+   "name": "Långfristiga leverantörskrediter",
+   "core": false
+  },
+  "2395": {
+   "name": "Andra långfristiga lån i utländsk valuta",
+   "core": false
+  },
+  "2396": {
+   "name": "Derivat",
+   "core": false
+  },
+  "2397": {
+   "name": "Mottagna depositioner, långfristiga",
+   "core": false
+  },
+  "2399": {
+   "name": "Övriga långfristiga skulder",
+   "core": false
+  },
+  "2410": {
+   "name": "Andra kortfristiga låneskulder till kreditinstitut",
+   "core": true
+  },
+  "2411": {
+   "name": "Kortfristiga lån från kreditinstitut",
+   "core": false
+  },
+  "2412": {
+   "name": "Byggnadskreditiv, kortfristig del",
+   "core": false
+  },
+  "2417": {
+   "name": "Kortfristig del av långfristiga skulder till kreditinstitut",
+   "core": false
+  },
+  "2419": {
+   "name": "Övriga kortfristiga skulder till kreditinstitut",
+   "core": false
+  },
+  "2420": {
+   "name": "Förskott från kunder",
+   "core": true
+  },
+  "2421": {
+   "name": "Ej inlösta presentkort",
+   "core": false
+  },
+  "2429": {
+   "name": "Övriga förskott från kunder",
+   "core": false
+  },
+  "2430": {
+   "name": "Pågående arbeten",
+   "core": false
+  },
+  "2431": {
+   "name": "Pågående arbeten, fakturering",
+   "core": false
+  },
+  "2438": {
+   "name": "Pågående arbeten, nedlagda kostnader",
+   "core": false
+  },
+  "2439": {
+   "name": "Beräknad förändring av pågående arbeten",
+   "core": false
+  },
+  "2440": {
+   "name": "Leverantörsskulder",
+   "core": true
+  },
+  "2441": {
+   "name": "Leverantörsskulder",
+   "core": false
+  },
+  "2443": {
+   "name": "Konsignationsskulder",
+   "core": false
+  },
+  "2445": {
+   "name": "Tvistiga leverantörsskulder",
+   "core": false
+  },
+  "2448": {
+   "name": "Ej reskontraförda leverantörsskulder",
+   "core": false
+  },
+  "2450": {
+   "name": "Fakturerad men ej upparbetad intäkt",
+   "core": false
+  },
+  "2460": {
+   "name": "Leverantörsskulder till koncernföretag",
+   "core": false
+  },
+  "2461": {
+   "name": "Leverantörsskulder till moderföretag",
+   "core": false
+  },
+  "2462": {
+   "name": "Leverantörsskulder till dotterföretag",
+   "core": false
+  },
+  "2463": {
+   "name": "Leverantörsskulder till andra koncernföretag",
+   "core": false
+  },
+  "2470": {
+   "name": "Leverantörsskulder till intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2471": {
+   "name": "Leverantörsskulder till intresseföretag",
+   "core": false
+  },
+  "2472": {
+   "name": "Leverantörsskulder till gemensamt styrda företag",
+   "core": false
+  },
+  "2473": {
+   "name": "Leverantörsskulder till övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2480": {
+   "name": "Checkräkningskredit, kortfristig",
+   "core": true
+  },
+  "2490": {
+   "name": "Övriga kortfristiga skulder till kreditinstitut, kunder och leverantörer",
+   "core": true
+  },
+  "2491": {
+   "name": "Avräkning spelarrangörer",
+   "core": false
+  },
+  "2492": {
+   "name": "Växelskulder",
+   "core": false
+  },
+  "2499": {
+   "name": "Andra övriga kortfristiga skulder",
+   "core": false
+  },
+  "2510": {
+   "name": "Skatteskulder",
+   "core": true
+  },
+  "2512": {
+   "name": "Beräknad inkomstskatt",
+   "core": false
+  },
+  "2513": {
+   "name": "Beräknad fastighetsskatt/fastighetsavgift",
+   "core": false
+  },
+  "2514": {
+   "name": "Beräknad särskild löneskatt på pensionskostnader",
+   "core": false
+  },
+  "2515": {
+   "name": "Beräknad avkastningsskatt",
+   "core": false
+  },
+  "2517": {
+   "name": "Beräknad utländsk skatt",
+   "core": false
+  },
+  "2518": {
+   "name": "Betald F-skatt",
+   "core": false
+  },
+  "2610": {
+   "name": "Utgående moms, 25 %",
+   "core": true
+  },
+  "2611": {
+   "name": "Utgående moms på försäljning inom Sverige, 25 %",
+   "core": true
+  },
+  "2612": {
+   "name": "Utgående moms på egna uttag, 25 %",
+   "core": true
+  },
+  "2613": {
+   "name": "Utgående moms för uthyrning, 25 %",
+   "core": true
+  },
+  "2614": {
+   "name": "Utgående moms omvänd skattskyldighet, 25 %",
+   "core": true
+  },
+  "2615": {
+   "name": "Utgående moms import av varor, 25 %",
+   "core": true
+  },
+  "2616": {
+   "name": "Utgående moms VMB 25 %",
+   "core": true
+  },
+  "2618": {
+   "name": "Vilande utgående moms, 25 %",
+   "core": false
+  },
+  "2620": {
+   "name": "Utgående moms, 12 %",
+   "core": true
+  },
+  "2621": {
+   "name": "Utgående moms på försäljning inom Sverige, 12 %",
+   "core": true
+  },
+  "2622": {
+   "name": "Utgående moms på egna uttag, 12 %",
+   "core": true
+  },
+  "2623": {
+   "name": "Utgående moms för uthyrning, 12 %",
+   "core": true
+  },
+  "2624": {
+   "name": "Utgående moms omvänd skattskyldighet, 12 %",
+   "core": true
+  },
+  "2625": {
+   "name": "Utgående moms import av varor, 12 %",
+   "core": true
+  },
+  "2626": {
+   "name": "Utgående moms VMB 12 %",
+   "core": true
+  },
+  "2628": {
+   "name": "Vilande utgående moms, 12 %",
+   "core": false
+  },
+  "2630": {
+   "name": "Utgående moms, 6 %",
+   "core": true
+  },
+  "2631": {
+   "name": "Utgående moms på försäljning inom Sverige, 6 %",
+   "core": true
+  },
+  "2632": {
+   "name": "Utgående moms på egna uttag, 6 %",
+   "core": true
+  },
+  "2633": {
+   "name": "Utgående moms för uthyrning, 6 %",
+   "core": true
+  },
+  "2634": {
+   "name": "Utgående moms omvänd skattskyldighet, 6 %",
+   "core": true
+  },
+  "2635": {
+   "name": "Utgående moms import av varor, 6 %",
+   "core": true
+  },
+  "2636": {
+   "name": "Utgående moms VMB 6 %",
+   "core": true
+  },
+  "2638": {
+   "name": "Vilande utgående moms, 6 %",
+   "core": false
+  },
+  "2640": {
+   "name": "Ingående moms",
+   "core": true
+  },
+  "2641": {
+   "name": "Debiterad ingående moms",
+   "core": true
+  },
+  "2642": {
+   "name": "Debiterad ingående moms i anslutning till frivillig skattskyldighet",
+   "core": true
+  },
+  "2645": {
+   "name": "Beräknad ingående moms på förvärv från utlandet",
+   "core": true
+  },
+  "2646": {
+   "name": "Ingående moms på uthyrning",
+   "core": true
+  },
+  "2647": {
+   "name": "Ingående moms omvänd skattskyldighet varor och tjänster i Sverige",
+   "core": true
+  },
+  "2648": {
+   "name": "Vilande ingående moms",
+   "core": true
+  },
+  "2649": {
+   "name": "Ingående moms, blandad verksamhet",
+   "core": true
+  },
+  "2650": {
+   "name": "Redovisningskonto för moms",
+   "core": true
+  },
+  "2660": {
+   "name": "Punktskatter",
+   "core": false
+  },
+  "2670": {
+   "name": "Utgående moms på försäljning inom EU, OSS",
+   "core": false
+  },
+  "2710": {
+   "name": "Personalskatt",
+   "core": true
+  },
+  "2730": {
+   "name": "Lagstadgade sociala avgifter och särskild löneskatt",
+   "core": true
+  },
+  "2731": {
+   "name": "Avräkning lagstadgade sociala avgifter",
+   "core": false
+  },
+  "2732": {
+   "name": "Avräkning särskild löneskatt",
+   "core": false
+  },
+  "2740": {
+   "name": "Avtalade sociala avgifter",
+   "core": true
+  },
+  "2750": {
+   "name": "Utmätning i lön m.m.",
+   "core": false
+  },
+  "2760": {
+   "name": "Semestermedel",
+   "core": false
+  },
+  "2761": {
+   "name": "Avräkning semesterlöner",
+   "core": false
+  },
+  "2762": {
+   "name": "Semesterlönekassa",
+   "core": false
+  },
+  "2790": {
+   "name": "Övriga löneavdrag",
+   "core": true
+  },
+  "2791": {
+   "name": "Personalens intressekonto",
+   "core": false
+  },
+  "2792": {
+   "name": "Lönsparande",
+   "core": false
+  },
+  "2793": {
+   "name": "Gruppförsäkringspremier",
+   "core": false
+  },
+  "2794": {
+   "name": "Fackföreningsavgifter",
+   "core": false
+  },
+  "2795": {
+   "name": "Mätnings- och granskningsarvoden",
+   "core": false
+  },
+  "2799": {
+   "name": "Övriga löneavdrag",
+   "core": false
+  },
+  "2810": {
+   "name": "Avräkning för factoring och belånade kontraktsfordringar",
+   "core": false
+  },
+  "2811": {
+   "name": "Avräkning för factoring",
+   "core": false
+  },
+  "2812": {
+   "name": "Avräkning för belånade kontraktsfordringar",
+   "core": false
+  },
+  "2820": {
+   "name": "Kortfristiga skulder till anställda",
+   "core": true
+  },
+  "2821": {
+   "name": "Löneskulder",
+   "core": false
+  },
+  "2822": {
+   "name": "Reseräkningar",
+   "core": false
+  },
+  "2823": {
+   "name": "Tantiem, gratifikationer",
+   "core": false
+  },
+  "2829": {
+   "name": "Övriga kortfristiga skulder till anställda",
+   "core": false
+  },
+  "2830": {
+   "name": "Avräkning för annans räkning",
+   "core": false
+  },
+  "2840": {
+   "name": "Kortfristiga låneskulder",
+   "core": true
+  },
+  "2841": {
+   "name": "Kortfristig del av långfristiga skulder",
+   "core": false
+  },
+  "2849": {
+   "name": "Övriga kortfristiga låneskulder",
+   "core": false
+  },
+  "2850": {
+   "name": "Avräkning för skatter och avgifter (skattekonto)",
+   "core": false
+  },
+  "2852": {
+   "name": "Anståndsbelopp för moms, arbetsgivaravgifter och personalskatt",
+   "core": false
+  },
+  "2860": {
+   "name": "Kortfristiga skulder till koncernföretag",
+   "core": false
+  },
+  "2861": {
+   "name": "Kortfristiga skulder till moderföretag",
+   "core": false
+  },
+  "2862": {
+   "name": "Kortfristiga skulder till dotterföretag",
+   "core": false
+  },
+  "2863": {
+   "name": "Kortfristiga skulder till andra koncernföretag",
+   "core": false
+  },
+  "2870": {
+   "name": "Kortfristiga skulder till intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2871": {
+   "name": "Kortfristiga skulder till intresseföretag",
+   "core": false
+  },
+  "2872": {
+   "name": "Kortfristiga skulder till gemensamt styrda företag",
+   "core": false
+  },
+  "2873": {
+   "name": "Kortfristiga skulder till övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "2880": {
+   "name": "Skuld erhållna bidrag",
+   "core": false
+  },
+  "2890": {
+   "name": "Övriga kortfristiga skulder",
+   "core": true
+  },
+  "2891": {
+   "name": "Skulder under indrivning",
+   "core": false
+  },
+  "2892": {
+   "name": "Inre reparationsfond/underhållsfond",
+   "core": false
+  },
+  "2893": {
+   "name": "Skulder till närstående personer, kortfristig del",
+   "core": false
+  },
+  "2895": {
+   "name": "Derivat (kortfristiga skulder)",
+   "core": false
+  },
+  "2897": {
+   "name": "Mottagna depositioner, kortfristiga",
+   "core": false
+  },
+  "2898": {
+   "name": "Outtagen vinstutdelning",
+   "core": false
+  },
+  "2899": {
+   "name": "Övriga kortfristiga skulder",
+   "core": false
+  },
+  "2910": {
+   "name": "Upplupna löner",
+   "core": true
+  },
+  "2911": {
+   "name": "Löneskulder",
+   "core": false
+  },
+  "2912": {
+   "name": "Ackordsöverskott",
+   "core": false
+  },
+  "2919": {
+   "name": "Övriga upplupna löner",
+   "core": false
+  },
+  "2920": {
+   "name": "Upplupna semesterlöner",
+   "core": true
+  },
+  "2930": {
+   "name": "Upplupna pensionskostnader",
+   "core": false
+  },
+  "2931": {
+   "name": "Upplupna pensionsutbetalningar",
+   "core": false
+  },
+  "2940": {
+   "name": "Upplupna lagstadgade sociala och andra avgifter",
+   "core": true
+  },
+  "2941": {
+   "name": "Beräknade upplupna lagstadgade sociala avgifter",
+   "core": false
+  },
+  "2942": {
+   "name": "Beräknad upplupen särskild löneskatt",
+   "core": false
+  },
+  "2943": {
+   "name": "Beräknad upplupen särskild löneskatt på pensionskostnader, deklarationspost",
+   "core": false
+  },
+  "2944": {
+   "name": "Beräknad upplupen avkastningsskatt på pensionskostnader",
+   "core": false
+  },
+  "2950": {
+   "name": "Upplupna avtalade sociala avgifter",
+   "core": true
+  },
+  "2951": {
+   "name": "Upplupna avtalade arbetsmarknadsförsäkringar",
+   "core": false
+  },
+  "2959": {
+   "name": "Upplupna avtalade pensionsförsäkringsavgifter, deklarationspost",
+   "core": false
+  },
+  "2960": {
+   "name": "Upplupna räntekostnader",
+   "core": true
+  },
+  "2970": {
+   "name": "Förutbetalda intäkter",
+   "core": true
+  },
+  "2971": {
+   "name": "Förutbetalda hyresintäkter",
+   "core": false
+  },
+  "2972": {
+   "name": "Förutbetalda medlemsavgifter",
+   "core": false
+  },
+  "2979": {
+   "name": "Övriga förutbetalda intäkter",
+   "core": false
+  },
+  "2980": {
+   "name": "Upplupna avtalskostnader",
+   "core": false
+  },
+  "2990": {
+   "name": "Övriga upplupna kostnader och förutbetalda intäkter",
+   "core": true
+  },
+  "2991": {
+   "name": "Beräknat arvode för bokslut",
+   "core": false
+  },
+  "2992": {
+   "name": "Beräknat arvode för revision",
+   "core": false
+  },
+  "2993": {
+   "name": "Ospecificerad skuld till leverantörer",
+   "core": false
+  },
+  "2995": {
+   "name": "Ej ankomna leverantörsfakturor",
+   "core": true
+  },
+  "2998": {
+   "name": "Övriga upplupna kostnader och förutbetalda intäkter",
+   "core": false
+  },
+  "2999": {
+   "name": "OBS-konto",
+   "core": true
+  },
+  "3000": {
+   "name": "Försäljning inom Sverige",
+   "core": true
+  },
+  "3001": {
+   "name": "Försäljning inom Sverige, 25 % moms",
+   "core": true
+  },
+  "3002": {
+   "name": "Försäljning inom Sverige, 12 % moms",
+   "core": true
+  },
+  "3003": {
+   "name": "Försäljning inom Sverige, 6 % moms",
+   "core": true
+  },
+  "3004": {
+   "name": "Försäljning inom Sverige, momsfri",
+   "core": true
+  },
+  "3100": {
+   "name": "Försäljning av varor utanför Sverige",
+   "core": true
+  },
+  "3105": {
+   "name": "Försäljning varor till land utanför EU",
+   "core": true
+  },
+  "3106": {
+   "name": "Försäljning varor till annat EU-land, momspliktig",
+   "core": true
+  },
+  "3108": {
+   "name": "Försäljning varor till annat EU-land, momsfri",
+   "core": true
+  },
+  "3200": {
+   "name": "Försäljning VMB och omvänd moms",
+   "core": true
+  },
+  "3211": {
+   "name": "Försäljning positiv VMB 25 %",
+   "core": true
+  },
+  "3212": {
+   "name": "Försäljning negativ VMB 25 %",
+   "core": true
+  },
+  "3231": {
+   "name": "Försäljning inom byggsektorn, omvänd skattskyldighet moms",
+   "core": true
+  },
+  "3300": {
+   "name": "Försäljning av tjänster utanför Sverige",
+   "core": true
+  },
+  "3305": {
+   "name": "Försäljning tjänster till land utanför EU",
+   "core": true
+  },
+  "3308": {
+   "name": "Försäljning tjänster till annat EU-land",
+   "core": true
+  },
+  "3400": {
+   "name": "Försäljning, egna uttag",
+   "core": true
+  },
+  "3401": {
+   "name": "Egna uttag momspliktiga, 25 %",
+   "core": true
+  },
+  "3402": {
+   "name": "Egna uttag momspliktiga, 12 %",
+   "core": true
+  },
+  "3403": {
+   "name": "Egna uttag momspliktiga, 6 %",
+   "core": true
+  },
+  "3404": {
+   "name": "Egna uttag, momsfria",
+   "core": true
+  },
+  "3500": {
+   "name": "Fakturerade kostnader (gruppkonto)",
+   "core": true
+  },
+  "3510": {
+   "name": "Fakturerat emballage",
+   "core": true
+  },
+  "3511": {
+   "name": "Fakturerat emballage",
+   "core": false
+  },
+  "3518": {
+   "name": "Returnerat emballage",
+   "core": false
+  },
+  "3520": {
+   "name": "Fakturerade frakter",
+   "core": true
+  },
+  "3521": {
+   "name": "Fakturerade frakter, EU-land",
+   "core": true
+  },
+  "3522": {
+   "name": "Fakturerade frakter, export",
+   "core": true
+  },
+  "3530": {
+   "name": "Fakturerade tull- och speditionskostnader m.m.",
+   "core": true
+  },
+  "3540": {
+   "name": "Faktureringsavgifter",
+   "core": true
+  },
+  "3541": {
+   "name": "Faktureringsavgifter, EU-land",
+   "core": true
+  },
+  "3542": {
+   "name": "Faktureringsavgifter, export",
+   "core": true
+  },
+  "3550": {
+   "name": "Fakturerade resekostnader",
+   "core": false
+  },
+  "3560": {
+   "name": "Fakturerade kostnader till koncernföretag",
+   "core": false
+  },
+  "3561": {
+   "name": "Fakturerade kostnader till moderföretag",
+   "core": false
+  },
+  "3562": {
+   "name": "Fakturerade kostnader till dotterföretag",
+   "core": false
+  },
+  "3563": {
+   "name": "Fakturerade kostnader till andra koncernföretag",
+   "core": false
+  },
+  "3570": {
+   "name": "Fakturerade kostnader till intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "3590": {
+   "name": "Övriga fakturerade kostnader",
+   "core": false
+  },
+  "3600": {
+   "name": "Rörelsens sidointäkter (gruppkonto)",
+   "core": true
+  },
+  "3610": {
+   "name": "Försäljning av material",
+   "core": false
+  },
+  "3611": {
+   "name": "Försäljning av råmaterial",
+   "core": false
+  },
+  "3612": {
+   "name": "Försäljning av skrot",
+   "core": false
+  },
+  "3613": {
+   "name": "Försäljning av förbrukningsmaterial",
+   "core": false
+  },
+  "3619": {
+   "name": "Försäljning av övrigt material",
+   "core": false
+  },
+  "3620": {
+   "name": "Tillfällig uthyrning av personal",
+   "core": false
+  },
+  "3630": {
+   "name": "Tillfällig uthyrning av transportmedel",
+   "core": false
+  },
+  "3670": {
+   "name": "Intäkter från värdepapper",
+   "core": false
+  },
+  "3671": {
+   "name": "Försäljning av värdepapper",
+   "core": false
+  },
+  "3672": {
+   "name": "Utdelning från värdepapper",
+   "core": false
+  },
+  "3679": {
+   "name": "Övriga intäkter från värdepapper",
+   "core": false
+  },
+  "3680": {
+   "name": "Management fees",
+   "core": false
+  },
+  "3690": {
+   "name": "Övriga sidointäkter",
+   "core": false
+  },
+  "3700": {
+   "name": "Intäktskorrigeringar (gruppkonto)",
+   "core": false
+  },
+  "3710": {
+   "name": "Ofördelade intäktsreduktioner",
+   "core": false
+  },
+  "3730": {
+   "name": "Lämnade rabatter",
+   "core": true
+  },
+  "3731": {
+   "name": "Lämnade kassarabatter",
+   "core": false
+  },
+  "3732": {
+   "name": "Lämnade mängdrabatter",
+   "core": false
+  },
+  "3740": {
+   "name": "Öres- och kronutjämning",
+   "core": true
+  },
+  "3750": {
+   "name": "Punktskatter",
+   "core": false
+  },
+  "3751": {
+   "name": "Intäktsförda punktskatter (kreditkonto)",
+   "core": false
+  },
+  "3752": {
+   "name": "Skuldförda punktskatter (debetkonto)",
+   "core": false
+  },
+  "3790": {
+   "name": "Övriga intäktskorrigeringar",
+   "core": false
+  },
+  "3800": {
+   "name": "Aktiverat arbete för egen räkning (gruppkonto)",
+   "core": true
+  },
+  "3840": {
+   "name": "Aktiverat arbete (material)",
+   "core": false
+  },
+  "3850": {
+   "name": "Aktiverat arbete (omkostnader)",
+   "core": false
+  },
+  "3870": {
+   "name": "Aktiverat arbete (personal)",
+   "core": false
+  },
+  "3900": {
+   "name": "Övriga rörelseintäkter (gruppkonto)",
+   "core": true
+  },
+  "3910": {
+   "name": "Hyres- och arrendeintäkter",
+   "core": false
+  },
+  "3911": {
+   "name": "Hyresintäkter",
+   "core": false
+  },
+  "3912": {
+   "name": "Arrendeintäkter",
+   "core": false
+  },
+  "3913": {
+   "name": "Frivilligt momspliktiga hyresintäkter",
+   "core": true
+  },
+  "3914": {
+   "name": "Övriga momspliktiga hyresintäkter",
+   "core": false
+  },
+  "3920": {
+   "name": "Provisionsintäkter, licensintäkter och royalties",
+   "core": false
+  },
+  "3921": {
+   "name": "Provisionsintäkter",
+   "core": false
+  },
+  "3922": {
+   "name": "Licensintäkter och royalties",
+   "core": false
+  },
+  "3925": {
+   "name": "Franchiseintäkter",
+   "core": false
+  },
+  "3940": {
+   "name": "Orealiserade negativa/positiva värdeförändringar på säkringsinstrument",
+   "core": false
+  },
+  "3950": {
+   "name": "Återvunna, tidigare avskrivna kundfordringar",
+   "core": false
+  },
+  "3960": {
+   "name": "Valutakursvinster på fordringar och skulder av rörelsekaraktär",
+   "core": true
+  },
+  "3970": {
+   "name": "Vinst vid avyttring av immateriella och materiella anläggningstillgångar",
+   "core": true
+  },
+  "3971": {
+   "name": "Vinst vid avyttring av immateriella anläggningstillgångar",
+   "core": false
+  },
+  "3972": {
+   "name": "Vinst vid avyttring av byggnader och mark",
+   "core": false
+  },
+  "3973": {
+   "name": "Vinst vid avyttring av maskiner och inventarier",
+   "core": false
+  },
+  "3980": {
+   "name": "Erhållna offentliga bidrag",
+   "core": true
+  },
+  "3981": {
+   "name": "Erhållna EU-bidrag",
+   "core": false
+  },
+  "3985": {
+   "name": "Erhållna statliga bidrag",
+   "core": false
+  },
+  "3987": {
+   "name": "Erhållna kommunala bidrag",
+   "core": false
+  },
+  "3988": {
+   "name": "Erhållna offentliga bidrag för personal",
+   "core": false
+  },
+  "3989": {
+   "name": "Övriga erhållna offentliga bidrag",
+   "core": false
+  },
+  "3990": {
+   "name": "Övriga ersättningar, bidrag och intäkter",
+   "core": false
+  },
+  "3991": {
+   "name": "Konfliktersättning",
+   "core": false
+  },
+  "3992": {
+   "name": "Erhållna skadestånd",
+   "core": false
+  },
+  "3993": {
+   "name": "Erhållna donationer och gåvor",
+   "core": false
+  },
+  "3994": {
+   "name": "Försäkringsersättningar",
+   "core": false
+  },
+  "3995": {
+   "name": "Erhållet ackord på skulder av rörelsekaraktär",
+   "core": false
+  },
+  "3996": {
+   "name": "Erhållna reklambidrag",
+   "core": false
+  },
+  "3997": {
+   "name": "Sjuklöneersättning",
+   "core": false
+  },
+  "3998": {
+   "name": "Återbäring av överskott från försäkringsföretag",
+   "core": false
+  },
+  "3999": {
+   "name": "Övriga rörelseintäkter",
+   "core": false
+  },
+  "4000": {
+   "name": "Inköp av varor från Sverige",
+   "core": true
+  },
+  "4200": {
+   "name": "Sålda varor VMB",
+   "core": true
+  },
+  "4211": {
+   "name": "Sålda varor positiv VMB 25 %",
+   "core": true
+  },
+  "4212": {
+   "name": "Sålda varor negativ VMB 25 %",
+   "core": true
+  },
+  "4400": {
+   "name": "Momspliktiga inköp i Sverige",
+   "core": true
+  },
+  "4415": {
+   "name": "Inköpta varor i Sverige, omvänd skattskyldighet, 25 % moms",
+   "core": true
+  },
+  "4416": {
+   "name": "Inköpta varor i Sverige, omvänd skattskyldighet, 12 % moms",
+   "core": false
+  },
+  "4417": {
+   "name": "Inköpta varor i Sverige, omvänd skattskyldighet, 6 % moms",
+   "core": false
+  },
+  "4425": {
+   "name": "Inköpta tjänster i Sverige, omvänd skattskyldighet, 25 % moms",
+   "core": false
+  },
+  "4426": {
+   "name": "Inköpta tjänster i Sverige, omvänd skattskyldighet, 12 % moms",
+   "core": true
+  },
+  "4427": {
+   "name": "Inköpta tjänster i Sverige, omvänd skattskyldighet, 6 % mom",
+   "core": true
+  },
+  "4500": {
+   "name": "Övriga momspliktiga inköp",
+   "core": true
+  },
+  "4515": {
+   "name": "Inköp av varor från annat EU-land, 25 %",
+   "core": true
+  },
+  "4516": {
+   "name": "Inköp av varor från annat EU-land, 12 %",
+   "core": true
+  },
+  "4517": {
+   "name": "Inköp av varor från annat EU-land, 6 %",
+   "core": true
+  },
+  "4518": {
+   "name": "Inköp av varor från annat EU-land, momsfri",
+   "core": true
+  },
+  "4531": {
+   "name": "Inköp av tjänster från ett land utanför EU, 25 % moms",
+   "core": true
+  },
+  "4532": {
+   "name": "Inköp av tjänster från ett land utanför EU, 12 % moms",
+   "core": true
+  },
+  "4533": {
+   "name": "Inköp av tjänster från ett land utanför EU, 6 % moms",
+   "core": true
+  },
+  "4535": {
+   "name": "Inköp av tjänster från annat EU-land, 25 %",
+   "core": true
+  },
+  "4536": {
+   "name": "Inköp av tjänster från annat EU-land, 12 %",
+   "core": true
+  },
+  "4537": {
+   "name": "Inköp av tjänster från annat EU-land, 6 %",
+   "core": true
+  },
+  "4538": {
+   "name": "Inköp av tjänster från annat EU-land, momsfri",
+   "core": true
+  },
+  "4545": {
+   "name": "Import av varor, 25 % moms",
+   "core": true
+  },
+  "4546": {
+   "name": "Import av varor, 12 % moms",
+   "core": true
+  },
+  "4547": {
+   "name": "Import av varor, 6 % moms",
+   "core": true
+  },
+  "4600": {
+   "name": "Legoarbeten och underentreprenader (gruppkonto)",
+   "core": true
+  },
+  "4700": {
+   "name": "Reduktion av inköpspriser (gruppkonto)",
+   "core": true
+  },
+  "4730": {
+   "name": "Erhållna rabatter",
+   "core": false
+  },
+  "4731": {
+   "name": "Erhållna kassarabatter",
+   "core": false
+  },
+  "4732": {
+   "name": "Erhållna mängdrabatter (inkl. bonus)",
+   "core": false
+  },
+  "4733": {
+   "name": "Erhållet aktivitetsstöd",
+   "core": false
+  },
+  "4790": {
+   "name": "Övriga reduktioner av inköpspriser",
+   "core": false
+  },
+  "4900": {
+   "name": "Förändring av lager (gruppkonto)",
+   "core": true
+  },
+  "4910": {
+   "name": "Förändring av lager av råvaror",
+   "core": true
+  },
+  "4920": {
+   "name": "Förändring av lager av tillsatsmaterial och förnödenheter",
+   "core": true
+  },
+  "4940": {
+   "name": "Förändring av produkter i arbete",
+   "core": true
+  },
+  "4944": {
+   "name": "Förändring av produkter i arbete, material och utlägg",
+   "core": false
+  },
+  "4945": {
+   "name": "Förändring av produkter i arbete, omkostnader",
+   "core": false
+  },
+  "4947": {
+   "name": "Förändring av produkter i arbete, personalkostnader",
+   "core": false
+  },
+  "4950": {
+   "name": "Förändring av lager av färdiga varor",
+   "core": true
+  },
+  "4960": {
+   "name": "Förändring av lager av handelsvaror",
+   "core": true
+  },
+  "4970": {
+   "name": "Förändring av pågående arbeten, nedlagda kostnader",
+   "core": true
+  },
+  "4974": {
+   "name": "Förändring av pågående arbeten, material och utlägg",
+   "core": false
+  },
+  "4975": {
+   "name": "Förändring av pågående arbeten, omkostnader",
+   "core": false
+  },
+  "4977": {
+   "name": "Förändring av pågående arbeten, personalkostnader",
+   "core": false
+  },
+  "4980": {
+   "name": "Förändring av lager av värdepapper",
+   "core": false
+  },
+  "4981": {
+   "name": "Sålda värdepappers anskaffningsvärde",
+   "core": false
+  },
+  "4987": {
+   "name": "Nedskrivning av värdepapper",
+   "core": false
+  },
+  "4988": {
+   "name": "Återföring av nedskrivning av värdepapper",
+   "core": false
+  },
+  "5000": {
+   "name": "Lokalkostnader (gruppkonto)",
+   "core": false
+  },
+  "5010": {
+   "name": "Lokalhyra",
+   "core": true
+  },
+  "5011": {
+   "name": "Hyra för kontorslokaler",
+   "core": false
+  },
+  "5012": {
+   "name": "Hyra för garage",
+   "core": false
+  },
+  "5013": {
+   "name": "Hyra för lagerlokaler",
+   "core": false
+  },
+  "5020": {
+   "name": "El för belysning",
+   "core": true
+  },
+  "5030": {
+   "name": "Värme",
+   "core": true
+  },
+  "5040": {
+   "name": "Vatten och avlopp",
+   "core": true
+  },
+  "5050": {
+   "name": "Lokaltillbehör",
+   "core": false
+  },
+  "5060": {
+   "name": "Städning och renhållning",
+   "core": true
+  },
+  "5061": {
+   "name": "Städning",
+   "core": false
+  },
+  "5062": {
+   "name": "Sophämtning",
+   "core": false
+  },
+  "5063": {
+   "name": "Hyra för sopcontainer",
+   "core": false
+  },
+  "5064": {
+   "name": "Snöröjning",
+   "core": false
+  },
+  "5065": {
+   "name": "Trädgårdsskötsel",
+   "core": false
+  },
+  "5070": {
+   "name": "Reparation och underhåll av lokaler",
+   "core": true
+  },
+  "5090": {
+   "name": "Övriga lokalkostnader",
+   "core": false
+  },
+  "5098": {
+   "name": "Övriga lokalkostnader, avdragsgilla",
+   "core": false
+  },
+  "5099": {
+   "name": "Övriga lokalkostnader, ej avdragsgilla",
+   "core": false
+  },
+  "5100": {
+   "name": "Fastighetskostnader (gruppkonto)",
+   "core": false
+  },
+  "5110": {
+   "name": "Tomträttsavgäld/arrende",
+   "core": false
+  },
+  "5120": {
+   "name": "El för belysning",
+   "core": true
+  },
+  "5130": {
+   "name": "Värme",
+   "core": true
+  },
+  "5131": {
+   "name": "Uppvärmning",
+   "core": false
+  },
+  "5132": {
+   "name": "Sotning",
+   "core": false
+  },
+  "5140": {
+   "name": "Vatten och avlopp",
+   "core": true
+  },
+  "5160": {
+   "name": "Städning och renhållning",
+   "core": true
+  },
+  "5161": {
+   "name": "Städning",
+   "core": false
+  },
+  "5162": {
+   "name": "Sophämtning",
+   "core": false
+  },
+  "5163": {
+   "name": "Hyra för sopcontainer",
+   "core": false
+  },
+  "5164": {
+   "name": "Snöröjning",
+   "core": false
+  },
+  "5165": {
+   "name": "Trädgårdsskötsel",
+   "core": false
+  },
+  "5170": {
+   "name": "Reparation och underhåll av fastighet",
+   "core": true
+  },
+  "5190": {
+   "name": "Övriga fastighetskostnader",
+   "core": false
+  },
+  "5191": {
+   "name": "Fastighetsskatt/fastighetsavgift",
+   "core": false
+  },
+  "5192": {
+   "name": "Fastighetsförsäkringspremier",
+   "core": false
+  },
+  "5193": {
+   "name": "Fastighetsskötsel och förvaltning",
+   "core": false
+  },
+  "5198": {
+   "name": "Övriga fastighetskostnader, avdragsgilla",
+   "core": false
+  },
+  "5199": {
+   "name": "Övriga fastighetskostnader, ej avdragsgilla",
+   "core": false
+  },
+  "5200": {
+   "name": "Hyra av anläggningstillgångar (gruppkonto)",
+   "core": true
+  },
+  "5210": {
+   "name": "Hyra av maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "5211": {
+   "name": "Korttidshyra av maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "5212": {
+   "name": "Leasing av maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "5220": {
+   "name": "Hyra av inventarier och verktyg",
+   "core": false
+  },
+  "5221": {
+   "name": "Korttidshyra av inventarier och verktyg",
+   "core": false
+  },
+  "5222": {
+   "name": "Leasing av inventarier och verktyg",
+   "core": false
+  },
+  "5250": {
+   "name": "Hyra av datorer",
+   "core": false
+  },
+  "5251": {
+   "name": "Korttidshyra av datorer",
+   "core": false
+  },
+  "5252": {
+   "name": "Leasing av datorer",
+   "core": false
+  },
+  "5290": {
+   "name": "Övriga hyreskostnader för anläggningstillgångar",
+   "core": false
+  },
+  "5300": {
+   "name": "Energikostnader (gruppkonto)",
+   "core": true
+  },
+  "5310": {
+   "name": "El för drift",
+   "core": false
+  },
+  "5320": {
+   "name": "Gas",
+   "core": false
+  },
+  "5330": {
+   "name": "Eldningsolja",
+   "core": false
+  },
+  "5340": {
+   "name": "Stenkol och koks",
+   "core": false
+  },
+  "5350": {
+   "name": "Torv, träkol, ved och annat träbränsle",
+   "core": false
+  },
+  "5360": {
+   "name": "Bensin, fotogen och motorbrännolja",
+   "core": false
+  },
+  "5370": {
+   "name": "Fjärrvärme, kyla och ånga",
+   "core": false
+  },
+  "5380": {
+   "name": "Vatten",
+   "core": false
+  },
+  "5390": {
+   "name": "Övriga energikostnader",
+   "core": false
+  },
+  "5400": {
+   "name": "Förbrukningsinventarier och förbrukningsmaterial (gruppkonto)",
+   "core": false
+  },
+  "5410": {
+   "name": "Förbrukningsinventarier",
+   "core": true
+  },
+  "5411": {
+   "name": "Förbrukningsinventarier med en livslängd på mer än ett år",
+   "core": false
+  },
+  "5412": {
+   "name": "Förbrukningsinventarier med en livslängd på ett år eller mindre",
+   "core": false
+  },
+  "5420": {
+   "name": "Programvaror",
+   "core": true
+  },
+  "5430": {
+   "name": "Transportinventarier",
+   "core": false
+  },
+  "5440": {
+   "name": "Förbrukningsemballage",
+   "core": false
+  },
+  "5460": {
+   "name": "Förbrukningsmaterial",
+   "core": true
+  },
+  "5480": {
+   "name": "Arbetskläder och skyddsmaterial",
+   "core": false
+  },
+  "5490": {
+   "name": "Övriga förbrukningsinventarier och förbrukningsmaterial",
+   "core": false
+  },
+  "5491": {
+   "name": "Övriga förbrukningsinventarier med en livslängd på mer än ett år",
+   "core": false
+  },
+  "5492": {
+   "name": "Övriga förbrukningsinventarier med en livslängd på ett år eller mindre",
+   "core": false
+  },
+  "5493": {
+   "name": "Övrigt förbrukningsmaterial",
+   "core": false
+  },
+  "5500": {
+   "name": "Reparation och underhåll (gruppkonto)",
+   "core": true
+  },
+  "5510": {
+   "name": "Reparation och underhåll av maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "5520": {
+   "name": "Reparation och underhåll av inventarier, verktyg och datorer m.m.",
+   "core": false
+  },
+  "5530": {
+   "name": "Reparation och underhåll av installationer",
+   "core": false
+  },
+  "5550": {
+   "name": "Reparation och underhåll av förbrukningsinventarier",
+   "core": false
+  },
+  "5580": {
+   "name": "Underhåll och tvätt av arbetskläder",
+   "core": false
+  },
+  "5590": {
+   "name": "Övriga kostnader för reparation och underhåll",
+   "core": false
+  },
+  "5600": {
+   "name": "Kostnader för transportmedel (gruppkonto)",
+   "core": true
+  },
+  "5610": {
+   "name": "Personbilskostnader",
+   "core": false
+  },
+  "5611": {
+   "name": "Drivmedel för personbilar",
+   "core": true
+  },
+  "5612": {
+   "name": "Försäkring och skatt för personbilar",
+   "core": true
+  },
+  "5613": {
+   "name": "Reparation och underhåll av personbilar",
+   "core": true
+  },
+  "5615": {
+   "name": "Leasing av personbilar",
+   "core": true
+  },
+  "5616": {
+   "name": "Trängselskatt, avdragsgill",
+   "core": false
+  },
+  "5619": {
+   "name": "Övriga personbilskostnader",
+   "core": false
+  },
+  "5620": {
+   "name": "Lastbilskostnader",
+   "core": false
+  },
+  "5630": {
+   "name": "Truckkostnader",
+   "core": false
+  },
+  "5640": {
+   "name": "Kostnader för arbetsmaskiner",
+   "core": false
+  },
+  "5650": {
+   "name": "Traktorkostnader",
+   "core": false
+  },
+  "5660": {
+   "name": "Motorcykel-, moped- och skoterkostnader",
+   "core": false
+  },
+  "5670": {
+   "name": "Båt-, flygplans- och helikopterkostnader",
+   "core": false
+  },
+  "5690": {
+   "name": "Övriga kostnader för transportmedel",
+   "core": false
+  },
+  "5700": {
+   "name": "Frakter och transporter (gruppkonto)",
+   "core": true
+  },
+  "5710": {
+   "name": "Frakter, transporter och försäkringar vid varudistribution",
+   "core": false
+  },
+  "5720": {
+   "name": "Tull- och speditionskostnader m.m.",
+   "core": false
+  },
+  "5730": {
+   "name": "Arbetstransporter",
+   "core": false
+  },
+  "5790": {
+   "name": "Övriga kostnader för frakter och transporter",
+   "core": false
+  },
+  "5800": {
+   "name": "Resekostnader (gruppkonto)",
+   "core": true
+  },
+  "5810": {
+   "name": "Biljetter",
+   "core": true
+  },
+  "5820": {
+   "name": "Hyrbilskostnader",
+   "core": true
+  },
+  "5830": {
+   "name": "Kost och logi",
+   "core": false
+  },
+  "5831": {
+   "name": "Kost och logi i Sverige",
+   "core": true
+  },
+  "5832": {
+   "name": "Kost och logi i utlandet",
+   "core": true
+  },
+  "5890": {
+   "name": "Övriga resekostnader",
+   "core": false
+  },
+  "5900": {
+   "name": "Reklam och PR (gruppkonto)",
+   "core": true
+  },
+  "5910": {
+   "name": "Annonsering",
+   "core": false
+  },
+  "5920": {
+   "name": "Utomhus- och trafikreklam",
+   "core": false
+  },
+  "5930": {
+   "name": "Reklamtrycksaker och direktreklam",
+   "core": false
+  },
+  "5940": {
+   "name": "Utställningar och mässor",
+   "core": false
+  },
+  "5950": {
+   "name": "Butiksreklam och återförsäljarreklam",
+   "core": false
+  },
+  "5960": {
+   "name": "Varuprover, reklamgåvor, presentreklam och tävlingar",
+   "core": false
+  },
+  "5970": {
+   "name": "Film-, radio-, TV- och Internetreklam",
+   "core": false
+  },
+  "5980": {
+   "name": "PR, institutionell reklam och sponsring",
+   "core": false
+  },
+  "5990": {
+   "name": "Övriga kostnader för reklam och PR",
+   "core": false
+  },
+  "6000": {
+   "name": "Övriga försäljningskostnader (gruppkonto)",
+   "core": false
+  },
+  "6010": {
+   "name": "Kataloger, prislistor m.m.",
+   "core": false
+  },
+  "6020": {
+   "name": "Egna facktidskrifter",
+   "core": false
+  },
+  "6030": {
+   "name": "Speciella orderkostnader",
+   "core": false
+  },
+  "6040": {
+   "name": "Kontokortsavgifter",
+   "core": false
+  },
+  "6050": {
+   "name": "Försäljningsprovisioner",
+   "core": false
+  },
+  "6055": {
+   "name": "Franchisekostnader o.dyl.",
+   "core": false
+  },
+  "6060": {
+   "name": "Kreditförsäljningskostnader",
+   "core": false
+  },
+  "6061": {
+   "name": "Kreditupplysning",
+   "core": false
+  },
+  "6062": {
+   "name": "Inkasso och KFM-avgifter",
+   "core": false
+  },
+  "6063": {
+   "name": "Kreditförsäkringspremier",
+   "core": false
+  },
+  "6064": {
+   "name": "Factoringavgifter",
+   "core": false
+  },
+  "6069": {
+   "name": "Övriga kreditförsäljningskostnader",
+   "core": false
+  },
+  "6070": {
+   "name": "Representation",
+   "core": false
+  },
+  "6071": {
+   "name": "Representation, avdragsgill",
+   "core": true
+  },
+  "6072": {
+   "name": "Representation, ej avdragsgill",
+   "core": true
+  },
+  "6080": {
+   "name": "Bankgarantier",
+   "core": false
+  },
+  "6090": {
+   "name": "Övriga försäljningskostnader",
+   "core": true
+  },
+  "6100": {
+   "name": "Kontorsmateriel och trycksaker (gruppkonto)",
+   "core": true
+  },
+  "6110": {
+   "name": "Kontorsmateriel",
+   "core": false
+  },
+  "6150": {
+   "name": "Trycksaker",
+   "core": false
+  },
+  "6200": {
+   "name": "Tele och post (gruppkonto)",
+   "core": false
+  },
+  "6210": {
+   "name": "Telekommunikation",
+   "core": true
+  },
+  "6211": {
+   "name": "Fast telefoni",
+   "core": false
+  },
+  "6212": {
+   "name": "Mobiltelefon",
+   "core": false
+  },
+  "6213": {
+   "name": "Mobilsökning",
+   "core": false
+  },
+  "6214": {
+   "name": "Fax",
+   "core": false
+  },
+  "6215": {
+   "name": "Telex",
+   "core": false
+  },
+  "6230": {
+   "name": "Datakommunikation",
+   "core": false
+  },
+  "6250": {
+   "name": "Postbefordran",
+   "core": true
+  },
+  "6300": {
+   "name": "Företagsförsäkringar och övriga riskkostnader (gruppkonto)",
+   "core": false
+  },
+  "6310": {
+   "name": "Företagsförsäkringar",
+   "core": true
+  },
+  "6320": {
+   "name": "Självrisker vid skada",
+   "core": false
+  },
+  "6330": {
+   "name": "Förluster i pågående arbeten",
+   "core": false
+  },
+  "6340": {
+   "name": "Lämnade skadestånd",
+   "core": false
+  },
+  "6341": {
+   "name": "Lämnade skadestånd, avdragsgilla",
+   "core": false
+  },
+  "6342": {
+   "name": "Lämnade skadestånd, ej avdragsgilla",
+   "core": false
+  },
+  "6350": {
+   "name": "Förluster på kundfordringar",
+   "core": true
+  },
+  "6351": {
+   "name": "Konstaterade förluster på kundfordringar",
+   "core": false
+  },
+  "6352": {
+   "name": "Befarade förluster på kundfordringar",
+   "core": false
+  },
+  "6360": {
+   "name": "Garantikostnader",
+   "core": false
+  },
+  "6361": {
+   "name": "Förändring av garantiavsättning",
+   "core": false
+  },
+  "6362": {
+   "name": "Faktiska garantikostnader",
+   "core": false
+  },
+  "6370": {
+   "name": "Kostnader för bevakning och larm",
+   "core": false
+  },
+  "6380": {
+   "name": "Förluster på övriga kortfristiga fordringar",
+   "core": false
+  },
+  "6390": {
+   "name": "Övriga riskkostnader",
+   "core": true
+  },
+  "6400": {
+   "name": "Förvaltningskostnader (gruppkonto)",
+   "core": false
+  },
+  "6410": {
+   "name": "Styrelsearvoden som inte är lön",
+   "core": true
+  },
+  "6420": {
+   "name": "Ersättningar till revisor",
+   "core": true
+  },
+  "6421": {
+   "name": "Revision",
+   "core": false
+  },
+  "6422": {
+   "name": "Revisonsverksamhet utöver revision",
+   "core": false
+  },
+  "6423": {
+   "name": "Skatterådgivning – revisor",
+   "core": false
+  },
+  "6424": {
+   "name": "Övriga tjänster – revisor",
+   "core": false
+  },
+  "6430": {
+   "name": "Management fees",
+   "core": false
+  },
+  "6440": {
+   "name": "Årsredovisning och delårsrapporter",
+   "core": false
+  },
+  "6450": {
+   "name": "Bolagsstämma/års- eller föreningsstämma",
+   "core": false
+  },
+  "6490": {
+   "name": "Övriga förvaltningskostnader",
+   "core": false
+  },
+  "6500": {
+   "name": "Övriga externa tjänster (gruppkonto)",
+   "core": false
+  },
+  "6510": {
+   "name": "Mätningskostnader",
+   "core": false
+  },
+  "6520": {
+   "name": "Ritnings- och kopieringskostnader",
+   "core": false
+  },
+  "6530": {
+   "name": "Redovisningstjänster",
+   "core": true
+  },
+  "6540": {
+   "name": "IT-tjänster",
+   "core": true
+  },
+  "6550": {
+   "name": "Konsultarvoden",
+   "core": true
+  },
+  "6551": {
+   "name": "Arkitekttjänster",
+   "core": false
+  },
+  "6552": {
+   "name": "Teknisk provning och analys",
+   "core": false
+  },
+  "6553": {
+   "name": "Tekniska konsulttjänster",
+   "core": false
+  },
+  "6554": {
+   "name": "Finansiell- och övrig ekonomisk rådgivning",
+   "core": false
+  },
+  "6555": {
+   "name": "Skatterådgivning inkl. insolvens- och konkursförvaltning",
+   "core": false
+  },
+  "6556": {
+   "name": "Köpta tjänster avseende forskning och utveckling",
+   "core": false
+  },
+  "6559": {
+   "name": "Övrig konsultverksamhet",
+   "core": false
+  },
+  "6560": {
+   "name": "Serviceavgifter till branschorganisationer",
+   "core": true
+  },
+  "6570": {
+   "name": "Bankkostnader",
+   "core": true
+  },
+  "6580": {
+   "name": "Advokat- och rättegångskostnader",
+   "core": false
+  },
+  "6590": {
+   "name": "Övriga externa tjänster",
+   "core": true
+  },
+  "6800": {
+   "name": "Inhyrd personal (gruppkonto)",
+   "core": true
+  },
+  "6810": {
+   "name": "Inhyrd produktionspersonal",
+   "core": false
+  },
+  "6820": {
+   "name": "Inhyrd lagerpersonal",
+   "core": false
+  },
+  "6830": {
+   "name": "Inhyrd transportpersonal",
+   "core": false
+  },
+  "6840": {
+   "name": "Inhyrd kontors- och ekonomipersonal",
+   "core": false
+  },
+  "6850": {
+   "name": "Inhyrd IT-personal",
+   "core": false
+  },
+  "6860": {
+   "name": "Inhyrd marknads- och försäljningspersonal",
+   "core": false
+  },
+  "6870": {
+   "name": "Inhyrd restaurang- och butikspersonal",
+   "core": false
+  },
+  "6880": {
+   "name": "Inhyrda företagsledare",
+   "core": false
+  },
+  "6890": {
+   "name": "Övrig inhyrd personal",
+   "core": false
+  },
+  "6900": {
+   "name": "Övriga externa kostnader (gruppkonto)",
+   "core": false
+  },
+  "6910": {
+   "name": "Licensavgifter och royalties",
+   "core": false
+  },
+  "6920": {
+   "name": "Kostnader för egna patent",
+   "core": false
+  },
+  "6930": {
+   "name": "Kostnader för varumärken m.m.",
+   "core": false
+  },
+  "6940": {
+   "name": "Kontroll-, provnings- och stämpelavgifter",
+   "core": false
+  },
+  "6950": {
+   "name": "Tillsynsavgifter myndigheter",
+   "core": false
+  },
+  "6970": {
+   "name": "Tidningar, tidskrifter och facklitteratur",
+   "core": true
+  },
+  "6980": {
+   "name": "Föreningsavgifter",
+   "core": true
+  },
+  "6981": {
+   "name": "Föreningsavgifter, avdragsgilla",
+   "core": false
+  },
+  "6982": {
+   "name": "Föreningsavgifter, ej avdragsgilla",
+   "core": false
+  },
+  "6990": {
+   "name": "Övriga externa kostnader",
+   "core": false
+  },
+  "6991": {
+   "name": "Övriga externa kostnader, avdragsgilla",
+   "core": true
+  },
+  "6992": {
+   "name": "Övriga externa kostnader, ej avdragsgilla",
+   "core": true
+  },
+  "6993": {
+   "name": "Lämnade bidrag och gåvor",
+   "core": false
+  },
+  "6996": {
+   "name": "Betald utländsk inkomstskatt",
+   "core": false
+  },
+  "6997": {
+   "name": "Obetald utländsk inkomstskatt",
+   "core": false
+  },
+  "6998": {
+   "name": "Utländsk moms",
+   "core": false
+  },
+  "6999": {
+   "name": "Ingående moms, blandad verksamhet",
+   "core": false
+  },
+  "7000": {
+   "name": "Löner till kollektivanställda (gruppkonto)",
+   "core": false
+  },
+  "7010": {
+   "name": "Löner till kollektivanställda",
+   "core": true
+  },
+  "7011": {
+   "name": "Löner till kollektivanställda",
+   "core": false
+  },
+  "7012": {
+   "name": "Vinstandelar till kollektivanställda",
+   "core": false
+  },
+  "7013": {
+   "name": "Lön växa-stöd kollektivanställda 10,21 %",
+   "core": false
+  },
+  "7017": {
+   "name": "Avgångsvederlag till kollektivanställda",
+   "core": false
+  },
+  "7018": {
+   "name": "Bruttolöneavdrag, kollektivanställda",
+   "core": false
+  },
+  "7019": {
+   "name": "Upplupna löner och vinstandelar till kollektivanställda",
+   "core": false
+  },
+  "7030": {
+   "name": "Löner till kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7031": {
+   "name": "Löner till kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7032": {
+   "name": "Vinstandelar till kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7037": {
+   "name": "Avgångsvederlag till kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7038": {
+   "name": "Bruttolöneavdrag, kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7039": {
+   "name": "Upplupna löner och vinstandelar till kollektivanställda (utlandsanställda)",
+   "core": false
+  },
+  "7080": {
+   "name": "Löner till kollektivanställda för ej arbetad tid",
+   "core": false
+  },
+  "7081": {
+   "name": "Sjuklöner till kollektivanställda",
+   "core": false
+  },
+  "7082": {
+   "name": "Semesterlöner till kollektivanställda",
+   "core": false
+  },
+  "7083": {
+   "name": "Föräldraersättning till kollektivanställda",
+   "core": false
+  },
+  "7089": {
+   "name": "Övriga löner till kollektivanställda för ej arbetad tid",
+   "core": false
+  },
+  "7090": {
+   "name": "Förändring av semesterlöneskuld",
+   "core": true
+  },
+  "7200": {
+   "name": "Löner till tjänstemän och företagsledare (gruppkonto)",
+   "core": false
+  },
+  "7210": {
+   "name": "Löner till tjänstemän",
+   "core": true
+  },
+  "7211": {
+   "name": "Löner till tjänstemän",
+   "core": false
+  },
+  "7212": {
+   "name": "Vinstandelar till tjänstemän",
+   "core": false
+  },
+  "7213": {
+   "name": "Lön växa-stöd tjänstemän 10,21 %",
+   "core": false
+  },
+  "7217": {
+   "name": "Avgångsvederlag till tjänstemän",
+   "core": false
+  },
+  "7218": {
+   "name": "Bruttolöneavdrag, tjänstemän",
+   "core": false
+  },
+  "7219": {
+   "name": "Upplupna löner och vinstandelar till tjänstemän",
+   "core": false
+  },
+  "7220": {
+   "name": "Löner till företagsledare",
+   "core": true
+  },
+  "7221": {
+   "name": "Löner till företagsledare",
+   "core": false
+  },
+  "7222": {
+   "name": "Tantiem till företagsledare",
+   "core": false
+  },
+  "7227": {
+   "name": "Avgångsvederlag till företagsledare",
+   "core": false
+  },
+  "7228": {
+   "name": "Bruttolöneavdrag, företagsledare",
+   "core": false
+  },
+  "7229": {
+   "name": "Upplupna löner och tantiem till företagsledare",
+   "core": false
+  },
+  "7230": {
+   "name": "Löner till tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7231": {
+   "name": "Löner till tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7232": {
+   "name": "Vinstandelar till tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7237": {
+   "name": "Avgångsvederlag till tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7238": {
+   "name": "Bruttolöneavdrag, tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7239": {
+   "name": "Upplupna löner och vinstandelar till tjänstemän och ftgsledare (utlandsanställda)",
+   "core": false
+  },
+  "7240": {
+   "name": "Styrelsearvoden",
+   "core": true
+  },
+  "7280": {
+   "name": "Löner till tjänstemän och företagsledare för ej arbetad tid",
+   "core": false
+  },
+  "7281": {
+   "name": "Sjuklöner till tjänstemän",
+   "core": false
+  },
+  "7282": {
+   "name": "Sjuklöner till företagsledare",
+   "core": false
+  },
+  "7283": {
+   "name": "Föräldraersättning till tjänstemän",
+   "core": false
+  },
+  "7284": {
+   "name": "Föräldraersättning till företagsledare",
+   "core": false
+  },
+  "7285": {
+   "name": "Semesterlöner till tjänstemän",
+   "core": false
+  },
+  "7286": {
+   "name": "Semesterlöner till företagsledare",
+   "core": false
+  },
+  "7288": {
+   "name": "Övriga löner till tjänstemän för ej arbetad tid",
+   "core": false
+  },
+  "7289": {
+   "name": "Övriga löner till företagsledare för ej arbetad tid",
+   "core": false
+  },
+  "7290": {
+   "name": "Förändring av semesterlöneskuld",
+   "core": true
+  },
+  "7291": {
+   "name": "Förändring av semesterlöneskuld till tjänstemän",
+   "core": false
+  },
+  "7292": {
+   "name": "Förändring av semesterlöneskuld till företagsledare",
+   "core": false
+  },
+  "7300": {
+   "name": "Kostnadsersättningar och förmåner (gruppkonto)",
+   "core": false
+  },
+  "7310": {
+   "name": "Kontanta extraersättningar",
+   "core": true
+  },
+  "7311": {
+   "name": "Ersättningar för sammanträden m.m.",
+   "core": false
+  },
+  "7312": {
+   "name": "Ersättningar för förslagsverksamhet och uppfinningar",
+   "core": false
+  },
+  "7313": {
+   "name": "Ersättningar för/bidrag till bostadskostnader",
+   "core": false
+  },
+  "7314": {
+   "name": "Ersättningar för/bidrag till måltidskostnader",
+   "core": false
+  },
+  "7315": {
+   "name": "Ersättningar för/bidrag till resor till och från arbetsplatsen",
+   "core": false
+  },
+  "7316": {
+   "name": "Ersättningar för/bidrag till arbetskläder",
+   "core": false
+  },
+  "7317": {
+   "name": "Ersättningar för/bidrag till arbetsmaterial och arbetsverktyg",
+   "core": false
+  },
+  "7318": {
+   "name": "Felräkningspengar",
+   "core": false
+  },
+  "7319": {
+   "name": "Övriga kontanta extraersättningar",
+   "core": false
+  },
+  "7320": {
+   "name": "Traktamenten vid tjänsteresa",
+   "core": false
+  },
+  "7321": {
+   "name": "Skattefria traktamenten, Sverige",
+   "core": true
+  },
+  "7322": {
+   "name": "Skattepliktiga traktamenten, Sverige",
+   "core": true
+  },
+  "7323": {
+   "name": "Skattefria traktamenten, utlandet",
+   "core": true
+  },
+  "7324": {
+   "name": "Skattepliktiga traktamenten, utlandet",
+   "core": true
+  },
+  "7330": {
+   "name": "Bilersättningar",
+   "core": false
+  },
+  "7331": {
+   "name": "Skattefria bilersättningar",
+   "core": true
+  },
+  "7332": {
+   "name": "Skattepliktiga bilersättningar",
+   "core": true
+  },
+  "7333": {
+   "name": "Ersättning för trängselskatt, skattefri",
+   "core": false
+  },
+  "7350": {
+   "name": "Ersättningar för föreskrivna arbetskläder",
+   "core": false
+  },
+  "7370": {
+   "name": "Representationsersättningar",
+   "core": false
+  },
+  "7380": {
+   "name": "Kostnader för förmåner till anställda",
+   "core": true
+  },
+  "7381": {
+   "name": "Kostnader för fri bostad",
+   "core": false
+  },
+  "7382": {
+   "name": "Kostnader för fria eller subventionerade måltider",
+   "core": false
+  },
+  "7383": {
+   "name": "Kostnader för fria resor till och från arbetsplatsen",
+   "core": false
+  },
+  "7384": {
+   "name": "Kostnader för fria eller subventionerade arbetskläder",
+   "core": false
+  },
+  "7385": {
+   "name": "Kostnader för fri bil",
+   "core": true
+  },
+  "7386": {
+   "name": "Subventionerad ränta",
+   "core": false
+  },
+  "7387": {
+   "name": "Kostnader för lånedatorer",
+   "core": false
+  },
+  "7388": {
+   "name": "Anställdas ersättning för erhållna förmåner",
+   "core": false
+  },
+  "7389": {
+   "name": "Övriga kostnader för förmåner",
+   "core": false
+  },
+  "7390": {
+   "name": "Övriga kostnadsersättningar och förmåner",
+   "core": true
+  },
+  "7391": {
+   "name": "Kostnad för trängselskatteförmån",
+   "core": false
+  },
+  "7392": {
+   "name": "Kostnad för förmån av hushållsnära tjänster",
+   "core": false
+  },
+  "7400": {
+   "name": "Pensionskostnader (gruppkonto)",
+   "core": false
+  },
+  "7410": {
+   "name": "Pensionsförsäkringspremier",
+   "core": true
+  },
+  "7411": {
+   "name": "Premier för kollektiva pensionsförsäkringar",
+   "core": false
+  },
+  "7412": {
+   "name": "Premier för individuella pensionsförsäkringar",
+   "core": false
+  },
+  "7420": {
+   "name": "Förändring av pensionsskuld",
+   "core": false
+  },
+  "7430": {
+   "name": "Avdrag för räntedel i pensionskostnad",
+   "core": false
+  },
+  "7440": {
+   "name": "Förändring av pensionsstiftelsekapital",
+   "core": false
+  },
+  "7441": {
+   "name": "Överföring av medel till pensionsstiftelse",
+   "core": false
+  },
+  "7448": {
+   "name": "Gottgörelse från pensionsstiftelse",
+   "core": false
+  },
+  "7460": {
+   "name": "Pensionsutbetalningar",
+   "core": false
+  },
+  "7461": {
+   "name": "Pensionsutbetalningar till f.d. kollektivanställda",
+   "core": false
+  },
+  "7462": {
+   "name": "Pensionsutbetalningar till f.d. tjänstemän",
+   "core": false
+  },
+  "7463": {
+   "name": "Pensionsutbetalningar till f.d. företagsledare",
+   "core": false
+  },
+  "7470": {
+   "name": "Förvaltnings- och kreditförsäkringsavgifter",
+   "core": false
+  },
+  "7490": {
+   "name": "Övriga pensionskostnader",
+   "core": true
+  },
+  "7500": {
+   "name": "Sociala och andra avgifter enligt lag och avtal (gruppkonto)",
+   "core": false
+  },
+  "7510": {
+   "name": "Arbetsgivaravgifter 31,42 %",
+   "core": false
+  },
+  "7511": {
+   "name": "Arbetsgivaravgifter för löner och ersättningar",
+   "core": true
+  },
+  "7512": {
+   "name": "Arbetsgivaravgifter för förmånsvärden",
+   "core": true
+  },
+  "7515": {
+   "name": "Arbetsgivaravgifter på skattepliktiga kostnadsersättningar",
+   "core": false
+  },
+  "7516": {
+   "name": "Arbetsgivaravgifter på arvoden",
+   "core": false
+  },
+  "7518": {
+   "name": "Arbetsgivaravgifter på bruttolöneavdrag m.m.",
+   "core": false
+  },
+  "7519": {
+   "name": "Arbetsgivaravgifter för semester- och löneskulder",
+   "core": true
+  },
+  "7530": {
+   "name": "Särskild löneskatt",
+   "core": true
+  },
+  "7531": {
+   "name": "Särskild löneskatt för vissa försäkringsersättningar m.m.",
+   "core": false
+  },
+  "7532": {
+   "name": "Särskild löneskatt pensionskostnader, deklarationspost",
+   "core": false
+  },
+  "7533": {
+   "name": "Särskild löneskatt för pensionskostnader",
+   "core": false
+  },
+  "7550": {
+   "name": "Avkastningsskatt på pensionsmedel",
+   "core": true
+  },
+  "7551": {
+   "name": "Avkastningsskatt 15 % försäkringsföretag m.fl. samt avsatt till pensioner",
+   "core": false
+  },
+  "7552": {
+   "name": "Avkastningsskatt 15 % utländska pensionsförsäkringar",
+   "core": false
+  },
+  "7553": {
+   "name": "Avkastningsskatt 30 % utländska försäkringsföretag m.fl.",
+   "core": false
+  },
+  "7554": {
+   "name": "Avkastningsskatt 30 % utländska kapitalförsäkringar",
+   "core": false
+  },
+  "7570": {
+   "name": "Premier för arbetsmarknadsförsäkringar",
+   "core": true
+  },
+  "7571": {
+   "name": "Arbetsmarknadsförsäkringar",
+   "core": false
+  },
+  "7572": {
+   "name": "Arbetsmarknadsförsäkringar pensionsförsäkringspremier, deklarationspost",
+   "core": false
+  },
+  "7580": {
+   "name": "Gruppförsäkringspremier",
+   "core": true
+  },
+  "7581": {
+   "name": "Grupplivförsäkringspremier",
+   "core": false
+  },
+  "7582": {
+   "name": "Gruppsjukförsäkringspremier",
+   "core": false
+  },
+  "7583": {
+   "name": "Gruppolycksfallsförsäkringspremier",
+   "core": false
+  },
+  "7589": {
+   "name": "Övriga gruppförsäkringspremier",
+   "core": false
+  },
+  "7590": {
+   "name": "Övriga sociala och andra avgifter enligt lag och avtal",
+   "core": true
+  },
+  "7600": {
+   "name": "Övriga personalkostnader (gruppkonto)",
+   "core": true
+  },
+  "7610": {
+   "name": "Utbildning",
+   "core": true
+  },
+  "7620": {
+   "name": "Sjuk- och hälsovård",
+   "core": false
+  },
+  "7621": {
+   "name": "Sjuk- och hälsovård, avdragsgill",
+   "core": true
+  },
+  "7622": {
+   "name": "Sjuk- och hälsovård, ej avdragsgill",
+   "core": true
+  },
+  "7623": {
+   "name": "Sjukvårdsförsäkring, ej avdragsgill",
+   "core": false
+  },
+  "7630": {
+   "name": "Personalrepresentation",
+   "core": false
+  },
+  "7631": {
+   "name": "Personalrepresentation, avdragsgill",
+   "core": true
+  },
+  "7632": {
+   "name": "Personalrepresentation, ej avdragsgill",
+   "core": true
+  },
+  "7650": {
+   "name": "Sjuklöneförsäkring",
+   "core": false
+  },
+  "7670": {
+   "name": "Förändring av personalstiftelsekapital",
+   "core": false
+  },
+  "7671": {
+   "name": "Avsättning till personalstiftelse",
+   "core": false
+  },
+  "7678": {
+   "name": "Gottgörelse från personalstiftelse",
+   "core": false
+  },
+  "7690": {
+   "name": "Övriga personalkostnader",
+   "core": false
+  },
+  "7691": {
+   "name": "Personalrekrytering",
+   "core": false
+  },
+  "7692": {
+   "name": "Begravningshjälp",
+   "core": false
+  },
+  "7693": {
+   "name": "Fritidsverksamhet",
+   "core": false
+  },
+  "7699": {
+   "name": "Övriga personalkostnader",
+   "core": false
+  },
+  "7710": {
+   "name": "Nedskrivningar av immateriella anläggningstillgångar",
+   "core": false
+  },
+  "7720": {
+   "name": "Nedskrivningar av byggnader och mark",
+   "core": true
+  },
+  "7730": {
+   "name": "Nedskrivningar av maskiner och inventarier",
+   "core": true
+  },
+  "7740": {
+   "name": "Nedskrivningar av vissa omsättningstillgångar",
+   "core": false
+  },
+  "7760": {
+   "name": "Återföring av nedskrivningar av immateriella anläggningstillgångar",
+   "core": false
+  },
+  "7770": {
+   "name": "Återföring av nedskrivningar av byggnader och mark",
+   "core": false
+  },
+  "7780": {
+   "name": "Återföring av nedskrivningar av maskiner och inventarier",
+   "core": false
+  },
+  "7790": {
+   "name": "Återföring av nedskrivningar av vissa omsättningstillgångar",
+   "core": false
+  },
+  "7810": {
+   "name": "Avskrivningar på immateriella anläggningstillgångar",
+   "core": true
+  },
+  "7811": {
+   "name": "Avskrivningar på balanserade utgifter",
+   "core": false
+  },
+  "7812": {
+   "name": "Avskrivningar på koncessioner m.m.",
+   "core": false
+  },
+  "7813": {
+   "name": "Avskrivningar på patent",
+   "core": false
+  },
+  "7814": {
+   "name": "Avskrivningar på licenser",
+   "core": false
+  },
+  "7815": {
+   "name": "Avskrivningar på varumärken",
+   "core": false
+  },
+  "7816": {
+   "name": "Avskrivningar på hyresrätter",
+   "core": false
+  },
+  "7817": {
+   "name": "Avskrivningar på goodwill",
+   "core": false
+  },
+  "7819": {
+   "name": "Avskrivningar på övriga immateriella anläggningstillgångar",
+   "core": false
+  },
+  "7820": {
+   "name": "Avskrivningar på byggnader och markanläggningar",
+   "core": true
+  },
+  "7821": {
+   "name": "Avskrivningar på byggnader",
+   "core": false
+  },
+  "7824": {
+   "name": "Avskrivningar på markanläggningar",
+   "core": false
+  },
+  "7829": {
+   "name": "Avskrivningar på övriga byggnader",
+   "core": false
+  },
+  "7830": {
+   "name": "Avskrivningar på maskiner och inventarier",
+   "core": true
+  },
+  "7831": {
+   "name": "Avskrivningar på maskiner och andra tekniska anläggningar",
+   "core": false
+  },
+  "7832": {
+   "name": "Avskrivningar på inventarier och verktyg",
+   "core": false
+  },
+  "7833": {
+   "name": "Avskrivningar på installationer",
+   "core": false
+  },
+  "7834": {
+   "name": "Avskrivningar på bilar och andra transportmedel",
+   "core": false
+  },
+  "7835": {
+   "name": "Avskrivningar på datorer",
+   "core": false
+  },
+  "7836": {
+   "name": "Avskrivningar på leasade tillgångar",
+   "core": false
+  },
+  "7839": {
+   "name": "Avskrivningar på övriga maskiner och inventarier",
+   "core": false
+  },
+  "7840": {
+   "name": "Avskrivningar på förbättringsutgifter på annans fastighet",
+   "core": false
+  },
+  "7940": {
+   "name": "Orealiserade positiva/negativa värdeförändringar på säkringsinstrument",
+   "core": false
+  },
+  "7960": {
+   "name": "Valutakursförluster på fordringar och skulder av rörelsekaraktär",
+   "core": false
+  },
+  "7970": {
+   "name": "Förlust vid avyttring av immateriella och materiella anläggningstillgångar",
+   "core": true
+  },
+  "7971": {
+   "name": "Förlust vid avyttring av immateriella anläggningstillgångar",
+   "core": false
+  },
+  "7972": {
+   "name": "Förlust vid avyttring av byggnader och mark",
+   "core": false
+  },
+  "7973": {
+   "name": "Förlust vid avyttring av maskiner och inventarier",
+   "core": false
+  },
+  "7990": {
+   "name": "Övriga rörelsekostnader",
+   "core": true
+  },
+  "8010": {
+   "name": "Utdelning på andelar i koncernföretag",
+   "core": false
+  },
+  "8012": {
+   "name": "Utdelning på andelar i dotterföretag",
+   "core": false
+  },
+  "8016": {
+   "name": "Emissionsinsats, koncernföretag",
+   "core": false
+  },
+  "8020": {
+   "name": "Resultat vid försäljning av andelar i koncernföretag",
+   "core": false
+  },
+  "8022": {
+   "name": "Resultat vid försäljning av andelar i dotterföretag",
+   "core": false
+  },
+  "8030": {
+   "name": "Resultatandelar från handelsbolag (dotterföretag)",
+   "core": false
+  },
+  "8070": {
+   "name": "Nedskrivningar av andelar i och långfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "8072": {
+   "name": "Nedskrivningar av andelar i dotterföretag",
+   "core": false
+  },
+  "8076": {
+   "name": "Nedskrivningar av långfristiga fordringar hos moderföretag",
+   "core": false
+  },
+  "8077": {
+   "name": "Nedskrivningar av långfristiga fordringar hos dotterföretag",
+   "core": false
+  },
+  "8080": {
+   "name": "Återföringar av nedskrivningar av andelar i och långfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "8082": {
+   "name": "Återföringar av nedskrivningar av andelar i dotterföretag",
+   "core": false
+  },
+  "8086": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos moderföretag",
+   "core": false
+  },
+  "8087": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos dotterföretag",
+   "core": false
+  },
+  "8110": {
+   "name": "Utdelningar på andelar i intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8111": {
+   "name": "Utdelningar på andelar i intresseföretag",
+   "core": false
+  },
+  "8112": {
+   "name": "Utdelningar på andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "8113": {
+   "name": "Utdelningar på andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8116": {
+   "name": "Emissionsinsats, intresseföretag",
+   "core": false
+  },
+  "8117": {
+   "name": "Emissionsinsats, gemensamt styrda företag",
+   "core": false
+  },
+  "8118": {
+   "name": "Emissionsinsats, övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8120": {
+   "name": "Resultat vid försäljning av andelar i intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8121": {
+   "name": "Resultat vid försäljning av andelar i intresseföretag",
+   "core": false
+  },
+  "8122": {
+   "name": "Resultat vid försäljning av andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "8123": {
+   "name": "Resultat vid försäljning av andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8130": {
+   "name": "Resultatandelar från handelsbolag (intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i)",
+   "core": false
+  },
+  "8131": {
+   "name": "Resultatandelar från handelsbolag (intresseföretag)",
+   "core": false
+  },
+  "8132": {
+   "name": "Resultatandelar från handelsbolag (gemensamt styrda företag)",
+   "core": false
+  },
+  "8133": {
+   "name": "Resultatandelar från handelsbolag (övriga företag som det finns ett ägarintresse i)",
+   "core": false
+  },
+  "8170": {
+   "name": "Nedskrivningar av andelar i och långfristiga fordringar hos intresseföretag, gemensamt styrda företag och övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8171": {
+   "name": "Nedskrivningar av andelar i intresseföretag",
+   "core": false
+  },
+  "8172": {
+   "name": "Nedskrivningar av långfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "8173": {
+   "name": "Nedskrivningar av andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "8174": {
+   "name": "Nedskrivningar av långfristiga fordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "8176": {
+   "name": "Nedskrivningar av andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8177": {
+   "name": "Nedskrivningar av långfristiga fordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8180": {
+   "name": "Återföringar av nedskrivningar av andelar i och långfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "8181": {
+   "name": "Återföringar av nedskrivningar av andelar i intresseföretag",
+   "core": false
+  },
+  "8182": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos intresseföretag",
+   "core": false
+  },
+  "8183": {
+   "name": "Återföringar av nedskrivningar av andelar i gemensamt styrda företag",
+   "core": false
+  },
+  "8184": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos gemensamt styrda företag",
+   "core": false
+  },
+  "8186": {
+   "name": "Återföringar av nedskrivningar av andelar i övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8187": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos övriga företag som det finns ett ägarintresse i",
+   "core": false
+  },
+  "8210": {
+   "name": "Utdelningar på andelar i andra företag",
+   "core": true
+  },
+  "8212": {
+   "name": "Utdelningar, övriga företag",
+   "core": false
+  },
+  "8216": {
+   "name": "Insatsemissioner, övriga företag",
+   "core": false
+  },
+  "8220": {
+   "name": "Resultat vid försäljning av värdepapper i och långfristiga fordringar hos andra företag",
+   "core": true
+  },
+  "8221": {
+   "name": "Resultat vid försäljning av andelar i andra företag",
+   "core": false
+  },
+  "8222": {
+   "name": "Resultat vid försäljning av långfristiga fordringar hos andra företag",
+   "core": false
+  },
+  "8223": {
+   "name": "Resultat vid försäljning av derivat (långfristiga värdepappersinnehav)",
+   "core": false
+  },
+  "8230": {
+   "name": "Valutakursdifferenser på långfristiga fordringar",
+   "core": false
+  },
+  "8231": {
+   "name": "Valutakursvinster på långfristiga fordringar",
+   "core": false
+  },
+  "8236": {
+   "name": "Valutakursförluster på långfristiga fordringar",
+   "core": false
+  },
+  "8240": {
+   "name": "Resultatandelar från handelsbolag (andra företag)",
+   "core": false
+  },
+  "8250": {
+   "name": "Ränteintäkter från långfristiga fordringar hos och värdepapper i andra företag",
+   "core": true
+  },
+  "8251": {
+   "name": "Ränteintäkter från långfristiga fordringar",
+   "core": false
+  },
+  "8252": {
+   "name": "Ränteintäkter från övriga värdepapper",
+   "core": false
+  },
+  "8254": {
+   "name": "Skattefria ränteintäkter, långfristiga tillgångar",
+   "core": false
+  },
+  "8255": {
+   "name": "Avkastningsskatt kapitalplacering",
+   "core": false
+  },
+  "8260": {
+   "name": "Ränteintäkter från långfristiga fordringar hos koncernföretag",
+   "core": false
+  },
+  "8261": {
+   "name": "Ränteintäkter från långfristiga fordringar hos moderföretag",
+   "core": false
+  },
+  "8262": {
+   "name": "Ränteintäkter från långfristiga fordringar hos dotterföretag",
+   "core": false
+  },
+  "8263": {
+   "name": "Ränteintäkter från långfristiga fordringar hos andra koncernföretag",
+   "core": false
+  },
+  "8270": {
+   "name": "Nedskrivningar av innehav av andelar i och långfristiga fordringar hos andra företag",
+   "core": true
+  },
+  "8271": {
+   "name": "Nedskrivningar av andelar i andra företag",
+   "core": false
+  },
+  "8272": {
+   "name": "Nedskrivningar av långfristiga fordringar hos andra företag",
+   "core": false
+  },
+  "8273": {
+   "name": "Nedskrivningar av övriga värdepapper hos andra företag",
+   "core": false
+  },
+  "8280": {
+   "name": "Återföringar av nedskrivningar av andelar i och långfristiga fordringar hos andra företag",
+   "core": false
+  },
+  "8281": {
+   "name": "Återföringar av nedskrivningar av andelar i andra företag",
+   "core": false
+  },
+  "8282": {
+   "name": "Återföringar av nedskrivningar av långfristiga fordringar hos andra företag",
+   "core": false
+  },
+  "8283": {
+   "name": "Återföringar av nedskrivningar av övriga värdepapper i andra företag",
+   "core": false
+  },
+  "8290": {
+   "name": "Värdering till verkligt värde, anläggningstillgångar",
+   "core": false
+  },
+  "8291": {
+   "name": "Orealiserade värdeförändringar på anläggningstillgångar",
+   "core": false
+  },
+  "8295": {
+   "name": "Orealiserade värdeförändringar på derivatinstrument",
+   "core": false
+  },
+  "8310": {
+   "name": "Ränteintäkter från omsättningstillgångar",
+   "core": true
+  },
+  "8311": {
+   "name": "Ränteintäkter från bank",
+   "core": false
+  },
+  "8312": {
+   "name": "Ränteintäkter från kortfristiga placeringar",
+   "core": false
+  },
+  "8313": {
+   "name": "Ränteintäkter från kortfristiga fordringar",
+   "core": false
+  },
+  "8314": {
+   "name": "Skattefria ränteintäkter",
+   "core": true
+  },
+  "8317": {
+   "name": "Ränteintäkter för dold räntekompensation",
+   "core": false
+  },
+  "8319": {
+   "name": "Övriga ränteintäkter från omsättningstillgångar",
+   "core": false
+  },
+  "8320": {
+   "name": "Värdering till verkligt värde, omsättningstillgångar",
+   "core": false
+  },
+  "8321": {
+   "name": "Orealiserade värdeförändringar på omsättningstillgångar",
+   "core": false
+  },
+  "8325": {
+   "name": "Orealiserade värdeförändringar på derivatinstrument (oms.-tillg.)",
+   "core": false
+  },
+  "8330": {
+   "name": "Valutakursdifferenser på kortfristiga fordringar och placeringar",
+   "core": true
+  },
+  "8331": {
+   "name": "Valutakursvinster på kortfristiga fordringar och placeringar",
+   "core": false
+  },
+  "8336": {
+   "name": "Valutakursförluster på kortfristiga fordringar och placeringar",
+   "core": false
+  },
+  "8340": {
+   "name": "Utdelningar på kortfristiga placeringar",
+   "core": true
+  },
+  "8350": {
+   "name": "Resultat vid försäljning av kortfristiga placeringar",
+   "core": true
+  },
+  "8360": {
+   "name": "Övriga ränteintäkter från koncernföretag",
+   "core": false
+  },
+  "8361": {
+   "name": "Övriga ränteintäkter från moderföretag",
+   "core": false
+  },
+  "8362": {
+   "name": "Övriga ränteintäkter från dotterföretag",
+   "core": false
+  },
+  "8363": {
+   "name": "Övriga ränteintäkter från andra koncernföretag",
+   "core": false
+  },
+  "8370": {
+   "name": "Nedskrivningar av kortfristiga placeringar",
+   "core": false
+  },
+  "8380": {
+   "name": "Återföringar av nedskrivningar av kortfristiga placeringar",
+   "core": false
+  },
+  "8390": {
+   "name": "Övriga finansiella intäkter",
+   "core": true
+  },
+  "8400": {
+   "name": "Räntekostnader (gruppkonto)",
+   "core": false
+  },
+  "8410": {
+   "name": "Räntekostnader för långfristiga skulder",
+   "core": true
+  },
+  "8411": {
+   "name": "Räntekostnader för obligations-, förlags- och konvertibla lån",
+   "core": false
+  },
+  "8412": {
+   "name": "Räntedel i årets pensionskostnad",
+   "core": false
+  },
+  "8413": {
+   "name": "Räntekostnader för checkräkningskredit",
+   "core": false
+  },
+  "8415": {
+   "name": "Räntekostnader för andra skulder till kreditinstitut",
+   "core": false
+  },
+  "8417": {
+   "name": "Räntekostnader för dold räntekompensation m.m.",
+   "core": false
+  },
+  "8418": {
+   "name": "Avdragspost för räntesubventioner",
+   "core": false
+  },
+  "8419": {
+   "name": "Övriga räntekostnader för långfristiga skulder",
+   "core": false
+  },
+  "8420": {
+   "name": "Räntekostnader för kortfristiga skulder",
+   "core": true
+  },
+  "8421": {
+   "name": "Räntekostnader till kreditinstitut",
+   "core": false
+  },
+  "8422": {
+   "name": "Dröjsmålsräntor för leverantörsskulder",
+   "core": true
+  },
+  "8423": {
+   "name": "Räntekostnader för skatter och avgifter",
+   "core": true
+  },
+  "8424": {
+   "name": "Räntekostnader byggnadskreditiv",
+   "core": false
+  },
+  "8429": {
+   "name": "Övriga räntekostnader för kortfristiga skulder",
+   "core": false
+  },
+  "8430": {
+   "name": "Valutakursdifferenser på skulder",
+   "core": true
+  },
+  "8431": {
+   "name": "Valutakursvinster på skulder",
+   "core": false
+  },
+  "8436": {
+   "name": "Valutakursförluster på skulder",
+   "core": false
+  },
+  "8440": {
+   "name": "Erhållna räntebidrag",
+   "core": false
+  },
+  "8450": {
+   "name": "Orealiserade värdeförändringar på skulder",
+   "core": false
+  },
+  "8451": {
+   "name": "Orealiserade värdeförändringar på skulder",
+   "core": false
+  },
+  "8455": {
+   "name": "Orealiserade värdeförändringar på säkringsinstrument",
+   "core": false
+  },
+  "8460": {
+   "name": "Räntekostnader till koncernföretag",
+   "core": false
+  },
+  "8461": {
+   "name": "Räntekostnader till moderföretag",
+   "core": false
+  },
+  "8462": {
+   "name": "Räntekostnader till dotterföretag",
+   "core": false
+  },
+  "8463": {
+   "name": "Räntekostnader till andra koncernföretag",
+   "core": false
+  },
+  "8480": {
+   "name": "Aktiverade ränteutgifter",
+   "core": false
+  },
+  "8490": {
+   "name": "Övriga skuldrelaterade poster",
+   "core": false
+  },
+  "8491": {
+   "name": "Erhållet ackord på skulder till kreditinstitut m.m.",
+   "core": false
+  },
+  "8810": {
+   "name": "Förändring av periodiseringsfond",
+   "core": false
+  },
+  "8811": {
+   "name": "Avsättning till periodiseringsfond",
+   "core": true
+  },
+  "8819": {
+   "name": "Återföring från periodiseringsfond",
+   "core": true
+  },
+  "8820": {
+   "name": "Mottagna koncernbidrag",
+   "core": false
+  },
+  "8830": {
+   "name": "Lämnade koncernbidrag",
+   "core": false
+  },
+  "8840": {
+   "name": "Lämnade gottgörelser",
+   "core": false
+  },
+  "8850": {
+   "name": "Förändring av överavskrivningar",
+   "core": true
+  },
+  "8851": {
+   "name": "Förändring av överavskrivningar, immateriella anläggningstillgångar",
+   "core": false
+  },
+  "8852": {
+   "name": "Förändring av överavskrivningar, byggnader och markanläggningar",
+   "core": false
+  },
+  "8853": {
+   "name": "Förändring av överavskrivningar, maskiner och inventarier",
+   "core": false
+  },
+  "8860": {
+   "name": "Förändring av ersättningsfond",
+   "core": false
+  },
+  "8861": {
+   "name": "Avsättning till ersättningsfond för inventarier",
+   "core": false
+  },
+  "8862": {
+   "name": "Avsättning till ersättningsfond för byggnader och markanläggningar",
+   "core": false
+  },
+  "8864": {
+   "name": "Avsättning till ersättningsfond för djurlager i jordbruk och renskötsel",
+   "core": false
+  },
+  "8865": {
+   "name": "Ianspråktagande av ersättningsfond för avskrivningar",
+   "core": false
+  },
+  "8866": {
+   "name": "Ianspråktagande av ersättningsfond för annat än avskrivningar",
+   "core": false
+  },
+  "8869": {
+   "name": "Återföring från ersättningsfond",
+   "core": false
+  },
+  "8890": {
+   "name": "Övriga bokslutsdispositioner",
+   "core": false
+  },
+  "8892": {
+   "name": "Nedskrivningar av konsolideringskaraktär av anläggningstillgångar",
+   "core": false
+  },
+  "8896": {
+   "name": "Förändring av lagerreserv",
+   "core": false
+  },
+  "8899": {
+   "name": "Övriga bokslutsdispositioner",
+   "core": false
+  },
+  "8910": {
+   "name": "Skatt som belastar årets resultat",
+   "core": true
+  },
+  "8920": {
+   "name": "Skatt på grund av ändrad beskattning",
+   "core": false
+  },
+  "8930": {
+   "name": "Restituerad skatt",
+   "core": false
+  },
+  "8940": {
+   "name": "Uppskjuten skatt",
+   "core": false
+  },
+  "8980": {
+   "name": "Övriga skatter",
+   "core": false
+  },
+  "8990": {
+   "name": "Resultat",
+   "core": true
+  },
+  "8999": {
+   "name": "Årets resultat",
+   "core": true
+  }
+ }
+}

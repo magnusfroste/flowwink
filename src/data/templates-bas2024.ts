@@ -23,7 +23,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 125, credit_pct: 0 },
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 0, credit_pct: 25 },
     ],
   },
   {
@@ -35,8 +35,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 125, credit_pct: 0 },
-      { account_code: '3001', account_name: 'Försäljning varor 25% moms', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '3001', account_name: 'Försäljning inom Sverige, 25 % moms', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 0, credit_pct: 25 },
     ],
   },
   {
@@ -49,7 +49,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 112, credit_pct: 0 },
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2620', account_name: 'Utgående moms 12%', debit_pct: 0, credit_pct: 12 },
+      { account_code: '2620', account_name: 'Utgående moms, 12 %', debit_pct: 0, credit_pct: 12 },
     ],
   },
   {
@@ -62,7 +62,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 106, credit_pct: 0 },
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2630', account_name: 'Utgående moms 6%', debit_pct: 0, credit_pct: 6 },
+      { account_code: '2630', account_name: 'Utgående moms, 6 %', debit_pct: 0, credit_pct: 6 },
     ],
   },
   {
@@ -99,7 +99,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -112,7 +112,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
 
@@ -138,9 +138,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '6110', account_name: 'Kontorsmaterial', debit_pct: 100, credit_pct: 0 },
+      { account_code: '6110', account_name: 'Kontorsmateriel', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -151,9 +151,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '6210', account_name: 'Mobiltelefon', debit_pct: 100, credit_pct: 0 },
+      { account_code: '6210', account_name: 'Telekommunikation', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -165,7 +165,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '5010', account_name: 'Lokalhyra', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -176,9 +176,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5020', account_name: 'Elkostnad', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5020', account_name: 'El för belysning', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -189,9 +189,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7290', account_name: 'Övriga personalkostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7290', account_name: 'Förändring av semesterlöneskuld', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 12, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 112 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 112 },
     ],
   },
   {
@@ -204,7 +204,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '6540', account_name: 'IT-tjänster', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -216,7 +216,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '6570', account_name: 'Bankkostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -229,7 +229,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '5810', account_name: 'Biljetter', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -242,7 +242,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '6071', account_name: 'Representation, avdragsgill', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -253,9 +253,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5610', account_name: 'Drivmedel', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5610', account_name: 'Personbilskostnader', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -267,7 +267,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '6310', account_name: 'Företagsförsäkringar', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -280,7 +280,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '5910', account_name: 'Annonsering', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -304,9 +304,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7310', account_name: 'Utbildning', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7310', account_name: 'Kontanta extraersättningar', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
 
@@ -321,9 +321,9 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '7010', account_name: 'Löner till kollektivanställda', debit_pct: 100, credit_pct: 0 },
       { account_code: '2710', account_name: 'Personalskatt', debit_pct: 0, credit_pct: 30 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 70 },
-      { account_code: '7210', account_name: 'Socialavgifter enligt lag', debit_pct: 31.42, credit_pct: 0 },
-      { account_code: '2730', account_name: 'Arbetsgivaravgifter', debit_pct: 0, credit_pct: 31.42 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 70 },
+      { account_code: '7210', account_name: 'Löner till tjänstemän', debit_pct: 31.42, credit_pct: 0 },
+      { account_code: '2730', account_name: 'Lagstadgade sociala avgifter och särskild löneskatt', debit_pct: 0, credit_pct: 31.42 },
     ],
   },
   {
@@ -335,8 +335,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2710', account_name: 'Personalskatt', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2730', account_name: 'Arbetsgivaravgifter', debit_pct: 31.42, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 131.42 },
+      { account_code: '2730', account_name: 'Lagstadgade sociala avgifter och särskild löneskatt', debit_pct: 31.42, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 131.42 },
     ],
   },
 
@@ -349,8 +349,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter (skattekonto)', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -364,8 +364,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '2650', account_name: 'Momsredovisning', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2650', account_name: 'Redovisningskonto för moms', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -376,8 +376,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter (skattekonto)', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
 
@@ -403,8 +403,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7510', account_name: 'Avskrivning inventarier', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1229', account_name: 'Ackumulerade avskrivningar inventarier', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7510', account_name: 'Arbetsgivaravgifter 31,42 %', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1229', account_name: 'Ackumulerade avskrivningar på inventarier och verktyg', debit_pct: 0, credit_pct: 100 },
     ],
   },
 
@@ -417,7 +417,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1790', account_name: 'Upplupna intäkter och förutbetalda kostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1790', account_name: 'Övriga förutbetalda kostnader och upplupna intäkter', debit_pct: 100, credit_pct: 0 },
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -429,8 +429,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1710', account_name: 'Förutbetalda kostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1710', account_name: 'Förutbetalda hyreskostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -441,8 +441,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '6990', account_name: 'Övriga externa tjänster', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2990', account_name: 'Upplupna kostnader', debit_pct: 0, credit_pct: 100 },
+      { account_code: '6990', account_name: 'Övriga externa kostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2990', account_name: 'Övriga upplupna kostnader och förutbetalda intäkter', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -453,8 +453,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2010', account_name: 'Aktiekapital', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2010', account_name: 'Eget kapital', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -478,7 +478,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 25, credit_pct: 0 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 25, credit_pct: 0 },
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 0, credit_pct: 125 },
     ],
   },
@@ -490,7 +490,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7210', account_name: 'Socialavgifter enligt lag', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7210', account_name: 'Löner till tjänstemän', debit_pct: 100, credit_pct: 0 },
       { account_code: '2731', account_name: 'Avräkning lagstadgade sociala avgifter', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -503,7 +503,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2731', account_name: 'Avräkning lagstadgade sociala avgifter', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter (skattekonto)', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -514,10 +514,10 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7080', account_name: 'Semesterlöner', debit_pct: 100, credit_pct: 0 },
-      { account_code: '7210', account_name: 'Socialavgifter enligt lag', debit_pct: 31.42, credit_pct: 0 },
-      { account_code: '2890', account_name: 'Upplupna semesterlöner', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2891', account_name: 'Upplupna sociala avgifter', debit_pct: 0, credit_pct: 31.42 },
+      { account_code: '7080', account_name: 'Löner till kollektivanställda för ej arbetad tid', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7210', account_name: 'Löner till tjänstemän', debit_pct: 31.42, credit_pct: 0 },
+      { account_code: '2890', account_name: 'Övriga kortfristiga skulder', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2891', account_name: 'Skulder under indrivning', debit_pct: 0, credit_pct: 31.42 },
     ],
   },
   {
@@ -528,7 +528,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7220', account_name: 'Avgifter för tjänstepension', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7220', account_name: 'Löner till företagsledare', debit_pct: 100, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -541,7 +541,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '7399', account_name: 'Övriga personalkostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -552,9 +552,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '6900', account_name: 'Övriga externa kostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '6900', account_name: 'Övriga externa kostnader (gruppkonto)', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -565,8 +565,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7350', account_name: 'Personalfester', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7350', account_name: 'Ersättningar för föreskrivna arbetskläder', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -577,9 +577,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7082', account_name: 'Styrelsearvoden', debit_pct: 100, credit_pct: 0 },
-      { account_code: '7210', account_name: 'Socialavgifter enligt lag', debit_pct: 31.42, credit_pct: 0 },
-      { account_code: '2920', account_name: 'Upplupna löner', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7082', account_name: 'Semesterlöner till kollektivanställda', debit_pct: 100, credit_pct: 0 },
+      { account_code: '7210', account_name: 'Löner till tjänstemän', debit_pct: 31.42, credit_pct: 0 },
+      { account_code: '2920', account_name: 'Upplupna semesterlöner', debit_pct: 0, credit_pct: 100 },
       { account_code: '2731', account_name: 'Avräkning lagstadgade sociala avgifter', debit_pct: 0, credit_pct: 31.42 },
     ],
   },
@@ -592,8 +592,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '4020', account_name: 'Inköp varor inom EU', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2615', account_name: 'Beräknad utgående moms på varuförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2645', account_name: 'Beräknad ingående moms på förvärv från utlandet', debit_pct: 25, credit_pct: 0 },
+      { account_code: '2614', account_name: 'Utgående moms omvänd skattskyldighet, 25 %', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -606,8 +606,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '6550', account_name: 'Konsultarvoden', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2645', account_name: 'Beräknad ingående moms på förvärv från utlandet', debit_pct: 25, credit_pct: 0 },
+      { account_code: '2614', account_name: 'Utgående moms omvänd skattskyldighet, 25 %', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -620,8 +620,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '5420', account_name: 'Programvaror', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2645', account_name: 'Beräknad ingående moms på förvärv från utlandet', debit_pct: 25, credit_pct: 0 },
+      { account_code: '2614', account_name: 'Utgående moms omvänd skattskyldighet, 25 %', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -634,8 +634,8 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '5910', account_name: 'Annonsering', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2645', account_name: 'Beräknad ingående moms på förvärv från utlandet', debit_pct: 25, credit_pct: 0 },
+      { account_code: '2614', account_name: 'Utgående moms omvänd skattskyldighet, 25 %', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -647,7 +647,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '4000', account_name: 'Inköp av varor', debit_pct: 100, credit_pct: 0 },
+      { account_code: '4000', account_name: 'Inköp av varor från Sverige', debit_pct: 100, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -685,7 +685,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 125, credit_pct: 0 },
       { account_code: '3050', account_name: 'Provisionsintäkter', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 0, credit_pct: 25 },
     ],
   },
   {
@@ -697,7 +697,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 100, credit_pct: 0 },
-      { account_code: '8310', account_name: 'Ränteintäkter', debit_pct: 0, credit_pct: 100 },
+      { account_code: '8310', account_name: 'Ränteintäkter från omsättningstillgångar', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -714,9 +714,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 125, credit_pct: 0 },
-      { account_code: '3001', account_name: 'Försäljning varor 25% moms', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 125, credit_pct: 0 },
+      { account_code: '3001', account_name: 'Försäljning inom Sverige, 25 % moms', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 0, credit_pct: 25 },
     ],
   },
   {
@@ -727,8 +727,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '3600', account_name: 'Erhållna bidrag', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '3600', account_name: 'Rörelsens sidointäkter (gruppkonto)', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -751,7 +751,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5020', account_name: 'Elkostnad', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5020', account_name: 'El för belysning', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
     ],
@@ -777,7 +777,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5500', account_name: 'Reparation och underhåll', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5500', account_name: 'Reparation och underhåll (gruppkonto)', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
     ],
@@ -816,9 +816,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5610', account_name: 'Drivmedel', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5610', account_name: 'Personbilskostnader', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -829,7 +829,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5600', account_name: 'Bilkostnader', debit_pct: 112.5, credit_pct: 0 },
+      { account_code: '5600', account_name: 'Kostnader för transportmedel (gruppkonto)', debit_pct: 112.5, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 12.5, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
     ],
@@ -842,9 +842,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '5600', account_name: 'Bilkostnader', debit_pct: 100, credit_pct: 0 },
+      { account_code: '5600', account_name: 'Kostnader för transportmedel (gruppkonto)', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -855,9 +855,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '6230', account_name: 'Porto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '6230', account_name: 'Datakommunikation', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -893,7 +893,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '4500', account_name: 'Underkonsulter', debit_pct: 100, credit_pct: 0 },
+      { account_code: '4500', account_name: 'Övriga momspliktiga inköp', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
     ],
@@ -921,7 +921,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '5410', account_name: 'Förbrukningsinventarier', debit_pct: 100, credit_pct: 0 },
       { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 125 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 125 },
     ],
   },
   {
@@ -932,8 +932,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '2310', account_name: 'Banklån', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2310', account_name: 'Obligations- och förlagslån', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -944,8 +944,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2310', account_name: 'Banklån', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2310', account_name: 'Obligations- och förlagslån', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -957,7 +957,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2091', account_name: 'Balanserad vinst eller förlust', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -968,8 +968,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '8330', account_name: 'Valutakursvinster på fordringar', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '8330', account_name: 'Valutakursdifferenser på kortfristiga fordringar och placeringar', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -980,8 +980,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8420', account_name: 'Valutakursförluster', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '8420', account_name: 'Räntekostnader för kortfristiga skulder', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -992,7 +992,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8422', account_name: 'Dröjsmålsräntor', debit_pct: 100, credit_pct: 0 },
+      { account_code: '8422', account_name: 'Dröjsmålsräntor för leverantörsskulder', debit_pct: 100, credit_pct: 0 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1004,8 +1004,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8910', account_name: 'Skatt på årets resultat', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter', debit_pct: 0, credit_pct: 100 },
+      { account_code: '8910', account_name: 'Skatt som belastar årets resultat', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1630', account_name: 'Avräkning för skatter och avgifter (skattekonto)', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1017,7 +1017,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '8811', account_name: 'Avsättning till periodiseringsfond', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2110', account_name: 'Periodiseringsfond', debit_pct: 0, credit_pct: 100 },
+      { account_code: '2110', account_name: 'Periodiseringsfonder', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1028,7 +1028,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '2110', account_name: 'Periodiseringsfond', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2110', account_name: 'Periodiseringsfonder', debit_pct: 100, credit_pct: 0 },
       { account_code: '8819', account_name: 'Återföring från periodiseringsfond', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1040,7 +1040,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8830', account_name: 'Förändring av överavskrivningar', debit_pct: 100, credit_pct: 0 },
+      { account_code: '8830', account_name: 'Lämnade koncernbidrag', debit_pct: 100, credit_pct: 0 },
       { account_code: '2150', account_name: 'Ackumulerade överavskrivningar', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1052,7 +1052,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1410', account_name: 'Råvaror och förnödenheter', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1410', account_name: 'Lager av råvaror', debit_pct: 100, credit_pct: 0 },
       { account_code: '4990', account_name: 'Förändring av lager', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1065,7 +1065,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '4990', account_name: 'Förändring av lager', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1410', account_name: 'Råvaror och förnödenheter', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1410', account_name: 'Lager av råvaror', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1076,8 +1076,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7810', account_name: 'Avskrivning byggnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1119', account_name: 'Ack avskrivning byggnader', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7810', account_name: 'Avskrivningar på immateriella anläggningstillgångar', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1119', account_name: 'Ackumulerade avskrivningar på byggnader', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1088,8 +1088,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7832', account_name: 'Avskrivning bilar', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1159', account_name: 'Ack avskrivning fordon', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7832', account_name: 'Avskrivningar på inventarier och verktyg', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1159', account_name: 'Ackumulerade avskrivningar på markanläggningar', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1100,8 +1100,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '7830', account_name: 'Avskrivning immateriella tillgångar', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1088', account_name: 'Ack avskrivning immateriella tillgångar', debit_pct: 0, credit_pct: 100 },
+      { account_code: '7830', account_name: 'Avskrivningar på maskiner och inventarier', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1088', account_name: 'Förskott för immateriella anläggningstillgångar', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1112,8 +1112,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '2010', account_name: 'Aktiekapital', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '2010', account_name: 'Eget kapital', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1124,7 +1124,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
       { account_code: '2091', account_name: 'Balanserad vinst eller förlust', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1136,8 +1136,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8810', account_name: 'Koncernbidrag', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '8810', account_name: 'Förändring av periodiseringsfond', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
 
@@ -1150,9 +1150,9 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1580', account_name: 'Fordran moms', debit_pct: 125, credit_pct: 0 },
+      { account_code: '1580', account_name: 'Fordringar för kontokort och kuponger', debit_pct: 125, credit_pct: 0 },
       { account_code: '3010', account_name: 'Försäljning av tjänster', debit_pct: 0, credit_pct: 100 },
-      { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2610', account_name: 'Utgående moms, 25 %', debit_pct: 0, credit_pct: 25 },
     ],
   },
   {
@@ -1164,7 +1164,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '7331', account_name: 'Skattefria bilersättningar', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1176,7 +1176,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '7321', account_name: 'Skattefria traktamenten, Sverige', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1187,8 +1187,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
-      { account_code: '8310', account_name: 'Ränteintäkter', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '8310', account_name: 'Ränteintäkter från omsättningstillgångar', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1199,8 +1199,8 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '8410', account_name: 'Räntekostnader', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '8410', account_name: 'Räntekostnader för långfristiga skulder', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1212,7 +1212,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2013', account_name: 'Övriga egna uttag', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
@@ -1223,7 +1223,7 @@ export const BAS_2024_TEMPLATES = [
     is_system: true,
     locale: 'se-bas2024',
     template_lines: [
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 100, credit_pct: 0 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 100, credit_pct: 0 },
       { account_code: '2018', account_name: 'Övriga egna insättningar', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -1248,7 +1248,7 @@ export const BAS_2024_TEMPLATES = [
     locale: 'se-bas2024',
     template_lines: [
       { account_code: '2898', account_name: 'Outtagen vinstutdelning', debit_pct: 100, credit_pct: 0 },
-      { account_code: '1930', account_name: 'Checkkonto/Företagskonto', debit_pct: 0, credit_pct: 100 },
+      { account_code: '1930', account_name: 'Företagskonto/checkkonto/affärskonto', debit_pct: 0, credit_pct: 100 },
     ],
   },
   {
