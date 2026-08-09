@@ -21,6 +21,7 @@ import {
 import { StarterTemplate } from '@/data/templates';
 import { ContentBlock, PageMeta } from '@/types/cms';
 import { toast } from 'sonner';
+import type { IdentityReport } from '../../supabase/functions/_shared/site-identity';
 
 interface ExportResult {
   template: StarterTemplate;
@@ -31,6 +32,9 @@ interface ExportResult {
     errors: string[];
     warnings: string[];
   };
+  /** What was removed because it identifies THIS instance, and what still looks
+   *  risky in what stayed. See supabase/functions/_shared/site-identity.ts. */
+  identity?: IdentityReport;
 }
 
 interface ZipExportState {
@@ -156,6 +160,7 @@ export function useTemplateExport() {
 
       const result: ExportResult = {
         template,
+        identity: (template as StarterTemplate & { __identity?: IdentityReport }).__identity,
         code,
         json,
         validation,

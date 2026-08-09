@@ -10,6 +10,11 @@ import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } fro
 import { ModulesSettings } from '@/hooks/useModules';
 import { StarterTemplate, TemplatePage, TemplateBlogPost, TemplateProduct } from '@/data/templates';
 import { TemplateKbCategory } from '@/data/template-kb-articles';
+// The identity rules live in supabase/functions/_shared because the export
+// exists in TWO places — this browser path and the agent's edge handler — and a
+// rule with two copies is a rule that drifts. The module is dependency-free
+// precisely so both runtimes can import it.
+import { applyIdentityPolicy, type IdentityReport } from '../../supabase/functions/_shared/site-identity';
 
 export interface SiteExportData {
   pages: Array<{
@@ -57,8 +62,16 @@ export interface TemplateMetadata {
  */
 export function exportSiteAsTemplate(
   siteData: SiteExportData,
-  metadata: TemplateMetadata
-): StarterTemplate {
+  metadata: TemplateMetadata,
+  /**
+   * Remove the fields that identify THIS instance (organisation name, agent
+   * prompts, SEO title, contact address, endpoints). Default ON: a template is
+   * a design that travels, and the origin's identity is not design. Found live
+   * — a Restagård export carried the demo's welcome message, which contained
+   * demo credentials in plain text.
+   */
+  stripIdentity = true,
+): StarterTemplate & { __identity?: IdentityReport } {
   // Convert pages to TemplatePage format
   const templatePages: TemplatePage[] = siteData.pages
     .filter(page => page.status === 'published')
@@ -120,7 +133,14 @@ export function exportSiteAsTemplate(
     }
   }
 
-  return template;
+  const policy = applyIdentityPolicy(template as unknown as Record<string, unknown>, stripIdentity);
+  // The report rides along on a non-enumerable key so it reaches the UI without
+  // ending up in the downloaded JSON — a template body must stay a template body.
+  const cleaned = policy.template as unknown as StarterTemplate;
+  Object.defineProperty(cleaned, '__identity', {
+    value: policy.identity, enumerable: false, configurable: true,
+  });
+  return cleaned;
 }
 
 /**

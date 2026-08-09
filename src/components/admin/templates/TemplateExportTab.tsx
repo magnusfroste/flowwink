@@ -27,6 +27,7 @@ import {
   Rocket,
   Building2,
   Shield,
+  ShieldCheck,
   Layers,
   HelpCircle,
   Sparkles,
@@ -279,6 +280,61 @@ export function TemplateExportTab() {
                     </div>
                   )}
                 </div>
+
+                {/* Identity — what does NOT travel with the template */}
+                {exportResult.identity && (exportResult.identity.stripped.length > 0
+                  || exportResult.identity.possible_secrets.length > 0
+                  || exportResult.identity.broken_nav_targets.length > 0) && (
+                  <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Instance identity</span>
+                    </div>
+
+                    {exportResult.identity.stripped.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          Removed {exportResult.identity.stripped.length} field(s) that identify this
+                          instance — the installed site supplies its own.
+                        </p>
+                        <ul className="space-y-1">
+                          {exportResult.identity.stripped.map((f) => (
+                            <li key={f.path} className="text-xs text-muted-foreground">
+                              <code className="text-foreground">{f.path}</code> — {f.why}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {exportResult.identity.possible_secrets.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-destructive">
+                          Still in the body, and it looks sensitive — check before sharing this template:
+                        </p>
+                        {exportResult.identity.possible_secrets.map((h, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-destructive">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <span><code>{h.path}</code> — {h.kind}: {h.redacted}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {exportResult.identity.broken_nav_targets.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-yellow-600">
+                          Navigation points at pages this template does not contain:
+                        </p>
+                        {exportResult.identity.broken_nav_targets.map((n) => (
+                          <div key={n.url} className="text-xs text-yellow-600">
+                            {n.label} → <code>{n.url}</code>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-2 text-center">

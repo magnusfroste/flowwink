@@ -32,7 +32,7 @@ type TemplatesOutput = z.infer<typeof templatesOutputSchema>;
  * description is the tier an agent reads BEFORE choosing the call.
  */
 const EXPORT_SITE_TEMPLATE_DESCRIPTION =
-  'Read the live site back as a reusable StarterTemplate — published pages with their blocks, blog posts, branding/header/footer/SEO/cookie settings, homepage slug and enabled modules — and optionally SAVE it: pass save_as=<name> to store it in site_templates (idempotent on the name), so install_template reproduces this site on another instance. Without save_as nothing is written. include=[pages,blog,kb,products] controls what is carried; whatever exists on the site but is not included is listed in export_report.skipped with the flag that would include it, so an omitted section never reads as an empty one. export_report.assets counts the ABSOLUTE image URLs — those are referenced, not copied, and keep resolving to this instance after the template is installed elsewhere. Use when: saving a site an agent or admin just built, cloning a site to another instance, backing up the site structure, or inspecting what a template of this site would contain. NOT for: installing a template (install_template), authoring a template body by hand (manage_site_template), or exporting media files.';
+  'Read the live site back as a reusable StarterTemplate — published pages with their blocks, blog posts, branding/header/footer/SEO/cookie settings, homepage slug and enabled modules — and optionally SAVE it: pass save_as=<name> to store it in site_templates (idempotent on the name), so install_template reproduces this site on another instance. Without save_as nothing is written. include=[pages,blog,kb,products] controls what is carried; whatever exists on the site but is not included is listed in export_report.skipped with the flag that would include it, so an omitted section never reads as an empty one. By default it STRIPS the fields that identify the origin instance (organisation name, agent prompts, SEO title, contact details, endpoints) — pass strip_identity=false to keep them; identity.stripped names every removal and identity.possible_secrets scans what remains for credential-shaped strings. export_report.assets counts the ABSOLUTE image URLs — those are referenced, not copied, and keep resolving to this instance after the template is installed elsewhere. Use when: saving a site an agent or admin just built, cloning a site to another instance, backing up the site structure, or inspecting what a template of this site would contain. NOT for: installing a template (install_template), authoring a template body by hand (manage_site_template), or exporting media files.';
 
 const TEMPLATE_SKILLS: SkillSeed[] = [
   {
@@ -182,6 +182,10 @@ MECHANICS: \`create\` is idempotent on name — an existing name returns \`alrea
               type: 'string',
               description: 'Store the export as a reusable template under this name, instead of only returning the JSON. Idempotent: an existing name is UPDATED, never duplicated. Omit for a read-only preview. This is what closes the loop — install_template then reproduces the site from this name on any instance.',
             },
+            strip_identity: {
+              type: 'boolean',
+              description: "Remove the fields that identify the ORIGIN instance — organisation name, brand tagline, logo, agent system prompt and welcome message, SEO title, contact email/phone/address, and any configured endpoints. DEFAULT TRUE, because a template is a design that travels and none of those are design. Pass false only when cloning your own site to a second instance of the same organisation. identity.stripped lists every removal with its reason; identity.possible_secrets scans what REMAINS for credential-shaped strings either way.",
+            },
             include: {
               type: 'array',
               items: { type: 'string', enum: ['pages', 'blog', 'kb', 'products'] },
@@ -226,6 +230,29 @@ content, and an unpublished draft has not been approved for anyone to see.
 in the template, with the flag that would include it. Read it before you save: a
 template that quietly omits 34 products looks identical to one from a site that
 has none.
+
+## The origin instance's identity
+Settings are not design: they say who this is. \`strip_identity\` (default TRUE)
+removes organisation name, brand tagline, logo, the agent's system prompt and
+welcome message, SEO title and template, contact email/phone/address, and any
+configured endpoints. \`identity.stripped\` names every removal with its reason.
+
+This is not cosmetic. A real export carried
+\`chatSettings.welcomeMessage: "…sign in (demo@flowwink.com / demo1234)…"\` —
+installed on a customer, their chat widget would have greeted visitors with
+somebody else's login.
+
+Pass \`strip_identity: false\` only when cloning your own site to a second
+instance of the SAME organisation.
+
+\`identity.possible_secrets\` runs either way, over whatever survived, and flags
+credential-shaped strings with the value redacted. The named list of identity
+fields will always be incomplete — settings gain fields — so the scan is the
+half that keeps working. It reports and never deletes: a false positive that
+removed real content would be worse than the leak.
+
+\`identity.broken_nav_targets\` lists navigation entries pointing at pages the
+template does not contain.
 
 ## The images
 \`export_report.assets\` counts the ABSOLUTE image URLs in the body and groups them

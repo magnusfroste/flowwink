@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
+import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
 import {
   type AuditContext,
@@ -2122,6 +2123,11 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   const include: string[] = Array.isArray(a.include)
     ? a.include.map((x: unknown) => String(x).toLowerCase())
     : ['pages', 'blog'];
+  // Default ON. A template is a design that travels; the origin instance's name,
+  // contact details and agent prompts are not design. The failure mode of the
+  // other default is a customer's chat widget greeting visitors with somebody
+  // else's login — so keeping identity is the choice that must be made out loud.
+  const stripIdentity = a.strip_identity !== false;
 
   const meta = {
     id: String(a.id || a.template_id || saveAs || 'site-export').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -2261,12 +2267,16 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
   }
   const assetCount = Object.values(assetHosts).reduce((a, b) => a + b, 0);
 
+  // ── Identity: what belongs to THIS instance must not travel ───────────────
+  const policy = applyIdentityPolicy(template, stripIdentity);
+  const body = policy.template;
+
   // ── Validation: the SAME function the write enforces ──────────────────────
   // A preview that validates differently from the refusal is worse than no
   // preview at all.
   let validation: any;
   const { data: report, error: reportError } = await supabase
-    .rpc('_site_template_structure_report', { p_template: template });
+    .rpc('_site_template_structure_report', { p_template: body });
   if (reportError || !report) {
     validation = {
       valid: false,
@@ -2294,7 +2304,7 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
       const before = existing.template_json as Record<string, unknown>;
       for (const [key, label] of [['products', 'products'], ['kbCategories', 'KB categories'], ['blogPosts', 'blog posts']] as const) {
         const had = Array.isArray(before[key]) ? (before[key] as unknown[]).length : 0;
-        const now = Array.isArray((template as any)[key]) ? ((template as any)[key] as unknown[]).length : 0;
+        const now = Array.isArray((body as any)[key]) ? ((body as any)[key] as unknown[]).length : 0;
         if (had > 0 && now === 0) removed.push({ section: label, was: had });
       }
     }
@@ -2306,13 +2316,13 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
       p_category: meta.category,
       p_icon: meta.icon,
       p_tagline: meta.tagline,
-      p_template_json: template,
+      p_template_json: body,
     });
     if (writeError) {
       return {
         success: false,
         error: `Export succeeded but the save was refused: ${writeError.message}`,
-        template, validation,
+        template: body, validation, identity: policy.identity,
         hint: 'A refused save means the structure report found errors — fix those and call again with the same save_as.',
       };
     }
@@ -2330,8 +2340,9 @@ async function tplExportSite(supabase: any, args: Record<string, unknown>): Prom
 
   return {
     success: true,
-    template,
+    template: body,
     validation,
+    identity: policy.identity,
     saved,
     stats: {
       pages: templatePages.length,
