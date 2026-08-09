@@ -104,6 +104,40 @@ describe('set is guarded, because a bad role fails mid-invoice', () => {
   });
 });
 
+describe('a remapped role leaves a balance behind, and set hands back the entry that clears it', () => {
+  it('computes what is stranded on the old account', () => {
+    // Saying "already-booked entries are unchanged" is honest and leaves the
+    // customer with a P&L split across two accounts. Dooer solved this when
+    // LiteIT moved from Bokio: on the closing date it booked "Change to Dooer
+    // kontoplan", moving 4 000 kr from 3011 to 3001 — dated, balanced,
+    // self-describing. The move became auditable instead of invisible.
+    expect(migration).toMatch(/SUM\(l\.debit_cents - l\.credit_cents\)/);
+    expect(migration).toMatch(/'stranded_balance_cents', v_balance_cents/);
+    expect(migration).toMatch(/Change to Dooer kontoplan/);
+  });
+
+  it('the suggested lines balance, whichever side of the sheet the account is on', () => {
+    // Sign follows the balance so an asset and a revenue account both work.
+    expect(migration).toMatch(/CASE WHEN v_balance_cents < 0 THEN -v_balance_cents ELSE 0 END/);
+    expect(migration).toMatch(/CASE WHEN v_balance_cents > 0 THEN v_balance_cents ELSE 0 END/);
+  });
+
+  it('it PROPOSES and never books — manage_journal_entry owns the approval rail', () => {
+    const setBlock = migration.slice(migration.indexOf("-- ── set"), migration.indexOf('-- ── propose'));
+    expect(setBlock).not.toMatch(/INSERT INTO public\.journal_entries/);
+    expect(migration).toMatch(/a role change may not quietly write a verification/);
+  });
+
+  it('and says plainly what happens if the entry is skipped', () => {
+    expect(migration).toMatch(/the figure lives on two accounts at once/);
+    expect(migration).toMatch(/neither figure is the truth/);
+  });
+
+  it('nothing stranded is stated too, rather than left as silence', () => {
+    expect(migration).toMatch(/Nothing is stranded: the old account has no balance/);
+  });
+});
+
 describe('it reaches the gateway and says the rule at the choice tier', () => {
   it('service-role escape — auth.uid() is NULL under MCP', () => {
     expect(migration).toMatch(/auth\.role\(\) = 'service_role' OR public\.has_role\(auth\.uid\(\), 'admin'\)/);

@@ -55,6 +55,8 @@ DECLARE
   v_evidence text;
   v_prefix text;
   v_n int;
+  v_transfer jsonb;
+  v_balance_cents bigint;
 BEGIN
   IF NOT (auth.role() = 'service_role' OR public.has_role(auth.uid(), 'admin')) THEN
     RAISE EXCEPTION 'Only admins can manage account roles';
@@ -109,12 +111,56 @@ BEGIN
           description = EXCLUDED.description,
           updated_at = now();
 
-    RETURN jsonb_build_object(
+    -- ── The half that telling the truth alone does not solve ───────────────
+    -- Saying "already-booked entries are unchanged" is honest and leaves the
+    -- customer with a P&L split across two accounts and no explanation. Dooer
+    -- solved this properly when LiteIT moved from Bokio: on the closing date it
+    -- booked "Change to Dooer kontoplan", moving 4 000 kr from 3011 to 3001 and
+    -- 764,40 from 6230 to 6200 — dated, balanced, self-describing. The move
+    -- became auditable instead of invisible.
+    --
+    -- So compute what is stranded and hand back the entry that would clear it.
+    -- We do NOT book it: manage_journal_entry owns booking, with its staging and
+    -- approval rail, and a role change must not quietly write a verification.
+    v_transfer := NULL;
+    IF v_current IS DISTINCT FROM btrim(p_account_code) AND v_current IS NOT NULL THEN
+      SELECT COALESCE(SUM(l.debit_cents - l.credit_cents), 0) INTO v_balance_cents
+        FROM public.journal_entry_lines l
+        JOIN public.journal_entries e ON e.id = l.journal_entry_id
+       WHERE l.account_code = v_current
+         AND COALESCE(e.status, 'posted') <> 'void';
+
+      IF v_balance_cents <> 0 THEN
+        SELECT account_name INTO v_current_name FROM public.chart_of_accounts
+         WHERE locale = v_locale AND account_code = v_current;
+        v_transfer := jsonb_build_object(
+          'description', format('Kontoplansbyte: %s flyttas från %s till %s', p_role, v_current, btrim(p_account_code)),
+          'entry_date', to_char(current_date, 'YYYY-MM-DD'),
+          'lines', jsonb_build_array(
+            -- Clear the old account, put the same amount on the new one. Sign
+            -- follows the balance so this works for both sides of the sheet.
+            jsonb_build_object('account_code', v_current, 'account_name', v_current_name,
+              'debit_cents', CASE WHEN v_balance_cents < 0 THEN -v_balance_cents ELSE 0 END,
+              'credit_cents', CASE WHEN v_balance_cents > 0 THEN v_balance_cents ELSE 0 END),
+            jsonb_build_object('account_code', btrim(p_account_code), 'account_name', v_candidate_name,
+              'debit_cents', CASE WHEN v_balance_cents > 0 THEN v_balance_cents ELSE 0 END,
+              'credit_cents', CASE WHEN v_balance_cents < 0 THEN -v_balance_cents ELSE 0 END)),
+          'stranded_balance_cents', v_balance_cents,
+          'why', format('%s has a balance of %s on it. Without this entry the same thing is reported on two accounts and neither figure is the truth. Book it with manage_journal_entry — it is NOT booked here, because a role change may not quietly write a verification, and manage_journal_entry owns the staging and approval rail.',
+            v_current, to_char(v_balance_cents / 100.0, 'FM999999990.00')));
+      END IF;
+    END IF;
+
+    RETURN jsonb_strip_nulls(jsonb_build_object(
       'set', true, 'locale', v_locale, 'role', p_role,
       'from', v_current, 'to', btrim(p_account_code), 'account_name', v_candidate_name,
+      'suggested_transfer', v_transfer,
       'note', CASE WHEN v_current IS DISTINCT FROM btrim(p_account_code)
-        THEN format('Every future posting for %s now lands on %s instead of %s. Entries already booked are unchanged — they reference the account code they were written with.', p_role, btrim(p_account_code), COALESCE(v_current, '(unset)'))
-        ELSE 'Unchanged — the role already pointed here.' END);
+        THEN format('Every future posting for %s now lands on %s instead of %s. Entries already booked are unchanged — they reference the account code they were written with.%s',
+          p_role, btrim(p_account_code), COALESCE(v_current, '(unset)'),
+          CASE WHEN v_transfer IS NULL THEN ' Nothing is stranded: the old account has no balance.'
+               ELSE ' The old account still carries a balance — see suggested_transfer, and book it, or the figure lives on two accounts at once.' END)
+        ELSE 'Unchanged — the role already pointed here.' END));
   END IF;
 
   -- ── propose: match the company's own accounts against the roles ─────────

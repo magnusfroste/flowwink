@@ -249,10 +249,22 @@ manage_chart_of_accounts BEFORE pointing a role at them; \`set\` refuses an
 account that does not exist, on purpose, because the alternative is a posting
 failure mid-invoice.
 
-## What set does and does not touch
+## What set does, and the entry it hands back
 It changes where FUTURE postings land. Entries already booked keep the account
-code they were written with — bookkeeping is not retroactively rewritten, and
-the response says so.`,
+code they were written with — bookkeeping is not retroactively rewritten.
+
+That alone is honest and leaves the customer with the same figure reported on two
+accounts. So when the old account still carries a balance, the response includes
+\`suggested_transfer\`: a balanced, dated, self-describing entry that moves it.
+BOOK IT with manage_journal_entry — it is deliberately not booked here, because a
+role change may not quietly write a verification and manage_journal_entry owns
+the staging and approval rail.
+
+This is what a real system does. When LiteIT moved from Bokio to Dooer, Dooer
+booked "Change to Dooer kontoplan" on the closing date, moving 4 000 kr from 3011
+to 3001 and 764,40 from 6230 to 6200. The migration became auditable instead of
+invisible — and that is the whole difference between a chart change and a hole in
+the accounts.`,
   },
   {
     name: 'read_sie_file',
