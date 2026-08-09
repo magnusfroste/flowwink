@@ -5,6 +5,7 @@ import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shar
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
+import { readSieFile } from '../_shared/sie-reader.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
 import {
   type AuditContext,
@@ -743,6 +744,33 @@ serve(async (req) => {
 
       } else if (handler === 'internal:fetch_ecb_rates') {
         result = await executeFetchFxRates(supabase);
+
+      } else if (handler === 'internal:read_sie_file') {
+        // Bytes, never a string. SIE 4 is specified as IBM CP437 and Bokio still
+        // writes it that way; a text read decodes it as UTF-8 and destroys every
+        // å ä ö before the skill sees it, irrecoverably. See _shared/sie-reader.ts.
+        const b64 = typeof args.content_base64 === 'string'
+          ? (args.content_base64 as string).replace(/^data:[^,]+,/, '') : '';
+        if (!b64) {
+          result = {
+            error: 'content_base64 is required. Read the SIE file as BYTES and base64-encode it — do NOT read it as text. SIE 4 is specified as IBM CP437; a text read decodes it as UTF-8 and destroys every å ä ö before the file reaches this skill, and nothing here can undo that.',
+            status: 'failed',
+          };
+        } else {
+          let sieBytes: Uint8Array | null = null;
+          try {
+            const bin = atob(b64);
+            sieBytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) sieBytes[i] = bin.charCodeAt(i);
+          } catch (e) {
+            result = { error: `content_base64 is not valid base64: ${e instanceof Error ? e.message : String(e)}`, status: 'failed' };
+          }
+          if (sieBytes) {
+            const sieInclude = Array.isArray(args.include)
+              ? (args.include as unknown[]).map((x) => String(x).toLowerCase()) : [];
+            result = readSieFile(sieBytes, sieInclude);
+          }
+        }
 
       } else if (handler === 'internal:describe_blocks') {
         result = executeDescribeBlocks(args as Record<string, unknown>);

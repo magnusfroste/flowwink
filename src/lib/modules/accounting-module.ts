@@ -186,6 +186,71 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
       'template_lines are PERCENTAGES of the net transaction amount (base = 100), not fixed amounts — booking expands them via manage_journal_entry {template_id, amount_cents}. Each line uses debit_pct OR credit_pct (other = 0); Σ debit_pct must equal Σ credit_pct or the booked verifikat will not balance. The receivable/payable line is typically 100 + VAT (e.g. 125 for 25% moms), the revenue/cost line 100, the VAT line 25. Use only account_codes that exist in the chart of accounts.',
   },
   {
+    name: 'read_sie_file',
+    description:
+      "Read a SIE 4 file (the export every Swedish accounting system produces — Bokio, Fortnox, Visma) and report what is in it. READ THE FILE AS BYTES AND SEND content_base64 — never as text: SIE 4 is specified as IBM CP437, and a text read decodes it as UTF-8, destroying every å ä ö before the file reaches this skill, irrecoverably. Returns an OBSERVATION and writes nothing: the encoding it detected versus what the file declared, how many characters were already destroyed before it arrived, the company and fiscal years, and counts of accounts, opening balances and verifications. One SIE file carries three things that belong in three different places — a chart, balances, and a year of journal entries — so you pick, then call the skill named under each section. Use when: onboarding a company that is moving from another accounting system, reading last year's history to derive posting templates, taking over opening balances. NOT for: importing a published national standard (import_accounting_standard), treating an SIE file as a bank statement (import_bank_file does that narrowly, for 19xx lines only).",
+    category: 'commerce',
+    handler: 'internal:read_sie_file',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'read_sie_file',
+        parameters: {
+          type: 'object',
+          properties: {
+            content_base64: {
+              type: 'string',
+              description: 'The file as base64-encoded BYTES. Read it in binary mode. If your file tool returns a string, it has already decoded — and if the file was CP437 the Swedish characters are gone. A data: prefix is stripped automatically.',
+            },
+            file_name: { type: 'string', description: 'Original file name, for the report.' },
+            include: {
+              type: 'array',
+              items: { type: 'string', enum: ['accounts', 'balances', 'verifications'] },
+              description: 'Full lists instead of the first 5 rows. A real file has ~1200 accounts, so ask only for the section you are about to act on.',
+            },
+          },
+          required: ['content_base64'],
+        },
+      },
+    },
+    instructions: `## Read it as bytes
+This is the one rule that cannot be recovered from later. SIE 4 is IBM CP437;
+Bokio still writes it that way (a real 2023 export encodes ö as the single byte
+0x94). Every ordinary file-reading tool decodes UTF-8, 0x94 is not valid UTF-8,
+and the character becomes U+FFFD. No skill can undo that. Read binary,
+base64-encode, send.
+
+## What comes back, and why each part matters
+- **encoding**: what the file DECLARED (\`#FORMAT\`) versus what its bytes
+  actually are. They disagree when a file has been opened and re-saved. The
+  bytes win — decoding by the declaration would corrupt it a second time.
+- **integrity.replacement_chars**: characters already destroyed before the file
+  reached us. Non-zero means: go find the original export from the accounting
+  system. The import will still work, but every Swedish letter in names is lost,
+  and it was not FlowWink that lost it.
+- **contains**: counts per section, plus \`unbalanced_verifications\` — a
+  verification whose lines do not sum to zero is a defect in the source file.
+
+## The three destinations
+A SIE file is not one import. It is three, and the customer may want any subset:
+
+1. **accounts** — the customer's EXISTING chart (~1200 rows). This is NOT a
+   published standard: do not send it to import_accounting_standard. Matching it
+   against FlowWink's locale pack is a mapping job with a human in it.
+2. **opening_balances** — \`#IB\` rows, one fiscal year at a time, into
+   manage_opening_balances. \`#IB 0\` is the year in \`#RAR 0\`; -1 is the year
+   before.
+3. **verifications** — what the company ACTUALLY books. Group the recurring
+   patterns and send them to propose_posting_templates. This is the section
+   FlowWink can never guess on its own, and the reason to read the file at all.
+
+## Size
+Full lists are opt-in through \`include\` because a real chart is ~1200 rows and
+would flood a context for a caller who only wanted the balances.`,
+  },
+  {
     name: 'import_accounting_standard',
     description:
       "Set up a country's chart of accounts from the OFFICIAL standard file — you read the file (xlsx/csv from the publisher: BAS, DATEV/SKR, PCG…), send structured rows, and the platform validates, stores, and wires the role layer so the engine can post. FAIL CLOSED on provenance: source_url + sha256 of the file are REQUIRED, because an unsourced chart cannot be verified later — a hand-written 'BAS 2024' shipped 166 wrong names before anyone could compare. Take account names VERBATIM from the file, never paraphrase or translate. Use when: activating a new country/standard on this instance, refreshing a chart from a new edition of the standard (replace=true). NOT for: authoring posting templates (propose_posting_templates), adding a single account (manage_chart_of_accounts), importing a customer's legacy chart from SIE — that is a mapping problem, not a standard.",
