@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260809100000",
-      "migrations_count": 356,
+      "migration_head": "20260809140000",
+      "migrations_count": 357,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1429,6 +1429,10 @@
         {
           "version": "20260809100000",
           "name": "revert-site-template-capture"
+        },
+        {
+          "version": "20260809140000",
+          "name": "fix-vat-output-account-role"
         }
       ]
     },
@@ -1439,7 +1443,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:307dbd34b1efdbf7e78faf9755e491525ae0d9949aa04b34612c53dea0b8a18a",
+      "shared_hash": "sha256:2b8b033f21e35bd45d62ab391dc99f1d9c2872a8c24dd3906e119b630c186072",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",

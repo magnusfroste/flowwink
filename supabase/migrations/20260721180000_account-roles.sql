@@ -91,7 +91,11 @@ INSERT INTO public.account_roles (locale, role, account_code, description) VALUE
   ('se-bas2024', 'accounts_receivable',      '1510', 'Kundfordringar'),
   ('se-bas2024', 'accounts_payable',         '2440', 'Leverantörsskulder'),
   ('se-bas2024', 'sales_revenue',            '3001', 'Försäljning'),
-  ('se-bas2024', 'vat_output',               '2611', 'Utgående moms 25%'),
+  -- 2610 is the account named "Utgående moms 25%"; 2611 is named
+  -- "omvänd skattskyldighet" in this pack. Reverse charge has its own roles
+  -- below, so this one is the ordinary domestic VAT. Corrected 2026-08-09 —
+  -- see 20260809140000_fix-vat-output-account-role.sql.
+  ('se-bas2024', 'vat_output',               '2610', 'Utgående moms 25% (vanlig inhemsk försäljning)'),
   ('se-bas2024', 'vat_input',                '2641', 'Debiterad ingående moms'),
   ('se-bas2024', 'employee_liability',       '2890', 'Övriga kortfristiga skulder (utlägg)'),
   ('se-bas2024', 'expense_default',          '5410', 'Förbrukningsinventarier'),
