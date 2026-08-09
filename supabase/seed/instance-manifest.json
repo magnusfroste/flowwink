@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260810000000",
-      "migrations_count": 364,
+      "migrations_count": 369,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1453,6 +1453,26 @@
         {
           "version": "20260809200000",
           "name": "vat-coverage-prefixes-from-the-map"
+        },
+        {
+          "version": "20260809214303",
+          "name": "c4d7c89d-dbc5-4013-86b4-49ae5ae46d7d"
+        },
+        {
+          "version": "20260809214510",
+          "name": "d8d72e98-bbf8-4207-b6e7-36ecc4a37277"
+        },
+        {
+          "version": "20260809214625",
+          "name": "f9be8813-7401-4156-a495-c726e69b9566"
+        },
+        {
+          "version": "20260809214727",
+          "name": "cc57c99b-be3d-4fbb-86c7-0ca41563cb0c"
+        },
+        {
+          "version": "20260809214844",
+          "name": "4da7c26a-c237-474f-b645-033d775c3dc8"
         },
         {
           "version": "20260809230000",
