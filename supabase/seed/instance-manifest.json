@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260809180000",
-      "migrations_count": 360,
+      "migration_head": "20260809190000",
+      "migrations_count": 361,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1445,17 +1445,21 @@
         {
           "version": "20260809180000",
           "name": "account-role-mapping"
+        },
+        {
+          "version": "20260809190000",
+          "name": "vat-box-map-as-account-property"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:2b32bfd9f15a39228736a85b19b5206eca4ec98fd0d74391d57180b736c53a98",
-      "skill_count": 531,
+      "seed_hash": "sha256:ecfa6b159c4f632479d8b457d609bd3b321d3864550f2e6cf54e18025c98f399",
+      "skill_count": 532,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:a13fde29ef5165d0bd236cf27ac6d5b7ce9ea4555995562b509d15018a9bbe6b",
+      "shared_hash": "sha256:862dececec9cceb326e5fb3a6addf9530accdaedeca9c2547a05f6d81ecc913c",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1514,7 +1518,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:d29c2a9ce0c09d1d4e074ae002b78efe337bb293c51045e4846252144c3ac5b9",
         "run-autonomy-tests": "sha256:d326b88ef0d263ed7604ba1eb75a770126d785e26211888b2093fcb325cc8c22",
-        "run-platform-tests": "sha256:035caddce95c23d0137b9b7655fc1b53c31d529e1bb73a89b0876b41051b181f",
+        "run-platform-tests": "sha256:d2aebdf3324623277e8b13371a40bccdea5355a8fd8f845e2efa8537aef28643",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

@@ -186,6 +186,55 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
       'template_lines are PERCENTAGES of the net transaction amount (base = 100), not fixed amounts — booking expands them via manage_journal_entry {template_id, amount_cents}. Each line uses debit_pct OR credit_pct (other = 0); Σ debit_pct must equal Σ credit_pct or the booked verifikat will not balance. The receivable/payable line is typically 100 + VAT (e.g. 125 for 25% moms), the revenue/cost line 100, the VAT line 25. Use only account_codes that exist in the chart of accounts.',
   },
   {
+    name: 'manage_account_tax_boxes',
+    description:
+      "See and change which VAT-return box each account reports into — the classification half of the role layer (account_roles decides where to POST, this decides how a posted amount is REPORTED). action=list shows the current map with account names; action=add points an account at a box; action=remove takes it out. Seeded verbatim from the locale pack, so a standard chart needs no work at all. Use when: a company migrated from another system and books VAT to its own accounts, when prepare_vat_return reports accounts under coverage.unmapped_but_reportable, or after adding a VAT account to the chart. NOT for: changing where postings land (manage_account_roles), adding accounts (manage_chart_of_accounts), preparing or filing the return (prepare_vat_return). An account that belongs to no box is not an error anywhere — its amount is simply absent from the filing, which is why this exists.",
+    category: 'commerce',
+    handler: 'rpc:manage_account_tax_boxes',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_account_tax_boxes',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'add', 'remove'] },
+            locale: { type: 'string', description: "Defaults to the instance's active accounting_locale." },
+            account_code: { type: 'string', description: 'add/remove only — must already exist in the chart of accounts.' },
+            box_code: { type: 'string', description: "add/remove only — the box on the return, e.g. '10' for output VAT 25%, '48' for input VAT. Run action=list to see which boxes this locale has." },
+          },
+          required: ['action'],
+          'x-action-required': { add: ['account_code', 'box_code'], remove: ['account_code', 'box_code'] },
+        },
+      },
+    },
+    instructions: `## The failure this prevents
+The return sums accounts. An account it has never been told about contributes
+nothing — and nothing is not an error. The filing comes out looking complete,
+the control account disagrees, and the difference is found by the tax authority
+or not at all.
+
+## How you will normally reach this
+Run prepare_vat_return first. Its \`coverage\` block lists every account that
+carried money in the period and belongs to no box. That list IS the work: each
+entry is one add. An empty list means there is nothing to do here.
+
+## Which box
+Match by MEANING, not by number. 2611 and 2614 are one digit apart and belong to
+different boxes (domestic output VAT vs reverse charge), which is exactly the
+kind of neighbourly-looking guess that produces a wrong but plausible filing.
+Read the account NAME from action=list, and when the meaning is not obvious from
+the name, ask rather than pick.
+
+## What it does not do
+It changes reporting, not history. Amounts already posted are included from the
+next time the return is prepared — the map is read at report time. And nothing
+here moves money or changes where future entries land; that is
+manage_account_roles.`,
+  },
+  {
     name: 'manage_account_roles',
     description:
       "See and change which account each platform ROLE posts to — bank, accounts_receivable, sales_revenue, vat_output and ~20 others. The engine never names an account number: it resolves account_for(role), so this is the one place that decides where every future invoice, payment and VAT line lands. action=list shows the current mapping; action=propose takes the accounts a company ACTUALLY uses (from read_sie_file) and reports, per role, whether they post where we do — it never picks for you, because a prefix is not a meaning and an auto-picked account that sounds right is how input VAT ends up on an output VAT account; action=set changes one role, refusing any account the chart does not have. Use when: onboarding a company migrating from Bokio/Fortnox/Dooer, after import_accounting_standard for a new country, or when postings are landing on the wrong account. NOT for: adding accounts to the chart (manage_chart_of_accounts), loading a national standard (import_accounting_standard), booking anything (manage_journal_entry).",

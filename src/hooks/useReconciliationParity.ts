@@ -23,9 +23,15 @@ export function useCreatePartialMatch() {
         p_entity_id: input.entity_id ?? null,
         p_match_cents: input.match_cents,
         p_variance_cents: input.variance_cents,
-        p_variance_account_code: input.variance_account_code ?? '3740',
-        p_variance_account_name: input.variance_account_name ?? 'Öresutjämning',
-        p_bank_gl_account: input.bank_gl_account ?? '1930',
+        // NULL means "resolve it": the RPC does COALESCE(..., account_for(role))
+        // server-side and knows the instance's locale. Sending a BAS number from
+        // the client defeated that lookup on every non-BAS chart — the same
+        // shape as the `|| 'USD'` that once posted Swedish deals in dollars.
+        p_variance_account_code: input.variance_account_code ?? null,
+        p_bank_gl_account: input.bank_gl_account ?? null,
+        // Omitted, not nulled: this one has a real SQL default, and an explicit
+        // NULL would overwrite it and leave the journal line unlabelled.
+        ...(input.variance_account_name ? { p_variance_account_name: input.variance_account_name } : {}),
         p_notes: input.notes ?? null,
       } as any);
       if (error) throw error;
@@ -82,7 +88,7 @@ export function useRecordPettyCashCount() {
       const { data, error } = await supabase.rpc('record_petty_cash_count', {
         p_cash_account_code: input.cash_account_code,
         p_counted_cents: input.counted_cents,
-        p_diff_account_code: input.diff_account_code ?? '7960',
+        p_diff_account_code: input.diff_account_code ?? null, // → account_for('cash_difference')
         p_count_date: input.count_date ?? null,
         p_notes: input.notes ?? null,
         p_currency: input.currency ?? 'SEK',

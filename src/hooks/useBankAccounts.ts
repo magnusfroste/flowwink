@@ -33,11 +33,30 @@ export function useUpsertBankAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Partial<BankAccount> & { name: string }) => {
+      // account_for('bank') is the same locale-aware lookup the posting engine
+      // uses, so a bank account created here lands where entries will actually
+      // be booked. Naming the account in the client instead — which is what
+      // this did — gave every instance on a non-standard chart a default that
+      // pointed at someone else's account, silently.
+      let resolved = input.gl_account;
+      if (!resolved) {
+        const { data, error } = await supabase.rpc('account_for', { p_role: 'bank' } as never);
+        if (error) throw error;
+        resolved = (data as string | null) ?? undefined;
+        // No role, no guess. An unmapped role is a setup question with a clear
+        // answer; a wrong account number is a reconciliation mystery months on.
+        if (!resolved) {
+          throw new Error(
+            'No account is mapped to the "bank" role for this locale. ' +
+            'Set it under Accounting → Chart of accounts, or pass gl_account explicitly.');
+        }
+      }
+
       const payload = {
         name: input.name,
         account_number: input.account_number ?? null,
         currency: input.currency || 'SEK',
-        gl_account: input.gl_account || '1930',
+        gl_account: resolved,
         stripe_account_id: input.stripe_account_id ?? null,
         is_default: input.is_default ?? false,
         archived: input.archived ?? false,

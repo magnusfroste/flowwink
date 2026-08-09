@@ -79,11 +79,44 @@ export async function executeVatReturnSe(
     };
     const { from, to } = resolvePeriod(input);
 
-    // Collect every account code we might need
-    const accountCodes = new Set<string>();
-    for (const b of BOXES_2026) {
-      for (const a of b.accounts ?? []) accountCodes.add(a);
+    const { data: localeRow } = await sb
+      .from('site_settings').select('value').eq('key', 'accounting_locale').maybeSingle();
+    const locale = (localeRow?.value as string) || 'se-bas2024';
+
+    // ── Which accounts feed which box: the INSTANCE decides ────────────────
+    // The lists in SE_VAT_BOXES_2026 are the standard's answer for a standard
+    // chart. A company that migrated from another system books VAT to accounts
+    // outside them, and the amount used to vanish from the return with no error
+    // — silence, on a statutory filing. account_tax_boxes holds the same map as
+    // data, seeded verbatim from the pack, extensible per company.
+    //
+    // The code map remains the fallback for an instance that has not run the
+    // migration yet, so a half-deployed fleet keeps filing correctly rather
+    // than filing zeroes.
+    const boxAccounts = new Map<string, Set<string>>();
+    let mapSource = 'account_tax_boxes';
+    {
+      const { data: rows } = await sb
+        .from('account_tax_boxes')
+        .select('box_code, account_code')
+        .eq('locale', locale);
+      if (rows && rows.length) {
+        for (const r of rows as { box_code: string; account_code: string }[]) {
+          if (!boxAccounts.has(r.box_code)) boxAccounts.set(r.box_code, new Set());
+          boxAccounts.get(r.box_code)!.add(r.account_code);
+        }
+      } else {
+        mapSource = 'locale pack (account_tax_boxes not seeded on this instance)';
+        for (const b of BOXES_2026) {
+          if (!b.accounts?.length) continue;
+          boxAccounts.set(b.code, new Set(b.accounts));
+        }
+      }
     }
+    const accountsFor = (b: BoxDef): string[] => Array.from(boxAccounts.get(b.code) ?? []);
+
+    const accountCodes = new Set<string>();
+    for (const set of boxAccounts.values()) for (const a of set) accountCodes.add(a);
 
     // Sum debits/credits per account for posted entries in period.
     // journal_entry_lines has account_code; join to journal_entries for
@@ -128,28 +161,28 @@ export async function executeVatReturnSe(
     for (const b of BOXES_2026) {
       if (b.kind === 'output_vat') {
         let sum = 0;
-        for (const a of b.accounts!) {
+        for (const a of accountsFor(b)) {
           const p = perAccount.get(a); if (!p) continue;
           sum += (p.credit - p.debit);
         }
         boxAmounts.set(b.code, sum);
       } else if (b.kind === 'input_vat') {
         let sum = 0;
-        for (const a of b.accounts!) {
+        for (const a of accountsFor(b)) {
           const p = perAccount.get(a); if (!p) continue;
           sum += (p.debit - p.credit);
         }
         boxAmounts.set(b.code, sum);
       } else if (b.kind === 'base_credit') {
         let sum = 0;
-        for (const a of b.accounts!) {
+        for (const a of accountsFor(b)) {
           const p = perAccount.get(a); if (!p) continue;
           sum += (p.credit - p.debit);
         }
         boxAmounts.set(b.code, sum);
       } else if (b.kind === 'base_debit') {
         let sum = 0;
-        for (const a of b.accounts!) {
+        for (const a of accountsFor(b)) {
           const p = perAccount.get(a); if (!p) continue;
           sum += (p.debit - p.credit);
         }
@@ -195,6 +228,27 @@ export async function executeVatReturnSe(
       matches_box_49: (outputTotal - inputTotal) === netToPay,
     };
 
+    // A return that only sums the accounts it knows about cannot tell you about
+    // the ones it does not. vat_box_coverage looks at what actually MOVED in the
+    // period and reports anything reportable that belongs to no box — the exact
+    // amount a migrated chart loses silently. It rides along with the filing
+    // because that is where someone is looking; a separate command would be run
+    // by the people who already knew to worry.
+    let coverage: unknown = null;
+    const { data: cov, error: covErr } = await sb.rpc('vat_box_coverage', {
+      p_from: from, p_to: to, p_locale: locale,
+    });
+    if (covErr) {
+      coverage = {
+        checked: false,
+        note: `Coverage could not be checked on this instance (${covErr.message}). ` +
+          'The box amounts above are still correct for the accounts that ARE mapped — ' +
+          'what is unverified is whether anything was posted outside the map.',
+      };
+    } else {
+      coverage = cov;
+    }
+
     return {
       form: 'SKV 4700',
       version: '2026',
@@ -203,7 +257,9 @@ export async function executeVatReturnSe(
       net_to_pay_cents: netToPay,
       direction: netToPay >= 0 ? 'pay_to_skatteverket' : 'refund_from_skatteverket',
       verification,
-      note: 'Sums posted journal_entry_lines on BAS 2024 VAT accounts. Verify against 2650 control account before filing; then book the payment via manage_journal_entry (template "Momsredovisning (betalning)").',
+      coverage,
+      box_map_source: mapSource,
+      note: 'Sums posted journal_entry_lines per the account→box map (account_tax_boxes). Verify against 2650 control account before filing; then book the payment via manage_journal_entry (template "Momsredovisning (betalning)").',
     };
   } catch (e: any) {
     return { error: e?.message ?? String(e) };

@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 vi.mock('../../../supabase/functions/_shared/ai-config.ts', () => ({
   resolveAiConfig: async () => ({ provider: 'openai', model: 'm', apiUrl: 'https://api.openai.com/v1/chat/completions', apiKey: 'k' }),
@@ -27,7 +29,13 @@ function stubDb(result: { data?: any; error?: any } = { data: null }) {
   q.then = (res: any, rej: any) => Promise.resolve(result).then(res, rej);
   q.single = vi.fn(() => Promise.resolve(result));
   q.maybeSingle = vi.fn(() => Promise.resolve(result));
-  return { from: vi.fn(() => q), _q: q } as any;
+  return {
+    from: vi.fn(() => q),
+    // vat_box_coverage rides along with the VAT return. Default to "complete"
+    // so the other assertions read the ordinary case.
+    rpc: vi.fn(async () => ({ data: { complete: true, unmapped_but_reportable: [] }, error: null })),
+    _q: q,
+  } as any;
 }
 
 describe('parse_resume internal handler', () => {
@@ -84,6 +92,27 @@ describe('prepare_vat_return internal handler', () => {
       expect(codes, `SKV 4700 box ${code} is missing`).toContain(code);
     }
     expect(res.boxes.every((b: { amount_cents: number }) => b.amount_cents === 0)).toBe(true);
+  });
+
+  it('the filing carries its own coverage — an account in no box is money missing from it', () => {
+    // Not a separate command: a return that only sums the accounts it knows
+    // about cannot report the ones it does not, and whoever is filing is
+    // looking at the return, not at a coverage tool they had to know to run.
+    const handler = readFileSync(
+      resolve(__dirname, '../../../supabase/functions/_shared/handlers/accounting-vat-return-se.ts'), 'utf-8');
+    expect(handler).toMatch(/rpc\('vat_box_coverage'/);
+    expect(handler).toMatch(/coverage,/);
+  });
+
+  it('and an instance without the coverage function still files, saying what is unverified', async () => {
+    // Half-deployed fleet: the box amounts are still correct for what IS mapped.
+    // Refusing to file would be worse than filing with a named blind spot.
+    const db = stubDb({ data: [] });
+    db.rpc = vi.fn(async () => ({ data: null, error: { message: 'function does not exist' } }));
+    const res: any = await executeVatReturnSe(db, { year: 2026, month: 6 });
+    expect(res.form).toBe('SKV 4700');
+    expect(res.coverage.checked).toBe(false);
+    expect(res.coverage.note).toMatch(/still correct for the accounts that ARE mapped/);
   });
 });
 

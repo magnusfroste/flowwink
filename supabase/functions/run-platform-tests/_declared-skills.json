@@ -223,6 +223,7 @@
     "log_time",
     "lookup_order",
     "manage_account_roles",
+    "manage_account_tax_boxes",
     "manage_accounting_template",
     "manage_activities",
     "manage_addresses",
