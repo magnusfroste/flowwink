@@ -9,6 +9,7 @@
 //
 // Body: { to, subject, html, text?, fromOverride?, tags? }
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
@@ -234,6 +235,24 @@ serve(async (req: Request) => {
     recipients = (Array.isArray(body.to) ? body.to : [body.to])
       .map(bareAddress)
       .filter((r) => r.length > 0);
+
+    // ── Allowlist gate — BEFORE suppressions, because it is the harder rule ──
+    // Suppressions are a deny list: everything sends unless named. The allowlist
+    // is the inverse, and while a live company runs FlowWink in development it
+    // is the only shape that is safe. See _shared/email-allowlist.ts.
+    const gate = await filterRecipients(supabase, recipients);
+    if (gate.blocked.length) {
+      console.warn(`[email-send] allowlist withheld ${gate.blocked.length} recipient(s)`);
+    }
+    if (gate.allowed.length === 0) {
+      await logComm({
+        status: "blocked", provider: null, simulated: false,
+        error_message: gate.error ?? `Blocked by email allowlist: ${gate.blocked.map((b) => b.address).join(", ")}`,
+      });
+      return new Response(JSON.stringify(blockedResponse(gate)),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    recipients = gate.allowed;
 
     // Suppression list check — skip suppressed recipients
     const lowered = recipients.map((r) => r.toLowerCase());

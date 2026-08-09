@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { filterRecipients } from "../_shared/email-allowlist.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
@@ -596,6 +597,13 @@ export async function handler(req: Request): Promise<Response> {
             ? "FlowPilot <flowpilot@flowwink.com>"
             : "FlowWink <briefing@flowwink.com>");
 
+          // Direct Resend call — the allowlist has to be applied here as well.
+          const gate = await filterRecipients(supabase, adminEmails);
+          if (gate.allowed.length === 0) {
+            console.warn(`[briefing] all ${adminEmails.length} recipient(s) withheld by the email allowlist — briefing saved, not mailed`);
+            throw new Error(gate.error ?? `Blocked by email allowlist: ${gate.blocked.map((b) => b.address).join(", ")}`);
+          }
+
           const resendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -604,7 +612,7 @@ export async function handler(req: Request): Promise<Response> {
             },
             body: JSON.stringify({
               from: fromAddress,
-              to: adminEmails,
+              to: gate.allowed,
               subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
               html: emailHtml,
             }),

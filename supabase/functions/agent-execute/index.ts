@@ -4,6 +4,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
+import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { markdownToTiptap, inlineClean, parseInline } from '../_shared/markdown-to-tiptap.ts';
 import {
   type AuditContext,
@@ -6648,7 +6649,7 @@ async function resolveResendFrom(supabase: any): Promise<string> {
 async function logOutboundEmail(
   supabase: any,
   row: {
-    status: 'sent' | 'failed' | 'simulated';
+    status: 'sent' | 'failed' | 'simulated' | 'blocked';
     recipient: string | string[];
     subject: string | null;
     body_html?: string | null;
@@ -7039,7 +7040,23 @@ async function executeSendInvoiceForOrder(
   // 6. Email customer
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
-  if (RESEND_API_KEY) {
+  // This path calls Resend DIRECTLY rather than going through email-send, so
+  // the allowlist has to be applied here too. Guarding only email-send would
+  // have left precisely the invoice mail ungated — the one send a company in a
+  // pilot phase most needs held back.
+  const invoiceGate = RESEND_API_KEY
+    ? await filterRecipients(supabase, [order.customer_email])
+    : null;
+  if (invoiceGate && invoiceGate.allowed.length === 0) {
+    emailResult = blockedResponse(invoiceGate);
+    await logOutboundEmail(supabase, {
+      status: 'blocked',
+      recipient: order.customer_email,
+      subject: `Invoice ${invoice.invoice_number}`,
+      body_html: '',
+      error_message: String(emailResult.error ?? 'blocked by email allowlist'),
+    });
+  } else if (RESEND_API_KEY) {
     const fromEmail = await resolveResendFrom(supabase);
     // Link to the PUBLIC invoice page, which has a working "Download PDF" that
     // posts public_token. The old generate-invoice-pdf?invoice_id= link was a
