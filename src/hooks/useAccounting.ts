@@ -30,6 +30,10 @@ export interface JournalEntry {
   voucher_series?: string | null;
   voucher_number?: number | null;
   voucher_year?: number | null;
+  // A reversed entry stays POSTED — it counts, and its mirror cancels it. The
+  // link is data, never status: status must not hide a booked entry from a report.
+  reversed_by?: string | null;
+  reverses?: string | null;
   // Enriched by useJournalEntries:
   total_cents?: number;
   line_count?: number;
@@ -145,7 +149,11 @@ export function useJournalEntries(statusFilter?: string, journalId?: string) {
         .order('entry_date', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (statusFilter && statusFilter !== 'all') {
+      if (statusFilter === 'reversed') {
+        // Not a status: a reversed entry is posted like any other. This is the
+        // whole point — the books never hide it, the UI just labels it.
+        query = query.not('reversed_by', 'is', null);
+      } else if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
       if (journalId && journalId !== 'all') {

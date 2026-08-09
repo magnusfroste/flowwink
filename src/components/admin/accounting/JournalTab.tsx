@@ -18,6 +18,8 @@ import { AccountingTabHeader } from './AccountingTabHeader';
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   posted: 'bg-success/15 text-success',
+  // Legacy only. Since 2026-08-10 a reversed entry stays POSTED and is marked by
+  // reversed_by — status is not allowed to hide a booked entry from the reports.
   voided: 'bg-destructive/10 text-destructive',
 };
 
@@ -140,7 +142,7 @@ export function JournalTab() {
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="posted">Posted</SelectItem>
-            <SelectItem value="voided">Voided</SelectItem>
+            <SelectItem value="reversed">Reversed</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1 ml-auto">
@@ -234,8 +236,14 @@ export function JournalTab() {
                       <td className="px-4 py-2.5 text-right font-mono tabular-nums">{fmt(e.total_cents || 0)}</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground">{e.source}</td>
                       <td className="px-4 py-2.5">
-                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', STATUS_STYLES[e.status] || 'bg-muted text-muted-foreground')}>
-                          {e.status}
+                        {/* A reversed entry is still posted — it counts, and its
+                            mirror cancels it. The badge says what happened to it
+                            without pretending it never happened. */}
+                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
+                          e.reversed_by ? 'bg-warning/15 text-warning'
+                            : e.reverses ? 'bg-muted text-muted-foreground'
+                            : STATUS_STYLES[e.status] || 'bg-muted text-muted-foreground')}>
+                          {e.reversed_by ? 'reversed' : e.reverses ? 'reversal' : e.status}
                         </span>
                       </td>
                     </tr>

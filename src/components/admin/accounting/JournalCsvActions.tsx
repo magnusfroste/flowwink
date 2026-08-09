@@ -109,7 +109,9 @@ export function JournalCsvActions({
         .from('journal_entries')
         .select('*')
         .order('entry_date', { ascending: false });
-      if (statusFilter !== 'all') q = q.eq('status', statusFilter);
+      // 'reversed' is a link, not a status — same rule as the list above.
+      if (statusFilter === 'reversed') q = q.not('reversed_by', 'is', null);
+      else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
       if (journalFilter !== 'all') q = q.eq('journal_id', journalFilter);
       const { data: entries, error } = await q;
       if (error) throw error;

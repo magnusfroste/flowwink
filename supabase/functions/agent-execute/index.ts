@@ -8256,23 +8256,41 @@ async function executeDbAction(
           .select('*').eq('id', entry_id).single();
         if (origErr) throw new Error(`Entry not found: ${origErr.message}`);
 
+        // Already reversed → say so instead of writing a second reversal, which
+        // would leave the books off by the entry's amount in the other direction.
+        if (original.reversed_by) {
+          return {
+            voided: false, original_id: entry_id, reversal_id: original.reversed_by,
+            error: 'This entry has already been reversed. Its reversal is reversal_id — the two net to zero. ' +
+              'If the correction itself was wrong, book the fix as a new entry rather than reversing twice.',
+          };
+        }
+
         const { data: origLines } = await supabase.from('journal_entry_lines')
           .select('*').eq('journal_entry_id', entry_id);
 
-        // Mark original as voided
-        await supabase.from('journal_entries').update({ status: 'voided' }).eq('id', entry_id);
-
-        // Create reversal entry
+        // The original STAYS posted. A booked verification is never unbooked —
+        // it is corrected by a mirror entry, and the two cancel in every report
+        // on their own. Marking it 'voided' (which is what this did until
+        // 2026-08-10) dropped it out of every report that filters status=posted
+        // while the reversal kept counting, so a voided sale read as a VAT
+        // refund. See migration 20260810000000.
         const { data: reversal, error: revErr } = await supabase.from('journal_entries')
           .insert({
+            // Today, not the original's date: you do not rewrite a period you
+            // have already declared. A June entry reversed in August belongs in
+            // August's return as a correction.
             entry_date: new Date().toISOString().split('T')[0],
             description: `Reversal: ${original.description}`,
             reference_number: `REV-${original.reference_number || entry_id.slice(0, 8)}`,
             status: 'posted',
             source: resolvedSource,
-
+            reverses: entry_id,
           }).select('id').single();
         if (revErr) throw new Error(`Reversal failed: ${revErr.message}`);
+
+        await supabase.from('journal_entries')
+          .update({ reversed_by: reversal.id }).eq('id', entry_id);
 
         // Reverse lines (swap debit/credit)
         if (origLines && origLines.length > 0) {
@@ -8299,10 +8317,14 @@ async function executeDbAction(
 
         return {
           voided: true, original_id: entry_id, reversal_id: reversal.id,
+          original_status: 'posted',
           bank_events_released: (linkedTx || []).length,
-          ...(linkedTx && linkedTx.length > 0 ? {
-            note: 'Linked bank event(s) returned to the events-to-book queue — re-book with the correct template and bank_transaction_id.',
-          } : {}),
+          note: 'The original entry is still posted and still counts — a booked verification is never unbooked. '
+            + `The reversal (${reversal.id}) mirrors it and the two net to zero in every report. `
+            + 'The reversal is dated today, so a period you have already declared stays as declared and the correction lands in the current one.'
+            + ((linkedTx && linkedTx.length > 0)
+              ? ' Linked bank event(s) returned to the events-to-book queue — re-book with the correct template and bank_transaction_id.'
+              : ''),
         };
       }
 
