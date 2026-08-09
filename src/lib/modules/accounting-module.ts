@@ -186,6 +186,75 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
       'template_lines are PERCENTAGES of the net transaction amount (base = 100), not fixed amounts — booking expands them via manage_journal_entry {template_id, amount_cents}. Each line uses debit_pct OR credit_pct (other = 0); Σ debit_pct must equal Σ credit_pct or the booked verifikat will not balance. The receivable/payable line is typically 100 + VAT (e.g. 125 for 25% moms), the revenue/cost line 100, the VAT line 25. Use only account_codes that exist in the chart of accounts.',
   },
   {
+    name: 'manage_account_roles',
+    description:
+      "See and change which account each platform ROLE posts to — bank, accounts_receivable, sales_revenue, vat_output and ~20 others. The engine never names an account number: it resolves account_for(role), so this is the one place that decides where every future invoice, payment and VAT line lands. action=list shows the current mapping; action=propose takes the accounts a company ACTUALLY uses (from read_sie_file) and reports, per role, whether they post where we do — it never picks for you, because a prefix is not a meaning and an auto-picked account that sounds right is how input VAT ends up on an output VAT account; action=set changes one role, refusing any account the chart does not have. Use when: onboarding a company migrating from Bokio/Fortnox/Dooer, after import_accounting_standard for a new country, or when postings are landing on the wrong account. NOT for: adding accounts to the chart (manage_chart_of_accounts), loading a national standard (import_accounting_standard), booking anything (manage_journal_entry).",
+    category: 'commerce',
+    handler: 'rpc:manage_account_roles',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_account_roles',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'propose', 'set'] },
+            locale: { type: 'string', description: "Defaults to the instance's active accounting_locale." },
+            accounts: {
+              type: 'array',
+              description: "propose only — the company's own accounts as [{code, name, in_use, has_movement}]. Send only the ones IN USE: a Bokio export carries ~1200 accounts of which a real company touches about 30, and the unused ones are noise that hides the decisions. has_movement (posted to this year) outranks a mere balance as evidence.",
+              items: { type: 'object', properties: {
+                code: { type: 'string' }, name: { type: 'string' },
+                in_use: { type: 'boolean' }, has_movement: { type: 'boolean' },
+              }, required: ['code'] },
+            },
+            role: { type: 'string', description: 'set only — the platform role, e.g. sales_revenue. An unknown name errors with the full valid list.' },
+            account_code: { type: 'string', description: 'set only — the account this role should resolve to. Must already exist in the chart.' },
+            reason: { type: 'string', description: 'set only — why, stored on the role. e.g. "LiteIT has booked service revenue here since 2018".' },
+          },
+          required: ['action'],
+          'x-action-required': { propose: ['accounts'], set: ['role', 'account_code'] },
+        },
+      },
+    },
+    instructions: `## Why this is ~20 decisions and not 1200
+A company arriving from another system brings its whole chart — a real Bokio
+export had 1 243 accounts. Mapping those against ours would be a week nobody
+finishes. But FlowWink posts to ROLES, not account numbers, and there are ~23 of
+them. In that same file exactly 29 accounts had any balance or movement at all;
+the other 1 214 were the standard chart shipped whether you use it or not.
+
+So: run read_sie_file, keep the accounts with a balance or movement, send those.
+
+## Read the answer, do not skim it
+- **exact** — they already post where we do. Nothing to do.
+- **candidates** — they post somewhere else in that group, and the accounts are
+  listed. THIS is the migration. Their history decides what their books mean: a
+  company that has booked revenue to 3011 for five years must keep doing so, or
+  every FlowWink entry lands on a different account than their own past and any
+  parallel comparison diverges from the first invoice.
+  One candidate is usually the answer. Several, or none that fit, means the role
+  has no counterpart in their books — say so instead of forcing one.
+- **no_evidence** — nothing in that account group moved. Leave it. An untouched
+  role is not a problem to solve.
+
+## The list you will actually feel
+\`accounts_missing_from_chart\` is the accounts they post to that this instance
+has never heard of. Moving between systems is mostly this list — the same reason
+a Bokio→Dooer move forces re-mapping: the new system simply does not have the
+accounts the old one gave you. Add the ones that carry real activity with
+manage_chart_of_accounts BEFORE pointing a role at them; \`set\` refuses an
+account that does not exist, on purpose, because the alternative is a posting
+failure mid-invoice.
+
+## What set does and does not touch
+It changes where FUTURE postings land. Entries already booked keep the account
+code they were written with — bookkeeping is not retroactively rewritten, and
+the response says so.`,
+  },
+  {
     name: 'read_sie_file',
     description:
       "Read a SIE 4 file (the export every Swedish accounting system produces — Bokio, Fortnox, Visma) and report what is in it. READ THE FILE AS BYTES AND SEND content_base64 — never as text: SIE 4 is specified as IBM CP437, and a text read decodes it as UTF-8, destroying every å ä ö before the file reaches this skill, irrecoverably. Returns an OBSERVATION and writes nothing: the encoding it detected versus what the file declared, how many characters were already destroyed before it arrived, the company and fiscal years, and counts of accounts, opening balances and verifications. One SIE file carries three things that belong in three different places — a chart, balances, and a year of journal entries — so you pick, then call the skill named under each section. Use when: onboarding a company that is moving from another accounting system, reading last year's history to derive posting templates, taking over opening balances. NOT for: importing a published national standard (import_accounting_standard), treating an SIE file as a bank statement (import_bank_file does that narrowly, for 19xx lines only).",

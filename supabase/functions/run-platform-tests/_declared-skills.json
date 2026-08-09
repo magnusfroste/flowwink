@@ -222,6 +222,7 @@
     "log_indirect_time",
     "log_time",
     "lookup_order",
+    "manage_account_roles",
     "manage_accounting_template",
     "manage_activities",
     "manage_addresses",
