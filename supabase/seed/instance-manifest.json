@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260809150000",
-      "migrations_count": 357,
+      "migration_head": "20260809160000",
+      "migrations_count": 358,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1433,6 +1433,10 @@
         {
           "version": "20260809150000",
           "name": "bas2024-account-names"
+        },
+        {
+          "version": "20260809160000",
+          "name": "bas2024-chart-names-from-standard"
         }
       ]
     },
