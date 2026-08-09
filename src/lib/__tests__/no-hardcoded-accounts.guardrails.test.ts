@@ -191,6 +191,8 @@ describe('the VAT box map is read from the instance, not from the engine', () =>
 describe('an account carrying money and belonging to no box is reported, not dropped', () => {
   const migration = readFileSync(
     join(ROOT, 'supabase/migrations/20260809190000_vat-box-map-as-account-property.sql'), 'utf-8');
+  const refined = readFileSync(
+    join(ROOT, 'supabase/migrations/20260809200000_vat-coverage-prefixes-from-the-map.sql'), 'utf-8');
 
   it('vat_box_coverage names the gap in the operator\'s own words', () => {
     expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.vat_box_coverage/);
@@ -202,6 +204,28 @@ describe('an account carrying money and belonging to no box is reported, not dro
     // A wage account with no VAT box is correct, not a gap. Listing it would
     // train the reader to ignore the list.
     expect(migration).toMatch(/A wage account\s*--\s*with no box is correct, not a gap/);
+  });
+
+  it('and reads WHICH accounts those are from the map, not from a hardcoded range', () => {
+    // Running the chain against optic flagged 3001 (revenue) as a gap. True as
+    // a fact, wrong as a warning: SKV 4700 derives the sales base from the VAT
+    // boxes and never sums revenue accounts. A warning that fires on a correct
+    // book teaches the reader to skip the list — and the real gap arrives in a
+    // list nobody reads any more.
+    expect(refined).toMatch(/SELECT array_agg\(DISTINCT left\(account_code, 2\)\)/);
+    expect(refined).toMatch(/left\(m\.account_code, 2\) = ANY\(v_groups\)/);
+    // Body only — the header quotes the old filter to explain what changed.
+    const body = refined.slice(refined.indexOf('AS $function$'));
+    expect(body).not.toMatch(/account_code LIKE/);
+    // Same principle as the box map itself: the engine does not know what BAS is.
+    expect(refined).toMatch(/the engine does not know what BAS is/);
+  });
+
+  it('an instance with no map says coverage is UNCHECKED rather than complete', () => {
+    // Empty map + "complete: true" would be the worst answer available: a clean
+    // bill of health computed from nothing.
+    expect(refined).toMatch(/'checked', false/);
+    expect(refined).toMatch(/every account is equally unclassified/);
   });
 
   it('and says so plainly when coverage is complete', () => {

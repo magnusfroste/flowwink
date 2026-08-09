@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260809190000",
-      "migrations_count": 361,
+      "migration_head": "20260809200000",
+      "migrations_count": 362,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1449,6 +1449,10 @@
         {
           "version": "20260809190000",
           "name": "vat-box-map-as-account-property"
+        },
+        {
+          "version": "20260809200000",
+          "name": "vat-coverage-prefixes-from-the-map"
         }
       ]
     },
