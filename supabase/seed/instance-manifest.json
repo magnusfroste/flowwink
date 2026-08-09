@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260810000000",
-      "migrations_count": 369,
+      "migration_head": "20260810010000",
+      "migrations_count": 370,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1481,6 +1481,10 @@
         {
           "version": "20260810000000",
           "name": "reversal-model-a-booked-entry-is-never-unbooked"
+        },
+        {
+          "version": "20260810010000",
+          "name": "account-roles-propose-truncate-not-delete"
         }
       ]
     },

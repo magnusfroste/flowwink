@@ -163,3 +163,23 @@ describe('it reaches the gateway and says the rule at the choice tier', () => {
     expect(seed).toMatch(/exactly 29 accounts had any balance or movement/);
   });
 });
+
+describe('propose survives the session an agent actually calls it from', () => {
+  const fix = readFileSync(
+    resolve(__dirname, '../../../supabase/migrations/20260810010000_account-roles-propose-truncate-not-delete.sql'), 'utf-8');
+
+  it('clears its temp table with TRUNCATE, not an unqualified DELETE', () => {
+    // Supabase runs PostgREST's role with the safeupdate extension, which
+    // rejects `DELETE FROM x` with no WHERE. Over psql — where every test of
+    // this function had run — safeupdate is off. So the skill worked all through
+    // development and failed the first time it was called through the gateway,
+    // which is the only way an agent ever calls it. Found on liteit 2026-08-10.
+    const body = fix.slice(fix.indexOf('AS $function$'));
+    expect(body).toMatch(/TRUNCATE _their;/);
+    expect(body).not.toMatch(/DELETE FROM _their;/);
+  });
+
+  it('names the class, not just the fix', () => {
+    expect(fix).toMatch(/legal in one session and refused\s*--\s*in another/);
+  });
+});
