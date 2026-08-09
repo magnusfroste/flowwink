@@ -63,13 +63,21 @@ Deno.serve(async (req) => {
       },
     });
 
-    await supabase
-      .from("document_signature_requests")
-      .update({ status: "sent", sent_at: new Date().toISOString() })
-      .eq("id", request_id);
+    // Only stamp "sent" when something was actually sent. The row was updated
+    // unconditionally before, so a request the allowlist withheld — or one the
+    // provider refused — showed staff a signer who had been asked and was not
+    // replying, when nothing had left the building. The signing link is still
+    // returned either way, so the request stays usable out-of-band.
+    const emailFailed = Boolean(sendRes?.error);
+    if (!emailFailed) {
+      await supabase
+        .from("document_signature_requests")
+        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("id", request_id);
+    }
 
     return new Response(
-      JSON.stringify({ ok: true, sign_url: signUrl, email: sendRes?.error ? "failed" : "sent" }),
+      JSON.stringify({ ok: true, sign_url: signUrl, email: emailFailed ? "failed" : "sent" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

@@ -188,3 +188,46 @@ describe('the invoice mail in agent-execute is gated', () => {
     expect(src).toMatch(/status: 'blocked',\n\s+recipient: order\.customer_email/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// The layer above: a withheld send must not read as a delivered one
+// ---------------------------------------------------------------------------
+
+describe('a blocked send cannot be mistaken for a delivered one by its callers', () => {
+  const src = readFileSync(join(FUNCTIONS_DIR, 'email-send/index.ts'), 'utf-8');
+
+  /**
+   * `supabase.functions.invoke` populates `error` only on a non-2xx response.
+   * Returned as 200, a blocked send is invisible to every caller that checks
+   * the transport error and not `data.success` — and three did exactly that:
+   * dunning-processor inserted a dunning action, document-sign-request stamped
+   * the request "sent", contract-billing-cron counted the reminder as gone out.
+   * A 422 makes the guard true for callers that were written before it existed.
+   */
+  it('answers a fully blocked send with a non-2xx status', () => {
+    const blockedBranch = src.slice(src.indexOf('blockedResponse(gate)'));
+    const status = blockedBranch.match(/status:\s*(\d{3})/);
+    expect(status, 'the blocked branch must set an explicit status').not.toBeNull();
+    expect(Number(status![1]), 'a 2xx here reads as delivered to invoke()').toBeGreaterThanOrEqual(400);
+  });
+
+  it('still names the withheld recipients when the rest of the send succeeded', () => {
+    // A send to [customer, internal] partially blocked: without this the
+    // customer's silence looks like theirs rather than ours.
+    expect(src).toMatch(/withheld_by_allowlist: gate\.blocked/);
+  });
+});
+
+describe('nobody records state for a send that did not happen', () => {
+  it('document-sign-request stamps "sent" only when the mail left', () => {
+    const src = readFileSync(join(FUNCTIONS_DIR, 'document-sign-request/index.ts'), 'utf-8');
+    // The update was unconditional: even a provider failure marked the request
+    // sent. The property is that the write is guarded, whatever the guard is
+    // named.
+    const update = src.indexOf('status: "sent", sent_at');
+    expect(update).toBeGreaterThan(-1);
+    const before = src.slice(0, update);
+    expect(before, 'the "sent" stamp must sit inside a success branch')
+      .toMatch(/if \(!\w*[Ff]ailed\w*\)\s*\{/);
+  });
+});
