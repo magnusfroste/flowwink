@@ -593,7 +593,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '4020', account_name: 'Inköp varor inom EU', debit_pct: 100, credit_pct: 0 },
       { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2611', account_name: 'Utgående moms omvänd skattskyldighet', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2615', account_name: 'Beräknad utgående moms på varuförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -607,7 +607,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '6550', account_name: 'Konsultarvoden', debit_pct: 100, credit_pct: 0 },
       { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2611', account_name: 'Utgående moms omvänd skattskyldighet', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -621,7 +621,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '5420', account_name: 'Programvaror', debit_pct: 100, credit_pct: 0 },
       { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2611', account_name: 'Utgående moms omvänd skattskyldighet', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },
@@ -635,7 +635,7 @@ export const BAS_2024_TEMPLATES = [
     template_lines: [
       { account_code: '5910', account_name: 'Annonsering', debit_pct: 100, credit_pct: 0 },
       { account_code: '2645', account_name: 'Beräknad ingående moms', debit_pct: 25, credit_pct: 0 },
-      { account_code: '2611', account_name: 'Utgående moms omvänd skattskyldighet', debit_pct: 0, credit_pct: 25 },
+      { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', debit_pct: 0, credit_pct: 25 },
       { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 100 },
     ],
   },

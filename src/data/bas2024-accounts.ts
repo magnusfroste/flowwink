@@ -111,6 +111,15 @@ export const BAS_2024_ACCOUNTS = [
   { account_code: '2510', account_name: 'Avräkning moms', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2610', account_name: 'Utgående moms 25%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2611', account_name: 'Utgående moms på försäljning inom Sverige, 25%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  // Reverse-charge output VAT (BAS: "omvänd skattskyldighet"). Seeded to the
+  // database by 20260726090000_reverse-charge-vat.sql but missing here, so the
+  // code's chart disagreed with every live instance until 2026-08-09.
+  { account_code: '2614', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 25%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2615', account_name: 'Beräknad utgående moms på varuförvärv från utlandet, 25%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2624', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 12%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2625', account_name: 'Beräknad utgående moms på varuförvärv från utlandet, 12%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2634', account_name: 'Beräknad utgående moms på tjänsteförvärv från utlandet, 6%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
+  { account_code: '2635', account_name: 'Beräknad utgående moms på varuförvärv från utlandet, 6%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2620', account_name: 'Utgående moms 12%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2630', account_name: 'Utgående moms 6%', account_type: 'liability', account_category: 'Moms', normal_balance: 'credit', locale: 'se-bas2024' },
   { account_code: '2640', account_name: 'Ingående moms', account_type: 'liability', account_category: 'Moms', normal_balance: 'debit', locale: 'se-bas2024' },
