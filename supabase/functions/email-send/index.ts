@@ -249,8 +249,20 @@ serve(async (req: Request) => {
         status: "blocked", provider: null, simulated: false,
         error_message: gate.error ?? `Blocked by email allowlist: ${gate.blocked.map((b) => b.address).join(", ")}`,
       });
+      // 422, not 200. `supabase.functions.invoke` only populates `error` on a
+      // non-2xx response, so a blocked send returned as 200 reads as delivered
+      // to every caller that checks the transport error and not `data.success`
+      // — and three of them do exactly that: dunning-processor records a
+      // dunning action, document-sign-request stamps the request "sent", and
+      // contract-billing-cron counts the reminder as gone out. Withholding the
+      // mail and then letting the caller write "sent" is the same envelope lie
+      // this guard exists to prevent, one layer up.
+      //
+      // The body is unchanged, so `blocked_by_allowlist` and the reason remain
+      // readable via the FunctionsHttpError's response for callers that want to
+      // distinguish "withheld" from "provider down".
       return new Response(JSON.stringify(blockedResponse(gate)),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     recipients = gate.allowed;
 
@@ -494,7 +506,14 @@ serve(async (req: Request) => {
     });
 
     return new Response(
-      JSON.stringify({ success: true, provider, simulated: false, result }),
+      // A partial block still succeeds — some recipients got it — but the
+      // caller has to be able to name the ones who did not. Without this, a
+      // send to [customer, internal] reports plain success and the customer's
+      // silence looks like theirs rather than ours.
+      JSON.stringify({
+        success: true, provider, simulated: false, result,
+        ...(gate.blocked.length ? { withheld_by_allowlist: gate.blocked } : {}),
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
