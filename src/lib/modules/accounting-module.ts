@@ -141,7 +141,7 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
   },
   {
     name: 'manage_accounting_template',
-    description: 'Create, list, or update reusable accounting templates for common transactions. Templates have keyword matching for AI auto-selection. Use when: admin wants to add a new template, or a new transaction pattern is identified that should be reusable. NOT for: actual bookkeeping (use manage_journal_entry).',
+    description: 'Create, list, or update ONE reusable accounting template at a time. Templates have keyword matching for AI auto-selection. Use when: admin wants to add or tweak a single template, or list what exists. NOT for: actual bookkeeping (use manage_journal_entry), authoring a SET of templates with structural verification against the chart (use propose_posting_templates — it balance-checks every template and corrects account names from the chart).',
     category: 'commerce',
     handler: 'db:accounting_templates',
     scope: 'internal',
@@ -184,6 +184,133 @@ Routing rules in order: (1) vendor.default_account_code wins; (2) keyword-match 
     },
     instructions:
       'template_lines are PERCENTAGES of the net transaction amount (base = 100), not fixed amounts — booking expands them via manage_journal_entry {template_id, amount_cents}. Each line uses debit_pct OR credit_pct (other = 0); Σ debit_pct must equal Σ credit_pct or the booked verifikat will not balance. The receivable/payable line is typically 100 + VAT (e.g. 125 for 25% moms), the revenue/cost line 100, the VAT line 25. Use only account_codes that exist in the chart of accounts.',
+  },
+  {
+    name: 'import_accounting_standard',
+    description:
+      "Set up a country's chart of accounts from the OFFICIAL standard file — you read the file (xlsx/csv from the publisher: BAS, DATEV/SKR, PCG…), send structured rows, and the platform validates, stores, and wires the role layer so the engine can post. FAIL CLOSED on provenance: source_url + sha256 of the file are REQUIRED, because an unsourced chart cannot be verified later — a hand-written 'BAS 2024' shipped 166 wrong names before anyone could compare. Take account names VERBATIM from the file, never paraphrase or translate. Use when: activating a new country/standard on this instance, refreshing a chart from a new edition of the standard (replace=true). NOT for: authoring posting templates (propose_posting_templates), adding a single account (manage_chart_of_accounts), importing a customer's legacy chart from SIE — that is a mapping problem, not a standard.",
+    category: 'commerce',
+    handler: 'rpc:import_accounting_standard',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'import_accounting_standard',
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: "Stable id: ISO country + standard, e.g. 'de-skr03', 'fr-pcg'. Lowercase." },
+            label: { type: 'string', description: "Human label, e.g. 'Germany — SKR03 2024'." },
+            source_url: { type: 'string', description: "The PUBLISHER's own URL for the file you parsed (bas.se, datev.de…). Required — this is what lets anyone re-verify the import." },
+            source_sha256: { type: 'string', description: 'Lowercase hex sha256 of the downloaded file. You have the file — hash it. Required.' },
+            accounts: {
+              type: 'array',
+              description: 'Every account, VERBATIM from the file: {code: "8400", name: "Erlöse 19 % USt", type: asset|liability|equity|revenue|expense, category?, normal_balance?}. Minimum 40 — fewer is a parsing failure, not a chart.',
+              items: { type: 'object', properties: {
+                code: { type: 'string' }, name: { type: 'string' },
+                type: { type: 'string', enum: ['asset', 'liability', 'equity', 'revenue', 'expense'] },
+                category: { type: 'string' }, normal_balance: { type: 'string', enum: ['debit', 'credit'] },
+              }, required: ['code', 'name', 'type'] },
+            },
+            roles: {
+              type: 'object',
+              description: 'Platform role → account code, e.g. {"bank":"1200","accounts_receivable":"1400","sales_revenue":"8400","vat_output":"1776","vat_input":"1576","accounts_payable":"1600"}. The six named are REQUIRED — the engine posts through roles, never through hardcoded numbers, and without them the locale is inert.',
+            },
+            replace: { type: 'boolean', description: 'Required to touch a locale that already has a chart. Existing accounts are renamed to the delivered names, missing inserted, none deleted — posted-to accounts always survive.' },
+          },
+          required: ['locale', 'label', 'source_url', 'source_sha256', 'accounts', 'roles'],
+        },
+      },
+    },
+    instructions: `## The job
+You are loading a STANDARD, not designing one. Fetch the official file from the
+publisher (BAS for Sweden, DATEV for German SKR, the authority for the country),
+parse it yourself, and deliver rows verbatim.
+
+## The three rules, each learned the hard way on this platform
+1. **Names verbatim.** Never paraphrase, translate or "improve" an account name.
+   Our own chart once carried 2614's name on 2611 — ordinary VAT went down a
+   reverse-charge path in four templates, and the label misled the person who
+   tried to fix it.
+2. **Provenance or nothing.** source_url must be the publisher's own address and
+   source_sha256 the hash of the exact file you parsed. The call REFUSES without
+   them: an unsourced chart is unverifiable forever.
+3. **Roles make it live.** The engine resolves bank/accounts_receivable/
+   accounts_payable/sales_revenue/vat_output/vat_input through account_roles —
+   map them to the codes the standard prescribes for those functions. Wrong role
+   mapping = every invoice posts to the wrong account, with a perfectly valid
+   chart.
+
+## Refusals are complete
+A refused import returns EVERY error at once (bad codes, duplicates, missing
+roles, unknown types) — fix them all and resubmit once. Nothing is written on
+refusal.
+
+## After import
+The response tells you: the locale can now post. What it cannot know is what
+THIS company books — follow with propose_posting_templates.`,
+  },
+  {
+    name: 'propose_posting_templates',
+    description:
+      "Author a SET of posting templates for a locale and have every one structurally verified before it is stored: lines must balance (Σ debit_pct = Σ credit_pct), every account must exist in the locale's chart, and account names are corrected FROM the chart (the chart is the single truth for names). Posting templates are published nowhere — they describe what a specific company actually books, which the platform cannot foresee. If you hold the company's transaction history, derive the templates from it: the recurring patterns in last year's transactions ARE the template set this company needs. Rejected templates come back with reasons and are NOT stored; accepted ones are operator-owned (is_system=false). Use when: setting up a new locale after import_accounting_standard, onboarding a company whose transaction history you can read, codifying recurring booking patterns. NOT for: editing one existing template (manage_accounting_template), booking a transaction (manage_journal_entry), registering a one-off pattern mid-booking (suggest_accounting_template).",
+    category: 'commerce',
+    handler: 'rpc:propose_posting_templates',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'propose_posting_templates',
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: "The locale whose chart the templates are verified against, e.g. 'se-bas2024', 'de-skr03'. Must already have a chart." },
+            templates: {
+              type: 'array',
+              description: 'Each: {template_name, description?, category: revenue|expense|payment|payroll|tax|adjustment|asset, keywords: [..], template_lines: [{account_code, debit_pct, credit_pct}]}. Percentages of the NET amount (base=100): a 19% VAT sale is receivable 119 / revenue 100 / VAT 19. account_name may be omitted — it is taken from the chart.',
+              items: { type: 'object', properties: {
+                template_name: { type: 'string' }, description: { type: 'string' },
+                category: { type: 'string', enum: ['revenue', 'expense', 'payment', 'payroll', 'tax', 'asset', 'adjustment'] },
+                keywords: { type: 'array', items: { type: 'string' } },
+                template_lines: { type: 'array', items: { type: 'object', properties: {
+                  account_code: { type: 'string' }, debit_pct: { type: 'number' }, credit_pct: { type: 'number' },
+                }, required: ['account_code', 'debit_pct', 'credit_pct'] } },
+              }, required: ['template_name', 'category', 'keywords', 'template_lines'] },
+            },
+          },
+          required: ['locale', 'templates'],
+        },
+      },
+    },
+    instructions: `## Where templates come from
+The chart says which accounts EXIST. It says nothing about what this company
+DOES. If you have access to the company's transaction history (a ledger export,
+last year's bank feed, an SIE file), mine it: group the recurring transactions —
+rent, the SaaS subscriptions, fuel, the two kinds of sales, payroll — and write
+one template per recurring pattern. Aim for the patterns that cover ~90% of
+transaction volume; a company rarely needs more than 30–50 to start. Without
+history, author the standard set for the country instead (domestic sale per VAT
+rate, EU purchase, payroll run, VAT settlement, bank fees…).
+
+## The verification you are writing against
+- **Balance**: Σ debit_pct = Σ credit_pct, both > 0. Percentages of the NET
+  amount (base=100). Example DE 19%: 1400 debit 119 / 8400 credit 100 /
+  1776 credit 19.
+- **Accounts must exist** in the locale's chart — run import_accounting_standard
+  first, and never invent a code.
+- **Names are the chart's.** Any account_name you send is REPLACED by the
+  chart's name and reported under name_corrections. Templates carrying their own
+  wording is how four VAT templates kept a wrong account for months.
+- **Keywords matter**: they are what the matching engine uses to find the
+  template from a transaction description. Use the words that appear in this
+  company's actual bank descriptions, in the local language.
+
+## Partial success is the contract
+accepted / rejected / skipped come back per template. Rejected ones were NOT
+stored — fix the reasons and resubmit ONLY those. Do not report the batch as
+done while rejected is non-empty.`,
   },
   {
     name: 'manage_opening_balances',
