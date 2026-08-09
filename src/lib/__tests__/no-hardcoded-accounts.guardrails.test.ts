@@ -193,6 +193,8 @@ describe('an account carrying money and belonging to no box is reported, not dro
     join(ROOT, 'supabase/migrations/20260809190000_vat-box-map-as-account-property.sql'), 'utf-8');
   const refined = readFileSync(
     join(ROOT, 'supabase/migrations/20260809200000_vat-coverage-prefixes-from-the-map.sql'), 'utf-8');
+  const statusFix = readFileSync(
+    join(ROOT, 'supabase/migrations/20260809230000_vat-coverage-counts-what-the-return-counts.sql'), 'utf-8');
 
   it('vat_box_coverage names the gap in the operator\'s own words', () => {
     expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.vat_box_coverage/);
@@ -226,6 +228,24 @@ describe('an account carrying money and belonging to no box is reported, not dro
     // bill of health computed from nothing.
     expect(refined).toMatch(/'checked', false/);
     expect(refined).toMatch(/every account is equally unclassified/);
+  });
+
+  it('counts the same entries the return counts', () => {
+    // Found end-to-end on dev: the filter said status <> 'void', and this
+    // platform writes 'voided'. The comparison was therefore always true and
+    // excluded nothing, while the return sums status = 'posted' only — so an
+    // account whose only movement was on a REVERSED entry was reported as a gap
+    // on books that are correct.
+    //
+    // A near-miss literal fails open and silently: no error, no type mismatch,
+    // just a filter that quietly matches everything. Stated positively, the two
+    // halves of the filing can only agree.
+    const handler = readFileSync(
+      join(ROOT, 'supabase/functions/_shared/handlers/accounting-vat-return-se.ts'), 'utf-8');
+    expect(handler).toMatch(/\.eq\('journal_entries\.status', 'posted'\)/);
+    expect(statusFix).toMatch(/AND e\.status = 'posted'/);
+    const body = statusFix.slice(statusFix.indexOf('AS $function$'));
+    expect(body).not.toMatch(/<> 'void'/);
   });
 
   it('and says so plainly when coverage is complete', () => {

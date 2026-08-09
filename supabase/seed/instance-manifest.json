@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260809200000",
-      "migrations_count": 362,
+      "migration_head": "20260809230000",
+      "migrations_count": 363,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1453,6 +1453,10 @@
         {
           "version": "20260809200000",
           "name": "vat-coverage-prefixes-from-the-map"
+        },
+        {
+          "version": "20260809230000",
+          "name": "vat-coverage-counts-what-the-return-counts"
         }
       ]
     },
