@@ -159,21 +159,44 @@ describe('seed parity between the browser path and the CLI', () => {
     expect(bundle.packs.some((p: any) => (p.countries ?? []).includes('*'))).toBe(true);
   });
 
-  it('chart presence is checked by account_code alone, in BOTH paths', () => {
-    // chart_of_accounts has UNIQUE (account_code). Scoping the presence lookup
-    // by locale asks a narrower question than the constraint enforces: liteit
-    // carries five accounts still tagged with the legacy locale `sv-SE`, which
-    // made them read as missing. The frontend then threw on the unique
-    // violation and aborted the whole top-up, leaving that instance at 261 of
-    // 263 accounts with nothing reporting why.
+  it('chart presence is checked per LOCALE, in both paths — and matches the constraint', () => {
+    // This guard used to say the opposite, and was right at the time: the table
+    // was globally UNIQUE (account_code), liteit carried five accounts tagged
+    // with the legacy locale `sv-SE`, and a locale-scoped lookup read them as
+    // missing — the insert then hit the global constraint and aborted the whole
+    // top-up at 261 of 263 accounts with nothing reporting why.
+    //
+    // On 2026-08-09 the constraint became UNIQUE (locale, account_code) so a
+    // German 1200 and a Swedish 1200 could coexist. The seeders were not
+    // updated: they kept the global lookup AND `on conflict (account_code)`,
+    // which matches no index, so sync:skills crashed with 42P10 and the chart
+    // top-up was dead fleet-wide until 2026-08-10.
+    //
+    // The rule now: ask the question the constraint answers. A constraint change
+    // is an API change for everything that writes the table — including the test
+    // that pins how it is written.
     const hook = read('src/hooks/useTenantLocalePack.ts');
     const chartBlock = hook.slice(hook.indexOf('Chart accounts:'), hook.indexOf('Templates:'));
-    expect(chartBlock, 'the chart lookup is locale-scoped again').not.toMatch(
-      /\.eq\('locale'/,
-    );
+    expect(chartBlock, 'the chart lookup must be locale-scoped').toMatch(/\.eq\('locale', pack\.id\)/);
 
     const sync = read('scripts/sync-skills.ts');
-    const syncBlock = sync.slice(sync.indexOf('Chart of accounts'), sync.length);
-    expect(syncBlock).not.toMatch(/from chart_of_accounts where locale/);
+    const syncBlock = sync.slice(sync.indexOf('Chart of accounts'));
+    expect(syncBlock).toMatch(/from chart_of_accounts where locale = \$1/);
+    expect(syncBlock, 'the conflict target must match the index').toMatch(
+      /on conflict \(locale, account_code\) do nothing/);
+
+    const ae = read('supabase/functions/agent-execute/index.ts');
+    expect(ae).toMatch(/\.select\('account_code'\)\.eq\('locale', pack\.id\)/);
+  });
+
+  it('and one code still names one account on an instance', () => {
+    // What the old global constraint used to enforce as a side effect, and what
+    // the per-locale one does not: two rows for 2081 differing only by a locale
+    // tag both answer to the same postings, because journal lines reference the
+    // code as text.
+    const cleanup = read('supabase/migrations/20260810020000_one-chart-per-code-drop-legacy-locale-rows.sql');
+    expect(cleanup).toMatch(/DELETE FROM public\.chart_of_accounts/);
+    expect(cleanup).toMatch(/ONLY where the same code already exists under another locale/);
+    expect(cleanup).toMatch(/no foreign keys/);
   });
 });
