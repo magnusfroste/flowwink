@@ -36,7 +36,10 @@ export async function topUpLocalePackSeeds(packId: string): Promise<void> {
   // aborted the whole top-up — including every batch after it. That instance
   // sat at 261 of 263 accounts with nothing reporting why.
   if (pack.chart.length > 0) {
-    const { data: existingAcc } = await supabase.from('chart_of_accounts').select('account_code');
+    // Locale-scoped: the table is UNIQUE (locale, account_code), so an account
+    // code present under another locale does not block this one.
+    const { data: existingAcc } = await supabase.from('chart_of_accounts')
+      .select('account_code').eq('locale', pack.id);
     const haveCodes = new Set((existingAcc ?? []).map((r) => r.account_code));
     const missingAcc = pack.chart
       .filter((a: any) => !haveCodes.has(a.account_code))

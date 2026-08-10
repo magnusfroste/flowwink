@@ -2021,11 +2021,15 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           (p: any) => p.id === localeToActivate,
         );
         if (pack) {
-          const { data: haveAcc } = await supabase.from('chart_of_accounts').select('account_code');
+          // Locale-scoped — UNIQUE (locale, account_code).
+          const { data: haveAcc } = await supabase.from('chart_of_accounts')
+            .select('account_code').eq('locale', pack.id);
           const have = new Set((haveAcc ?? []).map((r: any) => r.account_code));
           const missing = (pack.accounts as any[])
             .filter((acc) => !have.has(acc.account_code))
-            .map((acc) => ({ ...acc, is_active: true, locale: pack.id }));
+            // is_active comes from the pack — the whole standard is seeded, but
+            // only the accounts a company plausibly uses start visible.
+            .map((acc) => ({ ...acc, is_active: acc.is_active !== false, locale: pack.id }));
           for (let i = 0; i < missing.length; i += 100) {
             const { error: coaErr } = await supabase
               .from('chart_of_accounts').insert(missing.slice(i, i + 100));
@@ -8557,6 +8561,20 @@ async function executeDbAction(
           description: l.description || null,
         })));
       if (linesErr2) throw new Error(`Create lines failed: ${linesErr2.message}`);
+
+      // Posting to an account activates it. The chart carries the WHOLE
+      // standard (1 262 BAS accounts), but is_active means "this company uses
+      // it" — pickers, the balance-sheet classifier and the chart listing all
+      // filter on it. Without this an account posted to would hold a balance
+      // while staying invisible to every one of them, which is the orphan the
+      // balance sheet already warns about.
+      const touched = [...new Set(entryLines.map((l: any) => l.account_code).filter(Boolean))];
+      if (touched.length) {
+        await supabase.from('chart_of_accounts')
+          .update({ is_active: true })
+          .in('account_code', touched)
+          .eq('is_active', false);
+      }
 
       // Agentic bookkeeping: if this entry was booked from a bank event
       // (the "Händelser att bokföra" queue), link it so the event leaves the

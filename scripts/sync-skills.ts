@@ -182,12 +182,16 @@ const coaStats = {
 };
 
 if (pack) {
-  // By account_code alone — the table has UNIQUE (account_code), so scoping
-  // this to the pack's locale would ask a narrower question than the
-  // constraint enforces and report codes as missing that cannot be inserted.
-  // See the same note in useTenantLocalePack.ts, where it actually bit.
+  // Scoped to the pack's locale, because that is what the constraint says:
+  // UNIQUE (locale, account_code) since 2026-08-09 (import_accounting_standard
+  // needed a German 1200 and a Swedish 1200 to coexist). This code still asked
+  // the old global question and used `on conflict (account_code)`, which no
+  // longer matches any index — so the chart top-up crashed with 42P10 on every
+  // instance until 2026-08-10. A constraint change is an API change for
+  // everything that writes the table.
   const have = new Set(
-    (await c.query(`select account_code from chart_of_accounts`)).rows.map((r: any) => r.account_code),
+    (await c.query(`select account_code from chart_of_accounts where locale = $1`, [pack.id]))
+      .rows.map((r: any) => r.account_code),
   );
   for (const a of pack.accounts as Array<Record<string, unknown>>) {
     const code = String(a.account_code);
@@ -195,9 +199,13 @@ if (pack) {
     coaStats.missing.push(code);
     if (APPLY) {
       await c.query(
+        // is_active comes from the pack: the whole standard ships, but only the
+        // accounts a company plausibly uses start visible. Posting to a dormant
+        // one activates it — see manage_journal_entry.
         `insert into chart_of_accounts (account_code, account_name, account_type, account_category, normal_balance, is_active, locale)
-         values ($1,$2,$3,$4,$5,true,$6) on conflict (account_code) do nothing`,
-        [code, a.account_name, a.account_type, a.account_category, a.normal_balance, pack.id],
+         values ($1,$2,$3,$4,$5,$6,$7) on conflict (locale, account_code) do nothing`,
+        [code, a.account_name, a.account_type, a.account_category, a.normal_balance,
+         a.is_active !== false, pack.id],
       );
       coaStats.inserted++;
     }

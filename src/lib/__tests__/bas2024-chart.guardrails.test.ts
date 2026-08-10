@@ -154,3 +154,49 @@ describe('the generator is reproducible', () => {
     expect(gen).toMatch(/if len\(accounts\) < 1000/);
   });
 });
+
+describe('we ship the whole standard, and is_active says who uses it', () => {
+  const shipped = new Map(BAS_2024_ACCOUNTS.map((a) => [a.account_code, a]));
+
+  it('every BAS 2024 account is present — a missing one is a wall a migration hits', () => {
+    // LiteIT's own history needed six perfectly ordinary BAS accounts we simply
+    // had not shipped (1351, 1640, 2081, 2086, 2098, 8314). Reference data
+    // should be complete; what varies per company is which accounts they USE.
+    const missing = Object.keys(BAS).filter((c) => !shipped.has(c));
+    expect(missing, `Not shipped: ${missing.slice(0, 20).join(', ')}`).toEqual([]);
+    expect(shipped.size).toBe(Object.keys(BAS).length + KNOWN_NOT_IN_BAS.length);
+  });
+
+  it('is_active is "this company uses it", not "it exists"', () => {
+    const active = BAS_2024_ACCOUNTS.filter((a) => (a as { is_active?: boolean }).is_active);
+    // Every account BAS marks ■ starts active; the long tail ships dormant.
+    const coreInactive = Object.entries(BAS)
+      .filter(([c, v]) => (v as { core?: boolean }).core && !(shipped.get(c) as { is_active?: boolean })?.is_active)
+      .map(([c]) => c);
+    expect(coreInactive, `BAS core accounts shipped dormant: ${coreInactive.join(', ')}`).toEqual([]);
+    expect(active.length).toBeGreaterThan(400);
+    expect(active.length).toBeLessThan(shipped.size);   // a dormant tail must exist
+  });
+
+  it('is generated, so nobody hand-edits 1 262 rows back into drift', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../data/bas2024-accounts.ts'), 'utf-8');
+    expect(src).toMatch(/GENERATED\. Do not hand-edit/);
+    expect(src).toMatch(/scripts\/generate-bas2024-chart\.ts/);
+  });
+
+  it('posting to a dormant account activates it — otherwise it holds a balance nobody can see', () => {
+    const handler = readFileSync(
+      resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+    expect(handler).toMatch(/Posting to an account activates it/);
+    expect(handler).toMatch(/\.update\(\{ is_active: true \}\)\s*\n\s*\.in\('account_code', touched\)/);
+  });
+
+  it('the seeders carry the flag instead of forcing everything visible', () => {
+    const sync = readFileSync(resolve(__dirname, '../../../scripts/sync-skills.ts'), 'utf-8');
+    expect(sync).toMatch(/a\.is_active !== false/);
+    const edge = readFileSync(
+      resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+    expect(edge).toMatch(/is_active: acc\.is_active !== false/);
+  });
+});
