@@ -227,3 +227,6 @@ verify_jwt = false
 # invoice_id path is admin/service-gated in-body (requireServiceOrRole). Kept
 # --no-verify-jwt so the public token path reaches it with the publishable key.
 verify_jwt = false
+
+[functions.workspace-chat]
+verify_jwt = true

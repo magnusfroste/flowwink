@@ -10,6 +10,7 @@ export type WorkspaceSource =
   | 'crm'
   | 'employees'
   | 'wiki'
+  | 'handbook'
   | 'flowtable';
 
 export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
@@ -20,6 +21,7 @@ export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'crm',
   'employees',
   'wiki',
+  'handbook',
   'flowtable',
 ];
 
@@ -31,11 +33,19 @@ export interface WorkspaceCitation {
   url?: string;
 }
 
+export interface ConsultedSkill {
+  skill: string;
+  ok: boolean;
+  ms: number;
+}
+
 export interface WorkspaceMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   citations?: WorkspaceCitation[];
+  /** Live skills the assistant executed to ground this answer. */
+  consulted?: ConsultedSkill[];
   createdAt: string;
 }
 
@@ -207,6 +217,20 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
             if (line.startsWith('data: ')) {
               const data = line.slice(6).trim();
               if (data === '[DONE]') {
+                continue;
+              }
+
+              if (currentEvent === 'consulted') {
+                try {
+                  const cs = JSON.parse(data);
+                  if (Array.isArray(cs)) {
+                    setMessages((prev) =>
+                      prev.map((m) => (m.id === assistantId ? { ...m, consulted: cs } : m)),
+                    );
+                  }
+                } catch (err) {
+                  logger.error('parse consulted failed', err);
+                }
                 continue;
               }
 

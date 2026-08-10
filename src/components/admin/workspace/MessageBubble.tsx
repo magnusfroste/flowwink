@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, RotateCw, Loader2 } from 'lucide-react';
+import { Copy, Check, RotateCw, Loader2, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MessageBubbleProps {
   role: 'user' | 'assistant';
   content: string;
+  /** Live skills executed for this answer — shown so grounding is inspectable. */
+  consulted?: Array<{ skill: string; ok: boolean; ms: number }>;
   isStreaming?: boolean;
   /** Show regenerate button (assistant + last message + not streaming). */
   canRegenerate?: boolean;
@@ -16,6 +18,7 @@ interface MessageBubbleProps {
 export function MessageBubble({
   role,
   content,
+  consulted,
   isStreaming,
   canRegenerate,
   onRegenerate,
@@ -56,6 +59,20 @@ export function MessageBubble({
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         )}
       </div>
+      {consulted && consulted.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-1 text-[11px] text-muted-foreground">
+          <Wrench className="h-3 w-3 shrink-0" />
+          {consulted.map((c, i) => (
+            <span
+              key={`${c.skill}-${i}`}
+              className={cn('font-mono', !c.ok && 'line-through opacity-60')}
+              title={c.ok ? `${c.ms} ms` : 'failed'}
+            >
+              {c.skill}
+            </span>
+          ))}
+        </div>
+      )}
       {content && !isStreaming && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pl-1">
           <Button

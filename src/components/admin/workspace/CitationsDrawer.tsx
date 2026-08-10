@@ -48,6 +48,14 @@ const TYPE_LABEL: Record<string, string> = {
   lead: 'Lead',
   deal: 'Deal',
   employee: 'Employee',
+  // Citation TYPES come from the retrieval layer; source KEYS from the chat.
+  // Two lists that drift unless extended together — a wiki citation used to
+  // render the raw string 'wiki'.
+  wiki: 'Wiki',
+  handbook: 'Handbook',
+  flowtable: 'Flowtable',
+  skill: 'Live data',
+  attachment: 'Attachment',
 };
 
 const SOURCE_META: Record<
@@ -61,6 +69,7 @@ const SOURCE_META: Record<
   crm: { label: 'CRM', Icon: Users },
   employees: { label: 'Employees', Icon: UserCheck },
   wiki: { label: 'Wiki', Icon: BookOpen },
+  handbook: { label: 'Handbook', Icon: BookOpen },
   flowtable: { label: 'Flowtable', Icon: Table2 },
 };
 
@@ -164,7 +173,23 @@ export function CitationsDrawer({
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="px-6 pb-4 pt-1 space-y-2">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSourcesChange([...ALL_WORKSPACE_SOURCES])}
+                className="h-6 text-[11px] px-2"
+              >
+                All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSourcesChange([])}
+                className="h-6 text-[11px] px-2"
+              >
+                None
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

@@ -50,6 +50,7 @@ const CHUNK_CITATION_TYPE: Record<string, string> = {
   wiki_pages: 'wiki',
   docs_pages: 'doc',
   documents: 'document',
+  handbook_chapters: 'handbook',
 };
 
 /**

@@ -14,6 +14,29 @@
 // ─── Synonym Map ─────────────────────────────────────────────────────────────
 // Maps common user terms (including Swedish) to skill-related keywords
 const SYNONYM_MAP: Record<string, string[]> = {
+  // Swedish business nouns → catalog vocabulary (the catalog is English).
+  // Query-side expansion feeding the general scorer — the corpus lever, not a
+  // routing rule. Added 2026-08-11 when a Swedish FlowWork question ranked
+  // manage_automations above manage_ticket for "supporttickets".
+  fakturor: ['invoice', 'invoices', 'billing', 'payment', 'unpaid', 'overdue'],
+  obetald: ['unpaid', 'overdue', 'due', 'invoice'],
+  obetalda: ['unpaid', 'overdue', 'due', 'invoice'],
+  förfallen: ['overdue', 'due', 'invoice'],
+  betalning: ['payment', 'paid', 'invoice'],
+  kunder: ['customer', 'customers', 'company', 'client'],
+  ärende: ['ticket', 'support', 'case', 'issue'],
+  ärenden: ['ticket', 'tickets', 'support', 'case'],
+  supporttickets: ['ticket', 'tickets', 'support'],
+  avtal: ['contract', 'agreement', 'renewal'],
+  avtalet: ['contract', 'agreement', 'renewal'],
+  offert: ['quote', 'proposal'],
+  anställd: ['employee', 'staff', 'hr'],
+  anställda: ['employee', 'employees', 'staff', 'hr'],
+  semester: ['leave', 'vacation', 'absence'],
+  prenumeration: ['subscription', 'recurring'],
+  leverantör: ['vendor', 'supplier', 'purchase'],
+  omförhandla: ['renewal', 'contract', 'renegotiate'],
+  omförhandlas: ['renewal', 'contract', 'renegotiate'],
   // Email
   mail: ['gmail', 'email', 'inbox', 'send', 'composio_gmail'],
   email: ['gmail', 'mail', 'inbox', 'send', 'composio_gmail'],
@@ -84,7 +107,7 @@ const SYNONYM_MAP: Record<string, string[]> = {
   balansräkning: ['accounting', 'report', 'balance_sheet', 'accounting_reports'],
   huvudbok: ['accounting', 'ledger', 'report', 'accounting_reports'],
   moms: ['journal', 'accounting', 'vat', 'tax', 'manage_journal_entry'],
-  faktura: ['journal', 'accounting', 'invoice', 'manage_journal_entry'],
+  faktura: ['journal', 'accounting', 'invoice', 'billing', 'unpaid', 'overdue', 'manage_journal_entry'],
   hyra: ['journal', 'accounting', 'rent', 'template', 'manage_journal_entry'],
   expense: ['expense', 'receipt', 'reimburse', 'manage_expenses'],
   utlägg: ['expense', 'receipt', 'reimburse', 'manage_expenses'],

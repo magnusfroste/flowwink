@@ -53,12 +53,31 @@ import { supabase } from '@/integrations/supabase/client';
 
 const MAX_ATTACHMENTS = 5;
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
+const SOURCES_LS_KEY = 'flowwork.sources.v1';
 
 export default function WorkspaceChatPage() {
   const { toast } = useToast();
   const enabled = useIsModuleEnabled('workspaceChat');
   const { data: settings } = useCoworkSettings();
-  const [sources, setSources] = useState<WorkspaceSource[]>(ALL_WORKSPACE_SOURCES);
+  // The source selection is the user's own dial — it survives reloads. A
+  // saved choice beats the admin default; RLS decides what each source can
+  // actually show this person.
+  const [sources, setSourcesState] = useState<WorkspaceSource[]>(() => {
+    try {
+      const raw = localStorage.getItem(SOURCES_LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((s): s is WorkspaceSource => ALL_WORKSPACE_SOURCES.includes(s));
+        }
+      }
+    } catch { /* fall through to default */ }
+    return ALL_WORKSPACE_SOURCES;
+  });
+  const setSources = (next: WorkspaceSource[]) => {
+    setSourcesState(next);
+    try { localStorage.setItem(SOURCES_LS_KEY, JSON.stringify(next)); } catch { /* */ }
+  };
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<CoworkAttachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -78,13 +97,16 @@ export default function WorkspaceChatPage() {
   const activeSessionRef = useRef<string | null>(null);
   useEffect(() => { activeSessionRef.current = activeSessionId; }, [activeSessionId]);
 
-  // Apply saved defaults the first time settings load
+  // Apply the admin default the first time settings load — but never over a
+  // choice this user already made and saved.
   const hydrated = useRef(false);
   useEffect(() => {
-    if (!hydrated.current && settings?.defaultSources?.length) {
-      setSources(settings.defaultSources);
-      hydrated.current = true;
-    }
+    if (hydrated.current || !settings?.defaultSources?.length) return;
+    hydrated.current = true;
+    try {
+      if (localStorage.getItem(SOURCES_LS_KEY)) return;
+    } catch { /* */ }
+    setSourcesState(settings.defaultSources);
   }, [settings?.defaultSources]);
 
   const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate } = useWorkspaceChat({
@@ -520,6 +542,7 @@ export default function WorkspaceChatPage() {
                         key={m.id}
                         role={m.role}
                         content={m.content}
+                        consulted={m.consulted}
                         isStreaming={isStreaming && isLast && m.role === 'assistant'}
                         canRegenerate={
                           m.role === 'assistant' &&
