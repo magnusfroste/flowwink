@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260810160000",
-      "migrations_count": 379,
+      "migration_head": "20260810230000",
+      "migrations_count": 380,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1521,6 +1521,10 @@
         {
           "version": "20260810160000",
           "name": "the-ledger-decides-which-fiscal-years-exist"
+        },
+        {
+          "version": "20260810230000",
+          "name": "the-closing-balance-becomes-the-opening-balance"
         }
       ]
     },

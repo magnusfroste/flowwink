@@ -377,11 +377,26 @@ export function useAccountBalances(fiscalYear?: number) {
 
       if (error) throw error;
 
-      // Opening balances for the SELECTED fiscal year
-      const { data: openingData } = await supabase
-        .from('opening_balances')
-        .select('*')
-        .eq('fiscal_year', year);
+      // The opening balance is DERIVED — everything posted before this year —
+      // not read from a stored row for it. Storing it per year put the same
+      // number in two places (last year's closing, this year's opening) and
+      // they drifted: on liteit the two disagreed about whether a loan was
+      // long-term or short-term. See the migration for the full account.
+      const { data: openingRows } = await supabase.rpc(
+        'opening_balances_for_year' as never,
+        { p_year: year } as never,
+      );
+      const openingData = ((openingRows ?? []) as Array<{
+        account_code: string;
+        account_name: string;
+        net_cents: number;
+      }>).map((r) => ({
+        account_code: r.account_code,
+        account_name: r.account_name,
+        // net_cents is signed against the debit side.
+        amount_cents: Math.abs(Number(r.net_cents || 0)),
+        balance_type: Number(r.net_cents || 0) >= 0 ? 'debit' : 'credit',
+      }));
 
       // Aggregate by account
       const map = new Map<string, AccountBalance>();
@@ -505,19 +520,19 @@ export function useAccountLedger(accountCode: string | null, fiscalYear?: number
       const normalBalance: 'debit' | 'credit' =
         (chart?.normal_balance as 'debit' | 'credit') || 'debit';
 
-      const { data: opening } = await supabase
-        .from('opening_balances')
-        .select('amount_cents, balance_type, account_name')
-        .eq('fiscal_year', currentYear)
-        .eq('account_code', accountCode)
-        .maybeSingle();
-
-      let opening_cents = 0;
-      if (opening) {
-        const amt = Number((opening as any).amount_cents || 0);
-        const t = ((opening as any).balance_type || 'debit') as 'debit' | 'credit';
-        opening_cents = t === normalBalance ? amt : -amt;
-      }
+      // Derived, same rule as the balance sheet: everything posted before this
+      // year. An account ledger that opened at zero every January was the same
+      // defect seen from a different page.
+      const { data: openingRows } = await supabase.rpc(
+        'opening_balances_for_year' as never,
+        { p_year: currentYear } as never,
+      );
+      const net = Number(
+        ((openingRows ?? []) as Array<{ account_code: string; net_cents: number }>)
+          .find((r) => r.account_code === accountCode)?.net_cents ?? 0,
+      );
+      // net_cents is signed against the debit side.
+      const opening_cents = normalBalance === 'debit' ? net : -net;
 
       const { data: rows, error } = await supabase
         .from('journal_entry_lines')

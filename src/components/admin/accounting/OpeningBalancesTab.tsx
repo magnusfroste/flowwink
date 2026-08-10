@@ -16,8 +16,7 @@ import { AccountingTabHeader } from './AccountingTabHeader';
 
 export function OpeningBalancesTab() {
   const { locale } = useAccountingLocale();
-  const { year: fiscalYear, setYear: setFiscalYear } = useFiscalYear();
-  const currentYear = new Date().getFullYear();
+  const { year: fiscalYear } = useFiscalYear();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [amount, setAmount] = useState('');
@@ -79,20 +78,18 @@ export function OpeningBalancesTab() {
     <div className="space-y-4">
       <AccountingTabHeader
         title="Opening Balances"
-        description="Carry-forward balances at the start of the fiscal year — the foundation of every balance-sheet report."
+        description="The bridge into FlowWink — the position at the start of your FIRST year here, taken from wherever you kept the books before. Every later year carries forward from the ledger on its own; do not enter it twice."
       />
 
 
       <div className="rounded-lg border bg-card">
         <div className="flex flex-wrap items-center gap-4 px-6 py-4 border-b">
-          <Select value={String(fiscalYear)} onValueChange={v => setFiscalYear(Number(v))}>
-            <SelectTrigger className="w-28 h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map(y => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* No year picker here. The page header already has one, and this tab
+              used to carry a SECOND one whose options were hardcoded to the
+              current year ±2 — so selecting 2022 in the header left this control
+              blank and showing a year it could not represent. One piece of
+              state, one control. */}
+          <span className="text-sm font-medium tabular-nums">FY {fiscalYear}</span>
           <Badge variant={isBalanced ? 'secondary' : 'destructive'} className="font-normal">
             {isBalanced ? 'Balanced' : `Off by ${fmt(Math.abs(diff))}`}
           </Badge>
