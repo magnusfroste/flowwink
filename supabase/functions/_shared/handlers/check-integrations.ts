@@ -36,7 +36,10 @@ async function timedFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-type Probe = (config: Record<string, unknown>) => Promise<{ ok: boolean; detail: string }>;
+type Probe = (
+  config: Record<string, unknown>,
+  supabase: SupabaseClient,
+) => Promise<{ ok: boolean; detail: string }>;
 
 function keyProbe(envKey: string, url: string, init: (key: string) => RequestInit): Probe {
   return async () => {
@@ -89,9 +92,48 @@ const PROBES: Record<string, Probe> = {
     headers: { Authorization: `Bearer ${k}` },
   })),
 
-  resend: keyProbe('RESEND_API_KEY', 'https://api.resend.com/domains', (k) => ({
-    headers: { Authorization: `Bearer ${k}` },
-  })),
+  // Evidence before probe. A Resend key scoped to "Sending access" — the
+  // correct, least-privilege choice, and what optic uses — can POST /emails but
+  // gets 401 on GET /domains. The old probe hit /domains and reported "key
+  // rejected — rotate the key" about a key that had sent an invitation
+  // fourteen minutes earlier. A warning that fires on a working system teaches
+  // people to ignore warnings.
+  //
+  // So: ask the platform's own outbound log first. A recent successful send IS
+  // the health check, performed on the real path, in production, for free.
+  // Only with no such evidence does it fall back to the management endpoint —
+  // and a 401 there says what it can honestly say, which is that this endpoint
+  // cannot tell.
+  resend: async (_config, supabase) => {
+    const key = Deno.env.get('RESEND_API_KEY');
+    if (!key) return { ok: false, detail: 'RESEND_API_KEY is not set in edge function secrets' };
+
+    const since = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
+    const { data: recent } = await supabase
+      .from('outbound_communications')
+      .select('created_at')
+      .eq('provider', 'resend')
+      .eq('status', 'sent')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (recent?.length) {
+      const when = String(recent[0].created_at).slice(0, 16).replace('T', ' ');
+      return { ok: true, detail: `sending works — last delivered ${when} UTC` };
+    }
+
+    const res = await timedFetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (res.ok) return { ok: true, detail: `auth ok (HTTP ${res.status})` };
+    if (res.status === 401 || res.status === 403) {
+      return {
+        ok: false,
+        detail: `cannot verify from here (HTTP ${res.status}): a sending-only key is refused by /domains, and nothing has been sent in 7 days to prove otherwise. Send one mail, or check the key.`,
+      };
+    }
+    return { ok: false, detail: `unexpected HTTP ${res.status}` };
+  },
 
   openai: keyProbe('OPENAI_API_KEY', 'https://api.openai.com/v1/models', (k) => ({
     headers: { Authorization: `Bearer ${k}` },
@@ -231,7 +273,7 @@ export async function executeCheckIntegrations(
       }
       const started = Date.now();
       try {
-        const r = await probe(entry.config ?? {});
+        const r = await probe(entry.config ?? {}, supabase);
         results.push({
           name,
           status: r.ok ? 'ok' : 'fail',

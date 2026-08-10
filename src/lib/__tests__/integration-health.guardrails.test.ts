@@ -54,3 +54,40 @@ describe('integration health', () => {
     expect(h, 'a probe issues a POST — probes must be reads').not.toMatch(/method:\s*'POST'/);
   });
 });
+
+describe('a probe must test what the platform actually does', () => {
+  /**
+   * optic's FlowChat reported "resend: key rejected (HTTP 401) — rotate or
+   * re-enter the API key" about a key that had sent a colleague invitation
+   * fourteen minutes earlier and a password reset four minutes earlier.
+   *
+   * The probe hit GET /domains. The platform sends with POST /emails. A Resend
+   * key scoped to "Sending access" — least privilege, the right choice — is
+   * refused by /domains. So the health check failed a working integration, and
+   * the remedy it suggested (rotate the key) would have broken a working one.
+   *
+   * A warning that fires on a healthy system teaches people to ignore warnings.
+   */
+  const src = read('supabase/functions/_shared/handlers/check-integrations.ts');
+
+  it('asks the outbound log before it asks the vendor', () => {
+    const resendBlock = src.slice(src.indexOf('resend: async'), src.indexOf('openai:'));
+    expect(resendBlock).toMatch(/from\('outbound_communications'\)/);
+    expect(resendBlock).toMatch(/\.eq\('provider', 'resend'\)/);
+    expect(resendBlock).toMatch(/\.eq\('status', 'sent'\)/);
+    // A delivered mail is proof on the real path — stronger than any probe.
+    expect(resendBlock).toMatch(/sending works — last delivered/);
+  });
+
+  it('does not tell you to rotate a key it cannot actually judge', () => {
+    const resendBlock = src.slice(src.indexOf('resend: async'), src.indexOf('openai:'));
+    expect(resendBlock).not.toMatch(/rotate or re-enter/);
+    expect(resendBlock).toMatch(/cannot verify from here/);
+    expect(resendBlock).toMatch(/a sending-only key is refused by \/domains/);
+  });
+
+  it('the probe signature carries the client, so evidence stays available', () => {
+    expect(src).toMatch(/supabase: SupabaseClient,\n\) => Promise<\{ ok: boolean; detail: string \}>;/);
+    expect(src).toMatch(/await probe\(entry\.config \?\? \{\}, supabase\)/);
+  });
+});
