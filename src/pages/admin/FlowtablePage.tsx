@@ -34,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Table2, Plus, Download, Upload, MoreHorizontal, Trash2, ChevronDown, LayoutGrid, List as ListIcon, Rows3,
   Send, Users, X, Database, PanelLeft, PanelRight, Filter, ArrowUpDown, Columns3, GripVertical,
-  Maximize2, ChevronLeft, ChevronRight, WrapText,
+  Maximize2, ChevronLeft, ChevronRight, WrapText, Lock,
 } from 'lucide-react';
 import {
   useFlowtableBases, useCreateBase, useUpdateBase, useDeleteBase,
@@ -605,7 +605,12 @@ export default function FlowtablePage() {
                   {!basesMinimized && (
                     <>
                       <span className="flex-1 truncate">{b.name}</span>
-                      {b.workspace_shared && <Users className="h-3 w-3 text-muted-foreground" />}
+                      {/* Mark the exception, not the rule. Shared is the default
+                          now, so a group icon on almost every row says nothing —
+                          a lock on the few private ones says everything. */}
+                      {!b.workspace_shared && (
+                        <Lock className="h-3 w-3 text-muted-foreground" aria-label="Private — only you can see this base" />
+                      )}
                     </>
                   )}
                 </button>
@@ -644,14 +649,26 @@ export default function FlowtablePage() {
                   }
                   className="bg-transparent border-0 outline-none text-base font-semibold flex-1 min-w-0"
                 />
+                {/* The label follows the state instead of naming one direction.
+                    "Share with workspace" read as an invitation to opt in, which
+                    is backwards now that shared is the default — the switch is
+                    how you opt OUT. */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Label htmlFor="ws-share" className="cursor-pointer flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" />
-                    Share with workspace
+                    {activeBase.workspace_shared ? (
+                      <><Users className="h-3.5 w-3.5" /> Shared with colleagues</>
+                    ) : (
+                      <><Lock className="h-3.5 w-3.5" /> Private to you</>
+                    )}
                   </Label>
                   <Switch
                     id="ws-share"
                     checked={activeBase.workspace_shared}
+                    title={
+                      activeBase.workspace_shared
+                        ? 'Everyone can see this base. Switch off to make it private.'
+                        : 'Only you can see this base — and neither can FlowPilot. Switch on to share it.'
+                    }
                     onCheckedChange={(v) =>
                       updateBase.mutate({ id: activeBase.id, patch: { workspace_shared: v } })
                     }

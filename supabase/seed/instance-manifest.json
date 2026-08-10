@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260810140000",
-      "migrations_count": 377,
+      "migrations_count": 378,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1501,6 +1501,10 @@
         {
           "version": "20260810095345",
           "name": "c45da418-825b-41cc-8444-6c09ccede03f"
+        },
+        {
+          "version": "20260810110000",
+          "name": "flowtable-default-shared"
         },
         {
           "version": "20260810120000",
