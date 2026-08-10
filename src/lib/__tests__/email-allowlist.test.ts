@@ -176,16 +176,40 @@ describe('email-send applies it before it applies anything else', () => {
   });
 });
 
-describe('the invoice mail in agent-execute is gated', () => {
+describe('the invoice mail goes through the router, so the guard has one home', () => {
   const src = readFileSync(join(FUNCTIONS_DIR, 'agent-execute/index.ts'), 'utf-8');
 
-  it('filters the customer address before the direct Resend call', () => {
-    expect(src).toMatch(/const invoiceGate = RESEND_API_KEY/);
-    expect(src).toMatch(/await filterRecipients\(supabase, \[order\.customer_email\]\)/);
+  /**
+   * This block used to assert that agent-execute applied the allowlist itself
+   * before calling Resend directly — which was true, and was the emergency fix.
+   * Guarding the bypass was right on the day; leaving it there was not. A rule
+   * enforced in two files is two copies that drift, and the second copy is
+   * always the one nobody remembers when the rule changes (it took the
+   * source-aware scope about an hour to prove that).
+   *
+   * The invoice now goes through email-send like every other send, so it
+   * inherits the allowlist, provider fallback, the suppression list, the
+   * branded shell and one outbound log instead of a private half of each.
+   */
+  it('does not talk to the provider directly at all', () => {
+    expect(src).not.toMatch(/api\.resend\.com/);
   });
 
-  it('records the attempt as blocked instead of leaving no trace', () => {
-    expect(src).toMatch(/status: 'blocked',\n\s+recipient: order\.customer_email/);
+  it('sends it through email-send, tagged so the log can find it', () => {
+    expect(src).toMatch(/functions\.invoke\('email-send'/);
+    expect(src).toMatch(/source: 'send_invoice'/);
+    expect(src).toMatch(/related_entity_type: 'invoice'/);
+  });
+
+  it('and still tells blocked apart from broken', () => {
+    // The whole point of routing it: the reason must survive the extra hop.
+    expect(src).toMatch(/blocked\?\.blocked_by_allowlist/);
+    expect(src).toMatch(/Blocked and broken are different facts/);
+  });
+
+  it('never reports a simulated send as sent', () => {
+    expect(src).toMatch(/\(sendData as EmailSendReply \| null\)\?\.simulated/);
+    expect(src).toMatch(/leave a customer waiting for an invoice that never was/);
   });
 });
 

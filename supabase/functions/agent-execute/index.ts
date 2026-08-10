@@ -7069,31 +7069,31 @@ async function executeSendInvoiceForOrder(
       .eq('id', invoice.id);
   }
 
-  // 6. Email customer
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  let emailResult: any = { skipped: true, reason: 'RESEND_API_KEY not configured' };
-  // This path calls Resend DIRECTLY rather than going through email-send, so
-  // the allowlist has to be applied here too. Guarding only email-send would
-  // have left precisely the invoice mail ungated — the one send a company in a
-  // pilot phase most needs held back.
-  const invoiceGate = RESEND_API_KEY
-    ? await filterRecipients(supabase, [order.customer_email])
-    : null;
-  if (invoiceGate && invoiceGate.allowed.length === 0) {
-    emailResult = blockedResponse(invoiceGate);
-    await logOutboundEmail(supabase, {
-      status: 'blocked',
-      recipient: order.customer_email,
-      subject: `Invoice ${invoice.invoice_number}`,
-      body_html: '',
-      error_message: String(emailResult.error ?? 'blocked by email allowlist'),
-    });
-  } else if (RESEND_API_KEY) {
-    const fromEmail = await resolveResendFrom(supabase);
-    // Link to the PUBLIC invoice page, which has a working "Download PDF" that
-    // posts public_token. The old generate-invoice-pdf?invoice_id= link was a
-    // GET with a query param the handler never read, and after the invoice-PDF
-    // security gate it 403s for the customer anyway. (cloud review finding #2)
+  // 6. Email customer — through the platform's own router, like every other send.
+  //
+  // This path used to talk to Resend directly, which is why the outbound
+  // allowlist had to be applied twice: guarding only email-send would have left
+  // precisely the invoice mail ungated, the one send a company in a pilot phase
+  // most needs held back. Guarding the bypass was the right emergency fix and
+  // the wrong resting place — a rule enforced in two files is two copies that
+  // drift.
+  //
+  // Routing it here gives the invoice everything the rest of the platform
+  // already had: the allowlist at one choke point, provider fallback
+  // (Composio → SMTP → Resend), the suppression list, the operator's branded
+  // shell, and one logOutboundEmail instead of a second half-implementation.
+  interface EmailSendReply {
+    success?: boolean;
+    simulated?: boolean;
+    provider?: string | null;
+    result?: { id?: string } | null;
+  }
+  interface BlockedReply {
+    blocked_by_allowlist?: boolean;
+    error?: string;
+  }
+  let emailResult: Record<string, unknown>;
+  {
     let origin = Deno.env.get('PUBLIC_SITE_URL') || '';
     if (!origin) {
       const { data: gs } = await supabase.from('site_settings').select('value').eq('key', 'general').maybeSingle();
@@ -7109,42 +7109,55 @@ async function executeSendInvoiceForOrder(
     const fmt = (cents: number) =>
       new Intl.NumberFormat('sv-SE', { style: 'currency', currency: order.currency || 'SEK' }).format(cents / 100);
 
+    // A FRAGMENT, not a document — email-send wraps it in the operator's
+    // branded shell, so the invoice mail finally looks like the company's other
+    // mail instead of like this function's own idea of an email.
     const html = `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">
-        <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
-        <p>Hi ${order.customer_name || 'there'},</p>
-        <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.</p>
-        ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice &amp; download PDF</a></p>` : ''}
-        <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>
-      </div>`;
+      <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
+      <p>Hi ${order.customer_name || 'there'},</p>
+      <p>Thank you for your order. Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.</p>
+      ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice &amp; download PDF</a></p>` : ''}
+      <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>`;
+    const subject = `Invoice ${invoice.invoice_number}`;
 
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [order.customer_email],
-        subject: `Invoice ${invoice.invoice_number} from FlowPilot`,
+    const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
+      body: {
+        to: order.customer_email,
+        subject,
         html,
-      }),
+        source: 'send_invoice',
+        related_entity_type: 'invoice',
+        related_entity_id: invoice.id,
+        extra_metadata: { order_id, invoice_number: invoice.invoice_number },
+        tags: { source: 'send_invoice' },
+      },
     });
-    const resendData = await resendRes.json();
-    emailResult = resendRes.ok
-      ? { sent: true, message_id: resendData?.id }
-      : { sent: false, error: resendData?.message || resendRes.statusText };
-    await logOutboundEmail(supabase, {
-      status: resendRes.ok ? 'sent' : 'failed',
-      recipient: order.customer_email,
-      subject: `Invoice ${invoice.invoice_number} from FlowPilot`,
-      body_html: html,
-      from: fromEmail,
-      provider_message_id: resendData?.id ?? null,
-      error_message: resendRes.ok ? null : (resendData?.message || resendRes.statusText),
-      source: 'send_invoice',
-      related_entity_type: 'invoice',
-      related_entity_id: invoice.id,
-      extra_metadata: { order_id, invoice_number: invoice.invoice_number },
-    });
+
+    // Read the reason, not just the failure. email-send answers a withheld
+    // recipient with 422 and a body that explains; supabase-js flattens every
+    // non-2xx into "Edge Function returned a non-2xx status code" and leaves the
+    // body on .context. Blocked and broken are different facts and a caller that
+    // cannot tell them apart writes "invoice sent" into a customer record.
+    if (sendErr) {
+      let body: unknown = null;
+      const ctx = (sendErr as { context?: Response }).context;
+      if (ctx && typeof ctx.json === 'function') {
+        try { body = await ctx.json(); } catch { /* not JSON */ }
+      }
+      const blocked = body as BlockedReply | null;
+      emailResult = blocked?.blocked_by_allowlist
+        ? (blocked as Record<string, unknown>)
+        : { sent: false, error: blocked?.error ?? sendErr.message };
+    } else if ((sendData as EmailSendReply | null)?.simulated) {
+      // No provider configured. Logged as simulated by the router — reporting it
+      // as sent would leave a customer waiting for an invoice that never was.
+      emailResult = { sent: false, simulated: true,
+        reason: 'No email provider is configured — the invoice was not sent. Enable Composio, SMTP or Resend under Integrations.' };
+    } else {
+      const reply = sendData as EmailSendReply | null;
+      emailResult = { sent: true, provider: reply?.provider ?? null,
+        message_id: reply?.result?.id ?? null };
+    }
   }
 
   // 7. Audit trail
