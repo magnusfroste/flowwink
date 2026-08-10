@@ -36,7 +36,7 @@ export function useEmailAllowlist() {
         .eq('key', SETTING_KEY)
         .maybeSingle();
       if (error) throw error;
-      return (data?.value ?? null) as EmailAllowlist | null;
+      return (data?.value ?? null) as unknown as EmailAllowlist | null;
     },
   });
 }

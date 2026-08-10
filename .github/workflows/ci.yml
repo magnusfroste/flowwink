@@ -38,9 +38,17 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-      - name: Run TypeScript type check
-        run: npx tsc --noEmit
-        continue-on-error: true
+      # BLOCKING, and against the app's own config.
+      #
+      # This step was decorative in two ways at once. `continue-on-error: true`
+      # meant it could never fail a build, and the root config skips the app
+      # sources — so `tsc --noEmit` completed in under a second while
+      # `tsc -p tsconfig.app.json` reported real errors in useAccounting.ts and
+      # NewJournalEntryDialog.tsx. A green tick that checks nothing is worse
+      # than no tick: it is a claim the repo makes about itself and does not
+      # keep. Verified zero errors on main before removing the escape hatch.
+      - name: Run TypeScript type check (BLOCKING)
+        run: npx tsc -p tsconfig.app.json --noEmit
 
       - name: Run tests
         run: npx vitest run

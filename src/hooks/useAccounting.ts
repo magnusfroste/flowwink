@@ -236,14 +236,15 @@ export interface CreateJournalEntryInput {
     credit_cents: number;
     description?: string;
     analytic_account_id?: string | null;
-    /**
+  }[];
+  /**
    * The documents this verification rests on (BFL 5:7). Attached in the same
    * call as the entry, because an attachment that needs a second step is an
    * attachment that gets forgotten.
    */
   documents?: Array<{ kind?: 'file' | 'document'; label?: string; file_url?: string; file_name?: string; document_id?: string }>;
-}[];
 }
+
 
 export function useCreateJournalEntry() {
   const queryClient = useQueryClient();

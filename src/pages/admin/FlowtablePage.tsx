@@ -34,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Table2, Plus, Download, Upload, MoreHorizontal, Trash2, ChevronDown, LayoutGrid, List as ListIcon, Rows3,
   Send, Users, X, Database, PanelLeft, PanelRight, Filter, ArrowUpDown, Columns3, GripVertical,
-  Maximize2, ChevronLeft, ChevronRight, WrapText,
+  Maximize2, ChevronLeft, ChevronRight, WrapText, Lock,
 } from 'lucide-react';
 import {
   useFlowtableBases, useCreateBase, useUpdateBase, useDeleteBase,
@@ -51,6 +51,8 @@ import {
   DndContext, closestCorners, PointerSensor, useSensor, useSensors, DragOverlay,
   useDroppable, useDraggable, type DragStartEvent, type DragEndEvent,
 } from '@dnd-kit/core';
+import { FieldsMenu } from '@/components/admin/flowtable/FieldsMenu';
+
 
 // Row height ("fit to text") — a reading preference, not data. `auto` lets a
 // row grow to its tallest cell; the fixed steps clamp long text to N lines so
@@ -420,6 +422,37 @@ export default function FlowtablePage() {
     } catch { /* storage unavailable — session-only */ }
   };
 
+  // Column visibility is a per-viewer reading preference (like row height), so it
+  // lives in localStorage per table — hiding a column must never look like the
+  // data or the schema changed for everyone.
+  const [hiddenFieldIds, setHiddenFieldIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!activeTable?.id) return;
+    try {
+      const raw = localStorage.getItem(`flowtable-hiddenfields-${activeTable.id}`);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      setHiddenFieldIds(new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []));
+    } catch {
+      setHiddenFieldIds(new Set());
+    }
+  }, [activeTable?.id]);
+  const persistHidden = (ids: string[]) => {
+    setHiddenFieldIds(new Set(ids));
+    try {
+      if (activeTable?.id) localStorage.setItem(`flowtable-hiddenfields-${activeTable.id}`, JSON.stringify(ids));
+    } catch { /* storage unavailable — session-only */ }
+  };
+  const toggleHiddenField = (id: string) => {
+    const next = new Set(hiddenFieldIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    persistHidden(Array.from(next));
+  };
+  const visibleFields = useMemo(
+    () => fields.filter((f) => !hiddenFieldIds.has(f.id)),
+    [fields, hiddenFieldIds],
+  );
+
+
   const displayedRecords = useMemo(
     () => applyViewConfig(records, activeTable?.view_config),
     [records, activeTable?.view_config],
@@ -432,6 +465,19 @@ export default function FlowtablePage() {
   const deleteRecords = useDeleteRecords();
   const bulkInsert = useBulkInsertRecords();
   const pushToCrm = usePushToCrmLeads();
+
+  // Column order is schema, not preference: `position` is what agents and every
+  // other viewer read, so a reorder writes it for the whole ordered set.
+  const reorderFields = (orderedIds: string[]) => {
+    if (!activeTable?.id) return;
+    orderedIds.forEach((id, index) => {
+      const current = fields.find((f) => f.id === id);
+      if (!current || current.position === index) return;
+      updateField.mutate({ id, table_id: activeTable.id, patch: { position: index } });
+    });
+  };
+
+
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pushOpen, setPushOpen] = useState(false);
@@ -605,7 +651,12 @@ export default function FlowtablePage() {
                   {!basesMinimized && (
                     <>
                       <span className="flex-1 truncate">{b.name}</span>
-                      {b.workspace_shared && <Users className="h-3 w-3 text-muted-foreground" />}
+                      {/* Mark the exception, not the rule. Shared is the default
+                          now, so a group icon on almost every row says nothing —
+                          a lock on the few private ones says everything. */}
+                      {!b.workspace_shared && (
+                        <Lock className="h-3 w-3 text-muted-foreground" aria-label="Private — only you can see this base" />
+                      )}
                     </>
                   )}
                 </button>
@@ -644,14 +695,26 @@ export default function FlowtablePage() {
                   }
                   className="bg-transparent border-0 outline-none text-base font-semibold flex-1 min-w-0"
                 />
+                {/* The label follows the state instead of naming one direction.
+                    "Share with workspace" read as an invitation to opt in, which
+                    is backwards now that shared is the default — the switch is
+                    how you opt OUT. */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Label htmlFor="ws-share" className="cursor-pointer flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" />
-                    Share with workspace
+                    {activeBase.workspace_shared ? (
+                      <><Users className="h-3.5 w-3.5" /> Shared with colleagues</>
+                    ) : (
+                      <><Lock className="h-3.5 w-3.5" /> Private to you</>
+                    )}
                   </Label>
                   <Switch
                     id="ws-share"
                     checked={activeBase.workspace_shared}
+                    title={
+                      activeBase.workspace_shared
+                        ? 'Everyone can see this base. Switch off to make it private.'
+                        : 'Only you can see this base — and neither can FlowPilot. Switch on to share it.'
+                    }
                     onCheckedChange={(v) =>
                       updateBase.mutate({ id: activeBase.id, patch: { workspace_shared: v } })
                     }
@@ -786,6 +849,16 @@ export default function FlowtablePage() {
                       </DropdownMenu>
                     )}
 
+                    {activeTable.view_mode !== 'kanban' && (
+                      <FieldsMenu
+                        fields={fields}
+                        hidden={hiddenFieldIds}
+                        onToggleHidden={toggleHiddenField}
+                        onSetHidden={persistHidden}
+                        onReorder={reorderFields}
+                      />
+                    )}
+
                     <ViewToolbar
                       fields={fields}
                       config={activeTable.view_config ?? {}}
@@ -793,6 +866,7 @@ export default function FlowtablePage() {
                         updateTable.mutate({ id: activeTable.id, base_id: activeBase.id, patch: { view_config } })
                       }
                     />
+
                     <div className="flex-1" />
                     {selected.size > 0 && (
                       <>
@@ -867,7 +941,7 @@ export default function FlowtablePage() {
                       <CardView
                         columns={cardColumns}
 
-                        fields={fields}
+                        fields={visibleFields}
                         records={displayedRecords}
                         onExpand={setExpandedIndex}
                         onUpdate={(id, values) =>
@@ -876,7 +950,7 @@ export default function FlowtablePage() {
                       />
                     ) : activeTable.view_mode === 'list' ? (
                       <ListView
-                        fields={fields}
+                        fields={visibleFields}
                         records={displayedRecords}
                         selected={selected}
                         setSelected={setSelected}
@@ -887,7 +961,10 @@ export default function FlowtablePage() {
                       />
                     ) : (
                       <GridView
-                        fields={fields}
+                        fields={visibleFields}
+                        allFields={fields}
+                        onReorderFields={reorderFields}
+
                         records={displayedRecords}
                         tables={tables}
                         selected={selected}
@@ -979,6 +1056,8 @@ export default function FlowtablePage() {
 // ---------- Grid view ----------
 function GridView(props: {
   fields: FlowtableField[];
+  /** Every field, hidden ones included — link/lookup cells resolve against the schema, not the view. */
+  allFields?: FlowtableField[];
   records: FlowtableRecord[];
   tables: FlowtableTable[];
   selected: Set<string>;
@@ -989,14 +1068,57 @@ function GridView(props: {
   onAddField: (name: string, type: FlowtableFieldType, options: Record<string, unknown>) => void;
   onConfigureField: (id: string, patch: Partial<FlowtableField>) => void;
   onDeleteField: (id: string) => void;
+  onReorderFields?: (orderedIds: string[]) => void;
   onAddRow: () => void;
 }) {
   const { fields, records, tables, selected, setSelected } = props;
+  const allFields = props.allFields ?? fields;
   const [addFieldOpen, setAddFieldOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<FlowtableFieldType>('text');
   const [newOptions, setNewOptions] = useState<Record<string, unknown>>({});
   const [configField, setConfigField] = useState<FlowtableField | null>(null);
+  // Header drag = reorder. The handle only appears on hover so the header keeps
+  // reading as a label, not as a control surface.
+  const [dragFieldId, setDragFieldId] = useState<string | null>(null);
+  const [overFieldId, setOverFieldId] = useState<string | null>(null);
+  const resizeRef = useRef<{ id: string; startX: number; startWidth: number } | null>(null);
+
+  const moveField = (fromId: string, toId: string) => {
+    if (!props.onReorderFields || fromId === toId) return;
+    const ids = allFields.map((f) => f.id);
+    const fromIdx = ids.indexOf(fromId);
+    const toIdx = ids.indexOf(toId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    ids.splice(toIdx, 0, ids.splice(fromIdx, 1)[0]);
+    props.onReorderFields(ids);
+  };
+
+  // Resize writes once on release: a mutation per mouse-move would turn a drag
+  // into dozens of writes and make the column jitter.
+  const startResize = (e: React.MouseEvent, f: FlowtableField) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = { id: f.id, startX: e.clientX, startWidth: f.width || 180 };
+    const onMove = (ev: MouseEvent) => {
+      const state = resizeRef.current;
+      if (!state) return;
+      const next = Math.max(80, Math.round(state.startWidth + (ev.clientX - state.startX)));
+      const th = document.querySelector<HTMLElement>(`[data-field-col="${state.id}"]`);
+      if (th) { th.style.width = `${next}px`; th.style.minWidth = `${next}px`; }
+    };
+    const onUp = (ev: MouseEvent) => {
+      const state = resizeRef.current;
+      resizeRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!state) return;
+      const next = Math.max(80, Math.round(state.startWidth + (ev.clientX - state.startX)));
+      if (next !== state.startWidth) props.onConfigureField(state.id, { width: next });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   const toggleAll = () => {
     if (selected.size === records.length) setSelected(new Set());
@@ -1007,6 +1129,7 @@ function GridView(props: {
     if (n.has(id)) n.delete(id); else n.add(id);
     setSelected(n);
   };
+
 
   return (
     <div className="min-w-fit">
@@ -1021,13 +1144,41 @@ function GridView(props: {
                 />
               </div>
             </th>
-            {fields.map((f) => (
+            {fields.map((f, fi) => (
               <th
                 key={f.id}
-                className="border-r border-b text-left font-medium text-xs text-muted-foreground p-0"
+                data-field-col={f.id}
+                className={`relative border-r border-b text-left font-medium text-xs text-muted-foreground p-0 ${
+                  overFieldId === f.id && dragFieldId && dragFieldId !== f.id
+                    ? 'shadow-[inset_2px_0_0_0_hsl(var(--primary))]'
+                    : ''
+                } ${dragFieldId === f.id ? 'opacity-60' : ''}`}
                 style={{ width: f.width, minWidth: f.width }}
+                onDragOver={(e) => {
+                  if (!dragFieldId) return;
+                  e.preventDefault();
+                  setOverFieldId(f.id);
+                }}
+                onDrop={(e) => {
+                  if (!dragFieldId) return;
+                  e.preventDefault();
+                  moveField(dragFieldId, f.id);
+                  setDragFieldId(null);
+                  setOverFieldId(null);
+                }}
               >
                 <div className="h-9 px-2 flex items-center gap-1 group">
+                  {props.onReorderFields && (
+                    <span
+                      draggable
+                      onDragStart={() => setDragFieldId(f.id)}
+                      onDragEnd={() => { setDragFieldId(null); setOverFieldId(null); }}
+                      title="Drag to move column"
+                      className="cursor-grab text-muted-foreground/70 opacity-0 group-hover:opacity-100 -ml-1"
+                    >
+                      <GripVertical className="h-3 w-3" />
+                    </span>
+                  )}
                   <input
                     defaultValue={f.name}
                     onBlur={(e) => {
@@ -1046,6 +1197,23 @@ function GridView(props: {
                       <DropdownMenuItem onClick={() => setConfigField(f)}>
                         Configure field…
                       </DropdownMenuItem>
+                      {props.onReorderFields && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={fi === 0}
+                            onClick={() => moveField(f.id, fields[fi - 1].id)}
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5 mr-2" /> Move left
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={fi === fields.length - 1}
+                            onClick={() => moveField(f.id, fields[fi + 1].id)}
+                          >
+                            <ChevronRight className="h-3.5 w-3.5 mr-2" /> Move right
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive"
@@ -1056,8 +1224,18 @@ function GridView(props: {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                {/* Resize grip: invisible until hovered, so width is adjustable without a visible control. */}
+                <span
+                  role="separator"
+                  aria-orientation="vertical"
+                  title="Drag to resize column"
+                  onMouseDown={(e) => startResize(e, f)}
+                  onDoubleClick={() => props.onConfigureField(f.id, { width: 180 })}
+                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-primary/60"
+                />
               </th>
             ))}
+
             <th className="border-b p-0 w-12">
               <DropdownMenu open={addFieldOpen} onOpenChange={setAddFieldOpen}>
                 <DropdownMenuTrigger asChild>
@@ -1079,7 +1257,8 @@ function GridView(props: {
                       options={newOptions}
                       onChange={setNewOptions}
                       tables={tables}
-                      fields={fields}
+                      fields={allFields}
+
                     />
                   )}
                   <Button
@@ -1140,7 +1319,8 @@ function GridView(props: {
                   field={f}
                   value={r.values?.[f.key]}
                   record={r}
-                  fields={fields}
+                  fields={allFields}
+
                   rowHeight={props.rowHeight}
                   onChange={(v) => props.onUpdateRecord(r.id, { ...r.values, [f.key]: v })}
                 />
