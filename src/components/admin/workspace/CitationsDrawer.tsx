@@ -48,6 +48,12 @@ const TYPE_LABEL: Record<string, string> = {
   lead: 'Lead',
   deal: 'Deal',
   employee: 'Employee',
+  // These were missing, so a wiki citation rendered the raw string 'wiki'.
+  // The citation TYPES come from the retrieval layer, not from the source
+  // keys above — two lists that drift unless both are extended together.
+  wiki: 'Wiki',
+  doc: 'Handbook',
+  flowtable: 'Flowtable',
 };
 
 const SOURCE_META: Record<
@@ -61,6 +67,7 @@ const SOURCE_META: Record<
   crm: { label: 'CRM', Icon: Users },
   employees: { label: 'Employees', Icon: UserCheck },
   wiki: { label: 'Wiki', Icon: BookOpen },
+  docs: { label: 'Handbook & Docs', Icon: BookOpen },
   flowtable: { label: 'Flowtable', Icon: Table2 },
 };
 

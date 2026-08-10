@@ -13,6 +13,7 @@ const SOURCE_META: Record<WorkspaceSource, { label: string; description: string;
   crm: { label: 'CRM', description: 'Leads & deals', Icon: Users },
   employees: { label: 'Employees', description: 'HR records', Icon: UserCheck },
   wiki: { label: 'Wiki', description: 'Internal intranet pages', Icon: BookOpen },
+  docs: { label: 'Handbook & Docs', description: 'Internal handbook and product documentation', Icon: BookOpen },
   flowtable: { label: 'Flowtable', description: 'Shared tables (imported sheets, catalogs)', Icon: Table2 },
 };
 

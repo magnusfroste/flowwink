@@ -40,6 +40,7 @@ type SourceKey =
   | 'crm'
   | 'employees'
   | 'wiki'
+  | 'docs'
   | 'flowtable';
 
 const ALL_SOURCES: SourceKey[] = [
@@ -50,6 +51,7 @@ const ALL_SOURCES: SourceKey[] = [
   'crm',
   'employees',
   'wiki',
+  'docs',
   'flowtable',
 ];
 
@@ -200,6 +202,10 @@ async function buildContext(
     kb: 'kb_articles',
     pages: 'pages',
     wiki: 'wiki_pages',
+    // The handbook/docs corpus. It was indexed all along (docs_pages, the
+    // largest chunk source on most instances) but no SourceKey mapped to it,
+    // so FlowWork could never reach a single page of it.
+    docs: 'docs_pages',
   };
   const chunkTables = sources.map((s) => KNOWLEDGE_TABLES[s]).filter(Boolean) as string[];
   if (chunkTables.length && query) {

@@ -10,6 +10,7 @@ export type WorkspaceSource =
   | 'crm'
   | 'employees'
   | 'wiki'
+  | 'docs'
   | 'flowtable';
 
 export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
@@ -20,6 +21,7 @@ export const ALL_WORKSPACE_SOURCES: WorkspaceSource[] = [
   'crm',
   'employees',
   'wiki',
+  'docs',
   'flowtable',
 ];
 

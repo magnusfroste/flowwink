@@ -1613,7 +1613,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
-        "workspace-chat": "sha256:357dcc372b82c181c9f865576891c2b20511bd2672afc5d52accbfa16d8e832e"
+        "workspace-chat": "sha256:b8953ceb63442009a777c23e94c975cc25b1f48b57542346bf920bcf6feb1328"
       }
     },
     "frontend": {
