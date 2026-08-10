@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260810130000",
-      "migrations_count": 376,
+      "migration_head": "20260810140000",
+      "migrations_count": 377,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1509,6 +1509,10 @@
         {
           "version": "20260810130000",
           "name": "expense-receipts-follow-the-money"
+        },
+        {
+          "version": "20260810140000",
+          "name": "river-and-cowork-buckets-in-repo"
         }
       ]
     },
