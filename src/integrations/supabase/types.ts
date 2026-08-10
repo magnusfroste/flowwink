@@ -8653,6 +8653,8 @@ export type Database = {
           journal_id: string | null
           match_source: string | null
           reference_number: string | null
+          reversed_by: string | null
+          reverses: string | null
           source: string
           status: string
           subsidiary_id: string | null
@@ -8673,6 +8675,8 @@ export type Database = {
           journal_id?: string | null
           match_source?: string | null
           reference_number?: string | null
+          reversed_by?: string | null
+          reverses?: string | null
           source?: string
           status?: string
           subsidiary_id?: string | null
@@ -8693,6 +8697,8 @@ export type Database = {
           journal_id?: string | null
           match_source?: string | null
           reference_number?: string | null
+          reversed_by?: string | null
+          reverses?: string | null
           source?: string
           status?: string
           subsidiary_id?: string | null
@@ -8716,6 +8722,20 @@ export type Database = {
             columns: ["journal_id"]
             isOneToOne: false
             referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_by_fkey"
+            columns: ["reversed_by"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_fkey"
+            columns: ["reverses"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
           {
