@@ -8562,6 +8562,31 @@ async function executeDbAction(
         })));
       if (linesErr2) throw new Error(`Create lines failed: ${linesErr2.message}`);
 
+      // Underlying documentation, in the same call. BFL 5:7 wants a verification
+      // to identify what it rests on, and an agent that has just read a receipt
+      // or a bank statement is exactly who knows. Attaching after the fact works
+      // too (manage_journal_entry_document), but a second call is a second
+      // chance to forget.
+      const attachments = Array.isArray((args as any).documents) ? (args as any).documents : [];
+      let documents_attached = 0;
+      for (const d of attachments) {
+        const kind = d?.kind === 'document' ? 'document' : 'file';
+        if (kind === 'file' && !d?.file_url) continue;
+        if (kind === 'document' && !d?.document_id) continue;
+        const { error: docErr } = await supabase.from('journal_entry_documents').insert({
+          journal_entry_id: entry.id,
+          kind,
+          label: d.label ?? null,
+          file_url: d.file_url ?? null,
+          file_name: d.file_name ?? null,
+          document_id: d.document_id ?? null,
+          source: 'agent',
+          sort_order: documents_attached,
+        });
+        if (docErr) throw new Error(`Attach document failed: ${docErr.message}`);
+        documents_attached++;
+      }
+
       // Posting to an account activates it. The chart carries the WHOLE
       // standard (1 262 BAS accounts), but is_active means "this company uses
       // it" — pickers, the balance-sheet classifier and the chart listing all
@@ -8628,6 +8653,7 @@ async function executeDbAction(
 
       return {
         created: true,
+        documents_attached,
         entry_id: entry.id,
         bank_transaction_id: bankTxId || null,
         entry_date: effectiveDate,

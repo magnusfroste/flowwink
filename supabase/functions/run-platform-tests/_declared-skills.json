@@ -283,6 +283,7 @@
     "manage_job_offer",
     "manage_job_posting",
     "manage_journal_entry",
+    "manage_journal_entry_document",
     "manage_kb_article",
     "manage_leads",
     "manage_leave",

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, FileText } from 'lucide-react';
 import { useCreateJournalEntry, useJournals } from '@/hooks/useAccounting';
+import { supabase } from '@/integrations/supabase/client';
 import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccounting';
 import type { TemplateLine } from '@/hooks/useAccounting';
 import { useAccountingLocale } from '@/hooks/useAccountingLocale';
@@ -43,6 +44,24 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
 
   const { locale } = useAccountingLocale();
   const createEntry = useCreateJournalEntry();
+  // What this verification rests on. BFL 5:7 wants a verification to identify
+  // its underlying documents, and the moment someone is typing the entry is the
+  // moment they have the receipt in their hand.
+  const [docs, setDocs] = useState<{ label: string; file_url: string; file_name: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadReceipt = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `journal/${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
+      const { error } = await supabase.storage.from('documents').upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from('documents').getPublicUrl(path);
+      setDocs((d) => [...d, { label: file.name, file_url: data.publicUrl, file_name: file.name }]);
+    } finally {
+      setUploading(false);
+    }
+  };
   const { data: accounts } = useChartOfAccounts(locale);
   const { data: templates } = useAccountingTemplates(locale);
   const { data: journals } = useJournals();
@@ -90,6 +109,7 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
       description,
       reference_number: reference || undefined,
       journal_id: journalId || undefined,
+      documents: docs.map((d) => ({ kind: 'file' as const, ...d })),
       lines: lines
         .filter((l) => l.account_code && (l.debit_cents > 0 || l.credit_cents > 0))
         .map((l) => ({
@@ -278,6 +298,33 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
             >
               <Plus className="h-4 w-4 mr-1" /> Add line
             </Button>
+          </div>
+
+          {/* Underlying documentation. BFL 5:7 wants a verification to identify
+              what it rests on, and the moment someone is typing the entry is
+              the moment they have the receipt in their hand — so it lives here
+              rather than behind a later step. */}
+          <div className="space-y-2 border-t pt-4">
+            <Label>Underlying documents</Label>
+            {docs.length > 0 && (
+              <ul className="rounded-md border divide-y text-sm">
+                {docs.map((d, i) => (
+                  <li key={d.file_url} className="flex items-center gap-2 px-3 py-1.5">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">{d.label}</span>
+                    <Button type="button" variant="ghost" size="sm" className="ml-auto h-7 px-2"
+                      onClick={() => setDocs((x) => x.filter((_, j) => j !== i))}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Input type="file" disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadReceipt(f); e.target.value = ''; }} />
+            <p className="text-xs text-muted-foreground">
+              The receipt, invoice or statement this entry was booked from.
+            </p>
           </div>
 
           {/* Totals */}

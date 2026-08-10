@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { JournalEntry } from '@/hooks/useAccounting';
+import { useJournalEntryDocuments } from '@/hooks/useAccounting';
+import { FileText } from 'lucide-react';
 import { useAccountingPreferences } from '@/hooks/useSiteSettings';
 
 interface Props {
@@ -142,8 +144,54 @@ export function JournalEntryDetail({ entry, open, onOpenChange }: Props) {
               </TableBody>
             </Table>
           </div>
+
+          <VerificationDocuments entryId={entry.id} />
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * What the verification rests on. Shown even when empty — a verification with no
+ * underlying documentation is not an error in any amount, but BFL 5:7 wants one,
+ * and silence here reads as "nothing to see" rather than "nothing attached".
+ */
+function VerificationDocuments({ entryId }: { entryId: string }) {
+  const { data: docs, isLoading } = useJournalEntryDocuments(entryId);
+  if (isLoading) return null;
+  return (
+    <div>
+      <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-2">
+        Underlying documents
+      </div>
+      {!docs?.length ? (
+        <div className="rounded-md border border-dashed px-3 py-2.5 text-xs text-muted-foreground">
+          No underlying documentation attached.
+        </div>
+      ) : (
+        <ul className="rounded-md border divide-y">
+          {docs.map((d) => (
+            <li key={d.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{d.label || d.file_name || 'Document'}</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
+                {d.source}
+              </span>
+              {d.file_url && (
+                <a
+                  href={d.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline shrink-0"
+                >
+                  Open
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

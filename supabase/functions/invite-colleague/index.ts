@@ -156,9 +156,30 @@ serve(async (req: Request) => {
       const mailed = !sendErr && Boolean((sendData as { success?: boolean } | null)?.success) && !simulated;
       if (!mailed) {
         status = "invited_no_mail";
+        // email-send answers a withheld recipient with 422 and a body that says
+        // WHY. supabase-js turns any non-2xx into a FunctionsHttpError whose
+        // .message is the useless "Edge Function returned a non-2xx status
+        // code" — the body sits unread on .context. So the outbound allowlist
+        // did its job (nothing sent, account created, link handed back) while
+        // the admin was told nothing at all. Blocked-vs-broken is the whole
+        // difference between "add the domain" and "the mail server is down".
+        let reason = sendErr?.message ?? "unknown error";
+        const ctx = (sendErr as { context?: Response } | null)?.context;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json() as {
+              blocked_by_allowlist?: boolean; error?: string; how_to_change?: string;
+            };
+            if (body?.blocked_by_allowlist) {
+              reason = `${body.error ?? "Recipient is outside this instance's email allowlist."} ${body.how_to_change ?? ""}`.trim();
+            } else if (body?.error) {
+              reason = body.error;
+            }
+          } catch { /* body was not JSON — keep the transport message */ }
+        }
         mailProblem = simulated
           ? "No email provider is configured — enable Resend or Composio under Integrations, or use Create user instead."
-          : `Email failed: ${sendErr?.message ?? "unknown error"}`;
+          : reason;
       }
     }
 

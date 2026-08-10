@@ -103,6 +103,7 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
             action: { type: 'string', enum: ['create', 'list', 'void', 'delete'] },
             description: { type: 'string' },
             entry_date: { type: 'string' },
+            documents: { type: 'array', description: 'create only — the documents this verification rests on (BFL 5:7). Each: {kind: "file"|"document", label, file_url + file_name for a file, document_id for a row already in the archive}. Attach the receipt, invoice or statement you booked FROM — you are the one who just read it.', items: { type: 'object', properties: { kind: { type: 'string', enum: ['file','document'] }, label: { type: 'string' }, file_url: { type: 'string' }, file_name: { type: 'string' }, document_id: { type: 'string' } } } },
             entry_id: { type: 'string', description: 'Journal entry id — required for action=void and action=delete. Reversing an already-reversed entry is refused and tells you its reversal_id: book a new entry instead of reversing twice.' },
             lines: { type: 'array', items: { type: 'object', properties: { account_code: { type: 'string' }, account_name: { type: 'string' }, debit_cents: { type: 'number' }, credit_cents: { type: 'number' } } } },
             amount_cents: { type: 'number', description: 'NET base amount in cents/öre for percentage-based templates — the template lines (debit_pct/credit_pct) are expanded from this. E.g. a 25%-VAT sale with amount_cents=100000 books 125000/100000/25000. Required for one-call template booking.' },
@@ -234,6 +235,64 @@ It changes reporting, not history. Amounts already posted are included from the
 next time the return is prepared — the map is read at report time. And nothing
 here moves money or changes where future entries land; that is
 manage_account_roles.`,
+  },
+  {
+    name: 'manage_journal_entry_document',
+    description:
+      "See, attach or remove the documents a verification rests on — the receipt, supplier invoice, bank statement or SIE file it was booked from. Swedish bookkeeping law (BFL 5:7) requires a verification to identify its underlying documents, and a verification that carries none is not wrong in any amount but is incomplete as a record. action=list shows what a verification holds and says plainly when it holds nothing; action=attach adds one (kind=file with file_url for an uploaded artifact, kind=document with document_id to reference something already in the archive so one document can underlie several verifications without being copied); action=remove unlinks it — for kind=document that removes the LINK only, never the archived document. Use when: booking from a receipt or statement you have read, filling in evidence on entries booked earlier, checking what a verification rests on before a review or audit. NOT for: changing amounts or accounts (manage_journal_entry), uploading a file to the archive in the first place (upload_document), contract appendices (manage_contract_appendix). Attaching never changes a figure.",
+    category: 'commerce',
+    handler: 'rpc:manage_journal_entry_document',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_journal_entry_document',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'attach', 'remove'] },
+            entry_id: { type: 'string', description: 'The verification. Required for list and attach.' },
+            kind: { type: 'string', enum: ['file', 'document'], description: "attach only — 'file' is an uploaded artifact (needs file_url), 'document' references a row in the documents archive (needs document_id)." },
+            label: { type: 'string', description: 'attach only — what a reader calls it: "Kvitto", "Kontoutdrag SEB", "Årsredovisning 2023".' },
+            file_url: { type: 'string', description: 'attach, kind=file — a URL this instance can reach. Upload with upload_document first if you only have bytes.' },
+            file_name: { type: 'string', description: 'attach, kind=file — the original file name.' },
+            document_id: { type: 'string', description: 'attach, kind=document — id of a row in the documents archive.' },
+            attachment_id: { type: 'string', description: 'remove only — the attachment to unlink.' },
+          },
+          required: ['action'],
+          'x-action-required': { list: ['entry_id'], attach: ['entry_id'], remove: ['attachment_id'] },
+        },
+      },
+    },
+    instructions: `## Why a verification without underlying documents is incomplete
+The amounts can be perfect and the entry still fails its purpose: BFL 5:7 says a
+verification shall identify the documents that underlie it. An auditor asked to
+believe a 12 500 kr sale wants to see the invoice, not the bookkeeper's word.
+
+## Attach in the same call when you can
+manage_journal_entry takes a \`documents\` array on create. If you have just read
+a receipt or a bank statement, attach it there — a second call is a second
+chance to forget. This skill is for the entries that already exist.
+
+## file or document
+- **file** — an artifact that belongs to this verification and nothing else: a
+  receipt, a supplier invoice PDF. Needs file_url; upload_document first if all
+  you have is bytes.
+- **document** — something already in the archive that underlies SEVERAL
+  verifications: an annual report, a bank statement covering a whole year, a
+  board minute. Reference it by document_id so it is stored once. Removing the
+  link never removes the archived document.
+
+## The label is what a human reads
+"Kvitto" tells nobody which one. "Kvitto Circle K 2024-03-11" or "Kontoutdrag
+SEB 2024" lets a reviewer match the paper to the entry without opening it. Write
+the label as the person checking the books would say it out loud.
+
+## What it does not do
+It changes no amount, no account and no date. Attaching evidence to an entry
+that is wrong does not make it right — fix the entry with manage_journal_entry
+(which reverses rather than rewrites) and attach the evidence to the correction.`,
   },
   {
     name: 'manage_account_roles',

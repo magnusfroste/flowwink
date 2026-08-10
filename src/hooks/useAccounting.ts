@@ -236,7 +236,13 @@ export interface CreateJournalEntryInput {
     credit_cents: number;
     description?: string;
     analytic_account_id?: string | null;
-  }[];
+    /**
+   * The documents this verification rests on (BFL 5:7). Attached in the same
+   * call as the entry, because an attachment that needs a second step is an
+   * attachment that gets forgotten.
+   */
+  documents?: Array<{ kind?: 'file' | 'document'; label?: string; file_url?: string; file_name?: string; document_id?: string }>;
+}[];
 }
 
 export function useCreateJournalEntry() {
@@ -281,6 +287,28 @@ export function useCreateJournalEntry() {
         )
         .select();
       if (linesError) throw linesError;
+
+      // Underlying documentation, attached to the entry that was just created.
+      if (input.documents?.length) {
+        const rows = input.documents
+          .filter((d) => (d.kind === 'document' ? d.document_id : d.file_url))
+          .map((d, i) => ({
+            journal_entry_id: entry.id,
+            kind: d.kind ?? 'file',
+            label: d.label ?? null,
+            file_url: d.file_url ?? null,
+            file_name: d.file_name ?? null,
+            document_id: d.document_id ?? null,
+            source: 'upload',
+            sort_order: i,
+          }));
+        if (rows.length) {
+          const { error: docErr } = await supabase
+            .from('journal_entry_documents' as never)
+            .insert(rows as never);
+          if (docErr) throw docErr;
+        }
+      }
 
       // Create analytic_lines for any tagged JE lines
       const analyticRows: any[] = [];
@@ -628,6 +656,38 @@ export function useDeleteAccountingTemplate() {
     },
     onError: (err: any) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+export interface JournalEntryDocument {
+  id: string;
+  kind: 'file' | 'document';
+  label: string | null;
+  file_name: string | null;
+  file_url: string | null;
+  document_id: string | null;
+  source: string;
+}
+
+/**
+ * The documents a verification rests on (verifikationsunderlag, BFL 5:7).
+ * Kept as its own query rather than joined into the entry: an entry list of 500
+ * rows should not drag every receipt along, and the detail view is the only
+ * place that needs them.
+ */
+export function useJournalEntryDocuments(entryId: string | null) {
+  return useQuery({
+    queryKey: ['journal-entry-documents', entryId],
+    enabled: !!entryId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('journal_entry_documents' as never)
+        .select('id, kind, label, file_name, file_url, document_id, source')
+        .eq('journal_entry_id', entryId)
+        .order('sort_order');
+      if (error) throw error;
+      return (data || []) as unknown as JournalEntryDocument[];
     },
   });
 }
