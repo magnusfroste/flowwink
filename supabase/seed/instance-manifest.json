@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260810130000",
-      "migrations_count": 373,
+      "migrations_count": 376,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1489,6 +1489,18 @@
         {
           "version": "20260810020000",
           "name": "one-chart-per-code-drop-legacy-locale-rows"
+        },
+        {
+          "version": "20260810095137",
+          "name": "8cabdb35-9d70-4169-9d00-7c2cbabd02c2"
+        },
+        {
+          "version": "20260810095246",
+          "name": "04c72c85-05ae-462f-9cb7-382cd71f5605"
+        },
+        {
+          "version": "20260810095345",
+          "name": "c45da418-825b-41cc-8444-6c09ccede03f"
         },
         {
           "version": "20260810120000",
