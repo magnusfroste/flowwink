@@ -5,21 +5,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFiscalYear } from './FiscalYearContext';
 import { cn } from '@/lib/utils';
 
+/**
+ * Which years you can select comes from the LEDGER, via list_fiscal_years().
+ *
+ * This component used to ask `accounting_periods` — the closing register, which
+ * gets a row only when a month is closed. On liteit that table was empty while
+ * the ledger held 135 verifications across five years, so the selector offered
+ * the current year ±1 and nothing else: three years, 83 verifications
+ * unreachable, and every entry in the list badged "Upcoming" because no rows
+ * meant no information and no information was rendered as a claim.
+ */
 type Status = 'open' | 'closed' | 'upcoming';
 
-interface PeriodRow {
+interface FiscalYearRow {
   fiscal_year: number;
-  period_month: number | null;
-  status: string | null;
-}
-
-function statusFor(rows: PeriodRow[]): Status {
-  if (!rows.length) return 'upcoming';
-  const anyOpen = rows.some((r) => (r.status ?? '').toLowerCase() === 'open');
-  if (anyOpen) return 'open';
-  const monthly = rows.filter((r) => r.period_month != null);
-  if (monthly.length >= 12) return 'closed';
-  return 'open';
+  entry_count: number;
+  months_closed: number;
+  status: Status;
+  is_current: boolean;
 }
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -37,36 +40,35 @@ const STATUS_CLASS: Record<Status, string> = {
 export function FiscalYearSelector() {
   const { year, setYear } = useFiscalYear();
 
-  const { data: periods } = useQuery({
-    queryKey: ['accounting_periods', 'years'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounting_periods' as any)
-        .select('fiscal_year, period_month, status');
+  const { data: rows } = useQuery({
+    queryKey: ['fiscal-years'],
+    queryFn: async (): Promise<FiscalYearRow[]> => {
+      const { data, error } = await supabase.rpc('list_fiscal_years' as never);
       if (error) throw error;
-      return (data ?? []) as unknown as PeriodRow[];
+      return (data ?? []) as unknown as FiscalYearRow[];
     },
     staleTime: 5 * 60_000,
   });
 
-  const { years, statusByYear } = useMemo(() => {
-    const cy = new Date().getFullYear();
-    const map = new Map<number, PeriodRow[]>();
-    (periods ?? []).forEach((p) => {
-      if (!p.fiscal_year) return;
-      const arr = map.get(p.fiscal_year) ?? [];
-      arr.push(p);
-      map.set(p.fiscal_year, arr);
-    });
-    const set = new Set<number>(map.keys());
-    [cy - 1, cy, cy + 1, year].forEach((y) => set.add(y));
-    const years = Array.from(set).sort((a, b) => b - a);
-    const statusByYear = new Map<number, Status>();
-    years.forEach((y) => statusByYear.set(y, statusFor(map.get(y) ?? [])));
-    return { years, statusByYear };
-  }, [periods, year]);
+  const { years, byYear } = useMemo(() => {
+    const byYear = new Map<number, FiscalYearRow>();
+    (rows ?? []).forEach((r) => byYear.set(r.fiscal_year, r));
+    // The selected year is always selectable, even if it holds nothing yet —
+    // otherwise a stored preference could point at an option that is not there.
+    const set = new Set<number>([...byYear.keys(), year]);
+    return { years: Array.from(set).sort((a, b) => b - a), byYear };
+  }, [rows, year]);
 
-  const currentStatus = statusByYear.get(year) ?? 'upcoming';
+  // Before the query resolves we know nothing, so we claim nothing.
+  const statusOf = (y: number): Status | null => byYear.get(y)?.status ?? null;
+  const currentStatus = statusOf(year);
+
+  const badge = (s: Status | null) =>
+    s && (
+      <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', STATUS_CLASS[s])}>
+        {STATUS_LABEL[s]}
+      </span>
+    );
 
   return (
     <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
@@ -76,31 +78,22 @@ export function FiscalYearSelector() {
         <div className="flex items-center gap-2 w-full">
           <span className="text-xs text-muted-foreground">FY</span>
           <span className="font-medium tabular-nums">{year}</span>
-          <span
-            className={cn(
-              'ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium',
-              STATUS_CLASS[currentStatus],
-            )}
-          >
-            {STATUS_LABEL[currentStatus]}
-          </span>
+          <span className="ml-auto">{badge(currentStatus)}</span>
         </div>
       </SelectTrigger>
       <SelectContent>
         {years.map((y) => {
-          const s = statusByYear.get(y) ?? 'upcoming';
+          const row = byYear.get(y);
           return (
             <SelectItem key={y} value={String(y)}>
               <span className="inline-flex items-center gap-2">
                 <span className="tabular-nums">{y}</span>
-                <span
-                  className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
-                    STATUS_CLASS[s],
-                  )}
-                >
-                  {STATUS_LABEL[s]}
-                </span>
+                {badge(statusOf(y))}
+                {!!row?.entry_count && (
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {row.entry_count}
+                  </span>
+                )}
               </span>
             </SelectItem>
           );

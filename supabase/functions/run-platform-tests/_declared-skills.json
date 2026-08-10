@@ -196,6 +196,7 @@
     "list_dunning_sequences",
     "list_events",
     "list_expense_reports",
+    "list_fiscal_years",
     "list_flowtable_bases",
     "list_flowtable_records",
     "list_flowtable_tables",

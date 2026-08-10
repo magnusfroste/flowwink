@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260810140000",
-      "migrations_count": 377,
+      "migration_head": "20260810160000",
+      "migrations_count": 378,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1513,12 +1513,16 @@
         {
           "version": "20260810140000",
           "name": "river-and-cowork-buckets-in-repo"
+        },
+        {
+          "version": "20260810160000",
+          "name": "the-ledger-decides-which-fiscal-years-exist"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:0e98a48c3e21d615251399b7be433016567b73931c6af3d679a2d270953fcf5e",
-      "skill_count": 533,
+      "seed_hash": "sha256:405aab26f11c198ab7c0e2edbccc2d9a26b4320cf6791ada11fcdcea1fa23d0a",
+      "skill_count": 534,
       "module_count": 68
     },
     "edge_functions": {
@@ -1582,7 +1586,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:d29c2a9ce0c09d1d4e074ae002b78efe337bb293c51045e4846252144c3ac5b9",
         "run-autonomy-tests": "sha256:d326b88ef0d263ed7604ba1eb75a770126d785e26211888b2093fcb325cc8c22",
-        "run-platform-tests": "sha256:a87efa383a04d3ea859b3cb671dab3c97b73628cbc2de2a9a04750570a000bcd",
+        "run-platform-tests": "sha256:9795a6d7da6990a841e920c4082f730b57ea411eda2d7201e21b06136acb3979",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

@@ -32,7 +32,11 @@ export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) 
       const closed = rows.filter((r: any) => r.status === 'closed' || r.status === 'locked').length;
       return {
         closed,
-        total: rows.length,
+        // A fiscal year has twelve months. The denominator is NOT the number of
+        // rows in accounting_periods — that table only gets a row when a month
+        // is closed, so counting rows made the card read "3 of 3 periods
+        // closed" when nine months were still open.
+        total: 12,
         pending: pending.count ?? 0,
       };
     },
@@ -50,7 +54,7 @@ export function PeriodStatusCard({ onNavigate }: { onNavigate?: (tabId: string) 
       ) : (
         <>
           <div className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
-            {data.closed} <span className="text-muted-foreground font-normal text-xl">of {data.total || 12}</span>
+            {data.closed} <span className="text-muted-foreground font-normal text-xl">of {data.total}</span>
           </div>
           <Subline>periods closed · fiscal year {year}</Subline>
           {hasPending && (
