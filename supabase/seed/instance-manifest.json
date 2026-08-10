@@ -1507,7 +1507,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:390d771d7985223c126c639506d75020edcc4f2a39312a1bcd959d1b985a24d3",
+      "shared_hash": "sha256:17b7d2e5641573ef27ea2ec0aa5eedb608a4671df4a6367fcac4e051beec34eb",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1538,7 +1538,7 @@
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
         "dunning-processor": "sha256:e05e55a6624859ed9f36f296aa5eccbb313f5d70f861a84067af4a4738b12679",
         "elks46-ingest": "sha256:a1b085f53ec559914dd98a664838bb751ea12ec965cd181230e3eff8bed6635b",
-        "email-send": "sha256:fe2e75692594bf6e07db63eff2f70b7e9e176e45a0c6579fc19fc03c2447d654",
+        "email-send": "sha256:847dfe00b430b9b8c4a1767d66720cc4e9562404df27403d9d69806b48d3aa03",
         "email-webhook": "sha256:0ab483c28ad242ba4cbadc329f56a029ef246c89e669bd81184ce9017ede007d",
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
         "extract-pdf-text": "sha256:96f98e21532f261f3e41dc8843dee623e9a010a6106d4e40d3664d743df46304",
@@ -1551,7 +1551,7 @@
         "gmail-oauth-callback": "sha256:b851b5a37da669b8dc506d399417619361317d008a2ac17a3b3cfda4dfff0dea",
         "instance-health": "sha256:19ed2278f4b6656d7923caf70627fe107e529a53ac7f3c5327117bccc55cbf1a",
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
-        "invite-colleague": "sha256:59f6edf8fd61eefb4370a66f0b449250dedba573b91772309ad945397bbcbc5f",
+        "invite-colleague": "sha256:9080c0ce1d633eda3da606fd9bc03c304e7051d75fb7d201a07602bbb94da932",
         "invite-employee": "sha256:87bf2502e9d9e67f6d659342ef5abaca3009eb46e0fa9937c833b465f3c4efcd",
         "knowledge-indexer": "sha256:c6f628a21822a011e37b3719ef639f93b0dedab23c5becc0255e0c16e9c31289",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",

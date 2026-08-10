@@ -231,3 +231,48 @@ describe('nobody records state for a send that did not happen', () => {
       .toMatch(/if \(!\w*[Ff]ailed\w*\)\s*\{/);
   });
 });
+
+describe('the guard knows who is sending, because that is where the risk lives', () => {
+  // Optic blocked a colleague invitation to the company's OWN domain. The rule
+  // was right — no invoice may reach a customer — but the guard could not tell
+  // an invoice from an invitation, so it held both. A rail that fires on the
+  // harmless case is a rail people switch off.
+  const cfg = {
+    enabled: true, domains: ['liteit.se'], addresses: [],
+    scope: 'customer_facing', reason: 'pilot',
+  };
+
+  it('lets an internal sender through when scope is customer_facing', async () => {
+    const d = await filterRecipients(settingsClient(cfg),
+      ['peter@optictunnels.com'], 'invite-colleague');
+    expect(d.allowed).toEqual(['peter@optictunnels.com']);
+    expect(d.blocked).toEqual([]);
+    expect(d.active).toBe(false);
+    expect(d.note).toMatch(/sends to colleagues, not customers/);
+  });
+
+  it('still holds a customer-facing send from the same instance', async () => {
+    const d = await filterRecipients(settingsClient(cfg),
+      ['kund@example.com'], 'invoice');
+    expect(d.allowed).toEqual([]);
+    expect(d.blocked).toHaveLength(1);
+    expect(d.active).toBe(true);
+  });
+
+  it('an UNKNOWN sender is guarded, not exempt', async () => {
+    // The exempt list is short on purpose. A list of what to GUARD would fail
+    // open the day someone adds a mailer and forgets to register it.
+    const d = await filterRecipients(settingsClient(cfg),
+      ['kund@example.com'], 'some-new-mailer');
+    expect(d.allowed).toEqual([]);
+    expect(d.active).toBe(true);
+  });
+
+  it('and scope defaults to ALL, so an upgrade never widens the rail', async () => {
+    const { scope: _omitted, ...noScope } = cfg;
+    const d = await filterRecipients(settingsClient(noScope),
+      ['peter@optictunnels.com'], 'invite-colleague');
+    expect(d.allowed).toEqual([]);
+    expect(d.active).toBe(true);
+  });
+});

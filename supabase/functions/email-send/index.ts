@@ -240,7 +240,10 @@ serve(async (req: Request) => {
     // Suppressions are a deny list: everything sends unless named. The allowlist
     // is the inverse, and while a live company runs FlowWink in development it
     // is the only shape that is safe. See _shared/email-allowlist.ts.
-    const gate = await filterRecipients(supabase, recipients);
+    // The source travels with the decision: the risk this guard exists for is
+    // mailing a real CUSTOMER, and a colleague invitation is not that.
+    const gate = await filterRecipients(supabase, recipients,
+      body?.source ?? body?.tags?.source ?? null);
     if (gate.blocked.length) {
       console.warn(`[email-send] allowlist withheld ${gate.blocked.length} recipient(s)`);
     }

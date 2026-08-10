@@ -26,7 +26,32 @@ export interface EmailAllowlist {
   domains: string[];
   addresses: string[];
   reason?: string;
+  /**
+   * Which sends the guard applies to.
+   *   'all'             — every outbound mail (the original behaviour, and the
+   *                       default when the field is absent, because widening a
+   *                       safety rail must never happen by upgrade)
+   *   'customer_facing' — everything EXCEPT the sends whose recipient is a
+   *                       colleague by construction (see INTERNAL_SOURCES)
+   * The risk this guard exists for is mailing a real CUSTOMER by accident.
+   * Blocking a colleague invitation protects nobody and trains people to switch
+   * the guard off, which is how a rail stops existing.
+   */
+  scope?: 'all' | 'customer_facing';
 }
+
+/**
+ * Sends whose recipient is someone inside the company by construction. Kept as
+ * a short EXEMPT list rather than a list of guarded sources on purpose: a new
+ * sender must be guarded by default. A list of what to guard fails OPEN the day
+ * someone adds an invoice mailer and forgets to register it.
+ */
+export const INTERNAL_SOURCES = new Set([
+  'invite-colleague',
+  'invite-employee',
+  'platform-test',
+  'run-platform-tests',
+]);
 
 export interface AllowlistDecision {
   /** Recipients that may be sent to. */
@@ -87,6 +112,7 @@ function domainOf(address: string): string {
 export async function filterRecipients(
   supabase: SettingsReader,
   recipients: string[],
+  source?: string | null,
 ): Promise<AllowlistDecision> {
   const addresses = recipients.map(bareAddress).filter((r) => r.length > 0);
 
@@ -108,6 +134,17 @@ export async function filterRecipients(
   const cfg = (row?.value ?? null) as Partial<EmailAllowlist> | null;
   if (!cfg || cfg.enabled !== true) {
     return { allowed: addresses, blocked: [], active: false };
+  }
+
+  // Scope. Absent means 'all' — the behaviour every instance already has, so an
+  // upgrade cannot quietly let mail out that was being held yesterday.
+  if ((cfg.scope ?? 'all') === 'customer_facing' && source && INTERNAL_SOURCES.has(source)) {
+    return {
+      allowed: addresses,
+      blocked: [],
+      active: false,
+      note: `The email allowlist is set to customer_facing and "${source}" sends to colleagues, not customers — it is not filtered.`,
+    };
   }
 
   const domains = (cfg.domains ?? []).map((d) => String(d).toLowerCase().replace(/^@/, '').trim()).filter(Boolean);
