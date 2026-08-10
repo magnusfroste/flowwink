@@ -82,7 +82,10 @@ describe('the backend gates and reconciles correctly', () => {
     // an early return in the mail branch.
     const code = fn.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
     const upsertAt = code.indexOf('user_roles").upsert');
-    const mailAt = code.indexOf('invoke("email-send"');
+    // Anchor inside the INVITE branch: the reset branch also sends mail, and
+    // it returns early by design (it grants no role and has none to reconcile).
+    const inviteAt = code.indexOf('type: "invite"');
+    const mailAt = code.indexOf('invoke("email-send"', inviteAt);
     expect(upsertAt).toBeGreaterThan(mailAt); // reconciliation comes after, unconditionally
     const mailBranch = code.slice(mailAt, upsertAt);
     expect(mailBranch).not.toMatch(/return json/);
@@ -103,5 +106,51 @@ describe('the backend gates and reconciles correctly', () => {
     expect(cleanupAt).toBeGreaterThan(-1);
     const guard = code.slice(code.lastIndexOf('if (', cleanupAt), cleanupAt);
     expect(guard).toMatch(/status !== "granted_existing"|status === "invited"/);
+  });
+});
+
+describe('an invitation lands on the password step, not past it', () => {
+  /**
+   * Two colleagues were invited and walked straight into the dashboard with a
+   * live session and no password ever set. The verify-link pointed at /admin,
+   * so the activation screen — which exists, and is the only place that calls
+   * updateUser({password}) on an invited account — was simply never reached.
+   *
+   * The consequences are both ways round: they could not sign in a second time,
+   * and anyone holding a forwarded copy of that link was equally admitted.
+   */
+  it('sends the invite to the activation screen, carrying where to go after', () => {
+    expect(fn).toMatch(/\/account\/activate\?next=\/admin/);
+    expect(fn).not.toMatch(/const redirectTo = `\$\{siteUrl\}\/admin`/);
+  });
+
+  it('resolves the site URL ONE way for every link it makes', () => {
+    // The reset branch arrived with its own resolver reading a different
+    // source. Two ways to answer the same question in one file is how the
+    // answers drift.
+    expect((fn.match(/async function resolveSiteUrl/g) ?? []).length).toBe(1);
+    expect((fn.match(/await resolveSiteUrl\(admin, req\)/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('an admin can hand a colleague a way back in', () => {
+  it('offers a password reset, because re-inviting an existing user mails nothing', () => {
+    expect(fn).toMatch(/action === "reset_password"/);
+    expect(fn).toMatch(/type: "recovery"/);
+    expect(fn).toMatch(/No account for \$\{cleanEmail\}\. Invite them first\./);
+  });
+
+  it('sends it through the operator’s own rail, like the invitation', () => {
+    expect(fn).toMatch(/source: "colleague-password-reset"/);
+    const allowlist = readFileSync(
+      resolve(__dirname, '../../../supabase/functions/_shared/email-allowlist.ts'), 'utf-8');
+    // A reset for a colleague is internal — holding it would be the same false
+    // positive that blocked the invitation.
+    expect(allowlist).toMatch(/'colleague-password-reset',/);
+  });
+
+  it('never claims a send that did not happen', () => {
+    expect(fn).toMatch(/status: "reset_no_mail"/);
+    expect(fn).toMatch(/blocked_by_allowlist/);
   });
 });

@@ -13,6 +13,7 @@ import { useIntegrations, useUpdateIntegrations, useIsIntegrationActive } from "
 import { Mail, Inbox, CheckCircle2, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { InboundMailboxesSection } from "@/components/admin/email/InboundMailboxesSection";
+import { OutboundGuardPanel } from "@/components/admin/email/OutboundGuardPanel";
 
 /**
  * Email Router control plane. Owns provider selection, default From identity,
@@ -70,6 +71,11 @@ export function EmailRouterSettings() {
 
   return (
     <div className="space-y-6">
+      {/* The guard goes FIRST: an instance that is holding mail should say so
+          before it explains how mail flows, because everything below is about
+          sends that may not be leaving. */}
+      <OutboundGuardPanel />
+
       {/* Flow map — how transport, router and use cases connect */}
       <Card>
         <CardHeader>

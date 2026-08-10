@@ -36,6 +36,22 @@ const INVITABLE_ROLES = [
   "warehouse", "marketing", "purchasing", "projects",
 ];
 
+/**
+ * Where the invitation link should point. The instance's configured site URL
+ * first — the origin header is whatever browser the admin happened to use, and
+ * an early invitation once shipped a link aimed at the sender's own laptop.
+ * The header stays as the local-dev fallback.
+ *
+ * One resolver, because the invite branch and the reset branch had two and that
+ * is how the two drift.
+ */
+async function resolveSiteUrl(admin: ReturnType<typeof getServiceClient>, req: Request): Promise<string> {
+  const { data: general } = await admin
+    .from("site_settings").select("value").eq("key", "general").maybeSingle();
+  return ((general?.value as { siteUrl?: string } | null)?.siteUrl ?? "").replace(/\/+$/, "")
+    || (req.headers.get("origin") ?? "").replace(/\/+$/, "");
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -55,14 +71,80 @@ serve(async (req: Request) => {
     });
     if (!isAdmin) return json({ error: "Admin role required" }, 403);
 
-    const { email, role, full_name } = (await req.json()) as {
-      email?: string; role?: string; full_name?: string;
+    const { email, role, full_name, action } = (await req.json()) as {
+      email?: string; role?: string; full_name?: string; action?: string;
     };
 
     const cleanEmail = (email ?? "").trim().toLowerCase();
     if (!cleanEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
       return json({ error: "A valid email is required." }, 400);
     }
+    // ── Password reset ──────────────────────────────────────────────────
+    // The recovery path for a colleague who has an account but cannot sign in:
+    // invited before the activation screen existed, forgot their password, or
+    // was created with one they never received. Re-inviting does not help —
+    // an existing user is granted the role and mailed nothing.
+    //
+    // generateLink again, not resetPasswordForEmail: the mail must go through
+    // the operator's own rail (verified domain, branded shell, allowlist, no
+    // shared-sender cap) exactly like the invitation does.
+    if (action === "reset_password") {
+      const { data: users } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      const target = users?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+      if (!target) {
+        return json({ error: `No account for ${cleanEmail}. Invite them first.` }, 404);
+      }
+
+      const siteUrl = await resolveSiteUrl(admin, req);
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: cleanEmail,
+        options: { redirectTo: `${siteUrl}/account/activate?next=/admin` },
+      });
+      if (linkErr || !linkData?.properties?.action_link) {
+        return json({ error: linkErr?.message ?? "Could not create reset link" }, 500);
+      }
+      const link = linkData.properties.action_link;
+
+      const { data: sendData, error: sendErr } = await admin.functions.invoke("email-send", {
+        body: {
+          to: cleanEmail,
+          subject: "Set a new password",
+          html: `<h2 style="margin:0 0 12px">Set a new password</h2>
+            <p>An administrator asked us to send you a link to set a new password.</p>
+            <p><a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Set my password</a></p>
+            <p style="color:#666;font-size:13px">If you did not expect this, you can ignore it — the link expires and nothing changes until you use it.</p>`,
+          source: "colleague-password-reset",
+          tags: { source: "colleague-password-reset" },
+        },
+      });
+
+      const simulated = Boolean((sendData as { simulated?: boolean } | null)?.simulated);
+      const mailed = !sendErr && Boolean((sendData as { success?: boolean } | null)?.success) && !simulated;
+      if (mailed) return json({ status: "reset_sent", email: cleanEmail });
+
+      // Same honesty as the invitation: the admin gets the link to pass on
+      // rather than a false "sent", and the reason rather than an HTTP status.
+      let reason = sendErr?.message ?? "unknown error";
+      const ctx = (sendErr as { context?: Response } | null)?.context;
+      if (ctx && typeof ctx.json === "function") {
+        try {
+          const body = await ctx.json() as { blocked_by_allowlist?: boolean; error?: string; how_to_change?: string };
+          if (body?.blocked_by_allowlist) {
+            reason = `${body.error ?? "Recipient is outside this instance's email allowlist."} ${body.how_to_change ?? ""}`.trim();
+          } else if (body?.error) reason = body.error;
+        } catch { /* not JSON */ }
+      }
+      return json({
+        status: "reset_no_mail",
+        email: cleanEmail,
+        action_link: link,
+        mail_problem: simulated
+          ? "No email provider is configured — send this link yourself."
+          : reason,
+      });
+    }
+
     if (!role || !INVITABLE_ROLES.includes(role)) {
       return json({ error: `role must be one of: ${INVITABLE_ROLES.join(", ")}` }, 400);
     }
@@ -102,11 +184,15 @@ serve(async (req: Request) => {
       // from install, so the first real invitation shipped a link pointing at
       // the recipient's own machine. Falling back to the header keeps local
       // dev working.
-      const { data: general } = await admin
-        .from("site_settings").select("value").eq("key", "general").maybeSingle();
-      const siteUrl = ((general?.value as { siteUrl?: string } | null)?.siteUrl ?? "").replace(/\/+$/, "")
-        || (req.headers.get("origin") ?? "");
-      const redirectTo = `${siteUrl}/admin`;
+      const siteUrl = await resolveSiteUrl(admin, req);
+      // Land on the activation screen, NOT straight in the admin. Pointing an
+      // invite verify-link at /admin gave the colleague a live session and no
+      // password: they were in, and could never sign in again without another
+      // link. Anyone holding a forwarded copy of that link was equally in.
+      // /account/activate is the one place that sets a password on an invited
+      // account; `next` sends a colleague to the admin afterwards and a portal
+      // customer to the portal, so there is one screen and not two copies.
+      const redirectTo = `${siteUrl}/account/activate?next=/admin`;
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: "invite",
         email: cleanEmail,

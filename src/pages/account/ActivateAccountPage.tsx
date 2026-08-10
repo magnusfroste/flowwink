@@ -13,7 +13,7 @@
  * No valid invite session → an honest dead-end, not a signup form.
  */
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 
 export default function ActivateAccountPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [status, setStatus] = useState<'checking' | 'ready' | 'invalid'>('checking');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,7 +69,13 @@ export default function ActivateAccountPage() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success('Welcome — your account is ready.');
-      navigate('/account');
+      // Where the invitation was headed. A colleague invited to the admin should
+      // land in the admin, a portal customer in the portal — one activation
+      // screen, two destinations, rather than a second copy of a password form.
+      // Relative paths only: an open redirect on a page that hands out a session
+      // is how an invitation link becomes somebody else's.
+      const next = params.get('next');
+      navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/account');
     } catch (e) {
       toast.error((e as Error).message);
     } finally {

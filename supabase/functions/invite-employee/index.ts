@@ -84,7 +84,10 @@ Deno.serve(async (req) => {
       userId = found.id;
     } else {
       // Send invite
-      const redirectTo = `${req.headers.get("origin") ?? ""}/account`;
+      // The activation screen, not the portal itself — same reason as
+      // invite-colleague: an invite link that lands past the password step
+      // leaves an account nobody can sign into twice.
+      const redirectTo = `${req.headers.get("origin") ?? ""}/account/activate`;
       const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(emp.email, {
         data: { full_name: emp.name, signup_type: "employee" },
         redirectTo,

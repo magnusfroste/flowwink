@@ -25,7 +25,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, User, Settings2, Trash2 } from 'lucide-react';
+import { Shield, User, Settings2, Trash2, KeyRound } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -114,6 +114,39 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  /**
+   * The way back in for a colleague who has an account but cannot sign into it:
+   * invited before the activation screen existed, or simply forgot. Re-inviting
+   * does nothing — an existing user is granted the role and mailed nothing —
+   * so without this an admin had no move at all.
+   */
+  const resetPassword = useMutation({
+    mutationFn: async (email: string) => {
+      const { data, error } = await supabase.functions.invoke('invite-colleague', {
+        body: { action: 'reset_password', email },
+      });
+      if (error) throw new Error(error.message);
+      const res = data as { status?: string; action_link?: string; mail_problem?: string; error?: string };
+      if (res?.error) throw new Error(res.error);
+      return res;
+    },
+    onSuccess: (res) => {
+      if (res.status === 'reset_sent') {
+        toast({ title: 'Password link sent', description: 'They can set a new password from the email.' });
+      } else {
+        // Honest: the link exists, the mail did not go. Hand it over rather
+        // than claim a send that never happened.
+        toast({
+          title: 'Email not sent — pass the link on yourself',
+          description: `${res.mail_problem ?? ''} ${res.action_link ?? ''}`.trim(),
+        });
+      }
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -303,6 +336,15 @@ export default function UsersPage() {
                           {new Date(user.created_at).toLocaleDateString('en-US')}
                         </TableCell>
                         <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={resetPassword.isPending}
+                            title="Send a link to set a new password"
+                            onClick={() => resetPassword.mutate(user.email)}
+                          >
+                            <KeyRound className="h-4 w-4 text-muted-foreground" />
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button

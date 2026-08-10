@@ -49,6 +49,7 @@ export interface EmailAllowlist {
 export const INTERNAL_SOURCES = new Set([
   'invite-colleague',
   'invite-employee',
+  'colleague-password-reset',
   'platform-test',
   'run-platform-tests',
 ]);
