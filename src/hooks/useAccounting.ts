@@ -571,7 +571,7 @@ export function useAccountLedger(accountCode: string | null, fiscalYear?: number
 
       return {
         account_code: accountCode,
-        account_name: chart?.account_name || (opening as any)?.account_name || accountCode,
+        account_name: chart?.account_name || lines[0]?.description || accountCode,
         normal_balance: normalBalance,
         opening_cents,
         lines,
