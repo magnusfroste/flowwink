@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260811120000",
-      "migrations_count": 383,
+      "migration_head": "20260811140000",
+      "migrations_count": 384,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1537,6 +1537,10 @@
         {
           "version": "20260811120000",
           "name": "the-activity-log-knows-all-its-actors"
+        },
+        {
+          "version": "20260811140000",
+          "name": "first-user-on-a-virgin-instance-claims-admin"
         }
       ]
     },
