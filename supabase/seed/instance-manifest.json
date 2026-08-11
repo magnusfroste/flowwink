@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "99999999999999",
-      "migrations_count": 385,
+      "migrations_count": 386,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1541,6 +1541,10 @@
         {
           "version": "20260811140000",
           "name": "first-user-on-a-virgin-instance-claims-admin"
+        },
+        {
+          "version": "20260812120000",
+          "name": "demo-seeds-teach-the-state-space"
         },
         {
           "version": "99999999999999",
