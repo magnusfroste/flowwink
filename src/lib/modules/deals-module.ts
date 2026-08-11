@@ -47,15 +47,23 @@ const DEALS_SKILLS: SkillSeed[] = [
             },
             lead_id: {
               type: 'string',
-              description: 'Existing lead UUID. Required for create UNLESS company_id or company_name is supplied (then a lead is auto-created/reused).',
+              description: 'Existing lead UUID. Create requires ONE contact anchor: lead_id, company_id/company_name, or lead_email/lead_name — with none of them, create errors instead of fabricating a placeholder contact.',
             },
             company_id: {
               type: 'string',
-              description: 'Optional: when creating a deal company-centrically, supply company_id (or company_name) and a lead will be auto-created.',
+              description: 'Optional: when creating a deal company-centrically, supply company_id (or company_name) and the company\'s latest lead is reused (or one is created).',
             },
             company_name: {
               type: 'string',
               description: 'Optional: company name to fuzzy-match instead of company_id.',
+            },
+            lead_email: {
+              type: 'string',
+              description: 'Contact email for create: an existing lead with this email is reused (case-insensitive — never a duplicate); otherwise a lead is created carrying it. Preferred anchor when you know the contact but not their UUID.',
+            },
+            lead_name: {
+              type: 'string',
+              description: 'Contact name for create. With lead_name but no lead_email, a contactless placeholder lead is created (synthetic @auto.flowwink.local email) — a deliberate pipeline-only opportunity.',
             },
             product_id: {
               type: 'string',

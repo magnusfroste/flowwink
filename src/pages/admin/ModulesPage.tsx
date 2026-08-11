@@ -296,6 +296,39 @@ export default function ModulesPage() {
     }
   };
 
+  // The sync runs from the seeds bundled into THIS browser session's build.
+  // If a newer frontend has deployed since the tab loaded, clicking sync would
+  // faithfully write the OLD seeds — the exact footgun the runbook's
+  // "hard-refresh first" warning guards against. Automate the guard: compare
+  // the entry-script filename in the freshly served index.html against the one
+  // this session actually loaded; on mismatch, reload and auto-resume the sync.
+  const RESUME_SYNC_FLAG = 'flowwink-resync-after-reload';
+
+  const runningBuildIsStale = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`/?bust=${Date.now()}`, { cache: 'no-store' });
+      const deployed = (await res.text()).match(/\/assets\/index-[\w-]+\.js/)?.[0];
+      const running = document
+        .querySelector<HTMLScriptElement>('script[src*="/assets/index-"]')
+        ?.getAttribute('src');
+      // Vite dev serves /src/main.tsx (no match) → never stale. A fetch
+      // failure also reads as fresh: the guard must not block the sync.
+      if (!deployed || !running) return false;
+      return !running.endsWith(deployed.split('/').pop()!);
+    } catch {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem(RESUME_SYNC_FLAG) && localModules) {
+      sessionStorage.removeItem(RESUME_SYNC_FLAG);
+      toast({ title: 'Fresh build loaded — resuming skill sync' });
+      void handleResyncAll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localModules]);
+
   // Re-bootstrap every enabled module from the current code seeds. This is the
   // durable fix for skill drift: bootstrapModule() refreshes ALL definition
   // fields (description, tool_definition, handler, …) from src/lib/modules/*,
@@ -303,6 +336,15 @@ export default function ModulesPage() {
   // instance get synced. Run after a deploy on each instance.
   const handleResyncAll = async () => {
     if (!localModules) return;
+    if (await runningBuildIsStale()) {
+      sessionStorage.setItem(RESUME_SYNC_FLAG, '1');
+      toast({
+        title: 'A newer build is deployed — reloading first',
+        description: 'Syncing from a stale tab would write outdated skill seeds. The sync resumes automatically after reload.',
+      });
+      window.location.reload();
+      return;
+    }
     setResyncing(true);
     try {
       const targets = Object.entries(localModules)

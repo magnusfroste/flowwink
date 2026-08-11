@@ -4879,8 +4879,13 @@ async function executeDealsAction(
 
     // Auto-resolve a lead when no lead_id supplied. Strategy:
     //  1. If company_id/company_name → reuse latest lead for that company, else create one.
-    //  2. Else → create a minimal placeholder lead so deals can be tracked in a pure pipeline flow
-    //     (e.g. agent ingests an opportunity from a webform/news without a contact yet).
+    //  2. If lead_email → reuse the existing lead with that email (case-insensitive),
+    //     else create a real lead carrying that email. Never a duplicate.
+    //  3. If only lead_name → placeholder lead with a synthetic email (a deliberate
+    //     contactless opportunity, e.g. ingested from news before a contact exists).
+    //  4. Nothing at all → self-correcting error. Fabricating a phantom contact on
+    //     bad args teaches the calling agent nothing and fills the CRM with
+    //     @auto.flowwink.local ghosts (found live via process-QA 2026-08-11).
     if (!lead_id) {
       let resolvedCompanyId: string | null = company_id || null;
       let resolvedCompanyName: string | null = company_name || null;
@@ -4895,7 +4900,22 @@ async function executeDealsAction(
           .order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (existing) lead_id = existing.id;
       }
+      if (!lead_id && lead_email) {
+        // ilike with no wildcards = case-insensitive exact match.
+        const { data: byEmail } = await supabase
+          .from('leads').select('id').ilike('email', lead_email)
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (byEmail) lead_id = byEmail.id;
+      }
       if (!lead_id) {
+        if (!resolvedCompanyId && !lead_email && !lead_name) {
+          throw new Error(
+            'manage_deal create needs a contact anchor: pass lead_id (existing lead UUID), ' +
+            'company_id/company_name (deal anchored to a company), or lead_email/lead_name ' +
+            '(existing lead reused by email, otherwise created). ' +
+            'Refusing to fabricate a placeholder contact.'
+          );
+        }
         const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
         const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
         const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;

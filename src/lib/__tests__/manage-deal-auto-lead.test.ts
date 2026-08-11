@@ -3,11 +3,18 @@
  *
  * Locks the contract that:
  *   1. When `lead_id` is provided → no lead is created; deal links to that lead.
- *   2. When `lead_id` is missing → a minimal placeholder lead is auto-created
- *      with an `auto.flowwink.local` synthetic email and `source='agent_deal'`.
+ *   2. When `lead_email` is provided → an existing lead with that email is
+ *      REUSED (case-insensitive), never duplicated; otherwise a real lead is
+ *      created carrying that email.
  *   3. When `company_id` exists with an existing lead → that lead is reused.
- *   4. The response surfaces `auto_created_lead: boolean` so callers (and audit
- *      logs) can tell whether a placeholder was inserted.
+ *   4. With NO contact anchor at all (no lead_id/company/lead_email/lead_name)
+ *      → create ERRORS self-correctingly instead of fabricating a phantom
+ *      placeholder. Found live 2026-08-11: an agent passing a wrong param name
+ *      (`contact_email`) got "success" plus a ghost lead
+ *      (`deal-…@auto.flowwink.local`) while the real contact sat unlinked.
+ *   5. Only lead_name (a deliberate contactless opportunity) still yields the
+ *      synthetic-email placeholder, and the response surfaces
+ *      `auto_created_lead: boolean` so audit logs can tell.
  *
  * These tests reimplement the create-branch logic against an in-memory mock so
  * we can lock the behaviour without spinning up Deno/Supabase. If the edge
@@ -130,7 +137,21 @@ async function createDeal(supabase: any, args: any) {
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (existing) lead_id = existing.id;
     }
+    if (!lead_id && lead_email) {
+      const { data: byEmail } = await supabase
+        .from('leads').select('id').ilike('email', lead_email)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (byEmail) lead_id = byEmail.id;
+    }
     if (!lead_id) {
+      if (!resolvedCompanyId && !lead_email && !lead_name) {
+        throw new Error(
+          'manage_deal create needs a contact anchor: pass lead_id (existing lead UUID), ' +
+          'company_id/company_name (deal anchored to a company), or lead_email/lead_name ' +
+          '(existing lead reused by email, otherwise created). ' +
+          'Refusing to fabricate a placeholder contact.'
+        );
+      }
       const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
       const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
       const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;
@@ -167,19 +188,41 @@ describe('manage_deal auto-lead behaviour', () => {
     expect(state.deals).toHaveLength(1);
   });
 
-  it('auto-creates a minimal lead when lead_id is missing entirely', async () => {
+  it('ERRORS self-correctingly when no contact anchor at all is given', async () => {
+    // The old behaviour fabricated a phantom placeholder lead here — an agent
+    // passing a wrong param name (contact_email) got "success" plus a ghost.
     const supabase = makeSupabase();
-    const res = await createDeal(supabase, { value_cents: 50000 });
-    expect(res.auto_created_lead).toBe(true);
-    expect(state.leads).toHaveLength(1);
-    const lead = state.leads[0] as any;
-    expect(lead.source).toBe('agent_deal');
-    expect(lead.status).toBe('opportunity');
-    expect(lead.email).toMatch(/@auto\.flowwink\.local$/);
-    expect(res.lead_id).toBe(lead.id);
+    await expect(createDeal(supabase, { value_cents: 50000 }))
+      .rejects.toThrow(/contact anchor.*lead_id.*company_id.*lead_email/s);
+    expect(state.leads).toHaveLength(0);
+    expect(state.deals).toHaveLength(0);
   });
 
-  it('uses lead_name and lead_email when provided', async () => {
+  it('reuses an existing lead by email instead of duplicating it', async () => {
+    state.leads.push({
+      id: 'lead-real', name: 'Ops Test Person', email: 'ops-test@example.com',
+      created_at: '2025-01-01',
+    });
+    const supabase = makeSupabase();
+    const res = await createDeal(supabase, {
+      value_cents: 25000000, lead_email: 'ops-test@example.com',
+    });
+    expect(res.lead_id).toBe('lead-real');
+    expect(res.auto_created_lead).toBe(false);
+    expect(state.leads).toHaveLength(1);
+  });
+
+  it('matches lead_email case-insensitively', async () => {
+    state.leads.push({
+      id: 'lead-real', name: 'X', email: 'CTO@Acme.test', created_at: '2025-01-01',
+    });
+    const supabase = makeSupabase();
+    const res = await createDeal(supabase, { value_cents: 1, lead_email: 'cto@acme.test' });
+    expect(res.lead_id).toBe('lead-real');
+    expect(state.leads).toHaveLength(1);
+  });
+
+  it('uses lead_name and lead_email when provided and no lead matches', async () => {
     const supabase = makeSupabase();
     const res = await createDeal(supabase, {
       value_cents: 250000, lead_name: 'Acme CTO', lead_email: 'cto@acme.test',
@@ -188,6 +231,15 @@ describe('manage_deal auto-lead behaviour', () => {
     const lead = state.leads[0] as any;
     expect(lead.name).toBe('Acme CTO');
     expect(lead.email).toBe('cto@acme.test');
+  });
+
+  it('lead_name alone still yields a deliberate contactless placeholder', async () => {
+    const supabase = makeSupabase();
+    const res = await createDeal(supabase, { value_cents: 5000, lead_name: 'Mystery Prospect' });
+    expect(res.auto_created_lead).toBe(true);
+    const lead = state.leads[0] as any;
+    expect(lead.email).toMatch(/@auto\.flowwink\.local$/);
+    expect(lead.source).toBe('agent_deal');
   });
 
   it('reuses an existing lead for the resolved company', async () => {
@@ -218,7 +270,7 @@ describe('manage_deal auto-lead behaviour', () => {
     state.leads.push({ id: 'l1', email: 'a@b.c' });
     const supabase = makeSupabase();
     const withId = await createDeal(supabase, { lead_id: 'l1', value_cents: 1 });
-    const withoutId = await createDeal(supabase, { value_cents: 2 });
+    const withoutId = await createDeal(supabase, { value_cents: 2, lead_name: 'Placeholder Prospect' });
     expect(withId).toHaveProperty('auto_created_lead', false);
     expect(withoutId).toHaveProperty('auto_created_lead', true);
   });
