@@ -82,11 +82,25 @@ describe('handle_new_user trigger', () => {
     expect(adminBranch!).toMatch(/INSERT\s+INTO\s+public\.user_roles[\s\S]*?'admin'/i);
   });
 
-  it('inserts exactly one user_roles row per signup_type branch', () => {
-    // Count INSERT INTO user_roles statements — must match the number of
-    // signup_type branches (customer / admin / else = 3).
+  it('inserts exactly one user_roles row per branch', () => {
+    // One INSERT per decision branch, no more: a stray insert would grant two
+    // roles at once. Four branches now — customer / admin / employee-writer,
+    // plus the virgin-instance first-admin branch (20260811140000).
     const inserts = (fnBody.match(/INSERT\s+INTO\s+public\.user_roles/gi) || []).length;
-    expect(inserts).toBe(3);
+    expect(inserts).toBe(4);
+  });
+
+  it('grants admin to the first account ONLY while zero admins exist', () => {
+    // The self-hosted first-admin bootstrap. It is safe precisely because it is
+    // gated on the admin count being zero — remove that gate and it becomes
+    // "any signup can be admin", the hole 20260726190000 closed. This asserts
+    // the gate is present so a future edit can't quietly drop it.
+    expect(fnBody).toMatch(/count\(\*\)[\s\S]*?FROM\s+public\.user_roles[\s\S]*?role\s*=\s*'admin'/i);
+    const virginBranch = fnBody.match(
+      /IF\s+v_admin_count\s*=\s*0\s+THEN([\s\S]*?)(?=ELSIF|ELSE|END\s+IF)/i,
+    )?.[1];
+    expect(virginBranch, 'zero-admins branch must exist').toBeDefined();
+    expect(virginBranch!).toMatch(/INSERT\s+INTO\s+public\.user_roles[\s\S]*?'admin'/i);
   });
 
   it('uses ON CONFLICT DO NOTHING so re-runs stay idempotent', () => {
