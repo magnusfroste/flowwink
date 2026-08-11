@@ -24,7 +24,7 @@ import { resolveAiConfig, isAnthropicProvider } from '../_shared/ai-config.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import { knowledgeChunksSource, flowtableSource, type SourceCtx } from '../_shared/retrieval/sources.ts';
 import { scoreSkillsByIntent } from '../_shared/skills/intent-scorer.ts';
-import { isReadSkill, isReadCall, WRITE_REFUSAL } from '../_shared/skills/read-surface.ts';
+import { isReadSkill, isReadCall, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../_shared/skills/read-surface.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 
 const corsHeaders = {
@@ -457,7 +457,7 @@ const DISPATCH_TOOLS = [
     function: {
       name: 'execute_skill',
       description:
-        'Execute a read-only skill from search_skills and get its live result. Pass arguments matching the skill\'s parameter contract. Results are workspace facts — cite them.',
+        'Execute a skill from search_skills. READS return their live result immediately — cite it. WRITES (create/update/send/book) are automatically STAGED for the user\'s approval and never run directly, so calling this for a write is always safe: it produces an approval card, not a side effect.',
       parameters: {
         type: 'object',
         properties: {
@@ -474,27 +474,58 @@ const DISPATCH_TOOLS = [
 async function runSearchSkills(service: any, query: string) {
   const { data: skills } = await service
     .from('agent_skills')
-    .select('name, description, category, instructions')
+    .select('name, description, category, instructions, tool_definition')
     .limit(1000);
   const readable = (skills || []).filter(
     (sk: any) => isReadSkill(sk.name) || isReadCall(sk.name, { action: 'list' }),
   );
-  const ranked = scoreSkillsByIntent(readable, String(query || ''), { maxSkills: 8, alwaysInclude: ['get_customer_360'] });
+  // Compound anchoring: Swedish (and German, and …) glues entity words
+  // together — "supportticket" hides "ticket" from word-level scoring, and the
+  // scorer demonstrably ranked manage_ticket outside top-8 for exactly that
+  // message. If a catalog name TOKEN appears inside a query word, that skill
+  // is always in the list. Pure string containment against the catalog — no
+  // intent routing (Law 1).
+  const queryWords = String(query || '').toLowerCase().split(/[^\p{L}\p{N}_]+/u).filter((w) => w.length >= 5);
+  const anchors = new Set<string>(['get_customer_360']);
+  for (const sk of readable) {
+    const tokens = String(sk.name).split('_').filter((t: string) => t.length >= 4);
+    if (tokens.some((t: string) => queryWords.some((w) => w.includes(t)))) {
+      anchors.add(sk.name);
+      if (anchors.size >= 6) break;
+    }
+  }
+  // The scorer expects OpenAI tool shape (skill.function.name) — feeding it
+  // raw catalog rows scored EMPTY STRINGS for every skill and turned the whole
+  // ranking into noise (observed live: get_agent_trace topping a ticket
+  // question). Wrap rows before scoring.
+  const scorable = readable.map((sk: any) => ({
+    ...sk,
+    function: { name: sk.name, description: sk.description },
+  }));
+  const ranked = scoreSkillsByIntent(scorable, String(query || ''), { maxSkills: 8, alwaysInclude: [...anchors] });
   return {
-    skills: ranked.map((sk: any) => ({
-      name: sk.name,
-      description: String(sk.description || '').slice(0, 240),
-      has_instructions: !!sk.instructions,
-      ...(String(sk.name).startsWith('manage_')
-        ? { read_only_with: 'arguments.action must be one of list|get|search|view|check|status' }
-        : {}),
-    })),
-    note: 'Read-only surface. manage_* skills are readable ONLY with a read action argument; anything that would CHANGE data must be proposed to the user instead.',
+    skills: ranked.map((sk: any) => {
+      // Parameter NAMES up front: a bounced call costs a whole tool round, and
+      // weak models burn their patience on rounds. Contract-first beats
+      // guess-and-bounce.
+      const props = sk.tool_definition?.function?.parameters?.properties;
+      const params = props && typeof props === 'object' ? Object.keys(props).slice(0, 20).join(', ') : undefined;
+      return {
+        name: sk.name,
+        description: String(sk.description || '').slice(0, 240),
+        has_instructions: !!sk.instructions,
+        ...(params ? { params } : {}),
+        ...(String(sk.name).startsWith('manage_')
+          ? { actions: 'read with {"action":"list"|"get"|"search"}; a write action (create/update/…) STAGES the change for user approval' }
+          : {}),
+      };
+    }),
+    note: 'Reads execute immediately. Writes are staged for the user\'s approval — never executed directly — so proposing an action = calling execute_skill with the write arguments.',
   };
 }
 
 async function runReadSkillTool(service: any, name: string) {
-  if (!isReadCall(name, { action: 'list' })) return { error: WRITE_REFUSAL };
+  if (classifyCall(name, { action: 'list' }) === 'deny') return { error: WRITE_REFUSAL };
   const { data } = await service
     .from('agent_skills')
     .select('name, description, instructions, tool_definition')
@@ -523,28 +554,142 @@ async function resolveSkillName(service: any, name: string): Promise<string> {
   return candidates.find((c) => found.has(c)) ?? name;
 }
 
+interface StagedAction {
+  operation_id: string;
+  skill: string;
+  args: Record<string, unknown>;
+  reinvoke_args: Record<string, unknown>;
+  preview?: unknown;
+  /** Server-side name→uuid substitutions, shown on the card. */
+  resolved?: string[];
+}
+
 async function runExecuteSkill(
   service: any,
   supabaseUrl: string,
   serviceKey: string,
   rawName: string,
-  args: Record<string, unknown>,
+  rawArgs: Record<string, unknown>,
   userId: string,
-): Promise<{ ok: boolean; body: unknown; name: string }> {
+): Promise<{ ok: boolean; body: unknown; name: string; staged?: StagedAction }> {
   const name = await resolveSkillName(service, rawName);
-  if (!isReadCall(name, args)) return { ok: false, body: { error: WRITE_REFUSAL }, name };
+
+  // The model must NEVER hold the approval pen. These flags are how a human
+  // click executes a staged operation — strip them from model-supplied args so
+  // a prompt injection cannot self-approve.
+  const args: Record<string, unknown> = { ...(rawArgs ?? {}) };
+  delete (args as any)._approved;
+  delete (args as any)._approved_operation_id;
+  delete (args as any).force_staged;
+
+  const tier = classifyCall(name, args);
+  if (tier === 'deny') return { ok: false, body: { error: WRITE_REFUSAL }, name };
+
+  // A write must match the skill's parameter contract BEFORE a human is asked
+  // to approve it. A model that grabs the wrong skill and invents parameters
+  // (manage_automations with entity_type:'ticket', observed live) would
+  // otherwise stage garbage that LOOKS approvable. Unknown keys → bounce with
+  // the real contract so the model self-corrects — the PGRST202 philosophy,
+  // applied pre-flight.
+  if (tier === 'stage') {
+    const { data: skillRow } = await service
+      .from('agent_skills')
+      .select('tool_definition')
+      .eq('name', name)
+      .maybeSingle();
+    const props = skillRow?.tool_definition?.function?.parameters?.properties;
+    if (props && typeof props === 'object') {
+      const valid = new Set(Object.keys(props));
+      const unknown = Object.keys(args).filter((k) => !valid.has(k));
+      if (unknown.length) {
+        return {
+          ok: false,
+          name,
+          body: {
+            error: `Not staged: unknown parameter(s) ${unknown.join(', ')} for skill "${name}".`,
+            valid_parameters: [...valid],
+            hint: 'If these parameters do not fit what you are trying to do, this is probably the wrong skill — call search_skills for the module that owns the entity (e.g. manage_ticket for tickets).',
+          },
+        };
+      }
+      // Reference args must be REFERENCES. A name in an _id field ("company_id":
+      // "Nordisk Fiber AB", observed live) passes the key check, gets approved
+      // by a human, and then dies on the uuid cast — the card ends up wearing
+      // an error a lookup would have prevented. Bounce it pre-stage instead.
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const badRefs = Object.entries(args).filter(([k, v]) =>
+        k.endsWith('_id') && typeof v === 'string' && v.trim() !== '' && !UUID_RE.test(v.trim()));
+      // A name in an _id field is usually RESOLVABLE: company_id="Nordisk
+      // Fiber AB" names exactly one row in companies. Resolve it server-side —
+      // deterministic, and the approval card shows the substitution. Only an
+      // ambiguous or unknown name bounces back to the model. (Weak models
+      // repeatedly promised "jag skapar den nu…" instead of doing this lookup
+      // themselves; eleven live smokes said stop asking them to.)
+      const resolvedNotes: string[] = [];
+      for (const [k, v] of badRefs) {
+        const entity = k.slice(0, -3);
+        const table = entity.endsWith('y') ? `${entity.slice(0, -1)}ies` : `${entity}s`;
+        try {
+          const { data: matches } = await service
+            .from(table).select('id, name').ilike('name', String(v).trim()).limit(2);
+          if (matches?.length === 1) {
+            args[k] = matches[0].id;
+            resolvedNotes.push(`${k}: "${v}" → ${matches[0].id}`);
+            continue;
+          }
+          return {
+            ok: false,
+            name,
+            body: {
+              error: `Not staged: ${k}="${v}" ${matches?.length ? 'matches several rows' : `has no match in ${table}`} — an _id parameter needs a UUID.`,
+              hint: 'Look the id up (e.g. a list/search skill for that entity, or get_customer_360), then stage again with the real id — or omit the field if it is optional.',
+            },
+          };
+        } catch {
+          return {
+            ok: false,
+            name,
+            body: {
+              error: `Not staged: ${k}="${v}" is not a UUID and could not be resolved.`,
+              hint: 'Look the id up first, then stage again — or omit the field if optional.',
+            },
+          };
+        }
+      }
+      if (resolvedNotes.length) (args as any).__resolved = resolvedNotes;
+    }
+  }
+
   try {
     const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         skill_name: name,
-        arguments: args ?? {},
+        arguments: (() => { const a = { ...args }; delete (a as any).__resolved; return a; })(),
         agent_type: 'flowwork',
         caller_user_id: userId,
+        // Writes NEVER execute from chat: they stage, and the approval card's
+        // human click is the initiative transfer.
+        ...(tier === 'stage' ? { force_staged: true } : {}),
       }),
     });
-    let body = await resp.json().catch(() => ({ error: `agent-execute returned ${resp.status}` }));
+    let body: any = await resp.json().catch(() => ({ error: `agent-execute returned ${resp.status}` }));
+
+    if (tier === 'stage' && body?.staged === true && body?.operation_id) {
+      const resolved = (args as any).__resolved as string[] | undefined;
+      delete (args as any).__resolved;
+      const staged: StagedAction = {
+        operation_id: String(body.operation_id),
+        skill: name,
+        args,
+        ...(resolved ? { resolved } : {}),
+        reinvoke_args: body?.next?.reinvoke_args ?? { _approved_operation_id: body.operation_id },
+        preview: body?.preview,
+      };
+      return { ok: true, body: { status: 'staged', operation_id: staged.operation_id, note: STAGE_NOTICE }, name, staged };
+    }
+
     if (!resp.ok && JSON.stringify(body).includes('Skill not found')) {
       body = { ...body, hint: 'That skill name does not exist. Call search_skills to discover the correct name — many modules expose manage_<entity> with arguments {"action":"list"}.' };
     }
@@ -677,7 +822,7 @@ Deno.serve(async (req) => {
       `2. You ${allowWorld ? 'MAY' : 'MUST NOT'} use your own training knowledge when context is insufficient. Be explicit when you do (e.g. "Outside your workspace: …").`,
       `3. You ${webSearchOn ? 'MAY' : 'MUST NOT'} call the web_search tool for current/live external info — but only when the answer is not in the workspace context.`,
       '4. Workspace items must be cited with [N] markers. Web results should be cited as plain markdown links.',
-      '5. Tools are READ-ONLY: look up live module data freely, but never change anything. For mutations, describe the action and point to the relevant admin page.',
+      '5. Reads execute immediately. WRITES never execute from chat: when the user asks you to DO something (create, update, send, book), call execute_skill with complete arguments RIGHT AWAY — the platform stages it and shows an approval card, and THE CARD IS THE CONFIRMATION. Do NOT ask "shall I?" first when the request already contains the details; staging is safe by construction. If a staging attempt bounces (unknown parameters / wrong skill), do NOT give up: call search_skills with the entity word (ticket, invoice, …) and stage again with the correct skill — you have tool rounds left. IDs you learned from earlier tool results (a company_id from manage_company or get_customer_360) are yours to use — never ask the user for an id a tool already gave you. And NEVER end your reply with a promise (\'jag genomför det nu\') — either the tool call happens in THIS turn, or you say the action awaits approval.',
       '7. When the question concerns a SPECIFIC customer, company, order, invoice, ticket or deal and the CONTEXT block does not already answer it, you MUST call search_skills and then execute_skill BEFORE answering (e.g. get_customer_360 for a full customer picture, list_tickets, list_invoices). NEVER ask the user for permission to look something up, and never answer "I could not find it" without having executed at least one skill. Always call search_skills FIRST to get exact names — many modules expose manage_<entity>, readable with arguments {"action":"list", ...filters}. Max 4 tool rounds; be economical.',
       '8. HONESTY: claim "no tickets / no unpaid invoices / no X" ONLY when a skill you executed returned an empty result for exactly that entity and that company. If your executed skills did not cover something, say plainly that you could not check it. Never present a lookup of the wrong module as an answer.',
       '9. AMOUNTS: money fields in skill results are minor units — a field ending in _cents holds hundredths (total_cents: 2312500 means 23 125,00 kr). Always divide by 100 before presenting, and never invent a currency.',
@@ -695,7 +840,7 @@ Deno.serve(async (req) => {
           '',
           '--- LIVE TOOLS RANKED FOR THIS QUESTION (execute_skill) ---',
           ...pre.skills.map((sk: any) =>
-            `- ${sk.name}${sk.read_only_with ? ' (read via arguments {"action":"list"|"get"|"search"})' : ''}: ${sk.description}`),
+            `- ${sk.name}: ${sk.description}${sk.params ? `\n  params: ${sk.params}` : ''}`),
           'Use exact names. For other needs, call search_skills.',
           '--- END LIVE TOOLS ---',
         ].join('\n');
@@ -727,6 +872,13 @@ Deno.serve(async (req) => {
     // modes want. Web search remains cowork-only and settings-gated.
     const tools = [...(webSearchOn ? [WEB_SEARCH_TOOL] : []), ...DISPATCH_TOOLS];
     const consulted: Array<{ skill: string; ok: boolean; ms: number }> = [];
+    const stagedActions: StagedAction[] = [];
+    // Weak models fetch the missing id and then EXIT with "jag skapar den nu…"
+    // — a promise, no call. Mechanical backstop: if a write bounced and nothing
+    // got staged, the first attempt to finalize earns exactly one reminder
+    // round. Counts, not text-sniffing.
+    let bouncedStage = false;
+    let nudged = false;
 
     // First, run a (non-streaming) pass if tools are enabled, so we can resolve tool calls.
     // If no tools needed → switch to streaming on the second pass.
@@ -767,9 +919,18 @@ Deno.serve(async (req) => {
         const choice = json.choices?.[0];
         const toolCalls = choice?.message?.tool_calls;
         if (!toolCalls || toolCalls.length === 0) {
+          if (bouncedStage && stagedActions.length === 0 && !nudged && round < 3) {
+            nudged = true;
+            conversation.push(choice.message);
+            conversation.push({
+              role: 'system',
+              content: 'Nothing has been staged. If the user asked for a write, call execute_skill NOW with the corrected arguments (use ids from your tool results). If you truly cannot, say exactly what is missing. Do not promise future action.',
+            });
+            continue;
+          }
           // No tool calls — we have the final assistant message. Stream it back as a single chunk.
           const finalText: string = choice?.message?.content || '';
-          return streamFinal(citations, finalText, contextMeta, consulted);
+          return streamFinal(citations, finalText, contextMeta, consulted, stagedActions);
         }
         // Execute tool calls
         conversation.push(choice.message);
@@ -791,10 +952,19 @@ Deno.serve(async (req) => {
             conversation.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
           } else if (tc.function?.name === 'execute_skill') {
             const t0 = Date.now();
-            const out = await runExecuteSkill(
-              supabaseAdmin, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-              String(args.name || ''), args.arguments ?? {}, user.id,
-            );
+            let out: Awaited<ReturnType<typeof runExecuteSkill>>;
+            if (stagedActions.length >= 2 && classifyCall(String(args.name || ''), args.arguments ?? {}) === 'stage') {
+              // Two proposals per turn is plenty — more reads as spam, and each
+              // card demands a human decision.
+              out = { ok: false, body: { error: 'Max 2 staged actions per message. Summarize what is already staged.' }, name: String(args.name || '') };
+            } else {
+              out = await runExecuteSkill(
+                supabaseAdmin, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+                String(args.name || ''), args.arguments ?? {}, user.id,
+              );
+            }
+            if (out.staged) stagedActions.push(out.staged);
+            if (!out.ok && classifyCall(out.name, args.arguments ?? {}) === 'stage') bouncedStage = true;
             const skillName = out.name;
             consulted.push({ skill: skillName, ok: out.ok, ms: Date.now() - t0 });
             let refNote = '';
@@ -838,7 +1008,7 @@ Deno.serve(async (req) => {
         userId: user.id, metadata: { mode, phase: 'force-final' },
       });
       const finalText: string = json.choices?.[0]?.message?.content || '';
-      return streamFinal(citations, finalText, contextMeta, consulted);
+      return streamFinal(citations, finalText, contextMeta, consulted, stagedActions);
     }
 
     /* -------- No tools: stream straight through -------- */
@@ -925,6 +1095,7 @@ function streamFinal(
   text: string,
   contextMeta?: ContextMeta,
   consulted?: Array<{ skill: string; ok: boolean; ms: number }>,
+  staged?: StagedAction[],
 ): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -935,6 +1106,9 @@ function streamFinal(
       }
       if (consulted && consulted.length) {
         controller.enqueue(encoder.encode(`event: consulted\ndata: ${JSON.stringify(consulted)}\n\n`));
+      }
+      if (staged && staged.length) {
+        controller.enqueue(encoder.encode(`event: staged\ndata: ${JSON.stringify(staged)}\n\n`));
       }
       // Emit as a single OpenAI-style delta so the existing client parser handles it.
       const payload = { choices: [{ delta: { content: text } }] };

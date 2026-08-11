@@ -467,7 +467,12 @@ serve(async (req) => {
     //     Skills flagged requires_staging=true return a staged envelope on first call,
     //     creating a pending_operations row. Caller must approve_pending_operation, then
     //     re-invoke with _approved_operation_id=<uuid> to actually execute.
-    const requiresStaging = (skill as any).requires_staging === true;
+    // force_staged: the caller demands the staging envelope regardless of the
+    // skill's own flags. FlowWork's write path sets this — an employee's chat
+    // proposes, a human click executes. The flag lives in the BODY, never in
+    // skill arguments, so a model cannot un-set it.
+    const forceStaged = (body as any).force_staged === true;
+    const requiresStaging = (skill as any).requires_staging === true || forceStaged;
     const approvedOpId = (args as any)?._approved_operation_id as string | undefined;
     if (approvedOpId) delete (args as any)._approved_operation_id;
 

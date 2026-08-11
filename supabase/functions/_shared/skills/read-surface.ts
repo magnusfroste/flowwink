@@ -90,8 +90,30 @@ export function isReadCall(name: string, args?: Record<string, unknown>): boolea
   return READ_ACTIONS.has(action);
 }
 
+/**
+ * Three tiers, decided per CALL:
+ *   'read'  — execute immediately (isReadCall)
+ *   'stage' — a write: create a pending operation, human click executes
+ *   'deny'  — never touched from chat (secrets, deletion-shaped, empty)
+ * Fail-closed: the deny pattern wins over everything.
+ */
+export function classifyCall(
+  name: string,
+  args?: Record<string, unknown>,
+): 'read' | 'stage' | 'deny' {
+  const n = String(name || '').toLowerCase().trim();
+  if (!n || DENY_PATTERN.test(n)) return 'deny';
+  if (isReadCall(name, args)) return 'read';
+  return 'stage';
+}
+
 /** What the model is told when it reaches for a skill outside the surface. */
 export const WRITE_REFUSAL =
   'FlowWork runs a read-only tool surface. This skill would change data, so it was not executed. ' +
   'Describe the action you recommend and point the user to the right admin page — or, if they ask, ' +
   'draft the exact skill call so an admin can run it.';
+
+/** What the model is told when a write was staged instead of executed. */
+export const STAGE_NOTICE =
+  'The action was NOT executed. It is staged as a pending operation awaiting the user\'s approval — an approval card is shown in the chat. ' +
+  'Summarize exactly what will happen when approved. Never claim the action is done.';

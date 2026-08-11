@@ -38,6 +38,7 @@ import {
   type CoworkAttachment,
 } from '@/components/admin/workspace/AttachmentChip';
 import { MessageBubble } from '@/components/admin/workspace/MessageBubble';
+import { StagedActionCard } from '@/components/admin/workspace/StagedActionCard';
 import {
   Send,
   Square,
@@ -124,7 +125,7 @@ export default function WorkspaceChatPage() {
 
   const effectiveMode: 'strict' | 'cowork' = modeOverride ?? settings?.mode ?? 'cowork';
 
-  const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate } = useWorkspaceChat({
+  const { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate, resolveStaged } = useWorkspaceChat({
     sources,
     mode: effectiveMode,
     onError: (msg) =>
@@ -562,8 +563,8 @@ export default function WorkspaceChatPage() {
                   {messages.map((m, idx) => {
                     const isLast = idx === messages.length - 1;
                     return (
+                      <div key={m.id} className="space-y-2">
                       <MessageBubble
-                        key={m.id}
                         role={m.role}
                         content={m.content}
                         consulted={m.consulted}
@@ -588,6 +589,16 @@ export default function WorkspaceChatPage() {
                           setSheetOpen(true);
                         }}
                       />
+                      {m.staged?.map((a) => (
+                        <StagedActionCard
+                          key={a.operation_id}
+                          action={a}
+                          onResolved={(resolution, note) =>
+                            resolveStaged(m.id, a.operation_id, resolution, note)
+                          }
+                        />
+                      ))}
+                      </div>
                     );
                   })}
                 </div>

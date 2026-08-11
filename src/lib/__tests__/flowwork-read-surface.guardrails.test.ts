@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isReadSkill, isReadCall, WRITE_REFUSAL } from '../../../supabase/functions/_shared/skills/read-surface';
+import { isReadSkill, isReadCall, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../../../supabase/functions/_shared/skills/read-surface';
 
 /**
  * FlowWork mounts the MCP gateway's dispatch pattern INSIDE the employee chat:
@@ -104,6 +104,53 @@ describe('the call gate judges manage_* by its action', () => {
   });
 });
 
+describe('staged writes: propose, never execute', () => {
+  it('classifies calls into three tiers', () => {
+    expect(classifyCall('list_tickets')).toBe('read');
+    expect(classifyCall('manage_ticket', { action: 'list' })).toBe('read');
+    expect(classifyCall('manage_ticket', { action: 'create', subject: 'x' })).toBe('stage');
+    expect(classifyCall('send_invoice', { invoice_id: 'x' })).toBe('stage');
+    expect(classifyCall('write_blog_post', {})).toBe('stage');
+    // The deny tier never reaches staging — secrets and deletion-shaped names
+    // are untouchable from chat even with a human click downstream.
+    expect(classifyCall('get_api_keys')).toBe('deny');
+    expect(classifyCall('delete_user', {})).toBe('deny');
+    expect(classifyCall('')).toBe('deny');
+  });
+
+  it('the stage notice forbids claiming completion', () => {
+    expect(STAGE_NOTICE).toMatch(/NOT executed/i);
+    expect(STAGE_NOTICE).toMatch(/Never claim/i);
+  });
+
+  it('the model cannot hold the approval pen', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    const src = readFileSync(
+      join(__dirname, '../../../supabase/functions/workspace-chat/index.ts'),
+      'utf8',
+    );
+    // Approval flags are stripped from model-supplied arguments BEFORE any
+    // call — a prompt injection must not be able to self-approve.
+    expect(src).toMatch(/delete \(args as any\)\._approved;/);
+    expect(src).toMatch(/delete \(args as any\)\._approved_operation_id;/);
+    expect(src).toMatch(/delete \(args as any\)\.force_staged;/);
+    // Writes go out with force_staged set by the SERVER, from the tier.
+    expect(src).toMatch(/tier === 'stage' \? \{ force_staged: true \}/);
+  });
+
+  it('agent-execute honours force_staged in the body, not in args', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    const src = readFileSync(
+      join(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+      'utf8',
+    );
+    expect(src).toMatch(/\(body as any\)\.force_staged === true/);
+    expect(src).toMatch(/requires_staging === true \|\| forceStaged/);
+  });
+});
+
 describe('workspace-chat mounts the surface', () => {
   it('execute_skill is gated by isReadSkill and runs as flowwork', async () => {
     const { readFileSync } = await import('fs');
@@ -113,7 +160,7 @@ describe('workspace-chat mounts the surface', () => {
       'utf8',
     );
     // The gate must sit inside the executor, not in the prompt.
-    expect(src).toMatch(/if \(!isReadCall\(name, args\)\) return \{ ok: false, body: \{ error: WRITE_REFUSAL \}, name \};/);
+    expect(src).toMatch(/if \(tier === 'deny'\) return \{ ok: false, body: \{ error: WRITE_REFUSAL \}, name \};/);
     // The activity trail must name the surface, so agent_activity shows WHO acted.
     expect(src).toMatch(/agent_type: 'flowwork'/);
     expect(src).toMatch(/caller_user_id: userId/);

@@ -39,6 +39,20 @@ export interface ConsultedSkill {
   ms: number;
 }
 
+/** A write the assistant prepared. A human click executes it — never the model. */
+export interface StagedAction {
+  operation_id: string;
+  skill: string;
+  args: Record<string, unknown>;
+  reinvoke_args: Record<string, unknown>;
+  preview?: unknown;
+  /** Server-side name→uuid substitutions, shown on the card. */
+  resolved?: string[];
+  /** UI-side lifecycle. 'pending' until someone decides. */
+  resolution?: 'approved' | 'rejected' | 'failed';
+  result_note?: string;
+}
+
 export interface WorkspaceMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -46,6 +60,8 @@ export interface WorkspaceMessage {
   citations?: WorkspaceCitation[];
   /** Live skills the assistant executed to ground this answer. */
   consulted?: ConsultedSkill[];
+  /** Writes staged for approval in this turn. */
+  staged?: StagedAction[];
   createdAt: string;
 }
 
@@ -87,6 +103,24 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
     setMessages(msgs);
     setLastContextMeta(null);
   }, []);
+
+  const resolveStaged = useCallback(
+    (messageId: string, operationId: string, resolution: 'approved' | 'rejected' | 'failed', note?: string) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId && m.staged
+            ? {
+                ...m,
+                staged: m.staged.map((a) =>
+                  a.operation_id === operationId ? { ...a, resolution, result_note: note } : a,
+                ),
+              }
+            : m,
+        ),
+      );
+    },
+    [],
+  );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -220,6 +254,20 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
                 continue;
               }
 
+              if (currentEvent === 'staged') {
+                try {
+                  const st = JSON.parse(data);
+                  if (Array.isArray(st)) {
+                    setMessages((prev) =>
+                      prev.map((m) => (m.id === assistantId ? { ...m, staged: st } : m)),
+                    );
+                  }
+                } catch (err) {
+                  logger.error('parse staged failed', err);
+                }
+                continue;
+              }
+
               if (currentEvent === 'consulted') {
                 try {
                   const cs = JSON.parse(data);
@@ -325,5 +373,6 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
     });
   }, [send]);
 
-  return { messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate };
+  return {
+    resolveStaged, messages, isStreaming, send, stop, reset, loadHistory, lastContextMeta, regenerate };
 }

@@ -1543,11 +1543,11 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:dbad9ea72e69bc21770ef215dde90e809b8d7123750096beb867df27fbbe08b3",
+      "shared_hash": "sha256:dd2c3efd6a17077a9e6144756df3ba8bebd6a37d523d10d7c66824bbf685e85f",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:8fb1e303c4028132c2a9c88f591c33fdfbdae8a8c11a3b1aa2c1036c2e610c85",
+        "agent-execute": "sha256:f04b7c54ca448a7c4011d245db03f028ec2a4659c6a769ad0296f34e191e65ab",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:6a0c6b21f9f0575650d9e478bc9184ce24541d3a18d00bb6c80c64a60f5e28aa",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -1621,7 +1621,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
-        "workspace-chat": "sha256:1fa2caaec72883e0481233db2d35489440d933d7dad5d3f869dc222ac39328f3"
+        "workspace-chat": "sha256:a7bda6127a892d590e794601d94f222e998c929ede08d591394b7fe5a6299c61"
       }
     },
     "frontend": {
