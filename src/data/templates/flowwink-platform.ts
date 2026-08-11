@@ -22,6 +22,11 @@
  */
 import type { StarterTemplate } from './types';
 import { flowwinkPlatformExtraPages } from './flowwink-platform-pages';
+// Content seeds: detached by accident in a 2026-06-04 bulk commit (only this
+// template lost its imports — every other template kept seeding). Re-attached
+// 2026-08-12; the platform-template-full-showcase guardrail test now locks it.
+import { flowwinkBlogPosts } from '../template-blog-posts';
+import { flowwinkKbCategories } from '../template-kb-articles';
 
 
 export const flowwinkPlatformTemplate: StarterTemplate = {
@@ -33,25 +38,33 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   icon: 'Bot',
   tagline: 'The Business Operating System. CMS · CRM · ERP — run by an operator.',
   aiChatPosition: 'Embedded autonomous agent for site operations',
-  // Full BOS stack — content, CRM, commerce, finance, HR, operations, platform.
+  // The COMPLETE module registry — this is the full-platform showcase, and
+  // since the edge-surface refactor, module toggles no longer control edge-
+  // function deployment (functions are fixed by config.toml; skills run
+  // through agent-execute). Enabling everything costs skills rows and nav,
+  // nothing else. The platform-template-full-showcase guardrail asserts this
+  // list matches every key of ModulesSettings (minus deprecated), so a new
+  // module cannot silently miss the showcase.
   requiredModules: [
     // Content & marketing
     'pages', 'blog', 'knowledgeBase', 'docs', 'wiki', 'handbook', 'newsletter', 'mediaLibrary', 'forms',
     // CRM & sales
-    'leads', 'deals', 'companies', 'quotes', 'customer360', 'salesIntelligence', 'paidGrowth',
+    'leads', 'deals', 'companies', 'quotes', 'customer360', 'salesIntelligence', 'paidGrowth', 'companyInsights', 'visitorIntelligence',
     // Commerce
-    'ecommerce', 'inventory', 'shipping', 'returns', 'subscriptions', 'pricelists',
+    'ecommerce', 'inventory', 'shipping', 'returns', 'subscriptions', 'pricelists', 'pos', 'manufacturing',
     // Finance
     'invoicing', 'accounting', 'reconciliation', 'expenses', 'purchasing', 'fixedAssets', 'multiCurrency',
     // HR & people
     'hr', 'payroll', 'recruitment', 'timesheets', 'contracts', 'documents',
     // Operations
-    'projects', 'tickets', 'sla', 'approvals', 'calendar', 'bookings', 'surveys',
+    'projects', 'tickets', 'sla', 'approvals', 'calendar', 'bookings', 'surveys', 'fieldService', 'maintenance',
     // Communication
-    'chat', 'liveSupport', 'workspaceChat', 'webinars', 'river', 'email',
+    'chat', 'liveSupport', 'workspaceChat', 'webinars', 'river', 'email', 'voice', 'webmeet',
     // Platform & agent
-    'flowpilot', 'federation', 'composio', 'browserControl', 'siteMigration', 'developer', 'analytics', 'consultants',
+    'flowpilot', 'federation', 'composio', 'browserControl', 'siteMigration', 'developer', 'analytics', 'consultants', 'templates', 'flowtable',
   ],
+  blogPosts: flowwinkBlogPosts,
+  kbCategories: flowwinkKbCategories,
   pages: [
     // ═══════════════════════════════════════════════════════════
     // HOME — The Pitch + Pricing (convince & convert in one scroll)

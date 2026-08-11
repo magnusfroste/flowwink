@@ -24,12 +24,16 @@
     "customer360",
     "salesIntelligence",
     "paidGrowth",
+    "companyInsights",
+    "visitorIntelligence",
     "ecommerce",
     "inventory",
     "shipping",
     "returns",
     "subscriptions",
     "pricelists",
+    "pos",
+    "manufacturing",
     "invoicing",
     "accounting",
     "reconciliation",
@@ -50,12 +54,16 @@
     "calendar",
     "bookings",
     "surveys",
+    "fieldService",
+    "maintenance",
     "chat",
     "liveSupport",
     "workspaceChat",
     "webinars",
     "river",
     "email",
+    "voice",
+    "webmeet",
     "flowpilot",
     "federation",
     "composio",
@@ -63,7 +71,4435 @@
     "siteMigration",
     "developer",
     "analytics",
-    "consultants"
+    "consultants",
+    "templates",
+    "flowtable"
+  ],
+  "blogPosts": [
+    {
+      "title": "Your Website Should Run Itself: The Case for Autonomous CMS",
+      "slug": "your-website-should-run-itself",
+      "excerpt": "Content management has not evolved in 20 years. It is time for a system that operates autonomously — writing, publishing, qualifying leads, and learning from every interaction.",
+      "featured_image": "/templates/blog/code-editor.jpg",
+      "featured_image_alt": "AI-powered autonomous system visualization",
+      "is_featured": true,
+      "content": [
+        {
+          "id": "text-j1aedob",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "For two decades, content management systems have asked humans to do everything: write content, publish pages, respond to leads, send newsletters, manage bookings. The CMS was a tool. You were the operator."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Problem With Tools"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Tools require operators. Every blog post needs someone to write it. Every lead needs someone to qualify it. Every campaign needs someone to schedule it. The workload scales linearly with ambition."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What If the CMS Was the Operator?"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot is not a feature inside a CMS. It is the CMS. An autonomous AI agent that:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Writes and publishes content based on your objectives"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Qualifies leads the moment they arrive — day or night"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Sends campaigns triggered by real visitor behavior"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Books meetings and follows up automatically"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Reflects on its own performance on a regular schedule and improves"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Autonomous Loop"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. On a configurable schedule, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "You Set Objectives. FlowPilot Executes."
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Instead of managing tasks, you set goals: \"Publish 4 blog posts per month.\" \"Qualify all inbound leads within 5 minutes.\" \"Send a weekly newsletter.\" FlowPilot breaks these into actions and executes them autonomously."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Human-in-the-Loop, Not Human-in-the-Way"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every action FlowPilot takes is logged. Sensitive actions require your approval. You review an activity feed, not a task list. You direct strategy, not operations."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Discover why autonomous CMS is the future. Learn how FlowPilot operates your entire online presence — content, leads, campaigns — while you focus on strategy."
+      }
+    },
+    {
+      "title": "FlowPilot: An Autonomous Agent for Your Presence",
+      "slug": "flowpilot-autonomous-agent-manages-online-presence",
+      "excerpt": "Meet FlowPilot — an OpenClaw-inspired autonomous agent with persistent memory, self-evolving skills, and goal-driven objectives that manages content, CRM, email, and e-commerce.",
+      "featured_image": "/templates/blog/ai-concept.jpg",
+      "featured_image_alt": "Autonomous AI agent concept",
+      "content": [
+        {
+          "id": "text-99tx900",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot is not a chatbot. It is not an AI assistant. It is an autonomous digital operator inspired by the OpenClaw framework — designed to run your website, qualify your leads, publish your content, and learn from every interaction."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Six Core Capabilities"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "1. Skill Engine"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot has 30+ skills out of the box — from writing blog posts to qualifying leads to sending newsletters. Each skill is a registered tool with defined inputs, outputs, and approval requirements. And FlowPilot can create new skills when it encounters novel situations."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "2. Persistent Memory"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Unlike stateless AI tools, FlowPilot remembers. It stores brand guidelines, user preferences, past decisions, and learned patterns in a structured memory system. Every interaction makes it smarter."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "3. Objectives & Goals"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "You define objectives like \"Generate 10 qualified leads per week.\" FlowPilot tracks progress, adjusts strategies, and reports on results. Goals drive behavior, not manual task lists."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "4. Autonomous Heartbeat"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "On a configurable schedule, FlowPilot runs a reflection cycle. It reviews recent activity, evaluates performance against objectives, identifies opportunities, and plans its next actions. This happens without human input."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "5. Signal Automations"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When events occur — a form submission, a chat conversation, a new subscriber — FlowPilot reacts instantly. Signals trigger skills: qualify the lead, send a welcome email, enrich the company data."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "6. Self-Evolution"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot can modify its own instructions and create new skills. If it discovers a recurring task that has no skill, it proposes one. If its approach is not working, it adjusts."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Not a Chatbot. An Operator."
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Chatbots answer questions. FlowPilot runs operations. It manages your content pipeline, your CRM, your email campaigns, your bookings, and your e-commerce — simultaneously, continuously, autonomously."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Deep dive into FlowPilot — the autonomous agent that manages your entire online presence with persistent memory, self-evolving skills, and goal-driven objectives."
+      }
+    },
+    {
+      "title": "Self-Hosted AI: Privacy as Competitive Advantage",
+      "slug": "self-hosted-ai-privacy-competitive-advantage",
+      "excerpt": "When your AI agent manages content, leads, and customer data, where it runs matters. Self-hosted AI is not just safer — it is strategically superior.",
+      "featured_image": "/templates/blog/server-infrastructure.jpg",
+      "featured_image_alt": "Secure server infrastructure",
+      "content": [
+        {
+          "id": "text-v8esiut",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Your autonomous agent knows everything: your content strategy, your lead pipeline, your customer conversations, your pricing. When that agent runs on someone else's infrastructure, you are trusting them with your entire business intelligence."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The SaaS AI Problem"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your content and prompts train models you do not control"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your customer data flows through third-party servers"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your competitive strategies are visible to the AI provider"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Pricing can change — and you cannot leave without losing context"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Self-Hosted Advantage"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowWink is fully self-hostable. Run FlowPilot on your own infrastructure with your choice of AI provider — OpenAI, Gemini, or a completely private local LLM. Your data never leaves your control."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Private AI Is Not a Compromise"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Modern open-source LLMs are remarkably capable. A self-hosted model running on modest hardware can handle content generation, lead qualification, and customer chat with quality that rivals cloud APIs."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "GDPR by Architecture"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When your CMS, your AI, and your data all live on infrastructure you control, GDPR compliance is architectural, not aspirational. No Data Processing Agreements with AI vendors. No cross-border data transfers. No trust required."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Strategic Edge"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Your AI agent accumulates institutional knowledge over time. That knowledge — stored in persistent memory — becomes a competitive moat. Self-hosting ensures that moat belongs to you, permanently."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Learn why self-hosted AI is strategically superior for autonomous CMS. Privacy, control, and competitive advantage through self-hosted FlowPilot."
+      }
+    },
+    {
+      "title": "The Autonomous Loop: How FlowPilot Self-Improves",
+      "slug": "autonomous-loop-flowpilot-reflects-plans-improves",
+      "excerpt": "On a configurable schedule, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.",
+      "featured_image": "/templates/blog/team-brainstorming.jpg",
+      "featured_image_alt": "Continuous improvement cycle visualization",
+      "content": [
+        {
+          "id": "text-hxzjb8z",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Most AI tools are reactive — you prompt, they respond. FlowPilot is proactive. It operates in a continuous autonomous loop that drives self-improvement without human intervention."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Six Phases"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 1: Heartbeat"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "On schedule, FlowPilot's heartbeat triggers. It wakes up, gathers context, and begins its reflection cycle."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 2: Reflect"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot reviews everything that happened since the last heartbeat: content published, leads qualified, emails sent, conversations held, bookings made. It evaluates what worked and what did not."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 3: Plan"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Based on active objectives and reflection insights, FlowPilot plans its next actions. \"Objective says 4 posts this month. We have published 2. Time to draft the third.\""
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 4: Execute"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot executes planned actions using its skill engine. Each skill is a well-defined tool — write a blog post, qualify a lead, send a newsletter. Actions that require approval are queued for human review."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 5: Log"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every action is recorded in the activity feed with full context: what was done, why, what data was used, and the outcome. Complete auditability."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Phase 6: Learn"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot updates its persistent memory with new learnings. Patterns are reinforced. Mistakes are noted. The next heartbeat cycle benefits from accumulated experience."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Approval Gating"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Not all actions are autonomous. Skills marked as \"requires_approval\" queue actions for human review. You see exactly what FlowPilot wants to do and why — then approve, reject, or modify."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Result"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A system that gets better over time. Not because a vendor shipped an update, but because your agent learned from your specific context, your audience, and your objectives."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Understanding the Autonomous Loop — how FlowPilot continuously reflects, plans, executes, and self-improves every 12 hours without human intervention."
+      }
+    },
+    {
+      "title": "From 4 Products to 1 Agent: Replace Your Stack",
+      "slug": "replacing-cms-chatbot-crm-marketing-stack",
+      "excerpt": "Most businesses run a CMS, a chatbot, a CRM, and marketing automation as separate products. FlowPilot replaces all four with a single autonomous agent.",
+      "featured_image": "/templates/blog/unified-platform.jpg",
+      "featured_image_alt": "Unified platform replacing multiple tools",
+      "content": [
+        {
+          "id": "text-xudml9a",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The average business website runs WordPress for content, Intercom for chat, HubSpot for CRM, and Mailchimp for email. Four products, four logins, four bills, and zero integration between them."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Integration Tax"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every tool boundary is a data gap. A visitor chats on your site, but the CRM does not know. A lead fills out a form, but the email platform does not trigger. You spend hours on Zapier glue, and it still breaks."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "One Agent, Six Channels"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot operates across all channels natively:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Content & Blog — writes, schedules, publishes, optimizes"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Visitor Chat — answers questions, qualifies leads, escalates intelligently"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "CRM — captures, scores, enriches, and manages leads and deals"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Email — sends newsletters, drip sequences, booking confirmations"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Bookings — schedules appointments, confirms, follows up"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "E-Commerce — manages products, tracks orders, recommends"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Data Advantage"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Because FlowPilot manages everything, it has complete context. When a visitor asks about pricing in chat, FlowPilot knows they downloaded your whitepaper last week and viewed the enterprise page twice. That context makes every interaction smarter."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Cost Equation"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Replace four SaaS subscriptions with one self-hosted platform:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "WordPress + plugins: €200-500/month"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Intercom or Drift: €100-300/month"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "HubSpot CRM: €100-800/month"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Mailchimp or ConvertKit: €50-200/month"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Total: €450-1,800/month → FlowWink on a €20/month VPS"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Migration Is Simpler Than You Think"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Start by deploying FlowWink alongside your existing stack. Let FlowPilot handle one channel first — typically content or chat. As confidence grows, consolidate. Within 90 days, you can run everything from a single agent."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Learn how FlowPilot replaces your CMS, chatbot, CRM, and marketing automation with a single autonomous agent. Reduce costs and eliminate integration headaches."
+      }
+    },
+    {
+      "title": "Skill Engine: How FlowPilot Learns New Skills",
+      "slug": "skill-engine-deep-dive-flowpilot-capabilities",
+      "excerpt": "FlowPilot ships with 30+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.",
+      "featured_image": "/templates/blog/server-infrastructure.jpg",
+      "featured_image_alt": "Connected network representing skill engine",
+      "content": [
+        {
+          "id": "text-5nf0vq3",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Traditional software has features. FlowPilot has skills — modular, registered capabilities that it can invoke, chain, and even create on its own."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What Is a Skill?"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A skill is a database-registered tool defined in OpenAI function-calling format. Each skill has: a name and description, input parameters, an execution handler, a scope (internal, external, or both), and an approval requirement flag."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Built-In Skills"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot ships with skills for every module:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Content: create_page, publish_page, write_blog_post"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "CRM: qualify_lead, enrich_company, create_deal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Email: send_newsletter, add_subscriber"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Booking: check_availability, confirm_booking"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Knowledge: search_kb, update_article"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "System: soul_update, skill_instruct, reflect"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Scope and Security"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Skills have scope — \"internal\" skills are only available to admin operators, \"external\" skills can be invoked by visitor chat. This prevents visitors from triggering administrative actions while allowing FlowPilot to serve both audiences."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Approval Gating"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Skills marked as \"requires_approval\" queue their output for human review before execution. Publishing a blog post? FlowPilot writes and prepares it, then waits for your approval. Qualifying a lead? Happens instantly — no approval needed."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Self-Creating Skills"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When FlowPilot encounters a task that no existing skill covers, it can propose a new skill using the \"skill_instruct\" tool. It defines the skill's parameters, handler, and scope — then awaits admin approval to register it."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Handler Router"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Each skill's handler field determines where execution happens:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "edge: — executes a Supabase Edge Function"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "module: — triggers internal module logic"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "db: — performs a database operation"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "webhook: — calls an external service"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Why Skills Beat Features"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Features are static — they exist or they do not. Skills are dynamic, composable, and evolvable. FlowPilot can chain skills, create new ones, and optimize existing ones. Your CMS literally becomes more capable over time."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Deep dive into FlowPilot's skill engine — how skills are registered, routed, approved, and self-created. Understand the architecture that makes autonomous CMS possible."
+      }
+    },
+    {
+      "title": "Objectives vs Automations: Two Modes of Autonomous Operation",
+      "slug": "objectives-vs-automations-two-modes",
+      "excerpt": "FlowPilot operates in two cadences: one-time objectives with tracked progress, and recurring automations on cron schedules. Understanding when to use each is key to effective autonomous operations.",
+      "featured_image": "/templates/blog/planning-board.jpg",
+      "featured_image_alt": "Strategic planning board with goals and recurring tasks",
+      "content": [
+        {
+          "id": "text-fzam9gq",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot is not a single-mode system. It operates in two distinct cadences, each designed for a different kind of work. Understanding the difference is the key to getting the most out of your autonomous agent."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Objectives: Finite Goals With Tracked Progress"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "An objective is a high-level, one-time goal. \"Research competitor positioning and draft a strategy memo.\" \"Publish a 5-part blog series on AI in healthcare.\" Each objective has a clear definition of done."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "How Objectives Work"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "You define the goal and success criteria"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "FlowPilot decomposes it into actionable steps"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Progress is tracked via structured JSONB fields"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Each step is logged in the activity feed"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "The objective completes when all criteria are met"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Objectives live in the agent_objectives table with status tracking (active, completed, paused, failed) and a progress field that FlowPilot updates as it works."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Automations: Recurring Routines on Schedule"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Automations are the opposite — they never \"complete.\" They run on a schedule, executing a specific skill at defined intervals. Weekly competitor monitoring. Daily content research. Hourly lead scoring."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "How Automations Work"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Define a cron schedule (e.g., every Monday at 9 AM)"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Select the skill to execute"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Configure skill arguments"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "FlowPilot executes on schedule, logs results"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Automations are configured in Admin → Engine Room → Automations. Each automation has a trigger type, skill reference, and execution history."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When to Use Which"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Use objectives for finite, strategic work — projects with a clear end state. Use automations for ongoing operational routines that should happen regardless of objectives. The combination gives FlowPilot both strategic direction and operational rhythm."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "They Work Together"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "An objective might discover that weekly competitor monitoring would be valuable. FlowPilot can propose creating an automation as part of completing that objective. Strategic thinking feeds operational execution."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Learn the difference between FlowPilot objectives and automations — two complementary modes of autonomous operation for strategic goals and recurring routines."
+      }
+    },
+    {
+      "title": "Agent-to-Agent: How FlowPilot Talks to Other AI Agents",
+      "slug": "agent-to-agent-flowpilot-a2a-protocol",
+      "excerpt": "The agentic web is not one agent per company — it is agents collaborating across boundaries. FlowPilot supports A2A peer connections with token-authenticated communication.",
+      "featured_image": "/templates/blog/connected-nodes.jpg",
+      "featured_image_alt": "Network of connected nodes representing agent-to-agent communication",
+      "content": [
+        {
+          "id": "text-m9foui7",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The future of the web is not humans talking to websites. It is agents talking to agents. FlowPilot is built for this future with native Agent-to-Agent (A2A) protocol support."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What Is A2A?"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A2A is a peer-to-peer communication protocol that allows AI agents to discover capabilities, exchange tasks, and collaborate — without human intermediation. Think of it as APIs, but for autonomous agents."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "How FlowPilot Implements A2A"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Peer Registry"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Each A2A connection is a registered peer in the a2a_peers table. Peers have a name, URL endpoint, capabilities manifest, and authentication tokens. FlowPilot can both send and receive tasks from peers."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Token Authentication"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Security is built in. Each peer connection uses separate inbound and outbound tokens. Inbound tokens are stored as hashes. Outbound tokens are generated automatically. No shared secrets."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Capability Discovery"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When a peer connects, it shares its capabilities — what skills it can execute, what data it can provide. FlowPilot can query peer capabilities before sending tasks."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Use Cases"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "A content agent at Company A requests market research from an analyst agent at Company B"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "A sales agent sends qualified leads to a partner's booking agent"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "A monitoring agent alerts FlowPilot about brand mentions for autonomous response"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Multiple FlowWink instances collaborate on multi-site content strategies"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Activity Tracking"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every A2A interaction is logged in a2a_activity with direction (inbound/outbound), payload, status, and duration. Full auditability for cross-agent operations."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Agentic Web"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A2A transforms your website from an isolated node into a participant in a network of intelligent agents. FlowPilot does not just manage your site — it negotiates, collaborates, and coordinates with other agents across the internet."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Explore FlowPilot's Agent-to-Agent (A2A) protocol — how autonomous agents discover capabilities, authenticate, and collaborate across organizational boundaries."
+      }
+    },
+    {
+      "title": "Content Authority: FlowPilot and Thought Leadership",
+      "slug": "content-authority-flowpilot-thought-leadership",
+      "excerpt": "FlowPilot now monitors competitors, identifies content gaps, researches trending topics, and drafts thought leadership pieces — all autonomously through its Content Authority skills.",
+      "featured_image": "/templates/blog/content-strategy.jpg",
+      "featured_image_alt": "Person analyzing content strategy on multiple screens",
+      "content": [
+        {
+          "id": "text-qg4wddh",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Content marketing is a grind. Research topics, analyze competitors, find unique angles, write drafts, optimize for SEO, distribute across channels. It takes hours per piece. FlowPilot's Content Authority skills automate the entire pipeline."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Competitor Monitoring"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The competitor_monitor skill uses Firecrawl to scrape competitor websites and Gemini to analyze their positioning, messaging, and content gaps. FlowPilot identifies what competitors are saying — and more importantly, what they are missing."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "How It Works"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Configure competitor URLs in your objectives"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "FlowPilot crawls and analyzes on schedule (via automations)"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Identifies messaging themes, feature gaps, and positioning opportunities"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Stores insights in persistent memory for content planning"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Proposes blog topics that fill identified gaps"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Social Post Generation"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The generate_social_post skill repurposes your content into platform-specific formats. Write one blog post. FlowPilot generates LinkedIn articles, X threads, and newsletter excerpts — each optimized for the target platform's format and audience."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Content Research Pipeline"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot uses the content_research table to store deep research on topics before writing. It analyzes industry trends, target audience needs, and existing content performance. Every blog post is backed by structured research — not just AI generation."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Content Proposals Workflow"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Before writing, FlowPilot creates content proposals with topic, research sources, channel variants, and scheduling. Proposals flow through draft → approved → published. You review strategy. FlowPilot handles execution."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "From Research to Distribution"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The complete pipeline: Monitor competitors → Research topics → Create proposal → Write pillar content → Generate channel variants → Schedule publication → Track performance → Feed learnings back into the next cycle."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "How FlowPilot builds thought leadership automatically with competitor monitoring, content research, social post generation, and multi-channel distribution."
+      }
+    },
+    {
+      "title": "The 7-Step FlowAgent Loop Explained",
+      "slug": "flowagent-7-step-autonomous-loop",
+      "excerpt": "FlowPilot's reasoning engine has evolved into a 7-step autonomous loop. Understanding each phase reveals how an AI agent maintains, improves, and operates your entire digital presence.",
+      "featured_image": "/templates/blog/process-diagram.jpg",
+      "featured_image_alt": "Circular process diagram representing autonomous loop",
+      "content": [
+        {
+          "id": "text-p0k1k7f",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot's autonomous engine — internally called FlowAgent — has matured from a simple heartbeat into a sophisticated 7-step reasoning loop. Each step serves a distinct purpose in maintaining and advancing your digital operations."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 1: Self-Heal"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Before doing anything new, FlowPilot checks system health. Are all edge functions deployed? Are API keys valid? Are there failed skills that need retry? Self-healing ensures the foundation is stable before advancing."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 2: Propose"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot evaluates the current state against objectives and proposes what to do next. This is strategic thinking — not just task execution. It considers priorities, resource constraints, and past learnings."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 3: Plan"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Proposals become plans. FlowPilot decomposes high-level proposals into specific skill calls with defined parameters. A plan to \"publish a blog post about AI trends\" becomes: research_topic → write_blog_post → optimize_seo → queue_for_approval."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 4: Advance"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Plans execute. FlowPilot runs skills through the unified agent-execute edge function, which handles tool routing, approval gating, and audit logging. Each skill execution is atomic and traceable."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 5: Automate"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "After advancing, FlowPilot checks for patterns that should become automations. If it has been manually performing the same research every week, it proposes a recurring automation to handle it."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 6: Reflect"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot reviews what happened during this cycle. What succeeded? What failed? What took longer than expected? Reflection is not just logging — it is active evaluation that shapes future decisions."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Step 7: Remember"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Learnings from reflection are stored in persistent memory. Brand voice insights, successful content patterns, lead scoring calibrations — all persist across sessions. The agent gets smarter with every cycle."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Shared Reasoning Engine"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The agent-reason shared module powers this loop for both interactive tasks (Operate mode) and autonomous tasks (Heartbeat). Whether FlowPilot is responding to a chat message or running its scheduled cycle, the same reasoning engine ensures consistent, intelligent decision-making."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Deep dive into the 7-step FlowAgent loop — Self-Heal, Propose, Plan, Advance, Automate, Reflect, Remember — the reasoning engine behind autonomous CMS operations."
+      }
+    },
+    {
+      "title": "Module Registry: Orchestration Behind FlowWink",
+      "slug": "module-registry-data-orchestration-layer",
+      "excerpt": "FlowWink's Module Registry API organizes 15+ platform features into versioned, Zod-validated modules that FlowPilot can orchestrate. Here is how data flows between modules.",
+      "featured_image": "/templates/misc/analytics-dashboard.jpg",
+      "featured_image_alt": "Data flow architecture diagram",
+      "content": [
+        {
+          "id": "text-sk8xy6i",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowWink is not a monolith with bolted-on features. It is an orchestrated collection of modules — each with a versioned API contract, Zod-validated schemas, and well-defined data flow patterns."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What Is the Module Registry?"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Module Registry (src/lib/modules/) is a centralized coordinator for all platform features. Each module defines its capabilities, input/output schemas, and publishing logic. FlowPilot uses the registry to understand what operations are available and how to invoke them correctly."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Available Modules"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Blog — create, publish, and manage blog posts"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Pages — create and manage site pages"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Knowledge Base — create KB categories and articles"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Newsletter — manage subscribers and send campaigns"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "CRM — leads, deals, and companies"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Products & Orders — e-commerce operations"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Booking — services, availability, and appointments"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Forms — submission handling and lead routing"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Media — file management and optimization"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Global Blocks — site-wide header, footer, popup"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Webinars — event management and registration"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Sales Intelligence — lead enrichment and scoring"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Resume Matcher — talent matching capabilities"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The API Contract"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Each module follows a strict contract: versioned ID, Zod input schema, Zod output schema, capabilities list, and a publish() method. This means FlowPilot can validate inputs before execution and guarantee output structure — no surprises."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Data Flow Between Modules"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Modules communicate through signals and shared data. When a form submission creates a lead (Forms → CRM), the signal system triggers the appropriate module operations. When a blog post is published (Blog → Newsletter), the content flows automatically to subscribers."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Why This Architecture Matters"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "For FlowPilot, the module registry is its toolkit. Each module is a well-defined capability with predictable behavior. This architecture enables reliable autonomous operations — FlowPilot knows exactly what each module can do and how to invoke it safely."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Explore FlowWink's Module Registry API — how 15+ platform features are organized into versioned, validated modules that FlowPilot orchestrates for autonomous operations."
+      }
+    },
+    {
+      "title": "Google A2A Protocol and the Rise of the Agentic Web",
+      "slug": "google-a2a-protocol-agentic-web",
+      "excerpt": "Google's Agent-to-Agent protocol is setting the standard for how autonomous agents discover, authenticate, and collaborate. Here is what it means for FlowPilot and the future of the web.",
+      "featured_image": "/templates/team/tech-woman.jpg",
+      "featured_image_alt": "Interconnected digital network representing agent collaboration",
+      "is_featured": false,
+      "content": [
+        {
+          "id": "text-1tbwi5z",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "In April 2025, Google released the Agent-to-Agent (A2A) protocol — an open standard for AI agents to discover each other, negotiate capabilities, and exchange tasks across organizational boundaries. This is not a minor API update. It is the TCP/IP moment for autonomous systems."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What Is Google A2A?"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A2A defines three primitives: Agent Cards (capability discovery), Task Objects (structured work units), and Streaming Updates (real-time progress). Any agent that speaks A2A can collaborate with any other — regardless of vendor, framework, or hosting."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Why This Matters for FlowPilot"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot already has native A2A support through its peer registry. With Google formalizing the protocol, the ecosystem of compatible agents is about to explode:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Partner agencies can connect their FlowPilot instances for cross-site content strategies"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Specialized research agents can feed market intelligence directly into your CRM"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Sales agents from partner companies can exchange qualified leads automatically"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Monitoring agents can alert FlowPilot about brand mentions for autonomous response"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "From Assistant to Consultant"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The agentic web transforms FlowPilot from an assistant that executes your commands into a consultant that proactively collaborates. When FlowPilot can query a market research agent, cross-reference with a competitor analysis agent, and synthesize findings — it does not just manage your website. It advises your business."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Ecosystem Will Grow Exponentially"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Today, most organizations run isolated AI tools. A2A changes the economics: every new agent in the network increases the value for all participants. FlowPilot on your infrastructure is not just a CMS operator — it is your node in the emerging agentic web."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Getting Started"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot's A2A implementation is ready today. Connect peers in Admin → Agent Hub → A2A Peers. Define capabilities, exchange tokens, and start collaborating. As the ecosystem matures, your FlowPilot instance is already a first-class citizen."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "How Google's A2A protocol is shaping the agentic web and what it means for FlowPilot — from isolated assistant to networked consultant."
+      }
+    },
+    {
+      "title": "Running AI Models Locally: A Practical Guide",
+      "slug": "running-ai-models-locally-privacy-performance",
+      "excerpt": "Open-source LLMs have reached a tipping point. Models like Llama, Mistral, and Gemma can run on modest hardware with quality that rivals cloud APIs. Here is how to set it up with FlowWink.",
+      "featured_image": "/templates/blog/server-infrastructure.jpg",
+      "featured_image_alt": "Server hardware running local AI models",
+      "is_featured": false,
+      "content": [
+        {
+          "id": "text-vajopam",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The narrative that AI requires massive cloud infrastructure is outdated. In 2025, a €500 GPU can run models that generate production-quality content, qualify leads, and hold nuanced customer conversations — all without a single byte leaving your network."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Local AI Landscape in 2025"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The open-source AI ecosystem has matured dramatically:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Llama 3.1 (Meta) — 8B to 405B parameters, excellent reasoning and multilingual support"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Mistral/Mixtral — fast inference, strong at structured tasks like JSON generation"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Gemma 2 (Google) — optimized for edge deployment, surprisingly capable at 9B"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Phi-3 (Microsoft) — tiny models (3.8B) that punch well above their weight"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Qwen 2.5 — strong coding and analytical capabilities"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Why Local Matters"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Zero Data Leakage"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When FlowPilot processes customer conversations, qualifies leads, and drafts content using a local model, no data leaves your infrastructure. GDPR compliance becomes architectural fact, not a legal promise."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Predictable Costs"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Cloud AI bills are unpredictable. A busy month with heavy chat traffic can spike costs. Local inference has a fixed cost — the hardware. After the initial investment, every additional query is essentially free."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "No Vendor Lock-In"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "When your AI runs locally, you own the entire stack. No API deprecations, no surprise pricing changes, no terms of service updates that affect your operations."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowWink's Local AI Integration"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot supports local AI through the \"local\" provider in the chat-completion edge function. Point it at any OpenAI-compatible API endpoint — Ollama, llama.cpp, vLLM, or LocalAI — and FlowPilot uses your local model for all operations."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Recommended Setup"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Ollama for easy model management and serving"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "A single NVIDIA RTX 4060 (8GB) handles 7-8B models comfortably"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "For larger models (70B+), consider RTX 4090 or A100"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "CPU-only inference works for low-traffic sites (slower but viable)"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Hybrid Approach"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Many FlowWink deployments use a hybrid model: local AI for day-to-day operations (chat, lead qualification, content drafts) and cloud APIs (OpenAI, Gemini) for complex reasoning tasks. FlowPilot routes automatically based on task complexity."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "Practical guide to running AI models locally with FlowWink. Cover hardware requirements, model selection, and the privacy advantages of local inference."
+      }
+    },
+    {
+      "title": "The Agentic Web Is Here: What It Means for Your Business",
+      "slug": "agentic-web-what-it-means-for-business",
+      "excerpt": "We are entering the age of autonomous agents. Websites that operate themselves, agents that collaborate, and AI that acts — not just answers. Here is what forward-thinking businesses need to know.",
+      "featured_image": "/templates/blog/autonomous-agents.jpg",
+      "featured_image_alt": "Abstract visualization of connected autonomous agents",
+      "is_featured": false,
+      "content": [
+        {
+          "id": "text-ro54w93",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The web is undergoing its biggest transformation since mobile. Not in how it looks — in how it operates. We are moving from a web of pages to a web of agents. And the businesses that understand this shift will have an extraordinary advantage."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "From Reactive to Autonomous"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Traditional websites wait. They wait for visitors to click, for admins to update content, for marketers to send emails. An agentic website operates. It publishes content, qualifies leads, sends campaigns, and optimizes itself — continuously, autonomously."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Three Waves of the Agentic Web"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Wave 1: Single-Agent Autonomy (Now)"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Individual agents managing individual properties. FlowPilot operating your website, qualifying your leads, publishing your content. This is where most early adopters are today."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Wave 2: Agent Collaboration (2025-2026)"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Agents talking to agents via protocols like Google A2A. Your FlowPilot negotiating with a partner's agent to exchange leads, coordinate campaigns, or share market intelligence. The network effect begins."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Wave 3: Agent Economies (2027+)"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Agents transacting autonomously. Your agent hiring a specialized research agent for a one-time analysis, paying in tokens, and integrating the results — all without human intervention. Micro-economies of specialized capabilities."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "What This Means for Your Business"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your website is no longer a brochure — it is an autonomous operator"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your CRM is not a database — it is an intelligence system"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your content strategy is not a calendar — it is an objective for an agent"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Your competitive advantage is not just your product — it is how effectively your agents operate"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Privacy Imperative"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "In an agentic world, your agent knows everything about your business. Where that agent runs, who controls its memory, and what data it shares with other agents — these become existential strategic decisions. Self-hosted agents on private infrastructure are not a preference. They are a necessity."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Starting Today"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "You do not need to wait for the full agentic web to arrive. FlowPilot gives you Wave 1 autonomy today, with Wave 2 A2A collaboration already built in. Start with a single objective — \"publish 4 blog posts this month\" — and experience what autonomous operations feel like."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "The agentic web is transforming how businesses operate online. Understand the three waves of agent autonomy and why self-hosted AI agents are the future."
+      }
+    },
+    {
+      "title": "MCP and Tool Use: How FlowPilot Stays Agnostic",
+      "slug": "mcp-function-calling-tool-use-framework-agnostic",
+      "excerpt": "OpenAI function calling, Anthropic MCP, Google A2A — the AI ecosystem is fragmenting into competing standards. FlowPilot's skill engine is designed to work with all of them.",
+      "featured_image": "/templates/blog/code-frameworks.jpg",
+      "featured_image_alt": "Code on screen representing multiple AI frameworks",
+      "is_featured": false,
+      "content": [
+        {
+          "id": "text-wev9qvw",
+          "type": "text",
+          "data": {
+            "content": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The AI tool-use landscape is evolving fast. OpenAI has function calling. Anthropic introduced Model Context Protocol (MCP). Google launched A2A. Each approach has merits — and FlowPilot is designed to work with all of them."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Standards Landscape"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "OpenAI Function Calling"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The original standard. Define tools as JSON schemas, the model decides when to call them. FlowPilot's skill engine uses this format as its native representation — every skill is an OpenAI-compatible function definition."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Anthropic MCP (Model Context Protocol)"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "MCP takes a different approach: rather than the model calling functions, MCP servers expose resources and tools that any compatible client can discover and invoke. It is more about standardizing the bridge between AI and data sources."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 3
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Google A2A (Agent-to-Agent)"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A2A operates at a higher level — agent-to-agent collaboration. While function calling and MCP are about tool use within an agent, A2A is about coordination between agents. These are complementary, not competing."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot's Approach: Skill as Abstraction"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "FlowPilot's skill engine is deliberately provider-agnostic. A skill defines what it does, not how it is invoked. The handler router translates between skill definitions and the appropriate protocol:"
+                    }
+                  ]
+                },
+                {
+                  "type": "bulletList",
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "OpenAI models receive skills as function-calling tool definitions"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Local models (via Ollama) use the same OpenAI-compatible format"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "A2A peers receive skill capabilities as Agent Card manifests"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [
+                        {
+                          "type": "paragraph",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "Future MCP integration will expose skills as MCP tool resources"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Why This Matters"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The AI industry moves fast. Last year's dominant framework is this year's legacy. By abstracting skills from their invocation protocol, FlowPilot protects your investment. Your skills, your memory, your objectives — all survive framework changes."
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "attrs": {
+                    "level": 2
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The Pragmatic Path"
+                    }
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Today, use OpenAI or Gemini function calling. Tomorrow, add MCP servers for richer data integration. Next month, connect A2A peers for agent collaboration. FlowPilot's architecture supports all of these without rewriting a single skill."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "meta": {
+        "description": "How FlowPilot stays framework-agnostic across OpenAI function calling, Anthropic MCP, and Google A2A — protecting your investment as AI standards evolve."
+      }
+    }
+  ],
+  "kbCategories": [
+    {
+      "name": "Getting Started",
+      "slug": "getting-started",
+      "description": "Learn the basics of FlowWink and FlowPilot — the autonomous agent that runs your website.",
+      "icon": "Rocket",
+      "articles": [
+        {
+          "title": "What is FlowWink?",
+          "slug": "what-is-flowwink",
+          "question": "What is FlowWink and what can I do with it?",
+          "answer_text": "FlowWink is the first autonomous Business Operating System (BOS). Instead of managing your business manually across separate tools, you set objectives and FlowPilot — an autonomous agent — operates your entire online presence. It writes content, qualifies leads, sends campaigns, books meetings, and learns from every interaction. FlowWink replaces your CMS, CRM, ERP, and marketing stack — with a single self-hosted platform.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "What is FlowPilot?",
+          "slug": "what-is-flowpilot",
+          "question": "What is FlowPilot and how does it work?",
+          "answer_text": "FlowPilot is an autonomous AI agent inspired by the OpenClaw framework. It has six core capabilities: Skill Engine (20+ registered tools), Persistent Memory (learns and remembers), Objectives (goal-driven operations), Autonomous Heartbeat (12h reflection cycles), Signal Automations (event-driven reactions), and Self-Evolution (creates new skills and updates its own instructions). You set objectives. FlowPilot executes.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Setting Your First Objective",
+          "slug": "setting-first-objective",
+          "question": "How do I set objectives for FlowPilot?",
+          "answer_text": "Navigate to Admin → FlowPilot → Objectives. Click \"New Objective\" and describe your goal, e.g., \"Publish 4 blog posts per month\" or \"Qualify all inbound leads within 5 minutes.\" Define success criteria and any constraints. FlowPilot breaks objectives into actions and tracks progress autonomously. Review progress in the Activity Feed.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Understanding User Roles",
+          "slug": "user-roles",
+          "question": "What are the different user roles in FlowWink?",
+          "answer_text": "FlowWink has three roles: Writer – Can create and edit their own drafts, submit for review. Approver – Can review content, approve/reject submissions, publish content. Admin – Full access to all features including FlowPilot configuration, skills, objectives, and site settings. FlowPilot itself operates as a system-level agent with approval gating for sensitive actions.",
+          "include_in_chat": true
+        },
+        {
+          "title": "The Activity Feed",
+          "slug": "activity-feed",
+          "question": "How do I see what FlowPilot is doing?",
+          "answer_text": "The Activity Feed (Admin → FlowPilot → Activity) shows every action FlowPilot takes — content drafted, leads qualified, emails sent, skills executed. Each entry includes what was done, why, input/output data, and duration. Actions requiring approval appear with Approve/Reject buttons. This is your command center for reviewing autonomous operations.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "FlowPilot Skills",
+      "slug": "flowpilot-skills",
+      "description": "Understand and manage FlowPilot's autonomous capabilities.",
+      "icon": "Zap",
+      "articles": [
+        {
+          "title": "Skills Overview",
+          "slug": "skills-overview",
+          "question": "What are FlowPilot skills?",
+          "answer_text": "Skills are FlowPilot's registered capabilities — modular tools defined in OpenAI function-calling format. Each skill has a name, description, input parameters, execution handler, scope (internal/external), and an approval requirement flag. FlowPilot ships with 30+ skills and can create new ones autonomously.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Built-in Skills",
+          "slug": "built-in-skills",
+          "question": "What skills does FlowPilot have out of the box?",
+          "answer_text": "Built-in skills include: Content (create_page, publish_page, write_blog_post), CRM (qualify_lead, enrich_company, create_deal), Email (send_newsletter, add_subscriber), Booking (check_availability, confirm_booking), Knowledge (search_kb, update_article), and System (soul_update, skill_instruct, reflect). Enable or disable skills in Admin → FlowPilot → Skills.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Skill Scopes",
+          "slug": "skill-scopes",
+          "question": "What are internal and external skill scopes?",
+          "answer_text": "Scope controls who can trigger a skill. \"Internal\" skills are only available to FlowPilot operating as an admin assistant. \"External\" skills can be invoked by the visitor-facing chat. Skills can also be set to \"both.\" This prevents visitors from triggering administrative actions while allowing FlowPilot to serve both audiences safely.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Approval Gating",
+          "slug": "approval-gating",
+          "question": "How does approval gating work for FlowPilot actions?",
+          "answer_text": "Skills marked as \"requires_approval\" queue their output for human review before execution. For example, publishing a blog post gets queued — FlowPilot writes and prepares it, then waits for your approval. Lead qualification happens instantly, no approval needed. Configure approval requirements per skill in Admin → FlowPilot → Skills.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Creating Custom Skills",
+          "slug": "creating-custom-skills",
+          "question": "Can FlowPilot create new skills?",
+          "answer_text": "Yes. When FlowPilot encounters a task no existing skill covers, it can propose a new one using the \"skill_instruct\" tool. It defines the skill's parameters, handler, and scope — then awaits admin approval to register it. You can also create skills manually in Admin → FlowPilot → Skills → New Skill.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Autonomous Operations",
+      "slug": "autonomous-operations",
+      "description": "How FlowPilot manages content, leads, campaigns, and more without manual intervention.",
+      "icon": "Bot",
+      "articles": [
+        {
+          "title": "The Autonomous Loop",
+          "slug": "autonomous-loop",
+          "question": "What is the Autonomous Loop?",
+          "answer_text": "FlowPilot operates in a continuous cycle: Heartbeat (triggers every 12h) → Reflect (reviews recent activity) → Plan (decides next actions based on objectives) → Execute (runs skills) → Log (records everything) → Learn (updates persistent memory). This loop runs without human intervention, making your website truly self-operating.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Persistent Memory",
+          "slug": "persistent-memory",
+          "question": "How does FlowPilot remember things?",
+          "answer_text": "FlowPilot stores information in structured persistent memory with categories: brand (guidelines, tone), preferences (learned behaviors), context (recent decisions), and skills (execution patterns). Memory persists across sessions, making FlowPilot smarter over time. View memory entries in Admin → FlowPilot → Memory.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Signal Automations",
+          "slug": "signal-automations",
+          "question": "What are signal automations?",
+          "answer_text": "Signals are event-driven triggers that activate FlowPilot skills instantly. When events occur — form submission, chat message, new subscriber, booking request — signals trigger appropriate skills: qualify the lead, send a welcome email, enrich company data. Configure signals in Admin → FlowPilot → Automations.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Self-Evolution",
+          "slug": "self-evolution",
+          "question": "Can FlowPilot modify itself?",
+          "answer_text": "Yes. FlowPilot can update its own instructions (soul_update) and propose new skills (skill_instruct). If its approach is not producing results, it adjusts. If it discovers a recurring task with no skill, it proposes one. All self-modifications are logged and require admin approval.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Content Autopilot",
+          "slug": "content-autopilot",
+          "question": "How does FlowPilot handle content creation?",
+          "answer_text": "Set an objective like \"Publish 4 blog posts per month about AI in healthcare.\" FlowPilot will: research topics using your existing content, draft posts matching your brand voice (from persistent memory), create SEO-optimized titles and meta descriptions, queue for your approval, and publish on schedule. It learns from your edits to improve future drafts.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Lead Qualification Autopilot",
+          "slug": "lead-qualification-autopilot",
+          "question": "How does FlowPilot qualify leads automatically?",
+          "answer_text": "When a lead arrives via form, chat, or newsletter signup, FlowPilot: scores based on behavior and profile, enriches company data from the domain, generates an AI qualification summary, assigns to the appropriate team member, and creates a deal if the score exceeds threshold. All within seconds, 24/7.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Page Editing",
+      "slug": "page-editing",
+      "description": "Master the block editor and create beautiful pages — or let FlowPilot create them for you.",
+      "icon": "Edit3",
+      "articles": [
+        {
+          "title": "Block Types Overview",
+          "slug": "block-types",
+          "question": "What types of blocks are available in FlowWink?",
+          "answer_text": "FlowWink offers 43+ block types: Layout blocks (Hero, Two Column, Separator), Content blocks (Text, Image, Gallery, Video), Interactive blocks (Form, Contact, Accordion, Tabs, Marquee, Table, Embed), Marketing blocks (CTA, Pricing, Testimonials, Stats, Countdown, Progress, Badge, Social Proof), Navigation blocks (Header, Footer, Link Grid, Announcement Bar), Notification blocks (Popup, Floating CTA, Notification Toast), and Special blocks (Products, Booking, Chat, Newsletter, KB blocks). FlowPilot can create and edit pages using these blocks autonomously.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Publishing Workflow",
+          "slug": "publishing-workflow",
+          "question": "How does the publishing workflow work?",
+          "answer_text": "Content flows through Draft → Reviewing → Published → Archived. Writers and FlowPilot create drafts. Approvers review and authorize. FlowPilot can manage this entire pipeline autonomously — drafting content, submitting for review, and publishing approved content on schedule.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Version History",
+          "slug": "version-history",
+          "question": "How does version history work?",
+          "answer_text": "Every save creates a recoverable version — whether by a human editor or FlowPilot. View all versions, compare changes, and restore any previous version. This provides a complete audit trail of both manual and autonomous content changes.",
+          "include_in_chat": true
+        },
+        {
+          "title": "AI Text Assistant",
+          "slug": "ai-text-assistant",
+          "question": "How do I use the AI text generation in the editor?",
+          "answer_text": "The AI Text Assistant (Cmd+J) helps write content faster: generate from keywords, improve grammar, expand or shorten content, translate, and summarize. It uses your brand context from FlowPilot's persistent memory for consistent voice. Available in every text editor across the platform.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "SEO Settings",
+          "slug": "seo-settings",
+          "question": "How do I configure SEO for my pages?",
+          "answer_text": "Each page has SEO settings: meta title, description, and Open Graph image. FlowWink auto-generates structured data, sitemaps, and LLMs.txt for AI search engines. FlowPilot can optimize SEO automatically when creating content, applying best practices from persistent memory.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Troubleshooting",
+      "slug": "troubleshooting",
+      "description": "Common issues and how to resolve them.",
+      "icon": "Wrench",
+      "articles": [
+        {
+          "title": "FlowPilot Not Responding",
+          "slug": "flowpilot-not-responding",
+          "question": "FlowPilot is not responding or executing skills — what do I do?",
+          "answer_text": "Check: 1) AI provider is configured and tested in Admin → Settings → Integrations, 2) Skills are enabled in Admin → FlowPilot → Skills, 3) Edge functions are deployed (check deployment status), 4) API keys have not expired, 5) Browser console (F12) for error messages. If using a local LLM, verify the endpoint is accessible.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Page Not Saving",
+          "slug": "page-not-saving",
+          "question": "Why is my page not saving?",
+          "answer_text": "If your page is not saving: 1) Check Internet Connection, 2) Refresh the page, 3) Check browser console (F12) for errors, 4) Clear browser cache, 5) Try another browser. Auto-save runs continuously, so recent changes should be preserved even if you lose connection briefly.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Approval Queue Issues",
+          "slug": "approval-queue-issues",
+          "question": "FlowPilot actions are stuck in the approval queue — what should I do?",
+          "answer_text": "Check Admin → FlowPilot → Activity for pending approvals. Each entry shows what FlowPilot wants to do and why. Approve or reject actions. If too many actions require approval, consider adjusting skill approval settings — mark routine skills as auto-approved to reduce queue friction.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Login Issues",
+          "slug": "login-issues",
+          "question": "I cannot log in to the admin panel",
+          "answer_text": "Verify email and password are correct. Check caps lock. Try \"Forgot Password\" to reset. If using a self-hosted instance, verify the Supabase connection is active. Contact your administrator to verify your account is active.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "AI Configuration",
+      "slug": "ai-configuration",
+      "description": "Configure AI providers that power FlowPilot and the visitor chat.",
+      "icon": "Brain",
+      "articles": [
+        {
+          "title": "AI Providers Overview",
+          "slug": "ai-providers",
+          "question": "What AI providers does FlowWink support?",
+          "answer_text": "FlowWink supports: 1) OpenAI (GPT models — recommended for most use cases), 2) Google Gemini (multimodal, large context), 3) Local LLM (self-hosted, OpenAI-compatible — for complete privacy), 4) N8N Webhook (custom AI workflows). Configure in Admin → Settings → Integrations. The same provider powers both FlowPilot autonomous operations and the visitor-facing chat.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Setting Up Local LLM",
+          "slug": "local-llm-setup",
+          "question": "How do I connect my own LLM for complete privacy?",
+          "answer_text": "For complete data sovereignty: 1) Set up an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM). 2) In Integrations, enable Local LLM. 3) Enter your endpoint URL (e.g., http://localhost:11434/v1). 4) Specify the model name. 5) Click Test Connection. Your content, leads, and customer data never leave your infrastructure. FlowPilot operates with the same capabilities regardless of provider.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Chat System Prompt",
+          "slug": "chat-system-prompt",
+          "question": "How do I customize FlowPilot's personality and behavior?",
+          "answer_text": "In Admin → Chat Settings, customize the system prompt that defines FlowPilot's personality for visitor-facing chat. Set tone, boundaries, and knowledge scope. FlowPilot's internal personality evolves through the soul_update mechanism — it refines its own instructions based on accumulated experience.",
+          "include_in_chat": true
+        },
+        {
+          "title": "N8N AI Agent Integration",
+          "slug": "n8n-ai-agent",
+          "question": "How do I connect FlowWink to an N8N AI Agent?",
+          "answer_text": "Create an N8N workflow with a Chat Trigger or Webhook node. Configure AI Agent with tools. Copy the webhook URL to FlowWink's N8N integration settings. This extends FlowPilot's capabilities with custom workflows — connecting to external services, databases, or specialized AI models.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Channels FlowPilot Manages",
+      "slug": "channels-managed",
+      "description": "Content, CRM, email, bookings, e-commerce — all managed by one agent.",
+      "icon": "Layers",
+      "articles": [
+        {
+          "title": "Blog & Content",
+          "slug": "blog-content-channel",
+          "question": "How does FlowPilot manage blog and content?",
+          "answer_text": "FlowPilot writes, edits, schedules, and publishes blog posts and pages based on your objectives. It uses persistent memory to maintain brand voice, applies SEO best practices, and learns from your editorial feedback. Features: categories, tags, author profiles, RSS feed, featured posts, reading time, and rich text editing with 43+ block types.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "CRM & Lead Management",
+          "slug": "crm-lead-channel",
+          "question": "How does FlowPilot manage leads and CRM?",
+          "answer_text": "FlowPilot captures leads from forms, chat, and newsletter signups. It scores leads based on behavior, enriches company data from domains, generates AI qualification summaries, and manages deals through a Kanban pipeline (Proposal → Negotiation → Won/Lost). All 24/7 with instant response times.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Newsletter & Email",
+          "slug": "newsletter-email-channel",
+          "question": "How does FlowPilot handle email campaigns?",
+          "answer_text": "FlowPilot manages subscriber lists, writes campaign content, and sends newsletters with open/click tracking. Signal automations trigger welcome sequences when new subscribers join. GDPR-compliant with double opt-in and one-click unsubscribe. Uses Resend for delivery.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Booking & Scheduling",
+          "slug": "booking-channel",
+          "question": "How does FlowPilot manage bookings?",
+          "answer_text": "Visitors book appointments directly on your site. FlowPilot manages services, availability, confirmations, and follow-ups. It sends reminder emails, creates leads from bookings, and can reschedule or cancel when triggered by signals.",
+          "include_in_chat": true
+        },
+        {
+          "title": "E-Commerce & Products",
+          "slug": "ecommerce-channel",
+          "question": "How does FlowPilot handle e-commerce?",
+          "answer_text": "FlowPilot manages product catalogs, processes orders via Stripe checkout, sends order confirmations, and tracks fulfillment. It can recommend products based on visitor behavior and trigger follow-up campaigns for completed purchases.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Visitor Chat",
+          "slug": "visitor-chat-channel",
+          "question": "How does FlowPilot handle visitor conversations?",
+          "answer_text": "FlowPilot powers an intelligent chat widget using Context Augmented Generation. It searches your knowledge base, pages, and blog posts to provide accurate answers. Complex questions are escalated to human agents. Chat conversations are logged, sentiment-analyzed, and can trigger CRM actions.",
+          "is_featured": true,
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Global Blocks & Branding",
+      "slug": "global-blocks-branding",
+      "description": "Manage site-wide elements, themes, and visual identity.",
+      "icon": "Palette",
+      "articles": [
+        {
+          "title": "Global Blocks Overview",
+          "slug": "global-blocks-overview",
+          "question": "What are Global Blocks?",
+          "answer_text": "Global Blocks are reusable elements across all pages: Header (navigation), Footer (links, branding), and Popup (modals for announcements or lead capture). Edit once, update everywhere. Access via Admin → Global Blocks.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Branding Settings",
+          "slug": "branding-settings",
+          "question": "How do I customize my site's look and feel?",
+          "answer_text": "Go to Admin → Branding to configure site name, logo, favicon, primary color, fonts, and dark mode. Changes apply site-wide instantly. FlowPilot uses branding settings to maintain consistent visual identity when creating content or pages autonomously.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Dark Mode",
+          "slug": "dark-mode",
+          "question": "Does FlowWink support dark mode?",
+          "answer_text": "Yes. Enable the theme toggle in the header to let visitors switch between light and dark modes. The site adapts colors, images, and contrast automatically. Set a default theme preference in branding settings.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Brand Guide AI",
+          "slug": "brand-guide-ai",
+          "question": "What is Brand Guide AI?",
+          "answer_text": "Brand Guide AI analyzes your website and extracts your brand identity — colors, fonts, tone, visual style. It feeds these into FlowPilot's persistent memory so all autonomous content matches your brand. Access from the Branding settings page.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Self-Hosting & Deployment",
+      "slug": "self-hosting",
+      "description": "Run FlowWink on Supabase Cloud + Vercel — your data, your infrastructure.",
+      "icon": "Server",
+      "articles": [
+        {
+          "title": "Self-Hosting Overview",
+          "slug": "self-hosting-overview",
+          "question": "Can I self-host FlowWink?",
+          "answer_text": "Yes. The recommended stack is Supabase Cloud for the backend (database, auth, edge functions, storage) and Vercel for the frontend. Both have generous free tiers. You own the Supabase project and the GitHub repo — your data, your code, no vendor lock-in. FlowPilot operates identically on any deployment.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Quick Start",
+          "slug": "quick-start",
+          "question": "How do I deploy FlowWink?",
+          "answer_text": "Five steps: 1) Create a Supabase Cloud project, 2) Fork this repo on GitHub, 3) Run supabase db push and supabase functions deploy from your local clone, 4) Connect the repo to Vercel and set VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PROJECT_ID, 5) Deploy. Total time: ~10 minutes. See docs/guides/deployment.md for the full walkthrough.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Environment Variables",
+          "slug": "environment-variables",
+          "question": "What environment variables do I need?",
+          "answer_text": "Frontend (Vercel): VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID. Backend secrets (Supabase Edge Function secrets): OPENAI_API_KEY or GEMINI_API_KEY, plus optional RESEND_API_KEY, UNSPLASH_ACCESS_KEY, FIRECRAWL_API_KEY, HUNTER_API_KEY. Configure integrations under /admin/integrations.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Connecting Your Domain",
+          "slug": "connecting-domain",
+          "question": "How do I connect my custom domain?",
+          "answer_text": "In Vercel → Project → Domains, add your domain and follow the DNS instructions. Then update Supabase → Auth → URL Configuration with the production URL so login redirects work. Finally update site branding under /admin/settings so canonical URLs and sitemaps use the right domain.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Upgrading FlowWink",
+          "slug": "upgrading",
+          "question": "How do I upgrade to a new version?",
+          "answer_text": "Pull the latest from upstream (git pull), then push new migrations and edge functions: supabase db push && supabase functions deploy. Vercel auto-rebuilds the frontend on git push. FlowPilot memory, skills and your data are preserved across upgrades. Always backup the Supabase database before major upgrades — check CHANGELOG.md for breaking changes.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Security & Privacy",
+      "slug": "security-privacy",
+      "description": "Data sovereignty, GDPR compliance, and audit trails in an autonomous system.",
+      "icon": "Shield",
+      "articles": [
+        {
+          "title": "Security Model",
+          "slug": "security-model",
+          "question": "How does FlowWink handle security with an autonomous agent?",
+          "answer_text": "FlowPilot respects all Row-Level Security policies and authentication constraints. AI-triggered actions follow the same security rules as manual operations. Skill scopes prevent unauthorized access. Approval gating adds human oversight for sensitive actions. Every action is logged in the audit trail.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "GDPR Compliance",
+          "slug": "gdpr-compliance",
+          "question": "Is FlowWink GDPR compliant?",
+          "answer_text": "When self-hosted with a private LLM, FlowWink is GDPR compliant by architecture — not policy. Your data, your AI, your infrastructure. No cross-border transfers. No third-party DPAs needed. Newsletter includes double opt-in and one-click unsubscribe. Complete data export available.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Audit Trail",
+          "slug": "audit-trail",
+          "question": "Is there a complete audit trail?",
+          "answer_text": "Yes. Every action — manual or autonomous — is logged: who did it (user or FlowPilot), what was done, when, and why. View audit logs in Admin → Settings → Audit Log. This includes content changes, lead actions, email sends, skill executions, and self-evolution events.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Private AI Setup",
+          "slug": "private-ai-setup",
+          "question": "How do I ensure my AI is completely private?",
+          "answer_text": "For full data sovereignty, run FlowWink against a self-hosted Supabase instance and configure a Local LLM (Ollama, LM Studio, vLLM) instead of cloud AI providers. Your prompts, content, lead data, and customer conversations never leave your network. FlowPilot's persistent memory is stored in your own database.",
+          "is_featured": true,
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Content Best Practices",
+      "slug": "content-best-practices",
+      "description": "Tips for effective content — whether written by you or FlowPilot.",
+      "icon": "Lightbulb",
+      "articles": [
+        {
+          "title": "SEO Optimization",
+          "slug": "seo-optimization",
+          "question": "How does FlowWink handle SEO?",
+          "answer_text": "Automatic SEO features: XML sitemap, RSS feed, canonical URLs, mobile-responsive design, structured data, and LLMs.txt for AI search engines. FlowPilot applies SEO best practices when creating content: keyword-rich titles under 60 characters, meta descriptions under 160 characters, proper heading hierarchy, and descriptive image alt text.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "AEO: AI Search Optimization",
+          "slug": "aeo-ai-search-optimization",
+          "question": "What is Answer Engine Optimization (AEO)?",
+          "answer_text": "AEO optimizes content for AI search engines that provide direct answers. FlowWink generates LLMs.txt automatically, and the Knowledge Base is inherently AEO-optimized with question-answer format. FlowPilot writes content that is both SEO and AEO friendly — structuring articles around specific questions with direct answers.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Setting Objectives for Content",
+          "slug": "content-objectives",
+          "question": "How should I configure content objectives for FlowPilot?",
+          "answer_text": "Be specific with objectives: \"Publish 4 blog posts per month about sustainable technology for CTOs\" beats \"Write some blog posts.\" Include: topic area, audience, frequency, tone, and any constraints. FlowPilot learns from your editorial feedback — editing a draft teaches it your preferences for future content.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Conversion Optimization",
+          "slug": "conversion-optimization",
+          "question": "How do I get more visitors to take action?",
+          "answer_text": "Clear CTAs: one primary CTA per page, action words, standout buttons. Reduce form friction: ask only essentials. Build trust: testimonials, customer logos, team photos. FlowPilot can analyze page performance and suggest improvements via the AEO analyzer and its reflection cycle.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Modules Overview",
+      "slug": "modules-overview",
+      "description": "All available modules — each one a channel FlowPilot can operate.",
+      "icon": "Package",
+      "articles": [
+        {
+          "title": "Available Modules",
+          "slug": "available-modules",
+          "question": "What modules are available in FlowWink?",
+          "answer_text": "FlowWink modules (each operable by FlowPilot): Core (always on): Pages, Media Library, Global Elements. Content: Blog, Knowledge Base. Marketing: Newsletter, AI Chat, Forms. Sales: Leads, Deals, Companies, Products, Orders, Booking. System: Analytics, Webhooks, Users, FlowPilot. Toggle modules in Admin → Modules.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "FlowPilot Module",
+          "slug": "flowpilot-module",
+          "question": "What is the FlowPilot module?",
+          "answer_text": "The FlowPilot module is the autonomous agent control center. Manage skills, objectives, memory, automations, and activity logs. This is where you configure how your website runs itself — from setting goals to reviewing autonomous actions.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Analytics Module",
+          "slug": "analytics-module",
+          "question": "What is the Analytics module?",
+          "answer_text": "Track page views, visitor stats, popular content, traffic sources, and geography. Privacy-focused with no third-party cookies. FlowPilot uses analytics data during its reflection cycle to evaluate content performance and adjust strategies.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Webhooks Module",
+          "slug": "webhooks-module",
+          "question": "What are webhooks?",
+          "answer_text": "Webhooks notify external services when events occur. Supported events: page/blog published, form submitted, order placed, subscriber added. FlowPilot's signal automations are the internal equivalent — both react to events, but signals trigger skills while webhooks call external URLs.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Objectives & Automations",
+      "slug": "objectives-automations",
+      "description": "Two cadences of autonomous operation — finite goals and recurring routines.",
+      "icon": "Target",
+      "articles": [
+        {
+          "title": "Objectives Overview",
+          "slug": "objectives-overview",
+          "question": "What are FlowPilot objectives and how do they work?",
+          "answer_text": "Objectives are high-level, finite goals with tracked progress. Create one in Admin → FlowPilot → Objectives. Define the goal, success criteria, and any constraints. FlowPilot decomposes the objective into steps, tracks progress via a structured JSONB field, and marks it complete when all criteria are met. Statuses: active, completed, paused, failed.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Automations Overview",
+          "slug": "automations-overview",
+          "question": "What are automations and how do I set one up?",
+          "answer_text": "Automations are recurring skill executions on a cron schedule. Go to Admin → Engine Room → Automations → New Automation. Select a trigger type (Cron Schedule), set the schedule (e.g., \"0 9 * * 1\" for every Monday at 9 AM), choose the skill to execute, and configure arguments. Automations run indefinitely until disabled.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Objectives vs Automations",
+          "slug": "objectives-vs-automations",
+          "question": "When should I use an objective versus an automation?",
+          "answer_text": "Use objectives for finite, strategic work with a clear end state: \"Research competitors and write a positioning memo.\" Use automations for ongoing operational routines: \"Monitor competitor blog every Monday.\" Objectives complete when done. Automations run on schedule forever. They complement each other — an objective might discover that a recurring task needs an automation.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Objective Progress Tracking",
+          "slug": "objective-progress",
+          "question": "How does FlowPilot track objective progress?",
+          "answer_text": "Each objective has a success_criteria JSONB field (the definition of done) and a progress JSONB field (current state). FlowPilot updates progress using objective_update_progress and objective_complete tools, creating a structured audit trail. View progress in Admin → FlowPilot → Objectives → click any objective.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Cron Schedule Examples",
+          "slug": "cron-schedule-examples",
+          "question": "What are some common cron schedules for automations?",
+          "answer_text": "Common schedules: \"0 9 * * 1\" = every Monday at 9 AM. \"0 */12 * * *\" = every 12 hours. \"0 8 * * 1-5\" = weekdays at 8 AM. \"0 0 1 * *\" = first of every month. \"0 9 * * 1,4\" = Monday and Thursday at 9 AM. Use these for competitor monitoring, content research, lead scoring, and performance reporting.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Agent-to-Agent (A2A)",
+      "slug": "a2a-protocol",
+      "description": "Connect FlowPilot with other AI agents for cross-boundary collaboration.",
+      "icon": "Network",
+      "articles": [
+        {
+          "title": "A2A Overview",
+          "slug": "a2a-overview",
+          "question": "What is Agent-to-Agent (A2A) and how does FlowPilot use it?",
+          "answer_text": "A2A is a peer-to-peer protocol that lets AI agents discover capabilities, exchange tasks, and collaborate across organizations. FlowPilot supports A2A natively — register peers in Admin → System → A2A Peers. Each peer has a URL endpoint, capabilities manifest, and separate inbound/outbound authentication tokens.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Registering an A2A Peer",
+          "slug": "register-a2a-peer",
+          "question": "How do I connect FlowPilot to another AI agent?",
+          "answer_text": "Go to Admin → System → A2A Peers → Add Peer. Enter the peer name, URL endpoint, and capabilities. An outbound token is generated automatically. Share your inbound endpoint and token with the peer for bidirectional communication. Test the connection before enabling production traffic.",
+          "include_in_chat": true
+        },
+        {
+          "title": "A2A Security",
+          "slug": "a2a-security",
+          "question": "How is A2A communication secured?",
+          "answer_text": "Each A2A peer uses separate inbound and outbound tokens. Inbound tokens are stored as hashes (never plaintext). Outbound tokens are generated using cryptographic random bytes. All communication is logged in a2a_activity with direction, payload, status, and duration for full auditability.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "A2A Activity Log",
+          "slug": "a2a-activity-log",
+          "question": "How do I monitor A2A interactions?",
+          "answer_text": "Every A2A interaction is logged in the a2a_activity table. View activity in Admin → System → A2A Activity. Each entry shows: peer name, direction (inbound/outbound), skill name, input/output data, status (pending/success/failed), duration in milliseconds, and any error messages.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Content API",
+      "slug": "content-api",
+      "description": "Consume your content via REST/GraphQL endpoints — headless CMS capabilities.",
+      "icon": "Code",
+      "articles": [
+        {
+          "title": "Content API Overview",
+          "slug": "content-api-overview",
+          "question": "What is the Content API and how do I use it?",
+          "answer_text": "The Content API (Admin → System → Content API) provides 20+ REST/GraphQL endpoints for consuming your content programmatically. Use it for mobile apps, external websites, newsletters, and AI integrations. The API Explorer lets you test endpoints interactively. Content is served in standardized Tiptap JSON format.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "API Explorer",
+          "slug": "api-explorer",
+          "question": "How do I test Content API endpoints?",
+          "answer_text": "Navigate to Admin → System → Content API. The interactive API Explorer shows all available endpoints with request/response previews. Click any endpoint to see the URL, parameters, and live response data. Copy endpoint URLs directly for use in your applications.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Markdown Export for LLMs",
+          "slug": "markdown-export-llms",
+          "question": "Can I export content as Markdown for AI/LLM consumption?",
+          "answer_text": "Yes. The Content API supports Markdown export optimized for LLMs. This includes LLMs.txt generation for AI search engine optimization (AEO). FlowWink automatically structures content for both traditional search engines and AI answer engines.",
+          "is_featured": true,
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "FlowAgent Framework",
+      "slug": "flowagent-framework",
+      "description": "The 7-step autonomous reasoning engine that powers FlowPilot.",
+      "icon": "Cpu",
+      "articles": [
+        {
+          "title": "The 7-Step Loop",
+          "slug": "seven-step-loop",
+          "question": "What is the FlowAgent 7-step loop?",
+          "answer_text": "FlowAgent implements a 7-step autonomous reasoning loop: 1) Self-Heal — check system health, retry failed operations. 2) Propose — evaluate objectives and suggest next actions. 3) Plan — decompose proposals into specific skill calls. 4) Advance — execute skills via agent-execute. 5) Automate — identify patterns that should become recurring automations. 6) Reflect — evaluate what worked and what failed. 7) Remember — store learnings in persistent memory.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Shared Reasoning Engine",
+          "slug": "shared-reasoning-engine",
+          "question": "What is the agent-reason shared module?",
+          "answer_text": "The agent-reason module is the centralized logic core that eliminates duplication between interactive tasks (Operate mode — responding to chat/commands) and autonomous tasks (Heartbeat — scheduled cycles). It handles unified LLM orchestration, context loading (Soul, Identity, Memories, Objectives, Instructions), and the iterative reasoning loop. This ensures consistent decision-making regardless of trigger.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Built-in Tools",
+          "slug": "flowagent-built-in-tools",
+          "question": "What tools does the FlowAgent reasoning engine have access to?",
+          "answer_text": "FlowAgent has 26+ built-in tools across categories: Ecommerce (product management, order tracking), CRM (lead qualification, company enrichment, deal management), Content (blog writing, page creation, KB updates), Analytics (performance review, conversion analysis), System (soul update, skill instruct, memory management), and A2A (peer communication). The tool registry is database-driven and extensible.",
+          "include_in_chat": true
+        },
+        {
+          "title": "Signal Ingest API",
+          "slug": "signal-ingest-api",
+          "question": "How do external events trigger FlowPilot?",
+          "answer_text": "The Signal Ingest API accepts token-authenticated events from external sources via the signal-dispatcher edge function. Database triggers fire signals for internal events (lead created, form submitted, booking made, blog published). Signals trigger matching automations, which execute skills. This creates a reactive layer on top of the proactive objective system.",
+          "is_featured": true,
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Webinars",
+      "slug": "webinars",
+      "description": "Host and manage webinar events with registration, scheduling, and follow-up.",
+      "icon": "Video",
+      "articles": [
+        {
+          "title": "Webinars Overview",
+          "slug": "webinars-overview",
+          "question": "How do webinars work in FlowWink?",
+          "answer_text": "The Webinars module lets you create events with registration forms, scheduling, and attendee management. Add webinar blocks to any page to display upcoming events. FlowPilot can manage event promotion, registration confirmations, and post-event follow-ups through its skill engine.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Creating a Webinar",
+          "slug": "creating-webinar",
+          "question": "How do I create and promote a webinar?",
+          "answer_text": "Go to Admin → Webinars → New Webinar. Set the title, date, time, description, and registration link. Add a Webinar block to any page to display it. FlowPilot can automatically promote webinars via blog posts, newsletter campaigns, and chat recommendations to site visitors.",
+          "include_in_chat": true
+        }
+      ]
+    },
+    {
+      "name": "Consultant Profiles",
+      "slug": "consultant-profiles",
+      "description": "Manage consultant and team member profiles for agency and consulting templates.",
+      "icon": "Users",
+      "articles": [
+        {
+          "title": "Consultant Profiles Overview",
+          "slug": "consultant-profiles-overview",
+          "question": "What are consultant profiles and how do they work?",
+          "answer_text": "Consultant Profiles let you showcase team members with skills, experience, certifications, hourly rates, and availability status. Used in consulting and agency templates. Profiles support education history, portfolio links, LinkedIn URLs, and multi-language capabilities. Visitors can browse and filter consultants by skill, availability, and expertise.",
+          "is_featured": true,
+          "include_in_chat": true
+        },
+        {
+          "title": "Consultant Matcher",
+          "slug": "consultant-matcher",
+          "question": "What is the Consultant Matcher feature?",
+          "answer_text": "The Consultant Matcher block allows visitors to upload a job description or requirements document, and FlowPilot matches it against your consultant profiles — scoring relevance based on skills, experience, and availability. This automates the talent-matching process for staffing agencies and consulting firms.",
+          "include_in_chat": true
+        }
+      ]
+    }
   ],
   "pages": [
     {
