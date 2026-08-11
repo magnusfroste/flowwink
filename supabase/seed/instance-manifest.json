@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "99999999999999",
+      "migration_head": "20260812140000",
       "migrations_count": 386,
       "migrations": [
         {
@@ -1543,12 +1543,12 @@
           "name": "first-user-on-a-virgin-instance-claims-admin"
         },
         {
-          "version": "20260812120000",
-          "name": "demo-seeds-teach-the-state-space"
+          "version": "20260812130000",
+          "name": "fresh-install-finalizer"
         },
         {
-          "version": "99999999999999",
-          "name": "fresh-install-finalizer"
+          "version": "20260812140000",
+          "name": "demo-seeds-teach-the-state-space"
         }
       ]
     },

@@ -57,13 +57,25 @@ try {
   // Tracked additions vs the fork point (this is what CI sees — the migration is
   // committed by then), PLUS any not-yet-committed new files (untracked/staged),
   // so the guard has teeth locally and pre-commit too.
-  const tracked = sh(`git diff --name-only --diff-filter=A ${mergeBase} -- ${MIGRATIONS_DIR}`)
+  // --no-renames: a rename must be seen as delete+add, or a file renamed TO a
+  // back-dated name would slip past the A-filter as status R.
+  const tracked = sh(`git diff --no-renames --name-only --diff-filter=A ${mergeBase} -- ${MIGRATIONS_DIR}`)
     .split('\n').map((s) => s.trim()).filter(Boolean);
   const untracked = sh(`git ls-files --others --exclude-standard -- ${MIGRATIONS_DIR}`)
     .split('\n').map((s) => s.trim()).filter(Boolean);
   addedFiles = [...new Set([...tracked, ...untracked])].filter((f) => f.endsWith('.sql'));
+  // Files DELETED on this branch no longer define the forward horizon: a
+  // rename (delete+add) of the ledger head must compare new files against the
+  // head that will exist AFTER the branch merges, not the one it removes.
+  // (Discovered when the fresh-install finalizer moved from the 99999999999999
+  // sentinel to a real timestamp — the sentinel it deleted was the baseMax.)
+  const deleted = new Set(
+    sh(`git diff --no-renames --name-only --diff-filter=D ${mergeBase} -- ${MIGRATIONS_DIR}`)
+      .split('\n').map((s) => s.trim()).filter(Boolean),
+  );
   baseFiles = sh(`git ls-tree -r --name-only ${mergeBase} -- ${MIGRATIONS_DIR}`)
-    .split('\n').map((s) => s.trim()).filter(Boolean).filter((f) => f.endsWith('.sql'));
+    .split('\n').map((s) => s.trim()).filter(Boolean)
+    .filter((f) => f.endsWith('.sql') && !deleted.has(f));
 } catch (e) {
   console.warn(`⚠ migration-forward-dated: git inspection failed — skipping (not blocking). ${(e as Error).message}`);
   process.exit(0);

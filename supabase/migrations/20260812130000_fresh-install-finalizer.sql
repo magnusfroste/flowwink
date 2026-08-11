@@ -1,8 +1,18 @@
 -- ============================================================================
--- The fresh-install finalizer — always the last migration, forever.
+-- The fresh-install finalizer — last of the migrations that existed at its
+-- creation (2026-08-12).
 --
--- Version 99999999999999 sorts after every timestamp that will ever exist, so
--- this file runs LAST on a from-scratch replay and exactly once per instance.
+-- HISTORY: this file was first shipped as version 99999999999999 so it would
+-- sort after every timestamp forever. That sentinel turned out to poison the
+-- ledger: with head = all-nines, every FUTURE migration reads as back-dated —
+-- to the forward-dating CI guard and to any ledger-head comparison. So the
+-- finalizer carries a real timestamp: on a from-scratch replay it still runs
+-- after the entire pre-existing stream (which is all it needs — storage and
+-- cron activation must not happen mid-stream), and migrations authored later
+-- legitimately run after it. Post-finalizer migrations must NOT quiesce cron
+-- (they would strand a live instance's jobs dark); the fresh-install-replay
+-- guardrail enforces both directions of that rule.
+--
 -- Two jobs, both of which must not happen mid-stream:
 --
 -- 1. STORAGE, deadlock-immune. The first-ever full replay (GitHub integration,

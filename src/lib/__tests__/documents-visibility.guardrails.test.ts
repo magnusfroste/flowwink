@@ -22,7 +22,7 @@ const migration = read('supabase/migrations/20260808160000_documents-visibility.
 // storage.* migrations deadlock against the storage service's own migrator on
 // brand-new projects — see fresh-install-replay.guardrails.test.ts). The
 // policy BODIES are unchanged; only their home moved.
-const storage = read('supabase/migrations/99999999999999_fresh-install-finalizer.sql');
+const storage = read('supabase/migrations/20260812130000_fresh-install-finalizer.sql');
 const dialog = read('src/components/admin/documents/AddDocumentDialog.tsx');
 const hook = read('src/hooks/useDocuments.ts');
 

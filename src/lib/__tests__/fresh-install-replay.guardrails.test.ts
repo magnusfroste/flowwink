@@ -29,9 +29,15 @@ import { join } from 'path';
  */
 
 const MIGRATIONS = join(__dirname, '../../../supabase/migrations');
-const FINALIZER = '99999999999999_fresh-install-finalizer.sql';
 
 const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql'));
+// The finalizer carries a REAL timestamp, not an all-nines sentinel: a
+// sentinel above every future version makes every later migration read as
+// back-dated — to the forward-dating CI guard and to any ledger comparing
+// against head. The finalizer only needs to sort after the migrations that
+// exist at its creation; migrations authored later legitimately sort after it
+// (see the cron rule below for what that implies).
+const FINALIZER = files.find((f) => f.endsWith('_fresh-install-finalizer.sql'))!;
 const read = (f: string) => readFileSync(join(MIGRATIONS, f), 'utf8');
 /** SQL with `--` line comments removed, so prose about storage.* doesn't trip rules. */
 const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, '');
@@ -49,15 +55,19 @@ describe('fresh-install replay guardrails', () => {
     expect(dupes, `Duplicate migration versions break the ledger:\n${dupes.join('\n')}`).toEqual([]);
   });
 
-  it('has exactly one finalizer, and it sorts after every other migration forever', () => {
-    const finalizers = files.filter((f) => f.startsWith('99999999999999_'));
+  it('has exactly one finalizer, with a real timestamp, sorted after every quiescing migration', () => {
+    const finalizers = files.filter((f) => f.endsWith('_fresh-install-finalizer.sql'));
     expect(finalizers).toEqual([FINALIZER]);
-    // Timestamps are 14-digit YYYYMMDDHHMMSS — every real one starts with a
-    // year (2…), so the all-nines version sorts last for the next ~7970 years.
-    const after = files.filter((f) => f > FINALIZER);
+    expect(FINALIZER, 'finalizer must carry a real YYYYMMDDHHMMSS timestamp, not a sentinel')
+      .toMatch(/^20\d{12}_/);
+    // Every migration that quiesces cron relies on the finalizer running LATER
+    // to re-activate the jobs — on a fresh replay that is filename order.
+    const quiescersAfter = files.filter(
+      (f) => f > FINALIZER && /active\s*=>\s*false/.test(stripComments(read(f))),
+    );
     expect(
-      after,
-      `These migrations sort AFTER the finalizer — storage/cron bootstrap would run before them: ${after.join(', ')}`,
+      quiescersAfter,
+      `These quiescing migrations sort AFTER the finalizer — their jobs would never be re-activated on a fresh replay: ${quiescersAfter.join(', ')}`,
     ).toEqual([]);
   });
 
@@ -90,18 +100,33 @@ describe('fresh-install replay guardrails', () => {
     );
   });
 
-  it('every migration that schedules cron jobs ends quiesced (jobs must not fire into a half-built schema)', () => {
-    const violations: string[] = [];
+  it('cron.schedule BEFORE the finalizer quiesces; AFTER it must NOT (jobs would be stranded dark)', () => {
+    // Before the finalizer (fresh-replay stream): jobs must not fire into a
+    // half-built schema, so every scheduling migration ends quiesced and the
+    // finalizer re-activates. AFTER the finalizer the rule INVERTS: on an
+    // existing instance a later migration runs alone — a quiescence block
+    // there would deactivate every job on a live site with nothing ever
+    // turning them back on. (Its own new job is safe active: it only calls
+    // objects from migrations ≤ its own timestamp.)
+    const mustQuiesce: string[] = [];
+    const mustNotQuiesce: string[] = [];
     for (const f of files) {
       if (f === FINALIZER) continue;
       const sql = stripComments(read(f));
-      if (!/cron\.schedule\s*\(/i.test(sql)) continue;
-      if (!/cron\.alter_job\([^)]*active\s*=>\s*false/i.test(sql)) violations.push(f);
+      const schedules = /cron\.schedule\s*\(/i.test(sql);
+      const quiesces = /cron\.alter_job\([^)]*active\s*=>\s*false/i.test(sql);
+      if (f < FINALIZER && schedules && !quiesces) mustQuiesce.push(f);
+      if (f > FINALIZER && quiesces) mustNotQuiesce.push(f);
     }
     expect(
-      violations,
-      `These migrations call cron.schedule without the quiescence block — on a fresh replay ` +
-        `their jobs fire into a half-built schema: ${violations.join(', ')}`,
+      mustQuiesce,
+      `Pre-finalizer migrations calling cron.schedule without quiescence — on a fresh replay ` +
+        `their jobs fire into a half-built schema: ${mustQuiesce.join(', ')}`,
+    ).toEqual([]);
+    expect(
+      mustNotQuiesce,
+      `Post-finalizer migrations must NOT quiesce — on a live instance they would switch every ` +
+        `cron job off permanently: ${mustNotQuiesce.join(', ')}`,
     ).toEqual([]);
   });
 

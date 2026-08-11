@@ -25,7 +25,8 @@ exactly once), every edge function declared in `supabase/config.toml`
 that a from-scratch replay is safe:
 
 - **All storage DDL lives in one always-last finalizer migration**
-  (`99999999999999_fresh-install-finalizer.sql`) with a deadlock-retry loop —
+  (`*_fresh-install-finalizer.sql`, timestamped like any migration) with a
+  deadlock-retry loop —
   mid-stream storage statements race Supabase's own storage service at project
   birth (SQLSTATE 40P01).
 - **Cron jobs are born quiesced.** Every migration that schedules jobs
@@ -155,7 +156,7 @@ From the SQL editor in the Supabase dashboard:
 ```sql
 SELECT
   (SELECT count(*) FROM supabase_migrations.schema_migrations)          AS migrations,
-  (SELECT max(version) FROM supabase_migrations.schema_migrations)     AS head,        -- must be 99999999999999
+  (SELECT max(version) FROM supabase_migrations.schema_migrations)     AS head,
   (SELECT count(*) FROM storage.buckets)                               AS buckets,     -- 5
   (SELECT count(*) FROM pg_policies WHERE schemaname = 'storage')      AS policies,    -- 17
   (SELECT count(*) FILTER (WHERE active) FROM cron.job)                AS active_jobs, -- all of them
