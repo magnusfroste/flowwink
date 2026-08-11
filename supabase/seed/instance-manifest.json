@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260811021000",
-      "migrations_count": 382,
+      "migration_head": "20260811120000",
+      "migrations_count": 383,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1533,6 +1533,10 @@
         {
           "version": "20260811021000",
           "name": "the-extractor-says-success-the-indexer-heard-completed"
+        },
+        {
+          "version": "20260811120000",
+          "name": "the-activity-log-knows-all-its-actors"
         }
       ]
     },
