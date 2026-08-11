@@ -230,3 +230,63 @@ verify_jwt = false
 
 [functions.workspace-chat]
 verify_jwt = true
+
+# ── Completed 2026-08-11: functions on disk that lacked a [functions.*]
+#    declaration, so the GitHub integration would not deploy them. A fresh
+#    GitHub-synced instance was born WITHOUT its mail router, invites,
+#    user management or billing. verify_jwt derived per invocation:
+#    pg_cron/anon and browser-media fetches are false (true = silent 401 /
+#    blocked media); admin-UI and service-to-service are true (service key
+#    is itself a valid JWT).
+
+[functions.contract-billing-cron]  # daily pg_cron (pg_net anon key) — verify_jwt=true would be a silent 401
+verify_jwt = false
+
+[functions.subscription-billing-cron]  # daily pg_cron (pg_net anon key)
+verify_jwt = false
+
+[functions.dunning-processor]  # runs on cron (pg_net anon key)
+verify_jwt = false
+
+[functions.voice-recording]  # fetched as a media src by the browser — no auth header is sent
+verify_jwt = false
+
+[functions.email-send]  # service-to-service mail router; service key passes; allowlist-guarded internally
+verify_jwt = true
+
+[functions.invite-colleague]  # admin UI, user JWT
+verify_jwt = true
+
+[functions.invite-employee]  # admin UI, user JWT
+verify_jwt = true
+
+[functions.create-user]  # admin UI, user JWT
+verify_jwt = true
+
+[functions.delete-user]  # admin UI, user JWT
+verify_jwt = true
+
+[functions.document-sign-request]  # admin/service sends a signing request
+verify_jwt = true
+
+[functions.integrations-account]  # admin UI
+verify_jwt = true
+
+[functions.check-secrets]  # admin UI
+verify_jwt = true
+
+[functions.system-integrity-check]  # admin UI / service
+verify_jwt = true
+
+[functions.media-optimize]  # admin UI
+verify_jwt = true
+
+[functions.run-platform-tests]  # admin-triggered
+verify_jwt = true
+
+[functions.run-autonomy-tests]  # admin-triggered
+verify_jwt = true
+
+[functions.setup-database]  # provisioning, admin/service
+verify_jwt = true
+
