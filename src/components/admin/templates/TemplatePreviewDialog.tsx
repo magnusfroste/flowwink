@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { 
+import { useState, useMemo, useEffect } from 'react';
+import {
   FileText,
   Palette,
   MessageSquare,
@@ -15,6 +15,10 @@ import {
   Send,
   ImageIcon,
   Trash2,
+  Newspaper,
+  BookOpen,
+  Package,
+  Users,
 } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -48,6 +52,44 @@ export interface TemplateOverwriteOptions {
   publishPages: boolean;
   publishBlogPosts: boolean;
   publishKbArticles: boolean;
+}
+
+/**
+ * Default install/overwrite options for a template.
+ *
+ * Content the template SHIPS defaults to ON: branded blog posts, KB articles,
+ * products and consultant profiles are part of the site the template
+ * describes (the flowwink-platform template without its 15 blog posts is not
+ * that site). This replaced a hardcoded `blogPosts: false` era whose comment
+ * said "module data is no longer seeded by templates" — that conflated two
+ * different things. The distinction that holds: BRANDED content belongs to
+ * the template; EDUCATIONAL state-space demo data belongs to each module's
+ * "Seed demo data". A template with no blog simply shows no blog row.
+ */
+export function buildDefaultOverwriteOptions(
+  template: StarterTemplate,
+  templateImageCount: number,
+): TemplateOverwriteOptions {
+  return {
+    pages: true,
+    branding: true,
+    chatSettings: true,
+    headerSettings: true,
+    footerSettings: true,
+    seoSettings: true,
+    cookieBannerSettings: true,
+    blogPosts: !!template.blogPosts?.length,
+    kbContent: !!template.kbCategories?.length,
+    products: !!template.products?.length,
+    consultants: !!template.consultants?.length,
+    modules: !!template.requiredModules?.length,
+    resetObjectives: false,
+    clearMedia: false,
+    downloadImages: templateImageCount > 0,
+    publishPages: true,
+    publishBlogPosts: !!template.blogPosts?.length,
+    publishKbArticles: !!template.kbCategories?.length,
+  };
 }
 
 interface ExistingContent {
@@ -178,28 +220,17 @@ export function TemplatePreviewDialog({
   templateImageCount,
   onApply
 }: TemplatePreviewDialogProps) {
-  const [options, setOptions] = useState<TemplateOverwriteOptions>({
-    pages: true,
-    branding: true,
-    chatSettings: true,
-    headerSettings: true,
-    footerSettings: true,
-    seoSettings: true,
-    cookieBannerSettings: true,
-    // Module data (blog/kb/products/consultants) is no longer seeded by
-    // templates — each module owns its own demo data via /admin/modules.
-    blogPosts: false,
-    kbContent: false,
-    products: false,
-    consultants: false,
-    modules: !!template.requiredModules?.length,
-    resetObjectives: false,
-    clearMedia: false,
-    downloadImages: templateImageCount > 0,
-    publishPages: true,
-    publishBlogPosts: false,
-    publishKbArticles: false,
-  });
+  const [options, setOptions] = useState<TemplateOverwriteOptions>(() =>
+    buildDefaultOverwriteOptions(template, templateImageCount),
+  );
+
+  // The dialog instance survives across template selections — without this
+  // reset, options derived from the FIRST template (e.g. "has no blog") would
+  // silently apply to every template opened after it.
+  useEffect(() => {
+    if (open) setOptions(buildDefaultOverwriteOptions(template, templateImageCount));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, template.id]);
 
   const updateOption = (key: keyof TemplateOverwriteOptions, value: boolean) => {
     setOptions(prev => ({ ...prev, [key]: value }));
@@ -244,26 +275,7 @@ export function TemplatePreviewDialog({
   };
 
   const handleSelectAll = () => {
-    setOptions({
-      pages: true,
-      branding: true,
-      chatSettings: true,
-      headerSettings: true,
-      footerSettings: true,
-      seoSettings: true,
-      cookieBannerSettings: true,
-      blogPosts: false,
-      kbContent: false,
-      products: false,
-      consultants: false,
-      modules: !!template.requiredModules?.length,
-      resetObjectives: false,
-      clearMedia: false,
-      downloadImages: templateImageCount > 0,
-      publishPages: true,
-      publishBlogPosts: false,
-      publishKbArticles: false,
-    });
+    setOptions(buildDefaultOverwriteOptions(template, templateImageCount));
   };
 
   const handleSelectNone = () => {
@@ -417,9 +429,53 @@ export function TemplatePreviewDialog({
               hasExisting={existingContent.hasCookieBanner}
             />
 
-            {/* Note: Blog posts, KB articles, products and consultants are
-                no longer seeded from templates. Enable the corresponding
-                module under /admin/modules and click "Seed demo data" there. */}
+            {/* Branded template content — shown only when the template ships
+                it. (Educational demo data is a different thing: each module's
+                "Seed demo data" under /admin/modules.) */}
+            {!!template.blogPosts?.length && (
+              <SettingRow
+                icon={<Newspaper className="h-4 w-4" />}
+                label={`Blog Posts (${template.blogPosts.length})`}
+                templateValue="Template articles"
+                existingValue={`${existingContent.blogPostsCount} existing`}
+                enabled={options.blogPosts}
+                onToggle={(v) => updateOption('blogPosts', v)}
+                hasExisting={existingContent.blogPostsCount > 0}
+              />
+            )}
+            {!!template.kbCategories?.length && (
+              <SettingRow
+                icon={<BookOpen className="h-4 w-4" />}
+                label={`Knowledge Base (${template.kbCategories.length} categories)`}
+                templateValue="Template articles"
+                existingValue={`${existingContent.kbCategoriesCount} existing`}
+                enabled={options.kbContent}
+                onToggle={(v) => updateOption('kbContent', v)}
+                hasExisting={existingContent.kbCategoriesCount > 0}
+              />
+            )}
+            {!!template.products?.length && (
+              <SettingRow
+                icon={<Package className="h-4 w-4" />}
+                label={`Products (${template.products.length})`}
+                templateValue="Template products"
+                existingValue={`${existingContent.productsCount} existing`}
+                enabled={options.products}
+                onToggle={(v) => updateOption('products', v)}
+                hasExisting={existingContent.productsCount > 0}
+              />
+            )}
+            {!!template.consultants?.length && (
+              <SettingRow
+                icon={<Users className="h-4 w-4" />}
+                label={`Consultant Profiles (${template.consultants.length})`}
+                templateValue="Template profiles"
+                existingValue="Existing profiles"
+                enabled={options.consultants}
+                onToggle={(v) => updateOption('consultants', v)}
+                hasExisting={false}
+              />
+            )}
 
 
             {/* Additional Options Section */}
