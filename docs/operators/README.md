@@ -14,6 +14,7 @@ You're an operator if you want to **use** FlowWink for a business — not modify
 
 | Step | Doc |
 |---|---|
+| **Install without a CLI** (fork + Vercel + Supabase dashboards only — recommended) | [`./provisioning-without-cli.md`](./provisioning-without-cli.md) |
 | Backend setup & env vars | [`../guides/setup.md`](../guides/setup.md) |
 | Production deployment (Supabase Cloud + Vercel) | [`../guides/deployment.md`](../guides/deployment.md) |
 | Security & auth model | [`../guides/security.md`](../guides/security.md) |

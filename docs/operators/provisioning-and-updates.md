@@ -16,6 +16,11 @@ each deployed by a different mechanism. When they fall out of sync, skills break
 in ways that pass local tests — exactly the class of bug we chased across the
 fleet in mid-2026.
 
+> **Standing up a single new instance?** There is now a zero-tooling path —
+> GitHub fork + Vercel + the Supabase GitHub integration, dashboards only:
+> [`provisioning-without-cli.md`](provisioning-without-cli.md). This page
+> remains the fleet maintainer's runbook.
+
 ## The mental model: a site is 4 layers
 
 | Layer | Source of truth | How it reaches an instance | Drift risk |
