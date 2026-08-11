@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
  */
 
 const migration = readFileSync(
-  resolve(__dirname, '../../../supabase/migrations/20260808310000_service-chain-contract-to-subscription.sql'),
+  resolve(__dirname, '../../../supabase/migrations/20260808310001_service-chain-contract-to-subscription.sql'),
   'utf-8',
 );
 const subCron = readFileSync(

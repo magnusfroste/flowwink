@@ -17,7 +17,12 @@ import { join } from 'node:path';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const migration = read('supabase/migrations/20260808160000_documents-visibility.sql');
-const storage = read('supabase/migrations/20260808170000_document-files-follow-visibility.sql');
+// The storage policies originally landed in 20260808170000, but ALL storage
+// DDL now lives in the always-last fresh-install finalizer (mid-stream
+// storage.* migrations deadlock against the storage service's own migrator on
+// brand-new projects — see fresh-install-replay.guardrails.test.ts). The
+// policy BODIES are unchanged; only their home moved.
+const storage = read('supabase/migrations/99999999999999_fresh-install-finalizer.sql');
 const dialog = read('src/components/admin/documents/AddDocumentDialog.tsx');
 const hook = read('src/hooks/useDocuments.ts');
 
@@ -81,8 +86,13 @@ describe('the file follows the row — restricting one and not the other is the 
     // as the querying user, so this EXISTS succeeds only when that user could
     // see the row. Restating `visibility = 'role' AND has_role(...)` here would
     // work today and drift the first time the table policy changes.
+    // Tolerant of pg_get_policydef normalisation (the finalizer's bodies are
+    // read back from live pg_policies): optional schema prefixes, wrapping
+    // parens and newlines around the EXISTS subquery.
     const body = policyBody(storage, `Document files follow their document's visibility`);
-    expect(body).toMatch(/EXISTS\s*\(\s*SELECT 1 FROM public\.documents d WHERE d\.file_url = storage\.objects\.name\s*\)/);
+    expect(body).toMatch(
+      /EXISTS\s*\(\s*SELECT 1\s+FROM\s+(?:public\.)?documents d\s+WHERE\s+\(?d\.file_url = (?:storage\.)?objects\.name\)?\s*\)/,
+    );
     expect(body).not.toMatch(/visibility = 'role'/);
   });
 
@@ -102,7 +112,7 @@ describe('the file follows the row — restricting one and not the other is the 
     // The client uploads the file BEFORE inserting the row. Without the
     // own-folder clause, the uploader cannot read their own file during that
     // window and an abandoned upload becomes unreachable by anyone.
-    expect(storage).toMatch(/\(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/);
+    expect(storage).toMatch(/\(storage\.foldername\(name\)\)\[1\] = \(?auth\.uid\(\)\)?::text/);
   });
 
   it('closes overwriting too, not only reading', () => {

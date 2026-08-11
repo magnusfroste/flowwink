@@ -1,20 +1,10 @@
-DROP POLICY IF EXISTS "Anyone can view cms images" ON storage.objects;
-CREATE POLICY "Anyone can view cms images"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'cms-images');
-
-DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
-CREATE POLICY "Authenticated users can upload images"
-ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'cms-images');
-
-DROP POLICY IF EXISTS "Authenticated users can update images" ON storage.objects;
-CREATE POLICY "Authenticated users can update images"
-ON storage.objects FOR UPDATE TO authenticated
-USING (bucket_id = 'cms-images')
-WITH CHECK (bucket_id = 'cms-images');
-
-DROP POLICY IF EXISTS "Authenticated users can delete images" ON storage.objects;
-CREATE POLICY "Authenticated users can delete images"
-ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id = 'cms-images');
+-- cms-images storage policies (public read, authenticated write/update/delete).
+--
+-- HISTORY: this migration used to DROP/CREATE the four cms-images policies on
+-- storage.objects inline. All storage DDL now lives ONLY in the always-last
+-- fresh-install finalizer (99999999999999_fresh-install-finalizer.sql) — a
+-- mid-stream migration touching storage.* deadlocks against the storage
+-- service's own migrator on fresh projects (SQLSTATE 40P01, observed live).
+--
+-- Intentionally a no-op.
+SELECT 1;

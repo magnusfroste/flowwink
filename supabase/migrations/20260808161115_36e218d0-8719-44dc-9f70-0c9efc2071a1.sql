@@ -46,36 +46,13 @@ CREATE POLICY "Uploaders can reclassify their own documents"
   USING (uploaded_by = auth.uid())
   WITH CHECK (uploaded_by = auth.uid());
 
-DROP POLICY IF EXISTS "Authenticated users can view documents" ON storage.objects;
-DROP POLICY IF EXISTS "Document files follow their document's visibility" ON storage.objects;
-CREATE POLICY "Document files follow their document's visibility"
-  ON storage.objects FOR SELECT TO authenticated
-  USING (
-    bucket_id = 'documents'
-    AND (
-      public.has_role(auth.uid(), 'admin'::public.app_role)
-      OR (storage.foldername(name))[1] = auth.uid()::text
-      OR EXISTS (
-        SELECT 1 FROM public.documents d WHERE d.file_url = storage.objects.name
-      )
-    )
-  );
-
-DROP POLICY IF EXISTS "Authenticated users can update documents" ON storage.objects;
-DROP POLICY IF EXISTS "Uploaders and admins can overwrite document files" ON storage.objects;
-CREATE POLICY "Uploaders and admins can overwrite document files"
-  ON storage.objects FOR UPDATE TO authenticated
-  USING (
-    bucket_id = 'documents'
-    AND (
-      public.has_role(auth.uid(), 'admin'::public.app_role)
-      OR (storage.foldername(name))[1] = auth.uid()::text
-      OR EXISTS (
-        SELECT 1 FROM public.documents d
-        WHERE d.file_url = storage.objects.name AND d.uploaded_by = auth.uid()
-      )
-    )
-  );
+-- HISTORY: the two storage.objects policies that mirrored the table's
+-- visibility ("Document files follow their document's visibility" SELECT +
+-- "Uploaders and admins can overwrite document files" UPDATE) used to be
+-- created here inline. All storage DDL now lives ONLY in the always-last
+-- fresh-install finalizer (99999999999999_fresh-install-finalizer.sql) —
+-- mid-stream storage.* DDL deadlocks against the storage service's own
+-- migrator on fresh projects (SQLSTATE 40P01, observed live 2026-08-10).
 
 CREATE OR REPLACE FUNCTION public.list_flowtable_tables(p_base_id uuid DEFAULT NULL, p_base_slug text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$

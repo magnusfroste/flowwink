@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260811140000",
-      "migrations_count": 384,
+      "migration_head": "99999999999999",
+      "migrations_count": 385,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1323,7 +1323,7 @@
           "name": "document-files-follow-visibility"
         },
         {
-          "version": "20260808170000",
+          "version": "20260808170001",
           "name": "public-terms"
         },
         {
@@ -1383,7 +1383,7 @@
           "name": "ownership-inheritance"
         },
         {
-          "version": "20260808310000",
+          "version": "20260808310001",
           "name": "service-chain-contract-to-subscription"
         },
         {
@@ -1541,6 +1541,10 @@
         {
           "version": "20260811140000",
           "name": "first-user-on-a-virgin-instance-claims-admin"
+        },
+        {
+          "version": "99999999999999",
+          "name": "fresh-install-finalizer"
         }
       ]
     },

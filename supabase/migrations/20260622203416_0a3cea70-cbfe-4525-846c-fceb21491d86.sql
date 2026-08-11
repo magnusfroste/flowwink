@@ -47,3 +47,22 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- Fresh-replay quiescence (2026-08-11): jobs must not fire into a half-built
+-- schema. A from-scratch replay deadlocked (SQLSTATE 40P01) on the very first
+-- GitHub-integration run. Every migration that schedules cron jobs at replay
+-- time now ends by deactivating ALL jobs; the always-last finalizer
+-- (99999999999999) activates everything once the schema is complete. Existing
+-- instances never re-run this file (ledger), so they are unaffected.
+DO $quiesce$
+DECLARE r record;
+BEGIN
+  IF to_regclass('cron.job') IS NOT NULL THEN
+    -- cron.alter_job, not UPDATE: on fresh (PG17) projects the postgres role
+    -- has no table UPDATE privilege on cron.job — the API function is the
+    -- portable path. Verified live on ypkhjjkywgnqhuyiilcz 2026-08-11.
+    FOR r IN SELECT jobid FROM cron.job LOOP
+      PERFORM cron.alter_job(r.jobid, active => false);
+    END LOOP;
+  END IF;
+END $quiesce$;

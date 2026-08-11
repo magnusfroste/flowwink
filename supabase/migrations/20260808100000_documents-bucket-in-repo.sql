@@ -1,39 +1,19 @@
 -- The documents bucket existed on three instances and in zero migrations.
 --
 -- Quote attachments, the documents module and upload_document all write to
--- storage bucket `documents` — which was created by hand on www/liteit/
--- autoversio at some point and never committed. optic and demo were born
--- without it, so "Upload" on a quote failed with bucket-not-found and read as
--- an RLS error. Same class as the auth-trigger hole from the fresh-install
--- audit: infrastructure that lives only on instances that happened to get it.
+-- storage bucket `documents` — created by hand on www/liteit/autoversio and
+-- never committed. optic and demo were born without it, so "Upload" on a
+-- quote failed with bucket-not-found and read as an RLS error.
 --
--- Config and policies below are copied from www, where the feature works —
--- the running fleet is the spec, not a guess. Private bucket, 50 MB cap, no
--- mime allowlist (the documents module accepts arbitrary business files);
--- authenticated staff read/write, only admins delete.
-
-INSERT INTO storage.buckets (id, name, public, file_size_limit)
-VALUES ('documents', 'documents', false, 52428800)
-ON CONFLICT (id) DO UPDATE
-  SET public = EXCLUDED.public,
-      file_size_limit = EXCLUDED.file_size_limit;
-
-DROP POLICY IF EXISTS "Authenticated users can upload documents" ON storage.objects;
-CREATE POLICY "Authenticated users can upload documents" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'documents');
-
-DROP POLICY IF EXISTS "Authenticated users can view documents" ON storage.objects;
-CREATE POLICY "Authenticated users can view documents" ON storage.objects
-  FOR SELECT TO authenticated
-  USING (bucket_id = 'documents');
-
-DROP POLICY IF EXISTS "Authenticated users can update documents" ON storage.objects;
-CREATE POLICY "Authenticated users can update documents" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (bucket_id = 'documents');
-
-DROP POLICY IF EXISTS "Admins can delete documents" ON storage.objects;
-CREATE POLICY "Admins can delete documents" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (bucket_id = 'documents' AND has_role(auth.uid(), 'admin'::app_role));
+-- HISTORY: this migration used to create the bucket and its four policies
+-- inline (copied from www — the running fleet is the spec). All storage DDL
+-- now lives ONLY in the always-last fresh-install finalizer
+-- (99999999999999_fresh-install-finalizer.sql), because a mid-stream migration
+-- touching storage.* deadlocks against the storage service's own migrator on
+-- fresh projects (SQLSTATE 40P01, observed live 2026-08-10). Note the read/
+-- update policies this file created were later superseded by
+-- 20260808170000_document-files-follow-visibility — the finalizer carries the
+-- superseding versions.
+--
+-- Intentionally a no-op.
+SELECT 1;
