@@ -45,7 +45,11 @@ interface TicketsTableProps {
 const BULK_STATUSES: TicketStatus[] = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
 
 export function TicketsTable({ tickets, isLoading, autoOpenTicketId }: TicketsTableProps) {
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  // The drawer's ticket is LOOKED UP from the fresh list by id — never held
+  // as a copy. A held copy froze at open time, so an assignee change wrote to
+  // the DB, the list refetched, and the drawer still showed the old value:
+  // the update looked like it didn't stick (optic, 2026-08-11).
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { data: assignees = [] } = useTicketAssignees();
   const { data: teams = [] } = useTicketTeams();
@@ -60,7 +64,7 @@ export function TicketsTable({ tickets, isLoading, autoOpenTicketId }: TicketsTa
   useEffect(() => {
     if (!autoOpenTicketId) return;
     const found = tickets.find((t) => t.id === autoOpenTicketId);
-    if (found) setSelectedTicket(found);
+    if (found) setSelectedTicketId(found.id);
   }, [autoOpenTicketId, tickets]);
 
   const allSelected = tickets.length > 0 && selectedIds.length === tickets.length;
@@ -173,7 +177,7 @@ export function TicketsTable({ tickets, isLoading, autoOpenTicketId }: TicketsTa
               <TableRow
                 key={ticket.id}
                 className="cursor-pointer"
-                onClick={() => setSelectedTicket(ticket)}
+                onClick={() => setSelectedTicketId(ticket.id)}
               >
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
@@ -237,9 +241,9 @@ export function TicketsTable({ tickets, isLoading, autoOpenTicketId }: TicketsTa
       </div>
 
       <TicketDetailDrawer
-        ticket={selectedTicket}
-        open={!!selectedTicket}
-        onOpenChange={(open) => !open && setSelectedTicket(null)}
+        ticket={tickets.find((t) => t.id === selectedTicketId) ?? null}
+        open={!!selectedTicketId}
+        onOpenChange={(open) => !open && setSelectedTicketId(null)}
       />
     </>
   );

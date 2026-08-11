@@ -27,7 +27,9 @@ interface TicketsKanbanProps {
 export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
   const { data: stages = [], isLoading: stagesLoading } = usePipelineStages('ticket');
   const updateTicket = useUpdateTicket();
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  // Same rule as TicketsTable: look the drawer's ticket up by id from the
+  // fresh list — a held copy goes stale the moment the drawer mutates it.
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -124,7 +126,7 @@ export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
                 stage={stage}
                 index={idx}
                 tickets={byStage[stage.id] ?? []}
-                onTicketClick={setSelectedTicket}
+                onTicketClick={(t) => setSelectedTicketId(t.id)}
               />
             ))}
           </div>
@@ -142,9 +144,9 @@ export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
       </DndContext>
 
       <TicketDetailDrawer
-        ticket={selectedTicket}
-        open={!!selectedTicket}
-        onOpenChange={(open) => !open && setSelectedTicket(null)}
+        ticket={tickets.find((t) => t.id === selectedTicketId) ?? null}
+        open={!!selectedTicketId}
+        onOpenChange={(open) => !open && setSelectedTicketId(null)}
       />
     </>
   );
