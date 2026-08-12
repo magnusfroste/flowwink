@@ -27,7 +27,7 @@
 
 For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (63 across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
+**FlowWink is a Business Operating System (BOS):** a unified, modular platform where every module (66 across CMS, CRM, commerce, finance, HR, operations) exposes its capabilities as **agent skills over MCP**. An operator — local or external — turns those skills into autonomous business outcomes.
 
 You set the direction. The operator runs the business. You choose which operator.
 
@@ -38,7 +38,7 @@ You set the direction. The operator runs the business. You choose which operator
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  FlowWink SaaS Platform  (always on, agent-agnostic)         │
-│  • 68 modules · 500+ MCP-exposed skills                      │
+│  • 66 modules · 500+ MCP-exposed skills                      │
 │  • Database + RLS · Automations · Event bus · Workflows      │
 │  • MCP server — the universal surface for any operator       │
 └──────────────────────────────────────────────────────────────┘
@@ -94,23 +94,25 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 
 ---
 
-## Modules — 63 integrated domains
+## Modules — 66 integrated domains
 
 FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and skill seeds. Modules register via `defineModule()` with typed contracts.
 
 | Category | Modules |
 |----------|---------|
-| **Content** | Pages, Blog, Knowledge Base, Docs, Global Blocks, Global Elements, Media Library, Templates, Handbook, Forms, Surveys |
-| **CRM & Sales** | Leads, Companies, Deals, Quotes, Sales Intelligence, Customer 360, Company Insights |
-| **Commerce** | Products, Orders, POS, Bookings, Subscriptions, Inventory |
-| **Finance** | Accounting (BAS 2024 / IFRS / US GAAP), Invoicing, Expenses, Reconciliation, Timesheets |
-| **HR & People** | HR, Recruitment, Resume, Contracts, Calendar |
-| **Operations** | Projects, Field Service, Manufacturing (MRP-light), Purchasing, SLA, Approvals, Maintenance |
-| **Communication** | Email, Newsletter, Webinars, Chat, Workspace Chat |
-| **Support** | Tickets (Kanban + auto-triage), Live Support |
-| **Growth** | Analytics, Paid Growth |
-| **System & Operator** | FlowPilot, Federation (A2A + MCP), Browser Control, Composio, Site Migration, Developer, Documents |
-| **Money & Assets** *(cross-cutting finance)* | Multi-Currency, Pricelists, Fixed Assets, Payroll, Returns, Shipping, River, Wiki |
+| **Content** | Website (Pages), Blog, Knowledge Base, Docs, Wiki, Handbook, Media Library, Templates, Forms, Site Migration |
+| **CRM & Sales** | Contacts, Companies, Deals, Quotes, Sales Intelligence, Customer 360, Business Identity, Visitor Intelligence |
+| **Commerce** | E-commerce, Point of Sale, Bookings, Subscriptions, Inventory, Pricelists, Returns / RMA, Shipping, Manufacturing (MRP-light) |
+| **Finance** | Accounting (BAS 2024 / IFRS / US GAAP), Quotes & Invoicing, Expense Reporting, Reconciliation, Purchasing, Fixed Assets, Multi-Currency |
+| **HR & People** | HR & Employees, Payroll, Recruitment, Consultants, Timesheets, Contracts, Documents |
+| **Operations** | Projects, Field Service, Maintenance, Approvals, SLA Monitor, Calendar, Surveys & NPS |
+| **Communication** | Email Router, Newsletter, AI Chat, Live Support, Tickets (Kanban + auto-triage), FlowWork, River, Webinars, WebMeet, Voice |
+| **Data & Growth** | Flowtable (agent data layer), Analytics, Paid Growth |
+| **System & Operator** | FlowPilot, Federation (A2A + MCP), Browser Control, Composio, Developer |
+
+Every module is enabled by the **FlowWink Platform** template — since the edge
+surface was consolidated behind `agent-execute`, turning a module on costs skill
+rows and navigation, not deployment slots.
 
 Each module provides:
 - **Data layer** — Supabase tables + RLS policies + RPCs
@@ -122,7 +124,7 @@ Composite MCP groups (`marketing`, `sales`, `operations`, …) let an external o
 
 ---
 
-## Skills — 300 capabilities, exposed over MCP
+## Skills — 500+ capabilities, exposed over MCP
 
 | Domain | Sample skills |
 |--------|---------------|
@@ -306,7 +308,7 @@ FlowWink draws inspiration from the best-in-class platforms across every busines
 | **E-Commerce** | Shopify, WooCommerce | Products, orders, inventory, Stripe checkout |
 | **Finance** | QuickBooks, Xero, FreshBooks | Invoicing, double-entry accounting, expenses |
 | **Time Tracking** | Toggl, Harvest, Clockify | Timesheets with project-based tracking |
-| **ERP** | Odoo, ERPNext | Modular architecture — 63 domains, one platform |
+| **ERP** | Odoo, ERPNext | Modular architecture — 66 domains, one platform |
 | **Headless CMS** | Contentful, Storyblok, Strapi | REST + GraphQL content API, multi-channel delivery |
 
 **The difference:** those platforms give you tools. FlowWink gives you an operator that *uses* the tools.
@@ -345,22 +347,52 @@ cp .env.example .env
 npm run dev   # migrations run automatically
 ```
 
-### Connect your Supabase instance
+### Deploy without a CLI — fork, Vercel, Supabase, done
 
-1. Create a project at [supabase.com](https://supabase.com/)
-2. Copy **Project URL**, **Anon key**, and **Project ref** into `.env`
-3. Run `npm run cli` and use `/install` to deploy functions, run migrations and create admin
-4. Start the server — migrations apply automatically on `npm run dev`
+The recommended path for a new instance needs **no local tooling at all** — three
+dashboards and a push. Proven end-to-end on a fresh instance: 385 migrations,
+77 edge functions, storage, cron and a working public site, zero terminal
+commands.
 
-### Deploy to production
+1. **Fork this repo** and create a [Vercel](https://vercel.com/) project from your fork.
+2. **Create a [Supabase](https://supabase.com/) project.** From Project Settings → API Keys, copy the **Project URL** and the **publishable key** (`sb_publishable_…`).
+3. **Set two Vercel env vars** — `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` — then redeploy. (An unconfigured deploy shows a "connect your backend" page instead of a blank screen, so you always know where you are.)
+4. **Pair Supabase's GitHub integration** with your fork and pick the production branch. It applies every pending migration and deploys every edge function declared in `supabase/config.toml` on each push. *Pairing alone may not fire it — push a commit if nothing happens.*
+5. **Log in.** On a virgin instance the first account automatically becomes admin.
+6. **Admin → Modules → "Sync skills from code"** — the one step migrations don't cover, because skills come from the module seeds in the frontend bundle.
+7. Install a template, add an AI provider key, and (optionally) mint an operator key for an external agent.
 
-The recommended FlowWink stack:
+Full walkthrough, the verification queries, and the known first-run retry:
+**[docs/operators/provisioning-without-cli.md](docs/operators/provisioning-without-cli.md)**.
 
-- **Backend** — [Supabase Cloud](https://supabase.com/) (free tier works for getting started). Holds the database, auth, edge functions and storage.
-- **Frontend** — deploy this repo to [Vercel](https://vercel.com/), Netlify, Cloudflare Pages, or any static host. Vercel auto-deploys on every push to `main`.
+### Operations — how updates reach a running instance
+
+A site is **four layers**, each with its own delivery rail. The CLI-free stack
+moves three of them with a single fork sync:
+
+| Layer | Source of truth | How it updates |
+|-------|-----------------|----------------|
+| **Schema** | `supabase/migrations/*.sql` | Fork sync → Supabase GitHub integration applies pending migrations |
+| **Edge functions** | `supabase/functions/*` | Same push — every function declared in `config.toml` redeploys |
+| **Frontend** | this repo | Same push — Vercel rebuilds |
+| **Skills** | `src/lib/modules/*` (`skillSeeds`) | **Admin → Modules → "Sync skills from code"** after the frontend deploy |
+
+The fourth layer is the one to remember: migrations never touch `agent_skills`.
+The sync button re-runs the module bootstrap from the freshly deployed bundle,
+refreshing every skill definition while leaving runtime `trust_level` overrides
+alone. It checks whether a newer build is live and reloads first, so a stale tab
+cannot write stale seeds.
+
+Migrations are **forward-only by construction**: a CI gate blocks any migration
+timestamped at or below the current head, because a back-dated file is silently
+skipped by the ledger on instances already past it — the drift class this repo
+learned the hard way.
+
+### Running it yourself with the CLI
+
+Prefer terminal tooling, or maintaining several instances at once?
 
 ```bash
-# Push database schema + edge functions to your Supabase project
 supabase link --project-ref <your-ref>
 supabase db push
 supabase functions deploy --project-ref <your-ref>
@@ -370,17 +402,10 @@ DATABASE_URL='postgresql://postgres:<pw>@db.<your-ref>.supabase.co:5432/postgres
   npm run sync:skills -- --apply
 ```
 
-Then point your Vercel project at this repo and set the three env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`). That's it.
-
-> **Running more than one site?** A "site" is four layers — schema (migrations),
-> skills (bootstrap), edge functions (deploy), frontend (Vercel) — each shipped
-> separately. Keeping them in sync is the whole game. Read
-> **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**
-> for the provision/update runbook, the `sync:skills` tool, and fork vs.
-> auto-deploy topology. A `git push` only auto-deploys the *frontend* of
-> non-forked sites — migrations, functions and skills go out per instance.
-
-See **[docs/guides/deployment.md](docs/guides/deployment.md)** for the full walkthrough.
+Multi-site operators: **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)**
+covers the fleet runbook, the `sync:skills` tool and fork vs. auto-deploy
+topology. See **[docs/guides/deployment.md](docs/guides/deployment.md)** for the
+full walkthrough.
 
 ---
 
@@ -398,6 +423,7 @@ Start at **[docs/start-here.md](docs/start-here.md)** — the curated entry poin
 | **[docs/concepts/elevator-pitch.md](docs/concepts/elevator-pitch.md)** | BOS positioning, vision, competitive landscape |
 | **[docs/guides/setup.md](docs/guides/setup.md)** | Supabase setup, environment variables, migrations |
 | **[docs/guides/deployment.md](docs/guides/deployment.md)** | Supabase Cloud + Vercel deployment walkthrough |
+| **[docs/operators/provisioning-without-cli.md](docs/operators/provisioning-without-cli.md)** | Stand up an instance with dashboards only — fork, Vercel, Supabase GitHub integration, and how updates flow afterwards |
 | **[docs/operators/provisioning-and-updates.md](docs/operators/provisioning-and-updates.md)** | Multi-site provisioning, the update runbook, skill-sync & drift prevention |
 | **[docs/operators/local-development.md](docs/operators/local-development.md)** | Run Supabase locally (OrbStack/Docker) to validate migrations & changes before prod |
 | **[docs/builders/README.md](docs/builders/README.md)** | Architecture, extending the platform, writing skills |
