@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260812160000",
-      "migrations_count": 388,
+      "migration_head": "20260812170000",
+      "migrations_count": 389,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1557,6 +1557,10 @@
         {
           "version": "20260812160000",
           "name": "vendor-docs-leave-the-public-tier"
+        },
+        {
+          "version": "20260812170000",
+          "name": "extraction-can-be-in-flight"
         }
       ]
     },
@@ -1567,7 +1571,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:4306d15211f8c095fd85a6f6667619d69b572df49ae413b5356ca0d17f638fa1",
+      "shared_hash": "sha256:2d8eefaa0907a094a4a25f898ec837a833d5c2e207b69ba770eb543e56fb916a",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",

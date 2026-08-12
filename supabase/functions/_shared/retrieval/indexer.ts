@@ -375,6 +375,10 @@ export interface ExtractionSweepResult {
   reclaimed: number;
   /** Extractor call could not even be dispatched. */
   failed: number;
+  /** File types this platform cannot read (marked, not left waiting). */
+  unsupported: number;
+  /** Why, for the failures — the sweep result is the only place they surface. */
+  errors?: string[];
 }
 
 /** A `processing` row older than this lost its extractor; take it back. */
@@ -430,7 +434,7 @@ export async function sweepPendingExtractions(
   service: any,
   opts: { supabaseUrl: string; serviceKey: string; limit?: number },
 ): Promise<ExtractionSweepResult> {
-  const result: ExtractionSweepResult = { started: 0, reclaimed: 0, failed: 0 };
+  const result: ExtractionSweepResult = { started: 0, reclaimed: 0, failed: 0, unsupported: 0 };
 
   // Nobody pays to read files for a module they switched off.
   const enabled = await loadEnabledSources(service);
@@ -455,12 +459,20 @@ export async function sweepPendingExtractions(
   if (error) throw new Error(`pending scan failed: ${error.message}`);
 
   for (const doc of pending ?? []) {
-    // The extractor is PDF-only. Other types keep waiting rather than being
-    // marked failed — we never tried, and saying otherwise would be a lie the
-    // health card then reports.
+    // The extractor is PDF-only. Anything else is marked 'unsupported' rather
+    // than left pending: 'pending' promises someone is coming, and for a .docx
+    // nobody is. 'failed' would be the other lie — we never tried to parse it.
     const isPdf =
       /pdf/i.test(doc.file_type ?? '') || /\.pdf$/i.test(doc.file_name ?? doc.file_url ?? '');
-    if (!isPdf) continue;
+    if (!isPdf) {
+      await service
+        .from('documents')
+        .update({ extraction_status: 'unsupported' })
+        .eq('id', doc.id)
+        .eq('extraction_status', 'pending');
+      result.unsupported += 1;
+      continue;
+    }
 
     const { error: claimError } = await service
       .from('documents')
@@ -468,7 +480,12 @@ export async function sweepPendingExtractions(
       .eq('id', doc.id)
       .eq('extraction_status', 'pending'); // lost race → another sweeper has it
     if (claimError) {
+      // Say why. A swallowed claim error is a document that stays pending with
+      // an empty extraction_error — indistinguishable from never having been
+      // looked at, which is the failure this whole sweeper exists to end.
+      console.error(`claim failed for document ${doc.id}:`, claimError.message ?? claimError);
       result.failed += 1;
+      result.errors = [...(result.errors ?? []), `${doc.id}: ${claimError.message ?? claimError}`];
       continue;
     }
 
@@ -490,6 +507,7 @@ export async function sweepPendingExtractions(
         .update({ extraction_status: 'pending', extraction_error: String(e).slice(0, 500) })
         .eq('id', doc.id);
       result.failed += 1;
+      result.errors = [...(result.errors ?? []), `${doc.id}: ${String(e).slice(0, 200)}`];
     }
   }
 
