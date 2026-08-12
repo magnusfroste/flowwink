@@ -87,6 +87,28 @@ export function extractTextFromBlock(block: any): string {
 }
 
 /**
+ * Does this page-slug allowlist mean "every published page"?
+ *
+ * `includedPageSlugs` has always had a wildcard: the frontend context
+ * indicator reads `['*']` as "all pages", and every template ships it that way
+ * so a site's chat is grounded in its own content from the moment it is
+ * installed — including pages created later.
+ *
+ * Both EDGE readers used to treat `'*'` as a literal slug. `.in('slug', ['*'])`
+ * matches nothing and the chunk filter dropped every page chunk, so a chat
+ * configured for "all pages" received exactly zero of them — and answered from
+ * the model's imagination instead (found live on www.flowwink.com 2026-08-12:
+ * asked to list the site's process pages, it invented seven that do not
+ * exist). KB articles travel a different path, which is why the failure looked
+ * like "KB works, pages don't" rather than an outage.
+ *
+ * An empty list keeps its historical meaning: unrestricted.
+ */
+export function allowsAllPages(slugs: string[] | null | undefined): boolean {
+  return !slugs?.length || slugs.includes('*');
+}
+
+/**
  * Build a token-budgeted knowledge base string from published pages
  * (optionally filtered by slug) and KB articles flagged include_in_chat.
  */
@@ -100,7 +122,7 @@ export async function buildKnowledgeBase(
   let estimatedTokens = 0;
 
   let query = supabase.from('pages').select('title, slug, content_json').eq('status', 'published');
-  if (includedSlugs.length > 0) query = query.in('slug', includedSlugs);
+  if (!allowsAllPages(includedSlugs)) query = query.in('slug', includedSlugs);
   const { data: pages } = await query;
 
   if (pages) {

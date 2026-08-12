@@ -23,6 +23,7 @@ import {
   extractTextFromBlock,
   buildKnowledgeBase,
   loadVisitorContext,
+  allowsAllPages,
 } from "../_shared/chat-context.ts";
 // Chat-kernel helpers — formerly standalone edge functions called over HTTP
 // (edge-surface B1b): now direct library imports, one hop less each.
@@ -516,9 +517,10 @@ serve(async (req) => {
       // Per-article chat opt-out (kb.include_in_chat=false) — indexed for
       // other surfaces, excluded here.
       chunks = chunks.filter((c) => !(c.sourceTable === 'kb_articles' && c.metadata.include_in_chat === false));
-      // Admin-curated page allowlist, when configured.
+      // Admin-curated page allowlist, when configured. `['*']` (what every
+      // template ships) and `[]` both mean "every page" — see allowsAllPages.
       const slugAllowlist = settings?.includeContentAsContext ? (settings?.includedPageSlugs || []) : [];
-      if (slugAllowlist.length > 0) {
+      if (!allowsAllPages(slugAllowlist)) {
         chunks = chunks.filter((c) => c.sourceTable !== 'pages' || slugAllowlist.includes(String(c.metadata.slug)));
       }
       if (!chunks.length) return '';
