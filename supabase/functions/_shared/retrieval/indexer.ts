@@ -203,11 +203,20 @@ async function extractEntity(
       };
     }
     case 'documents': {
-      const { data } = await service
+      const { data, error } = await service
         .from('documents')
         .select('title, content_md, extraction_status, category, visibility')
         .eq('id', entityId)
         .maybeSingle();
+      // A read that FAILED is not a row that says "de-index me". Returning null
+      // here deletes the entity's chunks, so a transient outage — or an
+      // instance whose schema lacks a column this select names — would quietly
+      // empty the index instead of leaving it as it was. Throwing puts the item
+      // back on the queue with the reason attached.
+      // (autoversio, 2026-08-12: schema head three weeks behind, no
+      // documents.visibility. Zero documents there today, which is the only
+      // reason this was a near miss rather than an incident.)
+      if (error) throw new Error(`documents read failed: ${error.message}`);
       // The platform writes extraction_status='success' (upload_document,
       // extract-pdf-text). This check said 'completed' — a literal that never
       // matched, so NO document was ever indexed, even fully extracted ones.

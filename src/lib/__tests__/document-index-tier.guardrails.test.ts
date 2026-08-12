@@ -67,6 +67,17 @@ describe('a document reaches only as far as its own visibility answer', () => {
     }
   });
 
+  it('never de-indexes because a read failed', () => {
+    // extractEntity returning null means "this entity should not be indexed",
+    // and reindexEntity acts on that by DELETING its chunks. A failed read is
+    // not that statement. Without this, an instance missing a column the select
+    // names (autoversio's schema head was three weeks behind on 2026-08-12)
+    // would silently empty its own document index.
+    const branch = codeOnly(INDEXER).match(/case 'documents': \{[\s\S]*?\n    \}/)?.[0] ?? '';
+    expect(branch).toMatch(/const \{ data, error \}/);
+    expect(branch).toMatch(/if \(error\) throw/);
+  });
+
   it('reads the column it branches on', () => {
     // A rule that selects nothing evaluates undefined for every row — which
     // here would silently mean "shared", i.e. exactly the bug being fixed.
