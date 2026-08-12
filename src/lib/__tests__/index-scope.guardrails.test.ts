@@ -75,6 +75,26 @@ describe('the indexer only spends on enabled modules', () => {
   });
 });
 
+describe('vendor documentation never enters the public tier', () => {
+  it('indexes docs_pages as internal, never public', () => {
+    // `knowledge_chunks` has an RLS policy "Anyone can read public chunks", and
+    // `search_knowledge_chunks` is EXECUTE-granted to anon. A publishable key
+    // (which ships in the JS bundle by design) plus `sources:["docs_pages"]`
+    // was therefore enough to read FlowWink's architecture documentation out of
+    // a customer's database — no login, no chat surface. Found live on four
+    // fleet instances (7,959 chunks) on 2026-08-12. The tier is the fix; the
+    // surface-level rule below is the second lock.
+    const src = codeOnly(INDEXER);
+    const branch = src.match(/case 'docs_pages': \{[\s\S]*?\n    \}/)?.[0] ?? '';
+    expect(branch, "the docs_pages branch must exist to be checked").not.toBe('');
+    expect(branch).toMatch(/visibility:\s*'internal'/);
+    expect(
+      branch,
+      "vendor docs classed 'public' are readable by anon via search_knowledge_chunks",
+    ).not.toMatch(/visibility:\s*'public'/);
+  });
+});
+
 describe('vendor documentation never reaches a customer-facing surface', () => {
   it('the visitor chat cannot request docs_pages', () => {
     const src = codeOnly(CHAT_COMPLETION);

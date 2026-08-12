@@ -139,7 +139,16 @@ async function extractEntity(
       if (!data || !data.content?.trim()) return null;
       return {
         title: data.title,
-        visibility: 'public',
+        // INTERNAL, never public. docs_pages is FlowWink's OWN repo
+        // documentation synced onto a customer's instance — not the customer's
+        // content. Classed 'public' it was readable by the `anon` role, and
+        // `search_knowledge_chunks` is EXECUTE-granted to anon, so anyone
+        // holding the instance's publishable key (it ships in the JS bundle by
+        // design) could read our entire architecture documentation out of a
+        // customer's database with one RPC call. Found 2026-08-12 on four
+        // fleet instances at once — 7,959 chunks in total. Staff surfaces keep
+        // it via the internal tier; the public path is closed by class.
+        visibility: 'internal',
         chunks: chunkMarkdown(data.title, data.content),
         metadata: { slug: data.slug, category: data.category, url: `/docs/${data.category}/${data.slug}` },
       };
