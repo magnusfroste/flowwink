@@ -242,11 +242,15 @@ async function updateDocumentExtraction(documentId: string, status: 'success' | 
     payload.content_extracted_at = new Date().toISOString();
   }
 
+  // Scoped to source='cowork-upload' until 2026-08-12, back when the cowork
+  // chat was the only caller. It made the write a silent no-op for every other
+  // upload path — the extractor would read the PDF, spend the AI call, report
+  // success and update nothing. Whose upload it was is not a property of
+  // whether its text may be stored.
   const { error } = await supabase
     .from('documents')
     .update(payload)
-    .eq('id', documentId)
-    .eq('source', 'cowork-upload');
+    .eq('id', documentId);
 
   if (error) {
     console.error('updateDocumentExtraction rpc failed:', error);

@@ -69,6 +69,37 @@ interface ExtractedEntity {
   metadata: Record<string, unknown>;
 }
 
+/**
+ * How far an uploaded file's text may travel in the index.
+ *
+ * Every other source declares its purpose by existing: a KB article is written
+ * to be read, a published page is published. `documents` is the one table where
+ * that is not true — the same table holds a product sheet, an employment
+ * contract, a receipt and a CV. An upload carries no purpose of its own, so the
+ * index must not invent one for it.
+ *
+ * We do NOT solve that with a second question ("should this file be searchable?"
+ * — the AnythingLLM model). The upload dialog already asks the one question the
+ * uploader can actually answer: *who can see this* (shared / role / private).
+ * Reach in the index is a CONSEQUENCE of that answer, never a separate switch.
+ *
+ *   shared  → 'internal'  staff-wide, the same tier the handbook sits on
+ *   role    → not indexed  the index has two tiers (public/internal); a
+ *                          role-restricted file has no honest home here, and
+ *                          'internal' would show HR files to every employee
+ *   private → not indexed  the whole point of the answer
+ *
+ * Note what is missing: nothing here returns 'public'. `knowledge_chunks` has an
+ * RLS policy granting anon read of public chunks, so 'public' would put an
+ * uploaded file in front of the visitor chat. A file is uploaded because it
+ * belongs to the business, not because it was published — the customer-facing
+ * tier stays reserved for content someone deliberately wrote for it.
+ */
+export function documentIndexTier(visibility: string | null | undefined): 'internal' | null {
+  // Default (a NULL from a row predating the column) follows the column default.
+  return (visibility ?? 'shared') === 'shared' ? 'internal' : null;
+}
+
 /** Load one source row and produce its chunks, or null to de-index it. */
 async function extractEntity(
   service: any,
@@ -174,7 +205,7 @@ async function extractEntity(
     case 'documents': {
       const { data } = await service
         .from('documents')
-        .select('title, content_md, extraction_status, category')
+        .select('title, content_md, extraction_status, category, visibility')
         .eq('id', entityId)
         .maybeSingle();
       // The platform writes extraction_status='success' (upload_document,
@@ -183,9 +214,11 @@ async function extractEntity(
       // Same near-miss class as the vat-coverage `<> 'void'` filter. Stated
       // positively, accepting both spellings ever written.
       if (!data || !['success', 'completed'].includes(data.extraction_status) || !data.content_md?.trim()) return null;
+      const tier = documentIndexTier(data.visibility);
+      if (!tier) return null; // private / role-restricted — never enters the shared index
       return {
         title: data.title,
-        visibility: 'internal',
+        visibility: tier,
         chunks: chunkMarkdown(data.title, data.content_md),
         metadata: { category: data.category },
       };
@@ -332,6 +365,134 @@ export async function processQueue(service: any, limit = 50): Promise<SweepResul
         .eq('entity_id', item.entity_id);
     }
   }
+  return result;
+}
+
+export interface ExtractionSweepResult {
+  /** Documents handed to the extractor this run. */
+  started: number;
+  /** Stale `processing` rows reclaimed (an extractor died mid-flight). */
+  reclaimed: number;
+  /** Extractor call could not even be dispatched. */
+  failed: number;
+}
+
+/** A `processing` row older than this lost its extractor; take it back. */
+const EXTRACTION_STALE_MS = 15 * 60 * 1000;
+
+/** Buckets a document row may point into, longest-prefix first. */
+const DOCUMENT_BUCKETS = ['cowork-uploads', 'form-uploads', 'documents'];
+
+/**
+ * `documents.file_url` holds two different things depending on who wrote it.
+ *
+ * The cowork upload path stores a bucket-qualified path (`cowork-uploads/x/y.pdf`);
+ * the admin documents page stores one relative to the `documents` bucket
+ * (`<uuid>/y.pdf`) and re-attaches the bucket at read time
+ * (`storage.from("documents").createSignedUrl(file_url)`). Both are internally
+ * consistent, which is why neither side noticed. The extractor takes a
+ * bucket-qualified path and splits on the first `/`, so an admin upload would
+ * have it look for a bucket named after a UUID.
+ *
+ * Normalising on read is the honest fix while both formats exist in the wild.
+ */
+export function toStoragePath(fileUrl: string): string {
+  const first = fileUrl.split('/')[0];
+  return DOCUMENT_BUCKETS.includes(first) ? fileUrl : `documents/${fileUrl}`;
+}
+
+/**
+ * Hand `pending` PDFs to the extractor.
+ *
+ * Uploading a document used to be where the knowledge chain quietly stopped.
+ * `extract-pdf-text` was only ever called by the three surfaces that upload on
+ * a user's behalf (cowork attachments, job applications, the skill handler) —
+ * an admin uploading through the documents page wrote a row with the column
+ * default `extraction_status='pending'` and nothing ever came for it. No cron,
+ * no trigger, no queue: the platform's own answer to "is this indexed yet" was
+ * *pending*, forever. Found on optic 2026-08-12, on the only uploaded file in
+ * the fleet, two days after upload.
+ *
+ * So: the sweeper, rather than a fourth caller. Any row that reaches `pending`
+ * gets picked up regardless of how it got there, which is the property a new
+ * upload path can't accidentally break.
+ *
+ * Extraction is claimed by flipping to `processing` before dispatch, so the
+ * next 5-minute tick does not pay for the same PDF twice. `failed` rows are
+ * left alone — a retry loop on a corrupt file is an unbounded AI bill; retrying
+ * is a deliberate act (re-upload, or the extract skill).
+ *
+ * Every pending document is extracted, including private ones: the text belongs
+ * to the document (it is what the document viewer shows), and how far that text
+ * travels is decided later and separately by `documentIndexTier`.
+ */
+export async function sweepPendingExtractions(
+  service: any,
+  opts: { supabaseUrl: string; serviceKey: string; limit?: number },
+): Promise<ExtractionSweepResult> {
+  const result: ExtractionSweepResult = { started: 0, reclaimed: 0, failed: 0 };
+
+  // Nobody pays to read files for a module they switched off.
+  const enabled = await loadEnabledSources(service);
+  if (!enabled.has('documents')) return result;
+
+  const staleBefore = new Date(Date.now() - EXTRACTION_STALE_MS).toISOString();
+  const { data: stale } = await service
+    .from('documents')
+    .update({ extraction_status: 'pending' })
+    .eq('extraction_status', 'processing')
+    .lt('updated_at', staleBefore)
+    .select('id');
+  result.reclaimed = (stale ?? []).length;
+
+  const { data: pending, error } = await service
+    .from('documents')
+    .select('id, file_url, file_name, file_type')
+    .eq('extraction_status', 'pending')
+    .not('file_url', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(opts.limit ?? 5);
+  if (error) throw new Error(`pending scan failed: ${error.message}`);
+
+  for (const doc of pending ?? []) {
+    // The extractor is PDF-only. Other types keep waiting rather than being
+    // marked failed — we never tried, and saying otherwise would be a lie the
+    // health card then reports.
+    const isPdf =
+      /pdf/i.test(doc.file_type ?? '') || /\.pdf$/i.test(doc.file_name ?? doc.file_url ?? '');
+    if (!isPdf) continue;
+
+    const { error: claimError } = await service
+      .from('documents')
+      .update({ extraction_status: 'processing', extraction_error: null })
+      .eq('id', doc.id)
+      .eq('extraction_status', 'pending'); // lost race → another sweeper has it
+    if (claimError) {
+      result.failed += 1;
+      continue;
+    }
+
+    try {
+      const response = await fetch(`${opts.supabaseUrl}/functions/v1/extract-pdf-text`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${opts.serviceKey}`,
+        },
+        body: JSON.stringify({ document_id: doc.id, storage_path: toStoragePath(doc.file_url) }),
+      });
+      if (!response.ok) throw new Error(`extractor returned ${response.status}`);
+      result.started += 1;
+    } catch (e) {
+      // Could not even dispatch — hand it back so the next tick retries.
+      await service
+        .from('documents')
+        .update({ extraction_status: 'pending', extraction_error: String(e).slice(0, 500) })
+        .eq('id', doc.id);
+      result.failed += 1;
+    }
+  }
+
   return result;
 }
 

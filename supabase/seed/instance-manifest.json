@@ -1567,7 +1567,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:eb55ab24e58c855be39aa1106de5a41ff7b0bf1cbbc88d57a049b51015df0a78",
+      "shared_hash": "sha256:4306d15211f8c095fd85a6f6667619d69b572df49ae413b5356ca0d17f638fa1",
       "functions": {
         "a2a": "sha256:ce9a4fb6212cae08011c6418af9ad906786f4bbad6a8de6f962eda2eb4c54978",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -1601,7 +1601,7 @@
         "email-send": "sha256:847dfe00b430b9b8c4a1767d66720cc4e9562404df27403d9d69806b48d3aa03",
         "email-webhook": "sha256:0ab483c28ad242ba4cbadc329f56a029ef246c89e669bd81184ce9017ede007d",
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
-        "extract-pdf-text": "sha256:96f98e21532f261f3e41dc8843dee623e9a010a6106d4e40d3664d743df46304",
+        "extract-pdf-text": "sha256:cdc3ca4ff97542a0c8531b3ad83b4592a41d3a8e9ab8654eb92fcf1ea45ae808",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:21acbb3522ba6b2d9a117ac63fbfb548bd21ea282715bc5d032047d9f9b310cd",
         "flowpilot-lifecycle": "sha256:c89547f6c804aa18bb0a809f34d88cc816d2bd71e87b8845cdd0b68b200f1782",
@@ -1613,7 +1613,7 @@
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
         "invite-colleague": "sha256:cad6246a2988ca3c780cb3497707a4d818e311f3b1bf704957b3754b9d86b5b3",
         "invite-employee": "sha256:354d9ecbcc20ff402597a0e4c10875807c1a140ace0c5c06505ff8fc9fe13eb5",
-        "knowledge-indexer": "sha256:c6f628a21822a011e37b3719ef639f93b0dedab23c5becc0255e0c16e9c31289",
+        "knowledge-indexer": "sha256:51f19b1f01bb746d7dc51e4ffa7eee51053c9c99a9f27812090d2f6b4f100070",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:3cb3f630ad868ee15eb2c559e50af08449af876d3856ba0557f9c2ab9300d2b4",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",

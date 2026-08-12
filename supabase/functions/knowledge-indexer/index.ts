@@ -9,7 +9,13 @@
 // path (search_knowledge_chunks, SECURITY INVOKER), never to indexing.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
-import { processQueue, queueFullReindex, CHUNK_SOURCES, type ChunkSource } from '../_shared/retrieval/indexer.ts';
+import {
+  processQueue,
+  queueFullReindex,
+  sweepPendingExtractions,
+  CHUNK_SOURCES,
+  type ChunkSource,
+} from '../_shared/retrieval/indexer.ts';
 import { embedPendingChunks } from '../_shared/retrieval/embedder.ts';
 
 const corsHeaders = {
@@ -47,6 +53,26 @@ serve(async (req) => {
       queued = await queueFullReindex(service, source);
     }
 
+    // A document has to be READ before it can be indexed. Uploads land as
+    // extraction_status='pending' and nothing used to come for them, so the
+    // chain stopped one step before the queue. Extraction is dispatched (the
+    // extractor answers 202 and finishes in the background) rather than awaited
+    // — a slow PDF must not hold up the queue drain behind it.
+    let extraction: Awaited<ReturnType<typeof sweepPendingExtractions>> | undefined;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (supabaseUrl && serviceKey) {
+      try {
+        extraction = await sweepPendingExtractions(service, {
+          supabaseUrl,
+          serviceKey,
+          limit: body.extract_limit ?? 5,
+        });
+      } catch (e) {
+        // Extraction trouble must not stop indexing of everything else.
+        console.error('extraction sweep failed (non-fatal):', String(e));
+      }
+    }
+
     const sweep = await processQueue(service, body.limit ?? 50);
 
     // M2: vectorize chunks lacking an embedding (or embedded with an old
@@ -54,7 +80,13 @@ serve(async (req) => {
     const embed = await embedPendingChunks(service, body.embed_limit ?? 80);
 
     return new Response(
-      JSON.stringify({ status: 'ok', ...(queued !== undefined ? { queued } : {}), ...sweep, embed }),
+      JSON.stringify({
+        status: 'ok',
+        ...(queued !== undefined ? { queued } : {}),
+        ...sweep,
+        embed,
+        ...(extraction ? { extraction } : {}),
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (e) {
