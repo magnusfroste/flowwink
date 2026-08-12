@@ -571,6 +571,35 @@ function KnowledgeIndexCard() {
                 {data?.missingEmbedding} chunk(s) without an embedding — check the AI provider key.
               </p>
             )}
+            {/* A file waiting to become text has no chunks, so every count below
+                reports it as absent. Say it out loud instead. */}
+            {(() => {
+              const w = data?.documentsAwaitingText;
+              if (!w) return null;
+              const queued = w.pending + w.processing;
+              return (
+                <>
+                  {queued > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {queued} uploaded file(s) still being read — they join the index once
+                      their text is extracted.
+                    </p>
+                  )}
+                  {w.failed > 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      {w.failed} upload(s) could not be read. They are not retried
+                      automatically — re-upload to try again.
+                    </p>
+                  )}
+                  {w.unsupported > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {w.unsupported} upload(s) are of a file type this instance cannot read
+                      yet (PDF only).
+                    </p>
+                  )}
+                </>
+              );
+            })()}
             <ul className="space-y-1">
               {KNOWLEDGE_SOURCES.map((src) => (
                 <li key={src} className="flex items-center justify-between text-sm py-0.5">

@@ -39,15 +39,25 @@ export interface KnowledgeIndexHealth {
   /** Items waiting for the next sweep. A steady non-zero value means the sweeper is not running. */
   queueDepth: number;
   lastIndexedAt: string | null;
+  /**
+   * Uploaded files that are not text yet, by extraction state.
+   *
+   * A document waiting for extraction has zero chunks, so every chunk-based
+   * number above reports it as simply absent — which is how a PDF sat pending
+   * on optic for two days without a single surface saying so. The point of
+   * doing things under the hood is not doing them in the dark.
+   */
+  documentsAwaitingText: { pending: number; processing: number; unsupported: number; failed: number };
 }
 
 export function useKnowledgeIndexHealth() {
   return useQuery({
     queryKey: ['knowledge-index-health'],
     queryFn: async (): Promise<KnowledgeIndexHealth> => {
-      const [chunks, queue] = await Promise.all([
+      const [chunks, queue, docs] = await Promise.all([
         supabase.from('knowledge_chunks').select('source_table, embedding, updated_at'),
         supabase.from('knowledge_index_queue').select('source_table'),
+        supabase.from('documents').select('extraction_status').not('file_url', 'is', null),
       ]);
       if (chunks.error) throw chunks.error;
 
@@ -69,6 +79,15 @@ export function useKnowledgeIndexHealth() {
         // the card must still render the chunk counts it CAN see.
         queueDepth: queue.error ? 0 : (queue.data?.length ?? 0),
         lastIndexedAt,
+        documentsAwaitingText: (docs.data ?? []).reduce(
+          (acc, d: { extraction_status: string | null }) => {
+            if (d.extraction_status && d.extraction_status in acc) {
+              acc[d.extraction_status as keyof typeof acc] += 1;
+            }
+            return acc;
+          },
+          { pending: 0, processing: 0, unsupported: 0, failed: 0 },
+        ),
       };
     },
     staleTime: 30_000,
