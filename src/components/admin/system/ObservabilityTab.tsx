@@ -1,14 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Activity, Zap, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2, Layers } from 'lucide-react';
+import { Activity, Zap, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2, Layers, Library, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import instanceManifest from '../../../../supabase/seed/instance-manifest.json';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { useAgentEvents } from '@/hooks/useAgentEvents';
 import { useAutomationHealth } from '@/hooks/useAutomationHealth';
+import { useKnowledgeIndexHealth, useRunKnowledgeIndexer, KNOWLEDGE_SOURCES } from '@/hooks/useKnowledgeIndex';
 import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 
 function timeAgo(iso: string | null) {
@@ -484,6 +487,109 @@ function InstanceSyncCard() {
   );
 }
 
+/**
+ * The Knowledge Index is a platform SERVICE — one index, every grounded
+ * surface. It has no module toggle (like the Skill Relevance Engine), which is
+ * exactly why it needs a window: an empty index is invisible everywhere except
+ * in the answers, which merely get vaguer. On 2026-08-12 a fresh instance ran
+ * for a day with zero chunks and a chat that invented pages; nothing in the UI
+ * said so. This card says so.
+ */
+function KnowledgeIndexCard() {
+  const { data, isLoading } = useKnowledgeIndexHealth();
+  const runIndexer = useRunKnowledgeIndexer();
+  const { toast } = useToast();
+
+  const SOURCE_LABELS: Record<string, string> = {
+    pages: 'Pages',
+    kb_articles: 'Knowledge Base',
+    wiki_pages: 'Wiki',
+    docs_pages: 'Docs',
+    handbook_chapters: 'Handbook',
+    documents: 'Documents',
+  };
+
+  const empty = !isLoading && (data?.totalChunks ?? 0) === 0;
+  const backlog = (data?.queueDepth ?? 0) > 0;
+
+  const handleRun = async () => {
+    try {
+      const res = await runIndexer.mutateAsync();
+      toast({
+        title: 'Indexer swept',
+        description: `${res.indexed_chunks ?? 0} chunk(s) indexed · ${res.processed ?? 0} item(s) processed`,
+      });
+    } catch (e) {
+      toast({
+        title: 'Indexer run failed',
+        description: e instanceof Error ? e.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between space-y-0">
+        <div>
+          <CardTitle className="font-serif flex items-center gap-2 text-base">
+            <Library className="h-4 w-4 text-sky-500" />
+            Knowledge Index
+          </CardTitle>
+          <CardDescription>
+            {isLoading
+              ? '…'
+              : `${data?.totalChunks ?? 0} chunk(s) · ${data?.queueDepth ?? 0} queued · updated ${timeAgo(data?.lastIndexedAt ?? null)}`}
+          </CardDescription>
+        </div>
+        <Button size="sm" variant="outline" onClick={handleRun} disabled={runIndexer.isPending}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${runIndexer.isPending ? 'animate-spin' : ''}`} />
+          Sweep now
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : (
+          <div className="space-y-2">
+            {empty && (
+              <p className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-1.5">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>
+                  Nothing indexed yet — grounded answers fall back to full-text until the first sweep
+                  completes. Press <strong>Sweep now</strong> to start it.
+                </span>
+              </p>
+            )}
+            {backlog && !empty && (
+              <p className="text-xs text-muted-foreground">
+                {data?.queueDepth} item(s) waiting for the next sweep (runs every 5 minutes).
+              </p>
+            )}
+            {(data?.missingEmbedding ?? 0) > 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-500">
+                {data?.missingEmbedding} chunk(s) without an embedding — check the AI provider key.
+              </p>
+            )}
+            <ul className="space-y-1">
+              {KNOWLEDGE_SOURCES.map((src) => (
+                <li key={src} className="flex items-center justify-between text-sm py-0.5">
+                  <span className="text-muted-foreground">{SOURCE_LABELS[src] ?? src}</span>
+                  <span className="font-mono text-xs">{data?.bySource?.[src] ?? 0}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[10px] text-muted-foreground pt-1">
+              One index, every grounded surface — visitor chat sees public content, staff surfaces
+              also see internal.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ObservabilityTab() {
   return (
     <div className="space-y-4">
@@ -495,6 +601,7 @@ export function ObservabilityTab() {
         <AutomationQueueCard />
         <SkillAuditCard />
         <LoginActivityCard />
+        <KnowledgeIndexCard />
       </div>
       <InstanceSyncCard />
       <CronHealthCard />

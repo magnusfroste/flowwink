@@ -41,6 +41,18 @@ import { handleConsultantCheckin } from '../_shared/chat/consultant-checkin.ts';
  * - N8N remains a special webhook passthrough
  */
 
+/**
+ * Retrieval returned nothing while its sources were enabled — the index is
+ * empty, not the answer. Distinct from a thrown retrieval error so the two
+ * read differently in the logs; both route to full-text grounding.
+ */
+class EmptyIndexError extends Error {
+  constructor() {
+    super('knowledge index returned no chunks');
+    this.name = 'EmptyIndexError';
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -523,7 +535,15 @@ serve(async (req) => {
       if (!allowsAllPages(slugAllowlist)) {
         chunks = chunks.filter((c) => c.sourceTable !== 'pages' || slugAllowlist.includes(String(c.metadata.slug)));
       }
-      if (!chunks.length) return '';
+      // Zero chunks with sources switched ON is NOT "nothing is relevant" — it
+      // is "this index cannot answer yet". A brand-new instance has an empty
+      // index until the first sweep, a page published a minute ago is not in
+      // it, and an instance without an embedding key never fills it. Treating
+      // those as "no context" makes the assistant answer from imagination —
+      // exactly what happened on www.flowwink.com (2026-08-12), where it
+      // invented seven process pages. Fall through to the full-text builder:
+      // slower and token-hungrier, but grounded. Degrade, never gate (Law 4).
+      if (!chunks.length) throw new EmptyIndexError();
       return `\n\n=== WEBSITE CONTENT (retrieved by relevance to the question) ===\n${renderContext(chunks)}`;
     };
 
@@ -531,7 +551,11 @@ serve(async (req) => {
       loadWorkspaceFiles(supabase),
       shouldLoadKB
         ? buildRetrievedKnowledge().catch((e) => {
-            console.error('retrieval grounding failed — falling back to legacy KB dump:', e);
+            console.error(
+              e instanceof EmptyIndexError
+                ? 'retrieval index has nothing to offer (empty or not built yet) — grounding on full text instead'
+                : `retrieval grounding failed — falling back to full-text grounding: ${e}`,
+            );
             return buildKnowledgeBase(
               supabase,
               settings?.contentContextMaxTokens || 50000,
