@@ -514,7 +514,7 @@ function KnowledgeIndexCard() {
 
   const handleRun = async () => {
     try {
-      const res = await runIndexer.mutateAsync();
+      const res = await runIndexer.mutateAsync({});
       toast({
         title: 'Indexer swept',
         description: `${res.indexed_chunks ?? 0} chunk(s) indexed · ${res.processed ?? 0} item(s) processed`,
