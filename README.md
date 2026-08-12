@@ -144,6 +144,26 @@ All skills follow Anthropic's MCP best practices: self-describing (`Use when:` /
 
 ---
 
+## Knowledge — one index, every surface
+
+**Most products bolt search on top of the systems. FlowWink has the memory built in — the same knowledge, different eyes, no extra product and no data leaving your instance.**
+
+Six content sources — pages, knowledge base, wiki, docs, handbook, documents — feed a single embedded index. Every grounded surface reads from it:
+
+| Who is asking | What they can retrieve |
+|---|---|
+| A visitor in the public chat | Public content only — published pages and KB articles |
+| Staff in FlowWork | Public *and* internal — wiki, handbook, documents, contracts, CRM |
+| An external agent over MCP | Whatever its key's scopes allow |
+
+Visibility is a property of the content, enforced by row-level security — not a filter the calling surface remembers to apply. A source whose module is switched off stops being indexed (nobody pays to embed content they turned off), and answers carry citations that link back to the record they came from.
+
+Retrieval is the default because it scales; when the index cannot answer — a brand-new instance, a page published a minute ago, no embedding key — grounding falls back to full text rather than to nothing. Degrade, never gate.
+
+See [`docs/architecture/retrieval-engine.md`](docs/architecture/retrieval-engine.md) and [`docs/architecture/conversation-and-retrieval.md`](docs/architecture/conversation-and-retrieval.md).
+
+---
+
 ## FlowPilot — the included operator
 
 FlowPilot is FlowWink's **vertically-integrated, local autonomous operator** — one of many possible MCP consumers, but the one that ships in the box. It runs *inside* the platform's trust boundary, which gives it advantages no external operator can replicate: zero-config onboarding, direct DB/event access, brand-aligned defaults, predictable cost.
