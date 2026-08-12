@@ -38,6 +38,15 @@ describe('the public address exists and everyone points at it', () => {
     expect(app).toMatch(/KbArticlePage/);
   });
 
+  it('serves /kb too — every link the KB pages emit must resolve', () => {
+    // Shipped without this once: the article page's "back to Knowledge Base"
+    // pointed at /kb, which matched nothing. Same class of bug the article
+    // route was built to fix, reintroduced one link over. Assert the pair.
+    const app = codeOnly('src/App.tsx');
+    expect(app).toMatch(/path:\s*"\/kb"/);
+    expect(app).toMatch(/KbLandingPage/);
+  });
+
   it('the article page refuses unpublished articles', () => {
     // Otherwise a draft is readable by guessing its slug.
     const hook = codeOnly('src/hooks/useKnowledgeBase.ts');

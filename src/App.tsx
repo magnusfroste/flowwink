@@ -93,6 +93,7 @@ const JobsPage = lazy(() => import("./pages/JobsPage"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const KbArticlePage = lazy(() => import("./pages/KbArticlePage"));
+const KbLandingPage = lazy(() => import("./pages/KbLandingPage"));
 const BlogCategoryPage = lazy(() => import("./pages/BlogCategoryPage"));
 const BlogTagPage = lazy(() => import("./pages/BlogTagPage"));
 const BlogAuthorPage = lazy(() => import("./pages/BlogAuthorPage"));
@@ -299,6 +300,7 @@ const router = createBrowserRouter([
       // renders answers inline; this is where a link, a chat citation or a
       // search result lands. /kb itself falls back to a page with that slug
       // if the operator built one.
+      { path: "/kb", element: <KbLandingPage /> },
       { path: "/kb/:slug", element: <KbArticlePage /> },
       { path: "/jobs", element: <JobsPage /> },
       { path: "/jobs/:slug", element: <JobDetailPage /> },
