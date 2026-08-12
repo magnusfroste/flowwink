@@ -104,6 +104,19 @@ describe('vendor documentation never reaches a customer-facing surface', () => {
       .not.toMatch(/sources[\s\S]{0,200}docs_pages/);
   });
 
+  it('the agent-facing search skill searches the customer\'s knowledge, not ours', () => {
+    // `search_knowledge` is what an external operator calls to look things up
+    // in the business it runs. FlowWink's own product documentation there is
+    // noise in the results and embeddings the customer paid for without
+    // asking — the /docs page has its own search (docs-chat) for the
+    // legitimate case. Not a secrecy rule: the docs are public on GitHub.
+    const src = codeOnly(join(ROOT, 'supabase/functions/agent-execute/index.ts'));
+    const list = src.match(/const SEARCHABLE_KNOWLEDGE_SOURCES = \[[^\]]*\]/)?.[0] ?? '';
+    expect(list, 'SEARCHABLE_KNOWLEDGE_SOURCES must exist').not.toBe('');
+    expect(list).not.toContain('docs_pages');
+    expect(list).toContain('kb_articles');
+  });
+
   it('the workspace chat maps `handbook` to the customer handbook, not vendor docs', () => {
     const src = codeOnly(WORKSPACE_CHAT);
     const map = src.match(/const KNOWLEDGE_TABLES[\s\S]*?\n\s*\};/)?.[0]

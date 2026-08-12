@@ -12484,7 +12484,14 @@ async function executeUpdateSkillInstructions(
 // scope enforcement lands, resolve the client from the key's rung instead.
 // Structured rows (orders, Flowtable, …) are NOT here — two-lane rule.
 // ─────────────────────────────────────────────────────────────────────────────
-const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents'];
+// docs_pages is deliberately ABSENT: it holds FlowWink's own product
+// documentation, synced onto each customer instance so the /docs page can
+// search itself (docs-chat does exactly that). An agent calling THIS skill is
+// searching the CUSTOMER's knowledge — vendor docs there are noise in the
+// results and embeddings the customer paid for without asking. Not a secrecy
+// argument (the documentation is public on GitHub); a hygiene and cost one,
+// which is why the fix narrows the source list rather than guarding the data.
+const SEARCHABLE_KNOWLEDGE_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'documents'];
 
 async function executeSearchKnowledge(
   supabase: any,
