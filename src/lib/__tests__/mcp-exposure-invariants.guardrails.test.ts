@@ -24,6 +24,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { describeIfLiveDb } from '@/test/live-db';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? 'https://rzhjotxffjfsdlhrdkpj.supabase.co';
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
@@ -51,7 +52,7 @@ const REQUIRED_MCP_UTILITIES = [
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-describe('MCP catalog exposure invariants (live DB)', () => {
+describeIfLiveDb('MCP catalog exposure invariants (live DB)', () => {
   it('every mcp_exposed=true skill is also enabled (no orphan tools in catalog)', async () => {
     const { data, error } = await supabase
       .from('agent_skills')

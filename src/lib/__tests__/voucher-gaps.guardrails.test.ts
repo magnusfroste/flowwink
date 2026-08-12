@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { describeIfLiveDb } from '@/test/live-db';
 
 /**
  * Voucher-integrity guardrail.
@@ -14,12 +15,11 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const SERVICE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-const describeIfDb = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
 // agent_skills has RLS that blocks anon — only run skill-table checks when
 // a service-role key is available.
 const itIfService = SUPABASE_URL && SERVICE_KEY ? it : it.skip;
 
-describeIfDb('Voucher integrity primitives', () => {
+describeIfLiveDb('Voucher integrity primitives', () => {
   it('list_voucher_gaps RPC is callable and returns an array', async () => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
     const year = new Date().getFullYear();

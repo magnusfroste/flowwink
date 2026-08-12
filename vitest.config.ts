@@ -8,6 +8,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Probe the live instance once before any suite runs, so live-DB tests can
+    // skip on "instance down" instead of failing with `fetch failed`.
+    globalSetup: ['./src/test/live-db-probe.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       reporter: ['text', 'json', 'html'],

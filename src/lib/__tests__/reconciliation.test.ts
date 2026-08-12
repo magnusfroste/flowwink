@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { describeIfLiveDb } from '@/test/live-db';
 
 /**
  * Reconciliation tests for payment ↔ invoice flow.
@@ -23,9 +24,8 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const describeIfDb = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
 
-describeIfDb('payment_reconciliations: partial payments + reversal', () => {
+describeIfLiveDb('payment_reconciliations: partial payments + reversal', () => {
   it('passes all 12 reconciliation scenarios', async () => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
     const { data, error } = await supabase.rpc('run_reconciliation_tests');

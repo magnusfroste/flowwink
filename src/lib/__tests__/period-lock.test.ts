@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { describeIfLiveDb } from '@/test/live-db';
 
 /**
  * Period-lock unit tests for time_entries.
@@ -14,9 +15,8 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const describeIfDb = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
 
-describeIfDb('time_entries period-lock guard', () => {
+describeIfLiveDb('time_entries period-lock guard', () => {
   it('blocks every illegal mutation in closed/locked periods (20 scenarios)', async () => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
     const { data, error } = await supabase.rpc('run_period_lock_tests');

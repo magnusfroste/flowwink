@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { describeIfLiveDb } from '@/test/live-db';
 
 /**
  * Staged-Operation Envelope guardrail.
@@ -19,7 +20,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-const describeIfDb = SUPABASE_URL && SERVICE_KEY ? describe : describe.skip;
 
 /** Skills that mutate the general ledger or close periods. */
 const MUST_BE_STAGED = [
@@ -35,7 +35,7 @@ const MUST_BE_STAGED = [
 /** Approve/reject helpers must exist and be MCP-exposed. */
 const STAGING_HELPERS = ['approve_pending_operation', 'reject_pending_operation'] as const;
 
-describeIfDb('Accounting staged-operation envelope', () => {
+describeIfLiveDb('Accounting staged-operation envelope', () => {
   it('every high-risk ledger skill is requires_staging=true and MCP-exposed', async () => {
     const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
     const { data, error } = await supabase
