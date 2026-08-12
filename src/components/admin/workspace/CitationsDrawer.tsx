@@ -61,6 +61,26 @@ const TYPE_LABEL: Record<string, string> = {
   attachment: 'Attachment',
 };
 
+/**
+ * Where an "Open" on a citation should land.
+ *
+ * FlowWork's reader is always signed-in staff, and it cites nine source types —
+ * documents, contracts, employees, CRM records — of which only pages and KB
+ * articles ever have a public address. So the internal view is the consistent
+ * destination, not the exception.
+ *
+ * KB got that wrong in a way worth remembering: the retrieval layer stamped
+ * `/kb/<slug>` into each chunk's metadata, the citation rendered it verbatim,
+ * and no such route existed — every KB citation was a 404 dressed as a
+ * quality signal. Route it to the admin reading panel instead
+ * (`?article=<id>`), which opens the article in a reading panel with Edit as
+ * the secondary action. Other types keep whatever URL retrieval gave them.
+ */
+function citationHref(c: WorkspaceCitation): string | undefined {
+  if (c.type === 'kb_article' && c.id) return `/admin/knowledge-base?article=${c.id}`;
+  return c.url || undefined;
+}
+
 const SOURCE_META: Record<
   WorkspaceSource,
   { label: string; Icon: any }
@@ -160,9 +180,9 @@ export function CitationsDrawer({
                         >
                           {c.title}
                         </p>
-                        {c.url && (
+                        {citationHref(c) && (
                           <Link
-                            to={c.url}
+                            to={citationHref(c)!}
                             className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1"
                           >
                             Open <ExternalLink className="h-3 w-3" />

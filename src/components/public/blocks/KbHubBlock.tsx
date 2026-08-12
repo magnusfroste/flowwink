@@ -373,7 +373,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
             {filteredArticles.map(article => (
               <Link
                 key={article.id}
-                to={`/${kbSlug}/${article.slug}`}
+                to={`/kb/${article.slug}`}
                 className="group block"
               >
                 <div className="h-full p-5 rounded-xl border bg-card hover:shadow-lg hover:border-primary/50 transition-all group-hover:-translate-y-1">

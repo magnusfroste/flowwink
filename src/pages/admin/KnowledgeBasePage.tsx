@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle, ThumbsUp, ThumbsDown, Globe, Lock } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -57,6 +57,12 @@ export default function KnowledgeBasePage() {
   // Read view: internal articles have no public page, so before this the EDIT
   // form was the only way for a salesperson to read what the operator wrote.
   const [readingArticle, setReadingArticle] = useState<KbArticle | null>(null);
+  // `?article=<id>` opens the reading panel directly. Without it the panel was
+  // only reachable by clicking a row, so nothing could link INTO it — which is
+  // why FlowWork's KB citations had nowhere sensible to point (they aimed at a
+  // public /kb/<slug> route that did not exist, and 404'd).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const articleParam = searchParams.get('article');
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'category' | 'article'; id: string } | null>(null);
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
 
@@ -67,6 +73,25 @@ export default function KnowledgeBasePage() {
   const deleteArticle = useDeleteKbArticle();
   const bulkUpdateChat = useBulkUpdateKbArticlesChatStatus();
   const clearImprovementFlag = useClearKbImprovementFlag();
+
+  // Resolve `?article=<id>` once the list has loaded. Deliberately keyed on the
+  // param and the data, not on readingArticle: closing the panel clears the
+  // param (below), so this cannot re-open what the user just dismissed.
+  useEffect(() => {
+    if (!articleParam || !articles) return;
+    const match = articles.find((a) => a.id === articleParam);
+    if (match) setReadingArticle(match);
+  }, [articleParam, articles]);
+
+  /** Close the reader and drop the deep-link param, so Back behaves. */
+  const closeReader = () => {
+    setReadingArticle(null);
+    if (articleParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('article');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const filteredArticles = articles?.filter(article => {
     const matchesSearch =
@@ -449,7 +474,7 @@ export default function KnowledgeBasePage() {
       </AlertDialog>
 
       {/* Read view — consume the article the way a reader would, edit one click away. */}
-      <Sheet open={!!readingArticle} onOpenChange={(o) => !o && setReadingArticle(null)}>
+      <Sheet open={!!readingArticle} onOpenChange={(o) => !o && closeReader()}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           {readingArticle && (
             <>

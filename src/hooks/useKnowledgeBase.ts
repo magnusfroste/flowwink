@@ -195,6 +195,32 @@ export function useKbArticle(id: string) {
   });
 }
 
+/**
+ * One published KB article by its slug — the public reading path.
+ *
+ * Published-only by design: this backs the anonymous `/kb/:slug` page, and an
+ * unpublished draft reachable by guessing a URL is a leak, not a feature. RLS
+ * already enforces it for anon; the filter keeps a logged-in staff member from
+ * seeing a draft here and assuming visitors can too.
+ */
+export function useKbArticleBySlug(slug?: string) {
+  return useQuery({
+    queryKey: ['kb-article-slug', slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kb_articles')
+        .select('*, category:kb_categories(*)')
+        .eq('slug', slug!)
+        .eq('is_published', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data ?? null) as KbArticle | null;
+    },
+    enabled: !!slug,
+  });
+}
+
 export function useCreateKbArticle() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

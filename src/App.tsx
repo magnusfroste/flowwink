@@ -92,6 +92,7 @@ const BlogArchivePage = lazy(() => import("./pages/BlogArchivePage"));
 const JobsPage = lazy(() => import("./pages/JobsPage"));
 const JobDetailPage = lazy(() => import("./pages/JobDetailPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
+const KbArticlePage = lazy(() => import("./pages/KbArticlePage"));
 const BlogCategoryPage = lazy(() => import("./pages/BlogCategoryPage"));
 const BlogTagPage = lazy(() => import("./pages/BlogTagPage"));
 const BlogAuthorPage = lazy(() => import("./pages/BlogAuthorPage"));
@@ -294,6 +295,11 @@ const router = createBrowserRouter([
       { path: "/blog/tag/:slug", element: <BlogTagPage /> },
       { path: "/blog/author/:slug", element: <BlogAuthorPage /> },
       { path: "/blog/:slug", element: <BlogPostPage /> },
+      // A KB article has its own address, like a blog post. The hub block
+      // renders answers inline; this is where a link, a chat citation or a
+      // search result lands. /kb itself falls back to a page with that slug
+      // if the operator built one.
+      { path: "/kb/:slug", element: <KbArticlePage /> },
       { path: "/jobs", element: <JobsPage /> },
       { path: "/jobs/:slug", element: <JobDetailPage /> },
       { path: "/docs", element: withPageFallback(<DocsLandingPage />) },

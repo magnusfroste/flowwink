@@ -110,7 +110,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
             {articles.map((article) => (
               <Link
                 key={article.id}
-                to={`/${kbSlug}/${article.slug}`}
+                to={`/kb/${article.slug}`}
                 className="group"
               >
                 <Card className="h-full transition-all duration-200 hover:shadow-lg hover:border-primary/50 group-hover:-translate-y-1">
@@ -137,7 +137,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
             {articles.map((article) => (
               <Link
                 key={article.id}
-                to={`/${kbSlug}/${article.slug}`}
+                to={`/kb/${article.slug}`}
                 className="group block"
               >
                 <div className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
