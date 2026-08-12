@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { describeIfLiveDb } from '@/test/live-db';
+import { describeIfServiceKey } from '@/test/live-db';
 
 /**
  * Voucher-integrity guardrail.
@@ -19,7 +19,7 @@ const SERVICE_KEY =
 // a service-role key is available.
 const itIfService = SUPABASE_URL && SERVICE_KEY ? it : it.skip;
 
-describeIfLiveDb('Voucher integrity primitives', () => {
+describeIfServiceKey('Voucher integrity primitives', () => {
   it('list_voucher_gaps RPC is callable and returns an array', async () => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
     const year = new Date().getFullYear();

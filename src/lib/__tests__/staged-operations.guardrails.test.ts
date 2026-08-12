@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { describeIfLiveDb } from '@/test/live-db';
+import { describeIfServiceKey } from '@/test/live-db';
 
 /**
  * Staged-Operation Envelope guardrail.
@@ -35,7 +35,7 @@ const MUST_BE_STAGED = [
 /** Approve/reject helpers must exist and be MCP-exposed. */
 const STAGING_HELPERS = ['approve_pending_operation', 'reject_pending_operation'] as const;
 
-describeIfLiveDb('Accounting staged-operation envelope', () => {
+describeIfServiceKey('Accounting staged-operation envelope', () => {
   it('every high-risk ledger skill is requires_staging=true and MCP-exposed', async () => {
     const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
     const { data, error } = await supabase
