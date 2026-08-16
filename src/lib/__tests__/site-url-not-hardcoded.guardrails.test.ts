@@ -29,38 +29,26 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe('no edge function hardcodes an instance address', () => {
-  /**
-   * Grandfathered, and tracked — not accepted.
-   *
-   * agent-execute:3148 hands the autonomous-testing skill
-   * `site.url = 'https://demo.flowwink.com'` with the description "test this
-   * URL, not any template/example domains", so the QA agent on every instance
-   * is pointed at the deleted project. It is a one-line fix (resolveSiteUrl,
-   * same as here) but agent-execute belongs to the local session; reported
-   * rather than edited. Remove this entry when it lands — the test then guards
-   * the whole surface.
-   */
-  const GRANDFATHERED = ['supabase/functions/agent-execute/index.ts'];
-
   it('the decommissioned demo domain appears in no code path', () => {
+    // No grandfathering left: agent-execute:3148 was the last holdout and now
+    // resolves the address like everything else.
+    //
     // A quoted occurrence is a value the code carries; an unquoted one is prose
     // in a comment (survey_send documents it as an example override). Stripping
     // trailing `//` comments is not an option here — every https:// URL would
     // be mangled by it.
     const offenders = walk(FUNCTIONS)
       .filter((f) => /['"`][^'"`\n]*demo\.flowwink\.com/.test(strip(read(f))))
-      .map((f) => f.replace(FUNCTIONS + '/', 'supabase/functions/'))
-      .filter((f) => !GRANDFATHERED.includes(f));
+      .map((f) => f.replace(FUNCTIONS + '/', 'supabase/functions/'));
     expect(offenders, 'hardcoded demo domain in a code path').toEqual([]);
   });
 
-  it('the grandfathered file is still the only one — and still there', () => {
-    // If this fails because the file no longer matches, the fix landed: delete
-    // the entry above. A guard that silently stops guarding is the failure mode
-    // this repo keeps meeting.
+  it('the QA agent is pointed at the running instance, or at nothing', () => {
     const src = strip(read(join(FUNCTIONS, 'agent-execute/index.ts')));
-    expect(/['"`][^'"`\n]*demo\.flowwink\.com/.test(src),
-      'agent-execute no longer hardcodes the domain — remove it from GRANDFATHERED').toBe(true);
+    expect(src).toMatch(/const siteUrl = await resolveSiteUrl\(supabase\)/);
+    expect(src).toMatch(/\.\.\.\(siteUrl \? \{ url: siteUrl \} : \{\}\)/);
+    // Without an address the instruction must stop telling it to test one.
+    expect(src).toMatch(/no public site URL is configured/);
   });
 });
 
@@ -74,11 +62,30 @@ describe('the address has one reader', () => {
     expect(helper).toMatch(/siteUrl/);
   });
 
+  it('keeps the house convention rather than a tidier one', () => {
+    // agent-execute resolved this at two call sites before the helper existed:
+    // PUBLIC_SITE_URL first, then four accepted spellings. A helper that read
+    // only `siteUrl` would have narrowed those paths on adoption.
+    expect(helper).toMatch(/Deno\.env\.get\('PUBLIC_SITE_URL'\)/);
+    for (const key of ['siteUrl', 'site_url', 'public_url', 'publicUrl']) {
+      expect(helper, `spelling ${key} dropped`).toContain(`'${key}'`);
+    }
+    // Env before setting, not after — measured on stripped source. The comment
+    // above the env read mentions PUBLIC_SITE_URL, so an unstripped indexOf
+    // compares against prose and passes even when the order is inverted.
+    // (Caught by negative-testing this very assertion; third time comments have
+    // sprung this trap in the repo.)
+    const code = strip(helper);
+    expect(code.indexOf('PUBLIC_SITE_URL')).toBeLessThan(code.indexOf("eq('key', 'general')"));
+  });
+
   it('answers null rather than a guess when unset or unreadable', () => {
-    expect(helper).toMatch(/return url\.length > 0 \? url : null/);
-    // The catch must not invent a fallback host.
+    // The property, not one phrasing of it: no host literal anywhere in the
+    // module, and the catch returns null instead of inventing a fallback.
+    expect(strip(helper), 'a host literal in the resolver is a guess')
+      .not.toMatch(/['"`]https?:\/\//);
     const body = helper.slice(helper.indexOf('} catch'));
-    expect(body).not.toMatch(/https?:\/\//);
+    expect(body).toMatch(/return null;/);
   });
 
   it('a2a omits the argument entirely when the address is unknown', () => {

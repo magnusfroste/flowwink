@@ -23,7 +23,20 @@ export interface SettingsReader {
   from(table: string): unknown;
 }
 
+/**
+ * The spellings this setting has been written under. agent-execute already
+ * accepted all four at two call sites before this helper existed; narrowing to
+ * `siteUrl` here would have quietly regressed those paths, so the helper takes
+ * the house convention rather than imposing a tidier one.
+ */
+const KEYS = ['siteUrl', 'site_url', 'public_url', 'publicUrl'] as const;
+
 export async function resolveSiteUrl(supabase: SettingsReader): Promise<string | null> {
+  // Env wins, same order the invoice and portal paths already use: a
+  // self-hosted deploy sets PUBLIC_SITE_URL and never touches the setting.
+  const fromEnv = String(Deno.env.get('PUBLIC_SITE_URL') ?? '').trim().replace(/\/+$/, '');
+  if (fromEnv) return fromEnv;
+
   try {
     const chain = supabase.from('site_settings') as {
       select(cols: string): {
@@ -31,9 +44,12 @@ export async function resolveSiteUrl(supabase: SettingsReader): Promise<string |
       };
     };
     const { data } = await chain.select('value').eq('key', 'general').maybeSingle();
-    const raw = (data as { value?: { siteUrl?: unknown } } | null)?.value?.siteUrl;
-    const url = String(raw ?? '').trim().replace(/\/+$/, '');
-    return url.length > 0 ? url : null;
+    const value = (data as { value?: Record<string, unknown> } | null)?.value ?? {};
+    for (const key of KEYS) {
+      const url = String(value[key] ?? '').trim().replace(/\/+$/, '');
+      if (url) return url;
+    }
+    return null;
   } catch {
     // An unreadable setting is "unknown", not "demo.flowwink.com". The caller
     // omits rather than guesses.

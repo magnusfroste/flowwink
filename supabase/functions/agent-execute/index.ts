@@ -5,6 +5,7 @@ import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shar
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
+import { resolveSiteUrl } from '../_shared/site-url.ts';
 import { readSieFile } from '../_shared/sie-reader.ts';
 import {
   buildIncomeStatement,
@@ -3149,11 +3150,23 @@ async function executeOpenClawAction(
         supabase.from('agent_memory').select('value').eq('key', 'identity').single(),
       ]);
 
+      // The QA agent tests THIS instance. This was the literal
+      // 'https://demo.flowwink.com' — one instance named for the whole fleet,
+      // and since that project was deleted (d5b867f) a host that does not
+      // resolve, handed over with an instruction to trust it. Resolved the way
+      // the invoice and portal paths in this file already resolve it: env
+      // first, then site_settings.general. Omitted when unknown — an agent
+      // without an address can say so; an agent with the wrong one reports the
+      // site is down.
+      const siteUrl = await resolveSiteUrl(supabase);
+
       return {
         site: {
-          url: 'https://demo.flowwink.com',
+          ...(siteUrl ? { url: siteUrl } : {}),
           name: 'FlowWink',
-          description: 'Autonomous Agentic CMS — test this URL, not any template/example domains',
+          description: siteUrl
+            ? 'Autonomous Agentic CMS — test this URL, not any template/example domains'
+            : 'Autonomous Agentic CMS — no public site URL is configured on this instance; do not guess one, and say so if a test needs it',
         },
         sessions: sessionsRes.data || [],
         findings: findingsRes.data || [],

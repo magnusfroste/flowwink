@@ -1731,11 +1731,11 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f04a8b4a04d9957ba0a03df94964e17ed12906369ed738ae5d17460e37e41eb4",
+      "shared_hash": "sha256:c2d89fa988e4dc5f48a84b9d22380ad6ff75d7f282f89cf785aecb4f9dd07555",
       "functions": {
         "a2a": "sha256:fe31e0b157534cc856e40c84efef6ff7f2ecc34ffd2cca250d8aed8ffe345397",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:0294a68cb6967da45789fc9f8a62d83bf54d493b002208e7d7739433199c63d5",
+        "agent-execute": "sha256:7707f7fcb05319cf9371186b71fd56d50f25ee9df5a3529bafc4b8a862dc3d81",
         "agent-operate": "sha256:72cdafe207ae2a5630e3263e6c993a55aade47c679f2cc200465cb3a17f30689",
         "ai-task": "sha256:c887b00caa01760c3c6a9fcfddee3bc0d0dba6973ffd2c780ff0251ac37c3a0b",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
