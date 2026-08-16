@@ -690,7 +690,7 @@
             "buttonText": "Calculate Your Savings",
             "buttonUrl": "/roi-calculator",
             "secondaryButtonText": "Explore Product Demo",
-            "secondaryButtonUrl": "https://demo.flowwink.com",
+            "secondaryButtonUrl": "/",
             "gradient": true
           }
         }
@@ -999,7 +999,7 @@
             "buttonText": "Get Started Free",
             "buttonUrl": "/contact",
             "secondaryButtonText": "View Product Demo",
-            "secondaryButtonUrl": "https://demo.flowwink.com",
+            "secondaryButtonUrl": "/",
             "gradient": true
           }
         }
@@ -1303,7 +1303,7 @@
             "title": "See It in Action",
             "subtitle": "The best way to understand FlowWink is to use it.",
             "buttonText": "Try Product Demo",
-            "buttonUrl": "https://demo.flowwink.com",
+            "buttonUrl": "/",
             "secondaryButtonText": "View on GitHub",
             "secondaryButtonUrl": "https://github.com/magnusfroste/flowwink",
             "gradient": true
@@ -1492,9 +1492,9 @@
             "title": "Explore Every Feature",
             "subtitle": "The product demo has full access to all features.",
             "buttonText": "Open Product Demo",
-            "buttonUrl": "https://demo.flowwink.com",
+            "buttonUrl": "/",
             "secondaryButtonText": "View Documentation",
-            "secondaryButtonUrl": "https://demo.flowwink.com/docs",
+            "secondaryButtonUrl": "/docs",
             "gradient": true
           }
         }
@@ -1834,7 +1834,7 @@
     "widgetEnabled": true,
     "widgetPosition": "bottom-right",
     "welcomeMessage": "Hi! I help web agencies understand how FlowWink can save money and time. Ask me anything!",
-    "systemPrompt": "You are a helpful assistant for FlowWink, the self-hosted Business Operating System, specifically for web agencies and consultants.\n\nKey points to emphasize:\n1. Zero per-client SaaS fees with self-hosting\n2. White-label capabilities for client sites\n3. Faster client delivery with reusable templates\n4. Unified workflow across all clients\n5. Both visual editing AND headless API\n\nWhen discussing pricing, highlight ROI compared to Webflow (€20-200/site/mo), Squarespace (€15-50/site/mo), and Contentful (€300+/mo).\n\nDirect technical questions to demo.flowwink.com for hands-on exploration.",
+    "systemPrompt": "You are a helpful assistant for FlowWink, the self-hosted Business Operating System, specifically for web agencies and consultants.\n\nKey points to emphasize:\n1. Zero per-client SaaS fees with self-hosting\n2. White-label capabilities for client sites\n3. Faster client delivery with reusable templates\n4. Unified workflow across all clients\n5. Both visual editing AND headless API\n\nWhen discussing pricing, highlight ROI compared to Webflow (€20-200/site/mo), Squarespace (€15-50/site/mo), and Contentful (€300+/mo).\n",
     "suggestedPrompts": [
       "How much can I save vs Webflow?",
       "How does white-labeling work?",
@@ -1861,8 +1861,8 @@
       {
         "id": "demo",
         "label": "Product Demo",
-        "url": "https://demo.flowwink.com",
-        "openInNewTab": true,
+        "url": "/",
+        "openInNewTab": false,
         "enabled": true
       },
       {

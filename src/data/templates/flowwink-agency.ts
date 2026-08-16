@@ -262,7 +262,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           buttonText: 'Calculate Your Savings',
           buttonUrl: '/roi-calculator',
           secondaryButtonText: 'Explore Product Demo',
-          secondaryButtonUrl: 'https://demo.flowwink.com',
+          secondaryButtonUrl: '/',
           gradient: true,
         },
       },
@@ -379,7 +379,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           buttonText: 'Get Started Free',
           buttonUrl: '/contact',
           secondaryButtonText: 'View Product Demo',
-          secondaryButtonUrl: 'https://demo.flowwink.com',
+          secondaryButtonUrl: '/',
           gradient: true,
         },
       },
@@ -486,7 +486,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           title: 'See It in Action',
           subtitle: 'The best way to understand FlowWink is to use it.',
           buttonText: 'Try Product Demo',
-          buttonUrl: 'https://demo.flowwink.com',
+          buttonUrl: '/',
           secondaryButtonText: 'View on GitHub',
           secondaryButtonUrl: 'https://github.com/magnusfroste/flowwink',
           gradient: true,
@@ -585,9 +585,9 @@ const flowwinkAgencyPages: TemplatePage[] = [
           title: 'Explore Every Feature',
           subtitle: 'The product demo has full access to all features.',
           buttonText: 'Open Product Demo',
-          buttonUrl: 'https://demo.flowwink.com',
+          buttonUrl: '/',
           secondaryButtonText: 'View Documentation',
-          secondaryButtonUrl: 'https://demo.flowwink.com/docs',
+          secondaryButtonUrl: '/docs',
           gradient: true,
         },
       },
@@ -803,8 +803,7 @@ Key points to emphasize:
 5. Both visual editing AND headless API
 
 When discussing pricing, highlight ROI compared to Webflow (€20-200/site/mo), Squarespace (€15-50/site/mo), and Contentful (€300+/mo).
-
-Direct technical questions to demo.flowwink.com for hands-on exploration.`,
+`,
     suggestedPrompts: [
       'How much can I save vs Webflow?',
       'How does white-labeling work?',
@@ -826,7 +825,7 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
     headerShadow: 'sm',
     showBorder: false,
     customNavItems: [
-      { id: 'demo', label: 'Product Demo', url: 'https://demo.flowwink.com', openInNewTab: true, enabled: true },
+      { id: 'demo', label: 'Product Demo', url: '/', openInNewTab: false, enabled: true },
       { id: 'github', label: 'GitHub', url: 'https://github.com/magnusfroste/flowwink', openInNewTab: true, enabled: true },
     ],
   },

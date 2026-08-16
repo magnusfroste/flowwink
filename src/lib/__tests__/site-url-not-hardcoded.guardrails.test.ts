@@ -15,18 +15,29 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const FUNCTIONS = resolve(__dirname, '../../../supabase/functions');
+const ROOT = resolve(__dirname, '../../..');
+const FUNCTIONS = join(ROOT, 'supabase/functions');
 const read = (p: string) => readFileSync(p, 'utf-8');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/[^\n]*$/gm, '');
+const rel = (p: string) => p.replace(ROOT + '/', '');
 
-function walk(dir: string, out: string[] = []): string[] {
+function walk(dir: string, exts: string[], out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
-    if (statSync(p).isDirectory()) walk(p, out);
-    else if (p.endsWith('.ts')) out.push(p);
+    if (statSync(p).isDirectory()) walk(p, exts, out);
+    else if (exts.some((e) => p.endsWith(e))) out.push(p);
   }
   return out;
 }
+
+/**
+ * Any absolute URL naming a FlowWink instance. `www.flowwink.com` is the
+ * product's own marketing site and legitimately absolute; every *instance*
+ * subdomain is not — instances are spun up, run and taken down, so an address
+ * baked into shipped content is a link to someone else's site at best and to
+ * nothing at all once that instance is gone.
+ */
+const INSTANCE_URL = /['"`]https?:\/\/(?!www\.flowwink\.com)[a-z0-9-]+\.flowwink\.com/i;
 
 describe('no edge function hardcodes an instance address', () => {
   it('the decommissioned demo domain appears in no code path', () => {
@@ -37,9 +48,9 @@ describe('no edge function hardcodes an instance address', () => {
     // in a comment (survey_send documents it as an example override). Stripping
     // trailing `//` comments is not an option here — every https:// URL would
     // be mangled by it.
-    const offenders = walk(FUNCTIONS)
+    const offenders = walk(FUNCTIONS, ['.ts'])
       .filter((f) => /['"`][^'"`\n]*demo\.flowwink\.com/.test(strip(read(f))))
-      .map((f) => f.replace(FUNCTIONS + '/', 'supabase/functions/'));
+      .map(rel);
     expect(offenders, 'hardcoded demo domain in a code path').toEqual([]);
   });
 
@@ -95,5 +106,71 @@ describe('the address has one reader', () => {
 
   it('a2a names the running instance in the system prompt, or nothing', () => {
     expect(a2a).toMatch(/autonomous CMS operator for FlowWink\$\{siteUrl \? ` \(\$\{siteUrl\}\)` : ''\}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Templates: a seeded site links to ITSELF, with a relative path
+// ---------------------------------------------------------------------------
+
+describe('no template ships an absolute URL to a FlowWink instance', () => {
+  /**
+   * The one that got past the first version of this guard.
+   *
+   * flowwink-agency carried seven `https://demo.flowwink.com` links — four CTA
+   * buttons, a /docs link, a nav item, and a line of chat instructions telling
+   * visitors to go there. Every site seeded from that template got dead buttons
+   * and a nav entry pointing at a deleted project, and its assistant sent
+   * people to a domain that NXDOMAINs.
+   *
+   * The category error is the interesting part, not the dead host: "Try Product
+   * Demo" IS the site the visitor is already on. It was written when demo was a
+   * separate neighbour to link across to; instances are spun up, run and taken
+   * down, so there is no fixed neighbour. The same template already knew the
+   * right shape one line above — `buttonUrl: '/roi-calculator'`.
+   *
+   * Relative wins on every domain and needs no substitution. Absolute is for
+   * things that genuinely live elsewhere (the GitHub link beside these is
+   * correctly absolute).
+   */
+  const TEMPLATE_DIRS = [
+    join(ROOT, 'src/data/templates'),
+    join(ROOT, 'templates'),
+    join(FUNCTIONS, 'agent-execute'),
+  ].filter((d) => {
+    try { return statSync(d).isDirectory(); } catch { return false; }
+  });
+
+  it('no instance subdomain appears in template data', () => {
+    const offenders: string[] = [];
+    for (const dir of TEMPLATE_DIRS) {
+      for (const f of walk(dir, ['.ts', '.json'])) {
+        // Source templates are commented; generated JSON is not. Strip either
+        // way so a comment explaining the rule cannot violate it.
+        const src = f.endsWith('.json') ? read(f) : strip(read(f));
+        if (INSTANCE_URL.test(src)) offenders.push(rel(f));
+      }
+    }
+    expect(offenders, 'absolute instance URL in template data').toEqual([]);
+  });
+
+  it('the self-referential links became relative, not merely repointed', () => {
+    // Repointing at sandbox.flowwink.com would have reproduced the bug with a
+    // fresh host: still one named instance shipped to all of them.
+    const agency = read(join(ROOT, 'src/data/templates/flowwink-agency.ts'));
+    expect(agency).toMatch(/buttonUrl: '\/'/);
+    expect(agency).toMatch(/secondaryButtonUrl: '\/docs'/);
+    expect(agency).toMatch(/id: 'demo'[^}]*url: '\/'[^}]*openInNewTab: false/);
+    // A link that truly points elsewhere stays absolute.
+    expect(agency).toContain("https://github.com/magnusfroste/flowwink");
+  });
+
+  it('the generated artifacts were regenerated from the source', () => {
+    // templates-to-json.ts writes three copies. A fix in the .ts that never
+    // reaches _templates.json leaves the shipped seed broken — the drift this
+    // repo keeps meeting between a source of truth and its emitted artifact.
+    const emitted = read(join(FUNCTIONS, 'agent-execute/_templates.json'));
+    expect(emitted).not.toMatch(/demo\.flowwink\.com/);
+    expect(read(join(ROOT, 'templates/flowwink-agency.json'))).not.toMatch(/demo\.flowwink\.com/);
   });
 });
