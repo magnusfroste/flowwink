@@ -174,3 +174,45 @@ describe('no template ships an absolute URL to a FlowWink instance', () => {
     expect(read(join(ROOT, 'templates/flowwink-agency.json'))).not.toMatch(/demo\.flowwink\.com/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Emitted artifacts must be reproducible
+// ---------------------------------------------------------------------------
+
+describe('template sources are deterministic', () => {
+  /**
+   * `templates-to-json.ts` writes three artifacts from these sources. When a
+   * source draws its ids from Math.random() at module load, every run emits
+   * different ids and the diff churns thirty lines that changed nothing —
+   * proven by running the generator twice on an unchanged tree.
+   *
+   * The cost is not cosmetic: the churn collides with anyone else editing the
+   * same emitted files, and it hides a real change inside a wall of noise. The
+   * next person commits a diff they cannot explain, or misses the one line that
+   * mattered.
+   */
+  const SOURCES = [
+    join(ROOT, 'src/data/templates'),
+    ...['template-blog-posts.ts', 'template-kb-articles.ts', 'templates.ts']
+      .map((f) => join(ROOT, 'src/data', f)),
+  ].filter((p) => { try { statSync(p); return true; } catch { return false; } });
+
+  it('no template source seeds content from randomness', () => {
+    const offenders: string[] = [];
+    for (const p of SOURCES) {
+      const files = statSync(p).isDirectory() ? walk(p, ['.ts']) : [p];
+      for (const f of files) {
+        if (/Math\.random\(|crypto\.randomUUID\(/.test(strip(read(f)))) offenders.push(rel(f));
+      }
+    }
+    expect(offenders, 'randomness in template source makes the emitted JSON churn').toEqual([]);
+  });
+
+  it('the block id counter survives — ids stay unique per emitted template', () => {
+    // Uniqueness is load-bearing: BlockRenderer passes block.id to FormBlock,
+    // BookingBlock and WebinarBlock to bind submissions to a specific block.
+    const src = read(join(ROOT, 'src/data/template-blog-posts.ts'));
+    expect(src).toMatch(/let textBlockSeq = 0;/);
+    expect(src).toMatch(/\(\+\+textBlockSeq\)\.toString\(\)/);
+  });
+});

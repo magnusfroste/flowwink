@@ -1,8 +1,31 @@
 import { TemplateBlogPost } from './templates';
 
-// Helper to create TipTap content
+/**
+ * Helper to create TipTap content.
+ *
+ * The id is a DETERMINISTIC counter, not `Math.random()`. It used to be random,
+ * evaluated at module load — so every run of `templates-to-json.ts` emitted 30
+ * different block ids and produced a thirty-line diff that changed nothing.
+ * Proven by running the generator twice on an unchanged tree: the only
+ * differences were these ids.
+ *
+ * That noise is not cosmetic. It collides with anyone else editing the same
+ * emitted files, and it hides a real change inside a wall of churn — so the
+ * next person either commits a diff they cannot explain or misses the one line
+ * that mattered.
+ *
+ * A counter is enough: ids must be unique within a page (BlockRenderer passes
+ * block.id to FormBlock / BookingBlock / WebinarBlock to bind submissions to a
+ * block), and module evaluation is top-to-bottom, so the sequence is stable
+ * across runs. Content-derived ids were the alternative and are worse here —
+ * two identical paragraphs would collide.
+ *
+ * Already-installed sites keep the ids stored in their own database; this
+ * changes what NEW installs are seeded with.
+ */
+let textBlockSeq = 0;
 const createTextBlock = (content: { type: string; content: unknown[] }) => ({
-  id: `text-${Math.random().toString(36).slice(2, 9)}`,
+  id: `text-${(++textBlockSeq).toString().padStart(4, '0')}`,
   type: 'text' as const,
   data: { content },
 });
