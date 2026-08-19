@@ -43,6 +43,7 @@ const FormBlock = lazy(() => import('./blocks/FormBlock').then(m => ({ default: 
 const NewsletterBlock = lazy(() => import('./blocks/NewsletterBlock').then(m => ({ default: m.NewsletterBlock })));
 const PopupBlock = lazy(() => import('./blocks/PopupBlock').then(m => ({ default: m.PopupBlock })));
 const BookingBlock = lazy(() => import('./blocks/BookingBlock').then(m => ({ default: m.BookingBlock })));
+const SmartBookingBlock = lazy(() => import('./blocks/SmartBookingBlock').then(m => ({ default: m.SmartBookingBlock })));
 const PricingBlock = lazy(() => import('./blocks/PricingBlock').then(m => ({ default: m.PricingBlock })));
 const TestimonialsBlock = lazy(() => import('./blocks/TestimonialsBlock').then(m => ({ default: m.TestimonialsBlock })));
 const TeamBlock = lazy(() => import('./blocks/TeamBlock').then(m => ({ default: m.TeamBlock })));
@@ -254,6 +255,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <PopupBlock data={block.data as unknown as PopupBlockData} />;
       case 'booking':
         return <BookingBlock data={block.data as unknown as BookingBlockData} blockId={block.id} pageId={pageId} />;
+      case 'smart-booking':
+        return <SmartBookingBlock data={block.data as unknown as BookingBlockData} blockId={block.id} pageId={pageId} />;
       case 'pricing':
         return <PricingBlock data={block.data as unknown as PricingBlockData} />;
       case 'testimonials':
