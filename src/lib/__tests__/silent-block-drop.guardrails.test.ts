@@ -29,6 +29,16 @@ describe('silent block drops are banned', () => {
     expect(blocks.length).toBe(1);
   });
 
+  it('manage_page create refuses (does not save) when blocks are dropped', () => {
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+    // "if (action === 'create')" appears in ~20 skills — anchor on the one
+    // line unique to manage_page create's write path instead.
+    const create = src.slice(src.indexOf('const pageBlocks = blocks || [];'), src.indexOf("if (action === 'update' && page_id)"));
+    expect(create).toContain('normalizeBlocks');
+    expect(create).toMatch(/dropped.*throw|throw[\s\S]{0,200}dropped/i); // loud refusal, same as update
+    expect(create).toContain('nothing was written');
+  });
+
   it('manage_page update refuses (does not save) when blocks are dropped, and takes content_json as alias', () => {
     const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
     const upd = src.slice(src.indexOf("if (action === 'update' && page_id)"), src.indexOf("if (action === 'publish' && page_id)"));

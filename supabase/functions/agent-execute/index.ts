@@ -3663,7 +3663,16 @@ async function executePagesAction(
           .from('pages').select('id', { count: 'exact', head: true }).is('deleted_at', null);
 
         const pageBlocks = blocks || [];
-        normalizeBlocks(pageBlocks);
+        // Same refusal contract as the update branch below: a create that
+        // quietly loses blocks answers "created" for a page thinner than what
+        // the caller sent — the silent-drop class the guardrail test bans.
+        const droppedOnCreate = normalizeBlocks(pageBlocks);
+        if (droppedOnCreate.length > 0) {
+          throw new Error(
+            `Block validation dropped ${droppedOnCreate.length} block(s): ${droppedOnCreate.join('; ')}. ` +
+            `Fix the named fields and retry — nothing was written.`,
+          );
+        }
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
