@@ -53,7 +53,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'manage_shipment',
     description:
-      'Create/list/update shipments (parcels) for an order. Use when: warehouse books a parcel with a carrier and gets a tracking number. NOT for: marking the whole order as shipped (use manage_orders fulfillment_status).',
+      'Create/list/update shipments (parcels) for an order. Use when: warehouse books a parcel with a carrier and gets a tracking number. NOT for: marking the whole order as shipped (use manage_orders with fulfillment_status=shipped).',
     category: 'commerce',
     handler: 'db:shipments',
     scope: 'internal',

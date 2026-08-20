@@ -32,7 +32,7 @@ const RIVER_SKILLS: SkillSeed[] = [
   {
     name: 'post_to_river',
     description:
-      'Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\'s team voice. Use when: announcing a release, sharing a quick win, posting an internal heads-up, or replying in a thread — anything a human colleague would genuinely post. NOT for: routine status or "checked, nothing new" (silence — that telemetry already lives in agent_activity); approval requests (the approval queue notifies on its own); external customer chat (use chat); ticket replies (use manage_tickets); newsletter/blog (those are external).',
+      'Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\'s team voice. Use when: announcing a release, sharing a quick win, posting an internal heads-up, or replying in a thread — anything a human colleague would genuinely post. NOT for: routine status or "checked, nothing new" (silence — that telemetry already lives in agent_activity); approval requests (the approval queue notifies on its own); external customer chat (use chat); ticket replies (use manage_ticket); newsletter/blog (those are external).',
     category: 'communication',
     handler: 'module:river',
     scope: 'internal',

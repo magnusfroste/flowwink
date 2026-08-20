@@ -739,7 +739,7 @@ Single step of the AI site-builder. Same loop the admin /admin/copilot UI uses, 
       },
     },
     instructions:
-      'Pages in the same translation_group_id are language versions of each other; one page per locale per group. create copies content_json as a DRAFT — translate the copy (manage_page update) and publish it. link requires the two pages to already have different locales (use set_locale first). The public site resolves ?lang=<locale> to the published translation.',
+      'Pages in the same translation_group_id are language versions of each other; one page per locale per group. create copies content_json as a DRAFT — translate the copy (manage_page update) and publish it. link requires the two pages to already have different locales (use manage_page update to set locales first). The public site resolves ?lang=<locale> to the published translation.',
   },
   {
     name: 'manage_page_experiment',

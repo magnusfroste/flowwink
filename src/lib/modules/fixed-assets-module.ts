@@ -32,7 +32,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'register_fixed_asset',
     description:
-      'Register a new fixed asset (equipment, furniture, vehicles, IT) and post the acquisition journal entry. Use when: a new piece of equipment is purchased and capitalized rather than expensed. NOT for: small consumables (use expenses), software subscriptions (use bills), or intangibles (separate flow).',
+      'Register a new fixed asset (equipment, furniture, vehicles, IT) and post the acquisition journal entry. Use when: a new piece of equipment is purchased and capitalized rather than expensed. NOT for: small consumables (use manage_expenses), software subscriptions (use register_vendor_invoice), or intangibles (separate flow).',
     category: 'commerce',
     handler: 'rpc:mcp_register_fixed_asset',
     scope: 'internal',

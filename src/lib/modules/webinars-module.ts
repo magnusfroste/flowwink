@@ -201,7 +201,7 @@ Manages webinars and registrations.
   },
   {
     name: 'generate_blog_from_webinar',
-    description: 'Turn a completed webinar into a blog post draft (title, slug, excerpt, markdown body, tags) and insert it as a draft in blog_posts. Use when: a webinar is completed and we want evergreen content from it. NOT for: editing existing blogs (use manage_blog), publishing live (admin reviews and publishes manually).',
+    description: 'Turn a completed webinar into a blog post draft (title, slug, excerpt, markdown body, tags) and insert it as a draft in blog_posts. Use when: a webinar is completed and we want evergreen content from it. NOT for: editing existing blogs (use manage_blog_posts), publishing live (admin reviews and publishes manually).',
     category: 'content',
     handler: 'edge:ai-task',
     scope: 'internal',

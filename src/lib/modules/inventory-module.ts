@@ -22,7 +22,7 @@ const INVENTORY_SKILLS: SkillSeed[] = [
   {
     name: 'transfer_stock',
     description:
-      'Move stock between two locations (e.g. WH/MAIN → WH/PRODUCTION). Use when: relocating goods, fulfilling internal pick lists, or moving items to scrap. NOT for: receiving from vendor (use receive_goods) or shipping to customer (use consume_reservation).',
+      'Move stock between two locations (e.g. WH/MAIN → WH/PRODUCTION). Use when: relocating goods, fulfilling internal pick lists, or moving items to scrap. NOT for: receiving from vendor (use receive_purchase_order) or shipping to customer (use consume_reservation).',
     category: 'commerce',
     handler: 'rpc:transfer_stock',
     scope: 'internal',
@@ -120,7 +120,7 @@ const INVENTORY_SKILLS: SkillSeed[] = [
   {
     name: 'adjust_quant',
     description:
-      'Manual stock adjustment at a specific location (positive or negative delta). Use when: stocktake correction, breakage, or initial seed. NOT for: vendor receipts (use receive_goods).',
+      'Manual stock adjustment at a specific location (positive or negative delta). Use when: stocktake correction, breakage, or initial seed. NOT for: vendor receipts (use receive_purchase_order).',
     category: 'commerce',
     handler: 'rpc:adjust_quant',
     scope: 'internal',

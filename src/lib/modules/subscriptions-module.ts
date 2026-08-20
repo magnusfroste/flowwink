@@ -276,7 +276,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'cancel_manual_subscription',
-    description: 'Cancel a manual (invoice-billed) subscription. Use when: customer terminates B2B plan, account closed. NOT for: Stripe subscriptions (use Stripe customer portal or cancel_subscription).',
+    description: 'Cancel a manual (invoice-billed) subscription. Use when: customer terminates B2B plan, account closed. NOT for: Stripe subscriptions (use Stripe customer portal).',
     category: 'commerce',
     handler: 'rpc:cancel_manual_subscription',
     scope: 'internal',

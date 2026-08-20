@@ -66,7 +66,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_project_task',
-    description: 'Create, update, move, and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status. NOT for: CRM tasks (use manage_crm_tasks), project-level operations (use manage_project).',
+    description: 'Create, update, move, and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
     category: 'crm',
     handler: 'db:project_tasks',
     scope: 'internal',

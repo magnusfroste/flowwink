@@ -645,7 +645,7 @@ done while rejected is non-empty.`,
   },
   {
     name: 'close_accounting_period',
-    description: 'Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and reconciled. NOT for: permanent archival (use lock_accounting_period after audit).',
+    description: 'Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and reconciled. NOT for: permanent archival.',
     category: 'commerce',
     handler: 'rpc:close_accounting_period',
     scope: 'internal',

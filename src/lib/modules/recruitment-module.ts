@@ -34,7 +34,7 @@ const RECRUITMENT_SKILLS: SkillSeed[] = [
   {
     name: 'manage_job_posting',
     description:
-      'Create, update, publish or close job postings (open roles). Use when: opening a new role, editing a job description, closing a filled position, listing active openings. NOT for: candidate applications (use manage_application).',
+      'Create, update, publish or close job postings (open roles). Use when: opening a new role, editing a job description, closing a filled position, listing active openings. NOT for: candidate applications (use move_application_stage).',
     category: 'crm',
     handler: 'db:job_postings',
     scope: 'internal',

@@ -35,7 +35,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'set_exchange_rate',
     description:
-      'Manually set or override an exchange rate for a base→quote pair on a given date. Use when: admin enters a custom rate, locking a contract rate, fixing a bad ECB pull. NOT for: automatic daily ECB fetch (handled by fetch_ecb_rates cron) or for converting amounts inline (use get_exchange_rate).',
+      'Manually set or override an exchange rate for a base→quote pair on a given date. Use when: admin enters a custom rate, locking a contract rate, fixing a bad ECB pull. NOT for: automatic daily ECB fetch (handled by fetch_ecb_rates cron) or for converting amounts inline.',
     category: 'commerce',
     handler: 'rpc:mcp_set_exchange_rate',
     scope: 'internal',

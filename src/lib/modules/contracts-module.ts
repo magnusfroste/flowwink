@@ -76,7 +76,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_contract',
-    description: 'Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), project management (use manage_projects).',
+    description: 'Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), project management (use manage_project).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',

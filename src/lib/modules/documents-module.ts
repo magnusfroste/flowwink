@@ -43,7 +43,7 @@ type DocumentsOutput = z.infer<typeof documentsOutputSchema>;
 const DOCS_SKILLS: SkillSeed[] = [
   {
     name: 'manage_document',
-    description: 'Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use manage_media), blog content.',
+    description: 'Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use media_browse), blog content.',
     category: 'content',
     handler: 'db:documents',
     scope: 'internal',

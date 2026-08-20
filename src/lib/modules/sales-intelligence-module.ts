@@ -232,7 +232,7 @@ This skill is primarily triggered by automations, not directly by users.
             },
           },
         },
-        description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity).',
+        description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use update_company_profile).',
       },
     },
     instructions: 'Use this skill when the user wants to set up their Sales Intelligence profile. For company profiles, ask about: ICP (ideal customer profile), value proposition, key differentiators, competitors, pricing strategy. For user profiles, ask about: their name, title, personal pitch, preferred tone, and email signature. Always confirm the data before saving.',

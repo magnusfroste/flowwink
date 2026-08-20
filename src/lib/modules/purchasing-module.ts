@@ -44,7 +44,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'register_vendor_invoice',
-    description: 'Register an incoming vendor invoice (AP inbox). Use when: a vendor bill arrives that needs 3-way matching against a PO before payment. NOT for: customer invoices (use create_invoice).',
+    description: 'Register an incoming vendor invoice (AP inbox). Use when: a vendor bill arrives that needs 3-way matching against a PO before payment. NOT for: customer invoices (use manage_invoice).',
     category: 'commerce',
     handler: 'db:vendor_invoices',
     scope: 'internal',
@@ -62,7 +62,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'flag_invoice_variance',
-    description: 'List vendor invoices flagged with price/quantity variance against their PO that need manual review. Use when: admin wants to see what failed automated 3-way matching. NOT for: inspecting a single invoice (use get_invoice) or auto-approving (use auto_approve_vendor_invoice).',
+    description: 'List vendor invoices flagged with price/quantity variance against their PO that need manual review. Use when: admin wants to see what failed automated 3-way matching. NOT for: inspecting a single invoice (use manage_invoice) or auto-approving (use auto_approve_vendor_invoice).',
     category: 'commerce',
     handler: 'db:vendor_invoices',
     scope: 'internal',
@@ -107,7 +107,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'create_purchase_order',
-    description: 'Create a new purchase order (draft) for a vendor with line items. Use when: stock is low and reorder is needed, admin requests a purchase, or purchase_reorder_check suggests items to order. NOT for: sending PO to vendor (use send_purchase_order), receiving goods (use receive_goods).',
+    description: 'Create a new purchase order (draft) for a vendor with line items. Use when: stock is low and reorder is needed, admin requests a purchase, or purchase_reorder_check suggests items to order. NOT for: sending PO to vendor (use send_purchase_order), receiving goods (use receive_purchase_order).',
     category: 'commerce',
     handler: 'db:purchase_orders',
     scope: 'internal',

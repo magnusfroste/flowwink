@@ -564,7 +564,7 @@ When generating social posts:
   },
   {
     name: 'seo_content_brief',
-    description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit).',
+    description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit_page).',
     category: 'content',
     // Generative — runs through the ai-task hub (seo_content_brief task). Was
     // wired to db:content_research (CRUD list) which always returned 0 items.
@@ -596,7 +596,7 @@ When generating social posts:
             },
           },
         },
-        description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit).',
+        description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit_page).',
       },
     },
     instructions: 'Use before writing SEO-targeted content. Returns keywords, questions, competitor gaps, and outline.',
