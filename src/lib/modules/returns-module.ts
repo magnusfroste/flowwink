@@ -27,7 +27,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'create_return',
     description:
-      'Create a new return (RMA) for an order. Use when: customer or support agent requests a return/refund. NOT for: approving (use approve_return) or processing the refund (use refund_return).',
+      'Create a new return (RMA) for an existing order. Use when: creating a return, an RMA or a return authorization for an order; a customer or support agent requests a return, a refund or an exchange of delivered goods. NOT for: approving (use approve_return); processing the refund (use refund_return); purchase orders to a vendor (use create_purchase_order).',
     category: 'commerce',
     handler: 'db:returns',
     scope: 'internal',
@@ -35,7 +35,7 @@ const SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'create_return',
-        description: 'Create a draft RMA in requested status',
+        description: 'Create a draft RMA (return authorization) in requested status for an existing customer order. Use when: creating a return, an RMA or a return authorization for an order; a customer requests a refund or exchange of delivered goods.',
         parameters: {
           type: 'object',
           properties: {
@@ -89,7 +89,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'manage_return_item',
     description:
-      'Add/edit/remove line items on an existing return. Use when: specifying which order items are being returned and in what condition.',
+      'Add/edit/remove line items on an existing return. Use when: specifying which order items are being returned and in what condition. The lines carry the refund ceiling (qty × unit_refund_cents), so refund_return refuses an RMA with no lines. Once the return is refunded its lines are frozen — update/delete are refused; book a correction on a new return.',
     category: 'commerce',
     handler: 'db:return_items',
     scope: 'internal',
@@ -182,7 +182,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Only valid when the return is in received or approved status (run receive_return first). Params: return_id, refund_cents (positive integer cents — partial refunds ACCUMULATE across calls), method, p_final. Expected total = Σ(return_items qty × unit_refund_cents) − restocking_fee_cents (set via inspect_return); over-refund is rejected. The RMA closes (status=refunded) when the running total reaches the expected total OR you pass p_final:true. For Stripe-paid orders prefer method="stripe" (records an actual refund); for card-not-present or offline orders use "manual".',
+      'Only valid when the return is in received or approved status (run receive_return first). Params: return_id, refund_cents (positive integer cents — partial refunds ACCUMULATE across calls), method, p_final. Expected total = Σ(return_items qty × unit_refund_cents) − restocking_fee_cents (set via inspect_return); over-refund is rejected, and so is an RMA with no priced lines — add them via manage_return_item first. The RMA closes (status=refunded) when the running total reaches the expected total OR you pass p_final:true. p_final closes early but never over-pays; to close an RMA that is already past its expected total, call with refund_cents 0 and p_final true. For Stripe-paid orders prefer method="stripe" (records an actual refund); for card-not-present or offline orders use "manual".',
   },
   {
     name: 'inspect_return',
@@ -206,7 +206,7 @@ const SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Only valid in status=received. The expected refund becomes Σ(return_items qty × unit_refund_cents) − restocking_fee_cents; refund_return enforces it.',
+    instructions: 'Only valid in status=received. The expected refund becomes Σ(return_items qty × unit_refund_cents) − restocking_fee_cents; refund_return enforces it. A fee that would push the expected total below what has ALREADY been refunded on the RMA is rejected — the error names the maximum fee still available.',
   },
   {
     name: 'return_reason_report',

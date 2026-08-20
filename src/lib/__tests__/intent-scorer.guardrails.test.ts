@@ -15,7 +15,8 @@
  * the default 25.
  */
 import { describe, expect, it } from 'vitest';
-import { scoreSkillsByIntent } from '../../../supabase/functions/_shared/skills/intent-scorer';
+import { scoreSkillsByIntent, stemSwedish } from '../../../supabase/functions/_shared/skills/intent-scorer';
+import artifact from '../../../supabase/seed/module-skills.json';
 
 type Tool = { function: { name: string; description: string } };
 const tool = (name: string, description = ''): Tool => ({ function: { name, description } });
@@ -133,5 +134,71 @@ describe('create-verb intent (OpenClaw sandbox smoke, 2026-07-22)', () => {
 
   it('"create a deal" still ranks manage_deal first (no overcorrection)', () => {
     expect(rankOf([...crm, ...padding], 'create a deal for this customer', 'manage_deal')).toBe(1);
+  });
+});
+
+describe('Swedish inflection reaches the catalog (FlowWork QA, 2026-08-20)', () => {
+  // The catalog is English. Swedish inflects at the END of the word — the
+  // definite article and the plural are suffixes — while the scorer's compound
+  // matcher was built for English compounds, which carry their category in the
+  // last morpheme. The two pull opposite ways: "retur"/"returen"/"returer"
+  // never touched `return`, and the whole eftermarknad vocabulary was missing
+  // from the synonym map besides. Six live QA questions came back with the
+  // wrong module or nothing at all.
+  //
+  // These run against the REAL bundled catalog (537 skills), because the bug
+  // was a corpus effect: the right skill lost to a plausible neighbour, and a
+  // hand-built fixture of five skills cannot reproduce that.
+  const catalog = (artifact as { modules: Array<{ skills: Array<{ name: string; description?: string }> }> })
+    .modules.flatMap((m) => m.skills.map((s) => ({
+      ...s,
+      function: { name: s.name, description: s.description ?? '' },
+    })));
+
+  const rank = (query: string, target: string): number => {
+    const ranked = scoreSkillsByIntent(catalog, query, { maxSkills: 8 });
+    const idx = ranked.findIndex((s: { function: { name: string } }) => s.function.name === target);
+    return idx === -1 ? Infinity : idx + 1;
+  };
+
+  it.each([
+    ['skapa retur RMA för order 1042', 'create_return'],
+    ['återbetala returen till kunden', 'refund_return'],
+    ['registrera ett utlägg för taxiresan', 'manage_expenses'],
+    ['attestera utläggsrapporten', 'approve_expense_report'],
+    ['skicka påminnelse på förfallna fakturor', 'send_dunning_reminders'],
+    ['skapa inköpsorder till leverantören', 'create_purchase_order'],
+    ['varumottagning av inköpsorder', 'receive_purchase_order'],
+  ])('"%s" ranks %s in the top 5', (query, target) => {
+    expect(rank(query, target)).toBeLessThanOrEqual(5);
+  });
+
+  it('English intents are not traded away for Swedish ones', () => {
+    expect(rank('write a blog post about our product', 'write_blog_post')).toBeLessThanOrEqual(3);
+    expect(rank('search the web for competitor pricing', 'search_web')).toBeLessThanOrEqual(3);
+  });
+});
+
+describe('the Swedish stemmer is conservative by construction', () => {
+  it('strips the inflection off real nouns', () => {
+    expect(stemSwedish('returen')).toBe('retur');
+    expect(stemSwedish('returer')).toBe('retur');
+    expect(stemSwedish('returerna')).toBe('retur');
+    expect(stemSwedish('leverantören')).toBe('leverantör');
+    expect(stemSwedish('fakturan')).toBe('faktura');
+  });
+
+  it('refuses to butcher short words — the 4-character floor IS the safety', () => {
+    // "post" → "pos" would leak every blog question into the POS module, and
+    // "error" → "err" would do the same to error-code lookups. Both null.
+    expect(stemSwedish('post')).toBeNull();
+    expect(stemSwedish('error')).toBeNull();
+    expect(stemSwedish('order')).toBeNull();
+    expect(stemSwedish('chat')).toBeNull();
+  });
+
+  it('leaves words with no Swedish ending alone', () => {
+    expect(stemSwedish('invoice')).toBeNull();
+    expect(stemSwedish('blog')).toBeNull();
   });
 });

@@ -34,9 +34,60 @@ const SYNONYM_MAP: Record<string, string[]> = {
   anställda: ['employee', 'employees', 'staff', 'hr'],
   semester: ['leave', 'vacation', 'absence'],
   prenumeration: ['subscription', 'recurring'],
-  leverantör: ['vendor', 'supplier', 'purchase'],
+  leverantör: ['vendor', 'supplier', 'purchase', 'purchasing'],
   omförhandla: ['renewal', 'contract', 'renegotiate'],
   omförhandlas: ['renewal', 'contract', 'renegotiate'],
+  // ── Aftermarket (returns/RMA/refunds) ──────────────────────────────────
+  // The whole eftermarknad vocabulary was missing: a Swedish "skapa retur för
+  // order 1042" scored create_purchase_order/place_order top-8 and never saw
+  // create_return at all (FlowWork QA, 2026-08-20). Query-side expansion into
+  // the catalog's English vocabulary — the corpus lever, not routing (Law 1).
+  retur: ['return', 'rma', 'refund', 'returns'],
+  returer: ['return', 'returns', 'rma', 'refund'],
+  returnera: ['return', 'rma', 'refund'],
+  rma: ['return', 'rma', 'refund'],
+  reklamation: ['return', 'rma', 'complaint', 'defective'],
+  återbetalning: ['refund', 'return', 'credit', 'rma'],
+  återbetala: ['refund', 'return', 'credit', 'rma'],
+  kreditfaktura: ['credit', 'note', 'invoice', 'refund'],
+  kreditnota: ['credit', 'note', 'invoice'],
+  // ── Expenses / approvals ───────────────────────────────────────────────
+  attestera: ['approve', 'approval', 'expense', 'report', 'sign'],
+  attest: ['approve', 'approval', 'expense', 'report'],
+  godkänna: ['approve', 'approval'],
+  utläggsrapport: ['expense', 'report', 'reimburse', 'manage_expenses'],
+  // ── Dunning / collections ──────────────────────────────────────────────
+  // Both the singular and the plural English form: nameWordHit tests whole
+  // name words, and "reminders" is not a substring of "reminder".
+  påminnelse: ['dunning', 'reminder', 'reminders', 'overdue', 'invoice', 'unpaid'],
+  påminnelser: ['dunning', 'reminder', 'reminders', 'overdue', 'invoice', 'unpaid'],
+  krav: ['dunning', 'collection', 'overdue', 'reminder', 'unpaid'],
+  inkasso: ['dunning', 'collection', 'overdue'],
+  förfallna: ['overdue', 'due', 'invoice', 'unpaid', 'dunning'],
+  // ── Purchasing / goods receipt / stock ─────────────────────────────────
+  inköp: ['purchase', 'purchasing', 'procurement', 'vendor'],
+  inköpsorder: ['purchase', 'order', 'purchasing', 'vendor'],
+  varumottagning: ['receive', 'receipt', 'goods', 'purchase', 'purchasing'],
+  mottagning: ['receive', 'receipt', 'goods', 'purchase'],
+  motta: ['receive', 'receipt', 'goods'],
+  lager: ['stock', 'inventory', 'warehouse', 'quant'],
+  lagret: ['stock', 'inventory', 'warehouse', 'quant'],
+  lagersaldo: ['stock', 'inventory', 'quantity', 'quant'],
+  saldo: ['stock', 'balance', 'inventory'],
+  frakt: ['shipping', 'shipment', 'carrier', 'delivery'],
+  leverans: ['delivery', 'shipping', 'shipment', 'fulfill'],
+  // ── Verbs ──────────────────────────────────────────────────────────────
+  // The catalog names its skills verb-first (create_*, send_*, update_*).
+  // A Swedish sentence carries the verb too — it just carries it in Swedish,
+  // so every create_* skill scored as if the user had named no action at all.
+  skapa: ['create', 'add', 'new'],
+  skicka: ['send', 'dispatch'],
+  uppdatera: ['update', 'edit', 'manage'],
+  ändra: ['update', 'edit', 'manage'],
+  registrera: ['create', 'register', 'record', 'add'],
+  lista: ['list', 'browse', 'search'],
+  visa: ['get', 'list', 'show', 'view'],
+  hämta: ['get', 'fetch', 'list'],
   // Email
   mail: ['gmail', 'email', 'inbox', 'send', 'composio_gmail'],
   email: ['gmail', 'mail', 'inbox', 'send', 'composio_gmail'],
@@ -123,6 +174,42 @@ const SYNONYM_MAP: Record<string, string[]> = {
   fakturerbar: ['billable', 'time', 'timesheet_summary', 'revenue'],
 };
 
+// ─── Term normalization (corpus layer, not routing) ──────────────────────────
+
+/**
+ * Swedish inflects at the END of the word — the definite article and the
+ * plural are SUFFIXES (retur → returen → returer → returerna). The scorer's
+ * compound matcher (`nameWordHit`) matches on suffixes because ENGLISH
+ * compounds carry their category in the last morpheme (flowtable → table).
+ * The two pull in opposite directions: every Swedish inflection destroys the
+ * suffix the English matcher and the synonym map are keyed on, so "returen"
+ * matched nothing while "retur" would have.
+ *
+ * So: strip the inflectional ending before matching. This is a NORMALIZATION
+ * of the query vocabulary — exactly the same class of thing as the synonym
+ * map — and emphatically NOT intent detection (Law 1): no user phrase is
+ * mapped to a skill here, and nothing branches on which skill is being scored.
+ * The stem is ADDED alongside the raw word, never substituted, so an English
+ * word that happens to end in a Swedish suffix loses nothing.
+ *
+ * The 4-character floor is what keeps it safe: "post" → "pos" and "error" →
+ * "err" are rejected, so a blog question cannot leak into the POS module.
+ */
+const SV_SUFFIXES = ['erna', 'arna', 'orna', 'en', 'et', 'er', 'ar', 'or', 'na', 'n', 't'];
+const SV_MIN_STEM = 4;
+
+export function stemSwedish(word: string): string | null {
+  const w = word.toLowerCase();
+  for (const suf of SV_SUFFIXES) {
+    if (w.length > suf.length && w.endsWith(suf)) {
+      const stem = w.slice(0, -suf.length);
+      if (stem.length >= SV_MIN_STEM) return stem;
+      return null; // too short to be evidence — fail quiet, keep the raw word
+    }
+  }
+  return null;
+}
+
 // ─── Scorer ──────────────────────────────────────────────────────────────────
 
 export interface ScoredSkill {
@@ -207,15 +294,27 @@ export function scoreSkillsByIntent(
   if (skills.length <= maxSkills && !userMessage.trim()) return skills;
 
   const msg = userMessage.toLowerCase();
-  const msgWords = msg.split(/\s+/).filter(w => w.length > 1);
+  const rawWords = msg.split(/\s+/).filter(w => w.length > 1);
 
-  // Expand user message with synonyms
+  // Expand user message with synonyms. Each word is looked up BOTH as typed
+  // and as its Swedish stem, so "returen"/"returer"/"returerna" all reach the
+  // `retur` entry — otherwise the map only ever fires on the dictionary form,
+  // which is not how anyone writes.
   const expandedTerms = new Set<string>();
-  for (const word of msgWords) {
+  const msgWords: string[] = [];
+  for (const word of rawWords) {
+    msgWords.push(word);
     expandedTerms.add(word);
-    const synonyms = SYNONYM_MAP[word];
-    if (synonyms) {
-      for (const syn of synonyms) expandedTerms.add(syn);
+    const stem = stemSwedish(word);
+    if (stem && stem !== word) {
+      msgWords.push(stem);
+      expandedTerms.add(stem);
+    }
+    for (const key of stem ? [word, stem] : [word]) {
+      const synonyms = SYNONYM_MAP[key];
+      if (synonyms) {
+        for (const syn of synonyms) expandedTerms.add(syn);
+      }
     }
   }
   const expandedMsg = Array.from(expandedTerms).join(' ');

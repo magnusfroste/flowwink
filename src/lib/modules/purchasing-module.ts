@@ -107,7 +107,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'create_purchase_order',
-    description: 'Create a new purchase order (draft) for a vendor with line items. Use when: stock is low and reorder is needed, admin requests a purchase, or purchase_reorder_check suggests items to order. NOT for: sending PO to vendor (use send_purchase_order), receiving goods (use receive_goods).',
+    description: 'Create a new purchase order (draft) for a vendor with line items. Use when: stock is low and reorder is needed, admin requests a purchase, or purchase_reorder_check suggests items to order. NOT for: sending PO to vendor (use send_purchase_order), receiving the delivered goods (use receive_purchase_order).',
     category: 'commerce',
     handler: 'db:purchase_orders',
     scope: 'internal',

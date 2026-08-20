@@ -96,6 +96,31 @@ Browse products in the catalog (visitor-facing, read-only).
               type: 'number',
               description: 'Product weight in grams. Omit/null = non-shippable (service/digital). A weighted product participates in the checkout shipping calculation.',
             },
+            track_inventory: {
+              type: 'boolean',
+              description: 'Whether stock is counted for this product. Set true at create time for physical goods — a product created without it is untracked and never appears in stock lists, low-stock alerts or the reorder loop.',
+            },
+            stock_quantity: {
+              type: 'number',
+              description: 'Opening on-hand quantity. Only meaningful with track_inventory: true.',
+            },
+            low_stock_threshold: {
+              type: 'number',
+              description: 'Stock level at or below which the product counts as low (default 5). Also the reorder point when no product_stock override exists.',
+            },
+            allow_backorder: {
+              type: 'boolean',
+              description: 'Accept orders beyond the on-hand quantity (default false). With false, an order line larger than the available stock is refused.',
+            },
+            cost_cents: {
+              type: 'number',
+              description: 'Purchase/unit cost in cents. Used for inventory valuation when a receipt carries no PO price.',
+            },
+            barcode: { type: 'string' },
+            category_id: {
+              type: 'string',
+              description: 'product_categories UUID. Drives the costing method used for valuation.',
+            },
           },
           required: [
             'action',
@@ -115,8 +140,12 @@ Manages products in the catalog: create, update, delete, manage variants.
 - **price_cents**: Price in cents (create/update).
 - **description**: Product description.
 - **weight_grams**: Weight in grams (create/update). null/omitted = non-shippable service or digital product; set it for physical goods so checkout can offer weight-based delivery options.
+- **track_inventory / stock_quantity / low_stock_threshold / allow_backorder / cost_cents / barcode / category_id**: accepted on create as well as update — a physical product should be born stocked rather than created and patched.
 ### Edge cases
 - Price is in cents (e.g., 9900 = $99.00 or 99 SEK).
+- track_inventory defaults to false. A product created without it is untracked: it never shows in list_stock, never triggers a low-stock alert and is never a reorder candidate.
+- allow_backorder=false (the default) makes order lines above the on-hand quantity fail with the available number in the error. Set it true to accept backorders — stock_quantity then goes negative, and the negative IS the backorder depth.
+- SKU lives on variants, not products — use manage_variant (p_sku) for it.
 - weight_grams drives shipping at checkout: carts with any weighted product require a delivery address and get carrier options from the shipping_rates weight bands.
 - Use manage_inventory for stock levels.`,
   },
@@ -247,7 +276,7 @@ CRUD over the uoms table (units of measure). Categories live in uom_categories; 
   },
   {
     name: 'manage_inventory',
-    description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
+    description: 'Manage product inventory on the e-commerce catalog: list stock, update quantities and thresholds, read low-stock alerts and back-in-stock waitlists. Actions: list_stock, update_stock, low_stock_alerts, back_in_stock_requests. Use when: adjusting stock levels; checking which products are below their reorder threshold; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products); warehouse-location stock moves (manage_quant, adjust_quant).',
     category: 'commerce',
     handler: 'module:products',
     scope: 'internal',
@@ -255,16 +284,23 @@ CRUD over the uoms table (units of measure). Categories live in uom_categories; 
       type: 'function',
       function: {
         name: 'manage_inventory',
-        description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
+        description: 'Manage product inventory on the e-commerce catalog: list stock, update quantities and thresholds, read low-stock alerts and back-in-stock waitlists. Actions: list_stock, update_stock, low_stock_alerts, back_in_stock_requests. Use when: adjusting stock levels; checking which products are below their reorder threshold; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products); warehouse-location stock moves (manage_quant, adjust_quant).',
         parameters: {
           type: 'object',
           properties: {
             action: {
               type: 'string',
+              // The handler's ACTUAL branches (agent-execute →
+              // executeProductsAction). This enum used to declare `low_stock`,
+              // which no branch answers to — the skill's own contract sent
+              // agents into "Unknown inventory action". `low_stock` is kept
+              // alive as a handler alias for callers that read the old enum,
+              // but it is no longer advertised.
               enum: [
                 'list_stock',
                 'update_stock',
-                'low_stock',
+                'low_stock_alerts',
+                'back_in_stock_requests',
               ],
             },
             product_id: {
@@ -276,6 +312,10 @@ CRUD over the uoms table (units of measure). Categories live in uom_categories; 
             threshold: {
               type: 'number',
               description: 'Low stock threshold (default 5)',
+            },
+            reason: {
+              type: 'string',
+              description: 'Why the stock is being corrected (stocktake, breakage, found units…). Recorded on the adjustment stock_move that update_stock writes.',
             },
           },
           required: [
@@ -292,13 +332,16 @@ Manages product inventory: list stock levels, update quantities, check low-stock
 - Automated low-stock alerts
 - After order fulfillment
 ### Parameters
-- **action**: Required. list_stock, update_stock, low_stock.
+- **action**: Required. list_stock, update_stock, low_stock_alerts, back_in_stock_requests.
 - **product_id**: For update_stock.
-- **quantity**: New stock quantity.
+- **quantity**: New stock quantity. ABSOLUTE, not a delta.
 - **threshold**: Low stock threshold (default 5).
+- **reason**: Why the correction is being made — lands on the adjustment stock_move.
 ### Edge cases
-- low_stock action returns all products below threshold.
-- Stock can go negative if not checked before order.`,
+- low_stock_alerts returns every tracked, active product at or below its threshold (default 5). The legacy name \`low_stock\` still works as an alias.
+- back_in_stock_requests lists un-notified customer waitlist rows.
+- update_stock writes an adjustment stock_move for the difference, so a corrected balance always says who moved it and why. Pass **reason**; the fallback is 'manual adjustment via agent'.
+- Stock goes negative only for products with allow_backorder — otherwise an order line above the on-hand quantity is refused outright.`,
   },
   {
     name: 'inventory_report',
@@ -367,7 +410,7 @@ Order status for the caller. Identity is enforced by the server, not by you.
   },
   {
     name: 'manage_orders',
-    description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
+    description: 'Manage orders: list, get details, move an order along one of its TWO status axes (payment: pending/paid/refunded/cancelled/completed/failed — fulfillment: unfulfilled/picked/packed/shipped/delivered), view stats. The value you pass decides the axis: shipping an order never changes whether it is paid, and paying never changes where the goods are. Pass tracking_number with a shipped update. Use when: reviewing customer orders; advancing fulfillment; recording payment state; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products); invoicing an order (send_invoice_for_order).',
     category: 'commerce',
     handler: 'module:orders',
     scope: 'internal',
@@ -375,7 +418,7 @@ Order status for the caller. Identity is enforced by the server, not by you.
       type: 'function',
       function: {
         name: 'manage_orders',
-        description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
+        description: 'Manage orders: list, get details, move an order along one of its two status axes (payment or fulfillment), view stats. The value decides the axis — a fulfillment value never touches the payment status and vice versa. Use when: reviewing customer orders; advancing fulfillment; recording payment state; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -385,6 +428,7 @@ Order status for the caller. Identity is enforced by the server, not by you.
                 'list',
                 'get',
                 'update_status',
+                'timeline',
                 'stats',
               ],
             },
@@ -393,7 +437,18 @@ Order status for the caller. Identity is enforced by the server, not by you.
             },
             status: {
               type: 'string',
+              description: "New status. Payment/lifecycle axis (orders.status): pending, processing, paid, completed, cancelled, refunded, failed. Fulfillment axis (orders.fulfillment_status): unfulfilled, picked, packed, shipped, delivered — these also stamp picked_at/packed_at/shipped_at/delivered_at. Anything else is rejected with the valid values per axis.",
             },
+            fulfillment_status: {
+              type: 'string',
+              description: 'Explicit fulfillment value (alternative to status): unfulfilled, picked, packed, shipped, delivered.',
+            },
+            tracking_number: {
+              type: 'string',
+              description: 'Carrier tracking number — written to orders.tracking_number on the same call (typically with shipped).',
+            },
+            tracking_url: { type: 'string' },
+            fulfillment_notes: { type: 'string', description: 'Internal note stored on the order.' },
             period: {
               type: 'string',
               enum: [
@@ -415,23 +470,34 @@ Order status for the caller. Identity is enforced by the server, not by you.
     },
     instructions: `## manage_orders
 ### What
-Manages e-commerce orders: list, get details, update status, view stats.
+Manages e-commerce orders: list, get details, update either status axis, timeline, stats.
+### The two axes (this is the thing to get right)
+An order answers two independent questions and they live in two columns:
+- **Money — orders.status**: pending → paid → (refunded / cancelled / failed / completed)
+- **Goods — orders.fulfillment_status**: unfulfilled → picked → packed → shipped → delivered
+The VALUE you pass picks the axis. \`status: "delivered"\` moves fulfillment and leaves
+\`paid\` alone; \`status: "paid"\` moves the money axis and leaves the shipment alone.
+Fulfillment values also stamp picked_at / packed_at / shipped_at / delivered_at.
+An unknown value is rejected with the valid list for each axis — do not retry it on the other axis.
 ### When to use
 - Admin asks about orders or order status
-- Order fulfillment workflow
+- Order fulfillment workflow (ship / deliver, with tracking)
 - Business reporting (order stats)
 ### Parameters
-- **action**: Required. list, get, update_status, stats.
-- **order_id**: For get/update_status.
-- **status**: New status for update_status.
+- **action**: Required. list, get, update_status, timeline, stats.
+- **order_id**: For get/update_status/timeline.
+- **status** or **fulfillment_status**: The new value (see the axes above).
+- **tracking_number** / **tracking_url** / **fulfillment_notes**: Written on the same update_status call.
 - **period**: For stats: today, week, month, quarter.
 ### Edge cases
-- Status transitions: pending → processing → shipped → delivered.
-- Stats action returns aggregated revenue and order counts.`,
+- Verbs work as actions: ship, deliver, fulfill (→ shipped), pay, cancel, refund.
+- \`list\` with a fulfillment value filters the fulfillment column, not the payment one.
+- stats counts revenue from the MONEY axis only (status paid|completed).
+- A full refund driven by an RMA is owned by refund_return, not by this skill.`,
   },
   {
     name: 'place_order',
-    description: 'Place an order as a customer — resolves products server-side, creates the order + line items. Accepts product_id or product_name per item. Use when: external agent creates an order programmatically, tests the purchase flow. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), Stripe-hosted storefront checkout (that is the website flow, not this skill).',
+    description: 'Place a NEW customer order in the webshop — resolves products server-side, creates the order + line items. Accepts product_id or product_name per item. Use when: staff registers an order on behalf of a customer (phone, email, counter); an external agent creates an order programmatically; testing the purchase flow. NOT for: managing existing orders (use manage_orders), browsing products (use browse_products), returns/RMAs (use create_return), purchase orders to a vendor (use create_purchase_order), on-site service jobs (use manage_service_order), Stripe-hosted storefront checkout (that is the website flow, not this skill).',
     category: 'commerce',
     handler: 'module:orders',
     scope: 'external',
@@ -439,7 +505,7 @@ Manages e-commerce orders: list, get details, update status, view stats.
       type: 'function',
       function: {
         name: 'place_order',
-        description: 'Place an order via the checkout API with sandbox mode support. Resolves products server-side (by id or name), computes cart weight from products.weight_grams, and auto-selects the cheapest shipping option for the total weight/country when the cart contains weighted products. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use browse_products), payment configuration (use site_settings).',
+        description: 'Place a NEW customer order via the checkout API with sandbox mode support. Resolves products server-side (by id or name), computes cart weight from products.weight_grams, and auto-selects the cheapest shipping option for the total weight/country when the cart contains weighted products. Use when: staff registers an order for a customer (phone, email, counter); an external agent creates an order programmatically; automated testing of the checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use browse_products), returns/RMAs (use create_return), purchase orders to a vendor (use create_purchase_order), payment configuration (use manage_site_settings).',
         parameters: {
           type: 'object',
           required: ['items', 'customer_email'],
@@ -569,7 +635,7 @@ Checks the current status of an order via the order-status edge function.
   },
   {
     name: 'send_invoice_for_order',
-    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent — reuses existing invoice for the same order.',
+    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable.',
     category: 'commerce',
     handler: 'module:orders',
     scope: 'internal',
@@ -594,7 +660,7 @@ Checks the current status of an order via the order-status edge function.
             },
             tax_rate: {
               type: 'number',
-              description: 'Tax rate as decimal e.g. 0.25 for 25% (default 0.25)',
+              description: "Tax rate as decimal e.g. 0.25 for 25%. Omit it: an order converted from a quote carries the accepted rate on the order (metadata.tax_rate) and it is used automatically; otherwise 0.25.",
             },
             payment_terms: {
               type: 'string',
@@ -612,7 +678,7 @@ Checks the current status of an order via the order-status edge function.
         },
       },
     },
-    instructions: 'Builds an invoice from order_items (qty × price_cents), applies tax_rate (default 0.25), marks status=sent, and emails the customer a link to /functions/v1/generate-invoice-pdf. Idempotent via notes "order:<id>". Use dry_run=true to preview totals before sending. Logs invoice_sent to audit_logs.',
+    instructions: 'Builds an invoice from order_items (qty × price_cents), applies the tax rate (explicit tax_rate → the order\'s own metadata.tax_rate when it came from a quote → 0.25), marks status=sent, and emails the customer a link. IDEMPOTENCY: keyed on the invoices.order_id column — one invoice per order. It used to key on the text "order:<id>" inside invoices.notes, which an edited note silently defeated: the next call issued a SECOND live invoice for an already-paid order. Pre-migration invoices are still found by the old note and are repaired to use the column. The reply carries reused_existing_invoice — if it is true, no new invoice was created and total_cents is the existing document\'s. Use dry_run=true to preview totals (and whether an invoice already exists) before sending. Logs invoice_sent to audit_logs.\n\nREAD THE RESULT, do not assume it: `invoice_created` and `sent` are two different facts. `sent:false` means the EMAIL did not leave — either no email provider is configured (email.simulated) or the outbound allowlist withheld the recipient (email.blocked_by_allowlist). The invoice still exists and is marked sent in the ledger. When sent is false, tell the user the invoice was created but NOT emailed, and say why from the `email` object.',
   },
   {
     name: 'fulfill_order_line',

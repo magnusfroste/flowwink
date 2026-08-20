@@ -61,33 +61,36 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin. Users can have multiple roles, so never rely on
-    // maybeSingle() without filtering to the specific admin row.
+    // STAFF-read, not admin-only: the response is PRESENCE BOOLEANS — no
+    // secret value ever leaves this function. Admin-gating it made every
+    // settings surface render "not configured" for staff (marketing saw the
+    // chat Provider tab as unconfigured while the provider worked fine) —
+    // permission-denied dressed up as absent data, the exact class the QA
+    // sweep flagged. Any user with a staff role may read presence; values
+    // stay in edge secrets.
     const adminClient = getServiceClient();
-    const { data: adminRoles, error: roleError } = await adminClient
+    const { data: staffRoles, error: roleError } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
       .limit(1);
 
     if (roleError) {
-      console.error('[check-secrets] Failed to verify admin role:', roleError);
+      console.error('[check-secrets] Failed to verify staff role:', roleError);
       return new Response(
-        JSON.stringify({ error: 'Failed to verify admin role' }),
+        JSON.stringify({ error: 'Failed to verify role' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!adminRoles || adminRoles.length === 0) {
-      console.error('[check-secrets] User is not admin:', user.id);
+    if (!staffRoles || staffRoles.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden - Admin access required' }),
+        JSON.stringify({ error: 'Forbidden - staff access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[check-secrets] Checking secrets status for admin:', user.id);
+    console.log('[check-secrets] Checking secrets presence for staff user:', user.id);
 
     // Check which secrets are configured (only presence, not values!)
     const status: SecretsStatus = {

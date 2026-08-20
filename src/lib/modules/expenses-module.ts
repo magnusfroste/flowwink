@@ -53,7 +53,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'update', 'delete', 'submit_report', 'approve_report', 'book_report', 'list_reports'] },
-            user_id: { type: 'string', description: 'User/employee UUID' },
+            user_id: { type: 'string', description: 'User/employee UUID the expense belongs to. Required on create unless the call carries an authenticated caller — there is no default user.' },
             expense_id: { type: 'string' },
             report_id: { type: 'string' },
             period: { type: 'string', description: 'YYYY-MM for monthly reports' },
@@ -129,7 +129,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
   },
   {
     name: 'submit_expense_report',
-    description: 'Submits a draft expense report for approval. Locks all included expenses to submitted state. Use when: employee finishes their expense report and wants it sent to manager / "submit my expenses" / "skicka in utlägg". NOT for: creating expenses (use generate_expense_report) or approving (use approve_expense_report).',
+    description: 'Submits a draft expense report for approval: locks all included expenses to submitted state and recomputes the report total from its lines. Only the report owner or an admin may submit. Use when: employee finishes their expense report and wants it sent to manager / "submit my expenses" / "skicka in utlägg". NOT for: creating expenses (use generate_expense_report) or approving (use approve_expense_report).',
     category: 'commerce',
     handler: 'rpc:submit_expense_report',
     scope: 'internal',
@@ -149,7 +149,7 @@ const EXPENSE_SKILLS: SkillSeed[] = [
   },
   {
     name: 'approve_expense_report',
-    description: 'Admin-only. Approves a submitted expense report and marks all included expenses as approved. Use when: manager approves a submitted report / "approve expense report" / "godkänn utlägg". NOT for: booking to ledger (use book_expense_report) or paying out (use mark_expense_report_paid).',
+    description: 'Admin-only. Approves a submitted expense report, marks all included expenses as approved and refreshes the report total from its lines. Use when: manager approves a submitted report / "approve expense report" / "godkänn utlägg". NOT for: booking to ledger (use book_expense_report) or paying out (use mark_expense_report_paid).',
     category: 'commerce',
     handler: 'rpc:approve_expense_report',
     scope: 'internal',

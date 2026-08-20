@@ -319,13 +319,82 @@ async function escalateDunning(supabase: any, args: Record<string, any>) {
   const seqId = args.sequence_id as string | undefined;
   if (!subId && !seqId) return { success: false, error: "Provide either subscription_id or sequence_id" };
 
+  let openedNew = false;
   const q = supabase
     .from("dunning_sequences")
     .update({ current_step: 4, next_action_at: new Date().toISOString(), status: "active" });
-  const { data, error } = seqId
+  let { data, error } = seqId
     ? await q.eq("id", seqId).select()
     : await q.eq("subscription_id", subId).select();
   if (error) throw error;
+
+  // ── Invoice-billed subscriptions had NO dunning at all ───────────────────
+  //
+  // dunning_sequences were created in exactly one place: stripe-webhook, on
+  // invoice.payment_failed. A subscription billed by invoice (payment_terms
+  // invoice_30 — how every B2B customer on this platform is billed) never
+  // fails a card, so it never got a sequence, so escalate_dunning answered
+  // "No dunning sequence found" and recovery for the whole invoice-billed book
+  // was a manual memory exercise.
+  //
+  // A missing sequence for a subscription that IS past due is not an error —
+  // it is the sequence that should have been opened. Open it, then escalate.
+  if ((!data || data.length === 0) && subId) {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id, status, currency, unit_amount_cents, quantity, billing_interval, customer_email, payment_terms")
+      .eq("id", subId)
+      .maybeSingle();
+    if (!sub) return { success: false, error: `Subscription ${subId} not found` };
+    if (sub.status !== "past_due" && sub.status !== "unpaid") {
+      return {
+        success: false,
+        error: `No dunning sequence for subscription ${subId}, and its status is '${sub.status}'. A sequence is only opened for a subscription that is past_due/unpaid with an overdue invoice.`,
+      };
+    }
+    // Evidence, not assumption: there must be a real overdue invoice.
+    const today = new Date().toISOString().split("T")[0];
+    const { data: overdue } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, total_cents, currency, due_date")
+      .eq("subscription_id", subId)
+      .in("status", ["sent", "overdue"])
+      .is("paid_at", null)
+      .lt("due_date", today)
+      .order("due_date", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!overdue) {
+      return {
+        success: false,
+        error: `No dunning sequence for subscription ${subId} and no overdue unpaid invoice to open one from. Nothing to escalate.`,
+      };
+    }
+    // Monthly value at risk, same normalisation subscription_mrr uses.
+    const amt = (sub.unit_amount_cents ?? 0) * (sub.quantity ?? 1);
+    const mrr =
+      sub.billing_interval === "year" ? Math.round(amt / 12) :
+      sub.billing_interval === "week" ? Math.round(amt * 4.33) :
+      sub.billing_interval === "day" ? amt * 30 : amt;
+    const { data: opened, error: openErr } = await supabase
+      .from("dunning_sequences")
+      .insert({
+        subscription_id: subId,
+        status: "active",
+        current_step: 4,
+        next_action_at: new Date().toISOString(),
+        failure_reason: `Invoice ${overdue.invoice_number} overdue since ${overdue.due_date}`,
+        failure_code: "invoice_overdue",
+        mrr_at_risk_cents: mrr,
+        currency: overdue.currency ?? sub.currency ?? undefined,
+        metadata: { opened_by: "escalate_dunning", billing: "invoice", invoice_id: overdue.id, payment_terms: sub.payment_terms },
+      })
+      .select();
+    if (openErr) throw openErr;
+    data = opened;
+    openedNew = true;
+  }
+
   if (!data || data.length === 0) return { success: false, error: "No dunning sequence found to escalate" };
 
   await supabase.from("dunning_actions").insert(
@@ -349,5 +418,15 @@ async function escalateDunning(supabase: any, args: Record<string, any>) {
   } catch (e) {
     console.warn("[escalate_dunning] could not trigger processor immediately:", e);
   }
-  return { success: true, data: { escalated_count: data.length, sequences: data } };
+  return {
+    success: true,
+    data: {
+      escalated_count: data.length,
+      opened_sequence: openedNew,
+      sequences: data,
+      ...(openedNew
+        ? { note: "No sequence existed for this invoice-billed subscription — one was opened from its overdue invoice and escalated." }
+        : {}),
+    },
+  };
 }

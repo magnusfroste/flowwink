@@ -516,7 +516,7 @@ Marks a finding as resolved after fix.`,
   },
   {
     name: 'confirm_fulfillment',
-    description: 'Confirm delivery/fulfillment of an order or purchase order. Use when: an external agent (Claw/supplier) confirms that goods have been delivered. NOT for: updating order status manually (use manage_orders); receiving goods against a PO (use receive_goods).',
+    description: 'Confirm delivery/fulfillment of an order or purchase order. Use when: an external agent (Claw/supplier) confirms that goods have been delivered. NOT for: updating order status manually (use manage_orders); receiving goods against a PO (use receive_purchase_order).',
     category: 'system',
     handler: 'module:openclaw',
     scope: 'external',
