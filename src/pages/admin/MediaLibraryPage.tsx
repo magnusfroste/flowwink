@@ -8,7 +8,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { convertToWebP } from '@/lib/image-utils';
+import { convertToWebP, isHeicFile } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
 import { UnsplashPicker } from '@/components/admin/UnsplashPicker';
 import { MediaDetailsSheet } from '@/components/admin/MediaDetailsSheet';
@@ -158,7 +158,9 @@ export default function MediaLibraryPage() {
 
   const handleUpload = useCallback(async (filesToUpload: FileList | File[]) => {
     const mediaFiles = Array.from(filesToUpload).filter(
-      f => f.type.startsWith('image/') || f.type.startsWith('video/')
+      // HEIC needs its own check: Chrome reports an empty mime type for
+      // .heic files, so they fail the image/* test.
+      f => f.type.startsWith('image/') || f.type.startsWith('video/') || isHeicFile(f)
     );
 
     if (mediaFiles.length === 0) {
@@ -397,7 +399,7 @@ export default function MediaLibraryPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/mp4,video/webm,video/quicktime"
+            accept="image/*,.heic,.heif,video/mp4,video/webm,video/quicktime"
             multiple
             onChange={handleFileInput}
             className="hidden"
