@@ -38,7 +38,7 @@ const WIKI_SKILLS: SkillSeed[] = [
   {
     name: 'manage_wiki_page',
     description:
-      'Manage internal wiki pages (intranet): list, get, create, update, delete. update with content_md REPLACES the whole body — for an addition use append_md instead, never regenerate a page you have not read in full. Use when: drafting onboarding notes, updating an internal SOP, capturing a process used by support staff, or seeding the intranet with a new topic. NOT for: public knowledge base articles (use manage_kb_article); public website pages (use manage_pages); blog posts (use manage_blog_posts).',
+      'Manage internal wiki pages (intranet): list, get, create, update, delete. THE skill whenever someone asks for a wiki page — "skriv en wikisida om X", "skapa en intern sida i wikin", "uppdatera wikisidan". update with content_md REPLACES the whole body — for an addition use append_md instead, never regenerate a page you have not read in full. Use when: creating or editing any wiki page; drafting onboarding notes; updating an internal SOP; capturing a process; seeding the intranet with a new topic. NOT for: product documentation pages (manage_docs_page); public knowledge base articles (manage_kb_article); public website pages (manage_page); blog posts (write_blog_post).',
     category: 'content',
     handler: 'module:wiki',
     scope: 'internal',

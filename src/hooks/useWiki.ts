@@ -9,6 +9,9 @@ export interface WikiPage {
   parent_slug: string | null;
   created_by: string | null;
   updated_by: string | null;
+  /** Agent surface that wrote/edited via the skill rail (flowwork/flowpilot/mcp) — null for pure UI edits. */
+  created_by_agent?: string | null;
+  updated_by_agent?: string | null;
   created_at: string;
   updated_at: string;
 }

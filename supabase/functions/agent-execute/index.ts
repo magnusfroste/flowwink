@@ -731,6 +731,11 @@ serve(async (req) => {
     }
 
     // 4. Route to handler — wrapped in try/catch for normalized error handling
+    // Attribution travels to handlers via args, SERVER-stamped here (overwrites
+    // anything model-supplied, so it cannot be spoofed): handlers that record
+    // provenance on rows (wiki created_by/_agent) read these two keys.
+    (args as Record<string, unknown>)._effective_agent = effectiveAgent;
+    if (caller_user_id) (args as Record<string, unknown>)._caller_user_id = caller_user_id;
     let result: unknown;
     const handler = skill.handler as string;
 
@@ -5010,7 +5015,15 @@ async function executeWikiAction(
     }
     const { data, error } = await supabase
       .from('wiki_pages')
-      .insert({ slug, title, content_md })
+      .insert({
+        slug, title, content_md,
+        // Provenance: WHO wrote this — human (via the staged-approve rail the
+        // caller id travels with the re-invoke) and/or agent surface.
+        created_by: (args as any)._caller_user_id ?? null,
+        updated_by: (args as any)._caller_user_id ?? null,
+        created_by_agent: (args as any)._effective_agent ?? null,
+        updated_by_agent: (args as any)._effective_agent ?? null,
+      })
       .select('slug, title, updated_at')
       .single();
     if (error) throw new Error(`create wiki failed: ${error.message}`);
@@ -5054,6 +5067,8 @@ async function executeWikiAction(
       appended = true;
     }
     if (Object.keys(patch).length === 0) throw new Error('nothing to update');
+    patch.updated_by = (args as any)._caller_user_id ?? null;
+    patch.updated_by_agent = (args as any)._effective_agent ?? null;
     const { data, error } = await supabase
       .from('wiki_pages').update(patch).eq('slug', slug)
       .select('slug, title, updated_at').single();

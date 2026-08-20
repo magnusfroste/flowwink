@@ -10,6 +10,14 @@ interface Props {
   content: string;
   /** Slugs that exist — used to color "missing" links red. */
   knownSlugs: Set<string>;
+  /** slug → page title. Link text shows the real title instead of the raw
+   *  PascalCase slug ("DennaSidaFungerar" read as one word — Magnus-fynd). */
+  titles?: Map<string, string>;
+}
+
+/** "DennaSidaFungerar" → "Denna Sida Fungerar" — fallback when no title known. */
+function humanizeSlug(slug: string): string {
+  return slug.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
 }
 
 const WIKI_LINK_RE = /\[\[([A-Z][A-Za-z0-9]*)\]\]/g;
@@ -22,8 +30,12 @@ const CAMEL_RE = /\b([A-Z][a-z]+(?:[A-Z][a-zA-Z0-9]*)+)\b/g;
  * + apply a "missing page" style.
  */
 function preprocess(md: string): string {
-  // 1) [[Slug]] → [Slug](wiki:Slug)
-  const out = md.replace(WIKI_LINK_RE, (_m, slug) => `[${slug}](wiki:${slug})`);
+  // 1) [[Slug]] → [Slug](/admin/wiki/Slug)
+  // Relative paths, NOT a custom `wiki:` scheme: react-markdown's URL
+  // sanitizer strips unknown protocols, which emptied every href and dropped
+  // all wiki links into the external target=_blank branch (Magnus-fynd
+  // 2026-08-19: internal links opened a new blank tab instead of navigating).
+  const out = md.replace(WIKI_LINK_RE, (_m, slug) => `[${slug}](/admin/wiki/${slug})`);
 
   // 2) Bare CamelCase. Skip inside code spans / fences / existing links.
   // Naive but workable: process line-by-line, leave fenced/inline code alone.
@@ -43,17 +55,17 @@ function preprocess(md: string): string {
     let last = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(line)) !== null) {
-      parts.push(line.slice(last, m.index).replace(CAMEL_RE, (w) => `[${w}](wiki:${w})`));
+      parts.push(line.slice(last, m.index).replace(CAMEL_RE, (w) => `[${w}](/admin/wiki/${w})`));
       parts.push(m[0]);
       last = m.index + m[0].length;
     }
-    parts.push(line.slice(last).replace(CAMEL_RE, (w) => `[${w}](wiki:${w})`));
+    parts.push(line.slice(last).replace(CAMEL_RE, (w) => `[${w}](/admin/wiki/${w})`));
     lines[i] = parts.join('');
   }
   return lines.join('\n');
 }
 
-export function WikiMarkdown({ content, knownSlugs }: Props) {
+export function WikiMarkdown({ content, knownSlugs, titles }: Props) {
   const processed = preprocess(content || '_This page is empty — double-click to start writing._');
 
   const headingId = (children: React.ReactNode) =>
@@ -68,9 +80,15 @@ export function WikiMarkdown({ content, knownSlugs }: Props) {
     h3: ({ children }) => <h3 id={headingId(children)}>{children}</h3>,
 
     a: ({ href, children, ...rest }) => {
-      if (href?.startsWith('wiki:')) {
-        const slug = href.slice(5);
+      if (href?.startsWith('/admin/wiki/')) {
+        const slug = href.slice('/admin/wiki/'.length);
         const exists = knownSlugs.has(slug);
+        // Auto-generated link text is the raw slug — swap it for the page's
+        // real title (or a spaced fallback). Hand-written [text](wiki:Slug)
+        // keeps its text: only replace when the text IS the slug.
+        const label = String(children) === slug
+          ? (titles?.get(slug) ?? humanizeSlug(slug))
+          : children;
         return (
           <Link
             to={`/admin/wiki/${slug}`}
@@ -81,9 +99,14 @@ export function WikiMarkdown({ content, knownSlugs }: Props) {
             }
             title={exists ? `Open ${slug}` : `Create ${slug}`}
           >
-            {children}
+            {label}
           </Link>
         );
+      }
+      // Any other in-app path navigates in place — a new tab on an internal
+      // link is never what an index page wants. Only true externals pop out.
+      if (href?.startsWith('/')) {
+        return <Link to={href}>{children}</Link>;
       }
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" {...rest}>

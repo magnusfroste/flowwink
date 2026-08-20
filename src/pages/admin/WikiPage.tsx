@@ -22,6 +22,8 @@ import {
   useWikiSearch,
 } from '@/hooks/useWiki';
 import { WikiMarkdown } from '@/components/admin/wiki/WikiMarkdown';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { WikiTree } from '@/components/admin/wiki/WikiTree';
 import { WikiTOC } from '@/components/admin/wiki/WikiTOC';
 import { WikiHistorySheet } from '@/components/admin/wiki/WikiHistorySheet';
@@ -83,6 +85,29 @@ function WikiPageInner() {
   const del = useDeleteWikiPage();
 
   const knownSlugs = useMemo(() => new Set(pages.map((p) => p.slug)), [pages]);
+  const titleMap = useMemo(() => new Map(pages.map((p) => [p.slug, p.title])), [pages]);
+
+  // Provenance: who wrote/last edited this page — human name (profiles) and/or
+  // agent surface (created_by_agent). Same design language as the context
+  // provenance lines: the answer to "var kommer detta ifrån" is always visible.
+  const { data: authorNames } = useQuery({
+    queryKey: ['wiki-authors', page?.created_by, page?.updated_by],
+    enabled: !!page && (!!page.created_by || !!page.updated_by),
+    queryFn: async () => {
+      const ids = [...new Set([page?.created_by, page?.updated_by].filter(Boolean))] as string[];
+      const { data } = await supabase.from('profiles').select('id, full_name, email').in('id', ids);
+      return new Map((data ?? []).map((r) => [r.id, r.full_name || r.email || 'Unknown']));
+    },
+  });
+  const AGENT_LABEL: Record<string, string> = {
+    flowwork: 'FlowWork', flowpilot: 'FlowPilot', flowchat: 'FlowChat', mcp: 'external agent', cron: 'scheduled run',
+  };
+  const provenanceOf = (userId?: string | null, agent?: string | null): string | null => {
+    const human = userId ? authorNames?.get(userId) : null;
+    const surface = agent ? (AGENT_LABEL[agent] ?? agent) : null;
+    if (human && surface) return `${human} via ${surface}`;
+    return human ?? surface ?? null;
+  };
 
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
@@ -206,8 +231,12 @@ function WikiPageInner() {
     <AdminLayout>
       <AdminPageContainer>
         <div className="grid grid-cols-12 gap-6">
-          {/* Sidebar */}
-          <aside className="col-span-12 lg:col-span-3 space-y-3">
+          {/* Sidebar — steps aside while WRITING an existing page: the moment
+              full width is needed is known (edit mode), so no show/hide buttons.
+              A NEW page auto-opens in edit mode — hiding the tree there made the
+              whole wiki look empty (/admin/wiki lands on a not-yet-created
+              HomePage, live 2026-08-20), so new-page editing keeps navigation. */}
+          <aside className={editing && page ? 'hidden' : 'col-span-12 lg:col-span-3 space-y-3'}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-primary" />
@@ -275,7 +304,7 @@ function WikiPageInner() {
           </aside>
 
           {/* Main */}
-          <main className="col-span-12 lg:col-span-9 space-y-4">
+          <main className={editing && page ? 'col-span-12 space-y-4' : 'col-span-12 lg:col-span-9 space-y-4'}>
             {trail.length > 0 && (
               <nav className="flex items-center gap-1 text-xs text-muted-foreground">
                 {trail.map((t) => (
@@ -308,8 +337,14 @@ function WikiPageInner() {
                   </Badge>
                   {page && (
                     <span className="text-xs text-muted-foreground">
-                      Updated {formatDateTime(page.updated_at)} · {words} words ·{' '}
-                      {Math.max(1, Math.round(words / 200))} min read
+                      {provenanceOf(page.created_by, (page as any).created_by_agent)
+                        ? `Created by ${provenanceOf(page.created_by, (page as any).created_by_agent)} · `
+                        : ''}
+                      Updated {formatDateTime(page.updated_at)}
+                      {provenanceOf(page.updated_by, (page as any).updated_by_agent)
+                        ? ` by ${provenanceOf(page.updated_by, (page as any).updated_by_agent)}`
+                        : ''}
+                      {' '}· {words} words · {Math.max(1, Math.round(words / 200))} min read
                     </span>
                   )}
                   {!page && !isLoading && <Badge variant="secondary">New page</Badge>}
@@ -377,7 +412,7 @@ function WikiPageInner() {
                   />
                   {splitPreview && (
                     <div className="min-h-[60vh] overflow-auto rounded-md border bg-card p-6">
-                      <WikiMarkdown content={body} knownSlugs={knownSlugs} />
+                      <WikiMarkdown content={body} knownSlugs={knownSlugs} titles={titleMap} />
                     </div>
                   )}
                 </div>
@@ -396,7 +431,7 @@ function WikiPageInner() {
                   {isLoading ? (
                     <div className="text-sm text-muted-foreground">Loading…</div>
                   ) : (
-                    <WikiMarkdown content={page?.content_md || ''} knownSlugs={knownSlugs} />
+                    <WikiMarkdown content={page?.content_md || ''} knownSlugs={knownSlugs} titles={titleMap} />
                   )}
                 </div>
                 <div className="hidden xl:block xl:col-span-3">

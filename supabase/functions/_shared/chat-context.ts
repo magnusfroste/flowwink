@@ -26,64 +26,60 @@ export function extractTextFromTiptap(content: any): string {
   return '';
 }
 
+/**
+ * Extract the human-readable text a block renders, for grounding and indexing.
+ *
+ * GENERIC walker, not a per-type switch: the old fixed list (text/hero/cta/
+ * accordion/…) silently skipped every other type — features, bento-grid,
+ * timeline, testimonials, pricing, tabs — so whole product definitions never
+ * reached the knowledge index (found live 2026-08-19: /product's Edge/Network
+ * Colocation lived in a features block and was invisible to retrieval and the
+ * chat). A new block type must be indexable the day it ships, without anyone
+ * remembering this file exists — so we collect by FIELD SHAPE instead:
+ * known text-bearing keys, Tiptap docs wherever they sit, and one level of
+ * object arrays (items/features/steps/tiers/chapters/…).
+ */
+const TEXT_KEYS = new Set([
+  'title', 'subtitle', 'eyebrow', 'description', 'question', 'label', 'quote',
+  'author', 'source', 'role', 'note', 'message', 'body', 'excerpt', 'name',
+  'bio', 'text', 'heading', 'caption', 'alt', 'company', 'value', 'date',
+  'expiredMessage', 'accentText', 'address', 'phone', 'email',
+]);
+
+function isTiptapDoc(v: any): boolean {
+  return !!v && typeof v === 'object' && !Array.isArray(v) && v.type === 'doc';
+}
+
+function collectTexts(obj: Record<string, any>, out: string[], depth: number): void {
+  for (const [key, val] of Object.entries(obj)) {
+    if (key.startsWith('_')) continue;
+    if (typeof val === 'string') {
+      // urls/ids/icons/enums are short config strings on non-text keys; the
+      // include-list keeps them out without a per-type registry.
+      if (TEXT_KEYS.has(key) && val.trim()) out.push(val.trim());
+    } else if (isTiptapDoc(val)) {
+      const t = extractTextFromTiptap(val);
+      if (t) out.push(t);
+    } else if (Array.isArray(val) && depth > 0) {
+      for (const item of val) {
+        if (item && typeof item === 'object' && !Array.isArray(item)) {
+          collectTexts(item, out, depth - 1);
+        } else if (typeof item === 'string' && item.trim() && TEXT_KEYS.has(key.replace(/s$/, ''))) {
+          // string arrays on text-ish keys (e.g. pricing tier `features: string[]`)
+          out.push(item.trim());
+        }
+      }
+    }
+  }
+}
+
 export function extractTextFromBlock(block: any): string {
   if (!block) return '';
-  const texts: string[] = [];
-  const type = block.type;
   const data = block.data || block;
-
-  switch (type) {
-    case 'text': if (data.content) texts.push(extractTextFromTiptap(data.content)); break;
-    case 'hero':
-      if (data.title) texts.push(data.title);
-      if (data.subtitle) texts.push(data.subtitle);
-      break;
-    case 'cta':
-      if (data.title) texts.push(data.title);
-      if (data.subtitle) texts.push(data.subtitle);
-      break;
-    case 'accordion':
-      if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => {
-          if (item.question) texts.push(item.question);
-          if (item.answer) texts.push(extractTextFromTiptap(item.answer));
-        });
-      }
-      break;
-    case 'contact':
-      if (data.phone) texts.push(`Phone: ${data.phone}`);
-      if (data.email) texts.push(`Email: ${data.email}`);
-      if (data.address) texts.push(`Address: ${data.address}`);
-      break;
-    case 'quote':
-      if (data.quote) texts.push(data.quote);
-      if (data.author) texts.push(`- ${data.author}`);
-      break;
-    case 'info-box': case 'infoBox':
-      if (data.title) texts.push(data.title);
-      if (data.content) texts.push(extractTextFromTiptap(data.content));
-      break;
-    case 'two-column': case 'twoColumn':
-      if (data.leftContent) texts.push(extractTextFromTiptap(data.leftContent));
-      if (data.rightContent) texts.push(extractTextFromTiptap(data.rightContent));
-      break;
-    case 'stats':
-      if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => { if (item.value && item.label) texts.push(`${item.value} ${item.label}`); });
-      }
-      break;
-    case 'article-grid': case 'articleGrid':
-      if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => { if (item.title) texts.push(item.title); if (item.excerpt) texts.push(item.excerpt); });
-      }
-      break;
-    case 'link-grid': case 'linkGrid':
-      if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => { if (item.title) texts.push(item.title); if (item.description) texts.push(item.description); });
-      }
-      break;
-  }
-  return texts.join(' ');
+  if (!data || typeof data !== 'object') return '';
+  const texts: string[] = [];
+  collectTexts(data, texts, 2);
+  return texts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
