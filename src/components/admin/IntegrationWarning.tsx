@@ -4,6 +4,7 @@ import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIntegrationStatus } from '@/hooks/useIntegrationStatus';
 import { useIntegrations, type IntegrationsSettings } from '@/hooks/useIntegrations';
+import { useAuth } from '@/hooks/useAuth';
 
 interface IntegrationWarningProps {
   integration: 'resend' | 'stripe' | 'openai' | 'gemini';
@@ -60,6 +61,7 @@ export function useIntegrationWarningStatus(integration: IntegrationWarningProps
 
 export function IntegrationWarning({ integration, title, description }: IntegrationWarningProps) {
   const { shouldShowWarning, reason, hasKey, isEnabled } = useIntegrationWarningStatus(integration);
+  const { isAdmin } = useAuth();
   const defaults = defaultMessages[integration];
 
   // Don't show warning if fully configured and enabled
@@ -77,12 +79,24 @@ export function IntegrationWarning({ integration, title, description }: Integrat
       <AlertTitle>{title || defaults.title}</AlertTitle>
       <AlertDescription className="flex items-center justify-between">
         <span>{displayDescription}</span>
-        <Button variant="outline" size="sm" asChild className="ml-4 shrink-0">
-          <Link to="/admin/integrations">
-            <ExternalLink className="h-3 w-3 mr-1" />
-            Configure
-          </Link>
-        </Button>
+        {/* Rollsvepet #102, app-lagret: the WARNING is true for everyone —
+            check-secrets answers presence booleans to any staff role — but
+            /admin/integrations lives in the adminOnly System group, so a
+            marketing or warehouse role clicking "Configure" landed on Access
+            Denied. Say who can fix it instead of offering a door that is
+            locked. Never hide the diagnosis to hide the locked door. */}
+        {isAdmin ? (
+          <Button variant="outline" size="sm" asChild className="ml-4 shrink-0">
+            <Link to="/admin/integrations">
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Configure
+            </Link>
+          </Button>
+        ) : (
+          <span className="ml-4 shrink-0 text-xs opacity-80">
+            An administrator connects this under Integrations.
+          </span>
+        )}
       </AlertDescription>
     </Alert>
   );

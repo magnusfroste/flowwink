@@ -25,7 +25,8 @@ import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import { knowledgeChunksSource, flowtableSource, type SourceCtx } from '../_shared/retrieval/sources.ts';
 import { scoreSkillsByIntent } from '../_shared/skills/intent-scorer.ts';
-import { isReadSkill, isReadCall, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../_shared/skills/read-surface.ts';
+import { isDiscoverableSkill, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '../_shared/skills/read-surface.ts';
+import { ownerModuleOf } from '../_shared/skills/skill-modules.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 
@@ -473,14 +474,54 @@ const DISPATCH_TOOLS = [
   },
 ];
 
-async function runSearchSkills(service: any, query: string) {
+/**
+ * What the CALLER may be offered, expressed as module grants.
+ *
+ * `null` means "everything" (admin). Otherwise it is the set of module ids the
+ * caller's roles hold in role_module_access — the same matrix can_access_module
+ * reads, batched into one pair of queries instead of 500 RPCs.
+ */
+async function loadCallerModules(service: any, userId: string): Promise<Set<string> | null> {
+  const { data: isAdmin } = await service.rpc('has_role', { _user_id: userId, _role: 'admin' });
+  if (isAdmin === true) return null;
+  const { data: roles } = await service.from('user_roles').select('role').eq('user_id', userId);
+  const roleNames = (roles || []).map((r: { role?: string }) => r.role).filter(Boolean);
+  if (!roleNames.length) return new Set<string>();
+  const { data: grants } = await service
+    .from('role_module_access').select('module_id').in('role', roleNames);
+  return new Set<string>((grants || []).map((g: { module_id?: string }) => g.module_id).filter(Boolean) as string[]);
+}
+
+/**
+ * Is this skill worth showing to THIS caller? Two independent questions:
+ *
+ *  1. Is it proposable at all — read or stage tier? (deny stays hidden.)
+ *  2. Would the executor let this caller run it — is the skill's owning module
+ *     granted to their role? A skill they cannot execute must not be offered:
+ *     the loop stages it, an approval card appears, a human clicks it, and the
+ *     click 403s. Three of those were burned in one QA session; the model looked
+ *     competent right up to the moment the human paid for it.
+ *
+ * Mirrors agent-execute's own gate exactly, including its fail-closed edges:
+ * platform-owned and unmapped skills are admin-only.
+ */
+function isOfferable(name: string, callerModules: Set<string> | null): boolean {
+  if (!isDiscoverableSkill(name)) return false;
+  if (callerModules === null) return true; // admin
+  const owner = ownerModuleOf(name);
+  if (!owner || owner === 'platform') return false;
+  return callerModules.has(owner);
+}
+
+async function runSearchSkills(service: any, query: string, callerModules: Set<string> | null) {
   const { data: skills } = await service
     .from('agent_skills')
     .select('name, description, category, instructions, tool_definition')
     .limit(1000);
-  const readable = (skills || []).filter(
-    (sk: any) => isReadSkill(sk.name) || isReadCall(sk.name, { action: 'list' }),
-  );
+  // The surface is what the caller can READ or STAGE — not what executes
+  // immediately. See isDiscoverableSkill for why that distinction cost 328
+  // skills of reach.
+  const readable = (skills || []).filter((sk: any) => isOfferable(sk.name, callerModules));
   // Compound anchoring: Swedish (and German, and …) glues entity words
   // together — "supportticket" hides "ticket" from word-level scoring, and the
   // scorer demonstrably ranked manage_ticket outside top-8 for exactly that
@@ -488,7 +529,11 @@ async function runSearchSkills(service: any, query: string) {
   // is always in the list. Pure string containment against the catalog — no
   // intent routing (Law 1).
   const queryWords = String(query || '').toLowerCase().split(/[^\p{L}\p{N}_]+/u).filter((w) => w.length >= 5);
-  const anchors = new Set<string>(['get_customer_360']);
+  // The anchor is a ranking aid, not an exemption — it goes through the same
+  // offer gate as everything else.
+  const anchors = new Set<string>(
+    isOfferable('get_customer_360', callerModules) ? ['get_customer_360'] : [],
+  );
   for (const sk of readable) {
     const tokens = String(sk.name).split('_').filter((t: string) => t.length >= 4);
     if (tokens.some((t: string) => queryWords.some((w) => w.includes(t)))) {
@@ -512,22 +557,27 @@ async function runSearchSkills(service: any, query: string) {
       // guess-and-bounce.
       const props = sk.tool_definition?.function?.parameters?.properties;
       const params = props && typeof props === 'object' ? Object.keys(props).slice(0, 20).join(', ') : undefined;
+      const required = sk.tool_definition?.function?.parameters?.required;
       return {
         name: sk.name,
         description: String(sk.description || '').slice(0, 240),
         has_instructions: !!sk.instructions,
         ...(params ? { params } : {}),
+        // Required names, up front, for the same reason params are: the
+        // preflight now bounces a missing required field, and a bounce the
+        // model could have avoided is a wasted round.
+        ...(Array.isArray(required) && required.length ? { required: required.join(', ') } : {}),
         ...(String(sk.name).startsWith('manage_')
           ? { actions: 'read with {"action":"list"|"get"|"search"}; a write action (create/update/…) STAGES the change for user approval' }
-          : {}),
+          : { tier: classifyCall(sk.name, {}) === 'stage' ? 'write — STAGES for user approval' : 'read — executes immediately' }),
       };
     }),
-    note: 'Reads execute immediately. Writes are staged for the user\'s approval — never executed directly — so proposing an action = calling execute_skill with the write arguments.',
+    note: 'This list is scoped to what YOU may do here: reads execute immediately, writes are staged for the user\'s approval and never executed directly. A write skill appearing in this list is a write you are meant to propose — call execute_skill with the write arguments; the approval card is the confirmation.',
   };
 }
 
-async function runReadSkillTool(service: any, name: string) {
-  if (classifyCall(name, { action: 'list' }) === 'deny') return { error: WRITE_REFUSAL };
+async function runReadSkillTool(service: any, name: string, callerModules: Set<string> | null) {
+  if (!isOfferable(name, callerModules)) return { error: WRITE_REFUSAL };
   const { data } = await service
     .from('agent_skills')
     .select('name, description, instructions, tool_definition')
@@ -573,6 +623,7 @@ async function runExecuteSkill(
   rawName: string,
   rawArgs: Record<string, unknown>,
   userId: string,
+  callerModules: Set<string> | null,
 ): Promise<{ ok: boolean; body: unknown; name: string; staged?: StagedAction }> {
   const name = await resolveSkillName(service, rawName);
 
@@ -588,17 +639,46 @@ async function runExecuteSkill(
   // (2026-08-19) bounced here invisibly — no agent_activity row, no staged op —
   // and the model's paraphrase ("schema accepted not the structure") was the
   // only record. Self-report is not evidence; log what was actually sent.
-  const logGateOutcome = (kind: string, errorMessage: string) => {
-    void service.from('agent_activity').insert({
+  //
+  // AWAITED, not fire-and-forget. `void insert()` produced exactly zero rows in
+  // this table, ever: an edge isolate is torn down when the handler's response
+  // resolves, and an un-awaited insert is still in flight at that moment. The
+  // trail we built to replace self-reporting was itself a self-report. Anything
+  // that must survive the response has to be awaited before it.
+  const logGateOutcome = async (kind: string, errorMessage: string) => {
+    const { error } = await service.from('agent_activity').insert({
       agent: 'flowwork', skill_name: name, input: args,
       status: 'failed', error_message: `[${kind}] ${errorMessage}`.slice(0, 500),
     });
+    if (error) console.error('[cowork-chat] gate-outcome log failed:', error.message);
   };
 
   const tier = classifyCall(name, args);
   if (tier === 'deny') {
-    logGateOutcome('write-refusal', WRITE_REFUSAL);
+    await logGateOutcome('write-refusal', WRITE_REFUSAL);
     return { ok: false, body: { error: WRITE_REFUSAL }, name };
+  }
+
+  // The module gate, applied HERE and not only at discovery. workspace-chat
+  // calls agent-execute with the service key, which agent-execute trusts as an
+  // internal caller and therefore does NOT run its can_access_module check
+  // against — so the executor cannot catch this for us. Without this branch a
+  // skill named directly by the model (rather than found through search) still
+  // stages, and the 403 lands on the human who clicks approve.
+  if (!isOfferable(name, callerModules)) {
+    const owner = ownerModuleOf(name);
+    const why = owner && owner !== 'platform'
+      ? `your role has not been granted the "${owner}" module (Users → Role Permissions)`
+      : 'this skill is platform-level and requires the admin role';
+    await logGateOutcome('module-refusal', `${name}: ${why}`);
+    return {
+      ok: false,
+      name,
+      body: {
+        error: `Not staged: you may not run "${name}" — ${why}.`,
+        hint: 'Do not retry this skill or look for a synonym of it. Tell the user plainly that this action is outside their permissions here, and who can grant it.',
+      },
+    };
   }
 
   // A write must match the skill's parameter contract BEFORE a human is asked
@@ -618,7 +698,7 @@ async function runExecuteSkill(
       const valid = new Set(Object.keys(props));
       const unknown = Object.keys(args).filter((k) => !valid.has(k));
       if (unknown.length) {
-        logGateOutcome('preflight-bounce', `unknown parameter(s) ${unknown.join(', ')}`);
+        await logGateOutcome('preflight-bounce', `unknown parameter(s) ${unknown.join(', ')}`);
         return {
           ok: false,
           name,
@@ -629,13 +709,53 @@ async function runExecuteSkill(
           },
         };
       }
+
+      // The other half of the contract. Checking only for UNKNOWN keys reads
+      // the schema with one eye: manage_return_item was staged with no
+      // `action`, the handler defaulted to `list`, the call returned "success",
+      // and the chat reported that the restocking fee had been set. Nothing had
+      // been set. A silent false success is worse than a bounce, so a missing
+      // required field is a bounce.
+      const declaredRequired: string[] = Array.isArray(
+        skillRow?.tool_definition?.function?.parameters?.required,
+      ) ? skillRow.tool_definition.function.parameters.required.map(String) : [];
+      // Several schemas also declare per-action requirements
+      // (`x-action-required`: {create: ['return_id'], …}) — the action the
+      // model actually chose decides which of those apply.
+      const perAction = skillRow?.tool_definition?.function?.parameters?.['x-action-required'];
+      const chosenAction = String(args.action ?? '').trim();
+      const actionRequired: string[] = perAction && chosenAction && Array.isArray(perAction[chosenAction])
+        ? perAction[chosenAction].map(String) : [];
+      const isBlank = (v: unknown) =>
+        v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
+      const missing = [...new Set([...declaredRequired, ...actionRequired])]
+        .filter((k) => isBlank(args[k]));
+      if (missing.length) {
+        await logGateOutcome('preflight-bounce', `missing required parameter(s) ${missing.join(', ')}`);
+        return {
+          ok: false,
+          name,
+          body: {
+            error: `Not staged: missing required parameter(s) ${missing.join(', ')} for skill "${name}"${chosenAction ? ` (action "${chosenAction}")` : ''}.`,
+            required_parameters: [...new Set([...declaredRequired, ...actionRequired])],
+            valid_parameters: [...valid],
+            hint: 'Supply every required field explicitly — do NOT rely on a handler default. If you do not know a value yet, read it with a list/get call first, then stage again.',
+          },
+        };
+      }
+
       // Reference args must be REFERENCES. A name in an _id field ("company_id":
       // "Nordisk Fiber AB", observed live) passes the key check, gets approved
       // by a human, and then dies on the uuid cast — the card ends up wearing
       // an error a lookup would have prevented. Bounce it pre-stage instead.
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // `id` counts as a reference key. It was excluded — the suffix test read
+      // "_id" — so manage_flowtable_record{id: "<a product name>"} sailed
+      // through the guard, through a human approval, and died on the uuid cast
+      // (QA, 2026-08-20). A bare `id` is the most common reference key there is.
+      const isRefKey = (k: string) => k === 'id' || k.endsWith('_id');
       const badRefs = Object.entries(args).filter(([k, v]) =>
-        k.endsWith('_id') && typeof v === 'string' && v.trim() !== '' && !UUID_RE.test(v.trim()));
+        isRefKey(k) && typeof v === 'string' && v.trim() !== '' && !UUID_RE.test(v.trim()));
       // A name in an _id field is usually RESOLVABLE: company_id="Nordisk
       // Fiber AB" names exactly one row in companies. Resolve it server-side —
       // deterministic, and the approval card shows the substitution. Only an
@@ -644,6 +764,20 @@ async function runExecuteSkill(
       // themselves; eleven live smokes said stop asking them to.)
       const resolvedNotes: string[] = [];
       for (const [k, v] of badRefs) {
+        // A bare `id` names no entity, so there is no table to look the value
+        // up in — we can only say that it is not an id. That is enough: the
+        // alternative is letting a product NAME through as a record id.
+        if (k === 'id') {
+          await logGateOutcome('ref-bounce', `id="${v}" is not a UUID`);
+          return {
+            ok: false,
+            name,
+            body: {
+              error: `Not staged: id="${v}" is not a UUID — "id" identifies an existing row and must be the row's real id.`,
+              hint: 'Look the row up first (a list/get/search action on the same skill, filtered by the name you have), then stage again with the id it returned. If you meant to CREATE a row, omit id and pass the field values instead.',
+            },
+          };
+        }
         const entity = k.slice(0, -3);
         // Pages have no `name` column and agents address them by URL path —
         // page_id="/blocks" (FlowWork live, 2026-08-19) died in the generic
@@ -664,7 +798,7 @@ async function runExecuteSkill(
             resolvedNotes.push(`${k}: "${v}" → ${match.id}`);
             continue;
           }
-          logGateOutcome('ref-bounce', `page_id="${v}" matched no page by slug or title`);
+          await logGateOutcome('ref-bounce', `page_id="${v}" matched no page by slug or title`);
           return {
             ok: false,
             name,
@@ -683,7 +817,7 @@ async function runExecuteSkill(
             resolvedNotes.push(`${k}: "${v}" → ${matches[0].id}`);
             continue;
           }
-          logGateOutcome('ref-bounce', `${k}="${v}" ${matches?.length ? 'ambiguous' : 'no match'} in ${table}`);
+          await logGateOutcome('ref-bounce', `${k}="${v}" ${matches?.length ? 'ambiguous' : 'no match'} in ${table}`);
           return {
             ok: false,
             name,
@@ -693,7 +827,7 @@ async function runExecuteSkill(
             },
           };
         } catch {
-          logGateOutcome('ref-bounce', `${k}="${v}" lookup in ${table} threw`);
+          await logGateOutcome('ref-bounce', `${k}="${v}" lookup in ${table} threw`);
           return {
             ok: false,
             name,
@@ -704,6 +838,42 @@ async function runExecuteSkill(
           };
         }
       }
+
+      // A well-formed UUID is not automatically the RIGHT uuid. An order id
+      // passed as `return_id` (QA, 2026-08-20) has the shape the guard above
+      // tests for, so it passed, staged, and was approved by a human before
+      // the foreign key rejected it. Shape is not identity: probe the target
+      // table and let the model correct itself while correcting is still free.
+      //
+      // Fail-OPEN on anything we cannot check (a key whose table we cannot
+      // derive, a table that does not exist or is not readable): this guard
+      // exists to catch a confident mistake, not to invent new refusals.
+      for (const [k, v] of Object.entries(args)) {
+        if (!isRefKey(k) || k === 'id') continue; // bare `id` names no table
+        if (typeof v !== 'string' || !UUID_RE.test(v.trim())) continue;
+        const entity = k.slice(0, -3);
+        const table = entity === 'page'
+          ? 'pages'
+          : entity.endsWith('y') ? `${entity.slice(0, -1)}ies` : `${entity}s`;
+        try {
+          const { data: row, error: probeErr } = await service
+            .from(table).select('id').eq('id', v.trim()).maybeSingle();
+          if (probeErr) continue; // unknown/unreadable table — not evidence
+          if (row) continue;
+          await logGateOutcome('ref-bounce', `${k}=${v} is not a row in ${table}`);
+          return {
+            ok: false,
+            name,
+            body: {
+              error: `Not staged: ${k}=${v} is a valid UUID but there is no such row in ${table} — this looks like the id of a different entity.`,
+              hint: `Fetch the ${entity} first (a list/get/search skill for ${entity}s) and use the id from that result. An id you got from another entity's record is not interchangeable.`,
+            },
+          };
+        } catch {
+          continue; // probe failed — fail open
+        }
+      }
+
       if (resolvedNotes.length) (args as any).__resolved = resolvedNotes;
     }
   }
@@ -888,19 +1058,30 @@ Deno.serve(async (req) => {
       '6. Be concise, use markdown, and match the user\'s language.',
     ].join('\n');
 
+    // What THIS colleague may be offered. Loaded once per request and passed
+    // down: discovery, read_skill and execute_skill must all answer the same
+    // question the executor will answer when the approval card is clicked.
+    const callerModules = await loadCallerModules(supabaseAdmin, user.id).catch((e) => {
+      console.error('[cowork-chat] module grants unreadable — failing closed:', e);
+      return new Set<string>();
+    });
+
     // Pre-rank the live tools for THIS question (Skill Relevance Engine) and
     // put them straight into the prompt — the model executes directly instead
     // of discovering the catalog one round-trip at a time.
     let rankedToolsBlock = '';
     try {
-      const pre = await runSearchSkills(supabaseAdmin, String(latestUserMessage));
+      const pre = await runSearchSkills(supabaseAdmin, String(latestUserMessage), callerModules);
       if (pre.skills.length) {
         rankedToolsBlock = [
           '',
           '--- LIVE TOOLS RANKED FOR THIS QUESTION (execute_skill) ---',
           ...pre.skills.map((sk: any) =>
-            `- ${sk.name}: ${sk.description}${sk.params ? `\n  params: ${sk.params}` : ''}`),
-          'Use exact names. For other needs, call search_skills.',
+            `- ${sk.name}: ${sk.description}`
+            + (sk.params ? `\n  params: ${sk.params}` : '')
+            + (sk.required ? `\n  required: ${sk.required}` : '')
+            + (sk.actions ? `\n  ${sk.actions}` : sk.tier ? `\n  ${sk.tier}` : '')),
+          'Use exact names. These are already scoped to what you are allowed to do here — a write in this list is a write you may propose. For other needs, call search_skills.',
           '--- END LIVE TOOLS ---',
         ].join('\n');
       }
@@ -913,10 +1094,23 @@ Deno.serve(async (req) => {
     // resolves to the model's prior about the platform itself.
     const businessIdentity = await loadBusinessIdentityBlock(supabaseAdmin).catch(() => '');
 
+    // TODAY. A model's sense of "now" is its training cutoff, and the loop
+    // stages real records with real dates: asked for a due date "in 30 days"
+    // it produced one two years in the past, and the approval card looked
+    // perfectly reasonable (QA, 2026-08-20). Nothing else in the prompt can
+    // supply this — it is the one fact the model cannot infer from context.
+    const now = new Date();
+    const todayBlock = [
+      `TODAY IS ${now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })}, ${now.toISOString().slice(0, 10)} (UTC).`,
+      'Every relative date the user gives ("today", "next Friday", "in 30 days", "last quarter") resolves against THAT date, not against your training data. When a skill takes a date, compute it from today and pass an explicit ISO date (YYYY-MM-DD) — never a relative phrase, and never a year you assumed.',
+    ].join('\n');
+
     const systemPrompt = [
       mode === 'strict'
         ? 'You are FlowWink Workspace Chat — strictly grounded in the user\'s workspace data.'
         : 'You are FlowWink Cowork Chat — a co-working assistant for an admin/employee. You combine the user\'s workspace data with your own knowledge (and optionally the web) to give the most useful answer.',
+      '',
+      todayBlock,
       '',
       mode === 'strict' ? strictRules : coworkRules,
       '',
@@ -940,7 +1134,7 @@ Deno.serve(async (req) => {
     // Dispatch tools are ALWAYS mounted — they fetch workspace data, which both
     // modes want. Web search remains cowork-only and settings-gated.
     const tools = [...(webSearchOn ? [WEB_SEARCH_TOOL] : []), ...DISPATCH_TOOLS];
-    const consulted: Array<{ skill: string; ok: boolean; ms: number }> = [];
+    const consulted: Array<{ skill: string; ok: boolean; ms: number; error?: string }> = [];
     const stagedActions: StagedAction[] = [];
     // Weak models fetch the missing id and then EXIT with "jag skapar den nu…"
     // — a promise, no call. Mechanical backstop: if a write bounced and nothing
@@ -967,7 +1161,7 @@ Deno.serve(async (req) => {
         if (!resp.ok) {
           const errText = await resp.text();
           console.error('AI provider error (tool pass):', resp.status, errText);
-          void logAiUsage({
+          await logAiUsage({
             supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
             promptTokens: 0, completionTokens: 0, totalTokens: 0,
             latencyMs: Date.now() - t0,
@@ -981,7 +1175,7 @@ Deno.serve(async (req) => {
         }
         const json = await resp.json();
         const usage = json?.usage || {};
-        void logAiUsage({
+        await logAiUsage({
           supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
           promptTokens: usage.prompt_tokens || 0,
           completionTokens: usage.completion_tokens || 0,
@@ -1018,10 +1212,10 @@ Deno.serve(async (req) => {
               content: JSON.stringify(out),
             });
           } else if (tc.function?.name === 'search_skills') {
-            const out = await runSearchSkills(supabaseAdmin, args.query || String(latestUserMessage));
+            const out = await runSearchSkills(supabaseAdmin, args.query || String(latestUserMessage), callerModules);
             conversation.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
           } else if (tc.function?.name === 'read_skill') {
-            const out = await runReadSkillTool(supabaseAdmin, String(args.name || ''));
+            const out = await runReadSkillTool(supabaseAdmin, String(args.name || ''), callerModules);
             conversation.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
           } else if (tc.function?.name === 'execute_skill') {
             const t0 = Date.now();
@@ -1033,13 +1227,20 @@ Deno.serve(async (req) => {
             } else {
               out = await runExecuteSkill(
                 supabaseAdmin, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-                String(args.name || ''), args.arguments ?? {}, user.id,
+                String(args.name || ''), args.arguments ?? {}, user.id, callerModules,
               );
             }
             if (out.staged) stagedActions.push(out.staged);
             if (!out.ok && classifyCall(out.name, args.arguments ?? {}) === 'stage') bouncedStage = true;
             const skillName = out.name;
-            consulted.push({ skill: skillName, ok: out.ok, ms: Date.now() - t0 });
+            // A failed consult carries WHY. The trace row used to say only
+            // `ok:false`, so a bounce and a genuine empty result were the same
+            // pixel — and the only account of what went wrong was the model's
+            // own paraphrase of it in the answer text.
+            const failReason = out.ok
+              ? undefined
+              : String((out.body as { error?: unknown })?.error ?? 'unknown error').slice(0, 300);
+            consulted.push({ skill: skillName, ok: out.ok, ms: Date.now() - t0, ...(failReason ? { error: failReason } : {}) });
             let refNote = '';
             if (out.ok) {
               const r = citations.length + 1;
@@ -1071,7 +1272,7 @@ Deno.serve(async (req) => {
       });
       const json = await resp.json();
       const fUsage = json?.usage || {};
-      void logAiUsage({
+      await logAiUsage({
         supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
         promptTokens: fUsage.prompt_tokens || 0,
         completionTokens: fUsage.completion_tokens || 0,
@@ -1094,7 +1295,7 @@ Deno.serve(async (req) => {
     if (!upstream.ok || !upstream.body) {
       const errText = await upstream.text();
       console.error('AI provider error:', upstream.status, errText);
-      void logAiUsage({
+      await logAiUsage({
         supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
         promptTokens: 0, completionTokens: 0, totalTokens: 0,
         latencyMs: Date.now() - tStream,
@@ -1140,7 +1341,7 @@ Deno.serve(async (req) => {
           console.error('stream error:', e);
         } finally {
           controller.close();
-          void logAiUsage({
+          await logAiUsage({
             supabase: supabaseAdmin, source: 'workspace-chat', provider, model,
             promptTokens: pTok, completionTokens: cTok, totalTokens: tTok,
             latencyMs: Date.now() - tStream, status: 'success',
@@ -1167,7 +1368,7 @@ function streamFinal(
   citations: Citation[],
   text: string,
   contextMeta?: ContextMeta,
-  consulted?: Array<{ skill: string; ok: boolean; ms: number }>,
+  consulted?: Array<{ skill: string; ok: boolean; ms: number; error?: string }>,
   staged?: StagedAction[],
 ): Response {
   const encoder = new TextEncoder();

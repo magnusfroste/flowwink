@@ -252,17 +252,26 @@ export function useHireCandidate() {
       if (error) throw error;
       const result = data as { success: boolean; employee_id: string; checklist_id: string; user_id: string | null; needs_invite: boolean };
 
-      // Fire-and-forget: invite employee to portal if no auth user yet
+      // Invite the new employee to the portal if no auth user yet. NOT
+      // fire-and-forget any more: invite-employee is admin-gated (it mints an
+      // auth user), so an HR role granted the recruitment module gets a 403
+      // here — and the swallowed catch still let the success toast announce
+      // "Portal invite sent." A denial rendered as a success is the worst
+      // shape of this class: nobody goes looking. Report what actually
+      // happened; the hire itself already succeeded and must not be undone.
+      let inviteError: string | null = null;
       if (result.employee_id) {
         try {
-          await supabase.functions.invoke('invite-employee', {
+          const { error: inviteErr } = await supabase.functions.invoke('invite-employee', {
             body: { employee_id: result.employee_id },
           });
+          if (inviteErr) inviteError = inviteErr.message ?? String(inviteErr);
         } catch (e) {
-          logger.error('invite-employee failed', e);
+          inviteError = e instanceof Error ? e.message : String(e);
         }
+        if (inviteError) logger.error('invite-employee failed', inviteError);
       }
-      return result;
+      return { ...result, inviteError };
     },
     onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
@@ -270,9 +279,12 @@ export function useHireCandidate() {
       qc.invalidateQueries({ queryKey: ['employees'] });
       toast({
         title: 'Candidate hired',
-        description: data.needs_invite
-          ? 'Employee record + onboarding created. Portal invite sent.'
-          : 'Employee record + onboarding created. Portal access linked.',
+        description: data.inviteError
+          ? `Employee record + onboarding created, but the portal invite failed: ${data.inviteError}. An administrator can invite them from the employee record.`
+          : data.needs_invite
+            ? 'Employee record + onboarding created. Portal invite sent.'
+            : 'Employee record + onboarding created. Portal access linked.',
+        variant: data.inviteError ? 'destructive' : undefined,
       });
     },
     onError: (e: Error) => {

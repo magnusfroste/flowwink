@@ -371,7 +371,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'escalate_dunning',
-    description: 'Escalate a dunning sequence to its final step immediately (last-notice email + imminent cancellation). Use when: repeated failures with no customer response, high-risk account needs resolution now. NOT for: gentle handling (pause_dunning) or reviewing sequences (list_dunning_sequences).',
+    description: 'Escalate a dunning sequence to its final step immediately (last-notice email + imminent cancellation). Works for card-billed subscriptions (Stripe opens the sequence on a failed payment) AND for invoice-billed ones: if the subscription is past_due/unpaid with an overdue unpaid invoice and has no sequence yet, one is opened from that invoice and escalated. Use when: repeated failures with no customer response, an invoice-billed subscription has gone unpaid past its due date, high-risk account needs resolution now. NOT for: gentle handling (pause_dunning), reviewing sequences (list_dunning_sequences), or invoice reminder emails to a customer who has no subscription (send_dunning_reminders).',
     category: 'commerce',
     handler: 'edge:subscriptions',
     scope: 'internal',
@@ -391,7 +391,7 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Provide subscription_id OR sequence_id. Escalation sets current_step=4 and runs the dunning-processor at once — the customer receives the final notice immediately, so use deliberately.',
+    instructions: 'Provide subscription_id OR sequence_id. Escalation sets current_step=4 and runs the dunning-processor at once — the customer receives the final notice immediately, so use deliberately. INVOICE-BILLED SUBSCRIPTIONS: sequences used to be created only by stripe-webhook on a failed card payment, so a subscription on payment_terms invoice_30 never had one and this skill answered "no dunning sequence found". Now, when subscription_id is given and no sequence exists, the subscription must be past_due/unpaid AND have an overdue unpaid invoice (evidence, not assumption) — then a sequence is opened from that invoice (failure_code=invoice_overdue, mrr_at_risk from the subscription) and escalated. The reply carries opened_sequence:true when that happened. If either condition is missing the skill declines and says which one.',
   },
 
   {

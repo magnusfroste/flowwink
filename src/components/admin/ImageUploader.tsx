@@ -11,7 +11,7 @@ import { MediaLibraryPicker } from './MediaLibraryPicker';
 import { UnsplashPicker } from './UnsplashPicker';
 import { UnsplashConfigHint } from './UnsplashConfigHint';
 
-import { convertToWebP, getWebPFileName } from '@/lib/image-utils';
+import { convertToWebP, getWebPFileName, isHeicFile } from '@/lib/image-utils';
 
 interface ImageUploaderProps {
   value: string;
@@ -44,8 +44,9 @@ export function ImageUploader({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type. HEIC needs its own check: Chrome reports an empty
+    // mime type for .heic files, so they fail the image/* test.
+    if (!file.type.startsWith('image/') && !isHeicFile(file)) {
       toast({
         title: 'Invalid file type',
         description: 'Please select an image file (JPG, PNG, GIF, WebP)',
@@ -74,18 +75,18 @@ export function ImageUploader({
 
       if (file.type !== 'image/webp' && file.type !== 'image/gif') {
         try {
+          // convertToWebP decodes HEIC via heic2any before the canvas pass.
           uploadBlob = await convertToWebP(file, 0.85);
           fileName = getWebPFileName(file.name);
           contentType = 'image/webp';
           logger.log(`Converted to WebP: ${file.size} → ${uploadBlob.size} bytes`);
         } catch (conversionError) {
           logger.warn('WebP conversion failed, using original:', conversionError);
-          // Formats the browser cannot DECODE (HEIC from phones is the common
-          // one) cannot fall back: the original would upload fine and then
-          // never render anywhere. Fail with a message instead of succeeding
-          // into a broken image.
-          if (/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
-            throw new Error('HEIC photos cannot be converted in this browser — export the photo as JPG or PNG first.');
+          // HEIC cannot fall back: browsers don't render it, so the original
+          // would upload fine and then never display anywhere. Fail with a
+          // message instead of succeeding into a broken image.
+          if (isHeicFile(file)) {
+            throw new Error('Could not decode this HEIC photo — export it as JPG or PNG and try again.');
           }
           // Other conversion hiccups: fall back to the original format.
         }
@@ -207,7 +208,7 @@ export function ImageUploader({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             onChange={handleFileSelect}
             className="hidden"
           />

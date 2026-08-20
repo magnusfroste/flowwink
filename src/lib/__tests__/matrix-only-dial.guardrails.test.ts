@@ -37,6 +37,48 @@ describe('agent-execute authorizes per the skill’s owning module', () => {
   it('the 403 names the module and the dial, so a denial self-corrects', () => {
     expect(src).toContain('Role Permissions');
   });
+
+  /**
+   * Matrisens ANDRA SVEP: invoice-creating skills are gated by the module that
+   * owns the EFFECT, not the one that owns the code. Six skills mint a real
+   * customer invoice (number from the series, rows in the ledger) while living
+   * in whichever process module happens to trigger them — so `sales`, holding
+   * only `ecommerce`, could issue a live invoice through send_invoice_for_order
+   * without ever being granted `invoicing`. The override map re-homes them.
+   */
+  it('invoice-creating skills are gated by invoicing, wherever they are seeded', () => {
+    expect(src).toContain('SKILL_OWNER_MODULE_OVERRIDES');
+    for (const name of [
+      'send_invoice_for_order',
+      'service_order_to_invoice',
+      'generate_contract_invoice',
+      'pos_sale_to_invoice',
+      'generate_subscription_invoice',
+    ]) {
+      expect(src, `${name} måste grindas av invoicing`).toMatch(
+        new RegExp(`${name}:\\s*'invoicing'`),
+      );
+    }
+  });
+
+  it('the override is applied AFTER the artifact loop, so a regen cannot undo it', () => {
+    const loopAt = src.indexOf('for (const s of mod.skills) SKILL_OWNER_MODULE');
+    const applyAt = src.indexOf('Object.entries(SKILL_OWNER_MODULE_OVERRIDES)');
+    expect(loopAt).toBeGreaterThan(-1);
+    expect(applyAt).toBeGreaterThan(loopAt);
+  });
+
+  /**
+   * initiate_company_invoice_payment stays on `companies` deliberately: it
+   * creates nothing, resolves one of the caller's OWN company's unpaid invoices
+   * and hands back the payment link. Its real gate is company membership
+   * (companyScopeGuard, rung 3), and it is reached with the service key, so the
+   * module gate never applies. Re-homing it would be theatre.
+   */
+  it('the read-only company payment link skill is NOT re-homed to invoicing', () => {
+    expect(src).not.toMatch(/initiate_company_invoice_payment:\s*'invoicing'/);
+    expect(src).toContain("companyScopeGuard(args, 'buyer')");
+  });
 });
 
 describe('no shadow role lists beside a moduleId (frontend)', () => {

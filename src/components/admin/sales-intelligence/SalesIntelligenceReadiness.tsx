@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, AlertTriangle, Circle, ArrowRight } from "lucide-react";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useCompanyInsights } from "@/hooks/useCompanyInsights";
+import { useModuleAccess } from "@/hooks/useRoleModuleAccess";
 
 interface Requirement {
   label: string;
@@ -14,6 +15,12 @@ interface Requirement {
   required: boolean;
   href?: string;
   linkLabel?: string;
+  /**
+   * Module that owns the fix-page, per the access matrix. Omitted = the page
+   * lives in the adminOnly System group (Integrations), so only an admin can
+   * follow the link. The matrix decides, never a hardcoded role list.
+   */
+  moduleId?: string;
 }
 
 function StatusIcon({ ok, required }: { ok: boolean; required: boolean }) {
@@ -28,10 +35,19 @@ function StatusIcon({ ok, required }: { ok: boolean; required: boolean }) {
  * Required: an AI provider (fit scoring and outreach run through FlowPilot) and
  * an ICP defined in Business Identity (the thing we score prospects against).
  * Optional: enrichment integrations that deepen research quality.
+ *
+ * The DIAGNOSIS is shown to every role the matrix let onto the page; only the
+ * FIX-link is withheld, and per requirement, from whoever cannot reach that
+ * page. Hiding the whole card from non-admins — as this surface used to —
+ * is the "denied permission rendered as absent data" class: sales was told
+ * nothing at all rather than "your ICP is missing, ask an admin".
  */
 export function SalesIntelligenceReadiness() {
   const { data: status, isLoading } = useIntegrationStatus();
   const { profile } = useCompanyInsights();
+  const { canAccess, isAdmin } = useModuleAccess();
+  const canReach = (req: Requirement) =>
+    isAdmin || (req.moduleId ? canAccess(req.moduleId) : false);
 
   const integrations = status?.integrations;
   const hasAi = !!(integrations?.openai || integrations?.gemini || integrations?.local_llm);
@@ -54,6 +70,7 @@ export function SalesIntelligenceReadiness() {
       required: true,
       href: "/admin/company-insights",
       linkLabel: "Business Identity",
+      moduleId: "companyInsights",
     },
     {
       label: "Positioning & services",
@@ -62,6 +79,7 @@ export function SalesIntelligenceReadiness() {
       required: true,
       href: "/admin/company-insights",
       linkLabel: "Business Identity",
+      moduleId: "companyInsights",
     },
   ];
 
@@ -115,7 +133,7 @@ export function SalesIntelligenceReadiness() {
         <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Required</p>
           {required.map((r) => (
-            <RequirementRow key={r.label} req={r} />
+            <RequirementRow key={r.label} req={r} reachable={canReach(r)} />
           ))}
         </div>
 
@@ -126,7 +144,7 @@ export function SalesIntelligenceReadiness() {
             Optional — deepens research
           </p>
           {optional.map((r) => (
-            <RequirementRow key={r.label} req={r} />
+            <RequirementRow key={r.label} req={r} reachable={canReach(r)} />
           ))}
         </div>
 
@@ -141,7 +159,7 @@ export function SalesIntelligenceReadiness() {
   );
 }
 
-function RequirementRow({ req }: { req: Requirement }) {
+function RequirementRow({ req, reachable }: { req: Requirement; reachable: boolean }) {
   return (
     <div className="flex items-start gap-3">
       <StatusIcon ok={req.ok} required={req.required} />
@@ -154,13 +172,18 @@ function RequirementRow({ req }: { req: Requirement }) {
         </div>
         <p className="text-xs text-muted-foreground">{req.description}</p>
       </div>
-      {!req.ok && req.href && (
+      {!req.ok && req.href && reachable && (
         <Button asChild variant="ghost" size="sm" className="gap-1 shrink-0">
           <Link to={req.href}>
             {req.linkLabel ?? "Open"}
             <ArrowRight className="h-3 w-3" />
           </Link>
         </Button>
+      )}
+      {!req.ok && req.href && !reachable && (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          Ask an admin — {req.linkLabel ?? "settings"}
+        </span>
       )}
     </div>
   );

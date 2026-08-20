@@ -237,7 +237,7 @@ function WikiPageInner() {
               A NEW page auto-opens in edit mode — hiding the tree there made the
               whole wiki look empty (/admin/wiki lands on a not-yet-created
               HomePage, live 2026-08-20), so new-page editing keeps navigation. */}
-          <aside className={editing && page ? 'hidden' : 'col-span-12 lg:col-span-3 space-y-3'}>
+          <aside className={editing && page ? 'hidden' : 'col-span-12 lg:col-span-3 min-w-0 space-y-3'}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-primary" />
@@ -263,7 +263,7 @@ function WikiPageInner() {
                 ⌘K
               </kbd>
             </div>
-            <ScrollArea className="h-[calc(100vh-280px)] rounded-md border">
+            <ScrollArea className="h-[calc(100vh-280px)] rounded-md border [&>[data-radix-scroll-area-viewport]>div]:!block [&>[data-radix-scroll-area-viewport]>div]:!w-full [&>[data-radix-scroll-area-viewport]>div]:!min-w-0">
               {searching2 ? (
                 <div className="p-1">
                   <p className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">

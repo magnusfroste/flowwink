@@ -360,7 +360,7 @@ const INVENTORY_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_inventory_count',
-    description: 'Run a physical cycle count: open a count for a location, snapshot system quantities, record counted quantities, and post variances to stock. Use when: stocktake, periodic cycle count, reconciling on-hand to reality. NOT for: ad-hoc single adjustments (adjust_quant) or receiving goods (receive_goods).',
+    description: 'Run a physical cycle count: open a count for a location, snapshot system quantities, record counted quantities, and post variances to stock. Use when: stocktake, periodic cycle count, reconciling on-hand to reality. NOT for: ad-hoc single adjustments (adjust_quant) or receiving goods against a purchase order (receive_purchase_order).',
     category: 'commerce',
     handler: 'rpc:manage_inventory_count',
     scope: 'internal',

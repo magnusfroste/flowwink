@@ -9,6 +9,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { AppRole } from '@/types/cms';
 import type { Database } from '@/integrations/supabase/types';
 
 export type ApprovalRequest = Database['public']['Tables']['approval_requests']['Row'];
@@ -108,7 +109,11 @@ export function useApprovals() {
           amount_cents: input.amount_cents ?? null,
           currency: input.currency ?? 'SEK',
           reason: input.reason ?? null,
-          required_role: (evalResult.requiredRole ?? 'admin') as 'admin' | 'approver' | 'writer' | 'customer',
+          // Whatever role the RULE names — the column is app_role and
+          // resolve_approval() checks has_role() against it, so narrowing this
+          // cast to the legacy trio would misdescribe a rule that requires,
+          // say, `accounting` (rollsvepet #102, app-lagret).
+          required_role: (evalResult.requiredRole ?? 'admin') as AppRole,
           requested_by: userData.user?.id ?? null,
           context: (input.context as never) ?? {},
         })

@@ -33,7 +33,6 @@ import { IntegrationsSettings } from '@/hooks/useIntegrations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { VisitorSessionsTab } from '@/components/admin/chat/VisitorSessionsTab';
 import { ProvenanceLine } from '@/components/ui/provenance-line';
-import { useAuth } from '@/hooks/useAuth';
 
 /**
  * The chat no longer picks a model or a hosted provider — the platform AI map
@@ -137,12 +136,14 @@ export default function ChatSettingsPage() {
   const updateSettings = useUpdateChatSettings();
   const [formData, setFormData] = useState<ChatSettings | null>(null);
   const isOpenAIConfigured = useIsOpenAIConfigured();
-  // Provider status is verified via check-secrets, an ADMIN-gated probe. For a
-  // non-admin it answers denied, which the hooks read as "not configured" — a
-  // check without read access must not condemn the configuration (#97-klassen,
-  // tredje gången i dag). Non-admins get an honest line instead of warnings.
-  const { role } = useAuth();
-  const isAdmin = role === 'admin';
+  // Provider status is verified via check-secrets, which since 600a3ccb0 is a
+  // STAFF-read presence probe (booleans, never values) — so the status shown
+  // here is real for every role the matrix let onto this page. The admin-only
+  // workaround that used to sit here (hide the warnings, print "cannot be
+  // shown") outlived the gate it worked around and became the very thing it
+  // was meant to prevent: a truthful check rendered as unavailable. The
+  // remaining admin difference is who can ACT — the fix-link, owned by
+  // IntegrationWarning.
   const isGeminiConfigured = useIsGeminiConfigured();
   const isAnthropicConfigured = useIsAnthropicConfigured();
   const isLocalLlmConfigured = useIsLocalLLMConfigured();
@@ -281,17 +282,11 @@ export default function ChatSettingsPage() {
 
         {/* The credential that matters is the one the model map points at, not a
             provider the chat picked — the chat no longer picks one. */}
-        {isAdmin && formData.aiProvider !== 'n8n' && platformAi.provider === 'openai' && isOpenAIConfigured === false && (
+        {formData.aiProvider !== 'n8n' && platformAi.provider === 'openai' && isOpenAIConfigured === false && (
           <IntegrationWarning integration="openai" />
         )}
-        {isAdmin && formData.aiProvider !== 'n8n' && platformAi.provider === 'gemini' && isGeminiConfigured === false && (
+        {formData.aiProvider !== 'n8n' && platformAi.provider === 'gemini' && isGeminiConfigured === false && (
           <IntegrationWarning integration="gemini" />
-        )}
-        {!isAdmin && (
-          <ProvenanceLine>
-            Provider status is verified by an admin-only check — the assistant runs on the
-            provider your administrator configured, even if it cannot be shown here.
-          </ProvenanceLine>
         )}
 
         <div className="max-w-4xl space-y-6">

@@ -16,7 +16,6 @@ import { SalesProfileSetup } from "@/components/admin/sales-intelligence/SalesPr
 import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchHistory";
 import { SalesIntelligenceReadiness } from "@/components/admin/sales-intelligence/SalesIntelligenceReadiness";
 import { useProspectFit, loadSavedFit } from "@/hooks/useProspectFit";
-import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
 
@@ -30,15 +29,15 @@ export default function SalesIntelligencePage() {
   // Deep-linkable tabs: the Profile page points sellers straight at their
   // sender profile (?tab=profiles), which is otherwise three clicks deep.
   const [searchParams, setSearchParams] = useSearchParams();
-  // Setup lists platform dependencies (AI provider, ICP, API keys) whose
-  // status is read from admin-only settings and whose fix-links lead to
-  // admin pages. For a non-admin the reads come back empty (RLS), so the tab
-  // reported "AI not connected" about a fully configured instance — the
-  // check's own missing read access presented as fact. Admin-only, honestly.
-  const { role } = useAuth();
-  const isAdmin = role === 'admin';
-  const requested = searchParams.get('tab') ?? 'research';
-  const tab = requested === 'setup' && !isAdmin ? 'research' : requested;
+  // Setup lists the module's dependencies (AI provider, ICP, positioning).
+  // Both reads behind it are staff-readable today — check-secrets answers
+  // presence booleans to any staff role (600a3ccb0) and site_settings SELECT
+  // is open — so the old admin-only tab hid a truthful readiness report from
+  // the exact role the module is for. Sales was told nothing at all instead of
+  // "your ICP is missing". The tab is now shown to everyone the matrix let
+  // onto this page; the readiness card itself withholds only the fix-LINK per
+  // requirement, and it asks the matrix (not a role list) who can follow it.
+  const tab = searchParams.get('tab') ?? 'research';
 
   const handleResearch = async () => {
     if (!companyName.trim()) {
@@ -111,7 +110,7 @@ export default function SalesIntelligencePage() {
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="profiles">Sales Profile</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
-            {isAdmin && <TabsTrigger value="setup">Setup</TabsTrigger>}
+            <TabsTrigger value="setup">Setup</TabsTrigger>
           </TabsList>
 
           <TabsContent value="research" className="space-y-4">
@@ -229,11 +228,9 @@ export default function SalesIntelligencePage() {
             <ResearchHistory />
           </TabsContent>
 
-          {isAdmin && (
-            <TabsContent value="setup" className="space-y-4">
-              <SalesIntelligenceReadiness />
-            </TabsContent>
-          )}
+          <TabsContent value="setup" className="space-y-4">
+            <SalesIntelligenceReadiness />
+          </TabsContent>
         </Tabs>
       </AdminPageContainer>
     </AdminLayout>

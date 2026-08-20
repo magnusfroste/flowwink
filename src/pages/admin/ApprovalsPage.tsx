@@ -21,6 +21,7 @@ import { InboxSection } from './ApprovalInboxPage';
 import { ChainsSection, GroupsSection } from './ApprovalChainsPage';
 import { AgentSkillApprovalHeader, AgentSkillApprovalBody } from '@/components/admin/approvals/AgentSkillApprovalCard';
 import { useFormatAmount } from '@/lib/format-currency';
+import { ASSIGNABLE_WORK_ROLES, ROLE_LABELS, type AppRole } from '@/types/cms';
 
 
 export default function ApprovalsPage() {
@@ -49,7 +50,12 @@ export default function ApprovalsPage() {
     entity_type: 'expense_report',
     amount_threshold_cents: '',
     currency: 'SEK',
-    required_role: 'admin' as 'admin' | 'approver' | 'writer',
+    // Rollsvepet #102, app-lagret: this was narrowed to the three LEGACY roles,
+    // so no functional role (accounting, hr, purchasing…) could ever be made the
+    // approver — even though approval_rules.required_role is typed app_role and
+    // resolve_approval() checks has_role() against whatever is stored. A dial
+    // the database offers and the UI hides is a hidden capability.
+    required_role: 'admin' as AppRole,
     priority: 100,
   });
 
@@ -71,7 +77,7 @@ export default function ApprovalsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['approvals', 'rules'] });
       setRuleOpen(false);
-      setNewRule({ name: '', description: '', entity_type: 'expense_report', amount_threshold_cents: '', currency: 'SEK', required_role: 'admin', priority: 100 });
+      setNewRule({ name: '', description: '', entity_type: 'expense_report', amount_threshold_cents: '', currency: 'SEK', required_role: 'admin' as AppRole, priority: 100 });
       toast.success('Rule created');
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed'),
@@ -235,12 +241,12 @@ export default function ApprovalsPage() {
                     </div>
                     <div>
                       <Label>Required role</Label>
-                      <Select value={newRule.required_role} onValueChange={(v) => setNewRule({ ...newRule, required_role: v as 'admin' | 'approver' | 'writer' })}>
+                      <Select value={newRule.required_role} onValueChange={(v) => setNewRule({ ...newRule, required_role: v as AppRole })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="approver">Approver</SelectItem>
-                          <SelectItem value="writer">Writer</SelectItem>
+                          {ASSIGNABLE_WORK_ROLES.map((r) => (
+                            <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

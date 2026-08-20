@@ -23,6 +23,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig, isAnthropicProvider } from "../_shared/ai-config.ts";
+import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { requireServiceOrModule } from "../_shared/edge-auth.ts";
 import { TASKS, listTasks } from "./tasks.ts";
 
@@ -116,6 +117,19 @@ serve(async (req) => {
       reqBody.tools = [{ type: "function", function: spec.tool }];
       reqBody.tool_choice = { type: "function", function: { name: spec.tool.name } };
     }
+    // Reasoning models (gpt-5.x) reject max_tokens (want max_completion_tokens)
+    // and any temperature but the default — every task spec sets both, so the
+    // whole ai-task hub broke the day the model map moved to a reasoning model
+    // (research_content 'AI call failed', 2026-08-20). Tools additionally
+    // require reasoning_effort 'none' on /chat/completions.
+    if (ai.provider === 'openai' && isOpenAiReasoningModel(ai.model)) {
+      if (reqBody.max_tokens !== undefined) {
+        reqBody.max_completion_tokens = reqBody.max_tokens;
+        delete reqBody.max_tokens;
+      }
+      delete reqBody.temperature;
+      if (spec.tool) reqBody.reasoning_effort = 'none';
+    }
 
     // Anthropic path
     if (isAnthropicProvider(ai.apiUrl)) {
@@ -151,7 +165,7 @@ serve(async (req) => {
       if (!resp.ok) {
         const text = await resp.text();
         console.error(`[ai-task:${taskName}] Anthropic ${resp.status}:`, text);
-        return jsonResponse({ error: "AI call failed", status: resp.status }, 502);
+        return jsonResponse({ error: "AI call failed", status: resp.status, upstream: (await resp.text().catch(() => "")).slice(0, 400) }, 502);
       }
       const data = await resp.json();
       const toolUse = (data.content || []).find((b: any) => b.type === "tool_use");
@@ -197,7 +211,7 @@ serve(async (req) => {
       console.error(`[ai-task:${taskName}] AI ${resp.status} (${ai.provider}):`, text);
       if (resp.status === 429) return jsonResponse({ error: "Rate limited" }, 429);
       if (resp.status === 402) return jsonResponse({ error: "AI credits exhausted" }, 402);
-      return jsonResponse({ error: "AI call failed", status: resp.status }, 502);
+      return jsonResponse({ error: "AI call failed", status: resp.status, upstream: (await resp.text().catch(() => "")).slice(0, 400) }, 502);
     }
 
     const data = await resp.json();

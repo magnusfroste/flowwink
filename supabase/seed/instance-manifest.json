@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260820120000",
-      "migrations_count": 443,
+      "migration_head": "20260821010000",
+      "migrations_count": 460,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1777,29 +1777,97 @@
         {
           "version": "20260820120000",
           "name": "b7c8d9e0-branding-media-matrix"
+        },
+        {
+          "version": "20260820200001",
+          "name": "c3d4e5f6-refund-guard-requires-lines"
+        },
+        {
+          "version": "20260820200002",
+          "name": "c3d4e5f7-expense-report-lifecycle"
+        },
+        {
+          "version": "20260820210001",
+          "name": "stock-locations-are-platform-config"
+        },
+        {
+          "version": "20260820210002",
+          "name": "receipts-reach-the-quants"
+        },
+        {
+          "version": "20260820210003",
+          "name": "inbound-cost-follows-the-receipt"
+        },
+        {
+          "version": "20260820210004",
+          "name": "stock-events-mirror-without-a-location"
+        },
+        {
+          "version": "20260820210005",
+          "name": "overselling-is-refused"
+        },
+        {
+          "version": "20260820210006",
+          "name": "reorder-reads-the-products-table"
+        },
+        {
+          "version": "20260820220000",
+          "name": "order-to-cash-links"
+        },
+        {
+          "version": "20260820220001",
+          "name": "recalc-quote-totals-empty"
+        },
+        {
+          "version": "20260820220002",
+          "name": "invoice-dunning-actions"
+        },
+        {
+          "version": "20260820220003",
+          "name": "platform-default-currency"
+        },
+        {
+          "version": "20260820230000",
+          "name": "commerce-tables-follow-the-matrix"
+        },
+        {
+          "version": "20260820230100",
+          "name": "process-roles-are-structurally-complete"
+        },
+        {
+          "version": "20260820230200",
+          "name": "vendor-invoice-creator-can-be-deleted"
+        },
+        {
+          "version": "20260821000000",
+          "name": "d8e9f0a1-project-rpcs-follow-the-matrix"
+        },
+        {
+          "version": "20260821010000",
+          "name": "e1f2a3b4-frontend-rpcs-follow-the-matrix"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:a0ddbada34712b923976df6ba6c5b1ca2b4ee82e1a97e78429bc8800cd23e61d",
+      "seed_hash": "sha256:00afd48288530aafbfe0999917f087457c6ef7d63a8b89ddefb991594ef31b03",
       "skill_count": 537,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:94b2368c84f5220859b54278214c902e2ea5c53e2d28cdddf201a9f8aea85d18",
+      "shared_hash": "sha256:548c5bf10817b169ad85d20c9629bc0de39ea0b1184399277579b1fc4a295e6a",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:8dc273cc407376f32ece05023960ebd8f69f44cb2e0d151b75365ce78bff5249",
+        "agent-execute": "sha256:03b4b4cdb083deedfbbf9b93fbef3972a40745d9994da80b3bcc3d5b2bf8d810",
         "agent-operate": "sha256:75fb1281c6ee8aa748f24c44a0b866686a12cf11df5291d7ff5e6aa59a2c1d2a",
-        "ai-task": "sha256:7eca41863874f798eb5dfadf3216302830d807b3265231567ba0284d791fb6cd",
+        "ai-task": "sha256:4f3549a12beac9c958dc7b584c91202f67fd5700dad7ac9e512e5483ddfb29c7",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
         "blog-rss": "sha256:dd57f6386804f1e0a4b8e0db3cdb83abc386c5790a677c7fdfe145067ae51be6",
         "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
         "chat-completion": "sha256:996f29441369d8b79ea3a56d560e70322cc9b7e46d5cb9cfbab523060eab2c36",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
-        "check-secrets": "sha256:7d51782c0c965937199c1eb471c2664b867a37a32382fba2ecf20f3999bf86aa",
+        "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
         "comms-send": "sha256:70122ef5a3cbfa7b1f0f8b8212ca5756493c16f8318fd7d872e2831a39929564",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
@@ -1855,7 +1923,7 @@
         "sitemap": "sha256:57bfd001304645f70cd359850af19f88d6960918f2dbe5795c8dda40f733daf1",
         "stripe-webhook": "sha256:8958c2a437fc3718ba106b4f1c9dbaad1707b9052651045d6f506ebb2c86f5ce",
         "subscription-billing-cron": "sha256:d3a4089951cbc82379b1f667b1d5b98503961e4364ab811617b4c5d5a6036663",
-        "subscriptions": "sha256:887203a0eb2a2c5fa2f3876abb0d5c7b0614deea1bc585c2e37d215f48c1bc52",
+        "subscriptions": "sha256:d3ac2a631b793a4507315d92f144c69a3697ffc6a0186b6bbc3d7cda05a46a33",
         "system-integrity-check": "sha256:f90caeeb5634c18d19e681df91c690b5fbee5122fc5b60f8648c96e5cd9ae3cc",
         "telegram-ingest": "sha256:d1a509622d71db0e42a6902da31ce346c3b57471a1350c240c7c5b37a50c9cbc",
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
@@ -1865,7 +1933,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
-        "workspace-chat": "sha256:c8eded922028308a586d6f77c1707965ac69ecd8a68f38fd38439f43694e8958"
+        "workspace-chat": "sha256:e170ea24f9d72ceb18f0ba3316a27cbb0b2baee93aa44614f0be30778f02b8b0"
       }
     },
     "frontend": {

@@ -85,7 +85,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
   {
     name: 'manage_approvals',
     description:
-      'Generic approval workflow engine: request approval for an entity, list pending requests, approve/reject/cancel, and evaluate whether an entity needs approval based on amount thresholds. Use when: a purchase order/expense report/invoice/quote crosses an approval threshold, an admin needs to see what is awaiting their decision, FlowPilot wants to know if an action requires human sign-off before proceeding. NOT for: managing the underlying entity itself (use update_purchase_order, manage_expenses, manage_invoice, manage_quote).',
+      "Generic approval workflow engine: request approval for an entity, list pending requests, approve/reject/cancel, and evaluate whether an entity needs approval based on amount thresholds. Use when: a purchase order/expense report/invoice/quote crosses an approval threshold, an admin needs to see what is awaiting their decision, FlowPilot wants to know if an action requires human sign-off before proceeding. NOT for: managing the underlying entity itself (use update_purchase_order, manage_expenses, manage_invoice, manage_quote). Enforced: approve/reject require the request's required_role (admin always qualifies) and the requester may never approve their own request — hand it to a second person instead.",
     category: 'commerce',
     handler: 'module:approvals',
     scope: 'internal',
@@ -120,7 +120,7 @@ const APPROVAL_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Workflow: 1) Before publishing/sending a high-value entity, call evaluate_rule with entity_type + amount_cents to check if approval is required. 2) If yes, call request to create an approval_request. 3) The required role (admin or approver) reviews and calls approve or reject. 4) Use list_pending to show what needs attention. 5) Cancel can only be called by the original requester. Audit trail is automatic.',
+      "Workflow: 1) Before publishing/sending a high-value entity, call evaluate_rule with entity_type + amount_cents to check if approval is required. 2) If yes, call request to create an approval_request — requested_by is stamped from the authenticated caller. 3) A DIFFERENT person holding the request's required_role (or an admin) calls approve or reject; resolved_by is stamped the same way. A caller without that role is refused, and so is the requester approving their own request. 4) Use list_pending to show what needs attention. 5) Cancel is the requester's own escape hatch and skips the role check.",
   },
   {
     name: 'manage_approval_chain',

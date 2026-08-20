@@ -112,6 +112,32 @@ export function classifyCall(
   return 'stage';
 }
 
+/**
+ * Is this skill allowed to APPEAR in a discovery result (search_skills)?
+ *
+ * The boundary: **visible = what the caller could read, or could stage.**
+ * Not "visible = what executes immediately". Those are different questions and
+ * conflating them cost the surface 328 of 536 skills — FlowWork's search
+ * filtered on the READ predicate, so every pure write (place_order,
+ * receive_purchase_order, refund_return, record_invoice_payment, ship_picking…)
+ * was undiscoverable, and the model could only reach one by being told its name
+ * out loud. Which worked perfectly when a human did it: "use place_order"
+ * staged a correct operation on the first try (QA, 2026-08-20). The staging
+ * tier exists precisely so a write can be proposed safely; hiding writes from
+ * discovery threw that away and left the loop unable to find its own hands.
+ *
+ * The deny tier stays hidden — secrets and deletion-shaped skills are not
+ * proposable, so listing them would only teach the model to ask for what it
+ * can never have.
+ *
+ * Name-only judgement (no args yet at discovery time), which is why this asks
+ * classifyCall with a read action: a manage_* skill is discoverable as its
+ * readable self, and its write actions are reachable through staging.
+ */
+export function isDiscoverableSkill(name: string): boolean {
+  return classifyCall(name, { action: 'list' }) !== 'deny';
+}
+
 /** What the model is told when it reaches for a skill outside the surface. */
 export const WRITE_REFUSAL =
   'FlowWork runs a read-only tool surface. This skill would change data, so it was not executed. ' +

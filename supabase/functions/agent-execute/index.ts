@@ -119,6 +119,45 @@ for (const mod of (bundledModuleSkills as { modules: Array<{ moduleId: string; s
   for (const s of mod.skills) SKILL_OWNER_MODULE[s.name] = mod.moduleId;
 }
 
+// ─── Felhemmade skapare: modulen som äger EFFEKTEN, inte den som äger koden ──
+// Matrisens andra svep fann en hel klass av samma bugg: skills som ställer ut en
+// SKARP kundfaktura — fakturanummer ur serien, rader i huvudboken — men som är
+// seedade i den modul vars process råkade utlösa dem. Ägarkartan ovan läser bara
+// var seedet står, så grinden hamnade på fel modul: `sales` har `ecommerce` och
+// kunde därmed skapa en riktig faktura via send_invoice_for_order utan att
+// någonsin ha beviljats `invoicing`. Modulratten var påslagen — men inte den för
+// det som faktiskt hände.
+//
+// Regeln: ett skill auktoriseras av modulen som äger DET SOM BLIR TILL, inte av
+// modulen vars arbetsflöde startade det. Fakturaskapande är `invoicing`, vare sig
+// avsändaren är en butiksorder, ett serviceuppdrag, ett avtal, en kassaförsäljning
+// eller en prenumeration. Åtkomst till källobjektet kräver fortfarande sin egen
+// modul via RLS — överskrivningen LÄGGER TILL ett krav, den byter inte ut ett.
+//
+// Överskrivningen står här och inte i modulseedet med flit: `moduleId` i
+// src/lib/modules/* styr också navigering, katalogisering och sync:skills, och
+// skill:et hör verkligen hemma i sin processmodul. Det är AUKTORISATIONEN som ska
+// följa effekten, inte katalogiseringen.
+//
+// EJ i listan: initiate_company_invoice_payment (companies). Verifierat
+// 2026-08-20 — den SKAPAR ingen faktura. Den slår upp en av det egna företagets
+// redan utställda obetalda fakturor inom company-scope och returnerar
+// betalningslänken (/invoice/<public_token>); ingen state skrivs. Den bär sin egen
+// enforcement via companyScopeGuard(args, 'buyer') på rung 3 och nås genom
+// kundportalens chat-completion-väg med service-nyckeln (isServiceCaller), så
+// modulgrinden nedan gäller den ändå aldrig. Att flytta den till `invoicing` hade
+// varit teater på en yta där den riktiga grinden är företagstillhörighet.
+const SKILL_OWNER_MODULE_OVERRIDES: Record<string, string> = {
+  send_invoice_for_order: 'invoicing',        // seedad i ecommerce (products-module)
+  service_order_to_invoice: 'invoicing',      // seedad i fieldService
+  generate_contract_invoice: 'invoicing',     // seedad i contracts
+  pos_sale_to_invoice: 'invoicing',           // seedad i pos
+  generate_subscription_invoice: 'invoicing', // seedad i subscriptions
+};
+for (const [name, moduleId] of Object.entries(SKILL_OWNER_MODULE_OVERRIDES)) {
+  SKILL_OWNER_MODULE[name] = moduleId;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -1054,14 +1093,31 @@ serve(async (req) => {
           // can fix it on the next turn instead of seeing an opaque error.
           if ((rpcErr as any).code === 'PGRST202' || /Could not find the function|schema cache/i.test(rpcErr.message || '')) {
             const sent = Object.keys(rpcArgs);
-            const declared = Object.keys(
-              ((skill as any)?.tool_definition?.function?.parameters?.properties) ?? {},
-            );
-            rpcMsg += ` — the parameter names likely don't match the function signature.`
-              + ` You sent: [${sent.join(', ')}].`
-              + (declared.length
-                  ? ` This skill's declared parameters are: [${declared.join(', ')}]. Use these EXACT names (RPC params are p_-prefixed; do not substitute synonyms).`
-                  : ` Pass the exact p_-prefixed parameter names from this skill's input schema.`);
+            const params = (skill as any)?.tool_definition?.function?.parameters;
+            const declared = Object.keys(params?.properties ?? {});
+            // PGRST202 has TWO causes and they need opposite advice. Wrong
+            // NAMES is the famous one. But an OMITTED required parameter
+            // produces the identical error — and there the name hint actively
+            // misleads: it lists back the names the caller already sent and
+            // tells them to use those exact names, which they did. Check for
+            // the omission first and name it.
+            const requiredList: string[] = Array.isArray(params?.required)
+              ? params.required.map(String) : [];
+            const missing = requiredList.filter((k) => {
+              const v = (args as Record<string, unknown>)[k];
+              return v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
+            });
+            if (missing.length) {
+              rpcMsg += ` — missing required parameter${missing.length > 1 ? 's' : ''}: [${missing.join(', ')}].`
+                + ` This skill requires [${requiredList.join(', ')}]; you sent [${Object.keys(args).join(', ')}].`
+                + ` Supply the missing value(s) explicitly — do not rely on a default.`;
+            } else {
+              rpcMsg += ` — the parameter names likely don't match the function signature.`
+                + ` You sent: [${sent.join(', ')}].`
+                + (declared.length
+                    ? ` This skill's declared parameters are: [${declared.join(', ')}]. Use these EXACT names (RPC params are p_-prefixed; do not substitute synonyms).`
+                    : ` Pass the exact p_-prefixed parameter names from this skill's input schema.`);
+            }
           }
           result = { error: rpcMsg, status: 'failed' };
         } else {
@@ -3513,14 +3569,18 @@ async function executeApprovalsAction(
   if (action === 'request') {
     const { entity_type, entity_id, amount_cents, currency = 'SEK', reason, required_role = 'admin', context, rule_id } = a;
     if (!entity_type || !entity_id) throw new Error('entity_type and entity_id are required');
+    // Who asked is half the approval record. It was never written, which is
+    // also why self-approval could not be detected downstream.
+    const requestedBy = typeof a._caller_user_id === 'string' ? a._caller_user_id : null;
     const { data, error } = await supabase.from('approval_requests').insert({
       entity_type, entity_id,
       amount_cents: amount_cents != null ? Number(amount_cents) : null,
       currency, reason: reason ?? null, required_role, context: context ?? {}, rule_id: rule_id ?? null,
+      requested_by: requestedBy,
       status: 'pending',
-    }).select('id, entity_type, entity_id, status, required_role').single();
+    }).select('id, entity_type, entity_id, status, required_role, requested_by').single();
     if (error) throw new Error(`request failed: ${error.message}`);
-    return { request_id: data.id, status: data.status, required_role: data.required_role };
+    return { request_id: data.id, status: data.status, required_role: data.required_role, requested_by: data.requested_by };
   }
 
   if (action === 'list_pending') {
@@ -3543,13 +3603,62 @@ async function executeApprovalsAction(
   if (action === 'approve' || action === 'reject' || action === 'cancel') {
     if (!a.request_id) throw new Error('request_id is required');
     const status = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'cancelled';
+    const callerUserId = typeof a._caller_user_id === 'string' ? a._caller_user_id : null;
+
+    // The row carries the whole policy: which role may decide, and who asked.
+    // Both were written to the table and then never read — the gate rendered in
+    // /admin/approvals was decoration over an update anyone could issue.
+    const { data: reqRow, error: reqErr } = await supabase.from('approval_requests')
+      .select('id, status, required_role, requested_by, entity_type, entity_id')
+      .eq('id', a.request_id).maybeSingle();
+    if (reqErr) throw new Error(`${action} failed: ${reqErr.message}`);
+    if (!reqRow) return { error: `Request ${a.request_id} not found`, status: 'failed' };
+    if (reqRow.status !== 'pending') {
+      return { error: `Request ${a.request_id} is no longer pending (status ${reqRow.status})`, status: 'failed' };
+    }
+
+    if (action !== 'cancel') {
+      if (callerUserId) {
+        // Nobody signs off their own request. This is the whole point of an
+        // approval step; without it the workflow is a two-click self-serve.
+        if (reqRow.requested_by && reqRow.requested_by === callerUserId) {
+          return {
+            error: 'self-approval is not allowed — another approver must review this request',
+            request_id: reqRow.id,
+            required_role: reqRow.required_role,
+            status: 'failed',
+          };
+        }
+
+        const { data: roleRows, error: roleErr } = await supabase.from('user_roles')
+          .select('role').eq('user_id', callerUserId);
+        if (roleErr) throw new Error(`${action} failed: could not read caller roles: ${roleErr.message}`);
+        const callerRoles = (roleRows ?? []).map((r: any) => String(r.role));
+        // Admin is the platform's superuser role and may decide anything;
+        // otherwise the caller must hold exactly the role the request demands.
+        if (!callerRoles.includes(reqRow.required_role) && !callerRoles.includes('admin')) {
+          return {
+            error: `This request requires the '${reqRow.required_role}' role to ${action}. Caller holds: ${callerRoles.length ? callerRoles.join(', ') : 'no roles'}.`,
+            request_id: reqRow.id,
+            required_role: reqRow.required_role,
+            status: 'failed',
+          };
+        }
+      } else {
+        // Service-key call with no caller identity (FlowPilot autonomy, gateway
+        // peers). Deliberately still allowed — an autonomous operator has no
+        // user_roles row to hold — but it is recorded rather than invisible.
+        console.log(`[agent-execute] approvals ${action} without caller identity: request=${reqRow.id} entity=${reqRow.entity_type}:${reqRow.entity_id} required_role=${reqRow.required_role} (service-role decision, resolved_by null)`);
+      }
+    }
+
     const { data, error } = await supabase.from('approval_requests')
-      .update({ status, resolved_at: new Date().toISOString() })
+      .update({ status, resolved_at: new Date().toISOString(), resolved_by: callerUserId })
       .eq('id', a.request_id).eq('status', 'pending')
-      .select('id, status').maybeSingle();
+      .select('id, status, resolved_by').maybeSingle();
     if (error) throw new Error(`${action} failed: ${error.message}`);
     if (!data) return { error: `Request ${a.request_id} not found or no longer pending`, status: 'failed' };
-    return { request_id: data.id, status: data.status };
+    return { request_id: data.id, status: data.status, resolved_by: data.resolved_by };
   }
 
   if (action === 'create_rule') {
@@ -3668,7 +3777,16 @@ async function executePagesAction(
           .from('pages').select('id', { count: 'exact', head: true }).is('deleted_at', null);
 
         const pageBlocks = blocks || [];
-        normalizeBlocks(pageBlocks);
+        // Same refusal contract as the update branch below: a create that
+        // quietly loses blocks answers "created" for a page thinner than what
+        // the caller sent — the silent-drop class the guardrail test bans.
+        const droppedOnCreate = normalizeBlocks(pageBlocks);
+        if (droppedOnCreate.length > 0) {
+          throw new Error(
+            `Block validation dropped ${droppedOnCreate.length} block(s): ${droppedOnCreate.join('; ')}. ` +
+            `Fix the named fields and retry — nothing was written.`,
+          );
+        }
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
@@ -5545,7 +5663,13 @@ async function executeProductsAction(
 
   // manage_inventory
   if (skillName === 'manage_inventory') {
-    const { action = 'list_stock', product_id, quantity, threshold } = args as any;
+    const { product_id, quantity, threshold, reason } = args as any;
+    // The tool_definition used to advertise `low_stock`, which no branch here
+    // answers to — the skill's own contract sent every caller that trusted it
+    // into "Unknown inventory action". The enum now names the real branches;
+    // the alias keeps the old contract working for anything that cached it.
+    const rawAction = String((args as any).action ?? 'list_stock');
+    const action = rawAction === 'low_stock' ? 'low_stock_alerts' : rawAction;
 
     if (action === 'list_stock') {
       const { data, error } = await supabase.from('products')
@@ -5557,6 +5681,15 @@ async function executeProductsAction(
     }
 
     if (action === 'update_stock' && product_id) {
+      // update_stock sets an ABSOLUTE quantity. Doing that with a bare UPDATE
+      // left no trace at all: the balance jumped and nothing said who moved it,
+      // when, or why — a stock ledger with a hole in it. Read the old value,
+      // write the new one, and record the difference as an adjustment move.
+      const { data: before, error: beforeErr } = await supabase.from('products')
+        .select('id, name, stock_quantity').eq('id', product_id).maybeSingle();
+      if (beforeErr) throw new Error(`Update stock failed: ${beforeErr.message}`);
+      if (!before) throw new Error(`Product ${product_id} not found`);
+
       const updateData: any = { updated_at: new Date().toISOString() };
       if (quantity !== undefined) updateData.stock_quantity = quantity;
       if (threshold !== undefined) updateData.low_stock_threshold = threshold;
@@ -5564,7 +5697,35 @@ async function executeProductsAction(
         .update(updateData).eq('id', product_id)
         .select('id, name, stock_quantity, low_stock_threshold').single();
       if (error) throw new Error(`Update stock failed: ${error.message}`);
-      return { product_id: data.id, name: data.name, stock_quantity: data.stock_quantity, status: 'updated' };
+
+      let adjustment: number | null = null;
+      if (quantity !== undefined) {
+        adjustment = Number(quantity) - Number(before.stock_quantity ?? 0);
+        if (adjustment !== 0) {
+          const { error: moveErr } = await supabase.from('stock_moves').insert({
+            product_id,
+            quantity: adjustment,
+            move_type: 'adjustment',
+            reference_type: 'manual_adjustment',
+            reference_id: product_id,
+            notes: (typeof reason === 'string' && reason.trim())
+              ? reason.trim()
+              : 'manual adjustment via agent',
+          });
+          // The adjustment is the audit trail — a balance that moved without one
+          // is the bug this fixes, so say so instead of swallowing it.
+          if (moveErr) throw new Error(`Stock adjusted but the audit move failed: ${moveErr.message}`);
+        }
+      }
+
+      return {
+        product_id: data.id,
+        name: data.name,
+        stock_quantity: data.stock_quantity,
+        previous_stock_quantity: before.stock_quantity,
+        adjustment,
+        status: 'updated',
+      };
     }
 
     if (action === 'low_stock_alerts') {
@@ -5588,7 +5749,16 @@ async function executeProductsAction(
       return { requests: data || [] };
     }
 
-    return { error: `Unknown inventory action: ${action}` };
+    // Name what IS valid. "Unknown action: X" tells a caller it was wrong
+    // without telling it what right looks like — a whole extra round to learn
+    // something we already know.
+    return {
+      error: `Unknown inventory action: ${rawAction}`,
+      valid_actions: ['list_stock', 'update_stock', 'low_stock_alerts', 'back_in_stock_requests'],
+      hint: action === 'update_stock'
+        ? 'update_stock also requires product_id.'
+        : 'Pass one of valid_actions as "action". ("low_stock" is accepted as an alias for "low_stock_alerts".)',
+    };
   }
 
   // manage_product — original CRUD
@@ -5606,16 +5776,44 @@ async function executeProductsAction(
   }
 
   if (action === 'create') {
-    const { name, description, price_cents, currency = 'SEK', type = 'one_time', image_url, stripe_price_id, weight_grams } = args as any;
+    const {
+      name, description, price_cents, currency = 'SEK', type = 'one_time',
+      image_url, stripe_price_id, weight_grams,
+      // Inventory fields. Omitting these from the create allowlist meant a
+      // product could never be BORN stocked: an agent had to create it, then
+      // find it again, then update it — and until it did, the product looked
+      // untracked to the storefront, the low-stock alert and the reorder loop.
+      track_inventory, low_stock_threshold, allow_backorder, stock_quantity,
+      barcode, cost_cents, category_id,
+    } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
-    const { data, error } = await supabase.from('products').insert({
+    const insertData: Record<string, unknown> = {
       name, description, price_cents, currency, type,
       image_url, stripe_price_id, is_active: true,
       // null/undefined = non-shippable service/digital product
       weight_grams: weight_grams ?? null,
-    }).select('id, name, price_cents').single();
+    };
+    // Only send what the caller actually set — the columns carry their own
+    // defaults (track_inventory false, low_stock_threshold 5, allow_backorder
+    // false) and an explicit undefined would fight them.
+    if (track_inventory !== undefined) insertData.track_inventory = track_inventory;
+    if (low_stock_threshold !== undefined) insertData.low_stock_threshold = low_stock_threshold;
+    if (allow_backorder !== undefined) insertData.allow_backorder = allow_backorder;
+    if (stock_quantity !== undefined) insertData.stock_quantity = stock_quantity;
+    if (barcode !== undefined) insertData.barcode = barcode;
+    if (cost_cents !== undefined) insertData.cost_cents = cost_cents;
+    if (category_id !== undefined) insertData.category_id = category_id;
+
+    const { data, error } = await supabase.from('products').insert(insertData)
+      .select('id, name, price_cents, stock_quantity, track_inventory').single();
     if (error) throw new Error(`Create product failed: ${error.message}`);
-    return { product_id: data.id, name: data.name, price_cents: data.price_cents };
+    return {
+      product_id: data.id,
+      name: data.name,
+      price_cents: data.price_cents,
+      stock_quantity: data.stock_quantity,
+      track_inventory: data.track_inventory,
+    };
   }
 
   if (action === 'update') {
@@ -6728,6 +6926,42 @@ async function executeOrdersAction(
   if (skillName === 'manage_orders') {
     let { action = 'list', order_id, status, period = 'month', limit = 20 } = args as any;
 
+    // ── An order has TWO status axes, and they are not interchangeable ───────
+    //
+    // orders.status answers "where is the money" (pending → paid → refunded).
+    // orders.fulfillment_status answers "where are the goods" (unfulfilled →
+    // picked → packed → shipped → delivered), with picked_at/packed_at/
+    // shipped_at/delivered_at as its timeline.
+    //
+    // This handler used to write EVERY value to orders.status: `deliver` on a
+    // paid order overwrote status='paid' with 'delivered', and the money axis
+    // lost the only fact it carried — the order silently stopped counting as
+    // revenue in stats (which filters on status paid|delivered) and read as
+    // unpaid everywhere else. fulfillment_status, the tracking number and the
+    // four timestamps were never written at all, so the fulfillment timeline
+    // was empty for every agent-driven order (QA 2026-08-20).
+    //
+    // Now the VALUE decides the axis. Nothing writes across.
+    const FULFILLMENT_AXIS: Record<string, { at?: string }> = {
+      unfulfilled: {},
+      picked: { at: 'picked_at' },
+      packed: { at: 'packed_at' },
+      shipped: { at: 'shipped_at' },
+      delivered: { at: 'delivered_at' },
+    };
+    // The money/lifecycle axis, matching the admin UI's own vocabulary
+    // (OrdersPage STATUS_LABELS) so agent-set values render with real labels.
+    const PAYMENT_AXIS = new Set(['pending', 'processing', 'paid', 'completed', 'cancelled', 'refunded', 'failed']);
+    // "Fulfilled" is not a stored value anywhere in FlowWink — the UI's
+    // fulfillment vocabulary stops at shipped/delivered. Normalise rather than
+    // write a value that would render as "Unfulfilled" in the badge.
+    const VALUE_SYNONYMS: Record<string, string> = {
+      fulfilled: 'shipped',
+      complete: 'completed',
+      canceled: 'cancelled',
+      paid_in_full: 'paid',
+    };
+
     // ACTION_ALIASES — tolerate natural verbs from MCP clients (Agent Contract Integrity layer 3).
     // Verbs like ship/fulfill/deliver/cancel/refund/pay map to update_status with implied target.
     const ACTION_ALIASES: Record<string, { action: string; status?: string }> = {
@@ -6736,8 +6970,8 @@ async function executeOrdersAction(
       change_status: { action: 'update_status' },
       ship: { action: 'update_status', status: 'shipped' },
       mark_shipped: { action: 'update_status', status: 'shipped' },
-      fulfill: { action: 'update_status', status: 'fulfilled' },
-      mark_fulfilled: { action: 'update_status', status: 'fulfilled' },
+      fulfill: { action: 'update_status', status: 'shipped' },
+      mark_fulfilled: { action: 'update_status', status: 'shipped' },
       deliver: { action: 'update_status', status: 'delivered' },
       mark_delivered: { action: 'update_status', status: 'delivered' },
       pay: { action: 'update_status', status: 'paid' },
@@ -6750,12 +6984,24 @@ async function executeOrdersAction(
       action = alias.action;
       if (alias.status && !status) status = alias.status;
     }
+    // A caller may also name the axis explicitly — fulfillment_status wins over
+    // a generic `status` for the goods axis.
+    const explicitFulfillment = (args as any).fulfillment_status;
+    if (action === 'update_status' && explicitFulfillment && !alias) status = explicitFulfillment;
 
     if (action === 'list') {
       let query = supabase.from('orders')
-        .select('id, status, total_cents, currency, customer_email, customer_name, created_at')
+        .select('id, status, fulfillment_status, total_cents, currency, customer_email, customer_name, created_at')
         .order('created_at', { ascending: false }).limit(limit);
-      if (status) query = query.eq('status', status);
+      // Filter on the axis the value belongs to — asking for 'shipped' orders
+      // must not silently return nothing just because shipping lives on the
+      // other column.
+      if (status) {
+        const v = VALUE_SYNONYMS[String(status).toLowerCase().trim()] ?? String(status).toLowerCase().trim();
+        query = Object.prototype.hasOwnProperty.call(FULFILLMENT_AXIS, v) && !PAYMENT_AXIS.has(v)
+          ? query.eq('fulfillment_status', v)
+          : query.eq('status', v);
+      }
       const { data, error } = await query;
       if (error) throw new Error(`List orders failed: ${error.message}`);
       return { orders: data || [] };
@@ -6772,32 +7018,75 @@ async function executeOrdersAction(
     }
 
     if (action === 'update_status' && order_id && status) {
-      // Capture previous status for the audit timeline
+      const raw = String(status).toLowerCase().trim();
+      const value = VALUE_SYNONYMS[raw] ?? raw;
+      const isFulfillment = Object.prototype.hasOwnProperty.call(FULFILLMENT_AXIS, value);
+      const isPayment = PAYMENT_AXIS.has(value);
+      if (!isFulfillment && !isPayment) {
+        // Say which axis takes what, so the operator self-corrects next turn
+        // instead of guessing a value onto the wrong column.
+        throw new Error(
+          `Unknown order status '${status}'. Payment/lifecycle axis (orders.status): ${[...PAYMENT_AXIS].join(', ')}. ` +
+          `Fulfillment axis (orders.fulfillment_status): ${Object.keys(FULFILLMENT_AXIS).join(', ')}.`,
+        );
+      }
+
+      // Capture BOTH axes for the audit timeline — a fulfillment step must be
+      // readable next to the payment state it did not touch.
       const { data: prev } = await supabase.from('orders')
-        .select('status').eq('id', order_id).single();
+        .select('status, fulfillment_status').eq('id', order_id).single();
+
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (isFulfillment) {
+        updates.fulfillment_status = value;
+        const stamp = FULFILLMENT_AXIS[value].at;
+        if (stamp) updates[stamp] = new Date().toISOString();
+      } else {
+        updates.status = value;
+      }
+      // Fulfillment side-facts, whichever axis moved: these were accepted by the
+      // schema and dropped on the floor by this handler until now.
+      const a = args as any;
+      const tracking = a.tracking_number ?? a.trackingNumber;
+      if (tracking) updates.tracking_number = String(tracking);
+      if (a.tracking_url) updates.tracking_url = String(a.tracking_url);
+      if (a.fulfillment_notes) updates.fulfillment_notes = String(a.fulfillment_notes);
+
       const { data, error } = await supabase.from('orders')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', order_id).select('id, status').single();
+        .update(updates).eq('id', order_id)
+        .select('id, status, fulfillment_status, tracking_number, shipped_at, delivered_at').single();
       if (error) throw new Error(`Update order failed: ${error.message}`);
 
       // Mirror admin-UI audit trail so OrderEventHistory shows agent actions too.
-      const fulfillmentStatuses = new Set(['picked', 'packed', 'shipped', 'delivered']);
-      const auditAction = fulfillmentStatuses.has(status)
-        ? `order.fulfillment.${status}`
-        : `order.status.${status}`;
+      const auditAction = isFulfillment ? `order.fulfillment.${value}` : `order.status.${value}`;
       await supabase.from('audit_logs').insert({
         entity_type: 'order',
         entity_id: order_id,
         action: auditAction,
         metadata: {
-          from: prev?.status ?? null,
-          to: status,
+          axis: isFulfillment ? 'fulfillment' : 'payment',
+          from: isFulfillment ? (prev?.fulfillment_status ?? null) : (prev?.status ?? null),
+          to: value,
+          ...(value !== raw ? { requested: raw } : {}),
+          ...(tracking ? { tracking_number: String(tracking) } : {}),
           source: 'agent',
           skill: 'manage_orders',
         },
       });
 
-      return { order_id: data.id, status: data.status };
+      return {
+        order_id: data.id,
+        axis: isFulfillment ? 'fulfillment' : 'payment',
+        status: data.status,
+        fulfillment_status: data.fulfillment_status,
+        tracking_number: data.tracking_number,
+        shipped_at: data.shipped_at,
+        delivered_at: data.delivered_at,
+        ...(value !== raw ? { normalized_from: raw } : {}),
+        note: isFulfillment
+          ? `Fulfillment moved to '${value}'. The payment axis (orders.status='${data.status}') was deliberately left alone — shipping an order does not change whether it is paid.`
+          : `Payment/lifecycle status set to '${value}'. Fulfillment (orders.fulfillment_status='${data.fulfillment_status}') was left alone.`,
+      };
     }
 
     if (action === 'timeline' && order_id) {
@@ -6820,12 +7109,23 @@ async function executeOrdersAction(
       else since.setHours(0, 0, 0, 0);
 
       const { data } = await supabase.from('orders')
-        .select('id, total_cents, currency, status, created_at')
+        .select('id, total_cents, currency, status, fulfillment_status, created_at')
         .gte('created_at', since.toISOString());
       const orders = data || [];
-      const totalRevenue = orders.filter((o: any) => o.status === 'paid' || o.status === 'delivered')
+      // Revenue is a MONEY-axis question. The old filter included 'delivered',
+      // a fulfillment value that only ever reached orders.status through the
+      // axis bug this handler now prevents — so a correctly-shipped order used
+      // to count as revenue while a correctly-paid one dropped out.
+      const totalRevenue = orders.filter((o: any) => o.status === 'paid' || o.status === 'completed')
         .reduce((sum: number, o: any) => sum + o.total_cents, 0);
-      return { period, total_orders: orders.length, total_revenue_cents: totalRevenue, by_status: groupBy(orders, 'status') };
+      return {
+        period,
+        total_orders: orders.length,
+        total_revenue_cents: totalRevenue,
+        revenue_basis: "orders.status in ('paid','completed')",
+        by_status: groupBy(orders, 'status'),
+        by_fulfillment_status: groupBy(orders, 'fulfillment_status'),
+      };
     }
 
     return { error: `Unknown orders action: ${action}` };
@@ -7530,29 +7830,61 @@ async function executeSendInvoiceForOrder(
     unit_price_cents: it.price_cents,
   }));
   const subtotal = lineItems.reduce((s: number, i: any) => s + i.qty * i.unit_price_cents, 0);
-  const effectiveTaxRate = typeof tax_rate === 'number' ? tax_rate : 0.25;
+  // The caller's rate wins; otherwise the ORDER's own rate — an order converted
+  // from a quote carries the rate the customer actually accepted, so the invoice
+  // lands on the quote's total instead of on a 25 % assumption.
+  const orderTaxRate = Number((order.metadata as any)?.tax_rate);
+  const effectiveTaxRate = typeof tax_rate === 'number'
+    ? tax_rate
+    : (Number.isFinite(orderTaxRate) && orderTaxRate >= 0 ? orderTaxRate : 0.25);
   const taxCents = Math.round(subtotal * effectiveTaxRate);
   const totalCents = subtotal + taxCents;
 
-  // 3. Idempotency — reuse existing invoice for this order if present
-  const { data: existingByMeta } = await supabase
-    .from('invoices')
-    .select('id, invoice_number, status, total_cents')
-    .contains('line_items', [{ order_id: order_id }] as any)
-    .maybeSingle()
-    .then((r: any) => r, () => ({ data: null }));
+  // 3. Idempotency — keyed on the invoices.order_id COLUMN.
+  //
+  // This used to key on invoices.notes containing `order:<uuid>`. Notes are an
+  // ordinary editable field: an operator (or an agent) who rewrote the note
+  // severed the only link between order and invoice, and the very next call to
+  // this skill issued a SECOND live, already-sent invoice for the same order —
+  // a phantom 18 687,50 kr receivable against a customer who had paid in full
+  // (order-to-cash QA 2026-08-20). An idempotency key must live somewhere the
+  // business cannot edit by accident; that is a foreign key, not prose.
+  //
+  // The notes scan survives as a READ-ONLY fallback for invoices created before
+  // the column existed — and when it hits, the row is repaired so the next call
+  // uses the column.
+  let orderIdColumn = true;
+  let existingInvoice: any = null;
+  {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('id, invoice_number, status, total_cents')
+      .eq('order_id', order_id)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    // Fail forward: an edge deploy can land before its migration. Fall back to
+    // the legacy scan rather than refusing to invoice.
+    if (error && /order_id/i.test(error.message || '')) orderIdColumn = false;
+    else existingInvoice = data ?? null;
+  }
 
-  // Fallback: scan recent invoices with notes referencing the order
-  let existingInvoice = existingByMeta;
   if (!existingInvoice) {
     const { data: byNotes } = await supabase
       .from('invoices')
-      .select('id, invoice_number, status')
+      .select('id, invoice_number, status, total_cents')
       .eq('customer_email', order.customer_email)
       .ilike('notes', `%order:${order_id}%`)
       .limit(1)
       .maybeSingle();
-    existingInvoice = byNotes;
+    if (byNotes) {
+      existingInvoice = byNotes;
+      // Heal the link so this invoice is never found by prose again.
+      if (orderIdColumn && !dry_run) {
+        await supabase.from('invoices').update({ order_id }).eq('id', byNotes.id);
+      }
+    }
   }
 
   // 4. Dry-run preview
@@ -7577,6 +7909,7 @@ async function executeSendInvoiceForOrder(
 
   // 5. Create or reuse invoice
   let invoice = existingInvoice;
+  const reusedExisting = !!existingInvoice;
   if (!invoice) {
     // Use the canonical INV-YYYY-NNNNN series (same as manage_invoice create and
     // quote convert_to_invoice). The old `INV-${count+1}` scheme was doubly wrong:
@@ -7608,7 +7941,9 @@ async function executeSendInvoiceForOrder(
         currency: order.currency || 'SEK',
         due_date: dueDate,
         payment_terms: payment_terms || `Net ${due_days}`,
+        // The note stays for human readability; it is no longer load-bearing.
         notes: `${notes ? notes + '\n' : ''}order:${order_id}`,
+        ...(orderIdColumn ? { order_id } : {}),
         status: 'sent',
         sent_at: new Date().toISOString(),
       })
@@ -7729,15 +8064,31 @@ async function executeSendInvoiceForOrder(
     },
   });
 
+  // `sent` is the answer to "did the customer get the invoice", and the router
+  // already worked that out — emailResult.sent is false when no provider is
+  // configured (simulated) or when the allowlist withheld the recipient. The
+  // top-level flag used to be a hardcoded `true` regardless, so a skill that
+  // knew perfectly well the mail had not left still reported that it had. The
+  // invoice creation is reported separately; those are two different facts.
+  const emailSent = (emailResult as { sent?: boolean })?.sent === true;
   return {
-    sent: true,
+    sent: emailSent,
+    invoice_created: true,
     order_id,
     invoice_id: invoice.id,
     invoice_number: invoice.invoice_number,
-    total_cents: totalCents,
+    // When an invoice already existed, report ITS total — the recomputation
+    // above describes what a new invoice would have said, not what the customer
+    // owes on the document that exists.
+    total_cents: reusedExisting ? (invoice.total_cents ?? totalCents) : totalCents,
     currency: order.currency || 'SEK',
     customer_email: order.customer_email,
+    reused_existing_invoice: reusedExisting,
+    ...(reusedExisting ? { note: `Order ${order_id} was already invoiced as ${invoice.invoice_number} — reused, no second invoice was created.` } : {}),
     email: emailResult,
+    ...(emailSent ? {} : {
+      note: 'The invoice exists and is marked sent in the ledger, but the EMAIL did not go out — see `email` for why. Do not tell the user the invoice was emailed.',
+    }),
   };
 }
 
@@ -9500,19 +9851,79 @@ async function executeDbAction(
         return `QUO-${String(max + 1).padStart(4, '0')}`;
       };
 
+      // Build (and VALIDATE) the quote lines without touching the database.
+      //
+      // Two failures this closes:
+      //
+      //  1. No product resolution. `{product_name: "Consulting", quantity: 10}`
+      //     — the shape place_order has always accepted — produced a line with
+      //     an empty description at 0 kr and reported items_inserted: 1. A quote
+      //     worth nothing that says it worked is worse than an error.
+      //  2. Nothing was checked before the write, so the update action (which
+      //     deletes the old lines first) could delete everything and then fail
+      //     on the new rows. Building first means a bad line throws while the
+      //     old lines are still there.
+      //
+      // Product resolution mirrors place_order: id first, then a name match.
+      // An unknown product is an ERROR — never an empty line.
+      const buildQuoteItemRows = async (quote_id: string, rawItems: unknown): Promise<Record<string, unknown>[]> => {
+        if (!Array.isArray(rawItems) || rawItems.length === 0) return [];
+        const rows: Record<string, unknown>[] = [];
+        for (let idx = 0; idx < rawItems.length; idx++) {
+          const it = (rawItems[idx] ?? {}) as any;
+          const where = `Quote line ${idx + 1}`;
+
+          const productId = it.product_id ?? it.productId ?? null;
+          const productName = it.product_name ?? it.productName ?? null;
+          let product: { id: string; name: string; price_cents: number | null } | null = null;
+          if (productId) {
+            const { data } = await supabase.from('products')
+              .select('id, name, price_cents').eq('id', productId).maybeSingle();
+            if (!data) throw new Error(`${where}: product ${productId} not found. Use browse_products to find the id, or pass description + unit_price_cents for a free-text line.`);
+            product = data as any;
+          } else if (productName) {
+            const { data } = await supabase.from('products')
+              .select('id, name, price_cents').ilike('name', `%${productName}%`).limit(1).maybeSingle();
+            if (!data) throw new Error(`${where}: no product matches '${productName}'. Use browse_products to find the exact name/id, or pass description + unit_price_cents for a free-text line.`);
+            product = data as any;
+          }
+
+          const description = String(it.description ?? it.name ?? product?.name ?? '').trim();
+          const rawPrice = it.unit_price_cents ?? it.unitPriceCents ?? it.price_cents
+            ?? (it.unit_price != null ? Math.round(Number(it.unit_price) * 100) : undefined);
+          const unitPriceCents = rawPrice !== undefined && rawPrice !== null
+            ? Number(rawPrice)
+            : (product ? Number(product.price_cents ?? NaN) : NaN);
+          const quantity = Number(it.quantity ?? it.qty ?? 1);
+
+          if (!description) {
+            throw new Error(`${where}: description is required (or pass product_id / product_name so it can be taken from the product).`);
+          }
+          if (!Number.isFinite(unitPriceCents)) {
+            throw new Error(`${where} ("${description}"): no price. Pass unit_price_cents, or reference a product that has a price.`);
+          }
+          if (!Number.isFinite(quantity) || quantity <= 0) {
+            throw new Error(`${where} ("${description}"): quantity must be a positive number (got ${JSON.stringify(it.quantity ?? it.qty)}).`);
+          }
+
+          rows.push({
+            quote_id,
+            position: typeof it.position === 'number' ? it.position : idx,
+            description,
+            quantity,
+            unit: it.unit ?? null,
+            unit_price_cents: Math.round(unitPriceCents),
+            tax_rate_pct: it.tax_rate_pct ?? 25,
+            discount_pct: it.discount_pct ?? 0,
+            product_id: product?.id ?? null,
+          });
+        }
+        return rows;
+      };
+
       const insertQuoteItems = async (quote_id: string, rawItems: unknown): Promise<number> => {
-        if (!Array.isArray(rawItems) || rawItems.length === 0) return 0;
-        const rows = rawItems.map((it: any, idx: number) => ({
-          quote_id,
-          position: typeof it.position === 'number' ? it.position : idx,
-          description: it.description ?? it.name ?? '',
-          quantity: it.quantity ?? it.qty ?? 1,
-          unit: it.unit ?? null,
-          unit_price_cents: it.unit_price_cents ?? Math.round((it.unit_price ?? 0) * 100),
-          tax_rate_pct: it.tax_rate_pct ?? 25,
-          discount_pct: it.discount_pct ?? 0,
-          product_id: it.product_id ?? null,
-        }));
+        const rows = await buildQuoteItemRows(quote_id, rawItems);
+        if (rows.length === 0) return 0;
         const { error } = await supabase.from('quote_items').insert(rows);
         if (error) throw new Error(`Insert quote_items failed: ${error.message}`);
         return rows.length;
@@ -9587,8 +9998,23 @@ async function executeDbAction(
         }
         let itemsInserted = 0;
         if (items) {
-          await supabase.from('quote_items').delete().eq('quote_id', qid);
-          itemsInserted = await insertQuoteItems(qid, items);
+          // Replace the lines SAFELY: build and validate every new row FIRST,
+          // and only then delete the old ones.
+          //
+          // The old order was delete → insert with no validation and no
+          // transaction: one bad line (a product that doesn't exist, a missing
+          // price) left the quote with zero rows — and, because the totals
+          // trigger refused to write on an empty quote, the OLD total still on
+          // the header. QA saw a 1 868 750 kr quote with nothing in it. Building
+          // first turns that into a plain error with the quote untouched.
+          const rows = await buildQuoteItemRows(qid, items);
+          const { error: delErr } = await supabase.from('quote_items').delete().eq('quote_id', qid);
+          if (delErr) throw new Error(`Replace quote lines failed (old lines kept): ${delErr.message}`);
+          if (rows.length > 0) {
+            const { error: insErr } = await supabase.from('quote_items').insert(rows);
+            if (insErr) throw new Error(`Insert quote_items failed: ${insErr.message}`);
+          }
+          itemsInserted = rows.length;
         }
         return { updated: true, quote_id: qid, items_inserted: itemsInserted };
       }
@@ -9751,7 +10177,111 @@ async function executeDbAction(
         return { converted: true, quote_id: qid, invoice_id: inv.id, invoice_number: inv.invoice_number, total_cents: inv.total_cents };
       }
 
-      throw new Error(`Unknown quotes action: ${action}. Supported: list, get, create, update, add_item, delete, send, request_approval, list_templates, use_template, convert_to_invoice.`);
+      if (action === 'convert_to_order') {
+        // ── Quote → Order: the step the chain was missing ────────────────────
+        //
+        // There was no conversion at all, so an agent asked to turn an accepted
+        // quote into an order rebuilt it by hand from the product catalogue —
+        // and dropped the tax on the way: quote 1 868 750 → order 1 495 000 →
+        // invoice 1 868 750. Three documents for one sale, two different
+        // amounts, and no link between any of them.
+        //
+        // This copies the accepted lines EXACTLY (unit price, quantity, per-line
+        // tax rate) and stamps orders.quote_id, so what the customer accepted is
+        // what gets fulfilled and what gets invoiced.
+        const a = args as any;
+        const qid = a.id || a.quote_id;
+        if (!qid) throw new Error('id (or quote_id) is required');
+        const [quoteRes, itemsRes] = await Promise.all([
+          supabase.from('quotes').select('*').eq('id', qid).maybeSingle(),
+          supabase.from('quote_items').select('*').eq('quote_id', qid).order('position'),
+        ]);
+        if (quoteRes.error || !quoteRes.data) throw new Error(`Quote not found: ${qid}`);
+        const quote = quoteRes.data;
+        const qItems = itemsRes.data || [];
+        if (qItems.length === 0) throw new Error(`Quote ${quote.quote_number || qid} has no line items — nothing to order.`);
+        if (['rejected', 'cancelled', 'expired'].includes(String(quote.status))) {
+          throw new Error(`Quote ${quote.quote_number || qid} is ${quote.status} — it cannot become an order. Revive it (update valid_until / status) or create a new quote.`);
+        }
+        const customerEmail = quote.customer_email;
+        if (!customerEmail) throw new Error(`Quote ${quote.quote_number || qid} has no customer_email — an order needs one.`);
+
+        // Idempotent: one order per quote.
+        const { data: existingOrder, error: existErr } = await supabase.from('orders')
+          .select('id, status, total_cents, currency').eq('quote_id', qid).limit(1).maybeSingle();
+        if (existErr && !/quote_id/i.test(existErr.message || '')) {
+          throw new Error(`Order lookup failed: ${existErr.message}`);
+        }
+        if (existingOrder) {
+          return {
+            converted: false, quote_id: qid, order_id: existingOrder.id,
+            status: existingOrder.status, total_cents: existingOrder.total_cents,
+            note: 'This quote already has an order — reused, no second order was created.',
+          };
+        }
+
+        const subtotal = Number(quote.subtotal_cents) || qItems.reduce(
+          (s: number, it: any) => s + Number(it.line_subtotal_cents ?? 0), 0);
+        const taxCents = Number(quote.tax_cents ?? 0)
+          || qItems.reduce((s: number, it: any) => s + Number(it.line_tax_cents ?? 0), 0);
+        const totalCents = Number(quote.total_cents) || (subtotal + taxCents);
+        // The rate the invoice must use later, derived from what was accepted —
+        // not the platform's 25 % assumption.
+        const effectiveTaxRate = subtotal > 0 ? Number((taxCents / subtotal).toFixed(6)) : 0;
+
+        const orderRow: Record<string, unknown> = {
+          customer_email: customerEmail,
+          customer_name: quote.customer_name || quote.customer_company || customerEmail,
+          currency: quote.currency || undefined,
+          status: 'pending',
+          quote_id: qid,
+          // The order carries the accepted amount INCLUDING tax — the same
+          // number on the quote and, later, on the invoice. The ex-tax basis and
+          // the rate travel in metadata so send_invoice_for_order can rebuild
+          // the invoice without guessing 25 %.
+          total_cents: totalCents,
+          metadata: {
+            source: 'quote_conversion',
+            quote_id: qid,
+            quote_number: quote.quote_number,
+            subtotal_cents: subtotal,
+            tax_cents: taxCents,
+            tax_rate: effectiveTaxRate,
+            total_includes_tax: true,
+          },
+        };
+        if (quote.company_id) orderRow.company_id = quote.company_id;
+        const { data: order, error: orderErr } = await supabase.from('orders')
+          .insert(orderRow).select('id, status, total_cents, currency').single();
+        if (orderErr) throw new Error(`Create order from quote failed: ${orderErr.message}`);
+
+        const orderItems = qItems.map((it: any) => ({
+          order_id: order.id,
+          product_id: it.product_id ?? null,
+          product_name: it.description,
+          quantity: Number(it.quantity) || 1,
+          price_cents: Number(it.unit_price_cents) || 0,
+        }));
+        const { error: oiErr } = await supabase.from('order_items').insert(orderItems);
+        if (oiErr) throw new Error(`Copy quote lines to order failed: ${oiErr.message}`);
+
+        return {
+          converted: true,
+          quote_id: qid,
+          quote_number: quote.quote_number,
+          order_id: order.id,
+          status: order.status,
+          items_copied: orderItems.length,
+          subtotal_cents: subtotal,
+          tax_cents: taxCents,
+          total_cents: order.total_cents,
+          currency: order.currency,
+          tax_rate: effectiveTaxRate,
+          note: `Order carries the accepted total ${totalCents / 100} ${order.currency} (incl. tax ${taxCents / 100}). Invoice it with send_invoice_for_order — it reads the tax rate off the order, so the invoice matches the quote to the öre.`,
+        };
+      }
+
+      throw new Error(`Unknown quotes action: ${action}. Supported: list, get, create, update, add_item, delete, send, request_approval, list_templates, use_template, convert_to_invoice, convert_to_order.`);
     }
 
     case 'expenses': {
@@ -9788,12 +10318,15 @@ async function executeDbAction(
 
       if (action === 'create') {
         let { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
-        // Agent fallback: if no user_id provided, use the first admin user
+        // An expense is a claim for money owed to a PERSON. The old fallback
+        // picked "the first admin row in user_roles" when no user_id was given,
+        // so every agent-created expense was booked on — and reimbursable to —
+        // whoever happened to sort first. Identity order is now: the explicit
+        // argument, then the authenticated caller, then an honest failure.
+        // Never a stand-in.
+        if (!user_id) user_id = (args as any)._caller_user_id;
         if (!user_id) {
-          const { data: adminRole } = await supabase.from('user_roles')
-            .select('user_id').eq('role', 'admin').limit(1).maybeSingle();
-          user_id = adminRole?.user_id;
-          if (!user_id) throw new Error('user_id is required (no admin user found for agent fallback)');
+          throw new Error('No user identity for this expense — pass user_id (the employee the expense belongs to). There is no default user: booking an expense on the wrong person means reimbursing the wrong person.');
         }
         if (is_representation && (!attendees || attendees.length === 0)) {
           throw new Error('Representation expenses require attendees [{name, company}]');
@@ -10221,18 +10754,21 @@ async function executeDbAction(
       const { data: gr, error: grErr } = await supabase.from('goods_receipts')
         .insert({
           purchase_order_id,
-          receipt_date: receipt_date || new Date().toISOString().split('T')[0],
+          // The column is received_date, not receipt_date — the old name made
+          // every receipt through this path fail at the header.
+          received_date: receipt_date || new Date().toISOString().split('T')[0],
           notes: notes || null,
         }).select('id').single();
       if (grErr) throw new Error(`Create goods receipt failed: ${grErr.message}`);
 
       // Insert receipt lines, update PO line received quantities, and sync inventory
       for (const rl of receiptLines) {
-        await supabase.from('goods_receipt_lines').insert({
+        const { error: grlErr } = await supabase.from('goods_receipt_lines').insert({
           goods_receipt_id: gr.id,
-          purchase_order_line_id: rl.po_line_id,
+          po_line_id: rl.po_line_id,
           quantity_received: rl.quantity_received,
         });
+        if (grlErr) throw new Error(`Create goods receipt line failed: ${grlErr.message}`);
 
         // Update received_quantity on the PO line
         const { data: poLine } = await supabase.from('purchase_order_lines')
@@ -10242,24 +10778,29 @@ async function executeDbAction(
           .update({ received_quantity: newReceived })
           .eq('id', rl.po_line_id);
 
-        // Auto-sync inventory: create stock move + update product_stock
+        // Auto-sync inventory. This used to gate on a `product_stock` row and
+        // write the on-hand back there — a table that is empty on every
+        // instance, so the gate never opened and the receipt moved no stock.
+        // apply_goods_receipt_stock books the quant AND the
+        // products.stock_quantity mirror, and raises if no warehouse exists
+        // rather than reporting a receipt that went nowhere.
         const productId = rl.product_id || poLine?.product_id;
         if (productId && rl.quantity_received > 0) {
-          const { data: stockRow } = await supabase.from('product_stock')
-            .select('id, quantity_on_hand').eq('product_id', productId).maybeSingle();
-          if (stockRow) {
-            await supabase.from('stock_moves').insert({
-              product_id: productId,
-              quantity: rl.quantity_received,
-              move_type: 'in',
-              reference_type: 'goods_receipt',
-              reference_id: gr.id,
-              notes: `Goods receipt – ${rl.quantity_received} units received`,
-            });
-            await supabase.from('product_stock')
-              .update({ quantity_on_hand: stockRow.quantity_on_hand + rl.quantity_received })
-              .eq('product_id', productId);
-          }
+          const { error: moveErr } = await supabase.from('stock_moves').insert({
+            product_id: productId,
+            quantity: rl.quantity_received,
+            move_type: 'in',
+            reference_type: 'goods_receipt',
+            reference_id: gr.id,
+            notes: `Goods receipt – ${rl.quantity_received} units received`,
+          });
+          if (moveErr) throw new Error(`Stock move failed: ${moveErr.message}`);
+
+          const { error: stockErr } = await supabase.rpc('apply_goods_receipt_stock', {
+            p_product_id: productId,
+            p_quantity: rl.quantity_received,
+          });
+          if (stockErr) throw new Error(`Stock sync failed: ${stockErr.message}`);
         }
       }
 
@@ -10300,13 +10841,19 @@ async function executeDbAction(
       if (skillName === 'purchase_reorder_check') {
         const { threshold_override, auto_create = false } = args as any;
 
-        // 1. Fetch products with stock info
-        const { data: stockRows, error: stockErr } = await supabase.from('product_stock')
+        // 1. Fetch products with stock info.
+        //
+        // On-hand lives on products.stock_quantity — the number the receipt
+        // writes and the order decrements. This used to read `product_stock`
+        // and `continue` on every product without a row there; that table is
+        // empty on every instance, so the loop skipped everything and the skill
+        // answered "All stock levels are healthy." no matter what. product_stock
+        // stays as an optional override for instances that populated it.
+        const { data: stockRows } = await supabase.from('product_stock')
           .select('product_id, quantity_on_hand, reorder_point, reorder_quantity, auto_reorder');
-        if (stockErr) throw new Error(`Stock check failed: ${stockErr.message}`);
 
         const { data: products, error: prodErr } = await supabase.from('products')
-          .select('id, name, price_cents')
+          .select('id, name, price_cents, stock_quantity, low_stock_threshold')
           .eq('track_inventory', true)
           .eq('is_active', true);
         if (prodErr) throw new Error(`Product fetch failed: ${prodErr.message}`);
@@ -10316,16 +10863,16 @@ async function executeDbAction(
 
         for (const p of (products || [])) {
           const stock = stockMap.get(p.id);
-          if (!stock) continue;
-          const threshold = threshold_override ?? stock.reorder_point ?? 5;
-          if (stock.quantity_on_hand <= threshold) {
+          const onHand = stock?.quantity_on_hand ?? p.stock_quantity ?? 0;
+          const threshold = threshold_override ?? stock?.reorder_point ?? p.low_stock_threshold ?? 5;
+          if (onHand <= threshold) {
             lowStock.push({
               product_id: p.id,
               product_name: p.name,
-              current_stock: stock.quantity_on_hand,
+              current_stock: onHand,
               reorder_point: threshold,
-              reorder_quantity: stock.reorder_quantity || Math.max(threshold * 3, 10),
-              auto_reorder: stock.auto_reorder || false,
+              reorder_quantity: stock?.reorder_quantity || Math.max(threshold * 3, 10),
+              auto_reorder: stock?.auto_reorder ?? true,
             });
           }
         }
@@ -10716,6 +11263,15 @@ async function executeDbAction(
       // Argument-name tolerance: MCP peers commonly send `id` — map to `invoice_id`.
       const inv = args as any;
       if (inv.id !== undefined && inv.invoice_id === undefined) inv.invoice_id = inv.id;
+      // invoice_overdue_check has its own question ("which invoices are past
+      // due?") but no `action` parameter, so it fell through to `list` and
+      // returned the 50 most recent invoices — drafts, paid and cancelled ones
+      // included — as if they were all overdue. It reported 6 overdue invoices
+      // on an instance that had 2 (QA 2026-08-20). This is handler dispatch by
+      // skill name, not intent detection: the skill IS the action.
+      if (skillName === 'invoice_overdue_check' && (args as any).action === undefined) {
+        (args as any).action = 'overdue';
+      }
       const { action = 'list' } = args as any;
 
       // ── helpers ──
@@ -10769,6 +11325,45 @@ async function executeDbAction(
         if (error) throw new Error(`Get invoice failed: ${error.message}`);
         if (!data) return { error: `Invoice ${invoice_id} not found` };
         return { invoice: data };
+      }
+
+      if (action === 'overdue') {
+        // Overdue = ISSUED, UNPAID and PAST DUE. All three conditions, or the
+        // answer is just "here are some invoices".
+        const { auto_flag = true, limit = 200 } = args as any;
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase.from('invoices')
+          .select('id, invoice_number, customer_name, customer_email, status, total_cents, paid_amount_cents, currency, due_date, sent_at')
+          .in('status', ['sent', 'overdue'])
+          .lt('due_date', today)
+          .is('paid_at', null)
+          .order('due_date', { ascending: true })
+          .limit(Math.min(Math.max(Number(limit) || 200, 1), 500));
+        if (error) throw new Error(`Overdue check failed: ${error.message}`);
+        const rows = (data || []).map((r: any) => ({
+          ...r,
+          days_overdue: Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000),
+          outstanding_cents: Number(r.total_cents || 0) - Number(r.paid_amount_cents || 0),
+        }));
+        let flagged = 0;
+        if (auto_flag !== false) {
+          const toFlag = rows.filter((r: any) => r.status === 'sent').map((r: any) => r.id);
+          if (toFlag.length > 0) {
+            const { error: fErr } = await supabase.from('invoices')
+              .update({ status: 'overdue', updated_at: new Date().toISOString() })
+              .in('id', toFlag);
+            if (fErr) throw new Error(`Flagging overdue failed: ${fErr.message}`);
+            flagged = toFlag.length;
+          }
+        }
+        return {
+          overdue_count: rows.length,
+          total_outstanding_cents: rows.reduce((s: number, r: any) => s + r.outstanding_cents, 0),
+          currency: rows[0]?.currency ?? null,
+          flagged_overdue: flagged,
+          criteria: "status in ('sent','overdue') AND due_date < today AND paid_at IS NULL",
+          invoices: rows,
+        };
       }
 
       if (action === 'create') {
@@ -10907,7 +11502,7 @@ async function executeDbAction(
         };
       }
 
-      throw new Error(`Unknown invoices action: ${action}. Supported: list, get, create, update, send, mark_paid, cancel. To "delete" an invoice use cancel (audit-preserving).`);
+      throw new Error(`Unknown invoices action: ${action}. Supported: list, get, overdue, create, update, send, mark_paid, cancel. To "delete" an invoice use cancel (audit-preserving).`);
     }
 
     case 'social_posts': {
@@ -11971,6 +12566,28 @@ async function executeGenericCrud(
   fields = { ...reservedExtract, ...mapped };
   if (dropped.length) {
     console.log(`[agent-execute] dropped unsupported columns for ${table}: ${dropped.join(', ')}`);
+  }
+
+  // ── Post-payout immutability: refunded RMAs freeze their lines ─────────────
+  // return_items ARE the arithmetic behind refund_return's ceiling (Σ qty ×
+  // unit_refund_cents − restocking fee). While the RMA is open that is a
+  // working document; once it is 'refunded' the money has left and the lines
+  // are the receipt. manage_return_item happily rewrote and deleted them after
+  // payout, which both falsifies the record and re-opens headroom under the
+  // refund guard. A correction belongs on a new return, not on this one.
+  if (table === 'return_items' && (action === 'update' || action === 'delete') && id) {
+    const { data: lineRow } = await supabase.from('return_items')
+      .select('return_id').eq('id', id).maybeSingle();
+    if (lineRow?.return_id) {
+      const { data: parentReturn } = await supabase.from('returns')
+        .select('status, rma_number').eq('id', lineRow.return_id).maybeSingle();
+      if (parentReturn?.status === 'refunded') {
+        return {
+          error: `Return ${parentReturn.rma_number ?? lineRow.return_id} is already refunded — its lines are the record of a payout that already happened and cannot be ${action === 'delete' ? 'deleted' : 'changed'}. Create a new return for a correction.`,
+          status: 'failed',
+        };
+      }
+    }
   }
 
   const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);

@@ -28,6 +28,27 @@ export const FUNCTIONAL_ROLES = [
 ] as const;
 export type FunctionalRole = (typeof FUNCTIONAL_ROLES)[number];
 
+/**
+ * Every role a WORK ITEM can be routed to — approvals, chain steps, hand-offs.
+ * Excludes `customer` (external) and nothing else: `approval_rules.required_role`
+ * and `approval_steps.required_role` are typed `app_role` in the database and
+ * resolved with `has_role(auth.uid(), required_role)`, so the engine already
+ * accepts any staff role.
+ *
+ * Rollsvepet #102, app-lagret: the two approval screens each carried their OWN
+ * shorter literal list (one offered 3 roles, the other 7, and they disagreed) —
+ * shadow role lists that quietly made warehouse, marketing, purchasing and
+ * projects unroutable even though the database would have accepted them.
+ * Legacy `writer`/`approver` stay in the list so existing rules remain
+ * editable; ROLE_LABELS marks them.
+ */
+export const ASSIGNABLE_WORK_ROLES = [
+  'admin',
+  ...FUNCTIONAL_ROLES,
+  'approver',
+  'writer',
+] as const satisfies readonly AppRole[];
+
 export type PageStatus = 'draft' | 'reviewing' | 'published' | 'archived';
 
 export interface Profile {

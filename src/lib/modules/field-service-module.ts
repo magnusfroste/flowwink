@@ -57,7 +57,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
   {
     name: 'manage_service_order',
     description:
-      'Create, update, schedule, complete and cancel field-service orders. Use when: a customer reports an on-site issue, technician needs to be dispatched, recurring maintenance is due. NOT for: digital subscriptions (manage_subscription), simple bookings (manage_booking), warranty tickets without on-site work (create_ticket).',
+      'Create, update, schedule, complete and cancel FIELD-SERVICE work orders — on-site jobs a technician travels to. Use when: a customer reports an on-site issue, a technician needs to be dispatched, recurring maintenance is due. NOT for: webshop/e-commerce customer orders (place_order, manage_orders); returns and RMAs (create_return); purchase orders to a vendor (create_purchase_order); manufacturing orders (create_manufacturing_order); digital subscriptions (manage_subscription); simple bookings (manage_booking); warranty tickets without on-site work (create_ticket).',
     category: 'system',
     handler: 'internal:manage_service_order',
     scope: 'internal',
@@ -65,7 +65,7 @@ const FIELD_SERVICE_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'manage_service_order',
-        description: 'CRUD + lifecycle for service orders (draft → scheduled → in_progress → completed → invoiced).',
+        description: 'CRUD + lifecycle for FIELD-SERVICE work orders — on-site jobs (draft → scheduled → in_progress → completed → invoiced). NOT for: webshop orders, returns/RMAs, purchase orders or manufacturing orders.',
         parameters: {
           type: 'object',
           properties: {

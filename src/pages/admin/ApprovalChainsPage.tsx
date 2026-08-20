@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { ASSIGNABLE_WORK_ROLES, ROLE_LABELS } from '@/types/cms';
 
 interface ChainStep {
   sort_order: number;
@@ -33,7 +34,11 @@ interface Chain {
 
 interface Group { id: string; name: string }
 
-const ROLES = ['admin', 'approver', 'writer', 'accounting', 'hr', 'sales', 'support'];
+// Rollsvepet #102, app-lagret: this was a 7-role literal that silently omitted
+// warehouse, marketing, purchasing and projects — a shadow role list beside the
+// matrix. approval_steps.required_role is typed app_role, so the engine always
+// accepted them; only this dropdown did not. One canonical list, in cms.ts.
+const ROLES = ASSIGNABLE_WORK_ROLES;
 const ENTITY_TYPES = ['expense_report', 'vendor_invoice', 'purchase_order', 'leave_request', 'agent_action'];
 
 export default function ApprovalChainsPage() {
@@ -195,7 +200,7 @@ function CreateChainForm() {
                 {kind === 'role' ? (
                   <Select value={s.required_role ?? 'approver'} onValueChange={v => updateStep(i, { required_role: v, group_id: null })}>
                     <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                    <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (
                   <Select value={s.group_id ?? ''} onValueChange={v => updateStep(i, { group_id: v, required_role: null })}>

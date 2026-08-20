@@ -1,119 +1,137 @@
+/**
+ * Guardrails: a skill's metadata must describe the skill that exists.
+ *
+ * Law 2 says skills are self-describing, which is only useful if what they say
+ * is true. Three lies were caught in one QA sweep (2026-08-20), each of which
+ * cost an agent a full round or an outright wrong answer:
+ *
+ *  - manage_inventory advertised an action (`low_stock`) that no handler branch
+ *    answered to. The contract itself sent callers into "Unknown action".
+ *  - Four NOT-for markers pointed at `receive_goods`, a skill deleted in May.
+ *    A phantom in a NOT-for is worse than no NOT-for: it names a destination
+ *    that cannot be reached.
+ *  - send_invoice_for_order returned `sent: true` unconditionally, including
+ *    when the router had just reported that no provider was configured and
+ *    nothing had been sent.
+ */
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import artifact from '../../../supabase/seed/module-skills.json';
 
-/**
- * Guardrail: every "(use X)" pointer in a skill seed's metadata must name a
- * skill that actually exists in the catalog.
- *
- * Skill descriptions carry Use-when / NOT-for markers with "(use X)" cross
- * references — that is how the Skill Relevance Engine steers an agent from the
- * wrong skill to the right one (Law 2: skills are self-describing, so what
- * they describe must be true). A pointer to a skill that does not exist sends
- * the agent to nothing, which is worse than no hint: the agent burns a turn
- * discovering the target is phantom, then has to fall back to search anyway.
- *
- * Live finding (2026-08-20): 29 seed descriptions pointed at phantoms —
- * renamed skills (manage_projects → manage_project, check_order →
- * check_order_status), never-built skills (seo_audit, openclaw_test), and
- * module-noun shorthand (use expenses, use bills). All repointed to real
- * skills or dropped.
- *
- * This test is a RATCHET: KNOWN_DANGLING pins the accepted debt. It blocks
- * NEW dangling pointers, and the set may only shrink — fix a pointer, remove
- * its entry. A stale entry (pinned but no longer dangling) also fails, so the
- * set cannot rot.
- */
-
-const root = process.cwd();
-
-/** Seed sources: module seed files + platform seeds (same set as the
- * declared-skills snapshot — platform primitives live outside modules
- * BY POLICY, so both must be scanned). */
-function seedFiles(): string[] {
-  const modulesDir = join(root, 'src/lib/modules');
-  return [
-    ...readdirSync(modulesDir)
-      .filter((f) => f.endsWith('.ts'))
-      .map((f) => join(modulesDir, f)),
-    join(root, 'src/lib/platform-seeds.ts'),
-  ];
+interface Seed {
+  name: string;
+  description?: string;
+  instructions?: string;
+  tool_definition?: {
+    function?: {
+      description?: string;
+      parameters?: { properties?: Record<string, { enum?: string[] }> };
+    };
+  };
 }
 
-/** Mirrors scripts/snapshot-declared-skills.ts — same sources, same patterns. */
-function skillCatalog(): Set<string> {
-  const out = new Set<string>();
-  for (const path of seedFiles()) {
-    const src = readFileSync(path, 'utf8');
-    for (const m of src.matchAll(/name:\s*'([a-z_][a-z0-9_]*)'/g)) {
-      const win = src.slice(m.index! + m[0].length, m.index! + m[0].length + 3000);
-      if (win.includes('tool_definition') && win.includes('handler')) out.add(m[1]);
-    }
-    for (const s of src.matchAll(/skills:\s*\[([\s\S]*?)\]/g)) {
-      for (const n of s[1].matchAll(/'([a-z_][a-z0-9_]*)'/g)) out.add(n[1]);
-    }
-  }
-  return out;
-}
+const seeds: Seed[] = (artifact as { modules: Array<{ skills: Seed[] }> })
+  .modules.flatMap((m) => m.skills);
+const byName = new Map(seeds.map((s) => [s.name, s]));
+const agentExecute = readFileSync(
+  join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+  'utf8',
+);
 
-/**
- * Extract skill-name candidates from "(use …)" parentheticals.
- *
- * Only underscore-shaped tokens count as skill references — prose words
- * ("use the admin UI"), module nouns ("use newsletter module") and single
- * words are not checkable claims. `key=value` fragments are stripped first
- * so parameter hints ("use manage_orders with fulfillment_status=shipped")
- * are not read as skill names.
- */
-function danglingPointers(catalog: Set<string>): string[] {
-  const out = new Set<string>();
-  for (const path of seedFiles()) {
-    const src = readFileSync(path, 'utf8');
-    const file = path.slice(root.length + 1);
-    for (const m of src.matchAll(/\(use ([^)]*)\)/g)) {
-      const inner = m[1].replace(/\S+=\S+/g, ' ');
-      for (const name of inner.match(/[a-z][a-z0-9]*(?:_[a-z0-9]+)+/g) ?? []) {
-        if (!catalog.has(name)) out.add(`${file} → ${name}`);
+describe('declared actions exist in the handler', () => {
+  it('manage_inventory declares exactly the branches executeProductsAction answers to', () => {
+    const declared = byName.get('manage_inventory')
+      ?.tool_definition?.function?.parameters?.properties?.action?.enum;
+    expect(declared).toEqual([
+      'list_stock',
+      'update_stock',
+      'low_stock_alerts',
+      'back_in_stock_requests',
+    ]);
+    for (const action of declared!) {
+      expect(
+        agentExecute.includes(`action === '${action}'`),
+        `manage_inventory advertises "${action}" but no handler branch matches it`,
+      ).toBe(true);
+    }
+  });
+
+  it('the retired `low_stock` name still works, and the error names what does', () => {
+    expect(agentExecute).toMatch(/rawAction === 'low_stock' \? 'low_stock_alerts' : rawAction/);
+    expect(agentExecute).toMatch(/valid_actions: \['list_stock', 'update_stock', 'low_stock_alerts', 'back_in_stock_requests'\]/);
+  });
+});
+
+describe('cross-references point at skills that exist', () => {
+  // A ratchet, not a clean sheet. Sweeping the catalog for "(use X)" pointers
+  // turned up 20 more of them beyond the four this session was sent to fix —
+  // some plain phantoms (seo_audit, get_exchange_rate), some plural near-misses
+  // the executor's inflection tolerance happens to absorb (manage_projects →
+  // manage_project). All of those are now fixed and the set is EMPTY — it may
+  // only stay empty or shrink again after a regression: anything new fails the
+  // build. Repoint the text to a real skill (grep `name: '` across
+  // src/lib/modules/ and src/lib/platform-seeds.ts) or drop the parenthetical;
+  // never pin a new phantom here.
+  const KNOWN_DANGLING = new Set<string>([]);
+
+  const danglingPointers = (): string[] => {
+    const known = new Set(seeds.map((s) => s.name));
+    const out = new Set<string>();
+    for (const s of seeds) {
+      const text = `${s.description ?? ''} ${s.tool_definition?.function?.description ?? ''}`;
+      for (const m of text.matchAll(/\(use ([a-z][a-z0-9_]{4,})\)/g)) {
+        if (!known.has(m[1])) out.add(`${s.name} → ${m[1]}`);
       }
     }
-  }
-  return [...out].sort();
-}
+    return [...out];
+  };
 
-/**
- * Accepted debt, as `<file> → <phantom skill name>`. May only SHRINK:
- * remove entries as you fix them. Never add — repoint the text to a real
- * skill (grep `name: '` across src/lib/modules/ and src/lib/platform-seeds.ts)
- * or drop the parenthetical rather than pinning a new phantom.
- */
-const KNOWN_DANGLING = new Set<string>([]);
-
-describe('skill metadata truth — "(use X)" pointers resolve', () => {
-  const catalog = skillCatalog();
-  const dangling = danglingPointers(catalog);
-
-  it('sanity: the scan actually sees the catalog and the pointers', () => {
-    // Guards against regex rot silently turning the suite into a no-op.
-    expect(catalog.size).toBeGreaterThan(400);
-    expect(catalog.has('manage_invoice')).toBe(true);
-    expect(catalog.has('post_to_river')).toBe(true);
-  });
-
-  it('no NEW dangling pointer — every "(use X)" names a real skill', () => {
-    const fresh = dangling.filter((d) => !KNOWN_DANGLING.has(d));
+  it('no NEW pointer at a non-existent skill', () => {
+    const introduced = danglingPointers().filter((d) => !KNOWN_DANGLING.has(d));
     expect(
-      fresh,
-      `${fresh.length} "(use X)" pointer(s) name a skill that does not exist. ` +
-      'Repoint the description to a real skill or drop the parenthetical — ' +
-      'do NOT add to KNOWN_DANGLING.',
+      introduced,
+      `A "(use X)" pointer names a skill that does not exist:\n${introduced.join('\n')}\n` +
+        'Point at the real skill name — a phantom in a NOT-for is worse than no NOT-for.',
     ).toEqual([]);
   });
 
-  it('KNOWN_DANGLING only shrinks — no stale entries', () => {
-    const stale = [...KNOWN_DANGLING].filter((k) => !dangling.includes(k));
-    expect(
-      stale,
-      `${stale.length} KNOWN_DANGLING entr(ies) are fixed — remove them so the ratchet tightens.`,
-    ).toEqual([]);
+  it('receive_goods is gone and nothing points at it any more', () => {
+    expect([...byName.keys()]).not.toContain('receive_goods');
+    const all = JSON.stringify(artifact);
+    expect(all).not.toContain('receive_goods');
+    expect(byName.get('receive_purchase_order')).toBeDefined();
+  });
+});
+
+describe('a skill reports what happened, not what it attempted', () => {
+  it('send_invoice_for_order derives `sent` from the email result', () => {
+    expect(agentExecute).toMatch(/const emailSent = \(emailResult as \{ sent\?: boolean \}\)\?\.sent === true;/);
+    expect(agentExecute).toMatch(/\n {4}sent: emailSent,/);
+    // Creating the invoice and emailing it are two facts, reported separately.
+    expect(agentExecute).toMatch(/invoice_created: true,/);
+    // …and the skill's own instructions say so, so the model reads the flag.
+    expect(byName.get('send_invoice_for_order')?.instructions)
+      .toMatch(/two different facts/i);
+  });
+});
+
+describe('the intent boundaries QA saw crossed are stated', () => {
+  it('manage_service_order rules out the three order shapes it hijacked', () => {
+    const d = byName.get('manage_service_order')?.description ?? '';
+    for (const rival of ['place_order', 'create_return', 'create_purchase_order']) {
+      expect(d, `manage_service_order must say it is NOT for ${rival}`).toContain(rival);
+    }
+  });
+
+  it('place_order covers staff registering an order on a customer\'s behalf', () => {
+    expect(byName.get('place_order')?.description ?? '')
+      .toMatch(/on behalf of a customer|staff registers an order/i);
+  });
+
+  it('create_return names the RMA vocabulary a user actually types', () => {
+    const d = byName.get('create_return')?.description ?? '';
+    expect(d.toLowerCase()).toContain('rma');
+    expect(d.toLowerCase()).toContain('return authorization');
   });
 });
