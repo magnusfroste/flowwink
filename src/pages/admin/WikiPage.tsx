@@ -22,6 +22,7 @@ import {
   useWikiSearch,
 } from '@/hooks/useWiki';
 import { WikiMarkdown } from '@/components/admin/wiki/WikiMarkdown';
+import { AIMarkdownToolbar } from '@/components/admin/AIMarkdownToolbar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { WikiTree } from '@/components/admin/wiki/WikiTree';
@@ -358,6 +359,7 @@ function WikiPageInner() {
               <div className="flex items-center gap-2">
                 {editing ? (
                   <>
+                    <AIMarkdownToolbar value={body} onChange={setBody} context={title || slug} />
                     <Toggle
                       size="sm"
                       pressed={splitPreview}
@@ -405,6 +407,7 @@ function WikiPageInner() {
               <div className="space-y-2">
                 <div className={splitPreview ? 'grid gap-4 lg:grid-cols-2' : ''}>
                   <Textarea
+                    data-ai-md-target
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     className="min-h-[60vh] font-mono text-sm leading-relaxed"

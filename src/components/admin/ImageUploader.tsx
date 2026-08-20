@@ -80,7 +80,14 @@ export function ImageUploader({
           logger.log(`Converted to WebP: ${file.size} → ${uploadBlob.size} bytes`);
         } catch (conversionError) {
           logger.warn('WebP conversion failed, using original:', conversionError);
-          // Fall back to original if conversion fails
+          // Formats the browser cannot DECODE (HEIC from phones is the common
+          // one) cannot fall back: the original would upload fine and then
+          // never render anywhere. Fail with a message instead of succeeding
+          // into a broken image.
+          if (/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
+            throw new Error('HEIC photos cannot be converted in this browser — export the photo as JPG or PNG first.');
+          }
+          // Other conversion hiccups: fall back to the original format.
         }
       }
 
@@ -111,9 +118,13 @@ export function ImageUploader({
       });
     } catch (error) {
       logger.error('Upload error:', error);
+      // Surface the ACTUAL cause — the generic text made same-user-different-
+      // machine failures undiagnosable (expired session, blocked request, odd
+      // file type all read as "try again"). The message names the next step.
+      const cause = error instanceof Error ? error.message : String(error);
       toast({
         title: 'Upload failed',
-        description: 'Could not upload image. Please try again.',
+        description: `${cause} — if this mentions an expired session or JWT, sign out and in again; otherwise send this message to your admin.`,
         variant: 'destructive',
       });
     } finally {

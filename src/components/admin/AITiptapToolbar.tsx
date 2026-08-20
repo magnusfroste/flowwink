@@ -36,24 +36,27 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
   const { generate, isLoading } = useAITextGeneration();
   const [preview, setPreview] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [replaceSelection, setReplaceSelection] = useState(false);
+  const [pendingAction, setPendingAction] = useState<AIAction | null>(null);
+  const [hasSelection, setHasSelection] = useState(false);
+  // Selection is captured when the MENU opens — clicking a menu item moves
+  // focus, and acting on a later selection state applied the result to the
+  // wrong range. Harmonized with AIMarkdownToolbar (the wiki editor).
+  const [selRange, setSelRange] = useState<{ from: number; to: number }>({ from: 0, to: 0 });
 
-  const getTextForAI = (): string => {
+  const snapshotSelection = () => {
     const { from, to } = editor.state.selection;
-    const hasSelection = from !== to;
-    
-    if (hasSelection) {
-      return editor.state.doc.textBetween(from, to, ' ');
-    }
-    return editor.getText();
+    setSelRange({ from, to });
+    setHasSelection(to > from);
   };
 
   const handleAction = async (action: AIAction) => {
-    const text = getTextForAI();
+    const { from, to } = selRange;
+    // Selection required — with nothing selected the old code transformed the
+    // WHOLE document and setContent() flattened every heading/list into one
+    // paragraph. "Improve" on a finished post must never mean "replace it all".
+    if (to <= from) return;
+    const text = editor.state.doc.textBetween(from, to, ' ');
     if (!text.trim()) return;
-
-    const { from, to } = editor.state.selection;
-    setReplaceSelection(from !== to);
 
     const result = await generate({
       text,
@@ -63,6 +66,7 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
     });
 
     if (result) {
+      setPendingAction(action);
       setPreview(result);
       setShowPreview(true);
     }
@@ -70,18 +74,18 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
 
   const handleAccept = () => {
     if (!preview) return;
+    const { from, to } = selRange;
 
-    const { from, to } = editor.state.selection;
-    
-    if (replaceSelection && from !== to) {
-      // Replace selected text
-      editor.chain().focus().deleteSelection().insertContent(preview).run();
+    if (pendingAction === 'continue') {
+      // The hook returns ONLY the continuation — replacing the selection with
+      // it deleted the very text being continued. Insert after it instead.
+      editor.chain().focus().insertContentAt(to, ' ' + preview).run();
     } else {
-      // Replace all content
-      editor.commands.setContent(`<p>${preview}</p>`);
+      editor.chain().focus().deleteRange({ from, to }).insertContentAt(from, preview).run();
     }
 
     setPreview(null);
+    setPendingAction(null);
     setShowPreview(false);
   };
 
@@ -94,7 +98,7 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={(open) => { if (open) snapshotSelection(); }}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
@@ -112,13 +116,11 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-            {editor.state.selection.from !== editor.state.selection.to 
-              ? 'Transform selected text' 
-              : 'Transform all content'}
+            {hasSelection ? 'Transform selected text' : 'Select text in the editor first'}
           </div>
           <DropdownMenuSeparator />
           {actions.map((action) => (
-            <DropdownMenuItem key={action} onClick={() => handleAction(action)}>
+            <DropdownMenuItem key={action} disabled={!hasSelection} onClick={() => handleAction(action)}>
               {ACTION_CONFIG[action].icon}
               <span className="ml-2">{ACTION_CONFIG[action].label}</span>
             </DropdownMenuItem>
@@ -131,9 +133,9 @@ export function AITiptapToolbar({ editor, context }: AITiptapToolbarProps) {
           <DialogHeader>
             <DialogTitle>AI Generated Text</DialogTitle>
             <DialogDescription>
-              {replaceSelection 
-                ? 'This will replace your selected text.' 
-                : 'This will replace all content in the editor.'}
+              {pendingAction === 'continue'
+                ? 'This will be inserted after your selection.'
+                : 'This will replace your selected text.'}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

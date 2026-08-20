@@ -67,6 +67,7 @@ export function AITextAssistant({
   const { generate, isLoading } = useAITextGeneration();
   const [preview, setPreview] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [pendingAction, setPendingAction] = useState<AIAction | null>(null);
 
   const handleAction = async (action: AIAction) => {
     const result = await generate({ 
@@ -77,6 +78,7 @@ export function AITextAssistant({
     });
     
     if (result) {
+      setPendingAction(action);
       setPreview(result);
       setShowPreview(true);
     }
@@ -84,8 +86,12 @@ export function AITextAssistant({
 
   const handleAccept = () => {
     if (preview) {
-      onChange(preview);
+      // The hook returns ONLY the continuation for 'continue' — replacing the
+      // field with it would delete the text being continued (no consumer
+      // passes 'continue' today; this disarms the trap before one does).
+      onChange(pendingAction === 'continue' ? `${value} ${preview}` : preview);
       setPreview(null);
+      setPendingAction(null);
       setShowPreview(false);
     }
   };

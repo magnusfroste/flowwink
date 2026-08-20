@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260819230000",
-      "migrations_count": 442,
+      "migration_head": "20260820120000",
+      "migrations_count": 443,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1773,6 +1773,10 @@
         {
           "version": "20260819230000",
           "name": "a1b2c3d4-wiki-provenance"
+        },
+        {
+          "version": "20260820120000",
+          "name": "b7c8d9e0-branding-media-matrix"
         }
       ]
     },
