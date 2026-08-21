@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822050000",
-      "migrations_count": 472,
+      "migration_head": "20260822090000",
+      "migrations_count": 473,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1893,6 +1893,10 @@
         {
           "version": "20260822050000",
           "name": "e7f8a9b0-policy-user-roles-refs-via-definer"
+        },
+        {
+          "version": "20260822090000",
+          "name": "sandbox-seed-p2p"
         }
       ]
     },
