@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { callSkill } from '@/lib/call-skill';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toast } from 'sonner';
 import { useChatSettings, usePlatformLocaleSettings } from './useSiteSettings';
 import type { FitAnalysisResult } from '@/components/admin/sales-intelligence/types';
 
@@ -126,15 +127,20 @@ function deriveDecisionMaker(raw: unknown): FitAnalysisResult['decision_maker'] 
  * Fire-and-forget on write: a failed save must not eat a finished analysis.
  */
 async function persistFit(companyId: string, fit: FitAnalysisResult, aiScored: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('companies')
-    .update({
-      fit_score: fit.fit_score,
-      fit_analysis: { ...fit, ai_scored: aiScored },
-      fit_analyzed_at: new Date().toISOString(),
-    } as never)
-    .eq('id', companyId);
-  if (error) logger.error('Failed to persist fit analysis', error);
+  // save_fit_assessment writes the card's CURRENT STATE (fit_score/analysis)
+  // and the timeline OBSERVATION (activities) atomically, matrix-gated.
+  // The old direct .update() hit companies-RLS that only admin|approver
+  // passed — sales/marketing computed a fit, saw it, and the save silently
+  // 403'd in this fire-and-forget (Magnus's Redeye fit, 2026-08-20). A denied
+  // save is now a TOAST, not a console line nobody reads.
+  const { error } = await supabase.rpc('save_fit_assessment' as never, {
+    p_company_id: companyId,
+    p_fit: { ...fit, ai_scored: aiScored },
+  } as never);
+  if (error) {
+    logger.error('Failed to persist fit analysis', error);
+    toast.error(`Analysen visas men kunde inte sparas: ${error.message}`);
+  }
 }
 
 export async function loadSavedFit(companyId: string): Promise<FitAnalysisResult | null> {

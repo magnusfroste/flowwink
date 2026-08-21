@@ -549,6 +549,25 @@ export default function ChatSettingsPage() {
             {/* Knowledge Base settings */}
             <TabsContent value="knowledge">
               <div className="space-y-6">
+                {/* What the assistant can reach — the map of dials. Education
+                    in the UI: knowledge is INJECTED as context (settings on
+                    this page); live data is FETCHED through skills (scope per
+                    skill). One decision, one dial, named here. */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">What the assistant can reach</CardTitle>
+                    <CardDescription>
+                      Knowledge is injected as context — controlled on this page. Live data is fetched
+                      through skills — controlled per skill. Each row names its dial.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChatReachRows
+                      kbIncluded={formData.includeKbArticles ?? true}
+                      pagesIncluded={formData.includeContentAsContext ?? false}
+                    />
+                  </CardContent>
+                </Card>
                 {/* CMS Pages Card */}
                 <Card>
                   <CardHeader>
@@ -2159,6 +2178,49 @@ function FeedbackTab({
           </Button>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * The reach map for the public assistant. Rows resolve from where each
+ * decision actually lives — never a second copy of the dial.
+ */
+function ChatReachRows({ kbIncluded, pagesIncluded }: { kbIncluded: boolean; pagesIncluded: boolean }) {
+  const { data: productsSkill } = useQuery({
+    queryKey: ['chat-reach', 'browse_products-scope'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('agent_skills').select('scope, enabled').eq('name', 'browse_products').maybeSingle();
+      return data as { scope?: string; enabled?: boolean } | null;
+    },
+    staleTime: 30_000,
+  });
+  const productsReachable = !!productsSkill?.enabled && productsSkill?.scope !== 'internal';
+
+  const Row = ({ ok, label, why }: { ok: boolean; label: string; why: React.ReactNode }) => (
+    <div className="flex items-start gap-2 py-1.5 text-sm">
+      <span className={ok ? 'text-primary' : 'text-muted-foreground'}>{ok ? '✓' : '✗'}</span>
+      <span className="font-medium w-40 shrink-0">{label}</span>
+      <span className="text-muted-foreground">{why}</span>
+    </div>
+  );
+
+  return (
+    <div className="divide-y">
+      <Row ok={kbIncluded} label="Knowledge Base" why="Published articles as context — your setting below." />
+      <Row ok={pagesIncluded} label="Website pages" why="Published page content as context — your setting below." />
+      <Row ok={false} label="Wiki" why="Internal by design: the wiki grounds staff surfaces (FlowWork), never visitors." />
+      <Row
+        ok={productsReachable}
+        label="Products"
+        why={
+          <>Not context — a live lookup through the <code className="text-xs">browse_products</code> skill
+          (prices and stock stay fresh). Its public/internal switch lives per skill in{' '}
+          <Link to="/admin/skills" className="text-primary hover:underline">Skills</Link>
+          {productsReachable ? ' — currently public on this instance.' : ' — currently internal on this instance, so the assistant tells the service story from identity and pages instead of listing SKUs.'}</>
+        }
+      />
     </div>
   );
 }

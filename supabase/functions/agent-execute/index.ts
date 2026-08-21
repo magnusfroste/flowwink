@@ -5135,7 +5135,21 @@ async function executeWikiAction(
       })
       .select('slug, title, updated_at')
       .single();
-    if (error) throw new Error(`create wiki failed: ${error.message}`);
+    if (error) {
+      // Slug is the primary key. An agent asked to "write the pitch" reaches
+      // for create even when the page exists (FlowWork, PitchPrivatAIForRedeye
+      // 2026-08-21) and got raw Postgres 23505. Refuse with the next step —
+      // never silently convert to update: overwriting an existing page via
+      // 'create' would be the silent-replacement class.
+      if ((error as { code?: string }).code === '23505') {
+        throw new Error(
+          `Wiki page "${slug}" already exists. To change it, use action=update ` +
+          `(content_md REPLACES the whole body; append_md ADDS a section) — ` +
+          `or choose a new slug for a separate page.`,
+        );
+      }
+      throw new Error(`create wiki failed: ${error.message}`);
+    }
     return { ...data, url: `/admin/wiki/${data.slug}`, status: 'created' };
   }
 

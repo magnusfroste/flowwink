@@ -183,6 +183,31 @@ export async function executeProspectResearch(
         if (error) console.error('company insert failed:', error.message);
         companyId = inserted?.id ?? null;
       }
+
+      // The card carries the LATEST STATE (web_summary etc); the research
+      // itself is an OBSERVATION and lands on the timeline, so "vad kom
+      // researchen fram till?" has a durable, readable answer on the company
+      // — not just a snapshot that the next run overwrites (Magnus-fynd,
+      // Redeye 2026-08-21). Await + log: a lost observation must be visible.
+      if (companyId) {
+        const { error: actError } = await supabase.from('activities').insert({
+          entity_type: 'company',
+          entity_id: companyId,
+          activity_type: 'research',
+          subject: `Research: ${distilled?.summary ? String(distilled.summary).slice(0, 80) : company_name}`,
+          body: distilled?.summary ?? 'Se metadata för hela underlaget.',
+          metadata: {
+            company_url: company_url ?? null,
+            main_offerings: distilled?.main_offerings ?? [],
+            potential_pain_points: distilled?.potential_pain_points ?? [],
+            sources: (searchResult?.results ?? []).slice(0, 8).map((r: any) => ({ url: r.url, title: r.title })),
+            contacts_found: contactsRaw.length,
+          },
+          created_by: (args as any)._caller_user_id ?? null,
+          done_at: new Date().toISOString(),
+        });
+        if (actError) console.error('research activity insert failed:', actError.message);
+      }
     }
 
     // Step 5: Persist contacts as leads (upsert by email)

@@ -88,7 +88,12 @@ function changedFields(seed: Skill, row: any): string[] {
   if ((seed.description ?? '') !== (row.description ?? '')) diffs.push('description');
   if ((seed.category ?? '') !== (row.category ?? '')) diffs.push('category');
   if ((seed.handler ?? '') !== (row.handler ?? '')) diffs.push('handler');
-  if ((seed.scope ?? '') !== (row.scope ?? '')) diffs.push('scope');
+  // scope är en PER-INSTANS affärsratt (vilka skills som möter publiken) —
+  // samma klass som trust_level: seeden sätter default vid INSERT, en operatörs
+  // runtime-val överlever resync. Bakgrund: optic stänger browse_products för
+  // publika chatten (products = offertmaskineri där, inte publik katalog;
+  // 4 SKU:er skulle konflikta med BI:s 3 tjänstefamiljer), medan shop-instanser
+  // vill ha den publik. En diff här hade återställt beslutet varje sync.
   if ((seed.instructions ?? null) !== (row.instructions ?? null)) diffs.push('instructions');
   if (norm(seed.tool_definition) !== norm(row.tool_definition)) diffs.push('tool_definition');
   if (row.enabled !== true) diffs.push('enabled');
@@ -117,8 +122,8 @@ for (const mod of modules) {
       stats.updates.push(`${seed.name} (${mod.moduleId}): ${diffs.join(', ')}`);
       if (APPLY) {
         await c.query(
-          `update agent_skills set enabled=true, mcp_exposed=true, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6, scope=$7 where name=$1`,
-          [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler, seed.scope],
+          `update agent_skills set enabled=true, mcp_exposed=true, description=$2, instructions=$3, tool_definition=$4, category=$5, handler=$6 where name=$1`,
+          [seed.name, seed.description, seed.instructions ?? null, seed.tool_definition, seed.category, seed.handler],
         );
       }
     }
