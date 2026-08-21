@@ -3,16 +3,154 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LifeBuoy, MessageSquare } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { LifeBuoy, MessageSquare, Plus } from 'lucide-react';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import {
   TICKET_STATUS_LABELS,
   TICKET_STATUS_COLORS,
   TICKET_PRIORITY_LABELS,
+  TICKET_CATEGORY_LABELS,
+  type TicketCategory,
 } from '@/hooks/useTickets';
-import { useMyTickets, useMyTicketComments, useAddMyTicketReply } from '@/hooks/useMyTickets';
+import {
+  useMyTickets,
+  useMyTicketComments,
+  useAddMyTicketReply,
+  useCreateMySupportRequest,
+  type MySupportRequestPriority,
+} from '@/hooks/useMyTickets';
+
+// The portal create rail (submit_support_request) only accepts these — urgent
+// is a staff-side triage call, not a customer field.
+const PORTAL_PRIORITIES: MySupportRequestPriority[] = ['low', 'medium', 'high'];
+
+function NewRequestDialog() {
+  const create = useCreateMySupportRequest();
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<MySupportRequestPriority>('medium');
+  const [category, setCategory] = useState<TicketCategory>('other');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (subject.trim().length < 3) return;
+
+    await create.mutateAsync({
+      subject: subject.trim(),
+      description: description.trim() || undefined,
+      priority,
+      category,
+    });
+
+    setSubject('');
+    setDescription('');
+    setPriority('medium');
+    setCategory('other');
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          New request
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>New support request</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="request-subject">Subject</Label>
+            <Input
+              id="request-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Brief summary of your request"
+              maxLength={200}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="request-description">Description</Label>
+            <Textarea
+              id="request-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tell us more — what happened, and what did you expect?"
+              rows={4}
+              maxLength={10000}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as MySupportRequestPriority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PORTAL_PRIORITIES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {TICKET_PRIORITY_LABELS[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as TicketCategory)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.entries(TICKET_CATEGORY_LABELS) as [TicketCategory, string][]).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={create.isPending || subject.trim().length < 3}>
+              {create.isPending ? 'Submitting…' : 'Submit request'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function MyTicketsPage() {
   const { formatDateTime } = usePlatformFormat();
@@ -32,11 +170,14 @@ export default function MyTicketsPage() {
     <>
       <Helmet><title>My support requests</title></Helmet>
       <div className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-semibold">Support requests</h2>
-          <p className="text-sm text-muted-foreground">
-            Follow your open requests and reply to our team
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold">Support requests</h2>
+            <p className="text-sm text-muted-foreground">
+              Follow your open requests and reply to our team
+            </p>
+          </div>
+          <NewRequestDialog />
         </div>
 
         {isLoading && (

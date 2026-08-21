@@ -23834,6 +23834,15 @@ export type Database = {
         Returns: Json
       }
       submit_expense_report: { Args: { p_report_id: string }; Returns: Json }
+      submit_support_request: {
+        Args: {
+          p_category?: string
+          p_description?: string
+          p_priority?: string
+          p_subject: string
+        }
+        Returns: string
+      }
       submit_survey_response: {
         Args: {
           _answers?: Json
