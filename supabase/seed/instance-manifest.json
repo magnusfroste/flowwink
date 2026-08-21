@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822090000",
-      "migrations_count": 473,
+      "migration_head": "20260822100000",
+      "migrations_count": 475,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1895,8 +1895,16 @@
           "name": "e7f8a9b0-policy-user-roles-refs-via-definer"
         },
         {
+          "version": "20260822080000",
+          "name": "the-outbound-chain-never-ran"
+        },
+        {
           "version": "20260822090000",
           "name": "sandbox-seed-p2p"
+        },
+        {
+          "version": "20260822100000",
+          "name": "sandbox-seed-o2c"
         }
       ]
     },
