@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bell, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Product, StockStatus as StockStatusType } from '@/hooks/useProducts';
@@ -73,12 +74,37 @@ export function BackInStockForm({ productId, productName, className }: BackInSto
     if (!email) return;
 
     setLoading(true);
-    const { error } = await supabase
-      .from('back_in_stock_requests' as any)
-      .upsert(
-        { product_id: productId, email } as any,
-        { onConflict: 'product_id,email' }
-      );
+    // The RPC is the working path. The direct upsert below fails for every
+    // anonymous visitor on a correctly locked-down instance: ON CONFLICT DO
+    // UPDATE needs to read the conflict row, and anon (correctly) has no
+    // SELECT or UPDATE path on back_in_stock_requests. request_back_in_stock
+    // is SECURITY DEFINER and returns nothing, so an outsider cannot probe
+    // which addresses are waiting. The legacy upsert stays as fallback for
+    // instances that have not run the migration yet (the fleet runs several
+    // schema versions at once by design).
+    const rpcCall = supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ error: { message: string } | null }>;
+    let error: { message: string } | null = null;
+    try {
+      ({ error } = await rpcCall('request_back_in_stock', {
+        p_product_id: productId,
+        p_email: email,
+      }));
+    } catch (e) {
+      error = { message: e instanceof Error ? e.message : String(e) };
+    }
+
+    if (error) {
+      logger.warn('request_back_in_stock unavailable, falling back to direct upsert', error.message);
+      ({ error } = await supabase
+        .from('back_in_stock_requests' as any)
+        .upsert(
+          { product_id: productId, email } as any,
+          { onConflict: 'product_id,email' }
+        ));
+    }
 
     setLoading(false);
 

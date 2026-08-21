@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260822140000",
-      "migrations_count": 480,
+      "migrations_count": 481,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1873,6 +1873,10 @@
         {
           "version": "20260821090000",
           "name": "f2a3b4c5-email-gets-a-matrix-dial"
+        },
+        {
+          "version": "20260821200000",
+          "name": "back-in-stock-requests-actually-save"
         },
         {
           "version": "20260822010000",
