@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -32,7 +33,12 @@ export default function PagesTrashTab() {
             {deletedPages?.length || 0} {(deletedPages?.length || 0) === 1 ? 'page' : 'pages'} in trash
           </CardTitle>
           <CardDescription>
-            Permanently deleted pages cannot be recovered
+            Permanently deleted pages cannot be recovered. Looking for something
+            you cannot place?{' '}
+            <Link to="/admin/trash" className="underline underline-offset-2 hover:text-foreground">
+              Search everything that was deleted
+            </Link>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
