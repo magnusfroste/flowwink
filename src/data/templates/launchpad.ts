@@ -168,8 +168,6 @@ const launchpadPages: StarterTemplate['pages'] = [
           subtitle: 'Join 50,000+ founders who chose to focus on what matters — their users.',
           backgroundImage: '/templates/hero/tech-future.jpg',
           overlayOpacity: 60,
-          buttonText: 'Start Building Free',
-          buttonUrl: '/contact',
         },
       },
       {
@@ -262,10 +260,14 @@ const launchpadPages: StarterTemplate['pages'] = [
         id: 'floating-cta-home',
         type: 'floating-cta',
         data: {
-          text: 'Free plan available — no credit card required',
+          // `text` is not a floating-cta field — FloatingCTABlock renders `title`.
+          // The 'pill' variant it shipped with renders the BUTTON ONLY, so this
+          // line was doubly invisible; 'minimal' is the variant that shows a short
+          // message beside the button, which is what the copy was written for.
+          title: 'Free plan available — no credit card required',
           buttonText: 'Start Building Free',
           buttonUrl: '/contact',
-          variant: 'pill',
+          variant: 'minimal',
         },
       },
     ],

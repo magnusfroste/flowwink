@@ -51,8 +51,14 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // Module-specific
   'consultant-matcher',
   // AI / Conversational commerce
-  'ai-assistant',
-  'quick-links'
+  'ai-assistant', 'ai-faq',
+  'quick-links',
+  // Blocks that shipped after this list was last touched. A hand-maintained
+  // copy of the vocabulary drifts the moment someone adds a block and only
+  // registers it in block-reference.ts — the template then fails validation with
+  // "Invalid block type", which reads as a broken template rather than a stale
+  // list. The drift guardrail now asserts this list covers BLOCK_REFERENCE.
+  'latest-posts', 'pricing-calculator', 'sticky-scroll', 'handbook', 'terms',
 ];
 
 // Required fields per block type

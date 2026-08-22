@@ -58,6 +58,8 @@ import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connec
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
 import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
+// describe_blocks' other half: "what can I build" ↔ "what did I build".
+import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
@@ -901,6 +903,8 @@ serve(async (req) => {
 
       } else if (handler === 'internal:describe_blocks') {
         result = executeDescribeBlocks(args as Record<string, unknown>);
+      } else if (handler === 'internal:inspect_rendered_page') {
+        result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
 

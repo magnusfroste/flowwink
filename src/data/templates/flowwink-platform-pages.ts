@@ -74,8 +74,6 @@ function processPage(p: ProcessPageInput): TemplatePage {
         type: 'stats',
         data: {
           items: p.stats.map((s, i) => ({ id: `${p.slug}-s${i}`, value: s.value, label: s.label })),
-          columns: p.stats.length,
-          variant: 'minimal',
         },
       },
       {
@@ -182,8 +180,6 @@ const platformPage: TemplatePage = {
           { id: 'pf3', value: '500+', label: 'Skills, all MCP-exposed' },
           { id: 'pf4', value: '3', label: 'Shells over one kernel' },
         ],
-        columns: 4,
-        variant: 'minimal',
       },
     },
     {
@@ -439,8 +435,6 @@ const mcpPage: TemplatePage = {
           { id: 'mc3', value: 'HTTP', label: 'Streamable transport' },
           { id: 'mc4', value: 'RLS', label: 'Same permissions as a human' },
         ],
-        columns: 4,
-        variant: 'minimal',
       },
     },
     {
