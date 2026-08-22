@@ -4,6 +4,11 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { computeInvoiceTotals, type InvoiceLineItem, type InvoiceLead } from '@/hooks/useInvoices';
 import { applyPricelistToLineItems } from '@/lib/pricelist-resolver';
+import {
+  canConvertQuoteToInvoice,
+  resolveQuoteLines,
+  type QuoteItemRow,
+} from '@/lib/quote-lines';
 
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
@@ -88,6 +93,31 @@ export function useQuote(id: string | undefined) {
       return data as unknown as Quote;
     },
     enabled: !!id,
+  });
+}
+
+/**
+ * The OTHER place a quote's lines can live: the `quote_items` table, which the
+ * MCP/agent path writes and the `recalc_quote_totals` trigger totals from. The
+ * admin sheet must read this before it dares recompute anything — see
+ * `src/lib/quote-lines.ts` for the incident this exists for.
+ */
+export function useQuoteItems(quoteId: string | undefined) {
+  return useQuery({
+    queryKey: ['quote-items', quoteId],
+    queryFn: async () => {
+      if (!quoteId) return [] as QuoteItemRow[];
+      const { data, error } = await supabase
+        .from('quote_items')
+        .select('id, description, quantity, unit_price_cents, discount_pct, product_id, position, is_optional, selected_by_customer')
+        .eq('quote_id', quoteId)
+        .order('position');
+      // A failed read must NOT look like "this quote has no lines" — throw so
+      // the caller sees `unknown`, not an empty array.
+      if (error) throw error;
+      return (data || []) as unknown as QuoteItemRow[];
+    },
+    enabled: !!quoteId,
   });
 }
 
@@ -194,11 +224,43 @@ export function useUpdateQuote() {
         // any invoice converted from it).
         const { data: current } = await supabase
           .from('quotes')
-          .select('lead_id, currency, tax_rate, line_items, leads(company_id)')
+          .select('lead_id, currency, tax_rate, line_items, subtotal_cents, total_cents, leads(company_id)')
           .eq('id', id)
           .maybeSingle();
 
+        // Last line of defence, one layer below the panel: if this quote's lines
+        // live in `quote_items`, recomputing totals from the (empty) JSONB
+        // column zeroes a real quote. Refuse — loudly. Fixing the caller beats
+        // silently rewriting money.
+        const { count: itemCount, error: itemCountErr } = await supabase
+          .from('quote_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('quote_id', id);
+        if (itemCountErr) {
+          throw new Error(
+            `Could not read this quote's line items (${itemCountErr.message}) — nothing was saved.`
+          );
+        }
+        if ((itemCount ?? 0) > 0) {
+          throw new Error(
+            "This quote's line items are stored on the quote itself (written by the agent/API path). " +
+              'Edit them there — saving lines or tax rate from here would overwrite the totals with zeroes.'
+          );
+        }
+
         let lineItems = dbUpdates.line_items ?? (current as any)?.line_items ?? [];
+
+        // No lines anywhere, but the quote claims money: that is an
+        // inconsistency to investigate, not a zero to write.
+        if (
+          !Array.isArray(dbUpdates.line_items) &&
+          (!Array.isArray(lineItems) || lineItems.length === 0) &&
+          Number((current as { total_cents?: number | null } | null)?.total_cents ?? 0) !== 0
+        ) {
+          throw new Error(
+            'This quote shows a total but has no line items to recompute from — nothing was saved.'
+          );
+        }
         if (dbUpdates.line_items) {
           lineItems = await applyPricelistToLineItems(lineItems, {
             lead_id: (current as any)?.lead_id ?? null,
@@ -255,6 +317,28 @@ export function useConvertQuoteToInvoice() {
 
   return useMutation({
     mutationFn: async (quote: Quote) => {
+      // The lines may live in `quote_items` (agent/API path) instead of the
+      // quotes.line_items JSONB. Copying the JSONB blindly produced an invoice
+      // with NO lines and the quote's total — an empty document whose own Save
+      // would then zero it. Read both, refuse when neither can be read.
+      const { data: itemRows, error: itemsErr } = await supabase
+        .from('quote_items')
+        .select('id, description, quantity, unit_price_cents, discount_pct, product_id, position')
+        .eq('quote_id', quote.id)
+        .order('position');
+      const resolved = resolveQuoteLines({
+        itemsLoaded: !itemsErr,
+        itemRows: (itemRows || []) as unknown as QuoteItemRow[],
+        jsonbLines: quote.line_items,
+      });
+      const gate = canConvertQuoteToInvoice({
+        origin: resolved.origin,
+        resolvedLineCount: resolved.items.length,
+        totalCents: quote.total_cents,
+      });
+      if (!gate.ok) throw new Error(gate.reason);
+      const invoiceLines = resolved.items;
+
       // Gapless, race-safe invoice number (same allocator as direct invoices).
       const { data: invoice_number, error: numErr } = await supabase
         .rpc('next_document_number', { p_kind: 'invoice', p_prefix: 'INV' });
@@ -269,7 +353,7 @@ export function useConvertQuoteToInvoice() {
           deal_id: quote.deal_id,
           customer_email: '',
           customer_name: '',
-          line_items: quote.line_items as any,
+          line_items: invoiceLines as any,
           tax_rate: quote.tax_rate,
           subtotal_cents: quote.subtotal_cents,
           tax_cents: quote.tax_cents,

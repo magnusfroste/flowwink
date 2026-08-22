@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useSlaPolicies, useSlaViolations } from '@/hooks/useSla';
+import { useSlaViolations } from '@/hooks/useSla';
 import type { Ticket } from '@/hooks/useTickets';
 
 export type TicketSlaState = 'breached' | 'due_soon' | 'ok' | 'none';
@@ -13,7 +13,7 @@ export interface TicketSlaStatus {
   metric?: string;
 }
 
-const OPEN_STATUSES = new Set(['new', 'open', 'in_progress', 'waiting']);
+const CLOSED_STATUSES = new Set(['resolved', 'closed']);
 
 function humanizeMinutes(mins: number) {
   const m = Math.abs(Math.round(mins));
@@ -24,12 +24,33 @@ function humanizeMinutes(mins: number) {
 }
 
 /**
- * Derives a per-ticket SLA status by combining the authoritative SLA Monitor
- * violations (entity_type = 'ticket') with a countdown from the ticket's own
- * `sla_deadline`, falling back to the active ticket resolution policy.
+ * Per-ticket SLA status — READ from the sweep, never recomputed here.
+ *
+ * Varför den här filen inte längre räknar något:
+ *
+ * Det fanns två SLA-implementationer som var oense. Den här hooken räknade
+ * KALENDERtimmar från created_at, ignorerade avtalsnivåns multiplikator,
+ * ignorerade klockpauser, och såg bara policies med metric='resolution'.
+ * `run_sla_sweep` i databasen räknade ARBETStid, pausade vid status=waiting
+ * och tillämpade tier-multiplikatorn. Observerat i QA: samma ärende, samma
+ * sekund, motsatta domar — admin-UI:t visade "Overdue 2d" medan svepet inte
+ * hade någon brottsrad alls. Med en first_response-policy visade UI:t ingen
+ * nedräkning alls förrän det plötsligt stod "Breached".
+ *
+ * Projektets princip är en skrivare per sanning. Svepet ÄR motorn: det äger
+ * arbetstidsklockan, pauserna, tier-multiplikatorerna och vad som stoppar
+ * klockan per metric. Den skriver numera sitt resultat läsbart:
+ *   • `tickets.sla_deadline` + `tickets.sla_metric` — nästa klocka som
+ *     fortfarande tickar (skrivs av sla_ticket_deadline(), som svepet och en
+ *     trigger på tickets/ticket_comments anropar, så värdet finns från
+ *     sekund ett och inte först efter nästa svep)
+ *   • `sla_violations` — det som redan brustit
+ *
+ * Den här hooken gör därför bara tre saker: läser brottet, läser deadlinen,
+ * och räknar ner. Ingen policy-, tier- eller kalenderlogik får flytta tillbaka
+ * hit — då är vi tillbaka i två motorer som ljuger olika.
  */
 export function useTicketSlaMap(tickets: Ticket[]) {
-  const { data: policies = [] } = useSlaPolicies();
   const { data: violations = [] } = useSlaViolations({ resolved: false, entity_type: 'ticket' });
 
   return useMemo(() => {
@@ -39,10 +60,6 @@ export function useTicketSlaMap(tickets: Ticket[]) {
         breachedIds.set(v.entity_id, { metric: v.metric, minutes: v.actual_minutes - v.threshold_minutes });
       }
     });
-
-    const ticketPolicies = policies.filter(
-      (p) => p.enabled && p.entity_type === 'ticket' && p.metric === 'resolution'
-    );
 
     const map = new Map<string, TicketSlaStatus>();
     const now = Date.now();
@@ -59,51 +76,39 @@ export function useTicketSlaMap(tickets: Ticket[]) {
         return;
       }
 
-      if (!OPEN_STATUSES.has(t.status)) {
-        map.set(t.id, { state: 'none', dueAt: null, label: 'Met' });
+      // No running clock. For a closed ticket that means every clock stopped in
+      // time; for an open one it means no policy covers it.
+      if (!t.sla_deadline) {
+        map.set(t.id, {
+          state: 'none',
+          dueAt: null,
+          label: CLOSED_STATUSES.has(t.status) ? 'Met' : 'No SLA',
+        });
         return;
       }
 
-      let dueAt: number | null = t.sla_deadline ? new Date(t.sla_deadline).getTime() : null;
-      let metric = 'resolution';
-      if (!dueAt && ticketPolicies.length > 0) {
-        const policy =
-          ticketPolicies.find((p) => p.priority === t.priority) ?? ticketPolicies[0];
-        dueAt = new Date(t.created_at).getTime() + policy.threshold_minutes * 60_000;
-        metric = policy.metric;
-      }
-
-      if (!dueAt) {
-        map.set(t.id, { state: 'none', dueAt: null, label: 'No SLA' });
-        return;
-      }
-
+      const dueAt = new Date(t.sla_deadline).getTime();
       const minutesLeft = (dueAt - now) / 60_000;
+      const metric = t.sla_metric ?? undefined;
       const iso = new Date(dueAt).toISOString();
+
       if (minutesLeft <= 0) {
+        // Klockan har passerat deadlinen men svepet har inte hunnit skriva
+        // brottet ännu (det kör var 15:e minut). "Due" — inte "Breached":
+        // bara svepet får uttala sig om brott, annars är vi två domare igen.
         map.set(t.id, {
           state: 'breached',
           dueAt: iso,
           metric,
-          label: `Overdue ${humanizeMinutes(minutesLeft)}`,
+          label: `Due ${humanizeMinutes(minutesLeft)} ago`,
         });
       } else if (minutesLeft <= 120) {
-        map.set(t.id, {
-          state: 'due_soon',
-          dueAt: iso,
-          metric,
-          label: `${humanizeMinutes(minutesLeft)} left`,
-        });
+        map.set(t.id, { state: 'due_soon', dueAt: iso, metric, label: `${humanizeMinutes(minutesLeft)} left` });
       } else {
-        map.set(t.id, {
-          state: 'ok',
-          dueAt: iso,
-          metric,
-          label: `${humanizeMinutes(minutesLeft)} left`,
-        });
+        map.set(t.id, { state: 'ok', dueAt: iso, metric, label: `${humanizeMinutes(minutesLeft)} left` });
       }
     });
 
     return map;
-  }, [tickets, policies, violations]);
+  }, [tickets, violations]);
 }

@@ -1266,6 +1266,17 @@ async function autoActivateModule(
       .eq('key', 'modules');
 
     console.log(`[agent-execute] Auto-activated module: ${settingKey} (triggered by handler module:${moduleName})`);
+
+    // The module just went ON, so the skill registry's requirement just grew.
+    // Nothing else in the chain notices — that gap is how an instance ends up
+    // with modules enabled and no skills behind them.
+    const synced = await executeSyncSkillsFromCode(supabase, {});
+    const missing = (synced as { after?: { missing?: number } })?.after?.missing;
+    if (missing) {
+      console.error(
+        `[agent-execute] auto-activated ${settingKey} but ${missing} required skill(s) are still missing`,
+      );
+    }
   } catch (err) {
     // Non-fatal — don't break skill execution
     console.error(`[agent-execute] Failed to auto-activate module ${settingKey}:`, err);
@@ -2081,6 +2092,8 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
   // 8. Optionally merge template settings into site_settings (off by default —
   //    branding/SEO/homepage swaps are a bigger blast radius than content seeding).
   const settingsApplied: string[] = [];
+  /** Result of the post-install skill reconcile (see 8b), or null when no module changed. */
+  let skillsSynced: unknown = null;
   if (applySettings) {
     const mergeSetting = async (key: string, value: any) => {
       if (!value || typeof value !== 'object') return;
@@ -2109,6 +2122,20 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
       }
       const { error } = await supabase.from('site_settings').upsert({ key: 'modules', value: modules }, { onConflict: 'key' });
       if (!error) settingsApplied.push('modules');
+    }
+  }
+
+  // 8b. Turning modules ON changes what the skill layer must contain — and
+  //     NOTHING else in the deploy chain notices. This was the trigger that
+  //     armed the 96-of-347 instance: the template enabled seven modules
+  //     server-side, no bootstrap ran for them, and the hash-gated sync then
+  //     answered "unchanged" forever. Reconcile here, right where the
+  //     requirement changed. Non-fatal — a template install must not fail on it.
+  if (settingsApplied.includes('modules')) {
+    try {
+      skillsSynced = await executeSyncSkillsFromCode(supabase, {});
+    } catch (err) {
+      errors.push(`skill sync after module enable: ${err instanceof Error ? err.message : 'unknown error'}`);
     }
   }
 
@@ -2211,6 +2238,10 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
     },
     skipped,
     settings_applied: settingsApplied,
+    // Enabling modules changes what the skill registry must hold; the reconcile
+    // runs here so an installed template is never one manual click away from an
+    // agent surface that cannot do the job the template promises.
+    skills_synced: skillsSynced ?? undefined,
     errors: errors.length ? errors : undefined,
     manifest,
     notes: [
@@ -2238,8 +2269,55 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
 // operator over MCP. Semantics mirror sync-skills.ts/bootstrapModule exactly:
 // only ENABLED modules (+ platform, always); INSERT missing skills complete;
 // UPDATE existing rows' definition fields only — NEVER trust_level, so runtime
-// trust overrides survive every release. The artifact's content hash is stored
-// in site_settings.skills_artifact_sha and short-circuits repeat calls.
+// trust overrides survive every release.
+//
+// ── Varför grinden mäter TÄCKNING och inte bara artefaktens hash ─────────────
+// Den första versionen kortslöt på `site_settings.skills_artifact_sha === sha`:
+// "har den här deployens artefakt redan applicerats?". Fel fråga — den mäter
+// koden, inte instansen. Verkligt utfall på en färsk, fullt provisionerad
+// instans (verifierat av tre oberoende QA-körningar): 96 av 347 förväntade
+// skills i `agent_skills`, medan svaret var {"status":"unchanged"}.
+//
+// Kedjan som armerade fällan:
+//   1. Första admin-laddningen kör synken när `site_settings.modules` ännu bara
+//      bär KODENS default (ett fåtal moduler på) → ~96 rader skrivs …
+//   2. … och sha:n STÄMPLAS, som om lagret vore komplett.
+//   3. `install_template` (apply_settings) slår sedan på commerce, contracts,
+//      subscriptions, invoicing, tickets, sla, field-service i modulraden.
+//      Ingen deploy, ingen migration och ingen bootstrap rör skill-lagret.
+//   4. Varje efterföljande synk ser samma artefakt-sha och svarar "unchanged"
+//      för alltid. Villkoret kan aldrig mer bli sant — samma klass som
+//      självläkningen som väntade på att en migrationsseedad skill skulle SAKNAS.
+//
+// Rätt fråga är tillståndsfrågan: "stämmer `agent_skills` med vad de PÅSLAGNA
+// modulerna säger att den ska innehålla?". Den mäts alltid (en namn-kolumnläsning,
+// paginerad), och hash-grinden får leva kvar enbart som snabbväg OVANPÅ den:
+// stämpeln räknas bara när täckningen faktiskt är hel.
+//
+// ── Varför svaret läses tillbaka ────────────────────────────────────────────
+// Samma körning rapporterade `inserted: 0` medan 251 rader skrevs. En räknare
+// som inte kan motsägas är ingen mätning. Svaret bär därför tabellens antal FÖRE
+// och EFTER skrivningen, vad som saknades, vad som fortfarande saknas, och
+// flaggar avvikelsen om raddeltat inte motsvarar de påstådda insertarna.
+
+/** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
+async function readAllSkills(supabase: any, columns: string): Promise<{ rows: any[]; error?: string }> {
+  const PAGE = 500;
+  const out: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('agent_skills')
+      .select(columns)
+      .order('name', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) return { rows: out, error: error.message };
+    const page = data ?? [];
+    out.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return { rows: out };
+}
+
 async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unknown>): Promise<unknown> {
   const force = args.force === true;
 
@@ -2253,18 +2331,77 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
     .in('key', ['skills_artifact_sha', 'modules']);
   const byKey = new Map<string, unknown>((settings ?? []).map((r: any) => [r.key, r.value]));
 
-  if (!force && byKey.get('skills_artifact_sha') === sha) {
-    return { status: 'unchanged', sha, note: 'Instance already carries this deploy\'s skill payload. Pass {"force": true} to re-apply.' };
-  }
-
   const enabledMap = (byKey.get('modules') ?? {}) as Record<string, { enabled?: boolean }>;
   const isEnabled = (id: string) => id === 'platform' || enabledMap[id]?.enabled === true;
+  // Utan modulraden läser servern VARJE modul som av (_shared/modules.ts gör
+  // ingen default-merge, med flit), så "täckningen är hel" skulle betyda
+  // "plattformslagret finns" — sant, och samtidigt vilseledande. Säg det.
+  const modulesRowPresent = Object.keys(enabledMap).length > 0;
 
-  const { data: rows, error: readErr } = await supabase
-    .from('agent_skills')
-    .select('name, description, category, handler, scope, instructions, enabled, mcp_exposed, tool_definition');
-  if (readErr) return { error: `Could not read agent_skills: ${readErr.message}` };
-  const existing = new Map<string, any>((rows ?? []).map((r: any) => [r.name, r]));
+  // ── 1. Vad de PÅSLAGNA modulerna kräver ───────────────────────────────────
+  const expected = new Map<string, any>();
+  const skippedModules: string[] = [];
+  for (const mod of (bundledModuleSkills as any).modules as Array<{ moduleId: string; skills: any[] }>) {
+    if (!isEnabled(mod.moduleId)) { skippedModules.push(mod.moduleId); continue; }
+    for (const seed of mod.skills) {
+      if (seed && typeof seed === 'object' && seed.name) expected.set(seed.name, seed);
+    }
+  }
+  const expectedNames = [...expected.keys()];
+
+  // ── 2. Verklig mätning (billig: bara namn + de två synlighetsflaggorna) ────
+  const probe = await readAllSkills(supabase, 'name, enabled, mcp_exposed');
+  if (probe.error) return { error: `Could not read agent_skills: ${probe.error}` };
+  const presentBefore = new Map<string, any>(probe.rows.map((r: any) => [r.name, r]));
+  const missingBefore = expectedNames.filter((n) => !presentBefore.has(n));
+  const hiddenBefore = expectedNames.filter((n) => {
+    const r = presentBefore.get(n);
+    return r && (r.enabled !== true || r.mcp_exposed !== true);
+  });
+  const rowsBefore = probe.rows.length;
+
+  const coverage = (missing: string[], hidden: string[], total: number) => ({
+    expected_for_enabled_modules: expected.size,
+    present: expected.size - missing.length,
+    missing: missing.length,
+    missing_names: missing.slice(0, 40),
+    disabled_or_unexposed: hidden.length,
+    agent_skills_rows: total,
+    modules_skipped_disabled: skippedModules.length,
+    modules_row_present: modulesRowPresent,
+    modules_row_warning: modulesRowPresent
+      ? undefined
+      : 'site_settings.modules is absent or empty — the server reads every module as OFF, so this coverage covers the platform layer alone. Seed the row (ensure_modules_settings) before trusting it.',
+  });
+
+  // ── 3. Snabbväg — men bara när MÄTNINGEN håller med stämpeln ──────────────
+  //     Hash-lika artefakt räcker inte: den säger att koden är densamma, inte
+  //     att instansen bär den. Täckningen måste vara hel också.
+  if (
+    !force &&
+    byKey.get('skills_artifact_sha') === sha &&
+    missingBefore.length === 0 &&
+    hiddenBefore.length === 0
+  ) {
+    return {
+      status: 'unchanged',
+      sha,
+      coverage: coverage(missingBefore, hiddenBefore, rowsBefore),
+      note:
+        `Verified, not assumed: all ${expected.size} skills the ${
+          (bundledModuleSkills as any).modules.length - skippedModules.length
+        } enabled module(s) require are present and exposed, and the instance carries this deploy's artifact. ` +
+        'Pass {"force": true} to re-assert every definition field anyway.',
+    };
+  }
+
+  // ── 4. Full avstämning ────────────────────────────────────────────────────
+  const full = await readAllSkills(
+    supabase,
+    'name, description, category, handler, scope, instructions, enabled, mcp_exposed, tool_definition',
+  );
+  if (full.error) return { error: `Could not read agent_skills: ${full.error}` };
+  const existing = new Map<string, any>(full.rows.map((r: any) => [r.name, r]));
 
   // Key-order-insensitive comparison, mirroring sync-skills.ts.
   const canon = (v: unknown): unknown =>
@@ -2276,70 +2413,115 @@ async function executeSyncSkillsFromCode(supabase: any, args: Record<string, unk
 
   const inserted: string[] = [];
   const updated: string[] = [];
+  const failures: string[] = [];
   let unchanged = 0;
-  let modulesSkipped = 0;
 
-  for (const mod of (bundledModuleSkills as any).modules as Array<{ moduleId: string; skills: any[] }>) {
-    if (!isEnabled(mod.moduleId)) { modulesSkipped++; continue; }
-    for (const seed of mod.skills) {
-      if (!seed || typeof seed !== 'object' || !seed.name) continue;
-      const row = existing.get(seed.name);
-      if (!row) {
-        const { error } = await supabase.from('agent_skills').insert({
-          name: seed.name,
-          description: seed.description,
-          category: seed.category,
-          handler: seed.handler,
-          scope: seed.scope,
-          tool_definition: seed.tool_definition,
-          instructions: seed.instructions ?? null,
-          enabled: true,
-          mcp_exposed: true,
-          origin: 'bundled',
-          trust_level: seed.trust_level ?? 'notify',
-          requires_staging: seed.requires_staging ?? false,
-        });
-        if (error) return { error: `Insert failed for ${seed.name}: ${error.message}`, inserted, updated };
-        inserted.push(seed.name);
-      } else {
-        const drifted =
-          (seed.description ?? '') !== (row.description ?? '') ||
-          (seed.category ?? '') !== (row.category ?? '') ||
-          (seed.handler ?? '') !== (row.handler ?? '') ||
-          (seed.scope ?? '') !== (row.scope ?? '') ||
-          (seed.instructions ?? null) !== (row.instructions ?? null) ||
-          norm(seed.tool_definition) !== norm(row.tool_definition) ||
-          row.enabled !== true || row.mcp_exposed !== true;
-        if (!drifted) { unchanged++; continue; }
-        const { error } = await supabase.from('agent_skills').update({
-          enabled: true,
-          mcp_exposed: true,
-          description: seed.description,
-          instructions: seed.instructions ?? null,
-          tool_definition: seed.tool_definition,
-          category: seed.category,
-          handler: seed.handler,
-          scope: seed.scope,
-        }).eq('name', seed.name);
-        if (error) return { error: `Update failed for ${seed.name}: ${error.message}`, inserted, updated };
-        updated.push(seed.name);
-      }
+  // En trasig seed får inte lämna resten av lagret oskrivet: samla felet och gå
+  // vidare. Den gamla varianten returnerade vid första felet, så en enda dålig
+  // rad kunde lämna 250 skills oseedade — och rapportera det som ett fel om EN.
+  for (const [name, seed] of expected) {
+    const row = existing.get(name);
+    if (!row) {
+      const { error } = await supabase.from('agent_skills').insert({
+        name: seed.name,
+        description: seed.description,
+        category: seed.category,
+        handler: seed.handler,
+        scope: seed.scope,
+        tool_definition: seed.tool_definition,
+        instructions: seed.instructions ?? null,
+        enabled: true,
+        mcp_exposed: true,
+        origin: 'bundled',
+        trust_level: seed.trust_level ?? 'notify',
+        requires_staging: seed.requires_staging ?? false,
+      });
+      if (error) { failures.push(`insert ${name}: ${error.message}`); continue; }
+      inserted.push(name);
+    } else {
+      const drifted =
+        (seed.description ?? '') !== (row.description ?? '') ||
+        (seed.category ?? '') !== (row.category ?? '') ||
+        (seed.handler ?? '') !== (row.handler ?? '') ||
+        (seed.scope ?? '') !== (row.scope ?? '') ||
+        (seed.instructions ?? null) !== (row.instructions ?? null) ||
+        norm(seed.tool_definition) !== norm(row.tool_definition) ||
+        row.enabled !== true || row.mcp_exposed !== true;
+      if (!drifted) { unchanged++; continue; }
+      const { error } = await supabase.from('agent_skills').update({
+        enabled: true,
+        mcp_exposed: true,
+        description: seed.description,
+        instructions: seed.instructions ?? null,
+        tool_definition: seed.tool_definition,
+        category: seed.category,
+        handler: seed.handler,
+        scope: seed.scope,
+      }).eq('name', name);
+      if (error) { failures.push(`update ${name}: ${error.message}`); continue; }
+      updated.push(name);
     }
   }
 
-  await supabase
-    .from('site_settings')
-    .upsert({ key: 'skills_artifact_sha', value: sha }, { onConflict: 'key' });
+  // ── 5. Läs tillbaka. Skrivarens egen räkning är inte bevis ────────────────
+  const after = await readAllSkills(supabase, 'name, enabled, mcp_exposed');
+  const presentAfter = new Map<string, any>(after.rows.map((r: any) => [r.name, r]));
+  const missingAfter = after.error ? missingBefore : expectedNames.filter((n) => !presentAfter.has(n));
+  const hiddenAfter = after.error ? hiddenBefore : expectedNames.filter((n) => {
+    const r = presentAfter.get(n);
+    return r && (r.enabled !== true || r.mcp_exposed !== true);
+  });
+  const rowsAfter = after.error ? null : after.rows.length;
+  const rowDelta = rowsAfter === null ? null : rowsAfter - rowsBefore;
+
+  const complete = !after.error && missingAfter.length === 0 && hiddenAfter.length === 0 && failures.length === 0;
+
+  // Stämpeln är ett PÅSTÅENDE om att lagret är komplett. En halvkörning får
+  // aldrig stämpla — det var precis så den här instansen låstes i "unchanged".
+  if (complete) {
+    await supabase
+      .from('site_settings')
+      .upsert({ key: 'skills_artifact_sha', value: sha }, { onConflict: 'key' });
+  }
+
+  // Motsägelsen som `inserted: 0` gömde: om tabellen inte växte lika mycket som
+  // vi påstår att vi skrev, säg det rakt ut i stället för att låta siffran stå.
+  const discrepancy =
+    rowDelta !== null && rowDelta !== inserted.length
+      ? `agent_skills grew by ${rowDelta} row(s) while ${inserted.length} insert(s) were reported — another writer ran concurrently, or an insert silently no-opped. Treat the read-back (missing_after) as the truth.`
+      : undefined;
 
   return {
-    status: 'synced',
+    status: complete ? 'synced' : 'incomplete',
     sha,
+    stamped: complete,
+    // Bevisbärande: vad som saknades, vad som skrevs, vad som står kvar.
+    before: coverage(missingBefore, hiddenBefore, rowsBefore),
+    wrote: {
+      inserted: inserted.length,
+      updated: updated.length,
+      unchanged,
+      failed: failures.length,
+      inserted_names: inserted.slice(0, 40),
+      updated_names: updated.slice(0, 40),
+      failures: failures.slice(0, 20),
+    },
+    after: after.error
+      ? { read_back_failed: after.error }
+      : coverage(missingAfter, hiddenAfter, rowsAfter as number),
+    agent_skills_row_delta: rowDelta,
+    discrepancy,
+    // Bakåtkompatibla toppnivåfält — äldre läsare (module-bootstrap-loggen,
+    // äldre operatörsrunbooks) läser dessa namn.
     inserted: inserted.length,
     updated: updated.length,
     unchanged,
-    modules_skipped_disabled: modulesSkipped,
-    inserted_names: inserted.slice(0, 40),
-    updated_names: updated.slice(0, 40),
+    modules_skipped_disabled: skippedModules.length,
+    note: complete
+      ? undefined
+      : `Skill layer still incomplete: ${missingAfter.length} of ${expected.size} required skill(s) missing after the write` +
+        (failures.length ? `, ${failures.length} write(s) failed` : '') +
+        '. The artifact hash was NOT stamped, so the next call re-attempts instead of short-circuiting.',
   };
 }
 
@@ -8365,6 +8547,19 @@ async function executeDbAction(
         .upsert({ key, value }, { onConflict: 'key' })
         .select().single();
       if (error) throw new Error(`Settings update failed: ${error.message}`);
+
+      // Turning a module ON changes what the skill registry must contain, and
+      // NOTHING in the deploy chain notices — agent_skills is table data born
+      // from TypeScript seeds. An external operator that enables `contracts`
+      // over MCP and then asks for a contract skill would find nothing: the
+      // module is on, its agent surface is empty, and no browser is involved
+      // anywhere in that story. Reconcile here, where the requirement changed.
+      if (key === 'modules') {
+        const skills = await executeSyncSkillsFromCode(supabase, {}).catch(
+          (err: unknown) => ({ error: err instanceof Error ? err.message : 'skill sync failed' }),
+        );
+        return { key: data.key, updated: true, skills_synced: skills };
+      }
       return { key: data.key, updated: true };
     }
 

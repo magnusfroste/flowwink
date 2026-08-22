@@ -220,7 +220,42 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
 ### Edge cases
 - Delete is soft-delete (archive). Hard delete requires explicit confirmation.
 - Rollback restores previous version from page_versions table.
-- content_json must be a valid ContentBlock[] array.`,
+### content_json — the block contract (read before writing a single block)
+content_json is a ContentBlock[]: [{ type, data }]. The types and the field names
+inside data are NOT free-form, and inventing them is the #1 reason a page write fails.
+- **Two envelope spellings exist — never mix them in one call.**
+  This skill takes \`blocks: [{ type, data }]\`.
+  Its sibling \`create_page_block\` takes \`block_type\` + \`block_data\` (and also
+  accepts \`blocks: [{ type, data }]\`).
+  Taking THIS skill's array shell with THAT skill's field names —
+  \`blocks: [{ block_type: "hero", block_data: { … } }]\` — is a real, repeated way
+  to lose an entire page write. Both spellings are now tolerated here and folded to
+  \`{ type, data }\` before validation, but write one form per call: if a block
+  carries both, \`type\`/\`data\` win and the other half is discarded.
+  This tolerance covers the ENVELOPE only — it does not extend to type names or to
+  field names inside data, which must match exactly (see the next two bullets).
+- **Never author blocks from memory.** Call \`describe_blocks\` FIRST — no argument for
+  the catalogue of every renderable type, then \`describe_blocks({ block_type })\` for
+  each type you are about to write — and use its exact type strings and field names.
+  It is free to call; one lookup costs less than one refused write.
+- **Block types are kebab-case**, never snake_case: "two-column" (not two_column),
+  "sticky-scroll" (not sticky_story), "bento-grid", "announcement-bar", "social-proof".
+  A type nothing renders is an invisible hole in the page, not an error you will see.
+- **The renderer's own field names win.** The misses that keep happening:
+  hero requires \`title\` (NOT headline) and reads subtitle / eyebrow /
+  primaryButton: { text, url } — not body, primary_cta or secondary_cta;
+  cta requires one of \`buttonText\` | \`primaryButtonText\` | \`buttons\` (with buttonUrl);
+  text requires \`content\`. Other required fields: features→features|items, stats→stats,
+  testimonials→testimonials, team→members, logos→logos, accordion→items, tabs→tabs,
+  pricing→tiers, timeline→steps, two-column→content|imageSrc, image→src, gallery→images,
+  quote→quote, table→columns, marquee→items, bento-grid→items, form→fields, map→address.
+- **Rich-text fields are Tiptap doc OBJECTS**, never markdown or plain strings:
+  { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "…" }] }] }.
+  Applies to content, answer, leftColumn, rightColumn.
+- **The write is fail-closed and all-or-nothing.** If ONE block is missing a required
+  field, the entire create/update is refused and NOTHING is written — no partial page,
+  no half-saved draft. The error names the block and the field it needs; fix that field
+  and resend the complete array.`,
   },
   {
     name: 'manage_page_blocks',
@@ -308,9 +343,22 @@ Granular block-level operations on pages: add, update, remove, reorder blocks.
 - block_data must match the ContentBlock schema for the block type.
 - Reorder requires ALL block_ids in the desired order.
 ### Hard rules that break silently if guessed (learned from real agent writes)
-- **Call describe_blocks FIRST when unsure** — it returns the exact type list
-  and the field contract per type. Invented types (e.g. "faq", "call_to_action")
-  and invented fields are REJECTED at write time; guessing costs a whole turn.
+- **Never author a block from memory — call describe_blocks FIRST, every time.**
+  No argument returns the catalogue of renderable types; \`describe_blocks({ block_type })\`
+  returns that type's exact field contract. Write only the type strings and field
+  names it gave you. It is free to call; one lookup costs less than one refused write.
+- **Block types are kebab-case, never snake_case**: "two-column" (not two_column),
+  "sticky-scroll" (not sticky_story), "bento-grid", "announcement-bar". Invented
+  types (e.g. "faq", "call_to_action", "two_column") and invented fields are
+  REJECTED at write time — nothing is written and the turn is lost.
+- **The renderer's own field names win.** The recurring misses:
+  hero requires \`title\` (NOT headline) and reads subtitle / eyebrow /
+  primaryButton: { text, url } — not body, primary_cta or secondary_cta;
+  cta requires one of \`buttonText\` | \`primaryButtonText\` | \`buttons\` (plus buttonUrl);
+  text requires \`content\` as a Tiptap doc object.
+- **Fail-closed, per call**: a block missing a required field or carrying an unknown
+  field is refused outright — nothing partial is stored. Read the error (it names the
+  block, the field, and a filled example) and resend the corrected shape.
 - **bento-grid: give at least one item span "wide" or "large".** All-normal
   spans defeat the bento layout — it renders as a plain equal-cell grid.
 - **icon fields are exact lucide-react names in PascalCase**: "Cpu", "Shield",
@@ -565,7 +613,51 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
         description: 'Create content blocks on a page. Supports BATCH: pass blocks[] array with multiple {type,data} objects to add 5-20 blocks in ONE call. Also supports single block via block_type + block_data. Use batch mode when building full pages — much more efficient than one block at a time. Available block types: hero, text, cta, features, stats, testimonials, pricing, accordion, form, newsletter, quote, two-column, info-box, logos, comparison, social-proof, countdown, chat-launcher, separator, tabs, marquee, embed, table, progress, badge, floating-cta, notification-toast, parallax-section, bento-grid, section-divider, gallery, image, youtube, map, team, timeline, products, announcement-bar, lottie, webinar, featured-carousel, quick-links, trust-bar, category-nav, shipping-info, ai-assistant.',
       },
     },
-    instructions: 'Use this only after a page exists. Required: page_id and block_type. If page_id is missing, first call manage_page with action=create and use the returned page_id. Then call create_page_block.',
+    instructions: `## create_page_block
+### What
+Add one block (block_type + block_data) or many (blocks[]: [{ type, data }]) to a page
+that already exists. Batch is preferred when building a page — 5–20 blocks in one call.
+### Order
+Use this only after a page exists. Required: page_id (or slug) and block_type. If you
+have no page_id, call manage_page action=create first and use the id it returns.
+### Two envelope spellings exist — never mix them in one call
+This skill's own names are \`block_type\` + \`block_data\` (single block). Its sibling
+\`manage_page\` takes \`blocks: [{ type, data }]\` — and this skill's batch array uses
+that same \`{ type, data }\` form, NOT block_type/block_data.
+So there are exactly two legal shapes here:
+  single: { page_id, block_type: "hero", block_data: { title, … } }
+  batch:  { page_id, blocks: [{ type: "hero", data: { title, … } }, …] }
+Taking the array shell with the single-block field names —
+\`blocks: [{ block_type: "hero", block_data: { … } }]\` — is a real, repeated way to
+lose a whole page write. Both spellings are now folded to \`{ type, data }\` before
+validation on both skills, but write ONE form per call: if a block carries both,
+\`type\`/\`data\` win and the other half is discarded. The tolerance covers the
+ENVELOPE only — type names and the field names inside data must still match exactly.
+### The block contract — never author blocks from memory
+- **Call \`describe_blocks\` FIRST, every time.** No argument returns the catalogue of
+  every renderable type; \`describe_blocks({ block_type })\` returns that type's exact
+  field contract. Use its exact type strings and field names — do not reconstruct them
+  from an example or from another site. It is free to call.
+- **Block types are kebab-case, never snake_case**: "two-column" (not two_column),
+  "sticky-scroll" (not sticky_story), "bento-grid", "announcement-bar", "social-proof".
+- **The renderer's own field names win.** hero requires \`title\` (NOT headline) and
+  reads subtitle / eyebrow / primaryButton: { text, url } — not body, primary_cta or
+  secondary_cta. cta requires one of \`buttonText\` | \`primaryButtonText\` | \`buttons\`
+  (plus buttonUrl). text requires \`content\`. Other required fields: features→features|items,
+  stats→stats, testimonials→testimonials, team→members, accordion→items, tabs→tabs,
+  pricing→tiers, timeline→steps, two-column→content|imageSrc, image→src, gallery→images,
+  quote→quote, table→columns, marquee→items, bento-grid→items, form→fields, map→address.
+- **Rich-text fields are Tiptap doc OBJECTS**, never markdown or plain strings:
+  { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "…" }] }] }.
+- **Every item in an items/tiers/members array needs a stable string id**, and icon
+  fields are exact lucide-react PascalCase names ("ShieldCheck", not "shield").
+### Fail-closed
+An invalid block is never written — an invented type, an unknown field or a missing
+required field is refused with the block named, the valid field list, and a filled
+example. In batch mode each block is judged on its own: the refused ones come back in
+\`errors\` while the valid ones are added, so ALWAYS compare \`blocks_added\` with the
+number you sent and re-send the rejected ones corrected. Never report a section as
+created without checking \`errors\`.`,
   },
   {
     name: 'generate_site_from_identity',

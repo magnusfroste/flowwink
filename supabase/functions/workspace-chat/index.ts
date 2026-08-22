@@ -29,6 +29,7 @@ import { isDiscoverableSkill, classifyCall, WRITE_REFUSAL, STAGE_NOTICE } from '
 import { ownerModuleOf } from '../_shared/skills/skill-modules.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
+import { preflightBlockArgs } from '../_shared/normalize-blocks.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -875,6 +876,40 @@ async function runExecuteSkill(
       }
 
       if (resolvedNotes.length) (args as any).__resolved = resolvedNotes;
+    }
+
+    // The parameter contract is only the TOP level of the argument object. A
+    // page write carries its real payload one level down, in the blocks — and
+    // those have contracts of their own that agent-execute enforces at WRITE
+    // time, i.e. after the approval click. Verified live 2026-08-22: a
+    // manage_page create whose hero block had no `title` passed this preflight
+    // (action and title were present at the top level), staged, got a human's
+    // approval, and only then died on
+    //   'Block validation dropped 2 block(s): "hero" block: missing required
+    //    field [title]; … Fix the named fields and retry — nothing was written.'
+    // That message is WRITTEN to be self-correcting, and in FlowPilot's ReAct
+    // loop it works: the refusal returns as a tool result and the model fixes
+    // the field next turn. The approval gate breaks that loop — the model is
+    // gone by the time the error exists, and the error lands on the human who
+    // just approved a doomed write.
+    //
+    // So the bounce moves in front of the staging. Same contracts, same call
+    // order, imported from the same file the executor uses — never re-stated
+    // here, because two copies of a contract are two contracts.
+    const blockCheck = preflightBlockArgs(name, args);
+    if (blockCheck.errors.length) {
+      await logGateOutcome('preflight-bounce', `block contract: ${blockCheck.errors.join('; ')}`);
+      return {
+        ok: false,
+        name,
+        body: {
+          error: `Not staged: ${blockCheck.errors.length} block(s) would be rejected at write time — `
+            + `${blockCheck.errors.join('; ')}. Nothing was written and nothing was sent for approval.`,
+          block_errors: blockCheck.errors,
+          hint: 'Fix the named fields and call this skill again — do NOT ask the user to approve this version. '
+            + 'Call describe_blocks({ block_type: "<type>" }) for a block\'s exact field contract if the error does not already name the field you need.',
+        },
+      };
     }
   }
 

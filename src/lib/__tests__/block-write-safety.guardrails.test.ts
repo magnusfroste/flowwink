@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import {
   KNOWN_BLOCK_TYPES,
   DATA_DRIVEN_BLOCK_TYPES,
+  BLOCK_CONTRACTS,
   normalizeBlockData,
+  normalizeBlocks,
+  preflightBlockArgs,
   validateBlockData,
 } from '../../../supabase/functions/_shared/normalize-blocks';
 import { classifyCall, isReadSkill } from '../../../supabase/functions/_shared/skills/read-surface';
@@ -60,6 +63,248 @@ describe('block write safety — invented types are refused with suggestions', (
     expect([...DATA_DRIVEN_BLOCK_TYPES].sort()).toEqual([...excluded].sort());
     for (const type of getImportableBlockTypes()) {
       expect(KNOWN_BLOCK_TYPES, `${type} missing from the write gate`).toContain(type);
+    }
+  });
+});
+
+/**
+ * Samma spärr, andra skrivvägen (verifierat hål, 2026-08-22).
+ *
+ * `manage_page` create/update går inte via validateBlockData utan via
+ * normalizeBlocks → validateBlockContracts. Där slog kontrollen ned på
+ * BLOCK_CONTRACTS, och en typ UTAN post föll rakt igenom loopen och SPARADES.
+ * Följden var att plattformen var oense med sig själv i ett och samma anrop:
+ *   - "hero" utan `title`  → hela skrivningen vägrades, användaren såg felet.
+ *   - "two_column"         → sparades tyst och renderade ingenting.
+ * Den andra raden är den farliga: sidan blev "grön" med osynliga hål, och
+ * modellen rapporterade en sektion som inte fanns. Skarpt observerat när en
+ * modell skickade snake_case-varianterna "two_column" och "sticky_story" —
+ * de riktiga typerna heter "two-column" och "sticky-scroll".
+ *
+ * Testerna nedan pinnar TVÅ saker som är lätta att råka bryta:
+ *   1. Okänd typ vägras på manage_page-vägen, med förslag och describe_blocks.
+ *   2. "Saknar kontrakt" är INTE "okänd typ" — en legitim blocktyp utan
+ *      obligatoriska fält (section-divider, terms, newsletter …) måste
+ *      fortfarande gå igenom. En spärr som skjuter dem vore en regression
+ *      utklädd till fix.
+ */
+describe('block write safety — manage_page refuses invented types too', () => {
+  it('normalizeBlocks drops the invented type WITH a reason (never silently)', () => {
+    const blocks = [
+      { id: 'ok', type: 'hero', data: { title: 'Välkommen' } },
+      { id: 'bad', type: 'two_column', data: { content: { type: 'doc', content: [] } } },
+    ];
+    const dropped = normalizeBlocks(blocks);
+    // Loud, not silent: agent-execute turns any non-empty reason list into a
+    // throw, so a reason here IS the refusal of the whole write.
+    expect(dropped.length, 'the invented type was written through').toBe(1);
+    expect(dropped[0]).toContain('two_column');
+    expect(dropped[0]).toContain('not a block type');
+    // The correction has to travel with the refusal, or the retry is a guess.
+    expect(dropped[0]).toContain('"two-column"');
+    expect(dropped[0]).toContain('describe_blocks');
+  });
+
+  it('the snake_case misses from the live incident are both named', () => {
+    const blocks = [
+      { id: 'a', type: 'sticky_story', data: { chapters: [{ id: 'c1', title: 'T', body: 'B' }] } },
+    ];
+    const dropped = normalizeBlocks(blocks);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).toContain('"sticky-scroll"');
+  });
+
+  it('a block with no type at all is refused, not written as a nameless hole', () => {
+    const dropped = normalizeBlocks([{ id: 'x', data: { title: 'T' } }]);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).toContain('type');
+  });
+
+  it('"no contract" is not "unknown type" — contract-free real blocks still save', () => {
+    // The distinction the fix hangs on. section-divider/terms/newsletter are
+    // pure-presentation or self-fetching blocks: rightly no BLOCK_CONTRACTS
+    // entry, and rightly writable.
+    const contractFree = KNOWN_BLOCK_TYPES.filter((t) => !BLOCK_CONTRACTS[t]);
+    expect(contractFree.length, 'no contract-free type left to guard').toBeGreaterThan(0);
+    const blocks = contractFree.map((type, i) => ({ id: `b${i}`, type, data: {} }));
+    expect(normalizeBlocks(blocks), 'a legitimate contract-free block was refused').toEqual([]);
+    expect(blocks.length).toBe(contractFree.length);
+
+    // …and the same for a block that HAS a contract and satisfies it.
+    const ok = [{ id: 'd', type: 'section-divider', data: { shape: 'wave' } }];
+    expect(normalizeBlocks(ok)).toEqual([]);
+  });
+
+  it('both write paths now agree about what a block type is', () => {
+    // The bug was the disagreement, not either verdict on its own.
+    for (const invented of ['two_column', 'sticky_story', 'hero_section']) {
+      expect(validateBlockData(invented, {}).valid, `${invented} passed validateBlockData`).toBe(false);
+      expect(
+        normalizeBlocks([{ id: 'b', type: invented, data: { title: 'T' } }]).length,
+        `${invented} passed the manage_page path`,
+      ).toBe(1);
+    }
+  });
+
+  it('the FlowWork preflight inherits the strictness — bounced BEFORE staging', () => {
+    // preflightBlockArgs runs the same normalizeBlocks, so it must bounce the
+    // invented type without any change of its own. If it did not, a human would
+    // be asked to approve a write that produces invisible holes.
+    const result = preflightBlockArgs('manage_page', {
+      action: 'create',
+      title: 'Om oss',
+      blocks: [
+        { type: 'hero', data: { title: 'Välkommen' } },
+        { type: 'two_column', data: { content: { type: 'doc', content: [] } } },
+      ],
+    });
+    expect(result.checked).toBe(true);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain('two_column');
+    expect(result.errors[0]).toContain('"two-column"');
+
+    // content_json is the alias `get` hands back — same refusal through it.
+    const viaAlias = preflightBlockArgs('manage_page', {
+      action: 'update',
+      page_id: 'p1',
+      content_json: [{ type: 'sticky_story', data: { chapters: [] } }],
+    });
+    expect(viaAlias.errors.length).toBe(1);
+    expect(viaAlias.errors[0]).toContain('sticky_story');
+  });
+
+  it('preflight leaves the caller\'s arguments untouched while judging them', () => {
+    // The approval card shows these arguments verbatim; normalizeBlocks mutates
+    // in place, so the copy is load-bearing.
+    const args = {
+      action: 'create',
+      title: 'Om oss',
+      blocks: [{ type: 'two_column', data: { content: 'raw' } }],
+    };
+    const before = JSON.stringify(args);
+    preflightBlockArgs('manage_page', args);
+    expect(JSON.stringify(args)).toBe(before);
+  });
+});
+
+/**
+ * Plattformens EGEN vokabulär, använd på fel ställe (skarpt, 2026-08-22 — andra
+ * försöket i rad från samma användare).
+ *
+ * Två syskonskills namnger samma objekt olika:
+ *   manage_page        blocks: [{ type, data }]
+ *   create_page_block  block_type + block_data
+ * Modellen tog manage_pages SKAL och create_page_blocks FÄLTNAMN:
+ *   blocks: [ { block_type: 'hero', block_data: { headline, eyebrow, body } }, … ]
+ * Utfallet var två defekter i rad:
+ *   A) inget alias fanns, så varje block saknade `type`;
+ *   B) felet blev `Block validation dropped 7 block(s): "undefined" block: invalid`
+ *      ×7 — som varken säger vad som är fel eller hur man rättar det.
+ * Ingen av dem är "modellen gissade ett fältnamn". `block_type` är ett namn VI
+ * själva publicerat, i samma domän, för samma sak. Att skalen inte accepterar
+ * varandras notation är plattformens godtycke, inte anroparens fel.
+ *
+ * Testerna pinnar båda halvorna, plus den gräns som gör aliaset försvarbart:
+ * KUVERTET förlåts, TYPNAMNET gör det inte (`two_column` vägras alltjämt).
+ */
+describe('block write safety — the sibling skill\'s envelope is not a guess', () => {
+  it('the real failing payload now writes — envelope folded, nothing dropped', () => {
+    // Verbatim shape from the incident, headline/eyebrow/body and all.
+    const blocks: Record<string, unknown>[] = [
+      { block_type: 'hero', block_data: { headline: 'Välkommen till Nordbrygg', eyebrow: 'SEDAN 1998', body: 'Vi rostar kaffe.' } },
+      { block_type: 'cta', block_data: { title: 'Redo?', buttonText: 'Kontakta oss', buttonUrl: '/kontakt' } },
+    ];
+    expect(normalizeBlocks(blocks), 'the mixed form is still refused').toEqual([]);
+
+    // Folded to the canonical envelope — and the alias must NOT survive into
+    // content_json, or the next read re-teaches the mix.
+    expect(blocks[0].type).toBe('hero');
+    expect(blocks[1].type).toBe('cta');
+    expect(blocks[0]).not.toHaveProperty('block_type');
+    expect(blocks[0]).not.toHaveProperty('block_data');
+    // …and the per-type field aliases still got their pass afterwards.
+    expect((blocks[0].data as Record<string, unknown>).title).toBe('Välkommen till Nordbrygg');
+    expect((blocks[0].data as Record<string, unknown>).subtitle).toBe('Vi rostar kaffe.');
+  });
+
+  it('halves are never blended — type/data win and block_* is discarded', () => {
+    const blocks: Record<string, unknown>[] = [
+      { type: 'hero', block_type: 'cta', data: { title: 'Kanonisk' }, block_data: { title: 'Ignorerad' } },
+    ];
+    expect(normalizeBlocks(blocks)).toEqual([]);
+    expect(blocks[0].type).toBe('hero');
+    expect((blocks[0].data as Record<string, unknown>).title).toBe('Kanonisk');
+    expect(blocks[0]).not.toHaveProperty('block_type');
+  });
+
+  it('one half is enough — a block_data-only envelope still resolves', () => {
+    const blocks: Record<string, unknown>[] = [
+      { type: 'hero', block_data: { title: 'Halvblandat' } },
+    ];
+    expect(normalizeBlocks(blocks)).toEqual([]);
+    expect((blocks[0].data as Record<string, unknown>).title).toBe('Halvblandat');
+  });
+
+  it('the envelope tolerance does NOT leak into type names', () => {
+    // The whole reason the alias is defensible: `block_type` is our own word,
+    // `two_column` is a spelling the platform never published. If forgiving the
+    // first ever starts forgiving the second, the fix has become the bug.
+    const dropped = normalizeBlocks([
+      { block_type: 'two_column', block_data: { content: { type: 'doc', content: [] } } },
+    ]);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).toContain('not a block type');
+    expect(dropped[0]).toContain('"two-column"');
+  });
+
+  it('a block with NO type key at all names the problem and the correct form', () => {
+    // Defect B: `"undefined" block: invalid` said neither what broke nor how to
+    // fix it. Whatever the wording becomes, these two facts must travel with it.
+    const dropped = normalizeBlocks([{ id: 'x', data: { title: 'T' } }]);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).not.toContain('undefined');
+    expect(dropped[0]).toContain('{ type, data }');
+    expect(dropped[0]).toContain('describe_blocks');
+  });
+
+  it('a block with a real type but no data object says so, not "invalid"', () => {
+    const dropped = normalizeBlocks([{ id: 'y', type: 'hero' }]);
+    expect(dropped.length).toBe(1);
+    expect(dropped[0]).not.toMatch(/\binvalid\b/);
+    expect(dropped[0]).toContain('hero');
+    expect(dropped[0]).toContain('data');
+    expect(dropped[0]).toContain('describe_blocks');
+  });
+
+  it('FlowWork preflight accepts the mixed form on BOTH page-write skills', () => {
+    // The two surfaces must not disagree about which of our own two names is
+    // real — that disagreement is the defect, not either verdict on its own.
+    const viaManagePage = preflightBlockArgs('manage_page', {
+      action: 'create',
+      title: 'Om oss',
+      blocks: [{ block_type: 'hero', block_data: { headline: 'Hej' } }],
+    });
+    expect(viaManagePage.checked).toBe(true);
+    expect(viaManagePage.errors).toEqual([]);
+
+    const viaCreateBlock = preflightBlockArgs('create_page_block', {
+      page_id: 'p1',
+      blocks: [{ block_type: 'hero', block_data: { headline: 'Hej' } }],
+    });
+    expect(viaCreateBlock.checked).toBe(true);
+    expect(viaCreateBlock.errors).toEqual([]);
+  });
+
+  it('preflight still leaves the mixed-form arguments untouched', () => {
+    // The approval card shows these verbatim; the envelope fold mutates in
+    // place, so preflight has to keep judging a copy.
+    for (const skill of ['manage_page', 'create_page_block'] as const) {
+      const args: Record<string, unknown> = skill === 'manage_page'
+        ? { action: 'create', title: 'Om oss', blocks: [{ block_type: 'hero', block_data: { headline: 'Hej' } }] }
+        : { page_id: 'p1', blocks: [{ block_type: 'hero', block_data: { headline: 'Hej' } }] };
+      const before = JSON.stringify(args);
+      preflightBlockArgs(skill, args);
+      expect(JSON.stringify(args), `${skill} mutated the caller's args`).toBe(before);
     }
   });
 });

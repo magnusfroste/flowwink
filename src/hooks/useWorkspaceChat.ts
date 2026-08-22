@@ -1,6 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import type { StagedResolution } from '@/lib/staged-action-outcome';
+
+export type { StagedResolution };
 
 export type WorkspaceSource =
   | 'documents'
@@ -48,8 +51,12 @@ export interface StagedAction {
   preview?: unknown;
   /** Server-side name→uuid substitutions, shown on the card. */
   resolved?: string[];
-  /** UI-side lifecycle. 'pending' until someone decides. */
-  resolution?: 'approved' | 'rejected' | 'failed';
+  /**
+   * Outcome — DERIVED from `pending_operations`, never authored here and never
+   * persisted onto the chat row. Undefined means "still awaiting a decision".
+   * See src/lib/staged-action-outcome.ts.
+   */
+  resolution?: StagedResolution;
   result_note?: string;
 }
 
@@ -80,7 +87,11 @@ interface UseWorkspaceChatOpts {
   mode?: CoworkMode;
   onError?: (msg: string) => void;
   onPersistUser?: (text: string) => Promise<void> | void;
-  onPersistAssistant?: (text: string, citations: WorkspaceCitation[]) => Promise<void> | void;
+  onPersistAssistant?: (
+    text: string,
+    citations: WorkspaceCitation[],
+    staged: StagedAction[],
+  ) => Promise<void> | void;
   onFirstMessage?: (text: string) => Promise<string | null> | string | null;
 }
 
@@ -104,8 +115,15 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
     setLastContextMeta(null);
   }, []);
 
+  /**
+   * Paint an outcome the card just derived from `pending_operations`.
+   *
+   * This is presentation only — it copies what the operation row already says
+   * so the user sees it without a refetch. The durable truth stays in
+   * `pending_operations`, and `loadMessages` re-derives it on every reload.
+   */
   const resolveStaged = useCallback(
-    (messageId: string, operationId: string, resolution: 'approved' | 'rejected' | 'failed', note?: string) => {
+    (messageId: string, operationId: string, resolution: StagedResolution, note?: string) => {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === messageId && m.staged
@@ -150,6 +168,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
       const assistantId = crypto.randomUUID();
       let assistantContent = '';
       let assistantCitations: WorkspaceCitation[] = [];
+      let assistantStaged: StagedAction[] = [];
 
       setMessages((prev) => [
         ...prev,
@@ -258,6 +277,7 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
                 try {
                   const st = JSON.parse(data);
                   if (Array.isArray(st)) {
+                    assistantStaged = st as StagedAction[];
                     setMessages((prev) =>
                       prev.map((m) => (m.id === assistantId ? { ...m, staged: st } : m)),
                     );
@@ -344,8 +364,11 @@ export function useWorkspaceChat({ sources, mode, onError, onPersistUser, onPers
             ),
           );
         }
-        if (onPersistAssistant && assistantContent) {
-          try { await onPersistAssistant(assistantContent, assistantCitations); } catch (e) { logger.error('onPersistAssistant failed', e); }
+        // Persist even a contentless turn when it staged something: the
+        // approval card is the message. Dropping it here is how an approved
+        // write lost its card (and its diagnosis) on the next reload.
+        if (onPersistAssistant && (assistantContent || assistantStaged.length > 0)) {
+          try { await onPersistAssistant(assistantContent, assistantCitations, assistantStaged); } catch (e) { logger.error('onPersistAssistant failed', e); }
         }
       }
     },

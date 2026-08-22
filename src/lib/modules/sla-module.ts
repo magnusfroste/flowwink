@@ -7,14 +7,19 @@
  * Architecture:
  *  - `sla_policies` defines thresholds per entity_type + metric
  *  - `sla_check` (rpc:run_sla_sweep) sweeps current data and writes/auto-resolves
- *    `sla_violations` rows
+ *    `sla_violations` rows. It is the ONE engine: the metric decides where the
+ *    clock stops (`sla_clock_spec`), and it writes its result somewhere readable
+ *    (`tickets.sla_deadline` / `tickets.sla_metric`) so no UI has to recompute.
+ *  - The "SLA Sweep" automation runs it every 15 minutes via the platform
+ *    dispatcher — the module used to seed no automation at all, so nothing ever
+ *    ran the clock.
  *  - Policies & violations are CRUD'd through generic agent-execute table CRUD
  */
 
 import { logger } from '@/lib/logger';
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { AutomationSeed, SkillSeed } from '@/lib/module-bootstrap';
 
 const slaInputSchema = z.object({
   action: z.enum(['check', 'list_policies', 'list_violations']),
@@ -55,7 +60,7 @@ const SLA_SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Run during heartbeat or on demand. Returns counts per entity_type plus fresh violations; auto-resolves violations whose entity is now handled. The sweep measures on business minutes when a schedule exists, subtracts clock pauses (manage_sla_clock), applies per-customer tier multipliers (manage_sla_tier) and — for tickets/chats — treats policy priority as an entity filter. Breaches fire the policy escalation_actions (manage_sla_escalation). Cheap and idempotent.',
+      'Runs automatically every 15 minutes (automation "SLA Sweep"); run on demand to see the effect of a policy change immediately. Each policy is measured on ITS OWN clock: first_response stops at the first customer-facing reply (ticket_comments with is_internal=false and author_type<>\'customer\'; chat_messages with role assistant/agent), resolution stops at resolved_at/closed_at, fulfillment at shipped_at, confirmation at confirmation_sent_at. A clock that stopped within the last 7 days is still reported, so a late reply is recorded even if no sweep ran while it was ticking. Measures business minutes when a schedule exists, subtracts clock pauses (manage_sla_clock), applies per-customer tier multipliers (manage_sla_tier) and — for tickets/chats — treats policy priority as an entity filter. At most one violation per (policy, entity). Returns counts per entity_type, fresh_violations, unmapped_metrics (policies whose metric has no clock — fix the policy) and ticket_deadlines_written. Idempotent: re-running opens nothing new.',
   },
   {
     name: 'manage_sla_policy',
@@ -82,7 +87,8 @@ const SLA_SKILLS: SkillSeed[] = [
             },
             metric: {
               type: 'string',
-              description: 'Metric to track — first_response, resolution, fulfillment, confirmation',
+              description:
+                "Metric to track. The metric decides where the clock STOPS, so pick the one you mean: ticket → first_response | resolution; chat → first_response | resolution; order → fulfillment; lead → follow_up; booking → confirmation. Any other value has no clock and the sweep reports it under unmapped_metrics.",
             },
             threshold_minutes: {
               type: 'number',
@@ -313,8 +319,40 @@ const SLA_SKILLS: SkillSeed[] = [
   },
 ];
 
+/**
+ * Ingen körde klockan.
+ *
+ * SLA-modulen seedade ingen automation och inget cron rörde `sla_check` —
+ * ändå påstod /admin/sla att compliance övervakas automatiskt. Svepet kördes
+ * alltså bara när någon råkade be om det, vilket gör varje "vi svarar inom X"
+ * omätbart i praktiken: brott upptäcks i efterhand eller aldrig.
+ *
+ * Rälsen fanns redan: cron-jobbet `automation-dispatcher-every-minute` plockar
+ * `agent_automations`-rader med trigger_type='cron'. executor='platform' (default)
+ * betyder att dispatchern kör den deterministiskt via agent-execute — den kräver
+ * INTE att FlowPilot-modulen är på, vilket är rätt: att mäta svarstid är
+ * plattformsmekanik, inte en agentbedömning.
+ *
+ * Var 15:e minut, inte varje minut: svepet skannar upp till 500 entiteter per
+ * policy och skriver om deadlines för upp till 1000 öppna ärenden. Det
+ * retroaktiva fönstret (7 dygn i run_sla_sweep) gör att inget missas mellan
+ * körningarna, så tätare körning köper ingenting.
+ */
+const SLA_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'SLA Sweep',
+    description:
+      'Every 15 minutes, measure every enabled SLA policy against current data — open violations, auto-resolve stopped clocks, and refresh ticket SLA deadlines.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *' },
+    skill_name: 'sla_check',
+    skill_arguments: {},
+    executor: 'platform',
+  },
+];
+
 export const slaModule = defineModule<SlaInput, SlaOutput>({
-  id: 'sla' as any, // SLA is operations-layer; not in user-facing ModulesSettings yet
+  id: 'sla',
   name: 'SLA Monitor',
   version: '1.1.0',
   processes: ['support-to-resolution', 'order-to-delivery'],
@@ -335,6 +373,7 @@ export const slaModule = defineModule<SlaInput, SlaOutput>({
     tables: ['service_credits', 'sla_tier_assignments', 'sla_tiers', 'sla_clock_pauses', 'sla_violations', 'sla_policies'],
   },
   skillSeeds: SLA_SKILLS,
+  automations: SLA_AUTOMATIONS,
 
   async publish(input: SlaInput): Promise<SlaOutput> {
     const validated = slaInputSchema.parse(input);
