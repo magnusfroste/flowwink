@@ -235,8 +235,10 @@ export function useDeleteQuote() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('quotes').delete().eq('id', id);
+      // RLS-denied deletes return success with 0 rows — count them or lie.
+      const { data, error } = await supabase.from('quotes').delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -281,13 +283,20 @@ export function useConvertQuoteToInvoice() {
 
       if (invError) throw invError;
 
-      // Link invoice back to quote
-      const { error: linkError } = await supabase
+      // Link invoice back to quote. A denied update answers 200 with 0 rows, so
+      // count them — the invoice exists either way and the message must say so.
+      const { data: linkedRows, error: linkError } = await supabase
         .from('quotes')
         .update({ invoice_id: invoice.id } as any)
-        .eq('id', quote.id);
+        .eq('id', quote.id)
+        .select('id');
 
       if (linkError) throw linkError;
+      if (!linkedRows?.length) {
+        throw new Error(
+          `Invoice ${invoice.invoice_number} was created, but it could not be linked back to the quote — you may not have permission to update this quote.`
+        );
+      }
 
       return invoice;
     },

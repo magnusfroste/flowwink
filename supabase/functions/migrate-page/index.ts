@@ -4,6 +4,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import {
   TIPTAP_FIELDS,
@@ -973,8 +974,11 @@ Respond only with JSON.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 16384,
-        temperature: 0.2,
+        // gpt-5-class (map-resolved 'reasoning' tier) rejects max_tokens and
+        // non-default temperature on /chat/completions.
+        ...(_aiProvider === 'openai' && isOpenAiReasoningModel(aiConfig.model)
+          ? { max_completion_tokens: 16384 }
+          : { max_tokens: 16384, temperature: 0.2 }),
       }),
     });
 

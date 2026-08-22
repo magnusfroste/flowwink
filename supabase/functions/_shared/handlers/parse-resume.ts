@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig, isAnthropicProvider } from '../ai-config.ts';
+import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
 export async function executeParseResume(
   supabase: SupabaseClient,
@@ -105,8 +106,12 @@ Rules:
         body: JSON.stringify({
           model: ai.model,
           messages: [{ role: 'user', content: userMessage }],
-          temperature: 0.2,
-          max_tokens: 4096,
+          // This branch also serves Gemini-compat and Local, so gate on the
+          // resolved provider: only OpenAI's reasoning class rejects
+          // max_tokens/temperature.
+          ...(ai.provider === 'openai' && isOpenAiReasoningModel(ai.model)
+            ? { max_completion_tokens: 4096 }
+            : { temperature: 0.2, max_tokens: 4096 }),
           response_format: { type: 'json_object' },
         }),
       });

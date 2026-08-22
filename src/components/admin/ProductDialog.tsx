@@ -25,6 +25,7 @@ import { ProductVariantsPanel } from '@/components/admin/products/ProductVariant
 import { SalesUomSelect } from '@/components/admin/products/SalesUomSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect as useEffectAlias, useState as useStateAlias } from 'react';
+import { toast } from 'sonner';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface ProductDialogProps {
@@ -173,7 +174,22 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   }, [product]);
 
   const saveSalesUom = async (id: string) => {
-    await supabase.from('products').update({ sales_uom_id: salesUomId }).eq('id', id);
+    // RLS-denied updates return success with 0 rows — check both, or the button
+    // does nothing and says nothing.
+    const { data, error } = await supabase
+      .from('products')
+      .update({ sales_uom_id: salesUomId })
+      .eq('id', id)
+      .select('id');
+    if (error) {
+      toast.error(`Could not save unit: ${error.message}`);
+      return;
+    }
+    if (!data?.length) {
+      toast.error('Nothing was updated — you may not have permission, or the product is gone.');
+      return;
+    }
+    toast.success('Sales unit saved');
   };
 
   return (

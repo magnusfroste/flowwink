@@ -15,7 +15,12 @@
  *
  * Returns the parsed JSON body from the AI provider.
  * Logging is fire-and-forget — failures never block the response.
+ *
+ * It also normalises reasoning-class params (see normalizeReasoningParams below)
+ * so callers may keep writing plain `max_tokens` / `temperature` / `tools`.
  */
+
+import { isOpenAiReasoningModel } from './ai-providers.ts';
 
 export interface AiUsageLogContext {
   supabase: any;
@@ -38,6 +43,36 @@ export interface CallAiCompletionArgs extends AiUsageLogContext {
   signal?: AbortSignal;
 }
 
+/**
+ * gpt-5-class models resolved off the platform AI map (site_settings.system_ai)
+ * 400 on /chat/completions for three params every caller here writes by habit:
+ * `max_tokens` (wants max_completion_tokens), any non-default `temperature`, and
+ * function tools at a reasoning_effort above 'none'. Callers pass a plain
+ * OpenAI-shaped body, so the class is normalised here — one place — rather than
+ * in each handler. Anthropic bodies are left alone (max_tokens is REQUIRED there
+ * and the reasoning predicate does not apply).
+ */
+function normalizeReasoningParams(
+  body: Record<string, unknown>,
+  provider: string | undefined,
+  model: string | undefined,
+  apiUrl: string,
+): Record<string, unknown> {
+  const isOpenAi = provider === 'openai' || apiUrl.includes('api.openai.com');
+  if (!isOpenAi || !model || !isOpenAiReasoningModel(model)) return body;
+
+  const out = { ...body };
+  if (out.max_tokens !== undefined) {
+    out.max_completion_tokens = out.max_tokens;
+    delete out.max_tokens;
+  }
+  delete out.temperature;
+  if (Array.isArray(out.tools) && out.tools.length > 0 && out.reasoning_effort === undefined) {
+    out.reasoning_effort = 'none';
+  }
+  return out;
+}
+
 export async function callAiCompletion(args: CallAiCompletionArgs): Promise<any> {
   const start = Date.now();
   let status = 'success';
@@ -56,7 +91,14 @@ export async function callAiCompletion(args: CallAiCompletionArgs): Promise<any>
         Authorization: `Bearer ${args.apiKey}`,
         ...(args.headers || {}),
       },
-      body: JSON.stringify({ ...args.body, model: args.body.model ?? args.model }),
+      body: JSON.stringify(
+        normalizeReasoningParams(
+          { ...args.body, model: args.body.model ?? args.model },
+          args.provider,
+          (args.body.model as string) ?? args.model,
+          args.apiUrl,
+        ),
+      ),
       signal: args.signal,
     });
     httpStatus = resp.status;

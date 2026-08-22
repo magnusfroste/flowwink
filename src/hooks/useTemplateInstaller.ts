@@ -359,7 +359,15 @@ export function useTemplateInstaller() {
           // Remove consultants
           for (const conId of (m.consultantIds || [])) {
             setProgress({ currentPage: ++cleaned, totalPages: totalCleanup, currentStep: 'Removing previous template consultants...' });
-            try { await supabase.from('consultant_profiles').delete().eq('id', conId); } catch { /* already deleted */ }
+            try {
+              // supabase-js reports failures in `error`, not by throwing, and an
+              // RLS-denied delete answers 200 with 0 rows — the bare catch swallowed
+              // both, so leftovers looked like a clean uninstall.
+              const { data: removed, error: conErr } = await supabase
+                .from('consultant_profiles').delete().eq('id', conId).select('id');
+              if (conErr) logger.warn(`[TemplateInstaller] Could not remove consultant ${conId}: ${conErr.message}`);
+              else if (!removed?.length) logger.warn(`[TemplateInstaller] Consultant ${conId} was not removed — no permission, or already gone`);
+            } catch (e) { logger.warn(`[TemplateInstaller] Consultant ${conId} cleanup failed`, e); }
           }
 
           // Remove booking availability (before services due to FK)
@@ -561,11 +569,18 @@ export function useTemplateInstaller() {
                 // Mirror to products.stock_quantity + enable tracking so the
                 // public storefront shows "In stock" badges and the
                 // order_item trigger keeps the mirror in sync on each sale.
-                await supabase.from('products').update({
+                const { data: mirrored, error: mirrorError } = await supabase.from('products').update({
                   track_inventory: true,
                   stock_quantity: product.stock.quantity_on_hand,
                   low_stock_threshold: product.stock.reorder_point ?? 5,
-                }).eq('id', created.id);
+                }).eq('id', created.id).select('id');
+                // Best-effort, but never silent: an RLS-denied update returns
+                // success with 0 rows and the storefront badge quietly goes missing.
+                if (mirrorError) {
+                  logger.warn(`Stock mirror update failed for product ${created.id}:`, mirrorError);
+                } else if (!mirrored?.length) {
+                  logger.warn(`Stock mirror update matched 0 rows for product ${created.id} — no permission, or it is gone`);
+                }
               } catch { /* non-fatal — stock seeding is best-effort */ }
             }
           }

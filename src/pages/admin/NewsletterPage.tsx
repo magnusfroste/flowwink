@@ -151,11 +151,13 @@ export default function NewsletterPage() {
   // Update newsletter
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; subject: string; content_html: string }) => {
-      const { error } = await supabase
+      const { data: rows, error } = await supabase
         .from("newsletters")
         .update({ subject: data.subject, content_html: data.content_html })
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id");
       if (error) throw error;
+      if (!rows?.length) throw new Error("Nothing was updated — you may not have permission.");
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["newsletters"] });
@@ -170,8 +172,10 @@ export default function NewsletterPage() {
   // Delete newsletter
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("newsletters").delete().eq("id", id);
+      // RLS-denied deletes return success with 0 rows — count them or lie.
+      const { data, error } = await supabase.from("newsletters").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("Nothing was deleted — you may not have permission, or it is already gone.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
@@ -207,11 +211,13 @@ export default function NewsletterPage() {
   // Schedule newsletter
   const scheduleMutation = useMutation({
     mutationFn: async ({ id, scheduled_at }: { id: string; scheduled_at: string }) => {
-      const { error } = await supabase
+      const { data: rows, error } = await supabase
         .from("newsletters")
         .update({ status: "scheduled", scheduled_at })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!rows?.length) throw new Error("Nothing was scheduled — you may not have permission.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
@@ -226,11 +232,13 @@ export default function NewsletterPage() {
   // Cancel schedule
   const cancelScheduleMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { data: rows, error } = await supabase
         .from("newsletters")
         .update({ status: "draft", scheduled_at: null })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!rows?.length) throw new Error("Nothing was cancelled — you may not have permission.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
@@ -242,8 +250,9 @@ export default function NewsletterPage() {
 
   const deleteSubscriberMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
+      const { data, error } = await supabase.from("newsletter_subscribers").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("Nothing was deleted — you may not have permission, or it is already gone.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["newsletter-subscribers"] });

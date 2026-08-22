@@ -74,8 +74,10 @@ export function useDeleteQuoteTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('quote_templates').delete().eq('id', id);
+      // RLS-denied deletes return success with 0 rows — count them or lie.
+      const { data, error } = await supabase.from('quote_templates').delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quote-templates'] });

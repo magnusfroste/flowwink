@@ -206,18 +206,28 @@ export function useDeleteLead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Delete related activities first
-      await supabase.from('lead_activities').delete().eq('lead_id', id);
-      const { error } = await supabase.from('leads').delete().eq('id', id);
+      // Delete related activities first. A denied delete here is not silent:
+      // leaving orphan activities behind while the contact goes away is the
+      // kind of half-write that only shows up much later.
+      const { error: activitiesError } = await supabase
+        .from('lead_activities')
+        .delete()
+        .eq('lead_id', id);
+      if (activitiesError) throw activitiesError;
+
+      // RLS-denied deletes return success with 0 rows — count them, or the
+      // toast below says "Contact deleted" about a contact that is still there.
+      const { data, error } = await supabase.from('leads').delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
       toast.success('Contact deleted');
     },
-    onError: () => {
-      toast.error('Failed to delete contact');
+    onError: (error: Error) => {
+      toast.error(`Failed to delete contact: ${error.message}`);
     },
   });
 }

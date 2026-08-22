@@ -1,5 +1,6 @@
 import { getServiceClient } from "../supabase-clients.ts";
 import { resolveAiConfig, isAnthropicProvider } from "../ai-config.ts";
+import { isOpenAiReasoningModel } from "../ai-providers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -151,6 +152,11 @@ YOUR JOB:
         tools: [UPDATE_TOOL],
         tool_choice: "auto",
         stream: true,
+        // gpt-5-class models off the AI map reject function tools on
+        // /chat/completions unless reasoning_effort is 'none'.
+        ...(ai.provider === "openai" && isOpenAiReasoningModel(ai.model)
+          ? { reasoning_effort: "none" }
+          : {}),
       }),
     });
 

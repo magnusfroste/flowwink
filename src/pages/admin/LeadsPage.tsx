@@ -73,12 +73,18 @@ export default function LeadsPage() {
       const updates = status === 'lost'
         ? { status }
         : { status, lost_reason: null, lost_note: null };
-      const { error } = await supabase.from('leads').update(updates).in('id', ids);
+      // Report rows the database actually touched, not rows we asked about:
+      // RLS filters the set silently, so ids.length would overcount.
+      const { data, error } = await supabase.from('leads').update(updates).in('id', ids).select('id');
       if (error) throw error;
-      return ids.length;
+      if (!data?.length) throw new Error('Nothing was updated — you may not have permission.');
+      return { updated: data.length, requested: ids.length };
     },
-    onSuccess: (count, status) => {
-      toast.success(`Updated ${count} contact${count === 1 ? '' : 's'} to ${status}`);
+    onSuccess: ({ updated, requested }, status) => {
+      toast.success(
+        `Updated ${updated} contact${updated === 1 ? '' : 's'} to ${status}` +
+        (updated < requested ? ` — ${requested - updated} skipped (no permission)` : '')
+      );
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leadStats'] });
@@ -89,12 +95,18 @@ export default function LeadsPage() {
   const bulkDelete = useMutation({
     mutationFn: async () => {
       const ids = Array.from(selectedIds);
-      const { error } = await supabase.from('leads').delete().in('id', ids);
+      // Same as above: RLS-denied deletes return success with 0 rows, so the
+      // count has to come back from the database, not from the selection.
+      const { data, error } = await supabase.from('leads').delete().in('id', ids).select('id');
       if (error) throw error;
-      return ids.length;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or they are already gone.');
+      return { deleted: data.length, requested: ids.length };
     },
-    onSuccess: (count) => {
-      toast.success(`Deleted ${count} contact${count === 1 ? '' : 's'}`);
+    onSuccess: ({ deleted, requested }) => {
+      toast.success(
+        `Deleted ${deleted} contact${deleted === 1 ? '' : 's'}` +
+        (deleted < requested ? ` — ${requested - deleted} skipped (no permission)` : '')
+      );
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leadStats'] });

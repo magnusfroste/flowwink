@@ -115,8 +115,11 @@ export function useDeleteDiscountCode() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await discountCodesTable().delete().eq('id', id);
+      // RLS-denied deletes return success with 0 rows — count them, or the
+      // toast claims a deletion the database refused to perform.
+      const { data, error } = await discountCodesTable().delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discount-codes'] });

@@ -225,12 +225,16 @@ export function useUpdateTicket() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Ticket> & { id: string }) => {
-      const { error } = await supabase
+      // RLS-denied updates return success with 0 rows — count them, or the
+      // board silently springs back to the old status/assignee on refetch.
+      const { data: rows, error } = await supabase
         .from('tickets')
         .update({ ...updates, updated_at: new Date().toISOString() } as never)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
 
       if (error) throw error;
+      if (!rows?.length) throw new Error('Nothing was updated — you may not have permission, or the ticket is gone.');
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tickets'] });
@@ -309,11 +313,13 @@ export function useUpdateTicketTags() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
-      const { error } = await supabase
+      const { data: rows, error } = await supabase
         .from('tickets')
         .update({ tags, updated_at: new Date().toISOString() } as never)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!rows?.length) throw new Error('Nothing was updated — you may not have permission, or the ticket is gone.');
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
     onError: (err: Error) => toast({ title: 'Failed to update tags', description: err.message, variant: 'destructive' }),

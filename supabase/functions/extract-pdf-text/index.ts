@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { resolveAiConfig } from "../_shared/ai-config.ts";
+import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { logAiUsage } from "../_shared/ai-usage-logger.ts";
 
 const corsHeaders = {
@@ -148,8 +149,11 @@ async function extractPdfTextCore(params: {
             { type: 'file', file: { file_id: fileId } },
           ],
         }],
-        max_tokens: 16384,
-        temperature: 0.1,
+        // Already inside the ai.provider === 'openai' branch: the reasoning
+        // class wants max_completion_tokens and rejects a set temperature.
+        ...(isOpenAiReasoningModel(ai.model)
+          ? { max_completion_tokens: 16384 }
+          : { max_tokens: 16384, temperature: 0.1 }),
       }),
     });
 

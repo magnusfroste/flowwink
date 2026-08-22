@@ -271,7 +271,18 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
             unit_price_cents: item.unit_price_cents ?? 0,
           };
         });
-        await supabase.from('quote_items').insert(rows as never);
+        // A denied insert answers 200 with 0 rows — count them, or the caller
+        // is told the template was applied to an empty quote.
+        const { data: itemRows, error: itemErr } = await supabase
+          .from('quote_items')
+          .insert(rows as never)
+          .select('id');
+        if (itemErr) {
+          return { success: false, quote_id: data.id, quote_number: data.quote_number, error: `Draft quote ${data.quote_number} was created, but the template items could not be added: ${itemErr.message}` };
+        }
+        if (!itemRows?.length) {
+          return { success: false, quote_id: data.id, quote_number: data.quote_number, error: `Draft quote ${data.quote_number} was created, but no template items were added — you may not have permission to write quote items.` };
+        }
         seededItems = true;
       }
 
@@ -287,14 +298,23 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
             product?.name ||
             (deal as { notes?: string | null }).notes ||
             'Service';
-          await supabase.from('quote_items').insert({
-            quote_id: (data as { id: string }).id,
-            position: 0,
-            description,
-            quantity: 1,
-            unit_price_cents: (deal as { value_cents: number }).value_cents ?? 0,
-            tax_rate_pct: 25,
-          } as never);
+          const { data: dealItemRows, error: dealItemErr } = await supabase
+            .from('quote_items')
+            .insert({
+              quote_id: (data as { id: string }).id,
+              position: 0,
+              description,
+              quantity: 1,
+              unit_price_cents: (deal as { value_cents: number }).value_cents ?? 0,
+              tax_rate_pct: 25,
+            } as never)
+            .select('id');
+          if (dealItemErr) {
+            return { success: false, quote_id: data.id, quote_number: data.quote_number, error: `Draft quote ${data.quote_number} was created, but the deal line could not be added: ${dealItemErr.message}` };
+          }
+          if (!dealItemRows?.length) {
+            return { success: false, quote_id: data.id, quote_number: data.quote_number, error: `Draft quote ${data.quote_number} was created, but the deal line was not added — you may not have permission to write quote items.` };
+          }
         }
       }
 
@@ -303,15 +323,21 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
 
     if (v.action === 'add_item') {
       if (!v.id || !v.description) return { success: false, error: 'id + description required' };
-      const { error } = await supabase.from('quote_items').insert({
-        quote_id: v.id,
-        description: v.description,
-        quantity: v.quantity ?? 1,
-        unit_price_cents: v.unit_price_cents ?? 0,
-        tax_rate_pct: v.tax_rate_pct ?? 25,
-        discount_pct: v.discount_pct ?? 0,
-      } as never);
+      const { data: addedRows, error } = await supabase
+        .from('quote_items')
+        .insert({
+          quote_id: v.id,
+          description: v.description,
+          quantity: v.quantity ?? 1,
+          unit_price_cents: v.unit_price_cents ?? 0,
+          tax_rate_pct: v.tax_rate_pct ?? 25,
+          discount_pct: v.discount_pct ?? 0,
+        } as never)
+        .select('id');
       if (error) return { success: false, error: error.message };
+      if (!addedRows?.length) {
+        return { success: false, quote_id: v.id, error: 'Nothing was added — you may not have permission to write quote items.' };
+      }
       return { success: true, quote_id: v.id, message: 'Item added' };
     }
 
@@ -342,10 +368,19 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
         .select('id')
         .single();
       if (reqErr) return { success: false, error: reqErr.message };
-      await supabase
+      // A denied update answers 200 with 0 rows — count them, or the quote stays
+      // sendable while an approval request sits open against it.
+      const { data: flipped, error: flipErr } = await supabase
         .from('quotes')
         .update({ status: 'pending_approval' as never, approval_request_id: (req as { id: string }).id } as never)
-        .eq('id', v.id);
+        .eq('id', v.id)
+        .select('id');
+      if (flipErr) {
+        return { success: false, quote_id: v.id, error: `Approval request was created, but the quote could not be put on hold: ${flipErr.message}` };
+      }
+      if (!flipped?.length) {
+        return { success: false, quote_id: v.id, error: 'Approval request was created, but the quote was not put on hold — you may not have permission to update it. Do not send this quote until it is resolved.' };
+      }
       return { success: true, quote_id: v.id, message: `Approval requested (${rule.required_role})` };
     }
 
@@ -365,15 +400,21 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
         snapshot: q as never,
         reason: 'sent_to_customer',
       } as never);
-      const { error } = await supabase
+      // The accept_token lives in this row and nowhere else — a denied update
+      // answers 200 with 0 rows and the public_url we hand back would be dead.
+      const { data: sentRows, error } = await supabase
         .from('quotes')
         .update({
           status: 'sent' as never,
           sent_at: new Date().toISOString(),
           accept_token: token,
         } as never)
-        .eq('id', v.id);
+        .eq('id', v.id)
+        .select('id');
       if (error) return { success: false, error: error.message };
+      if (!sentRows?.length) {
+        return { success: false, quote_id: v.id, error: 'Nothing was sent — the quote could not be marked as sent, so the public link would be dead. You may not have permission to update this quote.' };
+      }
       return {
         success: true,
         quote_id: v.id,

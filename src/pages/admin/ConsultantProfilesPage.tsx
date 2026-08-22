@@ -291,11 +291,15 @@ export default function ConsultantProfilesPage() {
   const saveMutation = useMutation({
     mutationFn: async (data: { id?: string; payload: ReturnType<typeof formToPayload> }) => {
       if (data.id) {
-        const { error } = await supabase
+        // RLS-denied updates return success with 0 rows — count them, or "Saved"
+        // is a lie and the edits vanish on the next refetch.
+        const { data: rows, error } = await supabase
           .from("consultant_profiles")
           .update(data.payload)
-          .eq("id", data.id);
+          .eq("id", data.id)
+          .select("id");
         if (error) throw error;
+        if (!rows?.length) throw new Error("Nothing was saved — you may not have permission, or the profile is gone.");
       } else {
         const { error } = await supabase
           .from("consultant_profiles")
@@ -308,26 +312,29 @@ export default function ConsultantProfilesPage() {
       toast({ title: "Saved", description: "Consultant profile updated." });
       closeDialog();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Could not save profile.", variant: "destructive" });
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Could not save profile.", variant: "destructive" });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // RLS-denied deletes return success with 0 rows — count them or lie.
+      const { data, error } = await supabase
         .from("consultant_profiles")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("Nothing was deleted — you may not have permission, or it is already gone.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["consultant-profiles"] });
       toast({ title: "Deleted", description: "Profile removed." });
       setDeleteId(null);
     },
-    onError: () => {
-      toast({ title: "Error", description: "Could not delete profile.", variant: "destructive" });
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Could not delete profile.", variant: "destructive" });
     },
   });
 

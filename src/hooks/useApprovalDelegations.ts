@@ -57,11 +57,17 @@ export function useRevokeApprovalDelegation() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      // RLS-denied updates return success with 0 rows — count them, or the
+      // delegation reads as revoked while it still grants approval rights.
+      const { data, error } = await (supabase as any)
         .from('approval_delegations')
         .update({ ends_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!(data as unknown[] | null)?.length) {
+        throw new Error('Nothing was revoked — you may not have permission, or the delegation is already gone.');
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['approval-delegations'] });

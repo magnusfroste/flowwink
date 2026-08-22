@@ -57,7 +57,9 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
       lost_reason?: string | null; lost_note?: string | null;
     }) => {
       const isLost = stageById.get(input.stage_id)?.is_lost || input.status === 'lost';
-      const { error } = await supabase
+      // RLS-denied updates return success with 0 rows — count them, or the card
+      // sits in its new column until the refetch snaps it back with no error.
+      const { data, error } = await supabase
         .from('leads')
         .update({
           stage_id: input.stage_id,
@@ -67,8 +69,10 @@ export function LeadKanban({ leads, isLoading, onLeadClick }: Props) {
           lost_reason: isLost ? (input.lost_reason ?? null) : null,
           lost_note: isLost ? (input.lost_note ?? null) : null,
         })
-        .eq('id', input.id);
+        .eq('id', input.id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was updated — you may not have permission, or the contact is gone.');
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leads'] });

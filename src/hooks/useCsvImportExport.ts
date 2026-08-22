@@ -89,16 +89,21 @@ export function useImportLeads() {
         
         const { data: inserted, error } = await supabase
           .from('leads')
-          .upsert(insertData, { 
+          .upsert(insertData, {
             onConflict: 'email',
             ignoreDuplicates: false,
           })
-          .select();
-        
+          .select('id');
+
         if (error) {
           allErrors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+        } else if (!inserted?.length) {
+          // An RLS-denied upsert returns success with 0 rows — surface it as a
+          // batch error instead of folding it into a silent "0 imported".
+          allErrors.push(`Batch ${Math.floor(i / batchSize) + 1}: nothing was imported — you may not have permission.`);
         } else {
-          successCount += inserted?.length || 0;
+          // Count rows the database actually wrote, not rows we sent.
+          successCount += inserted.length;
         }
       }
       

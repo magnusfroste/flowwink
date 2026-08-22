@@ -558,13 +558,20 @@ Beyond the Module Registry, FlowWink enforces **data ownership boundaries** at t
 
 ### Lead Utils Contract (`src/lib/lead-utils.ts`)
 
-All modules that interact with leads **must** use these functions:
+All modules that interact with leads **must** use these functions.
+
+**Public surfaces write through SECURITY DEFINER RPCs, never the table.**
+`leads` carries no `WITH CHECK (true)` policy since `20260821070000` — anonymous
+visitors reach the CRM only through `ingest_form_lead` / `ingest_webinar_lead`,
+and signed-in writes follow the role/module matrix (`can_access_module('leads')`).
+A new public lead source gets its own sister RPC with fail-closed validation;
+it does not get a table policy.
 
 | Function | Purpose | Used By |
 |----------|---------|---------|
-| `createLeadFromForm()` | Create/update lead from form submission | FormBlock |
-| `createLeadFromBooking()` | Create/update lead from booking | BookingBlock |
-| `createLeadFromWebinar()` | Create/update lead from webinar registration | WebinarBlock, useWebinars |
+| `createLeadFromForm()` | Create/update lead from form submission | FormBlock (via `ingest_form_lead` RPC) |
+| `createLeadFromBooking()` | Create/update lead from booking | Staff only — no caller; booking leads are created server-side in `comms-send/booking_confirmation.ts` |
+| `createLeadFromWebinar()` | Create/update lead from webinar registration | WebinarBlock (via `ingest_webinar_lead` RPC) |
 | `addLeadActivity()` | Log activity on a lead | All modules via createLeadFrom*, Deals |
 | `updateLeadStatus()` | Change lead status | Deals module |
 | `trackNewsletterActivity()` | Track email opens/clicks | Newsletter |

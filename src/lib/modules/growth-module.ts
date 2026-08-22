@@ -295,7 +295,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   },
   {
     name: 'schedule_social_post',
-    description: 'Create or schedule an organic social post (linkedin/x/instagram/facebook). If scheduled_at is set, status becomes "scheduled"; otherwise "draft". Actual channel publish requires per-channel credentials — this stores + queues the post; mark_social_post_posted records the external ref once published.',
+    description: 'Create or schedule an organic social post (linkedin/x/instagram/facebook). Use when: queueing, drafting or scheduling organic social content for a channel. If scheduled_at is set, status becomes "scheduled"; otherwise "draft". Actual channel publish requires per-channel credentials — this stores + queues the post; mark_social_post_posted records the external ref once published. NOT for: writing the copy itself (generate_social_post) or paid campaigns (ad_campaign_create).',
     category: 'growth',
     handler: 'db:social_posts',
     scope: 'internal',
@@ -322,7 +322,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   },
   {
     name: 'list_social_posts',
-    description: 'List organic social posts filtered by status/channel — inspect the calendar or moderation queue.',
+    description: 'List organic social posts filtered by status/channel. Use when: inspecting the social calendar or moderation queue, or finding the post id before mark_social_post_posted. NOT for: creating or scheduling posts (schedule_social_post).',
     category: 'growth',
     handler: 'db:social_posts',
     scope: 'internal',
@@ -345,7 +345,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   },
   {
     name: 'mark_social_post_posted',
-    description: 'Mark an organic social post as posted with the external ref/url returned by the channel.',
+    description: 'Mark an organic social post as posted with the external ref/url returned by the channel. Use when: a scheduled post has actually been published and needs its status + external reference recorded. NOT for: creating or scheduling posts (schedule_social_post).',
     category: 'growth',
     handler: 'rpc:mark_social_post_posted',
     scope: 'internal',

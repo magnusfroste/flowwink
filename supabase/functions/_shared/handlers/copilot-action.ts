@@ -12,6 +12,7 @@
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolveAiConfig } from '../ai-config.ts';
+import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
 const BLOCK_TYPES = [
   'hero', 'text', 'quote', 'cta', 'features', 'stats', 'testimonials', 'team',
@@ -163,7 +164,11 @@ export async function executeCopilotAction(
         ],
         tools: TOOLS,
         tool_choice: 'auto',
-        temperature: 0.7,
+        // gpt-5-class models off the AI map reject function tools without
+        // reasoning_effort:'none', and reject any non-default temperature.
+        ...(aiConfig.provider === 'openai' && isOpenAiReasoningModel(aiConfig.model)
+          ? { reasoning_effort: 'none' }
+          : { temperature: 0.7 }),
       }),
     });
 

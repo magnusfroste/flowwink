@@ -200,12 +200,16 @@ export function useDeleteDealActivity() {
   
   return useMutation({
     mutationFn: async ({ id }: { id: string; dealId: string }) => {
-      const { error } = await supabase
+      // RLS-denied deletes return success with 0 rows — count them, or the row
+      // disappears from the list and comes back on the next refetch.
+      const { data, error } = await supabase
         .from('deal_activities')
         .delete()
-        .eq('id', id);
-      
+        .eq('id', id)
+        .select('id');
+
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['deal-activities', variables.dealId] });

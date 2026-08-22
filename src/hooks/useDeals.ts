@@ -274,8 +274,11 @@ export function useDeleteDeal() {
 
   return useMutation({
     mutationFn: async (deal: { id: string; lead_id: string }) => {
-      const { error } = await supabase.from('deals').delete().eq('id', deal.id);
+      // RLS-denied deletes return success with 0 rows — count them, or the
+      // toast below promises a deletion the database refused to perform.
+      const { data, error } = await supabase.from('deals').delete().eq('id', deal.id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
       return deal;
     },
     onSuccess: (deal) => {

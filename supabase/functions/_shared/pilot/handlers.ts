@@ -8,6 +8,7 @@
  */
 
 import { resolveAiConfig } from '../ai-config.ts';
+import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -791,7 +792,8 @@ export async function handleDelegateTask(
     || SPECIALIST_PROMPTS[agent_name]
     || `You are a specialist agent focused on ${agent_name}. Complete the given task thoroughly and concisely.`;
 
-  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
+  const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabase, 'fast');
+  const reasoningClass = provider === 'openai' && isOpenAiReasoningModel(model);
   const contextStr = Object.keys(context).length > 0
     ? `\n\nContext:\n${JSON.stringify(context, null, 2)}`
     : '';
@@ -812,7 +814,11 @@ export async function handleDelegateTask(
     const resp = await fetch(apiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages, max_tokens: 1500 }),
+      body: JSON.stringify({
+        model,
+        messages,
+        ...(reasoningClass ? { max_completion_tokens: 1500 } : { max_tokens: 1500 }),
+      }),
     });
     if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
     const data = await resp.json();

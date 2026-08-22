@@ -36,6 +36,58 @@ Fifteen processes, one platform. Each links to its own doc — one page per proc
 
 ---
 
+## Odoo as the reference model
+
+We follow **Odoo's standard processes**. Where Odoo has a name for a step, we use
+that name — a customer arriving from Odoo, an implementation partner, or an
+external agent trained on the standard should recognise the flow without a
+glossary.
+
+This table is the mapping. It is also an honest inventory: the right-hand column
+says where the concept actually lives, including where it does not live yet.
+
+| Odoo term | Meaning | In FlowWink |
+|---|---|---|
+| **RFQ** (Request for Quotation) | A purchase order before the vendor confirms | `purchase_orders` in status `draft` / `sent`. We do not call it an RFQ in the UI; the states are the same |
+| **Purchase Order** | Confirmed by the vendor | status `confirmed` |
+| **Receipt** (incoming picking) | Goods arriving against a PO | `goods_receipts` + `receive_purchase_order` |
+| **Backorder** | The remainder when a receipt or delivery is partial | status `partially_received`; the PO stays open for the rest |
+| **Vendor Bill** | The supplier's invoice | `vendor_invoices`, matched 3-way against PO + receipt |
+| **Credit Note** (vendor) | Correction after a mismatch | `vendor_credit_memos` |
+| **Reordering Rule** (min/max) | Replenish when stock falls below min, up to max | `reorder_rules` (`min_qty`, `reorder_qty`) — **see the divergence below** |
+| **Replenishment report** | What needs ordering right now | `list_reorder_candidates`, `purchase_reorder_check`, `procurement_run` |
+| **Quotation** | A sales offer before acceptance | `quotes` in `draft` / `sent` |
+| **Sales Order** | Accepted quotation | `orders`, carrying `quote_id` since the order-to-cash fix |
+| **Delivery Order** (outgoing picking) | Picking and shipping to the customer | `picking_orders` + `picking_lines`; `allocate_picking` / `confirm_pick` / `ship_picking` |
+| **Internal Transfer** | Stock moving between locations | `inventory_transfers` + `inventory_transfer_lines` |
+| **Lot / Serial** | Traceable units | `stock_lots`; serials are lots of size 1 |
+| **Landed Cost** | Freight and duty added to the inbound unit cost | `resolve_inbound_unit_cost` computes an inbound cost per receipt; freight/duty apportionment is **not** modelled yet |
+| **Scrap** | Writing stock off | `stock_moves` with an adjustment reason; no dedicated scrap document |
+| **Incoterms** | Delivery terms on the order | **not modelled** |
+
+### Known divergence: the reordering rule has three homes
+
+Verified on the sandbox instance, 2026-08-21. The replenishment loop reads its
+threshold from two different places depending on who asks:
+
+| Caller | Reads |
+|---|---|
+| UI (`useInventoryV2`) writes, `procurement_run` reads | `reorder_rules.min_qty` — the Odoo-standard rule |
+| `list_reorder_candidates`, `purchase_reorder_check` (the **agent-facing** skills) | `COALESCE(product_stock.reorder_point, products.low_stock_threshold, 5)` — and never `reorder_rules` |
+
+So an operator who sets a reordering rule the standard way gets no effect on the
+answer an agent gives, and a product with no threshold anywhere silently
+inherits a hardcoded **5**. `product_stock` is additionally the legacy table the
+stock-chain fix already found empty on fresh instances — which is how
+`purchase_reorder_check` once answered *"All stock levels are healthy"* forever.
+
+One rule, one home: `reorder_rules` is the one that matches the standard and the
+one the UI already writes. The skills should read it, falling back to the
+product threshold only for products with no rule — and a missing threshold
+should be *absent*, not 5.
+
+---
+
 ## How to read a process doc
 
 Every process doc follows the same anatomy, top to bottom:

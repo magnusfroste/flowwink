@@ -153,12 +153,16 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // RLS-denied deletes return success with 0 rows — count them, or the
+      // toast claims a deletion the database refused to perform.
+      const { data, error } = await supabase
         .from('products')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
 
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission, or it is already gone.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });

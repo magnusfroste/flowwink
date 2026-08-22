@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface KbArticle { id: string; title: string; slug: string; question: string; answer_text: string | null }
 interface TicketLite { id: string; subject: string; description: string | null; suggested_kb_article_ids?: string[] }
@@ -17,6 +18,7 @@ function tokenize(text: string): Set<string> {
 
 export function TicketKbSuggestions({ ticket }: { ticket: TicketLite }) {
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [busy, setBusy] = useState(false);
 
   const { data: articles = [] } = useQuery({
@@ -48,11 +50,16 @@ export function TicketKbSuggestions({ ticket }: { ticket: TicketLite }) {
 
   const save = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from('tickets')
-        .update({ suggested_kb_article_ids: ids } as never).eq('id', ticket.id);
+      // RLS-denied updates return success with 0 rows — count them, or the
+      // suggestions look attached until the next refetch drops them.
+      const { data, error } = await supabase.from('tickets')
+        .update({ suggested_kb_article_ids: ids } as never).eq('id', ticket.id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was saved — you may not have permission to update this ticket.');
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
+    onError: (err: Error) => toast({ title: 'Failed to save KB suggestions', description: err.message, variant: 'destructive' }),
   });
 
   const attachTop3 = async () => {
@@ -60,6 +67,8 @@ export function TicketKbSuggestions({ ticket }: { ticket: TicketLite }) {
     try {
       const ids = ranked.slice(0, 3).map((r) => r.article.id);
       await save.mutateAsync(ids);
+    } catch {
+      // Surfaced by the mutation's onError toast.
     } finally { setBusy(false); }
   };
 

@@ -39,6 +39,13 @@ export interface ModuleConfig {
   requiresAI?: boolean;
   /** Module requires FlowPilot to be enabled — non-functional without the autonomous engine */
   requiresFlowPilot?: boolean;
+  /**
+   * Core modules are hidden from Role Permissions by default (`!core`-filtret) —
+   * this flag opts a core module back IN to the matrix. `core` answers "can it
+   * be disabled?"; roleGatable answers "can roles be granted it?" — two axes
+   * that must not share one flag (the email-module lesson).
+   */
+  roleGatable?: boolean;
   /** Module works without FlowPilot but gains proactive capabilities when enabled */
   enhancedByFlowPilot?: boolean;
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
@@ -619,6 +626,7 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Mail',
     category: 'system',
     core: true,
+    roleGatable: true,
     autonomy: 'agent-capable',
     adminUI: false,
     optionalIntegrations: ['smtp', 'resend'],
@@ -919,7 +927,7 @@ export function useModules() {
       // core:true) — those must never override the current defaults, otherwise
       // admins can't toggle modules that used to be marked core.
       const STRUCTURAL_KEYS = [
-        'core', 'name', 'description', 'icon', 'category', 'autonomy',
+        'core', 'roleGatable', 'name', 'description', 'icon', 'category', 'autonomy',
         'adminUI', 'requiresFlowPilot', 'enhancedByFlowPilot', 'requiresAI',
         'requiredIntegrations', 'optionalIntegrations',
       ] as const;

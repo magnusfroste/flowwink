@@ -131,6 +131,10 @@ export async function createLeadFromForm(options: {
   // returns nothing so an outsider cannot probe which emails exist in the CRM.
   // The legacy path stays as fallback for instances that have not run the
   // migration yet (the fleet runs several schema versions at once by design).
+  // Since 20260821070000 it is a STAFF path only: "System can insert leads"
+  // (WITH CHECK true) is gone, so the direct insert now needs leads in the
+  // caller's module matrix. That takes nothing away — for an anonymous visitor
+  // the fallback never worked, it only looked like it did.
   // Read once, before either path — both stamp the same values.
   const attributionOnSubmit = buildAttributionFields();
 
@@ -208,17 +212,29 @@ export async function createLeadFromForm(options: {
         }
       }
 
+      // Enrichment is best-effort (the capture itself already succeeded), but a
+      // denied write must not be reported back as applied: count the rows and
+      // only merge the fields the database actually accepted.
+      let applied: Record<string, string> = {};
       if (Object.keys(updates).length > 0) {
-        await supabase
+        const { data: enriched, error: enrichError } = await supabase
           .from('leads')
           .update(updates)
-          .eq('id', existingLead.id);
+          .eq('id', existingLead.id)
+          .select('id');
+        if (enrichError) {
+          logger.warn('Lead enrichment update failed:', enrichError);
+        } else if (!enriched?.length) {
+          logger.warn('Lead enrichment update matched 0 rows — no permission, or the contact is gone:', existingLead.id);
+        } else {
+          applied = updates;
+        }
       }
 
       // Trigger AI qualification
       qualifyLead(existingLead.id);
 
-      return { lead: { ...existingLead, ...updates } as unknown as Lead, isNew: false, error: null };
+      return { lead: { ...existingLead, ...applied } as unknown as Lead, isNew: false, error: null };
     }
 
     // Auto-match company by email domain (never auto-create)
@@ -281,6 +297,13 @@ export async function createLeadFromForm(options: {
 /**
  * Create or update a lead from booking
  * High-intent signal with automatic company matching and enrichment
+ *
+ * STAFF PATH. No public block calls this — the public BookingBlock creates no
+ * lead at all; booking leads are born server-side in
+ * comms-send/booking_confirmation.ts with the service key. The direct insert
+ * below therefore requires leads in the caller's module matrix (see
+ * 20260821070000). If a public surface ever needs this, give it a sister RPC
+ * (ingest_booking_lead) rather than reopening the table.
  */
 export async function createLeadFromBooking(options: {
   email: string;
@@ -312,12 +335,19 @@ export async function createLeadFromBooking(options: {
         },
       });
 
-      // Update phone if not set
+      // Update phone if not set. Best-effort, but never silent: an RLS-denied
+      // update returns success with 0 rows.
       if (phone && !existingLead.phone) {
-        await supabase
+        const { data: phoneRows, error: phoneError } = await supabase
           .from('leads')
           .update({ phone })
-          .eq('id', existingLead.id);
+          .eq('id', existingLead.id)
+          .select('id');
+        if (phoneError) {
+          logger.warn('Lead phone update failed:', phoneError);
+        } else if (!phoneRows?.length) {
+          logger.warn('Lead phone update matched 0 rows — no permission, or the contact is gone:', existingLead.id);
+        }
       }
 
       // Trigger AI qualification
@@ -379,6 +409,11 @@ export async function createLeadFromBooking(options: {
 
 /**
  * Create or update a lead from webinar registration
+ *
+ * `isNew` is null on the RPC path on purpose: the server does not tell an
+ * anonymous caller whether the address was already in the CRM — that is
+ * exactly what an outsider would probe for. The lead id it does return is
+ * useless without read rights, and the registration row needs it.
  */
 export async function createLeadFromWebinar(options: {
   email: string;
@@ -386,9 +421,52 @@ export async function createLeadFromWebinar(options: {
   phone?: string;
   webinarId: string;
   webinarTitle: string;
-}): Promise<{ leadId: string | null; isNew: boolean; error: string | null }> {
+}): Promise<{ leadId: string | null; isNew: boolean | null; error: string | null }> {
   const { email, name, phone, webinarId, webinarTitle } = options;
 
+  // Same story as the form path (see createLeadFromForm): the client-side flow
+  // below cannot work for an anonymous visitor. The existing-lead lookup runs
+  // as anon and RLS filters it to nothing, .insert().select() needs RETURNING
+  // which needs read rights anon does not have, and lead_activities has no
+  // public-insert policy either — so every public webinar registration was
+  // born without a contact while the visitor saw "Successfully registered!".
+  // ingest_webinar_lead is SECURITY DEFINER: real dedupe, no read grant, and
+  // it validates the webinar exists instead of trusting the caller.
+  try {
+    const rpcCall = supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: string | null; error: { message: string } | null }>;
+    const { data: rpcLeadId, error: rpcError } = await rpcCall('ingest_webinar_lead', {
+      p_email: email,
+      p_name: name ?? null,
+      p_phone: phone ?? null,
+      p_webinar_id: webinarId,
+      // The tracked-visitor cookie id — lets the server stitch the browsing
+      // history onto the lead. Null when the visitor declined analytics
+      // cookies, and the server treats that as "no journey to attach".
+      p_visitor_id:
+        typeof localStorage !== 'undefined' ? localStorage.getItem('pez_visitor_id') : null,
+    });
+    if (!rpcError) {
+      if (rpcLeadId) {
+        return { leadId: rpcLeadId, isNew: null, error: null };
+      }
+      // The RPC ran and refused: invalid email, or a webinar id that does not
+      // exist. Falling through to the client path would only turn a refusal
+      // into a silent failure — say so instead. The registration itself is the
+      // caller's decision to continue with.
+      logger.warn('ingest_webinar_lead refused the registration (invalid email or unknown webinar)');
+      return { leadId: null, isNew: null, error: 'Registration could not be linked to a contact.' };
+    }
+    logger.warn('ingest_webinar_lead unavailable, falling back to client path', rpcError.message);
+  } catch (e) {
+    logger.warn('ingest_webinar_lead threw, falling back to client path', e);
+  }
+
+  // Legacy path — staff only since 20260821070000 (the open
+  // "System can insert leads" policy is gone), kept for instances that have
+  // not run the migration that adds the RPC.
   try {
     // Check if lead exists
     const { data: existingLead } = await supabase
@@ -408,12 +486,19 @@ export async function createLeadFromWebinar(options: {
         },
       });
 
-      // Update phone if not set
+      // Update phone if not set. Best-effort, but never silent: an RLS-denied
+      // update returns success with 0 rows.
       if (phone && !existingLead.phone) {
-        await supabase
+        const { data: phoneRows, error: phoneError } = await supabase
           .from('leads')
           .update({ phone })
-          .eq('id', existingLead.id);
+          .eq('id', existingLead.id)
+          .select('id');
+        if (phoneError) {
+          logger.warn('Lead phone update failed:', phoneError);
+        } else if (!phoneRows?.length) {
+          logger.warn('Lead phone update matched 0 rows — no permission, or the contact is gone:', existingLead.id);
+        }
       }
 
       return { leadId: existingLead.id, isNew: false, error: null };
@@ -503,10 +588,19 @@ export async function addLeadActivity(options: {
 
     if (activities) {
       const totalScore = activities.reduce((sum, a) => sum + (a.points || 0), 0);
-      await supabase
+      // The activity itself landed, so this stays non-fatal — but a denied score
+      // write returns success with 0 rows and would otherwise leave the score
+      // quietly stale forever.
+      const { data: scored, error: scoreError } = await supabase
         .from('leads')
         .update({ score: totalScore })
-        .eq('id', leadId);
+        .eq('id', leadId)
+        .select('id');
+      if (scoreError) {
+        logger.warn('Lead score update failed:', scoreError);
+      } else if (!scored?.length) {
+        logger.warn('Lead score update matched 0 rows — no permission, or the contact is gone:', leadId);
+      }
     }
 
     return { success: true, error: null };
@@ -538,10 +632,21 @@ export async function updateLeadStatus(
       query = query.eq('status', options.onlyIfCurrentStatus);
     }
 
-    const { error } = await query;
+    const { data, error } = await query.select('id');
     if (error) {
       logger.error('updateLeadStatus error:', error);
       return { success: false, error: error.message };
+    }
+    if (!data?.length) {
+      // With onlyIfCurrentStatus this is the guard doing its job (the contact
+      // had already moved on) — expected, not a failure. Without it, 0 rows
+      // means the write was refused or the contact is gone.
+      if (options?.onlyIfCurrentStatus) {
+        logger.debug('updateLeadStatus: guard did not match, status left untouched:', leadId);
+        return { success: true, error: null };
+      }
+      logger.error('updateLeadStatus matched 0 rows:', leadId);
+      return { success: false, error: 'Nothing was updated — you may not have permission, or the contact is gone.' };
     }
     return { success: true, error: null };
   } catch (error) {

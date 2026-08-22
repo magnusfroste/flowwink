@@ -96,12 +96,20 @@ export function useRequestQuoteApproval() {
         currency: quote.currency,
         reason: `Quote ${quote.quote_number} pending review`,
       });
-      // Mark quote as pending_approval and link
-      const { error } = await supabase
+      // Mark quote as pending_approval and link.
+      // RLS-denied updates return success with 0 rows — count them, or the quote
+      // stays sendable while an approval request sits open against it.
+      const { data: flipped, error } = await supabase
         .from('quotes')
         .update({ status: 'pending_approval' as never, approval_request_id: (reqRes as { id: string }).id } as never)
-        .eq('id', quote.id);
+        .eq('id', quote.id)
+        .select('id');
       if (error) throw error;
+      if (!flipped?.length) {
+        throw new Error(
+          'Approval request was created, but the quote could not be put on hold — you may not have permission to update it. Do not send this quote until it is resolved.'
+        );
+      }
       return { required: true, request_id: (reqRes as { id: string }).id, role: evalRes.requiredRole };
     },
     onSuccess: (res) => {
@@ -130,7 +138,11 @@ export function useSendQuote() {
       }
       const token = (quote as unknown as { accept_token?: string }).accept_token || generateToken();
       const versionNum = await snapshotQuote(quote, 'sent_to_customer');
-      const { error } = await supabase
+      // The accept_token lives in this row and nowhere else — if the write is
+      // denied by RLS PostgREST still answers 200 with 0 rows, and the link we
+      // would email the customer points at a token that was never persisted.
+      // Verify persistence before anything leaves the building.
+      const { data: sentRows, error } = await supabase
         .from('quotes')
         .update({
           status: 'sent' as never,
@@ -138,8 +150,14 @@ export function useSendQuote() {
           accept_token: token,
           version: versionNum,
         } as never)
-        .eq('id', quote.id);
+        .eq('id', quote.id)
+        .select('id');
       if (error) throw error;
+      if (!sentRows?.length) {
+        throw new Error(
+          'Nothing was sent — the quote could not be marked as sent, so the customer link would be dead. You may not have permission to update this quote.'
+        );
+      }
 
       const url = publicQuoteUrl(token);
       let emailSent = false;

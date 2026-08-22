@@ -28,6 +28,14 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   reset_module_data: 'Wipe per modul — kräver överblick över alla moduler, inte en.',
   seed_module_demo: 'Skriver demodata över skarpa tabeller.',
   enable_demo_cycle_cron: 'Plattformens cron-schema, inte en modulyta.',
+  // ── Cron-schemaläggning: schemalägger godtycklig net.http_post (SSRF-yta) ──
+  // Fick intern admin-vakt i 20260822040000 (var vaktlös → anon-körbar). Rätt
+  // dimension är admin, inte modul: att schemalägga jobb är en plattforms-
+  // operation, och bootstrap-vägen (module-bootstrap.ts) körs av admin.
+  // Bara flowpilot-cron anropas från frontend (module-bootstrap); de övriga
+  // schemaläggarna körs via service_role från edge och står därför INTE här —
+  // guardrailen listar bara frontend-anropade RPC:er.
+  register_flowpilot_cron: 'Schemalägger cron (net.http_post). Admin, inte modul.',
   disable_demo_cycle_cron: 'Plattformens cron-schema, inte en modulyta.',
   run_period_lock_tests: 'Testhärnesk för periodlåsen — plattformsverktyg.',
   instance_sync_status: 'Driftstatus för instansen (fyra lager). Plattformsyta.',
@@ -36,9 +44,6 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // En roll som fick sin modul via matrisen får inte kunna skriva om matrisen.
   reset_role_module_access: 'Skriver om matrisen. Får aldrig grindas AV matrisen.',
   reset_all_role_module_access: 'Skriver om matrisen. Får aldrig grindas AV matrisen.',
-
-  // ── Räckvidd över alla moduler ───────────────────────────────────────────
-  global_search: 'Söker tvärs ALLA moduler. En modulgrind vore fel dimension.',
 
   // ── Vakten är inte en rollista — den är dynamisk eller ägarskapsbaserad ──
   // has_role() förekommer i kroppen, men med en VARIABEL roll ur datan
@@ -51,13 +56,9 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
     'Ägarvakt (v_owner = v_uid) med admin-override. Modulgrind vore fel dial.',
   log_indirect_time: 'Vakten släpper redan in varje inloggad (auth.uid() IS NOT NULL).',
 
-  // ── Ägarmodulen saknar matrisratt ────────────────────────────────────────
-  // `email` är core:true i useModules, och RolePermissionsPage listar bara
-  // `!cfg.core`. can_access_module(uid,'email') vore därför admin-only för
-  // alltid — en konvertering hade SNÄVAT dagens vakt (admin|marketing|sales|
-  // support) till admin. ÖPPET: ge email en matrisratt, konvertera sedan.
-  add_email_suppression: 'Ägarmodul `email` är core — ingen matrisratt att peka på ännu.',
-  remove_email_suppression: 'Ägarmodul `email` är core — ingen matrisratt att peka på ännu.',
-  upsert_email_template: 'Ägarmodul `email` är core — ingen matrisratt att peka på ännu.',
-  delete_email_template: 'Ägarmodul `email` är core — ingen matrisratt att peka på ännu.',
+  // ── Destruktiv grind ─────────────────────────────────────────────────────
+  // Suppressions/mall-upsert följer numera matrisratten `email` (roleGatable,
+  // 20260821090000) — men mall-DELETE är destruktivt och förblir admin, samma
+  // klass som deals DELETE.
+  delete_email_template: 'Destruktiv grind — mallradering är admin-only med avsikt.',
 };

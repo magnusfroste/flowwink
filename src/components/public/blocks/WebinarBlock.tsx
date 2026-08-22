@@ -74,11 +74,15 @@ export function WebinarBlock({ data, blockId, pageId }: WebinarBlockProps) {
       if (items.length > 0) {
         const counts: Record<string, number> = {};
         for (const w of items) {
-          const { count } = await supabase
-            .from('webinar_registrations')
-            .select('id', { count: 'exact', head: true })
-            .eq('webinar_id', w.id);
-          counts[w.id] = count || 0;
+          // Public visitors only need the count. Reading the registrations
+          // table directly would leak registrants' name/email/phone (the SELECT
+          // policy is staff+owner now), so go through the SECURITY DEFINER
+          // counter RPC which returns only an integer.
+          const { data: rc } = await supabase.rpc(
+            'webinar_registration_count' as any,
+            { p_webinar_id: w.id },
+          );
+          counts[w.id] = (rc as number) || 0;
         }
         setRegistrationCounts(counts);
       }

@@ -130,6 +130,9 @@ const HR_SKILLS: SkillSeed[] = [
             },
           },
           required: ['action'],
+          'x-action-required': {
+            create: ['employee_id'],
+          },
         },
       },
     },

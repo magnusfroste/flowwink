@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { loadSkillsRaw } from "../_shared/pilot/reason.ts";
 import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/skills/intent-scorer.ts";
+import { isOpenAiReasoningModel } from "../_shared/ai-providers.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import {
@@ -1268,7 +1269,7 @@ async function layer6Tests(supabase: any, supabaseUrl: string, serviceKey: strin
 
   // Helper: make a single AI call with a specific prompt and check the response
   async function singleAiTurn(systemPrompt: string, userMessage: string, tools?: any[]): Promise<{ content: string; tool_calls?: any[]; error?: string }> {
-    let aiConfig: { apiKey: string; apiUrl: string; model: string };
+    let aiConfig: { apiKey: string; apiUrl: string; model: string; provider?: string };
     try {
       aiConfig = await resolveAiConfig(supabase, 'fast');
     } catch {
@@ -1280,8 +1281,16 @@ async function layer6Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       { role: 'user', content: userMessage },
     ];
 
-    const body: any = { model: aiConfig.model, messages, max_tokens: 500 };
-    if (tools?.length) { body.tools = tools; body.tool_choice = 'auto'; }
+    // gpt-5-class models off the AI map want max_completion_tokens, and reject
+    // function tools at any reasoning_effort above 'none'.
+    const reasoningClass = aiConfig.provider === 'openai' && isOpenAiReasoningModel(aiConfig.model);
+    const body: any = { model: aiConfig.model, messages };
+    if (reasoningClass) body.max_completion_tokens = 500; else body.max_tokens = 500;
+    if (tools?.length) {
+      body.tools = tools;
+      body.tool_choice = 'auto';
+      if (reasoningClass) body.reasoning_effort = 'none';
+    }
 
     const resp = await fetch(aiConfig.apiUrl, {
       method: 'POST',
@@ -2030,12 +2039,17 @@ async function layer9Tests(supabase: any, supabaseUrl: string, serviceKey: strin
         { role: 'user', content: tc.input },
       ];
 
+      const reasoningClass = aiConfig.provider === 'openai' && isOpenAiReasoningModel(aiConfig.model);
       const body: any = {
         model: aiConfig.model,
         messages,
-        max_tokens: 300,
         tools: relevantTools.slice(0, 15),
         tool_choice: 'auto',
+        // L9 measures tool-selection accuracy — without this the whole layer
+        // 400s on a Luna instance instead of reporting a score.
+        ...(reasoningClass
+          ? { max_completion_tokens: 300, reasoning_effort: 'none' }
+          : { max_tokens: 300 }),
       };
 
       const resp = await fetch(aiConfig.apiUrl, {

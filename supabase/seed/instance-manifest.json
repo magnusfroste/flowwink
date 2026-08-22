@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260821020000",
-      "migrations_count": 461,
+      "migration_head": "20260822140000",
+      "migrations_count": 480,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1849,21 +1849,97 @@
         {
           "version": "20260821020000",
           "name": "f2a3b4c5-companies-follow-the-matrix"
+        },
+        {
+          "version": "20260821040000",
+          "name": "a7b8c9d0-newsletter-follows-the-matrix"
+        },
+        {
+          "version": "20260821050000",
+          "name": "b8c9d0e1-rollsvep4-writes-follow-the-matrix"
+        },
+        {
+          "version": "20260821060000",
+          "name": "c9d0e1f2-tickets-system-insert-tightened"
+        },
+        {
+          "version": "20260821070000",
+          "name": "d0e1f2a3-leads-system-insert-tightened"
+        },
+        {
+          "version": "20260821080000",
+          "name": "e1f2a3b4-global-search-follows-the-matrix"
+        },
+        {
+          "version": "20260821090000",
+          "name": "f2a3b4c5-email-gets-a-matrix-dial"
+        },
+        {
+          "version": "20260822010000",
+          "name": "a3b4c5d6-anon-surface-shrunk"
+        },
+        {
+          "version": "20260822020000",
+          "name": "b4c5d6e7-anon-function-surface"
+        },
+        {
+          "version": "20260822030000",
+          "name": "c5d6e7f8-anon-leaks-closed"
+        },
+        {
+          "version": "20260822040000",
+          "name": "d6e7f8a9-anon-guards-and-counters"
+        },
+        {
+          "version": "20260822050000",
+          "name": "e7f8a9b0-policy-user-roles-refs-via-definer"
+        },
+        {
+          "version": "20260822080000",
+          "name": "the-outbound-chain-never-ran"
+        },
+        {
+          "version": "20260822090000",
+          "name": "sandbox-seed-p2p"
+        },
+        {
+          "version": "20260822100000",
+          "name": "sandbox-seed-o2c"
+        },
+        {
+          "version": "20260822105000",
+          "name": "goods-come-back-at-a-cost"
+        },
+        {
+          "version": "20260822110000",
+          "name": "sandbox-seed-rma"
+        },
+        {
+          "version": "20260822120000",
+          "name": "the-nightly-reset-becomes-a-regression-run"
+        },
+        {
+          "version": "20260822130000",
+          "name": "a-testbed-is-not-a-demo"
+        },
+        {
+          "version": "20260822140000",
+          "name": "the-inspector-decides-and-the-decision-lands"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:00afd48288530aafbfe0999917f087457c6ef7d63a8b89ddefb991594ef31b03",
+      "seed_hash": "sha256:3271f72184ed60d640c719b551488edeb181fec9e349cd72d81c566ccd46fd23",
       "skill_count": 537,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:7271fa81a554c73f1a157c89322506388f2acf8b7b2a52b7fe80c2052cfb9bfb",
+      "shared_hash": "sha256:7299f09cce0d5d4f0f99206ca52f62662fcd7bca9f84594dde9b60bb881267e2",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:ced9a826c4a4fcdee1e45e395e7f5fac0d48fee1cfbc1733e5691054171bbf9e",
+        "agent-execute": "sha256:d2462f01c8d6703986ecce9b999786982b71dd2d2955db04788fda65b96da8bf",
         "agent-operate": "sha256:75fb1281c6ee8aa748f24c44a0b866686a12cf11df5291d7ff5e6aa59a2c1d2a",
         "ai-task": "sha256:4f3549a12beac9c958dc7b584c91202f67fd5700dad7ac9e512e5483ddfb29c7",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -1884,7 +1960,7 @@
         "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
-        "demo-cycle": "sha256:62f8ba6666c9e28bd5efffbfcac1ce7ee368860822f7dcf21ff09ee2154bfaf7",
+        "demo-cycle": "sha256:3e96b992969f273c591db183021ae194d5629ffedea7c3650b50d227c93504a7",
         "docs-chat": "sha256:7fd904e6cda9c1ad57f0aebc77b43adeb3ca4dc8ad31820d71f1213587611064",
         "document-share": "sha256:16c5281eb83fc8409d0b8c2906bb05ee74a7956786497e3eeaa7f2883067dd67",
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
@@ -1893,7 +1969,7 @@
         "email-send": "sha256:dd16d71530bd31384d8f4d188f600640c57632c38b3248a3d156000199c5cf11",
         "email-webhook": "sha256:2593b55c6730a00efc698b948de37f7aace1f916e8d2ee1dafd9f3014d5cf1a4",
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
-        "extract-pdf-text": "sha256:cdc3ca4ff97542a0c8531b3ad83b4592a41d3a8e9ab8654eb92fcf1ea45ae808",
+        "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
         "flowpilot-heartbeat": "sha256:21acbb3522ba6b2d9a117ac63fbfb548bd21ea282715bc5d032047d9f9b310cd",
         "flowpilot-lifecycle": "sha256:c89547f6c804aa18bb0a809f34d88cc816d2bd71e87b8845cdd0b68b200f1782",
@@ -1909,7 +1985,7 @@
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:3cb3f630ad868ee15eb2c559e50af08449af876d3856ba0557f9c2ab9300d2b4",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
-        "migrate-page": "sha256:7542943c7e86e548039ed47ddcad6b1319ea9c5b83fcc581303267cf8ade7a76",
+        "migrate-page": "sha256:d3b25894a47d1ea829df88f75d4c049b99db14833e63bf2b2dcac1634d7e9e1f",
         "newsletter": "sha256:14bd71f7af7a7470cff47c9f2447c8828383fb31eaec1679e0b794a11584dde6",
         "openclaw-responses": "sha256:70efb4b23cd1fb08427337148ccd47097d30a0e746bb27ad17120b39498dec3b",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
@@ -1917,7 +1993,7 @@
         "quote-expiry-reminders": "sha256:6d9b763668aefb9948af581d5d54f52879814f964f61f8cca345db4e57805034",
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:d29c2a9ce0c09d1d4e074ae002b78efe337bb293c51045e4846252144c3ac5b9",
-        "run-autonomy-tests": "sha256:d326b88ef0d263ed7604ba1eb75a770126d785e26211888b2093fcb325cc8c22",
+        "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
         "run-platform-tests": "sha256:c27bfd0f9beb7b4357b1aea7b0e6ede63f7dea8c38e0d8e27d0ea63fdfd21d22",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",

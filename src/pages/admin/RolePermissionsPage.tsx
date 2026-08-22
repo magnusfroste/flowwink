@@ -52,7 +52,7 @@ function RolePermissionsContent() {
   const moduleEntries = useMemo(() => {
     if (!modules) return [];
     return Object.entries(modules)
-      .filter(([_, cfg]) => cfg && cfg.adminUI !== false && !cfg.core)
+      .filter(([_, cfg]) => cfg && (cfg.roleGatable || (cfg.adminUI !== false && !cfg.core)))
       .map(([id, cfg]) => ({ id, name: cfg.name, category: cfg.category }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [modules]);

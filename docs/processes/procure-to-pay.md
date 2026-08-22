@@ -32,11 +32,11 @@ description: An employee pays for something out of pocket and photographs the re
 
 ```mermaid
 flowchart TD
-    A["Low stock / manual need"] --> B["Reorder check — auto or manual<br/>purchase_reorder_check · list_reorder_candidates · mrp_reorder_run"]
-    B --> C["Purchase order created<br/>create_purchase_order"]
-    C --> D["PO sent to vendor<br/>send_purchase_order"]
+    A["Low stock / manual need<br/>(Odoo: reordering rule min/max)"] --> B["Replenishment report — auto or manual<br/>purchase_reorder_check · list_reorder_candidates · procurement_run"]
+    B --> C["RFQ created — status draft<br/>create_purchase_order"]
+    C --> D["RFQ sent to vendor — status sent<br/>send_purchase_order"]
     D --> D2["PO change order (amendment + revision history)<br/>purchase_order_revisions"]
-    D2 --> E["Delivery → goods receipt<br/>receive_purchase_order"]
+    D2 --> E["Vendor confirms — status confirmed<br/>Delivery → goods receipt (partial ⇒ backorder)<br/>receive_purchase_order"]
     E --> F["Stock updated (Inventory) — receive→QC→putaway<br/>inventory_receipts"]
     F --> G["Vendor invoice in → 3-way match against PO + GR<br/>match_invoice_to_receipt"]
     G --> G2["Mismatch → dispute + supplier credit memo<br/>vendor_invoice_disputes · vendor_credit_memos"]
@@ -125,7 +125,20 @@ paid require admin trust.
 
 ---
 
-## Known gaps (missing for L5)
+
+## Known gaps
+
+> **The reordering rule has three homes.** Verified on sandbox 2026-08-21: the
+> UI writes `reorder_rules` (the Odoo-standard min/max rule) and `procurement_run`
+> reads it, while the agent-facing skills `list_reorder_candidates` and
+> `purchase_reorder_check` read
+> `COALESCE(product_stock.reorder_point, products.low_stock_threshold, 5)` and
+> never look at `reorder_rules` at all. So a rule set the standard way does not
+> change what an agent answers, and a product with no threshold anywhere
+> silently inherits a hardcoded 5. See the mapping table in
+> [README](./README.md#known-divergence-the-reordering-rule-has-three-homes).
+
+### Other gaps (missing for L5)
 
 - ✅ **3-way match auto-approve** — `match_invoice_to_receipt` + `auto_approve_vendor_invoice` live; tolerance config still manual
 - ❌ Multi-step approval based on amount thresholds

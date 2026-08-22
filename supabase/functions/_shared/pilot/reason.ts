@@ -11,6 +11,7 @@
 
 import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToolGroup } from '../types.ts';
 import { resolveAiConfig } from '../ai-config.ts';
+import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
 import { checkpointRun } from '../trace/checkpoint.ts';
@@ -674,7 +675,8 @@ export async function pruneConversationHistory(
 
 async function preCompactionFlush(messages: any[], supabase: any): Promise<void> {
   try {
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
+    const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabase, 'fast');
+    const reasoningClass = provider === 'openai' && isOpenAiReasoningModel(model);
 
     const transcript = messages
       .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -696,8 +698,9 @@ async function preCompactionFlush(messages: any[], supabase: any): Promise<void>
           },
           { role: 'user', content: transcript },
         ],
-        max_tokens: 600,
-        temperature: 0.1,
+        ...(reasoningClass
+          ? { max_completion_tokens: 600 }
+          : { max_tokens: 600, temperature: 0.1 }),
       }),
     });
 
@@ -739,7 +742,8 @@ async function preCompactionFlush(messages: any[], supabase: any): Promise<void>
 
 async function summarizeMessages(messages: any[], supabase: any): Promise<string | null> {
   try {
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
+    const { apiKey, apiUrl, model, provider } = await resolveAiConfig(supabase, 'fast');
+    const reasoningClass = provider === 'openai' && isOpenAiReasoningModel(model);
 
     const compactMessages = messages
       .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -760,7 +764,7 @@ async function summarizeMessages(messages: any[], supabase: any): Promise<string
           },
           { role: 'user', content: compactMessages.slice(0, 12000) },
         ],
-        max_tokens: 800,
+        ...(reasoningClass ? { max_completion_tokens: 800 } : { max_tokens: 800 }),
       }),
     });
 
@@ -1029,6 +1033,13 @@ export async function reason(
           messages: conversationMessages,
           tools: allTools.length > 0 ? allTools : undefined,
           tool_choice: allTools.length > 0 ? 'auto' : undefined,
+          // The ReAct loop IS tools — a gpt-5-class model resolved off the AI map
+          // 400s here unless reasoning_effort is 'none', which would take the whole
+          // autonomous loop down on every Luna instance. Gate it: sending the param
+          // to a non-reasoning model (gpt-4.1-*) is its own 400.
+          ...(provider === 'openai' && isOpenAiReasoningModel(model) && allTools.length > 0
+            ? { reasoning_effort: 'none' }
+            : {}),
         }),
       });
 

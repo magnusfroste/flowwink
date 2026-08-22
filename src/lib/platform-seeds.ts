@@ -454,6 +454,9 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
           required: [
             'action',
           ],
+          'x-action-required': {
+            update: ['key', 'value'],
+          },
         },
       },
     },

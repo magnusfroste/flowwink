@@ -15,6 +15,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../supabase-clients.ts';
 import { resolveAiConfig } from '../ai-config.ts';
 import { callAiCompletion } from '../ai-usage-logger.ts';
+import { isOpenAiReasoningModel } from '../ai-providers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -165,8 +166,11 @@ async function extractPdfText(pdfBytes: Uint8Array, ai: Awaited<ReturnType<typeo
               { type: 'file', file: { file_id: fileId } },
             ],
           }],
-          temperature: 0.1,
-          max_tokens: 8192,
+          // Already inside the ai.provider === 'openai' branch. (The tool-call
+          // site below goes through callAiCompletion, which normalises the class.)
+          ...(isOpenAiReasoningModel(ai.model)
+            ? { max_completion_tokens: 8192 }
+            : { temperature: 0.1, max_tokens: 8192 }),
         }),
       });
 

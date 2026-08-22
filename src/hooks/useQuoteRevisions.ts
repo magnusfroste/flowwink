@@ -100,10 +100,19 @@ export function useAmendQuote() {
       if (error) throw error;
 
       if (input.reset_acceptance) {
-        await supabase
+        // A denied update answers 200 with 0 rows — count them, or the quote
+        // keeps its old acceptance while the revision claims it was reset.
+        const { data: resetRows, error: resetError } = await supabase
           .from('quotes')
           .update({ status: 'draft', sent_at: null, accepted_at: null } as any)
-          .eq('id', input.quote_id);
+          .eq('id', input.quote_id)
+          .select('id');
+        if (resetError) throw resetError;
+        if (!(resetRows as unknown[] | null)?.length) {
+          throw new Error(
+            'The amendment was recorded, but the quote acceptance could not be reset — you may not have permission to update this quote.'
+          );
+        }
       }
 
       return { revision: data as any, approvalRequestId };
