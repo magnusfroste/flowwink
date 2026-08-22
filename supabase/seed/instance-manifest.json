@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260822150000",
-      "migrations_count": 482,
+      "migrations_count": 483,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1929,6 +1929,10 @@
         {
           "version": "20260822140000",
           "name": "the-inspector-decides-and-the-decision-lands"
+        },
+        {
+          "version": "20260822150000",
+          "name": "back-in-stock-rpc-reaches-instances-past-the-head"
         },
         {
           "version": "20260822150000",
