@@ -23058,6 +23058,7 @@ export type Database = {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
       }
+      regression_ticket_escalations: { Args: never; Returns: Json }
       reject_pending_operation: {
         Args: { p_id: string; p_reason?: string }
         Returns: Json

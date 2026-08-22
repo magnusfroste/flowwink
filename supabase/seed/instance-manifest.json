@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260823030000",
-      "migrations_count": 491,
+      "migration_head": "20260823040000",
+      "migrations_count": 492,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1969,6 +1969,10 @@
         {
           "version": "20260823030000",
           "name": "a-business-since-2019-has-an-opening-balance"
+        },
+        {
+          "version": "20260823040000",
+          "name": "the-escalation-sweep-can-compare-again"
         }
       ]
     },
@@ -2038,7 +2042,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:d29c2a9ce0c09d1d4e074ae002b78efe337bb293c51045e4846252144c3ac5b9",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:c27bfd0f9beb7b4357b1aea7b0e6ede63f7dea8c38e0d8e27d0ea63fdfd21d22",
+        "run-platform-tests": "sha256:73739503f8ec4968f547a64a21d591db3d8da336b8e03ebc0f17eff4b221913e",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

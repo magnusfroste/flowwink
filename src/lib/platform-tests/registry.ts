@@ -88,6 +88,16 @@ export const PLATFORM_SUITES: TestSuite[] = [
     docs: 'supabase/functions/_shared/ai-usage-logger.ts',
   },
   {
+    id: 'ticket_escalations',
+    title: 'Ticket escalation sweep',
+    description: 'Calls run_ticket_escalations() against a throwaway ticket and three rules, then rolls the whole fixture back. Catches the class that kept the sweep dead fleet-wide for two months: the function existed, so every existence check passed, but it aborted on the first matching ticket of any active rule.',
+    scope: 'platform',
+    category: 'behavior',
+    module: 'tickets',
+    run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['ticket_escalations'] } },
+    docs: 'supabase/migrations/20260823040000_the-escalation-sweep-can-compare-again.sql',
+  },
+  {
     id: 'skill_manifest_coverage',
     title: 'Skill manifest coverage',
     description: 'Detects DB skills (origin=bundled) without a matching skillSeed in any src/lib/modules/*-module.ts manifest. Orphans still work but never receive schema/description updates from module bootstrap. Refresh snapshot via: bun run scripts/snapshot-declared-skills.ts',
