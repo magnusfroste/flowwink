@@ -1,12 +1,19 @@
 // Public quote signing endpoint.
 // Atomically: records signature, sets quote.status, and on accept:
-//   - generates a draft invoice from quote.line_items / totals
+//   - generates a draft invoice from the SIGNED lines (quote_items, else the
+//     quotes.line_items JSONB) plus the quote's stored totals
 //   - links invoice back to the quote (invoice_id + converted_to_invoice_id)
 //   - emails customer the receipt and admins an internal notice via `email-send`
 // Bypasses JWT verification — auth is by accept_token + quote.status check.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
+import {
+  buildQuoteSignaturePayload,
+  invoiceLinesForSignedQuote,
+  QUOTE_CONTENT_HASH_ALG,
+  resolveSignedQuoteLines,
+} from '../_shared/quote-lines.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,21 +103,58 @@ Deno.serve(async (req: Request) => {
       req.headers.get('x-real-ip') ||
       null;
 
+    // ── The lines the customer is signing ────────────────────────────────────
+    // Until this fix the hash below covered `quote.line_items ?? []`. For every
+    // quote whose lines live in the `quote_items` TABLE — the agent/MCP path,
+    // template- and deal-derived quotes, quotes sent by comms-send — that is
+    // literally the empty list, and the stored hash was the digest of a document
+    // with NO PRICE IN IT. The certificate page meanwhile told the reader that a
+    // matching hash proves the document is unaltered. Anyone could rewrite every
+    // line and the "proof" still matched. A legal artifact that lies is worse
+    // than a missing one.
+    //
+    // Resolved here with the one shared rule (table wins, JSONB is the
+    // fallback) — the same rule `get_public_quote` renders the customer's page
+    // with, so the hash covers the document that was actually READ.
+    const { data: itemRows, error: itemsErr } = await supabase
+      .from('quote_items')
+      .select('description, quantity, unit, unit_price_cents, line_total_cents, position, is_optional, selected_by_customer')
+      .eq('quote_id', quote.id)
+      .order('position', { ascending: true });
+
+    const resolved = resolveSignedQuoteLines({
+      itemsReadOk: !itemsErr,
+      itemRows,
+      jsonbLines: quote.line_items,
+      totalCents: Number(quote.total_cents ?? 0),
+    });
+
+    // FAIL CLOSED on ACCEPT. Refusing to sign is recoverable; a signature whose
+    // evidence silently excludes the price is not.
+    //
+    // A DECLINE is not gated: nobody later disputes the price of an offer that
+    // was turned down, and refusing the decline would trap the customer with a
+    // quote they cannot answer. It simply gets no hash (below) rather than a
+    // hash over a list we could not account for.
+    if (!resolved.ok && body.action === 'accept') {
+      console.error('quote-sign refused: %s (quote %s)', resolved.code, quote.quote_number, itemsErr);
+      return new Response(
+        JSON.stringify({ error: resolved.reason, code: resolved.code }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     // Content hash: SHA-256 of the canonical quote content at signing time —
-    // durable tamper-evidence stored on the signature row and shown on the certificate.
-    const contentHash = await sha256Hex(JSON.stringify({
-      quote_number: quote.quote_number,
-      title: quote.title ?? null,
-      intro_text: quote.intro_text ?? null,
-      terms_text: quote.terms_text ?? null,
-      line_items: quote.line_items ?? [],
-      subtotal_cents: quote.subtotal_cents,
-      tax_cents: quote.tax_cents,
-      total_cents: quote.total_cents,
-      currency: quote.currency,
-      valid_until: quote.valid_until ?? null,
-      version: quote.version ?? 1,
-    }));
+    // durable tamper-evidence stored on the signature row and shown on the
+    // certificate. Stored as `<alg>:<hex>` so a signature always declares what
+    // its digest covers; bare-hex rows are the pre-2026-08-23 hashes that did
+    // not cover the lines, and are never recomputed. NULL where the lines could
+    // not be resolved at all — an absent hash is honest, an empty-list hash is not.
+    const contentHash = resolved.ok
+      ? `${QUOTE_CONTENT_HASH_ALG}:${await sha256Hex(
+          buildQuoteSignaturePayload({ quote, lines: resolved.lines }),
+        )}`
+      : null;
 
     // 2) Record signature
     const { error: sigErr } = await supabase.from('quote_signatures').insert({
@@ -152,6 +196,10 @@ Deno.serve(async (req: Request) => {
         total_cents: quote.total_cents,
         currency: quote.currency,
         content_hash: contentHash,
+        // What the hash covered, in the clear: how many lines and from which
+        // store. An audit entry that names its own scope needs no archaeology.
+        signed_line_count: resolved.ok ? resolved.lines.length : null,
+        signed_line_source: resolved.ok ? resolved.origin : resolved.code,
       },
     });
 
@@ -174,7 +222,10 @@ Deno.serve(async (req: Request) => {
         ? 'contract' : 'invoice';
 
     // 5) On accept → auto-create invoice (Quote-to-Cash close)
-    if (acceptBehavior === 'invoice' && body.action === 'accept' && !quote.converted_to_invoice_id && !quote.invoice_id) {
+    // `resolved.ok` is implied by reaching here with action=accept (the gate
+    // above returned otherwise); naming it keeps the line resolution provably
+    // present rather than defaulted.
+    if (acceptBehavior === 'invoice' && body.action === 'accept' && resolved.ok && !quote.converted_to_invoice_id && !quote.invoice_id) {
       // Canonical INV-YYYY-NNNNN series (matches manage_invoice / convert_to_invoice /
       // send_invoice_for_order). The old INV-${count+1} scheme diverged in format AND
       // counted every invoice-row series (SUB-/CN-/POS-/CTR-), breaking sequential
@@ -193,6 +244,16 @@ Deno.serve(async (req: Request) => {
       due.setDate(due.getDate() + 14);
       const dueDate = due.toISOString().slice(0, 10);
 
+      // The same two-store defect one document downstream: copying
+      // `quote.line_items` produced an invoice with the right total and NOT ONE
+      // LINE on it for every agent-written quote. Bill the lines that were
+      // signed — minus any optional line the customer left unticked.
+      const invoiceLines = invoiceLinesForSignedQuote({
+        origin: resolved.origin,
+        lines: resolved.lines,
+        jsonbLines: quote.line_items,
+      });
+
       const { data: inv, error: invErr } = await supabase
         .from('invoices')
         .insert({
@@ -201,7 +262,7 @@ Deno.serve(async (req: Request) => {
           deal_id: quote.deal_id,
           customer_email: body.signer_email || quote.customer_email || '',
           customer_name: body.signer_name || quote.customer_name || '',
-          line_items: quote.line_items ?? [],
+          line_items: invoiceLines,
           subtotal_cents: quote.subtotal_cents,
           tax_rate: quote.tax_rate,
           tax_cents: quote.tax_cents,

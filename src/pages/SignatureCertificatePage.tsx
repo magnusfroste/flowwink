@@ -17,6 +17,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
+// The signing endpoint stamps this in front of every digest it writes. Imported
+// from the writer rather than retyped here, so the reader can never disagree
+// with what was actually stored (same pattern as src/lib/email-preview.ts).
+import { QUOTE_CONTENT_HASH_ALG } from '../../supabase/functions/_shared/quote-lines';
 
 interface CertificateSignature {
   action: 'accept' | 'reject';
@@ -114,6 +118,22 @@ export default function SignatureCertificatePage() {
   const fmtAmount = (cents: number) => formatCurrency(cents, cert.currency);
   const docLabel = cert.kind === 'quote' ? 'Quote' : 'Contract';
   const payment = cert.payment ?? null;
+
+  // What the stored digest actually covers.
+  //
+  // Quote signatures carry their algorithm inside the value as `<alg>:<hex>`.
+  // A BARE hex is a pre-2026-08-23 signature, whose hash was computed over
+  // `quote.line_items` — empty for every quote whose lines live in the
+  // `quote_items` table, i.e. the digest of a document with no prices in it.
+  // Those hashes are never recomputed (that would forge history), so the
+  // certificate has to say plainly what they do and do not evidence.
+  // Contract signatures have covered body AND appendices since they existed
+  // and were never prefixed; a bare hex there is complete, not legacy.
+  const rawHash = sig?.content_hash ?? null;
+  const hashSeparator = rawHash?.indexOf(':') ?? -1;
+  const hashAlg = rawHash && hashSeparator > 0 ? rawHash.slice(0, hashSeparator) : null;
+  const hashDigest = rawHash && hashSeparator > 0 ? rawHash.slice(hashSeparator + 1) : rawHash;
+  const hashCoversLines = cert.kind === 'contract' ? true : hashAlg === QUOTE_CONTENT_HASH_ALG;
   const paidCents = payment?.paid_amount_cents ?? 0;
   const fullyPaid = !!payment && paidCents >= payment.total_cents && payment.total_cents > 0;
   const partiallyPaid = !!payment && paidCents > 0 && !fullyPaid;
@@ -235,9 +255,26 @@ export default function SignatureCertificatePage() {
                       <span className="text-xs text-muted-foreground break-all">{sig.user_agent}</span>
                     </Row>
                   )}
-                  {sig.content_hash && (
+                  {rawHash && (
                     <Row label="Content hash">
-                      <span className="font-mono text-xs break-all">sha256:{sig.content_hash}</span>
+                      <span className="font-mono text-xs break-all">sha256:{hashDigest}</span>
+                    </Row>
+                  )}
+                  {rawHash && (
+                    <Row label="Hash covers">
+                      {cert.kind === 'contract' ? (
+                        'The agreement text, its value, and every appendix attached at signing.'
+                      ) : hashCoversLines ? (
+                        'The quote number, title, every line item with its quantity and price, the totals, the terms and the validity date.'
+                      ) : (
+                        <span className="text-amber-700 dark:text-amber-500">
+                          The quote number, title, totals, terms and validity date — but{' '}
+                          <strong>not the individual line items</strong>. This signature was
+                          recorded before line items were included in the digest, so the hash cannot
+                          evidence them. The line items themselves are unchanged by this; they are
+                          simply outside what this hash can prove.
+                        </span>
+                      )}
                     </Row>
                   )}
                 </dl>
@@ -249,10 +286,31 @@ export default function SignatureCertificatePage() {
             )}
 
             <p className="text-xs text-muted-foreground border-t pt-4">
-              This certificate documents a simple electronic signature. The content hash is a SHA-256
-              digest of the {cert.kind === 'quote' ? 'quote content (items, totals, terms)' : 'agreement text'}{' '}
-              computed at the moment of signing; a matching hash proves the document has not been altered
-              since. Timestamp, IP address, and device information were recorded when the signer submitted
+              This certificate documents a simple electronic signature.{' '}
+              {rawHash ? (
+                <>
+                  The content hash is a SHA-256 digest, computed at the moment of signing, of the
+                  content listed under “Hash covers” above — recomputing that same content today and
+                  getting the same hash proves those parts of the document have not been altered
+                  since.
+                </>
+              ) : (
+                <>
+                  No content hash was recorded for this signature, so this certificate evidences the
+                  decision, the signer and the moment — not the document’s contents.
+                </>
+              )}
+              {rawHash && !hashCoversLines && (
+                <>
+                  {' '}
+                  <strong>
+                    A matching hash therefore does not, on this signature, say anything about the line
+                    items.
+                  </strong>{' '}
+                  The hash is reported exactly as it was recorded; it has not been recalculated.
+                </>
+              )}{' '}
+              Timestamp, IP address, and device information were recorded when the signer submitted
               their decision via the private signing link.
             </p>
           </CardContent>
