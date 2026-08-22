@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260823130000",
-      "migrations_count": 497,
+      "migration_head": "20260823140000",
+      "migrations_count": 498,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1993,6 +1993,10 @@
         {
           "version": "20260823130000",
           "name": "d7e8f9a0-hashen-tackte-inte-priset"
+        },
+        {
+          "version": "20260823140000",
+          "name": "a-vendor-term-is-a-word-not-a-number"
         }
       ]
     },
