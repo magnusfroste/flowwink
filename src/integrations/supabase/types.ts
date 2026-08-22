@@ -16270,6 +16270,7 @@ export type Database = {
           actual_minutes: number
           created_at: string
           entity_id: string
+          entity_priority: string | null
           entity_type: string
           escalated_at: string | null
           escalation_log: Json
@@ -16289,6 +16290,7 @@ export type Database = {
           actual_minutes: number
           created_at?: string
           entity_id: string
+          entity_priority?: string | null
           entity_type: string
           escalated_at?: string | null
           escalation_log?: Json
@@ -16308,6 +16310,7 @@ export type Database = {
           actual_minutes?: number
           created_at?: string
           entity_id?: string
+          entity_priority?: string | null
           entity_type?: string
           escalated_at?: string | null
           escalation_log?: Json
