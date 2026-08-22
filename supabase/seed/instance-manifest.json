@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822150000",
+      "migration_head": "20260822160000",
       "migrations_count": 483,
       "migrations": [
         {
@@ -1932,11 +1932,11 @@
         },
         {
           "version": "20260822150000",
-          "name": "back-in-stock-rpc-reaches-instances-past-the-head"
+          "name": "f8a9b0c1-back-in-stock-grants-join-the-sweep"
         },
         {
-          "version": "20260822150000",
-          "name": "f8a9b0c1-back-in-stock-grants-join-the-sweep"
+          "version": "20260822160000",
+          "name": "back-in-stock-rpc-reaches-instances-past-the-head"
         }
       ]
     },
