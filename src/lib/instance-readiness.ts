@@ -473,13 +473,19 @@ function aiRow(input: ReadinessInput['ai']): ReadinessRow {
     return {
       ...base,
       status: 'blocked',
-      detail: 'No AI provider key is present on this instance.',
-      note: 'Keys are edge-function secrets — set them on the Supabase project (or point the local-model integration at your own endpoint), then reload.',
+      // "Ingen nyckel" är INTE det enda sättet att hamna här.
+      // resolveIntegrationStatus kräver både hasKey OCH att integrationen är
+      // påslagen, så en satt nyckel bakom en avstängd integration landar också
+      // på false. Att då påstå "no key is present" vore osant — och att skicka
+      // någon till Supabase för att sätta en nyckel som redan finns är den
+      // sortens hjälp som kostar en halvtimme. Raden namnger båda vägarna.
+      detail: 'No AI provider is active on this instance — either no key is set, or the integration holding it is switched off.',
+      note: 'Keys are edge-function secrets — set them on the Supabase project (or point the local-model integration at your own endpoint). A key that IS set still counts as inactive until its integration is enabled in Integrations. Reload after either.',
       action: { kind: 'link', to: '/admin/integrations', label: 'Open Integrations' },
     };
   }
 
-  return { ...base, status: 'ok', detail: 'At least one AI provider is configured.' };
+  return { ...base, status: 'ok', detail: 'At least one AI provider has a key AND is switched on.' };
 }
 
 /**

@@ -78,6 +78,31 @@ Deno.serve(async (req) => {
   );
 
   try {
+    // Guardrail: a TESTBED is never cycled, and this is checked BEFORE
+    // demo_mode so it wins. Nordbrygg's value is that its history grew; one
+    // night of this function would erase months of it, and nothing brings that
+    // back. Every RPC below refuses on a testbed too (assert_not_testbed), but
+    // the cheapest place to stop is before the first one is called — otherwise
+    // a mis-flagged instance produces a nightly stack trace instead of a clean
+    // skip, and cron.job_run_details has wedged a Postgres instance in this
+    // fleet before.
+    const { data: testbedFlag } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "testbed_mode")
+      .maybeSingle();
+    if (testbedFlag?.value === true || (testbedFlag?.value as any)?.enabled === true) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          skipped: true,
+          reason:
+            "testbed_mode is enabled — a testbed is never reset or re-seeded on a cycle. testbed_mode overrides demo_mode.",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Guardrail: only run when site is explicitly marked as a demo.
     const { data: flag } = await supabase
       .from("site_settings")

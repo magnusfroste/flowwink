@@ -2358,9 +2358,19 @@ async function executeResetSandbox(supabase: any, args: Record<string, unknown>)
   const { data: flags } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['demo_mode', 'sandbox_mode', 'sandbox_template']);
+    .in('key', ['demo_mode', 'sandbox_mode', 'sandbox_template', 'testbed_mode']);
   const byKey = new Map<string, unknown>((flags ?? []).map((r: any) => [r.key, r.value]));
   const enabled = (v: unknown) => v === true || (v as any)?.enabled === true;
+  // testbed WINS over demo_mode/sandbox_mode, and is checked before them.
+  // A testbed accumulates — its months of history are the whole reason it
+  // exists — so there is no argument combination that resets one. The SQL
+  // function refuses too (assert_not_testbed); this is the first line, so the
+  // refusal is a clean skill result instead of a Postgres exception.
+  if (enabled(byKey.get('testbed_mode'))) {
+    return {
+      error: 'reset_sandbox refused: this instance is a TESTBED (site_settings.testbed_mode is enabled). A testbed is never reset — testbed_mode deliberately overrides demo_mode and sandbox_mode, so setting either of those does not re-arm this. Remove testbed_mode from site_settings if the instance really is disposable.',
+    };
+  }
   if (!enabled(byKey.get('demo_mode')) && !enabled(byKey.get('sandbox_mode'))) {
     return {
       error: 'reset_sandbox refused: this instance is not a demo (site_settings.demo_mode is not enabled). Demo Mode in System settings is the one switch that makes an instance disposable.',

@@ -381,9 +381,24 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: false,
   },
   flowpilot: {
-    enabled: false,
+    // PÅ som default sedan 2026-08-23, av två skäl som båda är mätta:
+    //
+    // 1. Den är TYST utan mål. flowpilot-heartbeat har en tomgångs-
+    //    kortslutning: utan aktiva objectives och utan uppföljningsarbete
+    //    returnerar den {skipped: true, reason: 'idle_no_standing_work'} och
+    //    når ALDRIG modellen. Noll AI-anrop, noll kostnad, noll 401:or på en
+    //    instans som ännu saknar nyckel.
+    // 2. Cronen körs ändå. flowpilot-heartbeat/-learn/-daily-briefing ligger i
+    //    plattformens cron-golv (ensurePlatformCron) och registreras oavsett
+    //    den här flaggan. Med modulen AV fyrade jobben alltså i alla fall —
+    //    men admin hade ingen yta att se eller styra dem i. Av var inte
+    //    säkrare, bara mer osynligt.
+    //
+    // Defaulten VILAR på kortslutningen: tas den bort blir en nyfödd instans
+    // dyr. Spärren flowpilot-idle-short-circuit.guardrails.test.ts vaktar den.
+    enabled: true,
     name: 'FlowPilot',
-    description: 'Optional autonomous AI operator — skills, objectives, automations and workflows. Disabled by default. FlowWink works as a traditional SaaS without it; enabling FlowPilot lets other modules opt into autonomous behavior (heartbeats, automations, scheduled actions).',
+    description: 'Autonomous AI operator — skills, objectives, automations and workflows. On by default and silent until you give it objectives: with no standing work the heartbeat short-circuits before any model call. FlowWink still works as a traditional SaaS if you switch it off.',
     icon: 'Sparkles',
     category: 'system',
     autonomy: 'agent-capable',

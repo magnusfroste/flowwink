@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { PLATFORM_SKILLS } from '@/lib/platform-seeds';
 
@@ -14,9 +14,31 @@ import { PLATFORM_SKILLS } from '@/lib/platform-seeds';
  */
 
 const root = process.cwd();
-// The LATEST definition of the wipe. A guardrail reading a superseded file
-// would certify a body no instance runs — so this must move with the function.
-const mig = readFileSync(join(root, 'supabase/migrations/20260813100000_a-wipe-must-not-destroy-what-only-a-migration-provides.sql'), 'utf8');
+const MIGRATIONS = join(root, 'supabase/migrations');
+
+/**
+ * The LATEST definition of the wipe. A guardrail reading a superseded file
+ * would certify a body no instance runs — so this must move with the function.
+ *
+ * It used to be a hardcoded filename, and it had already gone stale: the pin
+ * still pointed at 20260813100000 after 20260823020000 redefined
+ * sandbox_reset_wipe to carry the testbed veto. Every assertion below was
+ * passing against a body the fleet no longer ran, which is the exact failure
+ * mode the comment warned about. So resolve it instead of naming it — a pin
+ * that has to be remembered is a pin that will be forgotten.
+ */
+function latestMigrationDefining(fn: string): string {
+  const re = new RegExp(`CREATE\\s+OR\\s+REPLACE\\s+FUNCTION\\s+(?:public\\.)?${fn}\\s*\\(`, 'i');
+  const hit = readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()
+    .reverse()
+    .find((f) => re.test(readFileSync(join(MIGRATIONS, f), 'utf8')));
+  if (!hit) throw new Error(`No migration defines ${fn}`);
+  return readFileSync(join(MIGRATIONS, hit), 'utf8');
+}
+
+const mig = latestMigrationDefining('sandbox_reset_wipe');
 const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
 
 describe('sandbox reset safety', () => {
