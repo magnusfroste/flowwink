@@ -472,3 +472,58 @@ describe('inspect_rendered_page: hemvist och katalog', () => {
     expect(handler).not.toMatch(/const\s+\w*FIELDS\w*\s*(:\s*[^=]+)?=\s*\[\s*'/);
   });
 });
+
+/**
+ * Spärr: locale får inte tyst utesluta en läsning.
+ *
+ * 2026-08-22, kvällen. FlowWork byggde sidan (efter att ha rättat sig själv två
+ * gånger på bouncar — loopen fungerade) och bad sedan sensorn granska den:
+ *
+ *     { slug: "agentic-mt4unduy", locale: "sv-SE" }
+ *
+ * Raden är lagrad som locale "en" trots att innehållet är svenskt. Filtret
+ * uteslöt den och svaret blev `No page found for slug "agentic-mt4unduy"` —
+ * medan `known_slugs` i SAMMA svar gladeligen räknade upp just den slugen.
+ * Sensorn vi byggde för att avsluta tysta fel misslyckades tyst om sitt eget
+ * kriterium.
+ *
+ * Två regler följer. Detta är en LÄSNING: att vägra titta på sidan callern
+ * uppenbart menade, på grund av en metadata-krock, hjälper ingen. Och varje
+ * filter som kan förklara ett uteblivet svar måste NAMNGES i felet.
+ */
+describe('locale utesluter inte en läsning, och filtret döljer sig inte', () => {
+  const SRC = readFileSync(
+    join(__dirname, '../../../supabase/functions/_shared/handlers/inspect-rendered-page.ts'),
+    'utf8',
+  );
+
+  it('locale ingår inte i uppslagsfrågan', () => {
+    expect(
+      SRC,
+      'locale filtrerar i själva frågan igen — då försvinner sidan ur svaret ' +
+        'i stället för att rapporteras med en not',
+    ).not.toMatch(/q\s*=\s*q\.eq\(\s*['"]locale['"]/);
+  });
+
+  it('en locale-krock rapporteras som en not, inte som frånvaro', () => {
+    expect(SRC, 'ingen locale_note byggs — krocken blir tyst igen').toContain('localeNote');
+    expect(SRC, 'noten når aldrig svaret').toContain('locale_note');
+  });
+
+  it('"hittar inte" namnger det locale som begärdes', () => {
+    // Maskera kommentarer först: filens EGEN docstring citerar det gamla felet
+    // ordagrant, och en naiv indexOf träffar prosan i stället för koden. Exakt
+    // den fällan lät en migrationstransformation generera skarp SQL ur svensk
+    // text tidigare samma dag. Kod är kod; kommentarer är text som ser ut som kod.
+    const code = SRC
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, ' '));
+    const i = code.indexOf('No page found for');
+    expect(i, 'felmeddelandet är borta').toBeGreaterThan(-1);
+    expect(
+      code.slice(i, i + 400),
+      'felet nämner inte att ett locale begärdes — samma tystnad som orsakade fallet',
+    ).toContain('locale');
+  });
+});
+

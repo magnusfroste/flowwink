@@ -18,6 +18,7 @@ import { CartSidebar } from "@/components/public/CartSidebar";
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const PagesListPage = lazy(() => import("./pages/admin/PagesListPage"));
+const TrashPage = lazy(() => import("./pages/admin/TrashPage"));
 const NewPagePage = lazy(() => import("./pages/admin/NewPagePage"));
 const PageEditorPage = lazy(() => import("./pages/admin/PageEditorPage"));
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
@@ -312,6 +313,9 @@ const router = createBrowserRouter([
       { path: "/admin/pages", element: <PagesListPage /> },
       { path: "/admin/pages/new", element: <NewPagePage /> },
       { path: "/admin/pages/trash", element: <PagesListPage /> },
+      // Cross-module trash. Lives outside /admin/pages because it is not a
+      // pages feature — see src/pages/admin/TrashPage.tsx.
+      { path: "/admin/trash", element: <TrashPage /> },
       { path: "/admin/pages/:id", element: <PageEditorPage /> },
       { path: "/admin/blog", element: <BlogPage /> },
       { path: "/admin/blog/new", element: <BlogPostEditorPage /> },

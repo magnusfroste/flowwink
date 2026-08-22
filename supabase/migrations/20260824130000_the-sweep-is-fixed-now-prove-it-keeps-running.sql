@@ -45,9 +45,13 @@
 -- database is byte-identical afterwards. PL/pgSQL variables survive the
 -- rollback (they are not transactional), which is how the verdict gets out.
 --
--- Forward-dated above 20260823130000 and idempotent: a CREATE OR REPLACE below
--- a managed ledger's HEAD is silently skipped, and this has to reach instances
--- that are already past it.
+-- Forward-dated above main's migration head (20260824120000 at the time of
+-- writing) and idempotent. A CREATE OR REPLACE below a managed ledger's HEAD is
+-- silently skipped, and this has to reach instances that are already past it —
+-- which is exactly the instances that have main's fix and no check on it. If
+-- main lands further migrations before this merges, re-date it again: the
+-- forward-dating guard measures against the fork point, so it will not catch a
+-- timestamp that has fallen behind the branch it is merging into.
 
 CREATE OR REPLACE FUNCTION public.regression_ticket_escalations()
  RETURNS jsonb

@@ -720,6 +720,35 @@ When generating social posts:
     },
     instructions: 'The feed is served by the blog-rss edge function at /functions/v1/blog-rss and contains the 20 most recent published posts.',
   },
+  {
+    name: 'blog_post_history',
+    description:
+      'Version history for blog posts: list revisions, read an old revision, restore one. Every content/title/excerpt/image edit and every delete is captured automatically, and the revision survives the post being deleted — so a deleted post is recoverable. Use when: recovering a deleted or overwritten post, reviewing what changed and who changed it. NOT for: current post content (manage_blog_posts get); publishing or unpublishing (manage_blog_posts) — restore never changes a post\'s published state.',
+    category: 'content',
+    handler: 'rpc:blog_post_history',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'blog_post_history',
+        description: 'list (per slug or post_id, newest first) / get (full revision body) / restore (write a revision back — recreates deleted posts as drafts).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'get', 'restore'] },
+            p_slug: { type: 'string', description: 'Post slug (list)' },
+            p_post_id: { type: 'string', format: 'uuid', description: 'Post id (list) — wins over p_slug, and is the only way to reach a deleted post whose slug was reused' },
+            p_revision_id: { type: 'string', format: 'uuid', description: 'Revision id (get/restore)' },
+            p_limit: { type: 'integer', default: 20, description: 'list: max revisions (max 100)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Each revision stores the post state BEFORE the change that produced it, so the newest revision of a deleted post (action="delete") holds the post exactly as it was when it was deleted. action values: "update", "delete", and "baseline" (seeded once for posts that already existed when history was switched on). Workflow: list by p_slug (or p_post_id) → pick a revision id → get to inspect the body → restore. restore itself creates a new revision, so nothing is ever lost by restoring. If the post still exists, restore writes back title/excerpt/content/images/meta and leaves status and published_at untouched. If the post was deleted, restore recreates it with its original id as a DRAFT with published_at NULL — republishing is a separate, deliberate act via manage_blog_posts. Recreating fails with a clear error if another post has since taken the slug; rename that post first. Status/publish-flag-only changes do not create revisions.',
+  },
 ];
 
 export const blogModule = defineModule<BlogModuleInput, BlogModuleOutput>({
@@ -749,10 +778,15 @@ export const blogModule = defineModule<BlogModuleInput, BlogModuleOutput>({
     'moderate_blog_comment',
     'list_blog_comments',
     'get_blog_rss_url',
+    'blog_post_history',
   ],
   data: {
     // children first (FK-safe order)
-    tables: ['blog_comments', 'blog_post_categories', 'blog_post_tags', 'blog_posts', 'blog_categories', 'blog_tags'],
+    // blog_post_revisions is deliberately NOT FK-bound to blog_posts (that is
+    // the only reason a deleted post is recoverable), so nothing removes it on
+    // our behalf — a site reset must name it explicitly or the wipe leaves the
+    // full text of every "deleted" post behind.
+    tables: ['blog_post_revisions', 'blog_comments', 'blog_post_categories', 'blog_post_tags', 'blog_posts', 'blog_categories', 'blog_tags'],
   },
   skillSeeds: BLOG_SKILLS,
 

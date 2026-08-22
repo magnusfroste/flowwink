@@ -130,7 +130,11 @@ describe('roles live in data, not in the nav', () => {
     // Automations is platform-level (agent_automations has no owning module),
     // and was reachable by everyone before this cleanup; listing it here keeps
     // that behavior a stated fact instead of an accident.
-    const universal = new Set(['Dashboard', 'FlowChat', 'Profile', 'Automations']);
+    // Trash spans wiki/KB/pages, so no single moduleId could gate it honestly —
+    // picking one would hide the bin from everyone holding the others. Its
+    // trash_bin RPC filters row by row through can_access_module, so the link
+    // is universal and the CONTENT is matrix-gated. Stated, not accidental.
+    const universal = new Set(['Dashboard', 'FlowChat', 'Profile', 'Automations', 'Trash']);
     const naked: string[] = [];
     for (const group of navigationGroups) {
       if (group.adminOnly) continue;
