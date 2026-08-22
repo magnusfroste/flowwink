@@ -91,7 +91,7 @@ The harness records everything; this is the surface that makes it legible. It re
   {
     name: 'describe_blocks',
     description:
-      "Return the CMS block vocabulary: every block type the platform renders, and the exact field contract for one of them. Call with no argument for the catalogue (56 types with one-line descriptions), then with block_type=<type> for that block's full Data spec BEFORE writing its data. Use when: composing or editing a page (manage_page_blocks), authoring a site template, or unsure which fields a block supports — its own instructions say to ask rather than guess from examples. NOT for: reading a page's current blocks (manage_page_blocks action=get); NOT for site-wide settings.",
+      "Return the CMS block vocabulary: every block type the platform renders, and the exact field contract for one of them. Call with no argument for the catalogue (56 types with one-line descriptions), then with block_type=<type> for that block's full Data spec BEFORE writing its data. Use when: ALWAYS before authoring or editing block content — call it first on every page write (manage_page content_json, create_page_block, manage_page_blocks) and on every site template, and never write a block type or field name from memory. Types are kebab-case ('two-column', never 'two_column'); a guessed type or field is refused at write time or stored and never rendered. NOT for: reading a page's current blocks (manage_page_blocks action=get); NOT for site-wide settings.",
     category: 'system',
     handler: 'internal:describe_blocks',
     scope: 'internal',
@@ -101,7 +101,7 @@ The harness records everything; this is the surface that makes it legible. It re
       function: {
         name: 'describe_blocks',
         description:
-          'Block-type catalogue and per-block field contract. Read-only reference; costs nothing to call.',
+          'Block-type catalogue and per-block field contract. Call BEFORE every block write — never author a block from memory. Read-only reference; costs nothing to call.',
         parameters: {
           type: 'object',
           properties: {
@@ -121,10 +121,12 @@ The block vocabulary, served on demand. Two levels: no argument returns every bl
 manage_page_blocks tells you to ask for a block's schema rather than guess — this is what you ask. Guessing field names is the single most common cause of a page that saves but renders empty: the block ignores keys it does not know, silently.
 ### The rule that catches most agents
 Fields shown as a Tiptap JSON doc must be OBJECTS ({"type":"doc","content":[…]}), never strings. Sending markdown or plain text into a Tiptap field produces a block that stores your text and renders nothing.
+### The second rule: the type strings are kebab-case
+"two-column", "sticky-scroll", "bento-grid", "announcement-bar" — never snake_case ("two_column", "sticky_story") and never a name you invented. Copy the type string from this catalogue verbatim.
 ### Workflow
 1. describe_blocks() — pick the types the page needs
 2. describe_blocks({ block_type }) — for each one you will write
-3. manage_page_blocks / manage_site_template — write data using exactly those field names
+3. manage_page (content_json) / create_page_block / manage_page_blocks / manage_site_template — write data using exactly those field names. A missing required field fails the write closed (manage_page refuses the WHOLE page, nothing partial is stored), so the lookup is always cheaper than the retry.
 ### Source of truth
 Generated from src/lib/block-reference.ts, so it is always what the renderer actually supports. If a field is not listed here, the renderer does not read it.`,
   },

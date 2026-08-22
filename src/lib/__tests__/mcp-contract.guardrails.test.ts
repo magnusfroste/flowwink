@@ -23,6 +23,14 @@ describe('MCP contract guardrails', () => {
     expect(mcpServerSource).toContain('branding:');
   });
 
+  // NB: this is a REMOVAL detector only, and a weak one — it greps the
+  // concatenated source for literal `"<alias>"` strings from a hand-written
+  // list, so it can never notice that a NEW module is missing from
+  // SKILL_CATEGORY_MODULES (that is exactly how `email`, `pos`, `shipping`,
+  // `wiki`, … drifted out of the map and got their skills hidden on the
+  // gateway). Completeness is enforced by DERIVING the truth from the module
+  // registry in mcp-category-module-map.guardrails.test.ts — keep that test as
+  // the drift guard, not this list.
   it('preserves critical MCP group aliases for module-aware discovery', () => {
     const requiredAliases = [
       'pages',

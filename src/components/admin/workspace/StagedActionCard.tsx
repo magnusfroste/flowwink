@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, Loader2, ShieldAlert, Play } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ShieldAlert, Play, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import type { StagedAction } from '@/hooks/useWorkspaceChat';
+import {
+  extractExecutionError,
+  isUnfinished,
+  outcomeFromPendingOperation,
+  summarizeExecutionResult,
+  type StagedOutcome,
+  type StagedResolution,
+} from '@/lib/staged-action-outcome';
 
 /**
  * The approval card — where initiative changes hands.
@@ -17,10 +26,26 @@ import type { StagedAction } from '@/hooks/useWorkspaceChat';
  */
 interface Props {
   action: StagedAction;
-  onResolved: (resolution: 'approved' | 'rejected' | 'failed', note?: string) => void;
+  onResolved: (resolution: StagedResolution, note?: string) => void;
 }
 
 const HIDDEN_ARGS = new Set(['_approved', '_approved_operation_id']);
+
+/**
+ * How each outcome reads. 'executed' and 'approved' are separate labels on
+ * purpose: an operation that was approved but whose execution was never
+ * recorded is not a done deal, and must not wear the green checkmark.
+ */
+const RESOLVED_META: Record<
+  StagedResolution,
+  { Icon: typeof CheckCircle2; cls: string; label: string }
+> = {
+  executed: { Icon: CheckCircle2, cls: 'text-emerald-600 dark:text-emerald-400', label: 'Utförd' },
+  approved: { Icon: Clock, cls: 'text-amber-600 dark:text-amber-400', label: 'Godkänd – utförande obekräftat' },
+  rejected: { Icon: XCircle, cls: 'text-muted-foreground', label: 'Avvisad' },
+  failed: { Icon: ShieldAlert, cls: 'text-destructive', label: 'Misslyckades' },
+  expired: { Icon: Clock, cls: 'text-muted-foreground', label: 'Utgången' },
+};
 
 export function StagedActionCard({ action, onResolved }: Props) {
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null);
@@ -28,6 +53,37 @@ export function StagedActionCard({ action, onResolved }: Props) {
   const argRows = Object.entries(action.args || {}).filter(
     ([k, v]) => !HIDDEN_ARGS.has(k) && v !== undefined && v !== null && v !== '',
   );
+
+  /**
+   * Read the outcome back off the operation row — the one writer of it.
+   *
+   * The invoke response is only a courier; `pending_operations.status` +
+   * `execution_result` are what survives a reload, so the card shows exactly
+   * what the next load will show. The courier's version is the fallback for
+   * when the row itself cannot be read (RLS, offline).
+   */
+  const readOutcome = async (fallback: StagedOutcome): Promise<StagedOutcome> => {
+    try {
+      const { data, error } = await supabase
+        .from('pending_operations')
+        .select('id, status, execution_result, rejection_reason, expires_at')
+        .eq('id', action.operation_id)
+        .maybeSingle();
+      if (error || !data) {
+        if (error) logger.error('read pending operation outcome failed', error);
+        return fallback;
+      }
+      return outcomeFromPendingOperation(data) ?? fallback;
+    } catch (e) {
+      logger.error('read pending operation outcome threw', e);
+      return fallback;
+    }
+  };
+
+  const settle = async (fallback: StagedOutcome) => {
+    const outcome = await readOutcome(fallback);
+    onResolved(outcome.resolution, outcome.note ?? fallback.note);
+  };
 
   const approve = async () => {
     setBusy('approve');
@@ -51,20 +107,26 @@ export function StagedActionCard({ action, onResolved }: Props) {
       });
       if (error) throw new Error(error.message);
       if (data?.status === 'pending_approval') {
-        onResolved('approved', 'Kräver även beslut i /admin/approvals (dubbelgrindad åtgärd).');
+        await settle({
+          resolution: 'approved',
+          note: 'Kräver även beslut i /admin/approvals (dubbelgrindad åtgärd). Ingenting är utfört ännu.',
+        });
       } else if (data?.status === 'failed' || data?.error) {
-        onResolved('failed', String(data?.error ?? 'Utförandet misslyckades'));
+        await settle({
+          resolution: 'failed',
+          note:
+            extractExecutionError(data?.result) ??
+            extractExecutionError(data?.error) ??
+            'Utförandet misslyckades',
+        });
       } else {
-        const summary = typeof data?.result === 'object' && data?.result
-          ? Object.entries(data.result as Record<string, unknown>)
-              .slice(0, 3)
-              .map(([k, v]) => `${k}: ${typeof v === 'object' ? '…' : String(v)}`)
-              .join(' · ')
-          : undefined;
-        onResolved('approved', summary);
+        await settle({ resolution: 'executed', note: summarizeExecutionResult(data?.result) });
       }
     } catch (e) {
-      onResolved('failed', e instanceof Error ? e.message : 'Kunde inte utföra');
+      await settle({
+        resolution: 'failed',
+        note: e instanceof Error ? e.message : 'Kunde inte utföra',
+      });
     } finally {
       setBusy(null);
     }
@@ -79,30 +141,53 @@ export function StagedActionCard({ action, onResolved }: Props) {
       });
       if (rejErr) throw new Error(rejErr.message);
       if ((rej as Record<string, unknown>)?.error) throw new Error(String((rej as Record<string, unknown>).error));
-      onResolved('rejected');
+      await settle({ resolution: 'rejected' });
     } catch (e) {
-      onResolved('failed', e instanceof Error ? e.message : 'Kunde inte avvisa');
+      await settle({
+        resolution: 'failed',
+        note: e instanceof Error ? e.message : 'Kunde inte avvisa',
+      });
     } finally {
       setBusy(null);
     }
   };
 
   if (action.resolution) {
-    const meta = {
-      approved: { Icon: CheckCircle2, cls: 'text-emerald-600 dark:text-emerald-400', label: 'Utförd' },
-      rejected: { Icon: XCircle, cls: 'text-muted-foreground', label: 'Avvisad' },
-      failed: { Icon: ShieldAlert, cls: 'text-destructive', label: 'Misslyckades' },
-    }[action.resolution];
+    const meta = RESOLVED_META[action.resolution] ?? RESOLVED_META.failed;
     const Icon = meta.Icon;
+    const failed = action.resolution === 'failed';
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm max-w-[90%]">
+      <div
+        className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm max-w-[90%] ${
+          failed ? 'border-destructive/40 bg-destructive/5' : 'border-border/60 bg-muted/30'
+        }`}
+      >
         <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${meta.cls}`} />
-        <div className="min-w-0">
-          <span className="font-medium">{meta.label}:</span>{' '}
-          <span className="font-mono text-xs">{action.skill}</span>
-          {action.result_note && (
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">{action.result_note}</p>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div>
+            <span className="font-medium">{meta.label}:</span>{' '}
+            <span className="font-mono text-xs">{action.skill}</span>
+          </div>
+          {/* Says out loud that nothing changed. A failure that reads like a
+              detail line is how "ingenting hände" happened. */}
+          {isUnfinished(action.resolution) && (
+            <p className={`text-xs font-medium ${failed ? 'text-destructive' : 'text-muted-foreground'}`}>
+              Ingenting utfördes.
+            </p>
           )}
+          {action.result_note &&
+            (failed ? (
+              // Whole message, never clipped: these are usually self-correcting
+              // instructions ("missing required parameter(s) title …") and the
+              // half you cut is the half that tells you what to do.
+              <pre className="text-xs font-mono whitespace-pre-wrap break-words rounded bg-destructive/10 text-destructive px-2 py-1.5 max-h-64 overflow-y-auto">
+                {action.result_note}
+              </pre>
+            ) : (
+              <p className="text-xs text-muted-foreground break-words whitespace-pre-wrap">
+                {action.result_note}
+              </p>
+            ))}
         </div>
       </div>
     );

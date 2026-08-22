@@ -121,6 +121,26 @@ export interface ReadinessInput {
     expectedCount: number;
     /** PLATFORM_SKILL_NAMES.length — the always-on floor. */
     platformFloor: number;
+    /**
+     * Vad de PÅSLAGNA modulerna kräver, mätt av sync_skills_from_code mot den
+     * deployade seed-artefakten. null = mätningen kunde inte göras.
+     *
+     * Raden hade ETT tal före det här: antalet rader i agent_skills. Ett antal
+     * kan inte se ett HÅL. En färsk, fullt provisionerad instans bar 96 av 347
+     * skills — commerce, contracts, subscriptions, invoicing, tickets, sla och
+     * field-service påslagna med noll seedade skills — och raden lyste grönt
+     * ("96 skill(s) seeded, matching this build"), eftersom stämpeln fanns och
+     * 96 > golvet 14. En extern operatör kunde inte utföra sitt uppdrag alls.
+     *
+     * Kravet är alltså inte "finns det några skills" utan "finns DE skills som
+     * modulvalet lovar". Mätningen görs på servern, ur samma artefakt som
+     * skriver raderna — en skrivare, en sanning.
+     */
+    requiredByEnabledModules?: number | null;
+    /** Hur många av dem som saknas i agent_skills (efter en eventuell reparation). */
+    missingForEnabledModules?: number | null;
+    /** De första saknade namnen — nog för att namnge hålet i UI:t. */
+    missingSample?: string[];
   };
   edge: {
     /** Last set reported by the deploy tool, or null when never reported. */
@@ -306,6 +326,28 @@ function skillsRow(input: ReadinessInput['skills']): ReadinessRow {
     };
   }
 
+  // Täckning FÖRE stämpeln. Stämpeln är ett påstående; det här är en mätning,
+  // och en instans kan bära en giltig stämpel och ändå sakna två tredjedelar av
+  // det modulvalet lovar (96/347, verifierat av tre QA-körningar). Ett hål i
+  // agent-ytan är den skarpaste sanningen raden har — den vinner över allt annat.
+  if (
+    input.requiredByEnabledModules != null &&
+    input.missingForEnabledModules != null &&
+    input.missingForEnabledModules > 0
+  ) {
+    return {
+      ...base,
+      status: 'blocked',
+      detail:
+        `${input.requiredByEnabledModules - input.missingForEnabledModules} of ${input.requiredByEnabledModules} skill(s) ` +
+        `required by the enabled modules are registered — ${input.missingForEnabledModules} missing` +
+        ((input.missingSample ?? []).length ? ` (e.g. ${(input.missingSample ?? []).slice(0, 3).join(', ')})` : '') +
+        '. Those modules are switched ON with no agent surface behind them.',
+      note: 'Row count alone cannot see this: the layer looks populated while the specific skills an operator needs are absent.',
+      action: { kind: 'run', id: 'seed-skills', label: 'Seed the missing skills' },
+    };
+  }
+
   if (input.stampHash === null) {
     return {
       ...base,
@@ -330,7 +372,11 @@ function skillsRow(input: ReadinessInput['skills']): ReadinessRow {
   return {
     ...base,
     status: 'ok',
-    detail: `${input.total} skill(s) seeded (${input.enabled ?? 0} enabled), matching this build.`,
+    detail:
+      `${input.total} skill(s) seeded (${input.enabled ?? 0} enabled), matching this build` +
+      (input.requiredByEnabledModules != null
+        ? ` — all ${input.requiredByEnabledModules} required by the enabled modules are registered.`
+        : '. Per-module coverage could not be measured, so only the build stamp is claimed.'),
   };
 }
 

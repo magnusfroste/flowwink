@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,11 @@ import { computeInvoiceTotals, type InvoiceLineItem } from '@/hooks/useInvoices'
 import { useProducts } from '@/hooks/useProducts';
 import { computeRecurringRollup, deriveContractBilling } from '@/lib/recurring-value';
 import {
-  useQuote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice,
+  useQuote, useQuoteItems, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice,
   getQuoteCustomerName, getQuoteCustomerEmail, getQuoteCompanyName,
   type QuoteStatus,
 } from '@/hooks/useQuotes';
+import { decideQuoteSave, resolveQuoteLines } from '@/lib/quote-lines';
 import { useRequestQuoteApproval, useSendQuote, useSendQuoteReminder, publicQuoteUrl } from '@/hooks/useQuoteWorkflow';
 import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
@@ -47,6 +48,11 @@ const STATUS_ACTIONS: Record<QuoteStatus, { label: string; next: QuoteStatus; va
 
 export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const { data: quote } = useQuote(quoteId || undefined);
+  // The lines may live in `quote_items` (agent/API path) instead of the
+  // quotes.line_items JSONB this panel has always edited. Read that store too:
+  // a Save that never loaded the real lines must not be allowed to rewrite the
+  // totals. See src/lib/quote-lines.ts.
+  const { data: quoteItemRows, isSuccess: itemsRead } = useQuoteItems(quoteId || undefined);
   const updateQuote = useUpdateQuote();
   const deleteQuote = useDeleteQuote();
   const convertToInvoice = useConvertQuoteToInvoice();
@@ -60,6 +66,10 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const sendReminder = useSendQuoteReminder();
 
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
+  /** How many lines were actually LOADED for this quote (before any editing).
+   *  Zero-because-nothing-was-there and zero-because-the-user-deleted-them are
+   *  different facts, and only the second one may be saved as a zero. */
+  const [loadedLineCount, setLoadedLineCount] = useState<number | null>(null);
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
   const [validUntil, setValidUntil] = useState('');
@@ -68,18 +78,43 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
 
   const { data: products = [] } = useProducts();
 
-  useEffect(() => {
-    if (quote) {
-      setLineItems(quote.line_items || []);
-      setTaxRate(quote.tax_rate);
-      setNotes(quote.notes || '');
-      setValidUntil(quote.valid_until || '');
-      setPrepaymentPct(quote.prepayment_pct != null ? String(quote.prepayment_pct) : '');
-      setDefaultTerm(quote.default_term_months != null ? String(quote.default_term_months) : '');
-    }
-  }, [quote]);
+  const resolvedLines = useMemo(
+    () => resolveQuoteLines({
+      itemsLoaded: !!quoteId && itemsRead,
+      itemRows: quoteItemRows,
+      jsonbLines: quote?.line_items,
+    }),
+    [quoteId, itemsRead, quoteItemRows, quote?.line_items],
+  );
+  const linesEditable = resolvedLines.editable;
 
-  const totals = computeInvoiceTotals(lineItems, taxRate);
+  useEffect(() => {
+    if (!quote) return;
+    // Never seed the form from a half-read: an empty list here would look
+    // exactly like a quote with no lines, and Save would believe it.
+    if (resolvedLines.origin === 'unknown') return;
+    setLineItems(resolvedLines.items);
+    setLoadedLineCount(resolvedLines.items.length);
+    setTaxRate(quote.tax_rate);
+    setNotes(quote.notes || '');
+    setValidUntil(quote.valid_until || '');
+    setPrepaymentPct(quote.prepayment_pct != null ? String(quote.prepayment_pct) : '');
+    setDefaultTerm(quote.default_term_months != null ? String(quote.default_term_months) : '');
+  }, [quote, resolvedLines]);
+
+  // Totals are only ours to compute when the lines are ours to edit. For a
+  // quote whose lines live in `quote_items` the header totals are maintained by
+  // the recalc_quote_totals trigger — show those, don't invent new ones.
+  const totals = useMemo(
+    () => (linesEditable
+      ? computeInvoiceTotals(lineItems, taxRate)
+      : {
+          subtotal_cents: quote?.subtotal_cents ?? 0,
+          tax_cents: quote?.tax_cents ?? 0,
+          total_cents: quote?.total_cents ?? 0,
+        }),
+    [linesEditable, lineItems, taxRate, quote?.subtotal_cents, quote?.tax_cents, quote?.total_cents],
+  );
   // Derived recurring rollup — silent for a pure one-time quote (the degenerate
   // case where every line is one_time). See recurring-value-model.md.
   const termMonths = defaultTerm.trim() === '' ? null : Number(defaultTerm);
@@ -96,18 +131,40 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
       toast.error('Prepayment % must be between 1 and 100 (leave empty for full amount)');
       return;
     }
-    updateQuote.mutate({
+    // A Save must never delete lines it never loaded. This is the whole reason
+    // the guard exists: an agent-written quote kept its lines in `quote_items`,
+    // this panel loaded the empty JSONB column, recomputed 0 and wrote it back —
+    // 2 247,50 kr became 0 kr with nothing edited.
+    const decision = decideQuoteSave({
+      origin: resolvedLines.origin,
+      editedLineCount: lineItems.length,
+      loadedLineCount: loadedLineCount ?? 0,
+      currentTotalCents: quote.total_cents ?? 0,
+    });
+    if (!decision.allowed) {
+      toast.error(decision.reason);
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
       id: quote.id,
-      line_items: lineItems,
-      tax_rate: taxRate,
       notes: notes || null,
       valid_until: validUntil || null,
       prepayment_pct: pct,
       default_term_months: termMonths != null && Number.isFinite(termMonths) && termMonths > 0
         ? Math.round(termMonths) : null,
-      ...totals,
-    } as any);
-  }, [quote, lineItems, taxRate, notes, validUntil, prepaymentPct, termMonths, totals, updateQuote]);
+    };
+    if (decision.writeLines) {
+      payload.line_items = lineItems;
+      payload.tax_rate = taxRate;
+      Object.assign(payload, totals);
+    } else {
+      // Lines and totals belong to another store — say so instead of pretending
+      // the save covered them.
+      toast.warning(decision.reason);
+    }
+    updateQuote.mutate(payload as any);
+  }, [quote, lineItems, loadedLineCount, resolvedLines, taxRate, notes, validUntil, prepaymentPct, termMonths, totals, updateQuote]);
 
   const handleStatusChange = (next: QuoteStatus) => {
     if (!quote) return;
@@ -199,6 +256,15 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
           {/* Line items */}
           <div className="space-y-3">
             <Label>Line Items</Label>
+            {resolvedLines.origin === 'unknown' && (
+              <p className="text-sm text-muted-foreground">Loading line items…</p>
+            )}
+            {resolvedLines.origin === 'quote_items' && (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400">
+                These lines are stored on the quote itself (written by the agent/API path), not in this
+                editor. They are shown read-only — saving here leaves them and the totals untouched.
+              </p>
+            )}
             {lineItems.map((item, i) => (
               <div key={i} className="flex gap-2 items-start">
                 <Input
@@ -206,6 +272,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   value={item.description}
                   onChange={(e) => updateLineItem(i, 'description', e.target.value)}
                   className="flex-1"
+                  disabled={!linesEditable}
                 />
                 <Input
                   type="number"
@@ -220,6 +287,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   }}
                   onFocus={(e) => e.target.select()}
                   className="w-16"
+                  disabled={!linesEditable}
                 />
                 <Input
                   type="number"
@@ -239,6 +307,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   }}
                   onFocus={(e) => e.target.select()}
                   className="w-32"
+                  disabled={!linesEditable}
                 />
                 <Input
                   type="number"
@@ -260,10 +329,12 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   onFocus={(e) => e.target.select()}
                   className="w-20"
                   title="Line discount %"
+                  disabled={!linesEditable}
                 />
                 <Select
                   value={item.recurrence ?? 'one_time'}
                   onValueChange={(v) => updateLineItem(i, 'recurrence', v)}
+                  disabled={!linesEditable}
                 >
                   <SelectTrigger className="w-[92px]" title="Billing cadence">
                     <SelectValue />
@@ -274,17 +345,17 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                     <SelectItem value="year">/ year</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="icon" onClick={() => removeLineItem(i)}>
+                <Button variant="ghost" size="icon" onClick={() => removeLineItem(i)} disabled={!linesEditable}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ))}
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={addLineItem}>
+              <Button variant="outline" size="sm" onClick={addLineItem} disabled={!linesEditable}>
                 <Plus className="h-3 w-3 mr-1" /> Add item
               </Button>
               {products.length > 0 && (
-                <Select value="" onValueChange={addFromProduct}>
+                <Select value="" onValueChange={addFromProduct} disabled={!linesEditable}>
                   <SelectTrigger className="w-[220px] h-8 text-sm">
                     <SelectValue placeholder="Add from product…" />
                   </SelectTrigger>
@@ -311,6 +382,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
               value={Math.round(taxRate * 100)}
               onChange={(e) => setTaxRate((parseInt(e.target.value) || 0) / 100)}
               className="w-24"
+              disabled={!linesEditable}
             />
           </div>
 
@@ -487,7 +559,10 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={handleSave} disabled={updateQuote.isPending}>
+            <Button
+              onClick={handleSave}
+              disabled={updateQuote.isPending || resolvedLines.origin === 'unknown'}
+            >
               Save Changes
             </Button>
             {quote.status === 'draft' && (

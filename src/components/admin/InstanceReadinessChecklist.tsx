@@ -145,6 +145,25 @@ export function useInstanceReadiness() {
     enabled: isAdmin,
   });
 
+  // Skill COVERAGE — not the row count.
+  //
+  // "Hur många rader finns i agent_skills" kan inte se ett hål: instansen som
+  // bar 96 av 347 skills (commerce/contracts/subscriptions/invoicing/tickets/
+  // sla/field-service påslagna och tomma) lyste grönt på radantalet. Kravet
+  // kommer ur seed-artefakten som deployen bär, korsat med modulraden — och det
+  // finns bara EN plats som kan göra den korsningen billigt: servern, i
+  // sync_skills_from_code, som är samma skrivare som seedar raderna.
+  //
+  // Anropet är också reparationen (idempotent, skriver bara när något fattas),
+  // deduplicerat per sidladdning i ensureSkillRegistry — samma mätning som
+  // admin-skalet redan gör, inte en andra.
+  const coverageQ = useQuery({
+    queryKey: ['skill-registry-coverage'],
+    queryFn: () => ensureSkillRegistry(),
+    staleTime: 60_000,
+    enabled: isAdmin,
+  });
+
   const edgeQ = useDeployedEdgeFunctions();
   const secretsQ = useIntegrationStatus();
   const aiConfigured = useIsAIConfigured();
@@ -154,6 +173,9 @@ export function useInstanceReadiness() {
     syncQ.isLoading ||
     cronQ.isLoading ||
     settingsQ.isLoading ||
+    // Utan den här skulle raden hinna lysa grönt på radantalet innan täckningen
+    // svarat — en falsk grön bock i en halv sekund är fortfarande en lögn.
+    coverageQ.isLoading ||
     edgeQ.isLoading ||
     secretsQ.isLoading;
 
@@ -171,6 +193,14 @@ export function useInstanceReadiness() {
         expectedHash: expected.skills.seed_hash,
         expectedCount: expected.skills.skill_count,
         platformFloor: PLATFORM_SKILL_NAMES.length,
+        // `expected: 0` betyder "servern kunde inte mäta" (fel, eller ett svar
+        // utan täckningsblock från en äldre deployad agent-execute) — det ska
+        // läsa som "vet inte", aldrig som "inget krävs".
+        requiredByEnabledModules:
+          coverageQ.data && coverageQ.data.expected > 0 ? coverageQ.data.expected : null,
+        missingForEnabledModules:
+          coverageQ.data && coverageQ.data.expected > 0 ? coverageQ.data.missing : null,
+        missingSample: coverageQ.data?.missingNames ?? [],
       },
       edge: {
         deployed: edgeQ.data?.functions ?? null,
@@ -194,7 +224,7 @@ export function useInstanceReadiness() {
         enabledCount: settingsQ.data?.modulesEnabled ?? null,
       },
     });
-  }, [syncQ.data, cronQ.data, settingsQ.data, settingsQ.isError, edgeQ.data, secretsQ.data, secretsQ.isError, aiConfigured]);
+  }, [syncQ.data, cronQ.data, settingsQ.data, settingsQ.isError, coverageQ.data, edgeQ.data, secretsQ.data, secretsQ.isError, aiConfigured]);
 
   return {
     rows,
@@ -362,6 +392,7 @@ export function InstanceReadinessChecklist({
       queryClient.invalidateQueries({ queryKey: ['cron-health'] }),
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] }),
       queryClient.invalidateQueries({ queryKey: ['agent-automations'] }),
+      queryClient.invalidateQueries({ queryKey: ['skill-registry-coverage'] }),
     ]);
   }, [queryClient]);
 
@@ -371,14 +402,18 @@ export function InstanceReadinessChecklist({
       try {
         if (id === 'seed-skills') {
           const platform = await bootstrapPlatform();
-          const registry = await ensureSkillRegistry();
+          const registry = await ensureSkillRegistry({ fresh: true });
           await invalidate();
           // Verify, don't trust: the seeder's own report is a claim. Re-read
           // the registry and quote the number that came back.
           const { count } = await supabase
             .from('agent_skills')
             .select('id', { count: 'exact', head: true });
-          const failed = platform.errors.length > 0 || registry.status === 'error';
+          // "Klar" är inte "körningen svarade utan fel" — det är "hålet är
+          // borta". registry.missing kommer ur serverns återläsning, så en
+          // halvlyckad seedning kan inte stämpla sig grön.
+          const failed =
+            platform.errors.length > 0 || registry.status === 'error' || registry.missing > 0;
 
           // Stamp the instance with the seed bundle that was just applied —
           // ONLY on a fully clean run, exactly as the Modules page does.
@@ -414,8 +449,16 @@ export function InstanceReadinessChecklist({
             variant: failed ? 'destructive' : 'default',
             title: failed ? 'Skill seeding did not fully succeed' : 'Skills seeded',
             description: failed
-              ? `${platform.errors[0] ?? registry.error ?? 'Unknown error'} — agent_skills now holds ${count ?? '?'} row(s).`
-              : `agent_skills now holds ${count ?? '?'} row(s).`,
+              ? `${
+                  platform.errors[0] ??
+                  registry.error ??
+                  (registry.missing > 0
+                    ? `${registry.missing}/${registry.expected} required skill(s) still missing (${registry.missingNames
+                        .slice(0, 3)
+                        .join(', ')})`
+                    : 'Unknown error')
+                } — agent_skills now holds ${count ?? '?'} row(s).`
+              : `agent_skills now holds ${count ?? '?'} row(s) — all ${registry.expected} required by the enabled modules.`,
           });
         } else if (id === 'set-site-url') {
           // Du står redan på domänen — skriv inte in den för hand. MERGE, inte

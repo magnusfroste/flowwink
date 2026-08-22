@@ -21,7 +21,10 @@ export interface Ticket {
   contact_name: string | null;
   source: string;
   source_id: string | null;
+  /** Written by the SLA sweep / sla_ticket_deadline() — never by the client. */
   sla_deadline: string | null;
+  /** Which clock `sla_deadline` belongs to (first_response | resolution). */
+  sla_metric: string | null;
   resolved_at: string | null;
   closed_at: string | null;
   tags: string[];

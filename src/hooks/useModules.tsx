@@ -536,7 +536,7 @@ export const defaultModulesSettings: ModulesSettings = {
   sla: {
     enabled: false,
     name: 'SLA Monitor',
-    description: 'Define response and resolution time targets — FlowPilot monitors compliance and flags breaches automatically',
+    description: 'Define response and resolution time targets — a sweep measures compliance every 15 minutes and flags breaches automatically',
     icon: 'Shield',
     category: 'insights',
     autonomy: 'agent-capable',

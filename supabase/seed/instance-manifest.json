@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260823030000",
-      "migrations_count": 491,
+      "migration_head": "20260823120000",
+      "migrations_count": 496,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1969,21 +1969,41 @@
         {
           "version": "20260823030000",
           "name": "a-business-since-2019-has-an-opening-balance"
+        },
+        {
+          "version": "20260823040000",
+          "name": "a4b5c6d7-a-contract-is-not-everyones-to-read"
+        },
+        {
+          "version": "20260823053000",
+          "name": "b5c6d7e8-the-escalation-sweep-never-swept"
+        },
+        {
+          "version": "20260823090000",
+          "name": "d5e6f7a8-svarstiden-mats-fran-svaret"
+        },
+        {
+          "version": "20260823110000",
+          "name": "5cd236e0-a-token-lookup-returns-a-view-not-the-row"
+        },
+        {
+          "version": "20260823120000",
+          "name": "c6d7e8f9-nyckelknippan-lag-i-skyltfonstret"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:f9f05bd7c59187be540767e360466996a46cca5ec6410316c845822303819822",
-      "skill_count": 537,
+      "seed_hash": "sha256:a549f454775aacd6e1b990f266e4307539f98ee8cd5c5741c4c4664a7bab13a8",
+      "skill_count": 538,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:41dc8cec817df8aaa5eeb85d38dcb7544b027cac623bc23fed0ce9fa37a8b353",
+      "shared_hash": "sha256:235f676e262b66bf6ffbbc921e059651f798a91af58f59e5baa71da4cf2bbf15",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:fb09faab8e808d64f509a8781257e21505c144de6acde14cc8aa6a0c22029902",
+        "agent-execute": "sha256:32d5df4a0cd040d16bd0c78afca9208e16c8a9c40eba947aafcca20b0b77f0c7",
         "agent-operate": "sha256:75fb1281c6ee8aa748f24c44a0b866686a12cf11df5291d7ff5e6aa59a2c1d2a",
         "ai-task": "sha256:4f3549a12beac9c958dc7b584c91202f67fd5700dad7ac9e512e5483ddfb29c7",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2038,7 +2058,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:d29c2a9ce0c09d1d4e074ae002b78efe337bb293c51045e4846252144c3ac5b9",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:c27bfd0f9beb7b4357b1aea7b0e6ede63f7dea8c38e0d8e27d0ea63fdfd21d22",
+        "run-platform-tests": "sha256:6d79454371553d0d19efad9a3552bebbb2c53afd180a1ed330308099ec4d34e2",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
@@ -2057,7 +2077,7 @@
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
         "web-scrape": "sha256:f0948362eb60ff2d597de407af0f3eedb3b0f892b75ce4acff960e0b6ebf146f",
         "web-search": "sha256:6002f6b14ad490cfa0b444129694f123fad021050234cc8f87ee04ebb16c5320",
-        "workspace-chat": "sha256:e170ea24f9d72ceb18f0ba3316a27cbb0b2baee93aa44614f0be30778f02b8b0"
+        "workspace-chat": "sha256:6019aa2baa8167a4a3111b7e81960ff75aaf48ee313b996327e1d1ba7d32ddcf"
       }
     },
     "frontend": {
