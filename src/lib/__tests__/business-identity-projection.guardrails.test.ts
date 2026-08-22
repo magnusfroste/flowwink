@@ -35,6 +35,15 @@ import {
   loadBusinessIdentityBlock,
   IDENTITY_FIELDS,
 } from '../../../supabase/functions/_shared/domains/business-identity-block.ts';
+import { executeCompanyProfile } from '../../../supabase/functions/_shared/handlers/company-profile.ts';
+import {
+  normalizeCompanyProfileShapes,
+  normalizeNamedItems,
+  normalizePrimaryCta,
+  normalizeProofPoints,
+  normalizeTestimonials,
+} from '../company-profile-shapes';
+import { defaultProfile } from '../../hooks/useCompanyInsights';
 
 // ─── En fejkad site_settings-läsning ────────────────────────────────────────
 
@@ -413,5 +422,265 @@ describe('vad de alltid-på ytorna betalar', () => {
       expect(['core', 'narrative']).toContain(spec.depth);
       expect(spec.label.length).toBeGreaterThan(0);
     }
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. Formerna materialet hålls i
+//
+// Att bredda projektionen avslöjade andra halvan: flera fält bar bara HÄLFTEN
+// av vad ett block behöver, så en sidbyggande agent fick skriva resten själv.
+// Fem hål, samma klass — och botten i varje: tomt går att fylla i, påhittat
+// går inte att ta tillbaka.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const profileWith = (extra: Record<string, unknown>) =>
+  fakeSupabase([{ key: 'company_profile', value: { company_name: 'Optic Tunnels AB', ...extra } }]);
+
+describe('hål 1 — en differentiator bär sin egen förklaring', () => {
+  it('tar samma {name, description}-form som services', () => {
+    expect(normalizeNamedItems([{ name: 'Egen projektering', description: 'Vi ritar själva' }]))
+      .toEqual([{ id: expect.any(String), name: 'Egen projektering', description: 'Vi ritar själva' }]);
+  });
+
+  it('migrerar den gamla string[]-formen på läsning — och lämnar beskrivningen TOM', () => {
+    // Tomheten är poängen: etiketten överlever, och ingenting hittar på den
+    // halva som aldrig skrevs ner.
+    const items = normalizeNamedItems(['Egen projektering', 'Jour dygnet runt']);
+    expect(items.map((i) => i.name)).toEqual(['Egen projektering', 'Jour dygnet runt']);
+    expect(items.every((i) => i.description === '')).toBe(true);
+  });
+
+  it('droppar namnlösa poster — de renderas som tomma kort', () => {
+    expect(normalizeNamedItems([{ description: 'föräldralös' }])).toEqual([]);
+  });
+
+  it('bred projektion bär beskrivningarna, smal bara etiketterna', async () => {
+    const rows = { differentiators: [{ name: 'Egen projektering', description: 'Vi ritar själva' }] };
+    const wide = await loadBusinessIdentityBlock(profileWith(rows), 'narrative');
+    const narrow = await loadBusinessIdentityBlock(profileWith(rows), 'core');
+
+    expect(wide).toContain('Egen projektering — Vi ritar själva');
+    expect(narrow).toContain('Egen projektering');
+    expect(narrow).not.toContain('Vi ritar själva');
+  });
+
+  it('en profil ingen har sparat om går inte mörk — och skriver aldrig [object Object]', async () => {
+    const block = await loadBusinessIdentityBlock(profileWith({ differentiators: ['Egen projektering'] }), 'narrative');
+    expect(block).toContain('Differentiators: Egen projektering');
+    expect(block).not.toContain('[object Object]');
+  });
+});
+
+describe('hål 2 — ett tal lagras SOM ett tal, aldrig läst tillbaka ur prosa', () => {
+  it('bär {value, label, context}', () => {
+    expect(normalizeProofPoints([{ value: '99,98 %', label: 'tillgänglighet', context: '2025' }])[0])
+      .toMatchObject({ value: '99,98 %', label: 'tillgänglighet', context: '2025' });
+  });
+
+  it('delar en naken sträng bara på en LEDANDE siffra', () => {
+    expect(normalizeProofPoints(['412 km kanalisation'])[0]).toMatchObject({ value: '412 km', label: 'kanalisation' });
+  });
+
+  it('lämnar value TOMT när texten inte börjar med en siffra', () => {
+    // Ingen siffra hittas på ur ord; texten förblir en etikett.
+    expect(normalizeProofPoints(['marknadsledande'])[0]).toMatchObject({ value: '', label: 'marknadsledande' });
+  });
+
+  it('minerar aldrig delivered_value — prosa förblir prosa', async () => {
+    const block = await loadBusinessIdentityBlock(
+      profileWith({ delivered_value: 'Vi levererade 412 km kanalisation med 99,98 % tillgänglighet.' }),
+      'narrative',
+    );
+    // Prosan når prompten (det var hela poängen med narrative), men den blir
+    // aldrig proof points: att befordra en siffra ur en mening är ett beslut
+    // mot källan, inte en regex.
+    expect(block).toContain('412 km kanalisation');
+    expect(block).not.toContain('Proof points');
+  });
+
+  it('projicerar figurerna ordagrant, en per rad, och bara i bred projektion', async () => {
+    const rows = { proof_points: [{ value: '412 km', label: 'kanalisation byggd', context: 'sedan 2014' }] };
+    const wide = await loadBusinessIdentityBlock(profileWith(rows), 'narrative');
+    const narrow = await loadBusinessIdentityBlock(profileWith(rows), 'core');
+
+    expect(wide).toContain('412 km kanalisation byggd (sedan 2014)');
+    expect(wide).toMatch(/Proof points \(verbatim figures/);
+    expect(narrow).not.toContain('412 km');
+  });
+
+  it('säger åt skribenten att inte härleda en enda siffra till', async () => {
+    const wide = await loadBusinessIdentityBlock(profileWith({ proof_points: [{ value: '412 km', label: 'x' }] }), 'narrative');
+    expect(wide).toMatch(/do not derive, round or convert one out of prose/);
+  });
+});
+
+describe('hål 3 — sidan har en uppmaning', () => {
+  it('normaliserar {label, destination, intent}', () => {
+    expect(normalizePrimaryCta({ label: 'Boka möte', url: '/kontakt', goal: 'scoping' }))
+      .toEqual({ label: 'Boka möte', destination: '/kontakt', intent: 'scoping' });
+  });
+
+  it('är null utan etikett — en knapp utan text är ingen knapp', () => {
+    expect(normalizePrimaryCta({ destination: '/kontakt' })).toBeNull();
+    expect(normalizePrimaryCta('')).toBeNull();
+  });
+
+  it('projicerar label → destination (intent) i bred projektion', async () => {
+    const rows = { primary_cta: { label: 'Boka möte', destination: '/kontakt', intent: '30 min scoping' } };
+    const wide = await loadBusinessIdentityBlock(profileWith(rows), 'narrative');
+    const narrow = await loadBusinessIdentityBlock(profileWith(rows), 'core');
+
+    expect(wide).toContain('Primary call to action: Boka möte → /kontakt (30 min scoping)');
+    // De alltid-på ytorna ruttar via boundaries och kanalen de redan sitter i.
+    expect(narrow).not.toContain('Primary call to action');
+  });
+
+  it('en CTA utan etikett blir ingen rubrik alls', async () => {
+    const block = await loadBusinessIdentityBlock(profileWith({ primary_cta: { destination: '/kontakt' } }), 'narrative');
+    expect(block).not.toContain('Primary call to action');
+  });
+});
+
+describe('hål 4 — ett omdöme är ett citat MED den som sa det', () => {
+  it('migrerar den gamla klumpen till ETT oattribuerat citat', () => {
+    const items = normalizeTestimonials('De löste på en vecka vad vi dragit på i ett år.');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ quote: 'De löste på en vecka vad vi dragit på i ett år.', author: '', role: '' });
+  });
+
+  it('håller attributionen tom hellre än gissad', () => {
+    expect(normalizeTestimonials([{ text: 'Bra jobbat', by: 'Anna', position: 'CTO', organization: 'Nordbrygg' }])[0])
+      .toMatchObject({ quote: 'Bra jobbat', author: 'Anna', role: 'CTO', company: 'Nordbrygg' });
+    expect(normalizeTestimonials([{ author: 'Anna' }])).toEqual([]); // inget citat, inget omdöme
+  });
+
+  it('projicerar attributionen — och lånar aldrig ett namn till ett citat som saknar det', async () => {
+    const block = await loadBusinessIdentityBlock(profileWith({
+      clients: 'Västerås Stadsnät',
+      client_testimonials: [
+        { quote: 'Tre veckor före tidplan', author: 'Anna Ek', role: 'projektledare', company: 'Västerås Stadsnät' },
+        { quote: 'Snabbt och prydligt' },
+      ],
+    }), 'narrative');
+
+    expect(block).toContain('"Tre veckor före tidplan" — Anna Ek, projektledare, Västerås Stadsnät');
+    expect(block).toContain('"Snabbt och prydligt"');
+    expect(block).toMatch(/attribute no quote to a person the identity does not name/);
+  });
+
+  it('den gamla strängklumpen släpps igenom orörd — den bär ofta sin egen attribution', async () => {
+    const block = await loadBusinessIdentityBlock(
+      profileWith({ client_testimonials: '"Tre veckor före tidplan." — Västerås Stadsnät' }),
+      'narrative',
+    );
+    expect(block).toContain('"Tre veckor före tidplan." — Västerås Stadsnät');
+  });
+});
+
+describe('hål 5 — ett fält som når en prompt går att rätta av en människa', () => {
+  const page = readFileSync(resolve(__dirname, '../../pages/admin/CompanyInsightsPage.tsx'), 'utf-8');
+
+  it('tagline och business_purpose projiceras', async () => {
+    const { block } = await loadBusinessIdentity(profileWith({
+      tagline: 'Fiber utan avbrott',
+      business_purpose: 'Så att kritisk infrastruktur inte tystnar.',
+    }), 'narrative');
+
+    expect(block).toContain('Tagline: Fiber utan avbrott');
+    expect(block).toContain('Så att kritisk infrastruktur inte tystnar.');
+  });
+
+  it('...och varje projicerat fält är deklarerat på CompanyProfile', () => {
+    // Buggklassen: agentskrivet (update_company_profile mergar vilken nyckel
+    // som helst), promptläst, men osynligt i typ och UI.
+    for (const spec of IDENTITY_FIELDS) {
+      expect(Object.keys(defaultProfile)).toContain(spec.key);
+    }
+  });
+
+  it('...och varje projicerat fält går att redigera på Business Identity-sidan', () => {
+    for (const key of [
+      'tagline', 'business_purpose', 'proof_points', 'primary_cta',
+      'differentiators', 'client_testimonials', 'services',
+    ]) {
+      expect(page).toContain(`update("${key}"`);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. Skrivvägen coercar det agenter gissar
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('update_company_profile formar det den tar emot', () => {
+  /** site_settings-stub som fångar det som upsertas. */
+  function writableDb(current: Record<string, unknown>) {
+    const captured: { value?: Record<string, unknown> } = {};
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = () => chain;
+    chain.upsert = (row: { value: Record<string, unknown> }) => {
+      captured.value = row.value;
+      return chain;
+    };
+    chain.maybeSingle = () => Promise.resolve({ data: { value: current } });
+    chain.single = () => Promise.resolve({ data: { value: captured.value, updated_at: 'now' } });
+    return { db: { from: () => chain } as never, captured };
+  }
+
+  const update = async (current: Record<string, unknown>, data: Record<string, unknown>) => {
+    const { db, captured } = writableDb(current);
+    await executeCompanyProfile(db, { data }, 'update_company_profile');
+    return captured.value as Record<string, unknown>;
+  };
+
+  it('gissade differentiator-strängar blir den kanoniska formen', async () => {
+    expect(await update({}, { differentiators: ['Egen projektering'] })).toMatchObject({
+      differentiators: [{ id: expect.any(String), name: 'Egen projektering', description: '' }],
+    });
+  });
+
+  it('en proof point skickad som naken sträng coercas', async () => {
+    expect(await update({}, { proof_points: ['99,98 % tillgänglighet'] })).toMatchObject({
+      proof_points: [{ id: expect.any(String), value: '99,98 %', label: 'tillgänglighet', context: '' }],
+    });
+  });
+
+  it('en etikettlös CTA vägras, och en citatklump behåller sin text', async () => {
+    const saved = await update({}, { primary_cta: { destination: '/kontakt' }, client_testimonials: 'Bra jobbat' });
+    expect(saved.primary_cta).toBeNull();
+    expect(saved.client_testimonials).toEqual([
+      { id: expect.any(String), quote: 'Bra jobbat', author: '', role: '', company: '' },
+    ]);
+  });
+
+  it('rör bara nycklarna som skickas — mergen förblir grund', async () => {
+    const saved = await update(
+      { icp: 'Stadsnät', services: [{ id: 'x', name: 'Drift', description: '' }] },
+      { tagline: 'Fiber utan avbrott' },
+    );
+    expect(saved.icp).toBe('Stadsnät');
+    expect(saved.services).toEqual([{ id: 'x', name: 'Drift', description: '' }]);
+    expect(saved.tagline).toBe('Fiber utan avbrott');
+  });
+
+  it('normalizeCompanyProfileShapes lämnar frånvarande nycklar frånvarande', () => {
+    expect(Object.keys(normalizeCompanyProfileShapes({ tagline: 'x' }))).toEqual(['tagline']);
+  });
+});
+
+describe('agentytan beskriver formerna den bedöms på', () => {
+  const seed = readFileSync(resolve(__dirname, '../modules/company-insights-module.ts'), 'utf-8');
+
+  it('update_company_profile dokumenterar varje strukturerat fält', () => {
+    for (const key of ['proof_points', 'primary_cta', 'client_testimonials', 'differentiators']) {
+      expect(seed).toContain(`${key}: {`);
+    }
+  });
+
+  it('säger åt operatören att tomt slår påhittat', () => {
+    expect(seed).toMatch(/Never fill an attribution or a figure you cannot source/);
   });
 });

@@ -3,22 +3,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { callSkill } from '@/lib/call-skill';
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import {
+  isBlankValue,
+  normalizeCompanyProfileShapes,
+  type NamedItem,
+  type PrimaryCta,
+  type ProofPoint,
+  type Testimonial,
+} from "@/lib/company-profile-shapes";
 
-export interface ServiceItem {
-  id: string;
-  name: string;
-  description: string;
-}
+export type { NamedItem, PrimaryCta, ProofPoint, Testimonial };
+
+/** Services (and now differentiators) — a label WITH its explanation. */
+export type ServiceItem = NamedItem;
 
 export interface CompanyProfile {
   company_name: string;
+  /** One line under the company name — the shortest true sentence about it. */
+  tagline: string;
   about_us: string;
+  /** Why the company exists, in its own words. Written by agents long before it had an editor. */
+  business_purpose: string;
   services: ServiceItem[];
+  /** Prose about outcomes. The NUMBERS in it belong in proof_points, not here. */
   delivered_value: string;
+  /** Numbers held as numbers — what a `stats` block renders without parsing prose. */
+  proof_points: ProofPoint[];
   clients: string;
-  client_testimonials: string;
+  client_testimonials: Testimonial[];
   target_industries: string[];
-  differentiators: string[];
+  /** Label + description, so a `features` block has both halves without inventing one. */
+  differentiators: ServiceItem[];
+  /** What the visitor should DO. Without it, a generated page has no ask. */
+  primary_cta: PrimaryCta | null;
   value_proposition: string;
   icp: string;
   /** How claims are made — a writing RULE injected into every outward AI surface; it overrides campaign briefs. */
@@ -52,13 +69,17 @@ export interface EnrichmentEntry {
 
 export const defaultProfile: CompanyProfile = {
   company_name: "",
+  tagline: "",
   about_us: "",
+  business_purpose: "",
   services: [],
   delivered_value: "",
+  proof_points: [],
   clients: "",
-  client_testimonials: "",
+  client_testimonials: [],
   target_industries: [],
   differentiators: [],
+  primary_cta: null,
   value_proposition: "",
   icp: "",
   claim_stance: "",
@@ -83,22 +104,6 @@ export const defaultProfile: CompanyProfile = {
 const QUERY_KEY = ["site-settings", "company_profile"];
 
 /**
- * Normalize legacy services format.
- * Old format: Record<string, string> → New format: ServiceItem[]
- */
-function normalizeServices(raw: unknown): ServiceItem[] {
-  if (Array.isArray(raw)) return raw as ServiceItem[];
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    return Object.entries(raw as Record<string, string>).map(([name, description]) => ({
-      id: crypto.randomUUID(),
-      name,
-      description: description || "",
-    }));
-  }
-  return [];
-}
-
-/**
  * Merge enrichment data into current profile.
  * DEFENSIVE: Only fills EMPTY fields — never overwrites existing data.
  * Returns the merged profile and list of fields that were updated.
@@ -110,15 +115,19 @@ function mergeEnrichment(
   const merged = { ...current };
   const fieldsUpdated: string[] = [];
 
-  for (const [key, val] of Object.entries(extracted)) {
+  // Coerce the extractor's shapes BEFORE comparing — an enricher that returns
+  // differentiators as strings must not write strings into a structured field.
+  const incoming = normalizeCompanyProfileShapes(extracted);
+
+  for (const [key, val] of Object.entries(incoming)) {
     if (key === "enrichment_log" || key === "services") continue;
     const currentVal = (current as unknown as Record<string, unknown>)[key];
 
-    // Skip if the extracted value is empty
-    if (!val || !String(val).trim()) continue;
+    // Skip if the extracted value is empty (blank string, empty list, empty object)
+    if (isBlankValue(val)) continue;
 
     // Skip if current field already has data (DEFENSIVE — never overwrite)
-    if (currentVal && String(currentVal).trim()) continue;
+    if (!isBlankValue(currentVal)) continue;
 
     (merged as unknown as Record<string, unknown>)[key] = val;
     fieldsUpdated.push(key);
@@ -139,10 +148,13 @@ export function useCompanyInsights() {
         .eq("key", "company_profile")
         .maybeSingle();
       if (error) throw error;
-      const raw = { ...defaultProfile, ...(data?.value as unknown as Partial<CompanyProfile>) };
-      // Normalize legacy services format
-      raw.services = normalizeServices(raw.services);
-      return raw as CompanyProfile;
+      const stored = (data?.value ?? {}) as Record<string, unknown>;
+      // Read-side migration: services (legacy Record), differentiators (legacy
+      // string[]), client_testimonials (legacy single blob) and primary_cta all
+      // arrive in whatever shape the writer used — the editor only ever sees the
+      // canonical one. Nothing is written back until the user saves.
+      const raw = { ...defaultProfile, ...normalizeCompanyProfileShapes(stored) };
+      return raw as unknown as CompanyProfile;
     },
     staleTime: 1000 * 60 * 5,
   });
