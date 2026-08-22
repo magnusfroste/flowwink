@@ -4596,9 +4596,7 @@
                 "value": "100%",
                 "label": "Self-Hostable & Open Source"
               }
-            ],
-            "columns": 4,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -4610,7 +4608,6 @@
             "content": "Every ERP you've used is a form waiting to be filled. A workflow waiting to be triggered. A dashboard waiting to be read. They digitize processes — but you still run them.\n\nFlowWink inverts this entirely. It's an ERP where agentic intelligence is native — not a plugin, not a module, not a chatbot in the corner. The process engine itself has objectives, memory, and skills.\n\nIt doesn't wait for a purchase order to be created. It identifies the need, drafts the order, and routes it for approval. That's the difference between a system that reacts and one that acts.",
             "secondaryContent": "**Traditional ERP**\nEvent → Human notices → Human acts → Result\n\n**FlowWink BOS**\nObjective set → Agent monitors → Agent acts → Human approves",
             "layout": "text-text",
-            "contentFormat": "markdown",
             "primaryButton": {
               "text": "Meet FlowPilot",
               "url": "/flowpilot"
@@ -5810,8 +5807,7 @@
           "type": "form",
           "data": {
             "title": "Get in Touch",
-            "subtitle": "Start your free trial or ask us anything — we typically respond within a few hours.",
-            "formName": "contact",
+            "description": "Start your free trial or ask us anything — we typically respond within a few hours.",
             "fields": [
               {
                 "id": "name",
@@ -5842,7 +5838,7 @@
                 "placeholder": "Tell us what you need..."
               }
             ],
-            "submitText": "Send Message",
+            "submitButtonText": "Send Message",
             "successMessage": "Thanks! We'll be in touch shortly."
           }
         },
@@ -6766,9 +6762,7 @@
                 "label": "White-Label",
                 "icon": "Palette"
               }
-            ],
-            "columns": 4,
-            "variant": "cards"
+            ]
           }
         },
         {
@@ -6780,7 +6774,6 @@
             "content": "Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.\n\nFlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.\n\n**The result?** Agencies running 50+ client sites with a team of 5.",
             "secondaryContent": "**What FlowPilot Handles Per Client**\n\n• Blog content creation & scheduling\n• Lead capture & qualification\n• Newsletter campaigns\n• Ticket triage & KB management\n• Performance analytics & briefings\n• Client-facing AI chat support",
             "layout": "text-text",
-            "contentFormat": "markdown",
             "primaryButton": {
               "text": "Self-Host Free",
               "url": "https://github.com/magnusfroste/flowwink"
@@ -7015,9 +7008,7 @@
                 "label": "Successful Placements",
                 "icon": "CircleCheck"
               }
-            ],
-            "columns": 4,
-            "variant": "cards"
+            ]
           }
         },
         {
@@ -7305,7 +7296,6 @@
           "id": "ecom-marquee",
           "type": "marquee",
           "data": {
-            "title": "Trusted by Creators & Brands",
             "items": [
               {
                 "id": "em1",
@@ -7444,13 +7434,12 @@
             "imageSrc": "/templates/hero/data-abstract.jpg",
             "imageAlt": "Conversational service operations",
             "imagePosition": "right",
-            "imageObjectFit": "cover",
+            "imageFit": "cover",
             "imageRounded": "xl",
             "primaryButton": {
               "text": "Try It Now",
               "url": "#services-chat"
-            },
-            "verticalAlignment": "center"
+            }
           }
         },
         {
@@ -7534,7 +7523,7 @@
           "type": "booking",
           "data": {
             "title": "Book Your Appointment",
-            "subtitle": "Choose a service and time that works for you. Instant confirmation."
+            "description": "Choose a service and time that works for you. Instant confirmation."
           }
         },
         {
@@ -7680,7 +7669,7 @@
           "type": "booking",
           "data": {
             "title": "Book Your Appointment",
-            "subtitle": "Same-day appointments available. Choose your service and preferred time."
+            "description": "Same-day appointments available. Choose your service and preferred time."
           }
         },
         {
@@ -7911,9 +7900,7 @@
                 "value": "3",
                 "label": "Shells over one kernel"
               }
-            ],
-            "columns": 4,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -8465,9 +8452,7 @@
                 "value": "RLS",
                 "label": "Same permissions as a human"
               }
-            ],
-            "columns": 4,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -8898,9 +8883,7 @@
                 "value": "24/7",
                 "label": "Qualification cadence"
               }
-            ],
-            "columns": 3,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -9158,9 +9141,7 @@
                 "value": "4",
                 "label": "Dunning stages"
               }
-            ],
-            "columns": 3,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -9424,9 +9405,7 @@
                 "value": "Auto",
                 "label": "Stock reservation"
               }
-            ],
-            "columns": 3,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -9663,9 +9642,7 @@
                 "value": "OCR",
                 "label": "Receipt capture"
               }
-            ],
-            "columns": 3,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -9902,9 +9879,7 @@
                 "value": "Locked",
                 "label": "Closed periods, enforced"
               }
-            ],
-            "columns": 3,
-            "variant": "minimal"
+            ]
           }
         },
         {

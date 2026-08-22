@@ -61,7 +61,6 @@
             "gradientTitle": true,
             "titleAnimation": "slide-up",
             "subtitleAnimation": "fade-in",
-            "buttonAnimation": "fade-in",
             "showScrollIndicator": true,
             "primaryButton": {
               "text": "Shop the demo",

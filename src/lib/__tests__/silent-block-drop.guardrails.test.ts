@@ -13,14 +13,31 @@ describe('silent block drops are banned', () => {
   it('normalizeBlocks returns the reason for every dropped block', () => {
     const blocks = [
       { id: 'ok', type: 'hero', data: { title: 'T' } },
-      { id: 'bad', type: 'stats', data: { items: [{ value: '1', label: 'x' }] } },
+      { id: 'bad', type: 'stats', data: { title: 'Siffror' } },
     ];
     const dropped = normalizeBlocks(blocks);
     expect(blocks.length).toBe(1);
     expect(dropped.length).toBe(1);
-    // The reason names the block, the field, and the likely fix.
+    // The reason names the block and the field it needs.
     expect(dropped[0]).toContain('stats');
-    expect(dropped[0]).toContain('"items"');
+    expect(dropped[0]).toContain('missing required field');
+  });
+
+  it('the #98 stats/items case now RENDERS instead of being dropped', () => {
+    // This case used to be the example above: `items` on a stats block was
+    // refused. It is folded to `stats` since 2026-08-22, because StatsBlock
+    // itself reads `data.stats || data.items` — the name renders, so refusing it
+    // was a false no (and would have made every template-installed page, which
+    // authors stats.items, un-updatable through manage_page).
+    // The guardrail is unchanged in substance: nothing may vanish SILENTLY.
+    // A block is either folded to a shape that renders, or refused with a
+    // reason. What is banned is the third outcome — saved and invisible.
+    const blocks: Record<string, unknown>[] = [
+      { id: 'ok', type: 'stats', data: { items: [{ value: '1', label: 'x' }] } },
+    ];
+    expect(normalizeBlocks(blocks)).toEqual([]);
+    expect((blocks[0].data as Record<string, unknown>).stats).toHaveLength(1);
+    expect(blocks[0].data).not.toHaveProperty('items');
   });
 
   it('a valid page returns zero reasons', () => {
@@ -32,8 +49,10 @@ describe('silent block drops are banned', () => {
   it('manage_page create refuses (does not save) when blocks are dropped', () => {
     const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
     // "if (action === 'create')" appears in ~20 skills — anchor on the one
-    // line unique to manage_page create's write path instead.
-    const create = src.slice(src.indexOf('const pageBlocks = blocks || [];'), src.indexOf("if (action === 'update' && page_id)"));
+    // line unique to manage_page create's write path instead. (It reads
+    // `effectiveBlocks`, not `blocks`, since 2026-08-22: create used to ignore
+    // the content_json alias that update honoured and wrote an EMPTY page.)
+    const create = src.slice(src.indexOf('const pageBlocks = effectiveBlocks || [];'), src.indexOf("if (action === 'update' && page_id)"));
     expect(create).toContain('normalizeBlocks');
     expect(create).toMatch(/dropped.*throw|throw[\s\S]{0,200}dropped/i); // loud refusal, same as update
     expect(create).toContain('nothing was written');

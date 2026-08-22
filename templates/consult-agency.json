@@ -210,9 +210,7 @@
                 "label": "Successful Placements",
                 "icon": "CircleCheck"
               }
-            ],
-            "columns": 4,
-            "variant": "cards"
+            ]
           }
         },
         {
@@ -299,9 +297,7 @@
           "id": "sep-featured",
           "type": "separator",
           "data": {
-            "variant": "text",
-            "text": "Featured Consultants",
-            "icon": "UserCheck"
+            "spacing": "md"
           }
         },
         {
@@ -716,7 +712,7 @@
             "subtitle": "Every consultant in our network has 5+ years of hands-on delivery experience. No juniors. No generalists. Specialists who own their domain.",
             "backgroundType": "image",
             "backgroundImage": "/templates/misc/service-team.jpg",
-            "heightMode": "auto",
+            "heightMode": "60vh",
             "contentAlignment": "center",
             "overlayOpacity": 60,
             "overlayColor": "dark"
@@ -1057,9 +1053,7 @@
           "id": "sep-roster",
           "type": "separator",
           "data": {
-            "variant": "text",
-            "text": "Featured Specialists",
-            "icon": "Users"
+            "spacing": "md"
           }
         },
         {
@@ -1185,7 +1179,7 @@
             "subtitle": "A human process, not an algorithm. We read every brief. We match personally. We stand behind every placement.",
             "backgroundType": "image",
             "backgroundImage": "/templates/misc/expert-consultation.jpg",
-            "heightMode": "auto",
+            "heightMode": "60vh",
             "contentAlignment": "center",
             "overlayOpacity": 58,
             "overlayColor": "dark",
@@ -1572,10 +1566,7 @@
           "id": "sep-brief",
           "type": "separator",
           "data": {
-            "id": "brief-form",
-            "variant": "text",
-            "text": "Submit a Brief",
-            "icon": "FileText"
+            "spacing": "md"
           }
         },
         {
@@ -1583,8 +1574,7 @@
           "type": "form",
           "data": {
             "title": "Tell Us What You Need",
-            "subtitle": "A senior consultant will review it within 2 hours on business days. FlowPilot is available around the clock.",
-            "formName": "Consultant Brief",
+            "description": "A senior consultant will review it within 2 hours on business days. FlowPilot is available around the clock.",
             "fields": [
               {
                 "id": "bf-name",
@@ -1660,7 +1650,7 @@
             "subtitle": "Join a network of 300+ senior specialists. Interesting assignments, competitive rates — and someone who lines up your next engagement before your current one ends.",
             "backgroundType": "image",
             "backgroundImage": "/templates/blog/team-brainstorming.jpg",
-            "heightMode": "auto",
+            "heightMode": "60vh",
             "contentAlignment": "center",
             "overlayOpacity": 58,
             "overlayColor": "dark",
@@ -1699,9 +1689,7 @@
                 "value": "4.8★",
                 "label": "Consultant Satisfaction"
               }
-            ],
-            "columns": 4,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -1793,13 +1781,10 @@
           }
         },
         {
-          "id": "sep-apply",
+          "id": "apply",
           "type": "separator",
           "data": {
-            "id": "apply",
-            "variant": "text",
-            "text": "Apply to Join",
-            "icon": "UserPlus"
+            "spacing": "md"
           }
         },
         {
@@ -1807,8 +1792,7 @@
           "type": "form",
           "data": {
             "title": "Join the Network",
-            "subtitle": "We review every application personally — no algorithm. Expect a response within 3 business days.",
-            "formName": "Consultant Application",
+            "description": "We review every application personally — no algorithm. Expect a response within 3 business days.",
             "fields": [
               {
                 "id": "af-name",

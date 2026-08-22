@@ -724,7 +724,15 @@ serve(async (req) => {
     // public chat — facts, claim stance and boundaries come from the identity
     // and stay current when it changes, so the instance systemPrompt can be
     // personality alone. Soft-fail: no profile → empty string, chat unchanged.
-    const identityBlock = await loadBusinessIdentityBlock(supabase).catch(() => '');
+    //
+    // 'core' (explicit, not by default): this is the highest-volume surface in
+    // the platform — every message from every anonymous visitor — and it ANSWERS
+    // rather than authors. The constitution (who we are, what we sell, to whom,
+    // the claim stance and the boundaries) is what a support answer must not
+    // contradict; the company's story, testimonials and headcount would be sales
+    // material billed on every turn. Content authoring goes through FlowWork,
+    // agent-operate or ai-task, which pass 'narrative'.
+    const identityBlock = await loadBusinessIdentityBlock(supabase, 'core').catch(() => '');
     if (identityBlock) chatPrompt += identityBlock;
 
     // Knowledge base restrictions

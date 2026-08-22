@@ -26,7 +26,28 @@
           "id": "marquee-promo",
           "type": "marquee",
           "data": {
-            "text": "SUMMER SALE: 30% OFF EVERYTHING  •  FREE INSTANT DELIVERY  •  LIFETIME UPDATES  •  10,000+ HAPPY CREATORS  •  30-DAY MONEY BACK",
+            "items": [
+              {
+                "id": "ds-m1",
+                "text": "SUMMER SALE: 30% OFF EVERYTHING"
+              },
+              {
+                "id": "ds-m2",
+                "text": "FREE INSTANT DELIVERY"
+              },
+              {
+                "id": "ds-m3",
+                "text": "LIFETIME UPDATES"
+              },
+              {
+                "id": "ds-m4",
+                "text": "10,000+ HAPPY CREATORS"
+              },
+              {
+                "id": "ds-m5",
+                "text": "30-DAY MONEY BACK"
+              }
+            ],
             "speed": "normal",
             "direction": "left",
             "variant": "default",
@@ -89,9 +110,7 @@
                 "value": "<5min",
                 "label": "Avg. Delivery Time"
               }
-            ],
-            "columns": 4,
-            "variant": "minimal"
+            ]
           }
         },
         {
@@ -191,15 +210,13 @@
             },
             "imageSrc": "/templates/products/creator-toolkit.jpg",
             "imageAlt": "Creator Toolkit — 50+ premium templates",
-            "imageSide": "left",
-            "imageAspectRatio": "4:5",
-            "imageObjectFit": "cover",
+            "imagePosition": "left",
+            "imageFit": "cover",
             "imageRounded": "xl",
             "primaryButton": {
               "text": "View Product — $49",
               "url": "/home"
-            },
-            "verticalAlignment": "center"
+            }
           }
         },
         {
@@ -224,11 +241,7 @@
             "subtitle": "Stop designing from scratch. Start with premium foundations and launch in hours, not weeks.",
             "height": "md",
             "overlayOpacity": 55,
-            "contentAlignment": "center",
-            "primaryButton": {
-              "text": "Browse All Products",
-              "url": "#products-bestsellers"
-            }
+            "contentAlignment": "center"
           }
         },
         {
@@ -379,15 +392,13 @@
             },
             "imageSrc": "/templates/misc/money-growth.jpg",
             "imageAlt": "Pro Membership — unlock everything",
-            "imageSide": "right",
-            "imageAspectRatio": "4:5",
-            "imageObjectFit": "cover",
+            "imagePosition": "right",
+            "imageFit": "cover",
             "imageRounded": "xl",
             "primaryButton": {
               "text": "Start Pro — $29/mo",
               "url": "/home"
-            },
-            "verticalAlignment": "center"
+            }
           }
         },
         {
@@ -488,7 +499,7 @@
           "type": "form",
           "data": {
             "title": "Join 10,000+ Creators",
-            "subtitle": "Get early access to new products, exclusive discounts, and weekly design inspiration. No spam, ever.",
+            "description": "Get early access to new products, exclusive discounts, and weekly design inspiration. No spam, ever.",
             "fields": [
               {
                 "id": "email",
@@ -505,15 +516,14 @@
           }
         },
         {
-          "id": "article-grid-blog",
-          "type": "article-grid",
+          "id": "latest-posts-blog",
+          "type": "latest-posts",
           "data": {
             "title": "From the Blog",
             "subtitle": "Tips, strategies, and behind-the-scenes for digital creators",
             "columns": 3,
-            "limit": 3,
-            "showExcerpt": true,
-            "showImage": true
+            "count": 3,
+            "showExcerpt": true
           }
         },
         {
@@ -546,8 +556,7 @@
                 "question": "How do lifetime updates work?",
                 "answer": "When we improve a product, you get the updated version for free — forever. No extra cost, no re-purchase needed."
               }
-            ],
-            "variant": "default"
+            ]
           }
         },
         {
@@ -609,13 +618,11 @@
           "id": "floating-cart",
           "type": "floating-cta",
           "data": {
-            "text": "View Cart",
-            "url": "/cart",
-            "icon": "shopping-cart",
+            "title": "View Cart",
+            "buttonText": "View Cart",
+            "buttonUrl": "/cart",
             "position": "bottom-right",
-            "variant": "pill",
-            "showOnScroll": true,
-            "scrollThreshold": 400
+            "variant": "pill"
           }
         }
       ]
@@ -701,11 +708,10 @@
             },
             "imageSrc": "/templates/blog/team-brainstorming.jpg",
             "imageAlt": "Our team collaborating",
-            "imageSide": "right",
-            "imageAspectRatio": "3:2",
-            "imageObjectFit": "cover",
-            "imageRounded": "xl",
-            "verticalAlignment": "center"
+            "imagePosition": "right",
+            "imageAspect": "3:2",
+            "imageFit": "cover",
+            "imageRounded": "xl"
           }
         },
         {
@@ -771,9 +777,7 @@
                 "value": "98%",
                 "label": "Satisfaction Rate"
               }
-            ],
-            "columns": 4,
-            "variant": "default"
+            ]
           }
         }
       ]

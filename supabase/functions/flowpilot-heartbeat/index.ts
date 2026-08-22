@@ -25,6 +25,7 @@ import {
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
 import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
+import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
 import type { TokenUsage } from "../_shared/types.ts";
 
 /**
@@ -381,7 +382,7 @@ serve(async (req) => {
     // not CPU-bound: full context-gathering runs locally in a few seconds. The
     // thing that actually broke local full runs was reason()'s tool-array
     // exceeding the provider's 128 cap on a tier reload — fixed in reason.ts.)
-    const [integrityContext, cronHealthContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+    const [integrityContext, cronHealthContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol, businessIdentityCtx] = await Promise.all([
       light ? Promise.resolve('') : runIntegrityGate(supabase),
       light ? Promise.resolve('') : runCronHealthGate(supabase),
       loadWorkspaceFiles(supabase),
@@ -396,6 +397,13 @@ serve(async (req) => {
       light ? Promise.resolve({ isFresh: false }) : detectSiteMaturity(supabase),
       light ? Promise.resolve('') : loadCrossModuleInsights(supabase),
       loadHeartbeatProtocol(supabase),
+      // The COMPANY's identity. Audited 2026-08-22: workspace-chat's comment
+      // claims "the same grounding as the public chat and the ReAct engine" —
+      // true of agent-operate, but the HEARTBEAT, the mouth that writes most and
+      // is watched least, passed nothing. 'narrative' because this loop authors
+      // blog posts and campaigns unattended, and ~900 tokens against a
+      // 120-180k budget is under 1% of one cycle.
+      loadBusinessIdentityBlock(supabase, 'narrative'),
     ]);
 
     // 1. Token budget — give fresh sites more room to work
@@ -430,6 +438,7 @@ serve(async (req) => {
       maxIterations: maxIter,
       siteMaturity,
       customHeartbeatProtocol: customProtocol ?? undefined,
+      businessIdentityContext: businessIdentityCtx,
       dispatchMode,
     });
 

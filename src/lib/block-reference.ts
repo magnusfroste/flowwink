@@ -24,6 +24,19 @@ export interface BlockInfo {
   fields: BlockFieldInfo[];
 }
 
+/**
+ * ONE ENTRY PER TYPE. Every consumer resolves a type by first match —
+ * `getBlockInfo`, `describe_blocks`, the generated tool definitions — so a
+ * second entry for the same type is documentation nothing will ever serve.
+ * That was not hypothetical: kb-hub and kb-search each carried two entries with
+ * DIFFERENT field lists, and the half agents could see was the poorer one
+ * (kb-hub's shadowed entry held the only mention of kbPageSlug; kb-search's
+ * shadowed entry was the only one missing it, while the visible one lacked it
+ * too). `inspect_rendered_page` judges stored pages against this catalogue, so
+ * a field that is read but undocumented comes back as "no renderer reads this"
+ * and the sensor advises deleting content that renders fine.
+ * Enforced by src/lib/__tests__/block-reference-drift.guardrails.test.ts.
+ */
 export const BLOCK_REFERENCE: BlockInfo[] = [
   // ============================================
   // Content Blocks
@@ -174,11 +187,15 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'content',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Supporting text under the title' },
       { name: 'members', type: 'array', required: true, description: 'Array of members [{ id, name, role, bio, image, linkedin, twitter }]' },
       { name: 'columns', type: 'number', required: false, description: 'Number of columns', default: 4 },
+      { name: 'layout', type: 'string', required: false, description: 'Grid of cards or a swipeable carousel', default: 'grid', options: ['grid', 'carousel'] },
       { name: 'variant', type: 'string', required: false, description: 'Visual style', default: 'cards', options: ['cards', 'minimal'] },
       { name: 'showRole', type: 'boolean', required: false, description: 'Show member roles' },
       { name: 'showBio', type: 'boolean', required: false, description: 'Show member bios' },
+      { name: 'showSocial', type: 'boolean', required: false, description: "Show each member's social links", default: true },
+      { name: 'staggeredReveal', type: 'boolean', required: false, description: 'Animate the members in one by one as they enter the viewport', default: false },
     ],
   },
   {
@@ -188,11 +205,14 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'content',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Supporting text under the title' },
       { name: 'logos', type: 'array', required: true, description: 'Array of logos [{ id, name, logo }]' },
       { name: 'columns', type: 'number', required: false, description: 'Number of columns', default: 5 },
       { name: 'layout', type: 'string', required: false, description: 'Display layout', default: 'grid', options: ['grid', 'carousel', 'scroll'] },
       { name: 'variant', type: 'string', required: false, description: 'Color treatment', default: 'grayscale', options: ['grayscale', 'color', 'default'] },
       { name: 'logoSize', type: 'string', required: false, description: 'Logo size', default: 'md', options: ['sm', 'md', 'lg'] },
+      { name: 'autoplay', type: 'boolean', required: false, description: 'Auto-advance the carousel layout', default: true },
+      { name: 'autoplaySpeed', type: 'number', required: false, description: 'Seconds between carousel slides', default: 3 },
     ],
   },
   {
@@ -486,21 +506,23 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'commerce',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Supporting text under the title' },
       { name: 'products', type: 'array', required: true, description: 'Products to compare [{ id, name, highlighted }]' },
       { name: 'features', type: 'array', required: true, description: 'Features to compare [{ id, name, values[] }]' },
       { name: 'variant', type: 'string', required: false, description: 'Table style', default: 'striped', options: ['striped', 'bordered'] },
       { name: 'showPrices', type: 'boolean', required: false, description: 'Show prices in header' },
       { name: 'showButtons', type: 'boolean', required: false, description: 'Show CTA buttons' },
+      { name: 'stickyHeader', type: 'boolean', required: false, description: 'Keep the product header row pinned while the table scrolls', default: true },
     ],
   },
   {
     type: 'featured-product',
     name: 'Featured Product',
-    description: 'Hero-style spotlight for a single product with large image, price, and add-to-cart CTA.',
+    description: 'Hero-style spotlight for a single product with large image, price, and add-to-cart CTA. Data comes from the Products module — provide productId.',
     category: 'commerce',
     fields: [
-      { name: 'productId', type: 'string', required: false, description: 'Product ID to feature' },
-      { name: 'badge', type: 'string', required: false, description: 'Badge text (e.g. "New", "Sale")' },
+      { name: 'productId', type: 'string', required: false, description: 'UUID of the product to feature (leave empty to auto-pick the first active product)' },
+      { name: 'badge', type: 'string', required: false, description: 'Small label above the product, e.g. "New", "Sale", "Featured"' },
       { name: 'ctaText', type: 'string', required: false, description: 'CTA button text', default: 'Add to cart' },
       { name: 'layout', type: 'string', required: false, description: 'Image position', default: 'image-left', options: ['image-left', 'image-right'] },
       { name: 'showDescription', type: 'boolean', required: false, description: 'Show product description', default: true },
@@ -574,7 +596,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
   {
     type: 'kb-featured',
     name: 'KB Featured',
-    description: 'Display featured Knowledge Base articles as clickable cards.',
+    description: 'Featured Knowledge Base articles as clickable cards. Data-driven — no article content is authored here.',
     category: 'interactive',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
@@ -583,12 +605,13 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'layout', type: 'string', required: false, description: 'Display layout', default: 'grid', options: ['grid', 'list'] },
       { name: 'columns', type: 'number', required: false, description: 'Grid columns (when layout is grid)', default: 3, options: ['2', '3', '4'] },
       { name: 'showCategory', type: 'boolean', required: false, description: 'Show article category', default: true },
+      { name: 'kbPageSlug', type: 'string', required: false, description: 'Slug of the KB landing page; article links are built from it. Defaults to the site-wide KB slug.' },
     ],
   },
   {
     type: 'kb-hub',
     name: 'Knowledge Base',
-    description: 'Full Knowledge Base with search, category filters, and article listing.',
+    description: 'Full Knowledge Base with search, category browse, and contact CTA. Use as the landing block on a dedicated help/KB page.',
     category: 'interactive',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
@@ -602,22 +625,24 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'contactButtonText', type: 'string', required: false, description: 'Contact button text' },
       { name: 'contactLink', type: 'string', required: false, description: 'Contact button link' },
       { name: 'layout', type: 'string', required: false, description: 'Display layout', default: 'accordion', options: ['accordion', 'cards'] },
-      { name: 'emptyStateTitle', type: 'string', required: false, description: 'Empty state title' },
-      { name: 'emptyStateSubtitle', type: 'string', required: false, description: 'Empty state subtitle' },
+      { name: 'emptyStateTitle', type: 'string', required: false, description: 'Heading shown when a search matches nothing' },
+      { name: 'emptyStateSubtitle', type: 'string', required: false, description: 'Supporting line shown when a search matches nothing' },
+      { name: 'kbPageSlug', type: 'string', required: false, description: 'Slug of the KB landing page; article links are built from it. Defaults to the site-wide KB slug.' },
     ],
   },
   {
     type: 'kb-search',
     name: 'KB Search',
-    description: 'Standalone Knowledge Base search component that can be embedded in hero sections or anywhere on the site.',
+    description: 'Standalone Knowledge Base search input that routes to the KB search results page. Can be embedded in hero sections or anywhere on the site.',
     category: 'interactive',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Optional title above search' },
-      { name: 'subtitle', type: 'string', required: false, description: 'Optional subtitle' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Optional subtitle; rendered by both the hero and the default variant' },
       { name: 'placeholder', type: 'string', required: false, description: 'Search input placeholder', default: 'Search for answers...' },
       { name: 'buttonText', type: 'string', required: false, description: 'Search button text', default: 'Search' },
       { name: 'variant', type: 'string', required: false, description: 'Display variant', default: 'default', options: ['default', 'minimal', 'hero'] },
       { name: 'showButton', type: 'boolean', required: false, description: 'Show search button', default: true },
+      { name: 'kbPageSlug', type: 'string', required: false, description: 'Slug of the KB page the search routes to. Defaults to the site-wide KB slug.' },
     ],
   },
   // ============================================
@@ -744,6 +769,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'showSeconds', type: 'boolean', required: false, description: 'Show seconds', default: true },
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'cards', 'minimal', 'circular'] },
       { name: 'size', type: 'string', required: false, description: 'Size', default: 'md', options: ['sm', 'md', 'lg'] },
+      { name: 'labels', type: 'object', required: false, description: 'Unit labels, for translating the timer: { days, hours, minutes, seconds }. Any omitted key falls back to English.' },
     ],
   },
   {
@@ -757,9 +783,10 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'items', type: 'array', required: true, description: 'Progress items [{ id, label, value, color, icon }]' },
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'circular', 'minimal', 'cards'] },
       { name: 'size', type: 'string', required: false, description: 'Size', default: 'md', options: ['sm', 'md', 'lg'] },
-      { name: 'showLabel', type: 'boolean', required: false, description: 'Show labels', default: true },
+      { name: 'showLabels', type: 'boolean', required: false, description: 'Show item labels', default: true },
       { name: 'showPercentage', type: 'boolean', required: false, description: 'Show percentage', default: true },
       { name: 'animated', type: 'boolean', required: false, description: 'Animate on scroll', default: true },
+      { name: 'animationDuration', type: 'number', required: false, description: 'Animation length in ms', default: 1500 },
     ],
   },
   {
@@ -774,7 +801,7 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'cards', 'minimal', 'bordered'] },
       { name: 'columns', type: 'number', required: false, description: 'Number of columns', default: 4, options: ['2', '3', '4', '6'] },
       { name: 'size', type: 'string', required: false, description: 'Badge size', default: 'md', options: ['sm', 'md', 'lg'] },
-      { name: 'showTitle', type: 'boolean', required: false, description: 'Show badge titles', default: true },
+      { name: 'showTitles', type: 'boolean', required: false, description: 'Show badge titles', default: true },
       { name: 'grayscale', type: 'boolean', required: false, description: 'Grayscale images', default: false },
     ],
   },
@@ -790,8 +817,12 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'cards', 'minimal', 'banner', 'floating'] },
       { name: 'layout', type: 'string', required: false, description: 'Layout', default: 'horizontal', options: ['horizontal', 'vertical', 'grid'] },
       { name: 'size', type: 'string', required: false, description: 'Size', default: 'md', options: ['sm', 'md', 'lg'] },
+      { name: 'columns', type: 'number', required: false, description: 'Number of columns in the grid layout', default: 4, options: ['2', '3', '4'] },
       { name: 'animated', type: 'boolean', required: false, description: 'Animate counters', default: true },
+      { name: 'animationDuration', type: 'number', required: false, description: 'Counter animation length in ms', default: 2000 },
+      { name: 'showIcons', type: 'boolean', required: false, description: "Show each item's icon", default: true },
       { name: 'showLiveIndicator', type: 'boolean', required: false, description: 'Show live indicator', default: false },
+      { name: 'liveText', type: 'string', required: false, description: 'Label shown next to the live indicator', default: 'Live' },
     ],
   },
   {
@@ -801,13 +832,20 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'interactive',
     fields: [
       { name: 'notifications', type: 'array', required: true, description: 'Notification items [{ type, icon, title, message, image, timestamp, location }]' },
-      { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'minimal', 'rounded'] },
+      { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'minimal', 'card', 'bubble'] },
       { name: 'position', type: 'string', required: false, description: 'Screen position', default: 'bottom-left', options: ['bottom-left', 'bottom-right', 'top-left', 'top-right'] },
-      { name: 'displayDuration', type: 'number', required: false, description: 'Display time in ms', default: 5000 },
-      { name: 'delayBetween', type: 'number', required: false, description: 'Delay between notifications in ms', default: 8000 },
-      { name: 'initialDelay', type: 'number', required: false, description: 'Initial delay in ms', default: 3000 },
+      // Seconds, not milliseconds: the renderer multiplies each of these by
+      // 1000. The catalogue said ms with 5000/8000/3000 defaults, so an agent
+      // following it would have asked for a toast that hangs for 83 minutes.
+      { name: 'displayDuration', type: 'number', required: false, description: 'How long each notification stays on screen, in seconds', default: 5 },
+      { name: 'delayBetween', type: 'number', required: false, description: 'Pause between notifications, in seconds', default: 8 },
+      { name: 'initialDelay', type: 'number', required: false, description: 'Delay before the first notification, in seconds', default: 3 },
       { name: 'maxWidth', type: 'string', required: false, description: 'Max width', default: 'sm', options: ['sm', 'md', 'lg'] },
-      { name: 'animationType', type: 'string', required: false, description: 'Animation type', default: 'slide', options: ['slide', 'fade', 'bounce'] },
+      { name: 'animationType', type: 'string', required: false, description: 'Animation type', default: 'slide', options: ['slide', 'fade', 'pop'] },
+      { name: 'showCloseButton', type: 'boolean', required: false, description: 'Show the dismiss button; dismissing stops the whole sequence', default: true },
+      { name: 'showImage', type: 'boolean', required: false, description: "Show each notification's image (falls back to its icon)", default: true },
+      { name: 'showTimestamp', type: 'boolean', required: false, description: "Show each notification's timestamp line", default: true },
+      { name: 'loop', type: 'boolean', required: false, description: 'Start over after the last notification instead of stopping', default: true },
     ],
   },
   {
@@ -816,17 +854,31 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     description: 'Sticky call-to-action that appears on scroll.',
     category: 'interactive',
     fields: [
-      { name: 'text', type: 'string', required: true, description: 'CTA text' },
+      // This list described a component that does not exist. FloatingCTABlock
+      // destructures title / subtitle / showAfterScroll / showCloseButton /
+      // animationType / showScrollTop / secondaryButtonText+Url — and reads
+      // NONE of `text`, `secondaryText`, `scrollThreshold`, `closeable`. The
+      // admin editor (FloatingCTABlockEditor) already writes the renderer's
+      // names, so the catalogue was the lone outlier, and because the write
+      // gate judges THIS list it had the sign flipped both ways: the two
+      // templates authored against the renderer were reported as carrying dead
+      // fields, while the two authored against this list stored a headline
+      // (`text`) that nothing renders and were reported clean.
+      { name: 'title', type: 'string', required: true, description: 'Headline — the CTA message. Rendered by the bar, card and minimal variants; the pill variant shows only the button.' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Supporting line under the title. Rendered by the bar and card variants only.' },
       { name: 'buttonText', type: 'string', required: true, description: 'Button label' },
       { name: 'buttonUrl', type: 'string', required: true, description: 'Button URL' },
-      { name: 'secondaryText', type: 'string', required: false, description: 'Secondary text' },
-      { name: 'scrollThreshold', type: 'number', required: false, description: 'Show after scroll percentage', default: 30 },
-      { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'bar', options: ['bar', 'card', 'minimal', 'pill'] },
-      { name: 'position', type: 'string', required: false, description: 'Screen position', default: 'bottom', options: ['bottom', 'bottom-left', 'bottom-right'] },
+      { name: 'secondaryButtonText', type: 'string', required: false, description: 'Optional second button label; renders only together with secondaryButtonUrl (bar and card variants)' },
+      { name: 'secondaryButtonUrl', type: 'string', required: false, description: 'Optional second button URL; renders only together with secondaryButtonText' },
+      { name: 'showAfterScroll', type: 'number', required: false, description: 'Reveal once this PERCENTAGE of the page has been scrolled, 0-100 (not pixels)', default: 25 },
+      { name: 'hideOnScrollUp', type: 'boolean', required: false, description: 'Hide again while the visitor scrolls back up' },
+      { name: 'variant', type: 'string', required: false, description: 'Display style. "pill" is button-only — do not put copy in title for it', default: 'bar', options: ['bar', 'card', 'minimal', 'pill'] },
+      { name: 'position', type: 'string', required: false, description: 'Screen position; ignored by the "bar" variant, which always spans the bottom', default: 'bottom', options: ['bottom', 'bottom-left', 'bottom-right'] },
       { name: 'size', type: 'string', required: false, description: 'Size', default: 'md', options: ['sm', 'md', 'lg'] },
-      { name: 'hideOnScrollUp', type: 'boolean', required: false, description: 'Hide when scrolling up' },
-      { name: 'closeable', type: 'boolean', required: false, description: 'Allow closing', default: true },
-      { name: 'closePersistent', type: 'boolean', required: false, description: 'Remember closed state', default: true },
+      { name: 'showCloseButton', type: 'boolean', required: false, description: 'Show the dismiss (X) control', default: true },
+      { name: 'closePersistent', type: 'boolean', required: false, description: 'Remember the dismissal for the rest of the session', default: true },
+      { name: 'showScrollTop', type: 'boolean', required: false, description: 'Add a back-to-top button beside the CTA (pill variant only)' },
+      { name: 'animationType', type: 'string', required: false, description: 'Entrance animation', default: 'slide', options: ['slide', 'fade', 'scale'] },
     ],
   },
   {
@@ -851,10 +903,12 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
       { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
       { name: 'eyebrow', type: 'string', required: false, description: 'Small label displayed above the title' },
+      { name: 'eyebrowColor', type: 'string', required: false, description: 'Eyebrow color as a CSS/hex value; defaults to brand primary' },
       { name: 'items', type: 'array', required: true, description: 'Grid items [{ id, title, description?, icon?, span?, accentColor?, linkUrl?, linkLabel? }]. span: "normal" | "wide" | "tall" | "large"' },
       { name: 'columns', type: 'number', required: false, description: 'Number of columns (3 or 4)', default: 3 },
       { name: 'gap', type: 'string', required: false, description: 'Gap between items', options: ['sm', 'md', 'lg'] },
       { name: 'variant', type: 'string', required: false, description: 'Visual style', options: ['default', 'glass', 'bordered'] },
+      { name: 'staggeredReveal', type: 'boolean', required: false, description: 'Animate the cards in one by one as they enter the viewport', default: true },
     ],
   },
   {
@@ -1003,20 +1057,8 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'buttonText', type: 'string', required: false, description: 'Submit button label', default: 'Find match' },
     ],
   },
-  {
-    type: 'featured-product',
-    name: 'Featured Product',
-    description: 'Highlight a single product with a large image, badge, description, and add-to-cart CTA. Data comes from the Products module — provide productId.',
-    category: 'commerce',
-    fields: [
-      { name: 'productId', type: 'string', required: false, description: 'UUID of the product to feature (leave empty to auto-pick the first active product)' },
-      { name: 'badge', type: 'string', required: false, description: 'Small label above the product (e.g. "Featured")' },
-      { name: 'ctaText', type: 'string', required: false, description: 'Button label', default: 'Add to cart' },
-      { name: 'layout', type: 'string', required: false, description: 'Image position', default: 'image-left', options: ['image-left', 'image-right'] },
-      { name: 'showDescription', type: 'boolean', required: false, description: 'Show product description', default: true },
-      { name: 'backgroundStyle', type: 'string', required: false, description: 'Section background', default: 'default', options: ['default', 'muted', 'gradient'] },
-    ],
-  },
+  // (featured-product was declared a second time here. Merged into the single
+  // entry above — see the "one entry per type" note at the top of the array.)
   {
     type: 'products',
     name: 'Products',
@@ -1066,54 +1108,9 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'triggerWebhook', type: 'boolean', required: false, description: "Fire the booking automation webhook on submit", default: false },
     ],
   },
-  {
-    type: 'kb-featured',
-    name: 'KB Featured',
-    description: 'Featured knowledge-base articles pulled from the KB module. Data-driven — no article content is authored here.',
-    category: 'content',
-    fields: [
-      { name: 'title', type: 'string', required: false, description: 'Section title' },
-      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
-      { name: 'maxItems', type: 'number', required: false, description: 'Max articles to show', default: 6 },
-      { name: 'showCategory', type: 'boolean', required: false, description: 'Show category label per article', default: true },
-      { name: 'layout', type: 'string', required: false, description: 'Layout style', default: 'grid', options: ['grid', 'list'] },
-      { name: 'columns', type: 'number', required: false, description: 'Columns when layout=grid', default: 3, options: ['2', '3', '4'] },
-      { name: 'kbPageSlug', type: 'string', required: false, description: 'Slug of the KB landing page (for article links)' },
-    ],
-  },
-  {
-    type: 'kb-hub',
-    name: 'KB Hub',
-    description: 'Full knowledge-base hub with search, category browse, and contact CTA. Use as the landing block on a dedicated help/KB page.',
-    category: 'content',
-    fields: [
-      { name: 'title', type: 'string', required: false, description: 'Section title' },
-      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
-      { name: 'searchPlaceholder', type: 'string', required: false, description: 'Search input placeholder' },
-      { name: 'showSearch', type: 'boolean', required: false, description: 'Show search bar', default: true },
-      { name: 'showCategories', type: 'boolean', required: false, description: 'Show category browse', default: true },
-      { name: 'showContactCta', type: 'boolean', required: false, description: 'Show a "still need help?" contact CTA', default: true },
-      { name: 'contactTitle', type: 'string', required: false, description: 'Contact CTA title' },
-      { name: 'contactSubtitle', type: 'string', required: false, description: 'Contact CTA subtitle' },
-      { name: 'contactButtonText', type: 'string', required: false, description: 'Contact CTA button label' },
-      { name: 'contactLink', type: 'string', required: false, description: 'Contact CTA URL' },
-      { name: 'layout', type: 'string', required: false, description: 'Article list layout', default: 'accordion', options: ['accordion', 'cards'] },
-      { name: 'kbPageSlug', type: 'string', required: false, description: 'Slug of the KB landing page' },
-    ],
-  },
-  {
-    type: 'kb-search',
-    name: 'KB Search',
-    description: 'Dedicated knowledge-base search input that routes to the KB search results page.',
-    category: 'content',
-    fields: [
-      { name: 'title', type: 'string', required: false, description: 'Section title' },
-      { name: 'placeholder', type: 'string', required: false, description: 'Search input placeholder' },
-      { name: 'variant', type: 'string', required: false, description: 'Visual style', default: 'default', options: ['default', 'compact', 'hero'] },
-      { name: 'showButton', type: 'boolean', required: false, description: 'Show submit button', default: true },
-      { name: 'buttonText', type: 'string', required: false, description: 'Submit button label', default: 'Search' },
-    ],
-  },
+  // (kb-featured, kb-hub and kb-search were each declared a second time here.
+  // Merged into the single entries above — see the "one entry per type" note
+  // at the top of the array.)
   {
     type: 'terms',
     name: 'Contract Terms',

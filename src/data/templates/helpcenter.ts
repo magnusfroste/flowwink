@@ -129,7 +129,12 @@ const hybridHelpPages: TemplatePage[] = [
         type: 'kb-search',
         data: {
           placeholder: 'Search articles...',
-          variant: 'compact',
+          // KbSearchBlock renders hero / minimal / default. 'compact' was never
+          // one of them — it fell through to default. The name came from a
+          // SHADOWED second kb-search entry in block-reference.ts whose option
+          // list said 'compact'; describe_blocks never served that entry, so
+          // the value was authored from documentation nothing could resolve.
+          variant: 'minimal',
           showPopularSearches: false,
         },
       },

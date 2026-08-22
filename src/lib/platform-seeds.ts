@@ -91,7 +91,7 @@ The harness records everything; this is the surface that makes it legible. It re
   {
     name: 'describe_blocks',
     description:
-      "Return the CMS block vocabulary: every block type the platform renders, and the exact field contract for one of them. Call with no argument for the catalogue (56 types with one-line descriptions), then with block_type=<type> for that block's full Data spec BEFORE writing its data. Use when: ALWAYS before authoring or editing block content — call it first on every page write (manage_page content_json, create_page_block, manage_page_blocks) and on every site template, and never write a block type or field name from memory. Types are kebab-case ('two-column', never 'two_column'); a guessed type or field is refused at write time or stored and never rendered. NOT for: reading a page's current blocks (manage_page_blocks action=get); NOT for site-wide settings.",
+      "Return the CMS block vocabulary: every block type the platform renders, the exact field contract for one of them, and the composition rules for choosing between them. Call with no argument for the catalogue (56 types with one-line descriptions), then with block_type=<type> for that block's full Data spec BEFORE writing its data. It answers two questions, not one: which FIELDS a block has, and which BLOCK a piece of content belongs in — 'text' is the last resort (three claims belong in 'features' or 'stats', an argument in steps in 'timeline', questions in 'accordion'), and a page alternates block weight instead of repeating it. Use when: ALWAYS before authoring or editing block content — call it first on every page write (manage_page content_json, create_page_block, manage_page_blocks) and on every site template, and never write a block type or field name from memory. Types are kebab-case ('two-column', never 'two_column'); a guessed type or field is refused at write time or stored and never rendered. NOT for: reading a page's current blocks (manage_page_blocks action=get); NOT for site-wide settings.",
     category: 'system',
     handler: 'internal:describe_blocks',
     scope: 'internal',
@@ -101,7 +101,7 @@ The harness records everything; this is the surface that makes it legible. It re
       function: {
         name: 'describe_blocks',
         description:
-          'Block-type catalogue and per-block field contract. Call BEFORE every block write — never author a block from memory. Read-only reference; costs nothing to call.',
+          'Block-type catalogue, per-block field contract, and the composition rules for choosing between types (text is the last resort; three claims are features or stats, steps are timeline, Q&A is accordion). Call BEFORE every block write — never author a block from memory. Read-only reference; costs nothing to call.',
         parameters: {
           type: 'object',
           properties: {
@@ -123,12 +123,80 @@ manage_page_blocks tells you to ask for a block's schema rather than guess — t
 Fields shown as a Tiptap JSON doc must be OBJECTS ({"type":"doc","content":[…]}), never strings. Sending markdown or plain text into a Tiptap field produces a block that stores your text and renders nothing.
 ### The second rule: the type strings are kebab-case
 "two-column", "sticky-scroll", "bento-grid", "announcement-bar" — never snake_case ("two_column", "sticky_story") and never a name you invented. Copy the type string from this catalogue verbatim.
+### Choosing the block — the half that is not a field contract
+Knowing every field of \`text\` still gets you an essay. Measured over the 11 shipped templates (70 hand-built pages, 444 blocks): \`text\` is 13 blocks — 2.9% of everything. 57 of the 70 pages contain none, and NOT ONE page anywhere contains two. Where it does appear it is usually the WHOLE page (privacy policy, terms). On a page a visitor is meant to act on, \`text\` is the last resort, not the default:
+- three claims in a row → \`features\` (icon cards) or \`bento-grid\` (varied spans)
+- a number, a proof point → \`stats\`; the top three → \`hero.heroStats\`
+- an argument in steps, a "how it works" → \`timeline\`, or \`sticky-scroll\` for a long walkthrough
+- questions and objections → \`accordion\`
+- one claim beside an image → \`two-column\`
+- someone else's words → \`testimonials\`, \`quote\`, \`logos\`, \`social-proof\`
+- a row of destinations → \`quick-links\`; the ask → \`cta\`
+If you have written a paragraph and cannot name which of these it is, the paragraph is the wrong shape. Reshape it — do not ship it as \`text\`.
+### Rhythm
+Shipped pages open on \`hero\` (55/70) and close on \`cta\` (32/70); the middle ALTERNATES visual weight instead of repeating it. Template home pages run 6–25 blocks (median 14), subpages 6–8. Two blocks of the same type back to back — above all two \`text\` — is the signal that one of them wanted to be something else. \`section-divider\`, \`parallax-section\` and \`marquee\` are breathers between heavy sections, never content in their own right.
 ### Workflow
-1. describe_blocks() — pick the types the page needs
+1. describe_blocks() — pick the types the page needs (see "Choosing the block": a page is a composition, not an essay with headings)
 2. describe_blocks({ block_type }) — for each one you will write
 3. manage_page (content_json) / create_page_block / manage_page_blocks / manage_site_template — write data using exactly those field names. A missing required field fails the write closed (manage_page refuses the WHOLE page, nothing partial is stored), so the lookup is always cheaper than the retry.
 ### Source of truth
 Generated from src/lib/block-reference.ts, so it is always what the renderer actually supports. If a field is not listed here, the renderer does not read it.`,
+  },
+  {
+    // describe_blocks' other half. That one answers "what can I build";
+    // this one answers "what did I build". Platform, not FlowPilot: eleven
+    // modules write pages, and the consumers are FlowPilot's ReAct loop,
+    // FlowWork, external agents on the MCP gateway, and the template /
+    // migration path. Behind the FlowPilot toggle it would be invisible to
+    // three of the four.
+    name: 'inspect_rendered_page',
+    description:
+      "Read back a page that has ALREADY been written and report what actually renders: (1) every field stored that no renderer reads, with the correct field name where one exists, (2) every block that renders as an empty section because its content-bearing field is missing, (3) the page's composition — block count, text share, two same-type blocks in a row, how many blocks carry an image/video/logo. Static comparison against the generated block field catalogue: read-only, no browser, cannot fail in production, costs nothing to call. Use when: ALWAYS straight after writing or editing a page — manage_page, manage_page_blocks, create_page_block, install_template, migrate_url — because a block silently stores keys it does not know, so \"saved\" is not \"rendered\" and this is the only call that tells the two apart; also when a page looks thin, a section shows up blank, or you are about to report a page complete. NOT for: which fields a block SUPPORTS before writing (describe_blocks); NOT for reading a page's block content back (manage_page_blocks action=get); NOT for SEO/meta, site settings or link checking.",
+    category: 'system',
+    handler: 'internal:inspect_rendered_page',
+    scope: 'internal',
+    trust_level: 'auto',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'inspect_rendered_page',
+        description:
+          'What a written page actually renders: fields stored that nothing reads (with the right name), blocks that render as an empty section, and the page composition. Call after every page write — saving is not rendering. Read-only.',
+        parameters: {
+          type: 'object',
+          properties: {
+            slug: {
+              type: 'string',
+              description: "Page slug, e.g. 'agentic'. A leading/trailing slash is accepted.",
+            },
+            page_id: { type: 'string', description: 'Page UUID — use instead of slug when you have it.' },
+            locale: { type: 'string', description: "Optional locale, e.g. 'sv'. Omit for the most recently updated match." },
+          },
+          anyOf: [{ required: ['slug'] }, { required: ['page_id'] }],
+        },
+      },
+    },
+    instructions: `## inspect_rendered_page
+### What it is
+The sensor for your own page writes. You write blocks into content_json and you never see the result — content_json is JSON, it accepts any key, and a block ignores what it does not recognise without a word. This call is the eyes.
+### The failure it was built for
+On a real site an agent wrote a hero with \`primary_cta\`, \`secondary_cta\` and \`subheadline\`. HeroBlock reads \`primaryButton\`, \`secondaryButton\` and \`subtitle\`. All three saved. None rendered. A third of the block's content sat in the database, the page looked thin, and the agent reported it complete. Nothing anywhere said otherwise.
+### Call it
+\`inspect_rendered_page({ slug })\` — or \`{ page_id }\`. Read-only; call it as often as you like.
+### The three answers, and what to do with each
+1. **\`unread_fields\`** — you wrote it, nothing reads it. Each entry carries \`block_type\`, \`field\`, \`value_preview\` and \`likely_meant\` (the catalogued field you probably meant). FIX: rewrite that block with the right field name and move the value across. Do NOT just delete the key — the content in \`value_preview\` is content you intended to publish.
+2. **\`empty_blocks\`** — every field name is spelled right and the block still renders a blank band, because the field that carries its content is missing. \`missing\` names exactly which field (or which of several alternatives) would fill it. FIX: fill it, or remove the block. A blank section reads as a broken site.
+3. **\`composition\`** + \`composition.notes\` — the page as a whole: \`order\`, \`type_counts\`, \`text_block_count\`, \`text_share_pct\`, \`adjacent_repeats\`, \`blocks_with_media\`, \`opens_with\`, \`closes_with\`. Notes are measured against the 70 shipped template pages: they open on \`hero\`, close on \`cta\`, and not one contains two \`text\` blocks. Two blocks of the same type in a row means one of them wanted to be something else — see describe_blocks for which.
+Also: **\`unknown_block_types\`** — a type the renderer has no case for. Those render as literally nothing; \`did_you_mean\` names the closest real types.
+### Reading the verdict
+\`ok\` (nothing stored invisibly, nothing blank, composition clean) · \`renders_but_thin\` (everything renders, but the composition notes say it is an essay, not a page) · \`needs_attention\` (content is invisible or blank — fix before reporting the page done).
+### Workflow
+1. describe_blocks({ block_type }) — before writing
+2. manage_page / manage_page_blocks / create_page_block — write
+3. **inspect_rendered_page({ slug }) — after writing, every time**
+4. Fix what it names, then call it again. A page is not finished until this returns \`ok\` or you can say why the remaining notes are deliberate.
+### Honest limit
+It compares your data against the generated field catalogue (block-reference.ts → block-tools.ts), not against a live browser render. It cannot see layout, contrast or overflow — it sees, exactly and cheaply, which of your content the renderer will never look at. The data-driven blocks (products, cart, kb-hub, kb-search, kb-featured, kb-accordion, smart-booking, handbook, consultant-matcher) fetch their own rows, so an empty \`data\` on those is correct and is never flagged.`,
   },
   {
     name: 'check_integrations',
