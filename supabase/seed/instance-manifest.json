@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822110000",
-      "migrations_count": 477,
+      "migration_head": "20260822120000",
+      "migrations_count": 478,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1913,6 +1913,10 @@
         {
           "version": "20260822110000",
           "name": "sandbox-seed-rma"
+        },
+        {
+          "version": "20260822120000",
+          "name": "the-nightly-reset-becomes-a-regression-run"
         }
       ]
     },
@@ -1948,7 +1952,7 @@
         "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
-        "demo-cycle": "sha256:62f8ba6666c9e28bd5efffbfcac1ce7ee368860822f7dcf21ff09ee2154bfaf7",
+        "demo-cycle": "sha256:3e96b992969f273c591db183021ae194d5629ffedea7c3650b50d227c93504a7",
         "docs-chat": "sha256:7fd904e6cda9c1ad57f0aebc77b43adeb3ca4dc8ad31820d71f1213587611064",
         "document-share": "sha256:16c5281eb83fc8409d0b8c2906bb05ee74a7956786497e3eeaa7f2883067dd67",
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
