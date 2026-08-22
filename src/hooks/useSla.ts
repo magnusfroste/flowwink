@@ -25,12 +25,20 @@ export interface SlaViolation {
   metric: string;
   threshold_minutes: number;
   actual_minutes: number;
+  /** warning | breach | critical — how far past the threshold, not a priority. */
   severity: string;
+  /** The entity's own priority at breach time (low/medium/high/urgent). */
+  entity_priority: string | null;
   resolved_at: string | null;
   resolved_by: string | null;
   notes: string | null;
   created_at: string;
   policy?: SlaPolicy;
+}
+
+/** Only the slice of `sla_compliance_report` this hook needs. */
+interface ComplianceReportShape {
+  compliance_by_entity?: Record<string, { created_in_period: number; violations_in_period: number }>;
 }
 
 export type CreatePolicyInput = Omit<SlaPolicy, 'id' | 'created_at' | 'updated_at'>;
@@ -79,6 +87,19 @@ export function useSlaViolations(filters?: { resolved?: boolean; entity_type?: s
   });
 }
 
+/**
+ * Stats for the SLA Monitor header cards.
+ *
+ * `complianceRate` kommer från `sla_compliance_report` — samma RPC som
+ * Compliance-fliken läser. Varför: kortet visade "Compliance 100%" bredvid
+ * "Open Violations 3". Formeln räknade andelen violations med severity
+ * 'breach'/'critical' — värden som svepet aldrig skrev (det skrev entitetens
+ * PRIORITET i severity-kolumnen). Täljaren var därför konstant noll och kortet
+ * en konstant. Att laga formeln i klienten hade gett en TREDJE definition av
+ * compliance; i stället läser vi motorns egen: 1 − brott / skapade entiteter
+ * i perioden, viktat över entitetstyperna. Två ytor kan då inte visa olika
+ * compliance för samma vecka.
+ */
 export function useSlaStats() {
   return useQuery({
     queryKey: ['sla-stats'],
@@ -94,11 +115,24 @@ export function useSlaStats() {
       const critical = violations?.filter(v => v.severity === 'critical' && !v.resolved_at).length ?? 0;
       const breaches = violations?.filter(v => v.severity === 'breach' || v.severity === 'critical').length ?? 0;
 
-      // Compliance rate: policies checked vs violated (approximation)
       const { count: policyCount } = await supabase
         .from('sla_policies')
         .select('*', { count: 'exact', head: true })
         .eq('enabled', true);
+
+      // Compliance from the engine, not from a second formula in the client.
+      let complianceRate = 100;
+      const { data: report } = await supabase.rpc('sla_compliance_report', { p_days: 30 });
+      const byEntity = (report as ComplianceReportShape | null)?.compliance_by_entity;
+      if (byEntity) {
+        const rows = Object.values(byEntity);
+        const created = rows.reduce((s, r) => s + (r.created_in_period ?? 0), 0);
+        const violated = rows.reduce((s, r) => s + (r.violations_in_period ?? 0), 0);
+        // Inga entiteter i perioden = inget att vara compliant MOT. 100 är då
+        // ärligt (det finns inget löfte som bröts), till skillnad från förut
+        // där 100 var svaret oavsett hur många brott som låg öppna.
+        if (created > 0) complianceRate = Math.round((1 - Math.min(violated / created, 1)) * 100);
+      }
 
       return {
         totalViolations30d: total,
@@ -106,7 +140,7 @@ export function useSlaStats() {
         criticalOpen: critical,
         breaches30d: breaches,
         activePolicies: policyCount ?? 0,
-        complianceRate: total === 0 ? 100 : Math.round(((total - breaches) / Math.max(total, 1)) * 100),
+        complianceRate,
       };
     },
   });

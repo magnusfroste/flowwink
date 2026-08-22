@@ -109,23 +109,57 @@ export function useFlowPilotBootstrap() {
   // Deduped at module scope inside ensureModulesRow, so a StrictMode double
   // mount or a route change costs one RPC per page load at most — and that RPC
   // writes nothing once the row is complete.
+  // ── Skill-coverage reconcile ────────────────────────────────────────────
+  //
+  // Runs UNCONDITIONALLY, in the same effect and strictly AFTER the modules row
+  // is settled, because the skill layer's requirement CHANGES over an instance's
+  // life while nothing in the deploy chain notices:
+  //   • a template install turns seven modules on (install_template →
+  //     apply_settings), and
+  //   • an operator toggles modules in /admin/modules.
+  //
+  // The platform branch below cannot carry this: it fires only while the
+  // PLATFORM layer is incomplete, so on any instance past its first minute it
+  // early-returns — the same shape as the self-heal that waited for a
+  // migration-seeded skill to be absent. Measured consequence: a fresh, fully
+  // provisioned instance with 96 of 347 skills, every commerce/contracts/
+  // invoicing/tickets/sla/field-service module ON and empty, and a sync that
+  // answered "unchanged" because it compared the ARTIFACT instead of the
+  // instance.
+  //
+  // Cost on a healthy instance: one settings read plus one name-only read of
+  // agent_skills, once per page load, and it writes nothing.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const result = await ensureModulesRow(defaultModulesSettings);
       if (cancelled) return;
-      if (result.missing.length === 0) return;
 
-      // Shout. A modules row the server cannot see is the difference between
-      // "18 modules enabled" in the UI and 14 skills on the instance.
-      toast({
-        variant: 'destructive',
-        title: 'Module settings not stored',
-        description:
-          `${result.missing.length} module(s) are missing from site_settings.modules ` +
-          `(${result.missing.slice(0, 3).join(', ')}). Edge functions and the skill sync will treat them as OFF. ` +
-          (result.error ? `Error: ${result.error}` : 'Open Modules and save once to write the row.'),
-      });
+      if (result.missing.length > 0) {
+        // Shout. A modules row the server cannot see is the difference between
+        // "18 modules enabled" in the UI and 14 skills on the instance.
+        toast({
+          variant: 'destructive',
+          title: 'Module settings not stored',
+          description:
+            `${result.missing.length} module(s) are missing from site_settings.modules ` +
+            `(${result.missing.slice(0, 3).join(', ')}). Edge functions and the skill sync will treat them as OFF. ` +
+            (result.error ? `Error: ${result.error}` : 'Open Modules and save once to write the row.'),
+        });
+      }
+
+      const registry = await ensureSkillRegistry();
+      if (cancelled) return;
+      if (registry.missing > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Agent skills incomplete',
+          description:
+            `${registry.missing} of ${registry.expected} skill(s) required by the enabled modules are missing ` +
+            `(${registry.missingNames.slice(0, 3).join(', ')}). Agents cannot call what is not registered — ` +
+            'open Modules → "Sync skills from code".',
+        });
+      }
     })();
     return () => {
       cancelled = true;
@@ -191,6 +225,14 @@ export function useFlowPilotBootstrap() {
       }
       const registry = await ensureSkillRegistry();
       if (registry.status === 'error') errors.push(`skill registry: ${registry.error ?? 'sync failed'}`);
+      // Coverage, not status. "synced" is the writer's word; `missing` is the
+      // read-back — the only number that can contradict a successful-looking run.
+      else if (registry.missing > 0) {
+        errors.push(
+          `skill registry: ${registry.missing}/${registry.expected} required skill(s) still missing ` +
+            `(${registry.missingNames.slice(0, 3).join(', ')})`
+        );
+      }
 
       if (cancelled) return;
 

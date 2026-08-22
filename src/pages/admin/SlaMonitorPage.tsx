@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useIsModuleEnabled } from '@/hooks/useModules';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -123,7 +122,6 @@ function StatsCards() {
 // ── Policies Tab ─────────────────────────────────────────────────────
 
 function PoliciesTab() {
-  const fpEnabled = useIsModuleEnabled('flowpilot');
   const { data: policies = [], isLoading } = useSlaPolicies();
   const updatePolicy = useUpdateSlaPolicy();
   const deletePolicy = useDeleteSlaPolicy();
@@ -133,7 +131,7 @@ function PoliciesTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Define target times for each entity type. {fpEnabled ? 'FlowPilot monitors and flags breaches.' : 'Enable FlowPilot to auto-monitor and flag breaches.'}
+          Define target times for each entity type. The metric decides where the clock stops — first response is measured to the first reply that reaches the customer, resolution to the moment the ticket is resolved.
         </p>
         <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">
           <Plus className="h-3.5 w-3.5" /> Add Policy
@@ -416,7 +414,6 @@ function ViolationsTab() {
 // ── Page ─────────────────────────────────────────────────────────────
 
 export default function SlaMonitorPage() {
-  const fpEnabled = useIsModuleEnabled('flowpilot');
   return (
     <AdminLayout>
       <AdminPageContainer>
@@ -426,7 +423,7 @@ export default function SlaMonitorPage() {
             <div>
               <h1 className="font-serif text-2xl font-bold text-foreground">SLA Monitor</h1>
               <p className="text-sm text-muted-foreground">
-                Service level targets — {fpEnabled ? 'FlowPilot monitors compliance automatically' : 'enable FlowPilot to auto-monitor compliance'}
+                Service level targets — the SLA sweep measures compliance every 15 minutes
               </p>
             </div>
           </div>

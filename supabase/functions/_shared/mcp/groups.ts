@@ -14,13 +14,41 @@ export type GroupMap = Record<string, string[]>;
  * as external MCP clients. When a module is turned off, all skills in its categories
  * disappear from the LLM's tool list — same behaviour the user sees in MCP discovery.
  *
- * NOTE: This map is grep-checked by mcp-regression CI. Keep it in sync with
- * the unified module registry (src/lib/modules/*).
+ * COMPLETENESS IS LOAD-BEARING. `isCategoryActive` opens a category when ANY
+ * listed module is on — so a module that OWNS skills in a category but is
+ * missing from that category's list gets its own skills hidden whenever it is
+ * the only owner enabled. That happened for real: an instance with only the
+ * `email` module on exposed zero e-mail skills, and an external agent could not
+ * answer a customer at all.
+ *
+ * The truth lives in `src/lib/modules/*` (`skillSeeds[].category`). It is
+ * DERIVED and enforced by `src/lib/__tests__/mcp-category-module-map.guardrails.test.ts`
+ * — do not hand-maintain this map without running that test.
+ *
+ * Categories in ALWAYS_ON_CATEGORIES (automation / system / search) are exempt
+ * from the completeness rule: gating never consults their lists, which exist
+ * only for ?groups=<module> alias routing.
  */
 export const SKILL_CATEGORY_MODULES: GroupMap = {
-  content: ["pages", "blog", "knowledgeBase", "handbook", "consultants", "mediaLibrary", "siteMigration"],
-  crm: ["leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects", "salesIntelligence", "tickets"],
-  communication: ["newsletter", "chat", "liveSupport", "webinars"],
+  content: [
+    "pages", "blog", "knowledgeBase", "handbook", "consultants", "mediaLibrary", "siteMigration",
+    "newsletter", "docs", "wiki", "webinars", "documents", "globalElements",
+  ],
+  crm: [
+    "leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects",
+    "salesIntelligence", "tickets", "newsletter", "ecommerce", "flowtable", "customer360",
+    "surveys", "companyInsights", "calendar",
+    // DELIBERATE EXCLUSION: `flowpilot` owns one crm-tagged skill (users_list),
+    // but that is a categorisation slip in the seed — users_list is a system/
+    // identity lookup, not CRM domain ownership. FlowPilot is enabled on nearly
+    // every instance, so listing it here would make `crm` permanently ungated
+    // and would kill agent-operate's "that module is off — turn it on?" nudge.
+    // Fix forward by recategorising users_list, not by widening this list.
+  ],
+  communication: [
+    "newsletter", "chat", "liveSupport", "webinars",
+    "email", "voice", "webmeet", "workspaceChat", "composio", "river", "recruitment", "leads",
+  ],
   automation: [],
   // browserControl stays listed for ?groups=browsercontrol alias routing,
   // but the category itself is ALWAYS_ON (see below): search_web/scrape_url/
@@ -28,11 +56,26 @@ export const SKILL_CATEGORY_MODULES: GroupMap = {
   // browser-control toggle hid them. Browser-control's own skills are still
   // governed by their skill rows (enabled per module bootstrap).
   search: ["browserControl"],
-  analytics: ["analytics", "sla"],
+  analytics: [
+    "analytics", "sla",
+    "pages", "knowledgeBase", "leads", "ecommerce", "liveSupport", "visitorIntelligence",
+    "timesheets", "recruitment", "fixedAssets",
+    // DELIBERATE EXCLUSION: `flowpilot` owns one analytics-tagged skill
+    // (learn_from_data) — an agent-lifecycle skill, not analytics domain
+    // ownership. Same reasoning as `crm` above.
+  ],
   system: [],
-  commerce: ["ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets"],
+  commerce: [
+    "ecommerce", "accounting", "expenses", "contracts", "inventory", "purchasing", "invoicing", "timesheets",
+    "companies", "bookings", "fieldService", "maintenance", "pos", "manufacturing", "approvals",
+    "quotes", "reconciliation", "pricelists", "returns", "shipping", "multiCurrency", "fixedAssets",
+    "payroll", "subscriptions",
+  ],
   growth: ["paidGrowth"],
   subscriptions: ["subscriptions"],
+  // `identity` and `agent` currently own no skillSeeds — kept for
+  // COMPOSITE_GROUPS routing (`success` expands into `identity`) and for
+  // ?groups=<module> aliases.
   identity: ["companyInsights"],
   agent: ["flowpilot"],
 };

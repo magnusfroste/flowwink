@@ -464,6 +464,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "run_recurring_quotes": "quotes",
   "run_skill_curator": "platform",
   "run_subscription_billing": "subscriptions",
+  "run_ticket_escalations": "tickets",
   "run_trial_conversions": "subscriptions",
   "run_year_end": "accounting",
   "sales_profile_setup": "salesIntelligence",

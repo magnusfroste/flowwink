@@ -28,6 +28,7 @@ import {
   type WorkspaceSource,
 } from '@/hooks/useWorkspaceChat';
 import { useWorkspaceSessions } from '@/hooks/useWorkspaceSessions';
+import { toPersistableStaged } from '@/lib/staged-action-outcome';
 import { useCoworkSettings } from '@/hooks/useCoworkSettings';
 import { CitationsDrawer } from '@/components/admin/workspace/CitationsDrawer';
 import { CoworkSettingsPanel } from '@/components/admin/workspace/CoworkSettingsPanel';
@@ -143,10 +144,17 @@ export default function WorkspaceChatPage() {
       const id = activeSessionRef.current;
       if (id) await appendMessage(id, 'user', text);
     },
-    onPersistAssistant: async (text, citations) => {
+    onPersistAssistant: async (text, citations, staged) => {
       const id = activeSessionRef.current;
       if (id) {
-        await appendMessage(id, 'assistant', text, { citations });
+        // Only the IDENTITY of the staged actions is stored here. Their outcome
+        // belongs to pending_operations and is re-read on load — see
+        // src/lib/staged-action-outcome.ts.
+        const persistable = toPersistableStaged(staged as unknown as Record<string, unknown>[]);
+        await appendMessage(id, 'assistant', text, {
+          citations,
+          ...(persistable.length ? { staged: persistable } : {}),
+        });
         await refreshSessions();
       }
     },

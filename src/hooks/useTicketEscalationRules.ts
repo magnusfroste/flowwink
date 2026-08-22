@@ -85,20 +85,20 @@ export function useRunEscalations() {
         rules_evaluated: number;
         tickets_escalated: number;
         rules_skipped?: number;
-        invalid_rules?: Array<{ rule_name: string; problem: string }>;
+        skipped_rules?: Array<{ rule_id: string; rule_name: string; reason: string }>;
       };
     },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['tickets'] });
       // A rule the sweep had to skip is the operator's to fix — say which one
       // and why, rather than reporting a clean run that quietly did less.
-      const skipped = res.invalid_rules ?? [];
+      const skipped = res.skipped_rules ?? [];
       if (skipped.length > 0) {
         toast({
           title: `Escalation sweep complete — ${skipped.length} rule${skipped.length === 1 ? '' : 's'} skipped`,
           description:
             `${res.rules_evaluated} rules, ${res.tickets_escalated} tickets escalated. ` +
-            skipped.map((r) => `"${r.rule_name}": ${r.problem}`).join(' '),
+            skipped.map((r) => `"${r.rule_name}": ${r.reason}`).join(' '),
           variant: 'destructive',
         });
         return;
