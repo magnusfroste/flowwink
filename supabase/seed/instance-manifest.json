@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822234500",
-      "migrations_count": 489,
+      "migration_head": "20260823090000",
+      "migrations_count": 490,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1961,6 +1961,10 @@
         {
           "version": "20260822234500",
           "name": "e3f4a5b6-a-country-is-a-choice-not-a-default"
+        },
+        {
+          "version": "20260823090000",
+          "name": "a-vendor-term-is-a-word-not-a-number"
         }
       ]
     },
