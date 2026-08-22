@@ -881,21 +881,27 @@ Respond ONLY with valid JSON, no other text:
   ],
   "companyProfile": {
     "company_name": "Company name from the page",
+    "tagline": "The one-liner under the name, if the page has one",
     "about_us": "Brief company description extracted from about/intro sections",
-    "services": { "Service Name": "Brief description" },
-    "value_proposition": "Main value proposition or tagline",
+    "business_purpose": "Why the company says it exists, if stated",
+    "services": [{ "name": "Service name", "description": "Brief description as written on the page" }],
+    "value_proposition": "Main value proposition",
     "industry": "Detected industry",
-    "differentiators": ["Key differentiator 1", "Key differentiator 2"],
+    "differentiators": [{ "name": "Differentiator as a label", "description": "What the page says it means" }],
+    "proof_points": [{ "value": "412 km", "label": "kanalisation byggd", "context": "since 2014" }],
+    "primary_cta": { "label": "Text of the page's main button", "destination": "/its-href", "intent": "What the button leads to" },
     "target_industries": ["Target industry 1"],
     "contact_email": "info@example.com",
     "contact_phone": "+46 8 123 45 67",
     "address": "Street, City, Country",
     "clients": "Notable clients if mentioned",
-    "client_testimonials": "Short testimonial quotes if found"
+    "client_testimonials": [{ "quote": "Verbatim quote", "author": "Name if the page names one", "role": "", "company": "" }]
   }
 }
 
-IMPORTANT: The "companyProfile" field is OPTIONAL. Only include it if you can extract meaningful company data from the page (typically homepage or about pages). Include only fields you can confidently extract — omit fields where data is not available.`;
+IMPORTANT: The "companyProfile" field is OPTIONAL. Only include it if you can extract meaningful company data from the page (typically homepage or about pages). Include only fields you can confidently extract — omit fields where data is not available.
+
+For companyProfile specifically: copy, never compose. A differentiator's description must be words the page actually uses — omit the description rather than write one. "proof_points" are figures the page states, with the figure in "value" exactly as printed (unit included) and what it counts in "label"; never compute, round or convert one, and never turn a vague claim ("marknadsledande") into a number. Leave a testimonial's author/role/company empty when the page does not name them — an unattributed quote is correct, an invented attribution is a fabricated reference.`;
 
     // Identify hero video candidates
     const heroVideos = extractedVideos.filter(v => v.isHeroCandidate);

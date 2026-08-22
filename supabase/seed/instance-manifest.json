@@ -1997,17 +1997,17 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:a549f454775aacd6e1b990f266e4307539f98ee8cd5c5741c4c4664a7bab13a8",
+      "seed_hash": "sha256:5d4cc761a5e15ec4ccedc0bf8cf6c30b324633b91e119a7dda765113ac0212ca",
       "skill_count": 538,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:c8af1dbbd111720ae6e56b7abf70c16ed87805cd430bd006a91602feaee458c6",
+      "shared_hash": "sha256:dc20142459677141b68a48ae4cc8f95c463d0359443795a48076724a6c0f73d0",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:32d5df4a0cd040d16bd0c78afca9208e16c8a9c40eba947aafcca20b0b77f0c7",
+        "agent-execute": "sha256:4aabe358ca34e1a6efce6db5edec9c1e040d2566519e89f0f13286949ea88483",
         "agent-operate": "sha256:75fb1281c6ee8aa748f24c44a0b866686a12cf11df5291d7ff5e6aa59a2c1d2a",
         "ai-task": "sha256:4f3549a12beac9c958dc7b584c91202f67fd5700dad7ac9e512e5483ddfb29c7",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2053,7 +2053,7 @@
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
         "mcp-server": "sha256:3cb3f630ad868ee15eb2c559e50af08449af876d3856ba0557f9c2ab9300d2b4",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
-        "migrate-page": "sha256:d3b25894a47d1ea829df88f75d4c049b99db14833e63bf2b2dcac1634d7e9e1f",
+        "migrate-page": "sha256:163d9a8a447050186eb9226430a8edb675b7c918f87ce437a859a483d285e7fe",
         "newsletter": "sha256:14bd71f7af7a7470cff47c9f2447c8828383fb31eaec1679e0b794a11584dde6",
         "openclaw-responses": "sha256:70efb4b23cd1fb08427337148ccd47097d30a0e746bb27ad17120b39498dec3b",
         "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
