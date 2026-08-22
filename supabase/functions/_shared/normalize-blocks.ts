@@ -8,9 +8,9 @@
  * Call order inside normalizeBlocks():
  *   1. normalizeBlockData  — tiptap fields, team mapping, table structure
  *   2. applyIconFallbacks  — assign icons where missing
- *   3. validateBlockContracts — mark unknown TYPES and blocks missing required
- *      fields with _remove (no step maps or aliases the type itself — see the
- *      reasoning in validateBlockContracts)
+ *   3. validateBlockContracts — mark unknown TYPES, unknown FIELDS and blocks
+ *      missing required fields with _remove (no step maps or aliases the type
+ *      itself — see the reasoning in validateBlockContracts)
  *   4. strip _remove blocks
  *
  * TIPTAP_NESTED_FIELDS is auto-generated from block-reference.ts via sync-block-schema.ts.
@@ -45,6 +45,66 @@ export function htmlToTiptap(html: string): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// Renderer-level field fallbacks (the only aliases a STORED page renders under)
+// ---------------------------------------------------------------------------
+
+/**
+ * Alias → primary field names the RENDERER ITSELF falls back to.
+ *
+ *   StatsBlock:    `data.stats || (data as any).items`
+ *   TimelineBlock: `data.steps || (data as any).items`
+ *                  `data.variant || (data as any).layout`
+ *
+ * These are the one class of alias that is not a write-time rename: a block
+ * stored under the alias RENDERS, today, untouched — and our own seed templates
+ * ship 14 stats blocks and 9 timeline blocks in exactly that shape. Everything
+ * else in this file renames BEFORE storage, so a stored value under one of
+ * those names never reaches a renderer at all.
+ *
+ * That distinction is why this map is exported and why the fold below is a
+ * named function rather than an inline branch: inspect_rendered_page reads
+ * STORED blocks and must fold exactly these three pairs (or it reports content
+ * that is visible on the page as "read by nothing"), and must fold nothing else
+ * (or it goes blind to the very fields that were stored under a name the
+ * renderer never looks at — the /agentic incident it exists for). One
+ * implementation, two consumers; a second copy here would drift within a month
+ * and start lying in both directions.
+ */
+export const FOLDED_ALIASES: Readonly<Record<string, ReadonlyArray<readonly [string, string]>>> = {
+  stats: [['items', 'stats']],
+  timeline: [['items', 'steps'], ['layout', 'variant']],
+};
+
+/**
+ * Fold the renderer's own alias names to the primary name, **in place**.
+ *
+ * The write gate judges the block-reference field list, which documents only
+ * the primary name, so without this pass the gate would refuse a shape the
+ * platform itself ships and renders — a false refusal, and it would make every
+ * template-installed page un-updatable through manage_page. Fold to the primary
+ * name (one name wins, per Law 2) rather than documenting a second one in the
+ * catalogue.
+ *
+ * Mutates: callers that must not touch their input (the sensor) pass a copy.
+ */
+export function applyRendererFallbacks(block: Record<string, unknown>): void {
+  const data = block.data as Record<string, unknown> | undefined;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+  const pairs = FOLDED_ALIASES[String(block.type ?? '')];
+  if (!pairs) return;
+  for (const [from, to] of pairs) {
+    const val = data[from];
+    if (val === undefined) continue;
+    const current = data[to];
+    const targetEmpty = current === undefined || current === null
+      || (typeof current === 'string' && current.trim() === '')
+      || (Array.isArray(current) && current.length === 0);
+    if (targetEmpty) data[to] = val;
+    delete data[from];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Per-block normalizer
 // ---------------------------------------------------------------------------
 
@@ -72,11 +132,36 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
   // correctly-named block with one wrong field name, unambiguous in intent, and
   // nothing invisible gets saved by forgiving it. The skill instructions still
   // teach `title` (Law 2), exactly as they do for `heading`.
-  for (const alias of ['heading', 'headline'] as const) {
+  //
+  // `subheadline` → `subtitle` joined 2026-08-22 from the live /agentic hero on
+  // optic, and passes the identical test: not a field on ANY block type, read by
+  // no renderer, and every block with a supporting line calls it `subtitle` —
+  // string in, string out, nothing ambiguous, nothing invisible saved. It is
+  // also a word the platform itself put in front of the model: the landing-page
+  // composer skill says "strong headline + subheadline + CTA". We aliased
+  // `headline` from that same sentence; aliasing one half of a pair we wrote and
+  // refusing the other would be the platform disagreeing with itself again.
+  // Note what is NOT here: `subheading`, and the `primary_cta`/`secondary_cta`
+  // from the same block. Aliases stay evidence-driven — a name nobody has
+  // actually written gets the unknown-field refusal, which now names the right
+  // field anyway (suggestBlockFields), so the model self-corrects and LEARNS the
+  // name instead of having it silently swapped.
+  //
+  // The fold is catalogue-aware, and that is load-bearing: `quick-links` really
+  // does call its heading `heading` (QuickLinksBlock reads data.heading), so an
+  // unconditional heading→title rename took a CORRECT block and made it wrong —
+  // silently before the field gate existed, and refused-with-the-wrong-name
+  // after it. Never rename a field the block genuinely has, and never rename
+  // INTO a field the block does not have: leaving the caller's own name in place
+  // lets the refusal name what they actually sent.
+  const knownFields = blockFieldMap().get(String(block.type ?? ''));
+  for (const [alias, canonical] of [['heading', 'title'], ['headline', 'title'], ['subheadline', 'subtitle']] as const) {
+    if (knownFields && (knownFields.has(alias) || !knownFields.has(canonical))) continue;
     const val = data[alias];
     if (typeof val === 'string' && val.trim() !== '') {
-      if (data.title === undefined || data.title === null || String(data.title).trim() === '') {
-        data.title = val;
+      const current = data[canonical];
+      if (current === undefined || current === null || String(current).trim() === '') {
+        data[canonical] = val;
       }
     }
     if (val !== undefined) delete data[alias]; // never renders — keeping it only re-teaches the mistake
@@ -114,6 +199,8 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
     }
     delete data.buttonLink;
   }
+
+  applyRendererFallbacks(block);
 
   if (block.type === 'two-column') {
     // leftContent/rightContent match no renderer (see TIPTAP_FIELDS above).
@@ -333,7 +420,13 @@ export function applyIconFallbacks(blocks: Record<string, unknown>[]): void {
 export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string[] }> = {
   hero:               { required: [['title']] },
   text:               { required: [['content']] },
-  quote:              { required: [['quote']] },
+  // QuoteBlock renders `data.text`; `quote` is the LEGACY name block-reference
+  // documents as "prefer text". Requiring `quote` alone was therefore a gate
+  // that no correct block could pass and no incorrect one was caught by: every
+  // quote we ship (and the editor, and the catalogue) writes `text`, so the
+  // OR-group refused two of our own templates while a block carrying only
+  // `quote` — which renders blank — would have been waved through.
+  quote:              { required: [['text', 'quote']] },
   cta:                { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
   features:           { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
   stats:              { required: [['stats']] },
@@ -345,7 +438,13 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   image:              { required: [['src']] },
   gallery:            { required: [['images']] },
   youtube:            { required: [['videoId']] },
-  'two-column':       { required: [['content', 'imageSrc']] },
+  // TwoColumnBlock has a text-text mode: `isTextTextLayout` is true as soon as
+  // leftColumn OR rightColumn is present (or layout 'text-text' with
+  // secondaryContent), and it renders `leftColumn ?? content` beside
+  // `rightColumn ?? secondaryContent`. Naming only content/imageSrc here
+  // refused that whole mode — five two-column blocks across three of our own
+  // templates render correctly today and were reported as missing content.
+  'two-column':       { required: [['content', 'imageSrc', 'leftColumn', 'rightColumn', 'secondaryContent']] },
   form:               { required: [['fields']] },
   newsletter:         { required: [] },
   // Terms block: content comes from published contract_templates via RPC —
@@ -463,6 +562,40 @@ export function validateBlockContracts(blocks: Record<string, unknown>[]): void 
       continue;
     }
 
+    // 0c. Unknown top-level FIELDS — fail closed, identically to
+    // validateBlockData (which is why the check itself is shared, not copied).
+    //
+    // Same shape of hole as the unknown-TYPE one above, one level down, and it
+    // outlived that fix by exactly one day. Live 2026-08-22 on optic /agentic:
+    // a hero written with `primary_cta`, `secondary_cta` and `subheadline`.
+    // HeroBlock reads primaryButton / secondaryButton / subtitle, so all three
+    // values were stored and rendered by nothing — the page looked thin, the
+    // agent reported it complete, and a third of the block's content was gone
+    // without a word. This path only ever checked that REQUIRED fields were
+    // PRESENT; it never asked whether the fields that were sent exist.
+    //
+    // Fail closed and all-or-nothing, exactly like a missing required field:
+    // the reason travels back through stripRemovedBlocks → agent-execute →
+    // the model, naming the field and (where a real one is close) the right
+    // name, so the next turn corrects itself.
+    //
+    // Why refusing is right HERE even though the merge path (validateBlockData
+    // with unknownFieldScope) deliberately fails open: on manage_page the whole
+    // blocks array IS the caller's payload. Every field named in the refusal is
+    // one they can see and remove before resending. In the merge case the agent
+    // sends a handful of fields and the executor judges stored data the agent
+    // never saw — refusing there would make a legacy page permanently
+    // un-editable, which is a wall, not a gate.
+    const fieldErrors = unknownFieldErrors(type, data);
+    if (fieldErrors.length > 0) {
+      console.warn(`[validate] Block ${block.id} (${type}): ${fieldErrors[0]}`);
+      block._remove = true;
+      const example = BLOCK_HINTS[type];
+      block._remove_reason = fieldErrors[0]
+        + (example ? `. Correct "${type}" structure: ${JSON.stringify(example)}` : '');
+      continue;
+    }
+
     const contract = BLOCK_CONTRACTS[type];
     // Known, renderable type with no required/forbidden fields (section-divider,
     // newsletter, terms…). Nothing to check — but it is NOT unknown.
@@ -493,14 +626,11 @@ export function validateBlockContracts(blocks: Record<string, unknown>[]): void 
           `[validate] Block ${block.id} (${block.type}): missing required fields [${group.join('|')}] — marking for removal`,
         );
         block._remove = true;
-        // Self-correcting reason (the Tiptap-error pattern): name the block,
-        // the field it needs, and — when the caller plainly used a common
-        // wrong name — what they probably meant. The live miss: a stats block
-        // with `items` was dropped without a word.
-        const hint = String(block.type) === 'stats' && (data as any).items !== undefined
-          ? ' (you sent "items" — the stats block calls this field "stats")'
-          : '';
-        block._remove_reason = `"${block.type}" block: missing required field [${group.join(' or ')}]${hint}`;
+        // Self-correcting reason (the Tiptap-error pattern): name the block and
+        // the field it needs. The old `items` hint for stats lived here; it is
+        // gone because normalizeBlockData now folds stats.items → stats (the
+        // renderer's own fallback), so the wrong name never reaches this line.
+        block._remove_reason = `"${block.type}" block: missing required field [${group.join(' or ')}]`;
         break;
       }
     }
@@ -833,6 +963,153 @@ export function suggestBlockTypes(invented: string): string[] {
   return [...new Set([...synonyms, ...ranked])].slice(0, 3);
 }
 
+/**
+ * Wrong FIELD names whose right name shares too few letters for the similarity
+ * pass below to find it. Suggestion text only — nothing is routed or rescued on
+ * this map; every entry is filtered against the block's real field list before
+ * it is ever shown, so a synonym can never name a field the type does not have.
+ *
+ * Keys are normalised (lowercase, separators stripped), so one entry covers
+ * `primary_cta`, `primaryCta` and `primary-cta` alike.
+ *
+ * Every entry below is a name a real agent write used. This is NOT a second
+ * field catalogue: the catalogue is blockFieldMap() (generated from
+ * block-reference.ts) and stays the only authority on what exists.
+ */
+const FIELD_SYNONYMS: Record<string, string[]> = {
+  // The live miss this gate was built for (optic /agentic, 2026-08-22): a hero
+  // written with primary_cta / secondary_cta / subheadline. The two CTA names
+  // are refused, not aliased — see the reasoning at the unknown-field gate.
+  primarycta: ['primaryButton', 'buttonText'],
+  secondarycta: ['secondaryButton', 'secondaryButtonText'],
+  cta: ['primaryButton', 'buttonText'],
+  ctatext: ['buttonText', 'primaryButton'],
+  ctalabel: ['buttonText', 'primaryButton'],
+  ctalink: ['buttonUrl', 'primaryButton'],
+  ctaurl: ['buttonUrl', 'primaryButton'],
+  callotoaction: ['primaryButton', 'buttonText'],
+  // Text-shaped misses. `heading`/`headline`/`subheadline` are folded by
+  // normalizeBlockData on the blocks that HAVE title/subtitle; these entries
+  // catch the blocks that do not — quick-links calls its heading `heading`, and
+  // the refusal has to point there rather than at a `title` it never had.
+  heading: ['title', 'heading'],
+  headline: ['title', 'heading'],
+  subheadline: ['subtitle', 'description'],
+  subheading: ['subtitle', 'description'],
+  title: ['heading', 'text'],
+  tagline: ['subtitle', 'eyebrow'],
+  intro: ['subtitle', 'content'],
+  lead: ['subtitle', 'content'],
+  summary: ['subtitle', 'content'],
+  description: ['subtitle', 'content'],
+  body: ['content', 'subtitle'],
+  text: ['content', 'title'],
+  label: ['title', 'eyebrow'],
+  caption: ['subtitle', 'imageAlt'],
+  // Media-shaped misses.
+  image: ['imageSrc', 'backgroundImage', 'src'],
+  imageurl: ['imageSrc', 'backgroundImage', 'src'],
+  photo: ['imageSrc', 'backgroundImage', 'src'],
+  background: ['backgroundImage', 'backgroundType'],
+  video: ['videoUrl'],
+  link: ['buttonUrl', 'url'],
+  href: ['buttonUrl', 'url'],
+};
+
+/** lowercase + drop separators, so primary_cta / primaryCta / primary-cta match. */
+function normalizeFieldName(name: string): string {
+  return String(name || '').toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+/** camelCase / snake_case / kebab-case → lowercase word tokens. */
+function fieldWords(name: string): string[] {
+  return String(name || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[\s_-]+/)
+    .map((w) => w.toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Suggest the valid FIELD names closest to what the caller sent, for one block
+ * type — the field-level twin of suggestBlockTypes(), and deliberately the same
+ * crude similarity rather than a fuzzy-match library.
+ *
+ * It reads the SAME catalogue the gate refuses from (blockFieldMap), so a
+ * suggestion can never drift from what is actually accepted.
+ */
+export function suggestBlockFields(blockType: string, invented: string): string[] {
+  const valid = blockFieldMap().get(blockType);
+  if (!valid || valid.size === 0) return [];
+  const n = normalizeFieldName(invented);
+  if (!n) return [];
+  const out: string[] = [];
+  const push = (f: string) => { if (valid.has(f) && !out.includes(f)) out.push(f); };
+
+  // 1. Known synonym (filtered against this block's real fields).
+  for (const s of FIELD_SYNONYMS[n] ?? []) push(s);
+
+  // 2. Same field, other casing: `sub_title` → `subtitle`, `background_image` →
+  //    `backgroundImage`. The single most common miss and always unambiguous —
+  //    so it answers alone; a second guess beside a certainty only adds doubt.
+  for (const f of valid) if (normalizeFieldName(f) === n) return [f];
+
+  // 3. Containment, both ways, on names long enough for it to mean something
+  //    ("buttonlabel" ↔ "buttonText" is caught by the word pass instead).
+  if (n.length >= 5) {
+    for (const f of valid) {
+      const fn = normalizeFieldName(f);
+      if (fn.length >= 4 && (fn.includes(n) || n.includes(fn))) push(f);
+    }
+  }
+
+  // 4. Shared word: `buttonLabel` → `buttonText`, `heroTitle` → `title`.
+  const words = new Set(fieldWords(invented));
+  const scored: Array<{ field: string; shared: number }> = [];
+  for (const f of valid) {
+    if (out.includes(f)) continue;
+    const shared = fieldWords(f).filter((w) => words.has(w)).length;
+    if (shared > 0) scored.push({ field: f, shared });
+  }
+  scored.sort((a, b) => b.shared - a.shared || a.field.length - b.field.length);
+  for (const s of scored) push(s.field);
+
+  return out.slice(0, 2);
+}
+
+/**
+ * The unknown-top-level-FIELD check, shared verbatim by BOTH write paths.
+ *
+ * Returns [] when every field is known (or when the type has no declared field
+ * list — the data-driven blocks, which have no creation tool). One message per
+ * block, naming every unknown field and, where one exists, the right name.
+ *
+ * Silence here is the defect it closes (verified live on optic /agentic,
+ * 2026-08-22): a hero written with `primary_cta`, `secondary_cta` and
+ * `subheadline`. All three saved, none renders — HeroBlock reads primaryButton
+ * / secondaryButton / subtitle — so a third of the block's content sat in the
+ * database while the page looked thin and the agent reported it complete.
+ */
+export function unknownFieldErrors(
+  blockType: string,
+  scope: Record<string, unknown>,
+): string[] {
+  const validFields = blockFieldMap().get(blockType);
+  if (!validFields || validFields.size === 0) return [];
+  const unknown = Object.keys(scope).filter((k) => !k.startsWith('_') && !validFields.has(k));
+  if (unknown.length === 0) return [];
+  const named = unknown.map((f) => {
+    const suggestions = suggestBlockFields(blockType, f);
+    return suggestions.length
+      ? `${f} (did you mean ${suggestions.map((s) => `"${s}"`).join(' or ')}?)`
+      : f;
+  });
+  return [
+    `"${blockType}" block has unknown field(s): ${named.join(', ')} — nothing reads them, so they would be stored and never rendered. `
+    + `Valid fields for "${blockType}": ${[...validFields].join(', ')}`,
+  ];
+}
+
 export interface BlockValidationResult {
   valid: boolean;
   errors: string[];
@@ -885,17 +1162,10 @@ export function validateBlockData(
   // 0b. Unknown top-level FIELDS on a known type. These used to be written and
   // silently ignored by the renderer — the call answered "updated" while the
   // page did not change. Keys starting with "_" are internal plumbing.
-  const validFields = blockFieldMap().get(blockType);
-  if (validFields && validFields.size > 0) {
-    const scope = options.unknownFieldScope ?? blockData;
-    const unknown = Object.keys(scope).filter((k) => !k.startsWith('_') && !validFields.has(k));
-    if (unknown.length > 0) {
-      errors.push(
-        `"${blockType}" block has unknown field(s): ${unknown.join(', ')} — nothing reads them, so they would be stored and never rendered. `
-        + `Valid fields for "${blockType}": ${[...validFields].join(', ')}`,
-      );
-    }
-  }
+  // The check itself lives in unknownFieldErrors() because validateBlockContracts
+  // (the manage_page path) must refuse the identical set with the identical
+  // wording — two copies is how the two paths disagreed about TYPES for months.
+  errors.push(...unknownFieldErrors(blockType, options.unknownFieldScope ?? blockData));
 
   const contract = BLOCK_CONTRACTS[blockType];
   if (!contract) {

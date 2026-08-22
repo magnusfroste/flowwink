@@ -342,9 +342,7 @@
             "title": "The Best Startups Don't Build Infrastructure. They Build Products.",
             "subtitle": "Join 50,000+ founders who chose to focus on what matters — their users.",
             "backgroundImage": "/templates/hero/tech-future.jpg",
-            "overlayOpacity": 60,
-            "buttonText": "Start Building Free",
-            "buttonUrl": "/contact"
+            "overlayOpacity": 60
           }
         },
         {
@@ -558,10 +556,10 @@
           "id": "floating-cta-home",
           "type": "floating-cta",
           "data": {
-            "text": "Free plan available — no credit card required",
+            "title": "Free plan available — no credit card required",
             "buttonText": "Start Building Free",
             "buttonUrl": "/contact",
-            "variant": "pill"
+            "variant": "minimal"
           }
         }
       ]

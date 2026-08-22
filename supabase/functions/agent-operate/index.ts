@@ -157,7 +157,10 @@ serve(async (req) => {
       loadMemories(supabase),
       loadObjectives(supabase),
       loadCMSSchema(supabase),
-      loadBusinessIdentityBlock(supabase).catch(() => ''),
+      // 'narrative': this loop creates pages, blocks and posts. The bento grid
+      // that pitched FlowPilot as the customer's product came from an identity
+      // too thin to say what the customer actually sells.
+      loadBusinessIdentityBlock(supabase, 'narrative').catch(() => ''),
     ]);
 
     // Use prompt compiler (OpenClaw Layer 1)

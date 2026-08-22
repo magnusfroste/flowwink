@@ -34,7 +34,18 @@ const digitalShopPages: TemplatePage[] = [
         id: 'marquee-promo',
         type: 'marquee',
         data: {
-          text: 'SUMMER SALE: 30% OFF EVERYTHING  •  FREE INSTANT DELIVERY  •  LIFETIME UPDATES  •  10,000+ HAPPY CREATORS  •  30-DAY MONEY BACK',
+          // Was a single `text` string with the phrases separated by bullets —
+          // a field MarqueeBlock does not read. With no `items` the block
+          // returned null, so this announcement bar was absent from the page
+          // entirely. Same copy, split on the bullets it already used; the
+          // renderer re-inserts the separator between items.
+          items: [
+            { id: 'ds-m1', text: 'SUMMER SALE: 30% OFF EVERYTHING' },
+            { id: 'ds-m2', text: 'FREE INSTANT DELIVERY' },
+            { id: 'ds-m3', text: 'LIFETIME UPDATES' },
+            { id: 'ds-m4', text: '10,000+ HAPPY CREATORS' },
+            { id: 'ds-m5', text: '30-DAY MONEY BACK' },
+          ],
           speed: 'normal',
           direction: 'left',
           variant: 'default',
@@ -78,8 +89,6 @@ const digitalShopPages: TemplatePage[] = [
             { id: 's3', value: '4.9★', label: 'Average Rating' },
             { id: 's4', value: '<5min', label: 'Avg. Delivery Time' },
           ],
-          columns: 4,
-          variant: 'minimal',
         },
       },
 
@@ -132,12 +141,10 @@ const digitalShopPages: TemplatePage[] = [
           },
           imageSrc: '/templates/products/creator-toolkit.jpg',
           imageAlt: 'Creator Toolkit — 50+ premium templates',
-          imageSide: 'left',
-          imageAspectRatio: '4:5',
-          imageObjectFit: 'cover',
+          imagePosition: 'left',
+          imageFit: 'cover',
           imageRounded: 'xl',
           primaryButton: { text: 'View Product — $49', url: '/home' },
-          verticalAlignment: 'center',
         },
       },
 
@@ -167,7 +174,6 @@ const digitalShopPages: TemplatePage[] = [
           height: 'md',
           overlayOpacity: 55,
           contentAlignment: 'center',
-          primaryButton: { text: 'Browse All Products', url: '#products-bestsellers' },
         },
       },
 
@@ -256,12 +262,10 @@ const digitalShopPages: TemplatePage[] = [
           },
           imageSrc: '/templates/misc/money-growth.jpg',
           imageAlt: 'Pro Membership — unlock everything',
-          imageSide: 'right',
-          imageAspectRatio: '4:5',
-          imageObjectFit: 'cover',
+          imagePosition: 'right',
+          imageFit: 'cover',
           imageRounded: 'xl',
           primaryButton: { text: 'Start Pro — $29/mo', url: '/home' },
-          verticalAlignment: 'center',
         },
       },
 
@@ -329,7 +333,7 @@ const digitalShopPages: TemplatePage[] = [
         type: 'form',
         data: {
           title: 'Join 10,000+ Creators',
-          subtitle: 'Get early access to new products, exclusive discounts, and weekly design inspiration. No spam, ever.',
+          description: 'Get early access to new products, exclusive discounts, and weekly design inspiration. No spam, ever.',
           fields: [
             { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'full' },
           ],
@@ -341,15 +345,18 @@ const digitalShopPages: TemplatePage[] = [
 
       // 16 ── Blog ──
       {
-        id: 'article-grid-blog',
-        type: 'article-grid',
+        id: 'latest-posts-blog',
+        // Was an 'article-grid' with limit/showExcerpt/showImage and NO `articles`
+        // array. ArticleGridBlock renders static articles only and returns null
+        // when the array is missing, so this whole section was invisible. The
+        // intent — 'show the N most recent posts' — is what latest-posts does.
+        type: 'latest-posts',
         data: {
           title: 'From the Blog',
           subtitle: 'Tips, strategies, and behind-the-scenes for digital creators',
           columns: 3,
-          limit: 3,
+          count: 3,
           showExcerpt: true,
-          showImage: true,
         },
       },
 
@@ -367,7 +374,6 @@ const digitalShopPages: TemplatePage[] = [
             { question: 'What\'s included with Pro Membership?', answer: 'Full access to every product in our catalog (50+), new weekly releases, priority support, member-only exclusives, and early access to upcoming products. Cancel anytime.' },
             { question: 'How do lifetime updates work?', answer: 'When we improve a product, you get the updated version for free — forever. No extra cost, no re-purchase needed.' },
           ],
-          variant: 'default',
         },
       },
 
@@ -410,13 +416,17 @@ const digitalShopPages: TemplatePage[] = [
         id: 'floating-cart',
         type: 'floating-cta',
         data: {
-          text: 'View Cart',
-          url: '/cart',
-          icon: 'shopping-cart',
+          // Was authored against a stale schema: `text`/`url` are not fields, so the
+          // pill rendered an EMPTY button pointing nowhere. 'View Cart' is the button
+          // label and /cart its target. Dropped with no equivalent: `icon` (the pill
+          // has a fixed arrow) and `showOnScroll` (always true). `scrollThreshold: 400`
+          // was pixels; the real field is a PERCENTAGE and its default 25 is the same
+          // intent, so it is left at the default rather than restated in the wrong unit.
+          title: 'View Cart',
+          buttonText: 'View Cart',
+          buttonUrl: '/cart',
           position: 'bottom-right',
           variant: 'pill',
-          showOnScroll: true,
-          scrollThreshold: 400,
         },
       },
     ],
@@ -494,11 +504,10 @@ const digitalShopPages: TemplatePage[] = [
           },
           imageSrc: '/templates/blog/team-brainstorming.jpg',
           imageAlt: 'Our team collaborating',
-          imageSide: 'right',
-          imageAspectRatio: '3:2',
-          imageObjectFit: 'cover',
+          imagePosition: 'right',
+          imageAspect: '3:2',
+          imageFit: 'cover',
           imageRounded: 'xl',
-          verticalAlignment: 'center',
         },
       },
       {
@@ -529,8 +538,6 @@ const digitalShopPages: TemplatePage[] = [
             { id: 'as3', value: '4.9/5', label: 'Average Rating' },
             { id: 'as4', value: '98%', label: 'Satisfaction Rate' },
           ],
-          columns: 4,
-          variant: 'default',
         },
       },
     ],

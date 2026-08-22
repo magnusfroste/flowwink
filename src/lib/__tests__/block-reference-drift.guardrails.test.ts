@@ -34,13 +34,245 @@ function rendererPath(type: string): string | null {
   return hit ? resolve(rendererDir, hit) : null;
 }
 
-/** Fields the renderer reads off `data.` — its true consumption surface. */
+/**
+ * A renderer reads its block in two shapes, and this test only ever saw one:
+ *
+ *     data.title                                    ← member access
+ *     const { title, subtitle = 'x' } = data;       ← destructuring
+ *
+ * Roughly half the renderers destructure, so half the registry was never
+ * actually audited — the guard was green while ~33 fields went undocumented,
+ * among them BadgeBlock's `showTitles` (the registry said `showTitle`). That is
+ * the same class that let content be written to fields nothing renders.
+ *
+ * It matters more now that `inspect_rendered_page` exists: that sensor tells an
+ * agent which stored fields "no renderer reads", judged against this catalogue.
+ * A field that IS read but is missing from the catalogue therefore comes back as
+ * a false positive, and the sensor advises deleting correct, rendered content. A
+ * sensor that lies is worse than no sensor, so the catalogue has to be true —
+ * which means this extractor has to see everything the renderer sees.
+ *
+ * A naive /\{([^}]*)\} = data/ breaks on defaults that are themselves objects or
+ * arrays (`labels = {}`, `suggestedPrompts = ['…', '…']`), so the pattern body is
+ * walked brace-balanced instead — over a source with comments, strings, template
+ * text and regex literals blanked out, so no brace inside a literal can throw
+ * the count off.
+ */
+
+/**
+ * Blank comments, string bodies, template text and regex literals, preserving
+ * every offset (blanked characters become spaces, newlines survive). Both passes
+ * below then run over code only: a `data.foo` mentioned in a comment is not a
+ * read, and a `{` inside a string is not a brace.
+ */
+function maskNonCode(src: string): string {
+  const out = src.split('');
+  const n = src.length;
+  const blank = (a: number, b: number) => {
+    for (let k = Math.max(a, 0); k < b && k < n; k++) if (out[k] !== '\n') out[k] = ' ';
+  };
+  // `/` opens a regex literal only where a value may begin; after an identifier,
+  // `)` or `]` it is division. These files contain no division today, but the
+  // heuristic keeps a future one from swallowing the rest of the file.
+  const regexCanStart = (prev: string) => prev === '' || !/[\w$)\]]/.test(prev);
+  let prev = '';
+
+  /** Scan code from `i`. With `untilBrace`, return at the matching `}`. */
+  function scanCode(i: number, untilBrace: boolean): number {
+    while (i < n) {
+      const c = src[i];
+      if (c === '/' && src[i + 1] === '/') {
+        let e = src.indexOf('\n', i);
+        if (e === -1) e = n;
+        blank(i, e);
+        i = e;
+        continue;
+      }
+      if (c === '/' && src[i + 1] === '*') {
+        const e = src.indexOf('*/', i + 2);
+        const end = e === -1 ? n : e + 2;
+        blank(i, end);
+        i = end;
+        continue;
+      }
+      if (c === '"' || c === "'") {
+        let j = i + 1;
+        while (j < n && src[j] !== c && src[j] !== '\n') {
+          if (src[j] === '\\') j++;
+          j++;
+        }
+        blank(i + 1, j);
+        i = Math.min(j + 1, n);
+        prev = c;
+        continue;
+      }
+      if (c === '`') {
+        i = scanTemplate(i);
+        prev = '`';
+        continue;
+      }
+      if (c === '/' && regexCanStart(prev)) {
+        let j = i + 1;
+        let inClass = false;
+        while (j < n) {
+          const d = src[j];
+          if (d === '\\') { j += 2; continue; }
+          if (d === '\n') break; // unterminated — it was not a regex after all
+          if (d === '[') inClass = true;
+          else if (d === ']') inClass = false;
+          else if (d === '/' && !inClass) break;
+          j++;
+        }
+        if (j < n && src[j] === '/') {
+          blank(i + 1, j);
+          i = j + 1;
+          prev = '/';
+          continue;
+        }
+      }
+      if (untilBrace && c === '}') return i; // caller consumes it
+      if (c === '{') {
+        i = scanCode(i + 1, true);
+        if (i < n) i++;
+        prev = '}';
+        continue;
+      }
+      if (!/\s/.test(c)) prev = c;
+      i++;
+    }
+    return i;
+  }
+
+  /** Template literal: blank the literal text, keep `${ … }` as live code. */
+  function scanTemplate(start: number): number {
+    let i = start + 1;
+    while (i < n) {
+      const c = src[i];
+      if (c === '\\') { blank(i, i + 2); i += 2; continue; }
+      if (c === '`') return i + 1;
+      if (c === '$' && src[i + 1] === '{') {
+        i = scanCode(i + 2, true);
+        if (i < n) i++;
+        continue;
+      }
+      blank(i, i + 1);
+      i++;
+    }
+    return i;
+  }
+
+  scanCode(0, false);
+  return out.join('');
+}
+
+/** Walk back from a `}` to its matching `{`. Safe on masked source only. */
+function openingBrace(src: string, close: number): number {
+  let depth = 0;
+  for (let i = close; i >= 0; i--) {
+    if (src[i] === '}') depth++;
+    else if (src[i] === '{') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Top-level binding names of one object pattern body. Handles renaming
+ * (`{ a: b }` → a), defaults (`{ a = 1 }` → a), nested patterns (`{ a: { b } }`
+ * → a, since only `data.a` is the read), quoted keys and rest elements.
+ */
+function patternKeys(body: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (c === '{' || c === '[' || c === '(') depth++;
+    else if (c === '}' || c === ']' || c === ')') depth--;
+    else if (c === ',' && depth === 0) {
+      parts.push(body.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(body.slice(start));
+
+  const keys: string[] = [];
+  for (const raw of parts) {
+    const part = raw.trim();
+    if (!part) continue;
+    if (part.startsWith('...')) continue; // rest: names no field
+    if (part.startsWith('[')) continue; // computed key: not statically known
+    const key = part.split(/[:=]/)[0].trim().replace(/^['"]|['"]$/g, '');
+    if (/^[A-Za-z_$][\w$-]*$/.test(key)) keys.push(key);
+  }
+  return keys;
+}
+
+/**
+ * Names a renderer reads that the registry must NOT document, because
+ * normalize-blocks folds them to the primary name before anything else sees
+ * them. StatsBlock reads `data.stats || (data as any).items`; the fold turns a
+ * written `items` into `stats`, and normalize-blocks states the ruling
+ * explicitly: "Fold to the primary name (one name wins, per Law 2) rather than
+ * documenting a second one in the catalogue." Documenting them here would
+ * re-teach the name the platform is trying to retire. Keyed by block type so a
+ * fold added for one block cannot excuse the same name on another.
+ */
+const FOLDED_ALIASES: Record<string, string[]> = {
+  stats: ['items'],
+  timeline: ['items', 'layout'],
+};
+
+/**
+ * Fields the renderer reads off its `data` prop — its true consumption surface.
+ * Three shapes, all of them present in this repo:
+ *   data.x                          member access (also covers props.data.x)
+ *   (data as any).x                 cast-then-read, used for legacy aliases
+ *   const { x, y = 1 } = data       destructuring
+ */
 function rendererFields(path: string): Set<string> {
-  const src = readFileSync(path, 'utf-8');
+  const src = maskNonCode(readFileSync(path, 'utf-8'));
   const fields = new Set<string>();
-  for (const m of src.matchAll(/\bdata\.([a-zA-Z][a-zA-Z0-9]*)\b/g)) fields.add(m[1]);
+
+  for (const m of src.matchAll(/\bdata\.([A-Za-z_$][\w$]*)/g)) fields.add(m[1]);
+  for (const m of src.matchAll(/\(\s*data\s+as\s+[^)]+\)\s*\.([A-Za-z_$][\w$]*)/g)) fields.add(m[1]);
+
+  // `= data` — but not `= data.x`, `= data?.x`, `= data[0]`, and not a pattern
+  // destructured from something else that merely happens to bind a `data` key
+  // (`const { data, error } = await q`).
+  for (const m of src.matchAll(/=\s*data(?![\w$.?[])/g)) {
+    const before = src.slice(0, m.index).replace(/\s+$/, '');
+    if (!before.endsWith('}')) continue;
+    const open = openingBrace(src, before.length - 1);
+    if (open === -1) continue;
+    for (const key of patternKeys(src.slice(open + 1, before.length - 1))) fields.add(key);
+  }
+
   return fields;
 }
+
+/**
+ * Shapes the extractor deliberately does NOT model. If one appears, the guard
+ * would go quietly blind again for that renderer — exactly how it stayed green
+ * through 33 undocumented fields — so it fails loudly and names the file
+ * instead. Extend `rendererFields` above, do not widen this allowance.
+ */
+const UNMODELLED_SHAPES: Array<{ label: string; re: RegExp }> = [
+  { label: 'dynamic key access — data[expr]', re: /\bdata\s*\[/ },
+  // Binding positions only: a `(` or a declaration keyword must open the
+  // pattern. `interface Props { data: { title?: string } }` is a type, not a
+  // read, and every renderer in the repo declares one.
+  {
+    label: 'parameter destructuring — ({ data: { … } })',
+    re: /\(\s*\{[^(){}]*\bdata\s*:\s*\{/,
+  },
+  {
+    label: 'nested destructuring — const { data: { … } } = props',
+    re: /\b(?:const|let|var)\s*\{[^{}]*\bdata\s*:\s*\{/,
+  },
+];
 
 /**
  * Not yet audited — documented subset is known to be smaller than the renderer.
@@ -63,7 +295,10 @@ describe('block registry documents what the renderer can do', () => {
       const path = rendererPath(block.type)!;
       const consumed = rendererFields(path);
       const documented = new Set(block.fields.map((f) => f.name));
-      const undocumented = [...consumed].filter((f) => !documented.has(f)).sort();
+      const folded = new Set(FOLDED_ALIASES[block.type] ?? []);
+      const undocumented = [...consumed]
+        .filter((f) => !documented.has(f) && !folded.has(f))
+        .sort();
       expect(
         undocumented,
         `${block.type}'s renderer reads fields the registry does not document — ` +
@@ -76,6 +311,117 @@ describe('block registry documents what the renderer can do', () => {
     // A block cannot be both audited-clean and pending; if a future edit re-adds
     // a fixed block to PENDING, this fails and the regression is loud.
     for (const b of audited) expect(PENDING.has(b.type)).toBe(false);
+  });
+
+  /**
+   * The extractor's own blind-spot check. Silence is the failure mode here: a
+   * renderer whose reads it cannot see is audited against an empty set and
+   * passes, which is precisely how destructured fields stayed invisible.
+   */
+  it('sees a read in every renderer it audits', () => {
+    const blind = audited
+      .filter((b) => rendererFields(rendererPath(b.type)!).size === 0)
+      .map((b) => b.type);
+    expect(
+      blind,
+      'the extractor found no field reads in these renderers — either they truly ' +
+        'read nothing, or they use a shape rendererFields() cannot see:\n  ' +
+        blind.join(', '),
+    ).toEqual([]);
+  });
+
+  it('no renderer uses a data shape the extractor cannot model', () => {
+    const offenders: string[] = [];
+    for (const file of readdirSync(rendererDir).filter((f) => f.endsWith('.tsx'))) {
+      const src = maskNonCode(readFileSync(resolve(rendererDir, file), 'utf-8'));
+      for (const shape of UNMODELLED_SHAPES) {
+        if (shape.re.test(src)) offenders.push(`${file}: ${shape.label}`);
+      }
+    }
+    expect(
+      offenders,
+      'these renderers read `data` in a shape this test does not extract, so their ' +
+        'fields would go unaudited — teach rendererFields() the shape:\n  ' +
+        offenders.join('\n  '),
+    ).toEqual([]);
+  });
+});
+
+/**
+ * FOLDED_ALIASES is an exemption, and an exemption that stops being true is a
+ * new blind spot wearing the old one's clothes. Pin both halves of its claim:
+ * normalize-blocks really does fold the name, and the registry really does not
+ * document it. If the fold is ever removed, this fails and the alias has to be
+ * documented or the read removed — it cannot quietly stay invisible.
+ */
+describe('folded aliases stay folded, and stay out of the catalogue', () => {
+  const normalizeSrc = readFileSync(
+    resolve(__dirname, '../../../supabase/functions/_shared/normalize-blocks.ts'),
+    'utf-8',
+  );
+
+  for (const [type, aliases] of Object.entries(FOLDED_ALIASES)) {
+    for (const alias of aliases) {
+      it(`${type}.${alias} is folded by normalize-blocks, not documented`, () => {
+        expect(
+          normalizeSrc,
+          `${type}.${alias} is excused here because normalize-blocks folds it — ` +
+            'no fold pair for it is left in that file',
+        ).toContain(`['${alias}', '`);
+        const entry = BLOCK_REFERENCE.find((b) => b.type === type);
+        expect(entry, `${type} has no registry entry`).toBeTruthy();
+        expect(
+          entry!.fields.map((f) => f.name),
+          `${type}.${alias} is a legacy alias the platform folds away — documenting ` +
+            'it re-teaches the name normalize-blocks exists to retire',
+        ).not.toContain(alias);
+      });
+    }
+  }
+});
+
+/**
+ * `describe_blocks` resolves a type with `entries.find(…)` — first match wins —
+ * so a second entry for the same type is documentation that nothing will ever
+ * serve. It is not hypothetical: kb-hub and kb-search each carried two entries
+ * with DIFFERENT field lists, and the half an agent could see was the poorer
+ * one (kb-hub's second entry held the only mention of kbPageSlug; kb-search's
+ * first held the only mention of subtitle). Both fields are read by the
+ * renderer, so the loser's fields were unreachable and, to the sensor, unread.
+ */
+/**
+ * A third copy of the vocabulary. template-validator.ts keeps its own list of
+ * legal block types, and a block registered only in block-reference.ts fails
+ * template validation with "Invalid block type" — which reads as a broken
+ * template rather than a stale list. Six types had drifted out of it
+ * (ai-faq, latest-posts, pricing-calculator, sticky-scroll, handbook, terms).
+ */
+describe('template-validator knows every registered block type', () => {
+  it('VALID_BLOCK_TYPES covers BLOCK_REFERENCE', () => {
+    const src = readFileSync(resolve(__dirname, '../template-validator.ts'), 'utf-8');
+    const list = /const VALID_BLOCK_TYPES: ContentBlockType\[\] = \[([\s\S]*?)\];/.exec(src);
+    expect(list, 'VALID_BLOCK_TYPES was renamed or reshaped').toBeTruthy();
+    const valid = new Set([...list![1].matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]));
+    const missing = BLOCK_REFERENCE.map((b) => b.type).filter((t) => !valid.has(t)).sort();
+    expect(
+      missing,
+      'these block types are in the registry but not in template-validator, so any ' +
+        'template using them fails validation as an unknown type:\n  ' + missing.join(', '),
+    ).toEqual([]);
+  });
+});
+
+describe('BLOCK_REFERENCE keys are unique', () => {
+  it('no block type is declared twice', () => {
+    const seen = new Map<string, number>();
+    for (const b of BLOCK_REFERENCE) seen.set(b.type, (seen.get(b.type) ?? 0) + 1);
+    const dupes = [...seen].filter(([, n]) => n > 1).map(([t, n]) => `${t} ×${n}`);
+    expect(
+      dupes,
+      'a duplicate entry is dead documentation — describe_blocks serves the first ' +
+        'and the rest are invisible. Merge them into one entry (the union of the ' +
+        'fields the renderer actually reads):\n  ' + dupes.join(', '),
+    ).toEqual([]);
   });
 });
 

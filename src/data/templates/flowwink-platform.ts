@@ -144,8 +144,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 's3', value: 'BYO', label: 'Agent (FlowPilot or external)' },
               { id: 's4', value: '100%', label: 'Self-Hostable & Open Source' },
             ],
-            columns: 4,
-            variant: 'minimal',
           },
         },
         // PARADIGM SHIFT — The investor/vision argument
@@ -158,7 +156,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             content: 'Every ERP you\'ve used is a form waiting to be filled. A workflow waiting to be triggered. A dashboard waiting to be read. They digitize processes — but you still run them.\n\nFlowWink inverts this entirely. It\'s an ERP where agentic intelligence is native — not a plugin, not a module, not a chatbot in the corner. The process engine itself has objectives, memory, and skills.\n\nIt doesn\'t wait for a purchase order to be created. It identifies the need, drafts the order, and routes it for approval. That\'s the difference between a system that reacts and one that acts.',
             secondaryContent: '**Traditional ERP**\nEvent → Human notices → Human acts → Result\n\n**FlowWink BOS**\nObjective set → Agent monitors → Agent acts → Human approves',
             layout: 'text-text',
-            contentFormat: 'markdown',
             primaryButton: { text: 'Meet FlowPilot', url: '/flowpilot' },
           },
         },
@@ -610,15 +607,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'form',
           data: {
             title: 'Get in Touch',
-            subtitle: 'Start your free trial or ask us anything — we typically respond within a few hours.',
-            formName: 'contact',
+            description: 'Start your free trial or ask us anything — we typically respond within a few hours.',
             fields: [
               { id: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Your name' },
               { id: 'email', label: 'Email', type: 'email', required: true, placeholder: 'you@company.com' },
               { id: 'company', label: 'Company', type: 'text', required: false, placeholder: 'Company name (optional)' },
               { id: 'message', label: 'Message', type: 'textarea', required: true, placeholder: 'Tell us what you need...' },
             ],
-            submitText: 'Send Message',
+            submitButtonText: 'Send Message',
             successMessage: 'Thanks! We\'ll be in touch shortly.',
           },
         },
@@ -954,8 +950,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'as3', value: '24/7', label: 'Autonomous Operations', icon: 'Bot' },
               { id: 'as4', value: '100%', label: 'White-Label', icon: 'Palette' },
             ],
-            columns: 4,
-            variant: 'cards',
           },
         },
         {
@@ -967,7 +961,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             content: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.\n\nFlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.\n\n**The result?** Agencies running 50+ client sites with a team of 5.',
             secondaryContent: '**What FlowPilot Handles Per Client**\n\n• Blog content creation & scheduling\n• Lead capture & qualification\n• Newsletter campaigns\n• Ticket triage & KB management\n• Performance analytics & briefings\n• Client-facing AI chat support',
             layout: 'text-text',
-            contentFormat: 'markdown',
             primaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
           },
         },
@@ -1144,8 +1137,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'cs3', value: '95%', label: 'Client Retention', icon: 'TrendingUp' },
               { id: 'cs4', value: '1,200+', label: 'Successful Placements', icon: 'CircleCheck' },
             ],
-            columns: 4,
-            variant: 'cards',
           },
         },
         // TESTIMONIALS — consulting-specific
@@ -1369,7 +1360,6 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'ecom-marquee',
           type: 'marquee',
           data: {
-            title: 'Trusted by Creators & Brands',
             items: [
               { id: 'em1', text: 'Shopify Migrants' },
               { id: 'em2', text: 'Indie Creators' },
@@ -1468,10 +1458,9 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             imageSrc: '/templates/hero/data-abstract.jpg',
             imageAlt: 'Conversational service operations',
             imagePosition: 'right',
-            imageObjectFit: 'cover',
+            imageFit: 'cover',
             imageRounded: 'xl',
             primaryButton: { text: 'Try It Now', url: '#services-chat' },
-            verticalAlignment: 'center',
           },
         },
         // FEATURED CAROUSEL — from service-pro
@@ -1536,7 +1525,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'booking',
           data: {
             title: 'Book Your Appointment',
-            subtitle: 'Choose a service and time that works for you. Instant confirmation.',
+            description: 'Choose a service and time that works for you. Instant confirmation.',
           },
         },
         // PROGRESS — service quality KPIs
@@ -1650,7 +1639,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'booking',
           data: {
             title: 'Book Your Appointment',
-            subtitle: 'Same-day appointments available. Choose your service and preferred time.',
+            description: 'Same-day appointments available. Choose your service and preferred time.',
           },
         },
         // ACCORDION FAQ — patient-focused from securehealth

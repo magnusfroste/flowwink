@@ -149,8 +149,6 @@ export const consultAgencyTemplate: StarterTemplate = {
               { id: 'st3', value: '95%', label: 'Client Retention', icon: 'TrendingUp' },
               { id: 'st4', value: '1 200+', label: 'Successful Placements', icon: 'CircleCheck' },
             ],
-            columns: 4,
-            variant: 'cards',
           },
         },
 
@@ -237,7 +235,11 @@ export const consultAgencyTemplate: StarterTemplate = {
         {
           id: 'sep-featured',
           type: 'separator',
-          data: { variant: 'text', text: 'Featured Consultants', icon: 'UserCheck' },
+          // SeparatorBlock renders `style` + `spacing` only and is aria-hidden:
+          // it has no text or icon to render, so the heading that used to sit
+          // here was never on the page. Left as the deliberate spacer it
+          // actually rendered as — the section heading below is the real one.
+          data: { spacing: 'md' },
         },
         {
           id: 'featured-consultants',
@@ -479,7 +481,14 @@ export const consultAgencyTemplate: StarterTemplate = {
             subtitle: 'Every consultant in our network has 5+ years of hands-on delivery experience. No juniors. No generalists. Specialists who own their domain.',
             backgroundType: 'image',
             backgroundImage: '/templates/misc/service-team.jpg',
-            heightMode: 'auto',
+            // Was 'auto'. Every other image-backed hero in the corpus takes a
+            // viewport fraction (50-80vh); 'auto' is the value the templates use for
+            // text-only heroes on a colour background. With a background photo,
+            // 'auto' renders the hero at text height — and HeroBlock skips the
+            // contentAlignment class entirely when heightMode is 'auto', so the
+            // 'center' set below did nothing either. 60vh is the house value for an
+            // image-backed marketing sub-page (10 of the 18 such heroes use it).
+            heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 60,
             overlayColor: 'dark',
@@ -571,7 +580,11 @@ export const consultAgencyTemplate: StarterTemplate = {
         {
           id: 'sep-roster',
           type: 'separator',
-          data: { variant: 'text', text: 'Featured Specialists', icon: 'Users' },
+          // SeparatorBlock renders `style` + `spacing` only and is aria-hidden:
+          // it has no text or icon to render, so the heading that used to sit
+          // here was never on the page. Left as the deliberate spacer it
+          // actually rendered as — the section heading below is the real one.
+          data: { spacing: 'md' },
         },
         {
           id: 'roster-full',
@@ -644,7 +657,14 @@ export const consultAgencyTemplate: StarterTemplate = {
             subtitle: 'A human process, not an algorithm. We read every brief. We match personally. We stand behind every placement.',
             backgroundType: 'image',
             backgroundImage: '/templates/misc/expert-consultation.jpg',
-            heightMode: 'auto',
+            // Was 'auto'. Every other image-backed hero in the corpus takes a
+            // viewport fraction (50-80vh); 'auto' is the value the templates use for
+            // text-only heroes on a colour background. With a background photo,
+            // 'auto' renders the hero at text height — and HeroBlock skips the
+            // contentAlignment class entirely when heightMode is 'auto', so the
+            // 'center' set below did nothing either. 60vh is the house value for an
+            // image-backed marketing sub-page (10 of the 18 such heroes use it).
+            heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 58,
             overlayColor: 'dark',
@@ -763,14 +783,16 @@ export const consultAgencyTemplate: StarterTemplate = {
         },
 
         // BRIEF INTAKE FORM
-        { id: 'sep-brief', type: 'separator', data: { id: 'brief-form', variant: 'text', text: 'Submit a Brief', icon: 'FileText' } },
+        // data.id was never an anchor — BlockRenderer anchors on the block's
+        // ENVELOPE id (block.anchorId || block.id). #brief-form resolves to the
+        // form block below, which already carries that envelope id.
+        { id: 'sep-brief', type: 'separator', data: { spacing: 'md' } },
         {
           id: 'brief-form',
           type: 'form',
           data: {
             title: 'Tell Us What You Need',
-            subtitle: 'A senior consultant will review it within 2 hours on business days. FlowPilot is available around the clock.',
-            formName: 'Consultant Brief',
+            description: 'A senior consultant will review it within 2 hours on business days. FlowPilot is available around the clock.',
             fields: [
               { id: 'bf-name', type: 'text', label: 'Your Name', placeholder: 'Anna Svensson', required: true },
               { id: 'bf-company', type: 'text', label: 'Company', placeholder: 'Acme AB', required: true },
@@ -808,7 +830,14 @@ export const consultAgencyTemplate: StarterTemplate = {
             subtitle: 'Join a network of 300+ senior specialists. Interesting assignments, competitive rates — and someone who lines up your next engagement before your current one ends.',
             backgroundType: 'image',
             backgroundImage: '/templates/blog/team-brainstorming.jpg',
-            heightMode: 'auto',
+            // Was 'auto'. Every other image-backed hero in the corpus takes a
+            // viewport fraction (50-80vh); 'auto' is the value the templates use for
+            // text-only heroes on a colour background. With a background photo,
+            // 'auto' renders the hero at text height — and HeroBlock skips the
+            // contentAlignment class entirely when heightMode is 'auto', so the
+            // 'center' set below did nothing either. 60vh is the house value for an
+            // image-backed marketing sub-page (10 of the 18 such heroes use it).
+            heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 58,
             overlayColor: 'dark',
@@ -827,8 +856,6 @@ export const consultAgencyTemplate: StarterTemplate = {
               { id: 'sc3', value: '4 weeks', label: 'Advance Pipeline Notice' },
               { id: 'sc4', value: '4.8★', label: 'Consultant Satisfaction' },
             ],
-            columns: 4,
-            variant: 'minimal',
           },
         },
 
@@ -873,14 +900,16 @@ export const consultAgencyTemplate: StarterTemplate = {
         },
 
         // APPLICATION FORM
-        { id: 'sep-apply', type: 'separator', data: { id: 'apply', variant: 'text', text: 'Apply to Join', icon: 'UserPlus' } },
+        // The hero CTA links to #apply, but data.id is not an anchor and no block
+        // on this page carried 'apply' as its ENVELOPE id — the link went nowhere.
+        // Anchoring the envelope here puts #apply immediately above the form.
+        { id: 'apply', type: 'separator', data: { spacing: 'md' } },
         {
           id: 'apply-form',
           type: 'form',
           data: {
             title: 'Join the Network',
-            subtitle: 'We review every application personally — no algorithm. Expect a response within 3 business days.',
-            formName: 'Consultant Application',
+            description: 'We review every application personally — no algorithm. Expect a response within 3 business days.',
             fields: [
               { id: 'af-name', type: 'text', label: 'Your Name', placeholder: 'Marcus Anderson', required: true },
               { id: 'af-email', type: 'email', label: 'Email', placeholder: 'marcus@gmail.com', required: true },

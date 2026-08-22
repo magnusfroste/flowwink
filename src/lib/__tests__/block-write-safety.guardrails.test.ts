@@ -8,6 +8,7 @@ import {
   normalizeBlockData,
   normalizeBlocks,
   preflightBlockArgs,
+  suggestBlockFields,
   validateBlockData,
 } from '../../../supabase/functions/_shared/normalize-blocks';
 import { classifyCall, isReadSkill } from '../../../supabase/functions/_shared/skills/read-surface';
@@ -306,6 +307,220 @@ describe('block write safety — the sibling skill\'s envelope is not a guess', 
       preflightBlockArgs(skill, args);
       expect(JSON.stringify(args), `${skill} mutated the caller's args`).toBe(before);
     }
+  });
+});
+
+/**
+ * En tredjedel av hjälteblocket kastades TYST (skarpt verifierat 2026-08-22,
+ * optic /agentic — sidan skrevs av FlowWork samma dag).
+ *
+ * Agenten skrev ett hero-block med fälten `primary_cta`, `secondary_cta` och
+ * `subheadline`. HeroBlock läser `primaryButton`, `secondaryButton` och
+ * `subtitle`. Skrivningen gick igenom, sidan blev "grön", och tre innehåll låg
+ * kvar i content_json med ingenting som renderade dem:
+ *   subheadline:   "Optic Tunnels bygger den fysiska infrastrukturen …"
+ *   primary_cta:   "Utforska möjligheten"
+ *   secondary_cta: "Prata med oss"
+ * Sidan såg tunn ut. Den var inte tunn — en tredjedel hade kastats.
+ *
+ * Klassen är exakt densamma som okända TYPER, ett lager ned, och överlevde den
+ * fixen med en dag: `validateBlockContracts` (manage_page-vägen) kontrollerade
+ * bara att OBLIGATORISKA fält FANNS — aldrig att de fält som SKICKADES finns.
+ * Syskonvägen (`validateBlockData`, create_page_block / manage_page_blocks)
+ * fail-closade redan. Plattformen var alltså oense med sig själv igen, i samma
+ * anrop: `hero` utan title vägrades högljutt medan `primary_cta` sparades tyst.
+ *
+ * Testerna nedan pinnar tre saker:
+ *   1. Det VERKLIGA fallet vägras på manage_page-vägen — högljutt, med rätt
+ *      fältnamn i felet (självrättande i loopen, inte en återvändsgränd).
+ *   2. `subheadline` RÄDDAS i stället för att vägras (husets linje: alias när
+ *      anroparen namngett rätt block men använt plattformens egen synonym —
+ *      "strong headline + subheadline + CTA" står i vår egen skill-instruktion),
+ *      medan `primary_cta`/`secondary_cta` VÄGRAS: de namnen har plattformen
+ *      aldrig publicerat annat än som avskräckande exempel ("not body,
+ *      primary_cta or secondary_cta"), och de bär dessutom fel FORM
+ *      (primaryButton är { text, url }, inte en sträng).
+ *   3. FlowWork-preflighten ärver strängheten utan en rad egen kod, så felet
+ *      bouncar FÖRE stageningen och modellen rättar sig i sin egen loop.
+ */
+describe('block write safety — manage_page refuses unknown FIELDS too', () => {
+  /** Blocket precis som det skrevs, ordagrant, på optic /agentic. */
+  const agenticHero = () => ({
+    id: 'hero-agentic',
+    type: 'hero',
+    data: {
+      title: 'Infrastrukturen bakom agentiska arbetsflöden',
+      subheadline: 'Optic Tunnels bygger den fysiska infrastrukturen bakom nästa generations '
+        + 'arbetsflöden — dedikerad fiber, privat AI och colocation.',
+      primary_cta: 'Utforska möjligheten',
+      secondary_cta: 'Prata med oss',
+    },
+  });
+
+  it('the real /agentic hero is refused — never saved thin and silent', () => {
+    const dropped = normalizeBlocks([agenticHero()]);
+    expect(dropped.length, 'the block was written with fields nothing renders').toBe(1);
+    expect(dropped[0]).toContain('primary_cta');
+    expect(dropped[0]).toContain('secondary_cta');
+    // Självrättande: felet måste bära det RIKTIGA namnet, annars är nästa försök
+    // en ny gissning.
+    expect(dropped[0]).toContain('"primaryButton"');
+    expect(dropped[0]).toContain('"secondaryButton"');
+    // …och hela fältlistan reser med, precis som för okända typer.
+    expect(dropped[0]).toContain('subtitle');
+    expect(dropped[0]).toContain('unknown field');
+  });
+
+  it('subheadline is rescued, the two cta names are not — the house line', () => {
+    // Rescued: samma klass som heading/headline→title. Ett block med bara det
+    // felnamnet sparas, och innehållet hamnar där renderaren läser det.
+    const rescued: Record<string, unknown>[] = [
+      { id: 'h', type: 'hero', data: { title: 'Rubrik', subheadline: 'Stödraden' } },
+    ];
+    expect(normalizeBlocks(rescued), 'subheadline should be forgiven, not refused').toEqual([]);
+    expect((rescued[0].data as Record<string, unknown>).subtitle).toBe('Stödraden');
+    expect(rescued[0].data).not.toHaveProperty('subheadline');
+
+    // Refused: primary_cta är inget namn plattformen publicerat, och formen
+    // stämmer inte heller (primaryButton är { text, url }).
+    const refused = normalizeBlocks([
+      { id: 'h2', type: 'hero', data: { title: 'Rubrik', primary_cta: 'Utforska' } },
+    ]);
+    expect(refused.length).toBe(1);
+    expect(refused[0]).toContain('primary_cta');
+  });
+
+  it('both write paths agree about what a FIELD is', () => {
+    // Det var oenigheten som var buggen, inte någon av domarna för sig.
+    for (const data of [
+      { title: 'T', primary_cta: 'Go' },
+      { title: 'T', tagline: 'nope' },
+    ]) {
+      expect(validateBlockData('hero', { ...data }).valid, 'validateBlockData let it through').toBe(false);
+      expect(
+        normalizeBlocks([{ id: 'b', type: 'hero', data: { ...data } }]).length,
+        'the manage_page path let it through',
+      ).toBe(1);
+    }
+  });
+
+  it('the refusal carries a filled example the model can copy', () => {
+    const dropped = normalizeBlocks([agenticHero()]);
+    expect(dropped[0]).toContain('primaryButton');
+    // BLOCK_HINTS-exemplet visar FORMEN — { text, url } — som namnet ensamt inte gör.
+    expect(dropped[0]).toContain('"url"');
+  });
+
+  it('the FlowWork preflight inherits it — bounced BEFORE staging', () => {
+    // Punkt 5: preflightBlockArgs kör samma normalizeBlocks, så den ska bounca
+    // utan en enda rad egen kod. Annars klickar en människa godkänn på en
+    // skrivning vars innehåll försvinner, och felet når aldrig modellen.
+    const viaPage = preflightBlockArgs('manage_page', {
+      action: 'create',
+      title: 'Agentic',
+      blocks: [agenticHero()],
+    });
+    expect(viaPage.checked).toBe(true);
+    expect(viaPage.errors.length).toBe(1);
+    expect(viaPage.errors[0]).toContain('primary_cta');
+    expect(viaPage.errors[0]).toContain('"primaryButton"');
+
+    // Samma verdict genom content_json-aliaset (det `get` lämnar tillbaka) …
+    const viaAlias = preflightBlockArgs('manage_page', {
+      action: 'update',
+      page_id: 'p1',
+      content_json: [agenticHero()],
+    });
+    expect(viaAlias.errors.length).toBe(1);
+
+    // … och genom syskonskillen, som redan var sträng.
+    const viaBlock = preflightBlockArgs('create_page_block', {
+      page_id: 'p1',
+      block_type: 'hero',
+      block_data: agenticHero().data,
+    });
+    expect(viaBlock.checked).toBe(true);
+    expect(viaBlock.errors.length).toBe(1);
+    expect(viaBlock.errors[0]).toContain('primary_cta');
+  });
+
+  it('preflight still leaves the caller\'s arguments untouched', () => {
+    const args = { action: 'create', title: 'Agentic', blocks: [agenticHero()] };
+    const before = JSON.stringify(args);
+    preflightBlockArgs('manage_page', args);
+    expect(JSON.stringify(args)).toBe(before);
+  });
+
+  it('negative test: the corrected block saves, and nothing else changed', () => {
+    // Samma innehåll under renderarens egna namn — måste gå rakt igenom, annars
+    // är grinden en vägg.
+    const fixed: Record<string, unknown>[] = [{
+      id: 'hero-agentic',
+      type: 'hero',
+      data: {
+        title: 'Infrastrukturen bakom agentiska arbetsflöden',
+        subtitle: 'Optic Tunnels bygger den fysiska infrastrukturen …',
+        primaryButton: { text: 'Utforska möjligheten', url: '/kontakt' },
+        secondaryButton: { text: 'Prata med oss', url: '/kontakt' },
+      },
+    }];
+    expect(normalizeBlocks(fixed)).toEqual([]);
+    expect(fixed.length).toBe(1);
+
+    // Blocktyper utan deklarerad fältlista (de datadrivna) får inte plötsligt
+    // vägras — de har ingen creation tool och därmed ingen katalog att mäta mot.
+    for (const type of DATA_DRIVEN_BLOCK_TYPES) {
+      expect(
+        normalizeBlocks([{ id: 'd', type, data: { anything: 'goes', limit: 3 } }]),
+        `${type} must stay writable`,
+      ).toEqual([]);
+    }
+  });
+
+  it('a block never loses a field it genuinely HAS to an alias', () => {
+    // Latent fälla som fältgrinden hade förvandlat till 12 vägrade block i vår
+    // egen flaggskeppsmall: quick-links kallar sin rubrik `heading` (det är
+    // fältet QuickLinksBlock läser), men heading→title-aliaset döpte om det
+    // ovillkorligt. Aliaset är nu katalogmedvetet: ett fält blocket verkligen
+    // har byts aldrig bort, och ett fält blocket saknar byts aldrig in.
+    const links: Record<string, unknown>[] = [{
+      id: 'q1',
+      type: 'quick-links',
+      data: { heading: 'Hur kan vi hjälpa dig?', links: [{ id: 'l1', label: 'Kontakt', url: '/kontakt' }] },
+    }];
+    expect(normalizeBlocks(links), 'a correct quick-links block was refused').toEqual([]);
+    expect((links[0].data as Record<string, unknown>).heading).toBe('Hur kan vi hjälpa dig?');
+    expect(links[0].data).not.toHaveProperty('title');
+  });
+
+  it('renderer-published fallbacks are folded, not refused', () => {
+    // StatsBlock läser `data.stats || data.items` och TimelineBlock
+    // `data.steps || data.items` / `data.variant || data.layout`. De namnen
+    // RENDERAR alltså — och våra egna mallar använder dem. En grind som vägrade
+    // dem vore ett falskt nej, och skulle göra varje mallinstallerad sida
+    // oändringsbar via manage_page.
+    const blocks: Record<string, unknown>[] = [
+      { id: 's', type: 'stats', data: { items: [{ value: '99%', label: 'Uptime' }] } },
+      { id: 't', type: 'timeline', data: { items: [{ id: 'x', title: 'Start' }], layout: 'vertical' } },
+    ];
+    expect(normalizeBlocks(blocks)).toEqual([]);
+    expect((blocks[0].data as Record<string, unknown>).stats).toHaveLength(1);
+    expect(blocks[0].data).not.toHaveProperty('items');
+    expect((blocks[1].data as Record<string, unknown>).steps).toHaveLength(1);
+    expect((blocks[1].data as Record<string, unknown>).variant).toBe('vertical');
+  });
+
+  it('the field suggestion reads the SAME catalogue the gate refuses from', () => {
+    // Ingen andra fältkatalog: förslaget kan aldrig namnge ett fält som inte
+    // finns för just den typen, och aldrig utebli för ett som gör det.
+    expect(suggestBlockFields('hero', 'primary_cta')).toContain('primaryButton');
+    expect(suggestBlockFields('hero', 'sub_title')).toEqual(['subtitle']);
+    expect(suggestBlockFields('hero', 'background_image')).toContain('backgroundImage');
+    // cta-blocket har inget primaryButton — då föreslås dess egna namn i stället.
+    expect(suggestBlockFields('cta', 'primary_cta')).toContain('buttonText');
+    expect(suggestBlockFields('cta', 'primary_cta')).not.toContain('primaryButton');
+    // Okänd typ har ingen katalog → inget förslag, och heller ingen gissning.
+    expect(suggestBlockFields('not-a-block', 'whatever')).toEqual([]);
   });
 });
 

@@ -172,7 +172,7 @@
           "type": "kb-search",
           "data": {
             "placeholder": "Search articles...",
-            "variant": "compact",
+            "variant": "minimal",
             "showPopularSearches": false
           }
         },

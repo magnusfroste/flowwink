@@ -170,6 +170,7 @@
     "import_exchange_rates",
     "ingest_inbound_email",
     "initiate_company_invoice_payment",
+    "inspect_rendered_page",
     "inspect_return",
     "install_template",
     "inventory_gl_reconciliation",

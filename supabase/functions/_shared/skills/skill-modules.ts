@@ -176,6 +176,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "import_exchange_rates": "multiCurrency",
   "ingest_inbound_email": "email",
   "initiate_company_invoice_payment": "companies",
+  "inspect_rendered_page": "platform",
   "inspect_return": "returns",
   "install_template": "templates",
   "inventory_gl_reconciliation": "inventory",
