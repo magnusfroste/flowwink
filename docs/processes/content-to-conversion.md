@@ -37,7 +37,7 @@ description: Content marketing dies of 'no time to write' — research, drafting
 flowchart TD
     A["1. Research<br/>research_content, competitor_monitor"] --> B["2. Proposal<br/>generate_content_proposal"]
     B --> C["Human approve"]
-    C --> D["3. Generate<br/>write_blog_post, landing_page_compose"]
+    C --> D["3. Generate<br/>write_blog_post, describe_blocks + manage_page"]
     D --> E["4. Distribute<br/>send_newsletter, social_post_batch"]
     E --> F["5. Measure<br/>analyze_analytics, seo_audit_page"]
     F --> A
@@ -58,7 +58,7 @@ flowchart TD
 | Content brief | ✅ | ✅ (`seo_content_brief`) | — |
 | Proposal generation | — | ✅ (`generate_content_proposal`) | 🔗 Audit via peer |
 | Article writing | ✅ | ✅ (`write_blog_post`) | 🔗 Review via peer |
-| Landing page composition | ✅ | ✅ (`landing_page_compose`) | — |
+| Landing page composition | ✅ | ✅ (`describe_blocks` → `manage_page` / `manage_page_blocks`) | 🔗 Same skills via MCP |
 | Social posts | ✅ | ✅ (`social_post_batch`, `generate_social_post`) | — |
 | Newsletter sends | ✅ | ✅ (`send_newsletter`) | — |
 | Ad creative | ✅ | ✅ (`ad_creative_generate`) | — |
