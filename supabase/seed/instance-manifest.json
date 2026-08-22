@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822130000",
-      "migrations_count": 479,
+      "migration_head": "20260822140000",
+      "migrations_count": 480,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1921,6 +1921,10 @@
         {
           "version": "20260822130000",
           "name": "a-testbed-is-not-a-demo"
+        },
+        {
+          "version": "20260822140000",
+          "name": "the-inspector-decides-and-the-decision-lands"
         }
       ]
     },
