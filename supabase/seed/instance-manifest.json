@@ -2003,7 +2003,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:7d68a40e3ac4b08b9ae730e76180eaf3b9ab42ccda133db2b30a9758c069189e",
+      "shared_hash": "sha256:6778f3de1f07ab618b4a769025ff5b4116ab126adebdc0641391f37ed97dc1fe",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
