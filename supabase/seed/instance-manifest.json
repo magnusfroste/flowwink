@@ -1979,7 +1979,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:7299f09cce0d5d4f0f99206ca52f62662fcd7bca9f84594dde9b60bb881267e2",
+      "shared_hash": "sha256:41dc8cec817df8aaa5eeb85d38dcb7544b027cac623bc23fed0ce9fa37a8b353",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",

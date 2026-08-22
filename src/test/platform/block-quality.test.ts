@@ -187,8 +187,8 @@ const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string
   hero:               { required: [['title']] },
   text:               { required: [['content']] },
   quote:              { required: [['quote']] },
-  cta:                { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
-  features:           { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
+  cta:                { required: [['buttonText']], forbidden: ['videoUrl', 'videoType'] },
+  features:           { required: [['features']], forbidden: ['backgroundType', 'videoUrl'] },
   stats:              { required: [['stats']] },
   testimonials:       { required: [['testimonials']] },
   team:               { required: [['members']] },
@@ -870,15 +870,19 @@ describe("validateBlockData — agentic self-correction feedback", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it("cta accepts at least one of buttonText|primaryButtonText|buttons", () => {
-    const withButtonText  = validateBlockData("cta", { buttonText: "Start" });
-    const withPrimary     = validateBlockData("cta", { primaryButtonText: "Start" });
-    const missingAll      = validateBlockData("cta", { title: "No button at all" });
+  it("cta requires buttonText — the one name the renderer reads", () => {
+    // The OR-group used to name primaryButtonText and buttons too. Neither is a
+    // valid cta field, so both passed here and were refused by the unknown-field
+    // gate in the real module — while this error text offered them as the fix.
+    // The full behaviour (aliases + gate) is pinned against the real
+    // normalize-blocks module in src/lib/__tests__/block-write-safety.guardrails.test.ts.
+    const withButtonText = validateBlockData("cta", { buttonText: "Start" });
+    const missingAll     = validateBlockData("cta", { title: "No button at all" });
 
     expect(withButtonText.valid).toBe(true);
-    expect(withPrimary.valid).toBe(true);
     expect(missingAll.valid).toBe(false);
     expect(missingAll.errors[0]).toContain('"buttonText"');
+    expect(missingAll.errors.join(" ")).not.toContain("primaryButtonText");
   });
 
   it("two-column accepts imageSrc OR content as satisfying required", () => {
@@ -900,7 +904,7 @@ describe("validateBlockData — agentic self-correction feedback", () => {
     // features block: forbidden backgroundType AND missing features array
     const result = validateBlockData("features", {
       backgroundType: "image",   // forbidden
-      title: "Only a title",     // missing features/items
+      title: "Only a title",     // missing features array
     });
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThanOrEqual(2);
