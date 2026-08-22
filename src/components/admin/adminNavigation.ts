@@ -53,6 +53,7 @@ import {
   LayoutTemplate,
   Phone,
   Database,
+  Trash2,
 } from "lucide-react";
 
 import type { AppRole } from "@/types/cms";
@@ -134,6 +135,12 @@ export const navigationGroups: NavGroup[] = [
       { name: "Wiki", href: "/admin/wiki", icon: BookMarked, moduleId: "wiki" },
       { name: "River", href: "/admin/river", icon: MessageSquare, moduleId: "river" },
       { name: "Flowtable", href: "/admin/flowtable", icon: Table2, moduleId: "flowtable" },
+      // One bin for every content module, deliberately WITHOUT a moduleId: it
+      // spans wiki/KB/pages, so gating the link on any single module would be
+      // arbitrary. The trash_bin RPC filters row by row through
+      // can_access_module, so a role sees only what its matrix already grants —
+      // the link is never the gate.
+      { name: "Trash", href: "/admin/trash", icon: Trash2 },
     ],
   },
   {

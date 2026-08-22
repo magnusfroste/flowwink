@@ -312,12 +312,31 @@ export async function executeInspectRenderedPage(
     .select('id, slug, title, status, locale, content_json, updated_at')
     .is('deleted_at', null);
   q = pageId ? q.eq('id', pageId) : q.eq('slug', slug);
-  if (locale) q = q.eq('locale', locale);
+  // The locale filter is applied SEPARATELY below, never as part of the lookup.
+  // Observed 2026-08-22: a caller volunteered locale "sv-SE" (the page reads as
+  // Swedish) while the row is stored as "en"; the filter excluded it and the
+  // error said only `No page found for slug "…"` — hiding the criterion that
+  // actually rejected it, while the fallback list in the SAME response happily
+  // named that very slug. A sensor built to end silent failures must not fail
+  // silently about its own filter. This is a READ: refusing to look at the page
+  // the caller obviously meant, over a metadata mismatch, helps no one.
   const { data, error } = await q.order('updated_at', { ascending: false }).limit(5);
 
   if (error) return { error: `Could not load page: ${error.message}`, status: 'failed' };
 
-  const rows = (data ?? []) as PageRow[];
+  let localeNote: string | undefined;
+  const allRows = (data ?? []) as PageRow[];
+  const rows = (() => {
+    if (!locale || allRows.length === 0) return allRows;
+    const exact = allRows.filter((r) => r.locale === locale);
+    if (exact.length > 0) return exact;
+    const found = allRows.map((r) => r.locale ?? 'null').join(', ');
+    localeNote =
+      `You asked for locale "${locale}" but this page is stored as "${found}" — ` +
+      `inspected anyway. If the stored locale is wrong, that is a separate fix on the page itself; ` +
+      `the sensor does not filter a read on it.`;
+    return allRows;
+  })();
   if (rows.length === 0) {
     const { data: near } = await supabase
       .from('pages')
@@ -326,7 +345,10 @@ export async function executeInspectRenderedPage(
       .order('updated_at', { ascending: false })
       .limit(25);
     return {
-      error: `No page found for ${pageId ? `page_id "${pageId}"` : `slug "${slug}"`}.`,
+      error:
+        `No page found for ${pageId ? `page_id "${pageId}"` : `slug "${slug}"`}` +
+        `${locale ? ` (locale "${locale}" was requested; it is not used to exclude a match)` : ''}` +
+        `. Compare against known_slugs below — if the slug you want is listed, resend it verbatim.`,
       known_slugs: (near ?? []).map((r: { slug: string }) => r.slug),
       status: 'failed',
     };
@@ -481,6 +503,8 @@ export async function executeInspectRenderedPage(
       locale: page.locale,
       updated_at: page.updated_at,
       ...(otherLocales.length ? { other_locales: otherLocales } : {}),
+      // Named, never silent: the caller asked for one locale and got another.
+      ...(localeNote ? { locale_note: localeNote } : {}),
     },
     verdict,
     block_count: blocks.length,
