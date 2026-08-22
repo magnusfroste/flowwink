@@ -24,12 +24,23 @@
 -- som skippade originalet får funktionen. Originalfilen står kvar orörd för
 -- nyinstallationer.
 --
--- LACKMUS (samma anon-JWT-claims-mönster som originalet):
+-- GRANNEN: 20260822150000 drar in anons döda SELECT/UPDATE/DELETE-grants på
+-- back_in_stock_requests plus TRUNCATE från både anon och authenticated
+-- (tabellen var undantagen i anon-svepet eftersom #244 ägde den då; anons
+-- TRUNCATE gick igenom live — TRUNCATE styrs inte av RLS). Den här migrationen
+-- kör EFTER den, och de rör inte varandra: indraget gäller tabellgrants, medan
+-- RPC:n är SECURITY DEFINER och kör med ägarens rättigheter. Verifierat i den
+-- ordningen på dev — se lackmus nedan.
+--
+-- LACKMUS (samma anon-JWT-claims-mönster som originalet, kört EFTER 20260822150000):
 --   SET LOCAL ROLE anon;
 --   SELECT set_config('request.jwt.claims','{"role":"anon"}', true);
 --   POSITIVT: SELECT public.request_back_in_stock('<produkt-uuid>', 'a@b.se')
---             två gånger i rad → båda lyckas, EN rad finns efteråt.
---   NEKANDE:  SELECT/UPDATE på back_in_stock_requests som anon → 0 rader.
+--             två gånger i rad → båda lyckas, EN rad finns efteråt; ny anmälan
+--             på en notifierad rad nollar notified_at.
+--   NEKANDE:  SELECT på back_in_stock_requests som anon → 42501 (efter grannens
+--             indrag är det grantet som nekar, inte RLS som filtrerar till 0).
+--   NEKANDE:  TRUNCATE som anon → 42501.
 --   Och på en instans vars ledger passerat 20260821200000: funktionen SAKNAS
 --   före den här migrationen (`\df request_back_in_stock` ger tomt) — det är
 --   fyndet som bevisas åtgärdat.
