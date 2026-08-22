@@ -151,31 +151,101 @@ export async function ensurePlatformCron(): Promise<{ registered: boolean; error
  *
  * The edge deploy bundles the full skill-seed artifact into agent-execute;
  * sync_skills_from_code reconciles agent_skills against it (insert missing,
- * refresh drifted definition fields, never trust_level). The handler is
- * hash-gated — when the instance already carries this deploy's artifact it
- * answers "unchanged" in one settings read — so calling it on every admin
- * load costs nothing and removes the last manual step ("Sync skills from
- * code") from the deploy chain. Observed failure this closes: a fresh install
- * sat at 5 skills with 18 modules enabled because nothing ever applied the
- * seeds.
+ * refresh drifted definition fields, never trust_level). Observed failure this
+ * closes: a fresh install sat at 5 skills with 18 modules enabled because
+ * nothing ever applied the seeds.
+ *
+ * The handler MEASURES coverage — how many of the skills the enabled modules
+ * require are actually present and exposed — on every call, and only takes the
+ * hash short-circuit when that measurement agrees. The earlier version asked
+ * "has this artifact been applied?" instead, which is a question about the code,
+ * not about the instance: a fresh, fully provisioned instance sat at 96 of 347
+ * skills while the sync answered {"status":"unchanged"}.
+ *
+ * So the answer is evidence, not a claim, and this function refuses to swallow
+ * it: an incomplete layer is logged as an ERROR and returned to the caller.
  *
  * Fire-and-forget: a failed sync must never block a module bootstrap.
  */
-export async function ensureSkillRegistry(): Promise<{ status: string; error?: string }> {
+export interface SkillRegistryResult {
+  status: string;
+  /** Skills the ENABLED modules require but the instance does not carry (after the write). */
+  missing: number;
+  /** What the enabled modules require in total, per the deployed seed artifact. */
+  expected: number;
+  /** First few missing names — enough to name the gap in a toast. */
+  missingNames: string[];
+  error?: string;
+}
+
+/**
+ * Deduped at module scope, like ensureModulesRow: the admin shell and the
+ * readiness checklist both want the SAME measurement, and measuring twice per
+ * page load would be two edge invocations for one truth. Pass `{ fresh: true }`
+ * whenever the requirement has just CHANGED (a module was toggled, an operator
+ * pressed a repair button) — the memo would otherwise answer with the coverage
+ * from before the change.
+ */
+let skillRegistryPromise: Promise<SkillRegistryResult> | null = null;
+
+export function ensureSkillRegistry(options: { fresh?: boolean } = {}): Promise<SkillRegistryResult> {
+  if (!options.fresh && skillRegistryPromise) return skillRegistryPromise;
+  const run = syncSkillRegistry();
+  if (!options.fresh) {
+    skillRegistryPromise = run;
+    // A failed or incomplete run must not be cached as the answer for the rest
+    // of the session — the next caller has to be able to try again.
+    void run.then((r) => {
+      if (r.status === 'error' || r.missing > 0) skillRegistryPromise = null;
+    });
+  }
+  return run;
+}
+
+async function syncSkillRegistry(): Promise<SkillRegistryResult> {
+  const unknownResult = (status: string, error?: string): SkillRegistryResult => ({
+    status, missing: 0, expected: 0, missingNames: [], error,
+  });
   try {
     const { data, error } = await supabase.functions.invoke('agent-execute', {
       body: { skill_name: 'sync_skills_from_code', agent_type: 'bootstrap', arguments: {} },
     });
     if (error) throw error;
     const result = (data as any)?.result ?? data;
-    if (result?.status === 'synced') {
-      logger.log(`[module-bootstrap] skill registry synced: +${result.inserted} / ~${result.updated}`);
+    if (result?.error) return unknownResult('error', String(result.error));
+
+    // `after` on a sync, `coverage` on the short-circuit — both are the
+    // read-back, never the writer's own count.
+    const measured = (result?.after ?? result?.coverage ?? null) as
+      | { expected_for_enabled_modules?: number; missing?: number; missing_names?: string[] }
+      | null;
+    const expected = measured?.expected_for_enabled_modules ?? 0;
+    const missing = measured?.missing ?? 0;
+    const missingNames = measured?.missing_names ?? [];
+
+    if (result?.status === 'synced' || result?.status === 'incomplete') {
+      logger.log(
+        `[module-bootstrap] skill registry sync: +${result.inserted ?? 0} / ~${result.updated ?? 0} ` +
+          `(${expected - missing}/${expected} required skills present)`
+      );
     }
-    return { status: result?.status ?? 'unknown' };
+    if (result?.discrepancy) logger.warn(`[module-bootstrap] ${result.discrepancy}`);
+
+    if (missing > 0) {
+      // Shout. This is the exact state that shipped an instance whose external
+      // operator could not perform its assignment at all.
+      logger.error(
+        `[module-bootstrap] skill registry INCOMPLETE — ${missing}/${expected} skill(s) required by the ` +
+          `enabled modules are missing (${missingNames.slice(0, 5).join(', ')}). ` +
+          'Agents will not find them; search_skills answers with whatever else ranks.'
+      );
+    }
+
+    return { status: result?.status ?? 'unknown', missing, expected, missingNames };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error syncing skills';
     logger.warn('[module-bootstrap] skill registry sync failed:', msg);
-    return { status: 'error', error: msg };
+    return unknownResult('error', msg);
   }
 }
 
@@ -310,9 +380,10 @@ export async function bootstrapModule(
   // and non-fatal: a cron failure must never block seeding the module itself.
   await ensurePlatformCron();
   // Same anchor for the skill registry: the edge deploy carries the seed
-  // artifact, this applies it. Hash-gated server-side, so the steady-state
-  // cost is one settings read.
-  await ensureSkillRegistry();
+  // artifact, this applies it. `fresh` because bootstrapping a module is
+  // exactly the moment the requirement changed — a memoized answer from before
+  // the toggle would report the old coverage as current.
+  await ensureSkillRegistry({ fresh: true });
 
   // 1. Always seed reference data (unified seedData takes precedence over legacy bootstrap.seedData)
   const seedFn = unified?.seedData ?? bootstrap?.seedData;

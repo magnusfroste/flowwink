@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import {
+  outcomeFromPendingOperation,
+  type PendingOperationOutcomeRow,
+} from '@/lib/staged-action-outcome';
+import type { StagedAction, WorkspaceMessage } from '@/hooks/useWorkspaceChat';
 
 export interface WorkspaceSession {
   id: string;
@@ -93,7 +98,14 @@ export function useWorkspaceSessions() {
     }
   }, [refresh]);
 
-  const loadMessages = useCallback(async (id: string) => {
+  /**
+   * Rehydrate a session — including the outcome of anything that was staged.
+   *
+   * The chat row stores only WHAT was staged. WHAT HAPPENED is read back from
+   * `pending_operations`, the one writer of that truth, so a reload can never
+   * turn a failed execution back into "väntar på ditt beslut".
+   */
+  const loadMessages = useCallback(async (id: string): Promise<WorkspaceMessage[]> => {
     try {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -101,13 +113,56 @@ export function useWorkspaceSessions() {
         .eq('conversation_id', id)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []).map((m: any) => ({
-        id: m.id,
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-        citations: m.metadata?.citations,
-        createdAt: m.created_at,
-      }));
+
+      const msgs: WorkspaceMessage[] = (data || []).map((m: any) => {
+        const staged = Array.isArray(m.metadata?.staged)
+          ? (m.metadata.staged as StagedAction[]).filter((a) => a?.operation_id)
+          : undefined;
+        return {
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          citations: m.metadata?.citations,
+          ...(staged?.length ? { staged } : {}),
+          createdAt: m.created_at,
+        };
+      });
+
+      const opIds = [
+        ...new Set(msgs.flatMap((m) => m.staged?.map((a) => a.operation_id) ?? [])),
+      ];
+      if (opIds.length === 0) return msgs;
+
+      const { data: ops, error: opErr } = await supabase
+        .from('pending_operations')
+        .select('id, status, execution_result, rejection_reason, expires_at')
+        .in('id', opIds);
+      // A read failure is not evidence of anything — leave the cards as they
+      // were staged rather than inventing an outcome.
+      if (opErr) {
+        logger.error('load staged outcomes failed', opErr);
+        return msgs;
+      }
+
+      const byId = new Map<string, PendingOperationOutcomeRow>(
+        (ops || []).map((o) => [o.id, o as PendingOperationOutcomeRow]),
+      );
+      return msgs.map((m) =>
+        m.staged
+          ? {
+              ...m,
+              staged: m.staged.map((a) => {
+                const outcome = outcomeFromPendingOperation(byId.get(a.operation_id));
+                // Never carry a stale resolution in from metadata: the row is
+                // the authority, and "no outcome yet" must clear the field.
+                const { resolution: _r, result_note: _n, ...rest } = a;
+                return outcome
+                  ? { ...rest, resolution: outcome.resolution, result_note: outcome.note }
+                  : rest;
+              }),
+            }
+          : m,
+      );
     } catch (err) {
       logger.error('load messages failed', err);
       return [];

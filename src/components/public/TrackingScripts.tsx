@@ -1,21 +1,46 @@
 import { useEffect, useRef } from 'react';
-import { useIntegrations } from '@/hooks/useIntegrations';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PublicTrackingConfig {
+  google_analytics?: { enabled?: boolean; measurementId?: string | null };
+  meta_pixel?: { enabled?: boolean; pixelId?: string | null };
+}
 
 /**
  * Injects GA4 and Meta Pixel tracking scripts into public pages.
- * Reads config from integrations settings (not site_settings).
- * Only loads scripts when integration is enabled AND has a valid ID.
+ * Only loads scripts when the integration is enabled AND has a valid ID.
+ *
+ * This component used to read the whole `site_settings.integrations` row with
+ * the visitor's own eyes — which is precisely why that row had to stay
+ * anon-readable, and why a vendor `apiKey` sitting in the same JSON was
+ * fetchable by anyone holding the publishable key. Two public ids do not
+ * justify publishing the instance's key ring, so it now goes through
+ * `get_public_tracking_config()`: a SECURITY DEFINER window with a FIXED field
+ * list. Adding a new secret to the integrations JSON can never widen it.
  */
 export function TrackingScripts() {
-  const { data: integrations } = useIntegrations();
+  const { data: tracking } = useQuery({
+    queryKey: ['public-tracking-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_public_tracking_config' as never);
+      if (error) throw error;
+      return (data as PublicTrackingConfig | null) ?? {};
+    },
+    staleTime: 5 * 60 * 1000,
+    // An instance that never ran the migration must not throw on every page
+    // view — no config simply means no tracking (Law 4: degrade, never gate).
+    retry: false,
+  });
+
   const ga4Loaded = useRef(false);
   const metaPixelLoaded = useRef(false);
 
-  const ga4Config = integrations?.google_analytics;
-  const metaConfig = integrations?.meta_pixel;
+  const ga4Config = tracking?.google_analytics;
+  const metaConfig = tracking?.meta_pixel;
 
-  const measurementId = ga4Config?.config?.measurementId?.trim();
-  const pixelId = metaConfig?.config?.pixelId?.trim();
+  const measurementId = ga4Config?.measurementId?.trim();
+  const pixelId = metaConfig?.pixelId?.trim();
 
   // Google Analytics 4
   useEffect(() => {

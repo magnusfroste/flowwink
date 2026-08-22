@@ -8,7 +8,9 @@
  * Call order inside normalizeBlocks():
  *   1. normalizeBlockData  — tiptap fields, team mapping, table structure
  *   2. applyIconFallbacks  — assign icons where missing
- *   3. validateBlockContracts — mark blocks missing required fields with _remove
+ *   3. validateBlockContracts — mark unknown TYPES and blocks missing required
+ *      fields with _remove (no step maps or aliases the type itself — see the
+ *      reasoning in validateBlockContracts)
  *   4. strip _remove blocks
  *
  * TIPTAP_NESTED_FIELDS is auto-generated from block-reference.ts via sync-block-schema.ts.
@@ -62,13 +64,22 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
   // the unknown-field check below judges the corrected shape). Every mapping
   // below is a name a real agent write used; the renderer's own name wins.
   //
-  // `heading` → `title`: universal. No block reads `heading`; every block that
-  // has a headline calls it `title`.
-  if (typeof data.heading === 'string' && data.heading.trim() !== '') {
-    if (data.title === undefined || data.title === null || String(data.title).trim() === '') {
-      data.title = data.heading;
+  // `heading`/`headline` → `title`: universal. Neither name is a field on ANY
+  // block type (they appear in block-reference only inside prose descriptions
+  // — "Main headline"), no renderer reads either, and every block that has one
+  // calls it `title`. `headline` joined 2026-08-22 from the same live write that
+  // exposed the envelope mix below: it is the identical class as `heading` — a
+  // correctly-named block with one wrong field name, unambiguous in intent, and
+  // nothing invisible gets saved by forgiving it. The skill instructions still
+  // teach `title` (Law 2), exactly as they do for `heading`.
+  for (const alias of ['heading', 'headline'] as const) {
+    const val = data[alias];
+    if (typeof val === 'string' && val.trim() !== '') {
+      if (data.title === undefined || data.title === null || String(data.title).trim() === '') {
+        data.title = val;
+      }
     }
-    delete data.heading; // never renders — keeping it only re-teaches the mistake
+    if (val !== undefined) delete data[alias]; // never renders — keeping it only re-teaches the mistake
   }
 
   if (block.type === 'hero') {
@@ -387,11 +398,75 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
  */
 export function validateBlockContracts(blocks: Record<string, unknown>[]): void {
   for (const block of blocks) {
-    const data = block.data as Record<string, unknown> | undefined;
-    if (!data) { block._remove = true; continue; }
+    // 0. Unknown block TYPE — fail closed, identically to validateBlockData.
+    //
+    // This gate used to be reachable only through validateBlockData (the
+    // manage_page_blocks / create_page_block path). The manage_page path runs
+    // through here instead, and here an unrecognised type merely had no entry
+    // in BLOCK_CONTRACTS — so it fell out of the loop and was WRITTEN. Live
+    // 2026-08-22: a model sent "two_column" and "sticky_story" (snake_case for
+    // the real "two-column" / "sticky-scroll"); the page saved "green" and
+    // rendered two invisible holes. A hero without `title` was refused loudly
+    // on the same call — so the platform disagreed with itself about what a
+    // valid block is, depending on which skill was invoked.
+    //
+    // "Missing contract" ≠ "unknown type": a legitimate block with no
+    // obligatory fields (section-divider, newsletter, terms…) rightly has no
+    // BLOCK_CONTRACTS entry. The truth about what EXISTS is KNOWN_BLOCK_TYPES
+    // (= every case in BlockRenderer), so that is what we check here; the
+    // contract lookup below keeps its own, separate meaning.
+    //
+    // Deliberately NO snake_case→kebab rescue (two_column → two-column), even
+    // though it is one line and would "work":
+    //   1. validateBlockData already refuses "two_column" outright. Mapping on
+    //      this path only would re-create the very disagreement between the two
+    //      write paths that this change exists to remove — and the mapping
+    //      cannot be shared cheaply, because preflightBlockArgs passes the
+    //      caller's raw type string to validateBlockData separately from the
+    //      block it normalises.
+    //   2. suggestBlockTypes() already folds `_`→`-`, so "two_column" is
+    //      answered with `Did you mean: "two-column"?` — the model self-corrects
+    //      in one turn AND learns the real name. A silent rescue fixes this page
+    //      and teaches nothing; the same wrong name comes back next time, and
+    //      wherever no rescue exists (describe_blocks output, block-reference
+    //      docs, the editor) the model still has the wrong model.
+    //   3. Tolerating a second spelling makes it a second naming convention
+    //      that has to be maintained for every block type, forever.
+    // Field-level aliases (heading→title) are forgiven above and stay forgiven:
+    // there the caller named a real block correctly and only missed a field
+    // name — no ambiguity about WHAT was intended, and nothing invisible saved.
+    const type = String(block.type ?? '').trim();
+    if (!KNOWN_BLOCK_TYPES.includes(type)) {
+      const suggestions = suggestBlockTypes(type);
+      console.warn(`[validate] Block ${block.id}: unknown block type "${type}" — marking for removal`);
+      block._remove = true;
+      block._remove_reason = type
+        ? `"${type}" is not a block type — nothing renders it, so this block would be invisible on the page.`
+          + (suggestions.length ? ` Did you mean: ${suggestions.map((s) => `"${s}"`).join(', ')}?` : '')
+          + ' Call describe_blocks (optionally with block_type) for the exact field contract of a real type.'
+        : 'Block missing "type" — each block needs { type, data }. '
+          + 'Call describe_blocks to list the valid block types and their fields.';
+      continue;
+    }
 
-    const contract = BLOCK_CONTRACTS[String(block.type)];
-    if (!contract) continue; // unknown type — keep as-is
+    const data = block.data as Record<string, unknown> | undefined;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      // Used to be a bare `block._remove = true` with NO reason — which is how
+      // stripRemovedBlocks ended up emitting the contentless
+      // `"undefined" block: invalid`. Name the missing piece and show the shape.
+      console.warn(`[validate] Block ${block.id} (${type}): no data object — marking for removal`);
+      block._remove = true;
+      block._remove_reason =
+        `"${type}" block: missing its "data" object — every block is { type, data }, with the block's own `
+        + `fields inside data, e.g. { "type": "${type}", "data": { ... } }. `
+        + `Call describe_blocks({ block_type: "${type}" }) for the exact field list.`;
+      continue;
+    }
+
+    const contract = BLOCK_CONTRACTS[type];
+    // Known, renderable type with no required/forbidden fields (section-divider,
+    // newsletter, terms…). Nothing to check — but it is NOT unknown.
+    if (!contract) continue;
 
     if (contract.forbidden) {
       const bad = contract.forbidden.filter((f) => data[f] !== undefined && data[f] !== null);
@@ -435,14 +510,86 @@ export function validateBlockContracts(blocks: Record<string, unknown>[]): void 
 /** Remove all blocks marked with `_remove` in-place. Returns the reasons, so
  * callers can refuse-with-detail instead of silently shipping a thinner page. */
 export function stripRemovedBlocks(blocks: Record<string, unknown>[]): string[] {
-  const reasons = blocks.filter((b) => b._remove)
-    .map((b) => String(b._remove_reason ?? `"${b.type}" block: invalid`));
+  const reasons = blocks.filter((b) => b._remove).map((b) => {
+    if (b._remove_reason) return String(b._remove_reason);
+    // Every rejection site above records a reason, so reaching this line means a
+    // NEW one forgot to. The old fallback here interpolated a `type` that was
+    // itself the missing thing and produced `"undefined" block: invalid` — seven
+    // times, to an operator who could act on none of it. A fail-closed gate whose
+    // refusal cannot be acted on is just a wall: even with nothing specific to
+    // say, say what shape is expected and where the field list lives.
+    const t = String(b.type ?? '').trim();
+    return (t ? `"${t}" block` : 'Block')
+      + ': rejected by the block validator without a recorded reason. '
+      + 'Each block must be { type, data } with a renderable type — '
+      + 'call describe_blocks for the valid types and their fields.';
+  });
   if (reasons.length === 0) return [];
   const clean = blocks.filter((b) => !b._remove);
   blocks.length = 0;
   blocks.push(...clean);
   console.log(`[normalize] Removed ${reasons.length} invalid block(s)`);
   return reasons;
+}
+
+// ---------------------------------------------------------------------------
+// Envelope aliases (block_type/block_data → type/data)
+// ---------------------------------------------------------------------------
+
+/**
+ * Accept the SIBLING SKILL's envelope spelling on a block list, in place.
+ *
+ * The platform ships two page-write skills that name the same object twice:
+ *   manage_page        blocks: [{ type, data }]
+ *   create_page_block  block_type + block_data  (and blocks: [{ type, data }])
+ * Live 2026-08-22, twice in a row from the same operator: a model took
+ * manage_page's ARRAY shell and create_page_block's FIELD names —
+ * `blocks: [{ block_type: "hero", block_data: { ... } }]`. Every block came back
+ * typeless; seven blocks, nothing written, on both attempts.
+ *
+ * Why aliasing this is right while snake_case TYPE names (`two_column`) stay
+ * refused a few lines up — the two look alike and are not the same thing:
+ *   - `block_type` is OUR OWN vocabulary, published by our own sibling skill in
+ *     the same domain, for the same object. The caller did not guess; they used
+ *     a name this platform told them was correct, in the wrong place. That the
+ *     two skills disagree is the platform's arbitrariness, not the caller's
+ *     error — and there is nothing to teach by refusing, because the model
+ *     already knows both names and cannot tell which surface wants which.
+ *   - `two_column` is a spelling NOTHING in the platform ever published.
+ *     Accepting it would mint a second name for every block type, forever, and
+ *     would confirm a name that still fails in describe_blocks, in the editor
+ *     and in block-reference. There the refusal-with-suggestion IS the fix.
+ * The dividing line: forgive what we said ourselves, refuse what was invented.
+ *
+ * Deliberately conservative — only this exact pair, only where the canonical key
+ * is absent, and halves are never blended: if a block carries both spellings,
+ * `type`/`data` win and the collision is reported, because silently preferring
+ * either could store a block the caller never described.
+ */
+export function normalizeBlockEnvelopes(blocks: unknown[]): void {
+  const PAIRS = [['block_type', 'type'], ['block_data', 'data']] as const;
+  for (const raw of blocks) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+    const block = raw as Record<string, unknown>;
+    for (const [alias, canonical] of PAIRS) {
+      if (!(alias in block)) continue;
+      const current = block[canonical];
+      const canonicalEmpty = current === undefined || current === null
+        || (typeof current === 'string' && current.trim() === '');
+      if (canonicalEmpty) {
+        block[canonical] = block[alias];
+      } else {
+        console.warn(
+          `[normalize] Block ${block.id ?? '(no id)'}: both "${canonical}" and "${alias}" were sent — `
+          + `keeping "${canonical}", ignoring "${alias}". manage_page takes { type, data }; "${alias}" is `
+          + `create_page_block's name for the same thing. Pick one form per call, never both.`,
+        );
+      }
+      // Either way the alias must not survive into content_json: no renderer
+      // reads it, and a stored half-shape re-teaches the mix on the next read.
+      delete block[alias];
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -453,6 +600,7 @@ export function stripRemovedBlocks(blocks: Record<string, unknown>[]): string[] 
  * Full normalization pipeline for a content_json blocks array.
  *
  * Steps:
+ *   0. normalizeBlockEnvelopes — block_type/block_data → type/data
  *   1. normalizeBlockData  per block (tiptap, team, table)
  *   2. applyIconFallbacks  across all blocks
  *   3. validateBlockContracts (optional — set validate=false to skip removal)
@@ -464,6 +612,12 @@ export function normalizeBlocks(
 ): string[] {
   const { validate = true } = options;
   const typed = blocks as Record<string, unknown>[];
+
+  // Envelope FIRST: every step below reads `type`/`data`, so a sibling-skill
+  // spelling has to become the canonical one before anything looks at it —
+  // otherwise normalizeBlockData sees type `undefined` and skips every
+  // per-type alias, and the gate then judges an untouched shape.
+  normalizeBlockEnvelopes(typed);
 
   for (const block of typed) {
     normalizeBlockData(block);
@@ -484,7 +638,7 @@ export function normalizeBlocks(
 
 /** Minimal filled example per block type — included in validation errors so the
  *  AI can self-correct on retry without needing to guess the structure. */
-const BLOCK_HINTS: Record<string, Record<string, unknown>> = {
+export const BLOCK_HINTS: Record<string, Record<string, unknown>> = {
   // hero/text are the two most-written blocks and had no example at all — the
   // fallback hint ("check the schema") is exactly the dead end that made agents
   // re-send buttonText/heading/body a second time.
@@ -572,7 +726,7 @@ const BLOCK_HINTS: Record<string, Record<string, unknown>> = {
 };
 
 /** Minimal Tiptap doc — used in error messages when a Tiptap field is wrong. */
-const TIPTAP_HINT = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Your text here"}]}]}';
+export const TIPTAP_HINT = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Your text here"}]}]}';
 
 // ---------------------------------------------------------------------------
 // Known types & known fields (fail-closed write gate)
@@ -809,4 +963,120 @@ export function validateBlockData(
     : `Check the block schema for "${blockType}" and ensure all required fields are present.`;
 
   return { valid: false, errors, hint, example };
+}
+
+// ---------------------------------------------------------------------------
+// Pre-stage preflight (approval-gate parity)
+// ---------------------------------------------------------------------------
+
+export interface BlockPreflightResult {
+  /** True when the arguments actually carried blocks this function could judge. */
+  checked: boolean;
+  /** Per-block reasons. Empty ⇒ the same call would pass agent-execute's gate. */
+  errors: string[];
+}
+
+/**
+ * Judge a page-write skill's NESTED block payload **without touching the DB** —
+ * the same contracts, in the same order, that agent-execute applies at write
+ * time.
+ *
+ * Why this exists (FlowWork, verified 2026-08-22): a chat surface with a human
+ * approval gate stages a write first and executes it only after a person has
+ * clicked approve. The block contracts were enforced at execution — i.e. AFTER
+ * the model had left the loop. So a manage_page call carrying a hero block with
+ * no `title` produced a pretty approval card, a human click, and only then the
+ * refusal "Fix the named fields and retry — nothing was written". The message is
+ * WRITTEN to be self-correcting, and in FlowPilot's ReAct loop it is: the tool
+ * result comes back and the model fixes the field next turn. The approval gate
+ * broke that feedback loop and handed the error to the wrong actor.
+ *
+ * Callers that stage before executing must run this BEFORE staging and return
+ * its errors to the model as a tool result. The contracts live here and only
+ * here — a second copy of them next to the approval gate is precisely the drift
+ * class (two copies, one edited) this file already fights.
+ *
+ * Mirrors, argument-shape for argument-shape:
+ *   - manage_page create/update  → normalizeBlocks(blocks ?? content_json)
+ *   - manage_page_blocks add     → normalizeBlockData → validateBlockData
+ *   - create_page_block          → same, single and batch
+ * `manage_page_blocks action=update` is deliberately NOT judged: the executor
+ * validates the MERGE of incoming fields into the stored block, which needs the
+ * row. Guessing without it would bounce writes that would have succeeded, so
+ * that path stays the executor's job (fail open, not fail closed).
+ */
+export function preflightBlockArgs(
+  skillName: string,
+  args: Record<string, unknown>,
+): BlockPreflightResult {
+  const NONE: BlockPreflightResult = { checked: false, errors: [] };
+  if (!args || typeof args !== 'object') return NONE;
+
+  // The caller's arguments must survive this untouched: they are what a human
+  // sees on the approval card and what agent-execute receives. Normalization
+  // mutates in place, so judge a copy.
+  const copy = <T>(v: T): T => (v === undefined || v === null ? v : JSON.parse(JSON.stringify(v)) as T);
+
+  /** One candidate block, judged exactly as agent-execute's add path does. */
+  const judgeOne = (type: unknown, data: unknown): string[] => {
+    const blockType = String(type ?? '').trim();
+    if (!blockType) return ['Block missing "type" — each block needs { type, data }.'];
+    // Normalize FIRST, then validate — the order is load-bearing (see the
+    // comment on the add path in agent-execute): the alias/raw-string
+    // forgiveness must get its pass before the gate judges the shape.
+    const candidate: Record<string, unknown> = {
+      id: 'preflight',
+      type: blockType,
+      data: (copy(data) as Record<string, unknown>) ?? {},
+      spacing: {},
+      animation: { type: 'fade-up' },
+    };
+    normalizeBlockData(candidate);
+    const result = validateBlockData(blockType, candidate.data as Record<string, unknown>);
+    if (result.valid) return [];
+    return [`"${blockType}" block: ${result.errors.join('; ')}${result.hint ? ` — ${result.hint}` : ''}`];
+  };
+
+  if (skillName === 'manage_page') {
+    const action = String(args.action ?? '').trim();
+    if (action !== 'create' && action !== 'update') return NONE;
+    // content_json is an alias for blocks — `get` returns the column under that
+    // name, so that is the name a caller naturally sends back.
+    const raw = args.blocks !== undefined ? args.blocks : (args as Record<string, unknown>).content_json;
+    if (!Array.isArray(raw)) return NONE;
+    return { checked: true, errors: normalizeBlocks(copy(raw) as unknown[]) };
+  }
+
+  if (skillName === 'create_page_block') {
+    const batch = args.blocks;
+    if (Array.isArray(batch) && batch.length > 0) {
+      // Same envelope tolerance as manage_page — otherwise the fix for the
+      // mixed form would create a NEW disagreement (accepted over there,
+      // refused over here) of exactly the kind it exists to remove.
+      const items = copy(batch) as Array<Record<string, unknown>>;
+      normalizeBlockEnvelopes(items);
+      const errors: string[] = [];
+      for (const b of items) {
+        errors.push(...judgeOne(b?.type, b?.data));
+      }
+      // NB stricter than the executor, on purpose: its batch path skips the bad
+      // blocks and writes the rest. A half-applied batch is not something a
+      // human should be asked to approve — bounce the call, let the model fix
+      // the named fields, stage a whole page section or none of it.
+      return { checked: true, errors };
+    }
+    const blockType = args.block_type;
+    if (typeof blockType !== 'string' || !blockType.trim()) return NONE;
+    return { checked: true, errors: judgeOne(blockType, args.block_data ?? {}) };
+  }
+
+  if (skillName === 'manage_page_blocks') {
+    if (String(args.action ?? '').trim() !== 'add') return NONE;
+    const blockType = args.block_type;
+    // A missing block_type is the required-parameter gate's finding, not ours.
+    if (typeof blockType !== 'string' || !blockType.trim()) return NONE;
+    return { checked: true, errors: judgeOne(blockType, args.block_data ?? {}) };
+  }
+
+  return NONE;
 }

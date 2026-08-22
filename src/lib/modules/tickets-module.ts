@@ -149,6 +149,30 @@ const TICKETS_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    // Motorn fanns, men ingen kunde köra den utom en människa vid en knapp:
+    // run_ticket_escalations hade varken cron-schema eller skill-seed, så
+    // "Run sweep now" i TicketEscalationRulesTab var enda anroparen. Samma
+    // mönster som check_approval_escalations i approvals-module.ts, som ÄR
+    // agent-körbar — det är formen vi följer här.
+    name: 'run_ticket_escalations',
+    description:
+      'Sweep open tickets against the active ticket_escalation_rules and apply each rule that matches — raise priority, reassign, and log to support_escalations. Use when: heartbeat/queue hygiene, an SLA breach is suspected, or someone asks whether the support queue is being escalated. NOT for: escalating one named ticket (manage_ticket with priority:"urgent"), editing the rules themselves (table CRUD on ticket_escalation_rules), or SLA violation tracking (sla_check).',
+    category: 'crm',
+    handler: 'rpc:run_ticket_escalations',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'run_ticket_escalations',
+        description:
+          'Run the full ticket escalation sweep across all active rules. Returns counts. Idempotent and cheap — safe to run frequently.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+    instructions:
+      'Takes no arguments — it always sweeps every active rule. Returns {rules_evaluated, tickets_escalated, details, skipped_rules}. A rule whose match_status/match_priority/action_raise_priority carries a label that is not in the ticket enums is SKIPPED and reported in skipped_rules rather than aborting the sweep — read that key and report it, an empty skipped_rules is what a healthy rule set looks like. Escalating a ticket is idempotent per rule (a ticket already at the target priority is not re-escalated), so re-running after a partial failure is safe.',
+  },
 ];
 
 export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>({
@@ -163,9 +187,9 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
 
-  skills: ['manage_ticket', 'ticket_triage', 'search_tickets', 'manage_canned_response'],
+  skills: ['manage_ticket', 'ticket_triage', 'search_tickets', 'manage_canned_response', 'run_ticket_escalations'],
   data: {
-    tables: ['ticket_comments', 'support_escalations', 'canned_responses', 'tickets', 'support_agents'],
+    tables: ['ticket_comments', 'support_escalations', 'canned_responses', 'tickets', 'support_agents', 'ticket_escalation_rules'],
   },
   skillSeeds: TICKETS_SKILLS,
 

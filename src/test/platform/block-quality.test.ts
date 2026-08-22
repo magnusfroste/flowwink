@@ -15,408 +15,45 @@
  *  quality gate that proves the pipeline catches what FlowPilot gets wrong."
  *
  * These are pure-function unit tests. No DB or network required.
- * Functions are mirrored from supabase/functions/_shared/normalize-blocks.ts
- * because that module uses Deno-style imports incompatible with vitest.
+ * Every function under test is IMPORTED from
+ * supabase/functions/_shared/normalize-blocks.ts — never re-implemented here.
+ * See the note above the import block for why the old mirror was removed.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { BLOCK_REFERENCE, getImportableBlockTypes } from "@/lib/block-reference";
 
-// ─── Mirrored from _shared/normalize-blocks.ts ────────────────────────────────
-
-// Tiptap fields at top level of a block's data object.
+// ─── The source of truth, imported — not mirrored ────────────────────────────
 //
-// Parsed from the real file rather than mirrored: the hardcoded copy drifted the
-// first time the source changed — leftColumn/rightColumn were added to
-// normalize-blocks and this test kept failing against its own stale copy while
-// pointing the blame at normalize-blocks.ts. A mirror that names another file as
-// the authority must read that file.
-const TIPTAP_FIELDS: string[] = (() => {
-  const src = readFileSync(
-    resolve(__dirname, '../../../supabase/functions/_shared/normalize-blocks.ts'),
-    'utf-8',
-  );
-  const m = src.match(/export const TIPTAP_FIELDS = \[([^\]]+)\]/);
-  if (!m) throw new Error('TIPTAP_FIELDS not found in normalize-blocks.ts — update the parser');
-  return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
-})();
+// This file used to carry a ~400-line HAND-MAINTAINED COPY of normalize-blocks.ts,
+// justified by a header claiming the module's Deno-style imports were
+// "incompatible with vitest". That has not been true for a while — the sibling
+// suite src/lib/__tests__/block-write-safety.guardrails.test.ts imports the very
+// same module directly — and the copy had quietly fallen behind the source it
+// claimed to mirror (no unknown-TYPE gate, no removal reasons, no envelope
+// aliasing). Tests that green-light a stale copy of the thing under test are
+// worse than no tests: they report on code that never runs in production.
+// Import the source. If it changes, these tests change with it — which is the
+// entire point of a quality gate.
+import {
+  htmlToTiptap,
+  normalizeBlockData,
+  normalizeBlocks,
+  applyIconFallbacks,
+  guessIcon,
+  validateBlockData,
+  validateBlockContracts,
+  stripRemovedBlocks,
+  TIPTAP_FIELDS,
+  BLOCK_CONTRACTS,
+  ICON_FALLBACKS,
+  KEYWORD_ICON_MAP,
+  BLOCK_HINTS,
+  TIPTAP_HINT,
+} from "../../../supabase/functions/_shared/normalize-blocks";
+import { TIPTAP_NESTED_FIELDS } from "../../../supabase/functions/_shared/block-schema";
 
-// Nested tiptap field definitions (mirrored from generated block-schema.ts TIPTAP_NESTED_FIELDS)
-const TIPTAP_NESTED_FIELDS = [
-  { blockType: 'tabs',      arrayField: 'tabs',  itemField: 'content' },
-  { blockType: 'accordion', arrayField: 'items', itemField: 'answer' },
-] as const;
-
-function htmlToTiptap(html: string): Record<string, unknown> {
-  const text = html.replace(/<[^>]*>/g, '').trim();
-  if (!text) return { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
-  const paragraphs = text.split(/\n\n|\n/).filter((p: string) => p.trim());
-  return {
-    type: 'doc',
-    content: paragraphs.map((p: string) => ({
-      type: 'paragraph',
-      content: [{ type: 'text', text: p.trim() }],
-    })),
-  };
-}
-
-function normalizeBlockData(block: Record<string, unknown>): void {
-  const data = block.data as Record<string, unknown> | undefined;
-  if (!data) return;
-
-  for (const field of TIPTAP_FIELDS) {
-    if (typeof data[field] === 'string') {
-      data[field] = htmlToTiptap(data[field] as string);
-    }
-  }
-
-  for (const { blockType, arrayField, itemField } of TIPTAP_NESTED_FIELDS) {
-    if (block.type === blockType && Array.isArray(data[arrayField])) {
-      for (const item of data[arrayField] as Record<string, unknown>[]) {
-        if (typeof item[itemField] === 'string') {
-          item[itemField] = htmlToTiptap(item[itemField] as string);
-        }
-      }
-    }
-  }
-
-  if (block.type === 'team' && Array.isArray(data.members)) {
-    data.members = (data.members as Record<string, unknown>[]).map((member) => {
-      const normalized: Record<string, unknown> = {
-        ...member,
-        id: member.id || `member-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        photo: member.photo || member.image || '',
-        role: member.role || '',
-      };
-      delete normalized.image;
-      return normalized;
-    });
-  }
-
-  if (block.type === 'table') {
-    if (!Array.isArray(data.columns)) {
-      data.columns = [];
-    } else {
-      data.columns = (data.columns as Record<string, unknown>[]).map((col, i) => ({
-        id: col.id || `col${i + 1}`,
-        header: col.header || col.name || col.title || `Column ${i + 1}`,
-        align: col.align || 'left',
-      }));
-    }
-    const columns = data.columns as Array<{ id: string; header: string }>;
-    if (!Array.isArray(data.rows)) {
-      data.rows = [];
-    } else {
-      data.rows = (data.rows as unknown[]).map((row) => {
-        if (row && typeof row === 'object' && !Array.isArray(row)) {
-          const rowObj = row as Record<string, unknown>;
-          const normalized: Record<string, string> = {};
-          columns.forEach((col) => {
-            normalized[col.id] = String(rowObj[col.id] ?? rowObj[col.header] ?? '');
-          });
-          return normalized;
-        }
-        if (Array.isArray(row)) {
-          const normalized: Record<string, string> = {};
-          columns.forEach((col, i) => { normalized[col.id] = String(row[i] ?? ''); });
-          return normalized;
-        }
-        const normalized: Record<string, string> = {};
-        columns.forEach((col) => { normalized[col.id] = ''; });
-        return normalized;
-      });
-    }
-  }
-}
-
-const ICON_FALLBACKS: Record<string, string> = {
-  features: 'Star',
-  stats: 'TrendingUp',
-  timeline: 'Circle',
-  'link-grid': 'Link',
-  'trust-bar': 'ShieldCheck',
-  'shipping-info': 'Truck',
-};
-
-const KEYWORD_ICON_MAP: [RegExp, string][] = [
-  [/temperatur|temp|värme|heat/i, 'Thermometer'],
-  [/vatten|water|h2o|leak/i, 'Droplets'],
-  [/luft|air|vent|ventil/i, 'Wind'],
-  [/säkerhet|security|safe|shield/i, 'ShieldCheck'],
-  [/sensor|iot|monitor/i, 'Activity'],
-  [/analys|ai|data|insikt/i, 'BarChart3'],
-  [/energi|energy|el|power/i, 'Zap'],
-  [/kontakt|contact|mail/i, 'Mail'],
-];
-
-function guessIcon(text: string, fallback: string): string {
-  const lower = text.toLowerCase();
-  for (const [re, icon] of KEYWORD_ICON_MAP) {
-    if (re.test(lower)) return icon;
-  }
-  return fallback;
-}
-
-function applyIconFallbacks(blocks: Record<string, unknown>[]): void {
-  const ARRAY_FIELDS = ['features', 'stats', 'steps', 'items', 'links'];
-  for (const block of blocks) {
-    const data = block.data as Record<string, unknown> | undefined;
-    if (!data) continue;
-    const fallback = ICON_FALLBACKS[String(block.type)];
-    if (!fallback) continue;
-    for (const field of ARRAY_FIELDS) {
-      const arr = data[field] as Array<Record<string, unknown>> | undefined;
-      if (!Array.isArray(arr)) continue;
-      for (const item of arr) {
-        if (!item.icon || String(item.icon).trim() === '' || item.icon === 'null') {
-          const searchText = `${item.title || ''} ${item.description || ''} ${item.label || ''}`;
-          item.icon = guessIcon(searchText, fallback);
-        }
-      }
-    }
-  }
-}
-
-/**
- * Full mirror of BLOCK_CONTRACTS from supabase/functions/_shared/normalize-blocks.ts.
- * Must stay in sync — the coverage tests below catch missing entries automatically.
- * When adding a new block type: add it here AND in normalize-blocks.ts.
- */
-const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string[] }> = {
-  hero:               { required: [['title']] },
-  text:               { required: [['content']] },
-  quote:              { required: [['quote']] },
-  cta:                { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
-  features:           { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
-  stats:              { required: [['stats']] },
-  testimonials:       { required: [['testimonials']] },
-  team:               { required: [['members']] },
-  logos:              { required: [['logos']] },
-  timeline:           { required: [['steps']] },
-  accordion:          { required: [['items']] },
-  terms:              { required: [] },
-  image:              { required: [['src']] },
-  gallery:            { required: [['images']] },
-  youtube:            { required: [['videoId']] },
-  'two-column':       { required: [['content', 'imageSrc']] },
-  form:               { required: [['fields']] },
-  newsletter:         { required: [] },
-  map:                { required: [['address']] },
-  booking:            { required: [] },
-  popup:              { required: [] },
-  pricing:            { required: [['tiers']] },
-  comparison:         { required: [['products', 'features']] },
-  tabs:               { required: [['tabs']] },
-  marquee:            { required: [['items']] },
-  embed:              { required: [['url']] },
-  lottie:             { required: [['src']] },
-  table:              { required: [['columns']] },
-  countdown:          { required: [['targetDate']] },
-  progress:           { required: [['items']] },
-  badge:              { required: [['badges']] },
-  'social-proof':     { required: [['items']] },
-  'trust-bar':        { required: [['items']] },
-  'shipping-info':    { required: [['items']] },
-  'link-grid':        { required: [['links']] },
-  'announcement-bar': { required: [['message']] },
-  'floating-cta':     { required: [['buttonText']] },
-  'article-grid':     { required: [] },
-  'latest-posts':     { required: [] },
-  'bento-grid':       { required: [['items']] },
-  'notification-toast': { required: [['notifications']] },
-  // Added 2026-07-25 — mirror of normalize-blocks.ts (keep the two in sync).
-  'parallax-section': { required: [['title', 'backgroundImage']] },
-  'section-divider':  { required: [] },
-  'featured-carousel': { required: [['slides']] },
-  'sticky-scroll':    { required: [['chapters']] },
-  'ai-faq':           { required: [] },
-  'pricing-calculator': { required: [['variables', 'basePrice']] },
-  'quick-links':      { required: [['links']] },
-  'chat-launcher':    { required: [] },
-  'ai-assistant':     { required: [] },
-  contact:            { required: [] },
-};
-
-function validateBlockContracts(blocks: Record<string, unknown>[]): void {
-  for (const block of blocks) {
-    const data = block.data as Record<string, unknown> | undefined;
-    if (!data) { block._remove = true; continue; }
-    const contract = BLOCK_CONTRACTS[String(block.type)];
-    if (!contract) continue;
-    if (contract.forbidden) {
-      const bad = contract.forbidden.filter((f) => data[f] !== undefined && data[f] !== null);
-      if (bad.length > 0) { block._remove = true; continue; }
-    }
-    for (const group of contract.required) {
-      const hasAny = group.some((f) => {
-        const val = data[f];
-        if (val === undefined || val === null) return false;
-        if (typeof val === 'string' && val.trim() === '') return false;
-        if (Array.isArray(val) && val.length === 0) return false;
-        return true;
-      });
-      if (!hasAny) { block._remove = true; break; }
-    }
-  }
-}
-
-function stripRemovedBlocks(blocks: Record<string, unknown>[]): void {
-  const clean = blocks.filter((b) => !b._remove);
-  blocks.length = 0;
-  blocks.push(...clean);
-}
-
-function normalizeBlocks(blocks: unknown[], options: { validate?: boolean } = {}): void {
-  const { validate = true } = options;
-  const typed = blocks as Record<string, unknown>[];
-  for (const block of typed) normalizeBlockData(block);
-  applyIconFallbacks(typed);
-  if (validate) {
-    validateBlockContracts(typed);
-    stripRemovedBlocks(typed);
-  }
-}
-
-const TIPTAP_HINT = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Your text here"}]}]}';
-
-interface BlockValidationResult {
-  valid: boolean;
-  errors: string[];
-  hint?: string;
-  example?: Record<string, unknown>;
-}
-
-/**
- * Full mirror of BLOCK_HINTS from supabase/functions/_shared/normalize-blocks.ts.
- * Each example MUST be valid according to validateBlockData() — tested in the
- * self-correction loop suite below. Keep in sync with normalize-blocks.ts.
- */
-const BLOCK_HINTS: Record<string, Record<string, unknown>> = {
-  features: {
-    features: [
-      { id: 'f1', icon: 'ShieldCheck', title: 'Secure', description: 'Enterprise-grade security' },
-      { id: 'f2', icon: 'Zap', title: 'Fast', description: 'Sub-second response times' },
-    ],
-    columns: '3',
-    variant: 'cards',
-  },
-  stats: {
-    stats: [
-      { value: '10 000+', label: 'Customers', icon: 'Users' },
-      { value: '99.9%', label: 'Uptime', icon: 'Activity' },
-    ],
-  },
-  tabs: {
-    tabs: [
-      { id: 'tab-1', title: 'Overview', icon: 'Info',
-        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Tab content here.' }] }] } },
-    ],
-    variant: 'underline',
-    defaultTab: 'tab-1',
-  },
-  accordion: {
-    items: [
-      { question: 'How does it work?',
-        answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'It connects to your systems.' }] }] } },
-    ],
-  },
-  'bento-grid': {
-    items: [
-      { id: 'b1', title: 'Monitoring', description: 'Live sensor data', icon: 'Activity', span: 'wide' },
-      { id: 'b2', title: 'Alerts', description: 'Instant notifications', icon: 'Bell', span: 'normal' },
-    ],
-    columns: 3,
-    variant: 'default',
-  },
-  'two-column': {
-    content: { type: 'doc', content: [
-      { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Section title' }] },
-      { type: 'paragraph', content: [{ type: 'text', text: 'Describe your offer here.' }] },
-    ]},
-    imageSrc: 'https://example.com/image.jpg',
-    imageAlt: 'Descriptive alt text',
-    imagePosition: 'right',
-  },
-  pricing: {
-    tiers: [
-      { id: 't1', name: 'Starter', price: '€49', period: 'month',
-        features: ['Feature A', 'Feature B'], buttonText: 'Get started', buttonUrl: '/contact' },
-      { id: 't2', name: 'Pro', price: '€99', period: 'month', highlighted: true,
-        features: ['Everything in Starter', 'Feature C'], buttonText: 'Get started', buttonUrl: '/contact' },
-    ],
-    variant: 'cards',
-  },
-  testimonials: {
-    testimonials: [
-      { id: 't1', content: 'This product changed how we work.', author: 'Anna S.', role: 'CEO', company: 'Acme AB', rating: 5 },
-    ],
-    layout: 'grid',
-    variant: 'cards',
-  },
-  team: {
-    members: [
-      { id: 'm1', name: 'Anna Svensson', role: 'CEO', bio: 'Leading the company since 2018.', photo: '' },
-    ],
-    columns: 3,
-  },
-};
-
-function validateBlockData(blockType: string, blockData: Record<string, unknown>): BlockValidationResult {
-  const errors: string[] = [];
-  const contract = BLOCK_CONTRACTS[blockType];
-  if (!contract) return { valid: true, errors: [] };
-
-  if (contract.forbidden) {
-    const bad = contract.forbidden.filter((f) => blockData[f] !== undefined && blockData[f] !== null);
-    if (bad.length > 0) {
-      errors.push(`"${blockType}" block has forbidden field(s): ${bad.join(', ')} — these belong to other block types`);
-    }
-  }
-
-  for (const group of contract.required) {
-    const hasAny = group.some((f) => {
-      const val = blockData[f];
-      if (val === undefined || val === null) return false;
-      if (typeof val === 'string' && val.trim() === '') return false;
-      if (Array.isArray(val) && val.length === 0) return false;
-      return true;
-    });
-    if (!hasAny) {
-      errors.push(
-        group.length === 1
-          ? `"${blockType}" block is missing required field: "${group[0]}"`
-          : `"${blockType}" block must have at least one of: ${group.map((f) => `"${f}"`).join(' | ')}`,
-      );
-    }
-  }
-
-  for (const field of TIPTAP_FIELDS) {
-    if (typeof blockData[field] === 'string') {
-      errors.push(`"${blockType}" block: field "${field}" is a raw string — must be Tiptap JSON: ${TIPTAP_HINT}`);
-    }
-  }
-
-  for (const { blockType: bt, arrayField, itemField } of TIPTAP_NESTED_FIELDS) {
-    if (bt !== blockType) continue;
-    const arr = blockData[arrayField];
-    if (!Array.isArray(arr)) continue;
-    (arr as Record<string, unknown>[]).forEach((item, i) => {
-      if (typeof item[itemField] === 'string') {
-        errors.push(`"${blockType}" block: ${arrayField}[${i}].${itemField} is a raw string — must be Tiptap JSON: ${TIPTAP_HINT}`);
-      }
-    });
-  }
-
-  if (errors.length === 0) return { valid: true, errors: [] };
-
-  const example = BLOCK_HINTS[blockType];
-  const hint = example
-    ? `Correct "${blockType}" structure: ${JSON.stringify(example)}`
-    : `Check the block schema for "${blockType}" and ensure all required fields are present.`;
-
-  return { valid: false, errors, hint, example };
-}
 
 // ─── Helper: make a valid Tiptap doc ─────────────────────────────────────────
 
@@ -771,8 +408,12 @@ describe("validateBlockData — agentic self-correction feedback", () => {
       videoUrl: "https://youtube.com/watch?v=123", // forbidden!
     });
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toContain("forbidden");
-    expect(result.errors[0]).toContain("videoUrl");
+    // videoUrl trips TWO gates in the real module — it is both an unknown cta
+    // field and an explicitly forbidden one — and the unknown-field error is
+    // pushed first. Assert on the whole list, not on errors[0]: which gate
+    // speaks first is an implementation detail, that both speak is the contract.
+    expect(result.errors.join(' ')).toContain("forbidden");
+    expect(result.errors.join(' ')).toContain("videoUrl");
   });
 
   it("returns valid=false when features block has forbidden backgroundType", () => {
@@ -864,21 +505,38 @@ describe("validateBlockData — agentic self-correction feedback", () => {
     expect(result.hint).toContain("features");
   });
 
-  it("returns valid=true for unknown block type (pass-through)", () => {
+  it("REFUSES an unknown block type — it renders as nothing", () => {
+    // This test asserted valid=true ("pass-through") for as long as this file
+    // ran against its own hand-written copy of the module. The real module has
+    // failed closed here since the invented-type gate landed: a type nothing
+    // renders is an invisible hole in the page, and letting it through is how
+    // an agent reports a section that does not exist. The stale copy is exactly
+    // why the inversion went unnoticed — the test was green about code that
+    // never ran in production.
     const result = validateBlockData("custom-marketing-block", { any: "data" });
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain("custom-marketing-block");
+    expect(result.hint).toContain("describe_blocks");
   });
 
-  it("cta accepts at least one of buttonText|primaryButtonText|buttons", () => {
-    const withButtonText  = validateBlockData("cta", { buttonText: "Start" });
-    const withPrimary     = validateBlockData("cta", { primaryButtonText: "Start" });
-    const missingAll      = validateBlockData("cta", { title: "No button at all" });
-
+  it("cta requires buttonText — and the OR-group's other names are unwritable", () => {
+    const withButtonText = validateBlockData("cta", { buttonText: "Start" });
+    const missingAll = validateBlockData("cta", { title: "No button at all" });
     expect(withButtonText.valid).toBe(true);
-    expect(withPrimary.valid).toBe(true);
     expect(missingAll.valid).toBe(false);
     expect(missingAll.errors[0]).toContain('"buttonText"');
+
+    // Contract self-contradiction, surfaced the moment this suite started
+    // testing the real module: BLOCK_CONTRACTS.cta lists the OR-group
+    // ['buttonText','primaryButtonText','buttons'], but block-reference gives
+    // cta only `buttonText`. So the last two satisfy the required-field gate
+    // and are then refused by the unknown-field gate — the error text
+    // recommends field names that cannot be written. Pinned as-is (not fixed
+    // here: trimming the group would newly refuse legacy stored blocks on
+    // update). If someone repairs the contract, this expectation flips.
+    const withPrimary = validateBlockData("cta", { primaryButtonText: "Start" });
+    expect(withPrimary.valid).toBe(false);
+    expect(withPrimary.errors.join(' ')).toContain("unknown field");
   });
 
   it("two-column accepts imageSrc OR content as satisfying required", () => {
@@ -936,8 +594,22 @@ describe("validateBlockContracts — block removal marking", () => {
     expect(blocks[0]._remove).toBe(true);
   });
 
-  it("leaves unknown block types untouched (no contract = no removal)", () => {
+  it("REMOVES an unknown block type, with a reason that names the fix", () => {
+    // Same inversion as the validateBlockData case above, on the manage_page
+    // write path. "No contract" is NOT "unknown type": the truth about what
+    // exists is KNOWN_BLOCK_TYPES, and a type outside it is removed — loudly.
     const blocks = [{ id: 'b1', type: 'custom-xyz', data: { anything: true } }] as any[];
+    validateBlockContracts(blocks);
+    expect(blocks[0]._remove).toBe(true);
+    expect(String(blocks[0]._remove_reason)).toContain('not a block type');
+    expect(String(blocks[0]._remove_reason)).toContain('describe_blocks');
+  });
+
+  it("a legitimate contract-FREE type is still kept — the distinction holds", () => {
+    // The guard that keeps the gate above from becoming a regression:
+    // section-divider/terms/newsletter render fine and rightly have no
+    // BLOCK_CONTRACTS entry. Missing contract ≠ missing from the renderer.
+    const blocks = [{ id: 'b1', type: 'section-divider', data: { shape: 'wave' } }] as any[];
     validateBlockContracts(blocks);
     expect(blocks[0]._remove).toBeUndefined();
   });
