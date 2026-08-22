@@ -34,7 +34,12 @@ export async function distillCompany(
     // is even worth extracting from their site — read the prospect blind. With
     // the ICP present the same page yields sharper pain points: what matters is
     // what OUR offering could act on, not a neutral summary (#89).
-    const identity = await loadBusinessIdentityBlock(supabase);
+    // 'core': the distiller needs our ICP, offering and target industries to
+    // decide what is worth extracting from THEIR site. Our own story and
+    // testimonials would only invite importing our claims into their profile —
+    // the exact failure the instruction below guards against — and this runs
+    // once per prospect in bulk enrichment.
+    const identity = await loadBusinessIdentityBlock(supabase, 'core');
     const ai = await resolveAiConfig(supabase, 'fast');
     const result = await callAiCompletion({
       supabase,

@@ -238,6 +238,10 @@ inside data are NOT free-form, and inventing them is the #1 reason a page write 
   the catalogue of every renderable type, then \`describe_blocks({ block_type })\` for
   each type you are about to write — and use its exact type strings and field names.
   It is free to call; one lookup costs less than one refused write.
+  It also answers WHICH block a piece of content belongs in, not only which fields it
+  has — read that before you compose a page, or you will ship an essay in \`text\`
+  blocks where the hand-built templates use \`features\`, \`stats\`, \`timeline\` and
+  \`accordion\` (\`text\` is 2.9% of all blocks across them, and no page uses two).
 - **Block types are kebab-case**, never snake_case: "two-column" (not two_column),
   "sticky-scroll" (not sticky_story), "bento-grid", "announcement-bar", "social-proof".
   A type nothing renders is an invisible hole in the page, not an error you will see.
@@ -253,9 +257,12 @@ inside data are NOT free-form, and inventing them is the #1 reason a page write 
   { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "…" }] }] }.
   Applies to content, answer, leftColumn, rightColumn.
 - **The write is fail-closed and all-or-nothing.** If ONE block is missing a required
-  field, the entire create/update is refused and NOTHING is written — no partial page,
-  no half-saved draft. The error names the block and the field it needs; fix that field
-  and resend the complete array.`,
+  field, carries a field the type does not have, or names a type that does not exist,
+  the entire create/update is refused and NOTHING is written — no partial page, no
+  half-saved draft. An unknown field is refused for the same reason a missing one is:
+  nothing renders it, so its content would sit in the database invisible while the page
+  looked thin. The error names the block, the field, and the right field name when there
+  is one; fix it and resend the complete array.`,
   },
   {
     name: 'manage_page_blocks',

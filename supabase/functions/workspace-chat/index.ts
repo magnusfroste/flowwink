@@ -1127,7 +1127,14 @@ Deno.serve(async (req) => {
     // The COMPANY's identity — same grounding as the public chat and the
     // ReAct engine (one identity, every mouth). Without it, "our products"
     // resolves to the model's prior about the platform itself.
-    const businessIdentity = await loadBusinessIdentityBlock(supabaseAdmin).catch(() => '');
+    //
+    // 'narrative': FlowWork is the AUTHORING surface. When it is asked for a
+    // landing page the knowledge sources are switched off on purpose (a landing
+    // page rests on the Business Identity, not on chunks of internal wiki), so
+    // here the identity is not one source among several — it is the entire
+    // input. The narrow projection made that task impossible, not merely worse:
+    // nine assertions, none of the company's 1 284 characters of story.
+    const businessIdentity = await loadBusinessIdentityBlock(supabaseAdmin, 'narrative').catch(() => '');
 
     // TODAY. A model's sense of "now" is its training cutoff, and the loop
     // stages real records with real dates: asked for a due date "in 30 days"

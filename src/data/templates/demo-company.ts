@@ -91,7 +91,6 @@ export const demoCompanyTemplate: StarterTemplate = {
             gradientTitle: true,
             titleAnimation: 'slide-up',
             subtitleAnimation: 'fade-in',
-            buttonAnimation: 'fade-in',
             showScrollIndicator: true,
             primaryButton: { text: 'Shop the demo', url: '/shop' },
             secondaryButton: { text: 'Open the admin', url: '/auth' },

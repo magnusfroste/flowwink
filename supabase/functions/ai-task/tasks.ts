@@ -654,7 +654,10 @@ const contentProposalTask: TaskSpec<z.infer<typeof contentProposalInput>, any> =
     const knowledge = await loadPublicKnowledgeBlock((input as any).topic ?? '');
     return {
       existing_coverage: await loadContentMemoryBlock(supabase, { limit: 15 }),
-      business_identity: await loadBusinessIdentityBlock(supabase),
+      // 'narrative': this writes outward copy, and the brief is thin by design.
+      // The narrow projection gave the model assertions and no material — the
+      // generic-landing-page class (2026-08-22).
+      business_identity: await loadBusinessIdentityBlock(supabase, 'narrative'),
       public_knowledge: knowledge.block,
       // (4) Learning mode: what this team historically picks, distilled to a
       // few lines — never the raw choice rows (#90).
@@ -816,7 +819,9 @@ const socialPostTask: TaskSpec<z.infer<typeof socialPostInput>, any> = {
   // Same voice, same source: batch-generated social posts ground in Business
   // Identity exactly like campaign proposals do.
   load: async (_input, supabase) => ({
-    business_identity: await loadBusinessIdentityBlock(supabase),
+    // 'narrative' — same reason as content_proposal: a social post that cannot
+    // name a real outcome falls back to platitudes.
+    business_identity: await loadBusinessIdentityBlock(supabase, 'narrative'),
   }),
   system: (input) =>
     `You are an expert social media copywriter. Write ONE native post per requested platform, returning everything via the submit_social_posts tool. Match each platform's norms: LinkedIn = hook + value + soft CTA, professional; X = punchy, ≤ 280 chars, can be a short thread if needed. Use the tone "${(input as any).tone ?? "professional"}". 3-6 relevant hashtags per post. No emojis-spam, no filler. Platforms: ${JSON.stringify((input as any).platforms ?? [])}.${(input as any).business_identity ?? ""}`,

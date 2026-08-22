@@ -169,8 +169,6 @@ const serviceProPages: TemplatePage[] = [
           title: 'Your Time Is Valuable. We Treat It That Way.',
           subtitle: 'No waiting rooms. No back-and-forth scheduling. Just expert service when you need it, exactly how you want it.',
           overlayOpacity: 65,
-          buttonText: 'Book in 60 Seconds',
-          buttonUrl: '/book',
         },
       },
       {
@@ -304,15 +302,18 @@ const serviceProPages: TemplatePage[] = [
         },
       },
       {
-        id: 'article-grid-blog',
-        type: 'article-grid',
+        id: 'latest-posts-blog',
+        // Was an 'article-grid' with limit/showExcerpt/showImage and NO `articles`
+        // array. ArticleGridBlock renders static articles only and returns null
+        // when the array is missing, so this whole section was invisible. The
+        // intent — 'show the N most recent posts' — is what latest-posts does.
+        type: 'latest-posts',
         data: {
           title: 'Tips & Insights',
           subtitle: 'Expert advice to help you get the most from our services',
           columns: 3,
-          limit: 3,
+          count: 3,
           showExcerpt: true,
-          showImage: true,
         },
       },
       {
@@ -356,10 +357,14 @@ const serviceProPages: TemplatePage[] = [
         id: 'floating-cta-home',
         type: 'floating-cta',
         data: {
-          text: 'Same-day appointments available — spots fill fast',
+          // `text` is not a floating-cta field — FloatingCTABlock renders `title`.
+          // The 'pill' variant it shipped with renders the BUTTON ONLY, so this
+          // line was doubly invisible; 'minimal' is the variant that shows a short
+          // message beside the button, which is what the copy was written for.
+          title: 'Same-day appointments available — spots fill fast',
           buttonText: 'Book Now',
           buttonUrl: '/book',
-          variant: 'pill',
+          variant: 'minimal',
         },
       },
     ],
@@ -407,7 +412,9 @@ const serviceProPages: TemplatePage[] = [
         id: 'separator-1',
         type: 'separator',
         data: {
-          variant: 'line',
+          // `variant` is not a separator field; the renderer switches on `style`.
+          // Spelled `variant` this divider drew nothing at all.
+          style: 'line',
           spacing: 'lg',
         },
       },
