@@ -19,6 +19,7 @@
  */
 import { TIPTAP_NESTED_FIELDS, IMPORTABLE_BLOCK_TYPES } from './block-schema.ts';
 import { BLOCK_CREATION_TOOLS, toolNameToBlockType } from './block-tools.ts';
+import { suggestClosestNames } from './suggest-names.ts';
 
 // ---------------------------------------------------------------------------
 // Tiptap helpers
@@ -722,6 +723,32 @@ export function normalizeBlockEnvelopes(blocks: unknown[]): void {
   }
 }
 
+/**
+ * A page is a FLAT ARRAY of blocks. The commonest wrong answer is a shape that
+ * DESCRIBES a page instead — `{ hero: {...}, sections: [...] }` — observed live
+ * 2026-08-22. It used to reach normalizeBlocks and throw `blocks is not
+ * iterable`: a crash message, not an answer. A caller that gets a stack trace
+ * cannot correct itself, so it goes looking for another skill (the exact move
+ * that produced a worse page an hour earlier that evening).
+ *
+ * Returns null when the shape is acceptable (array, or absent). ONE message,
+ * used by both the preflight and the executor — two copies is how the write
+ * paths disagreed about types for months.
+ */
+export function blocksShapeError(raw: unknown): string | null {
+  if (raw === undefined || raw === null) return null;
+  if (Array.isArray(raw)) return null;
+  const got = typeof raw === 'object'
+    ? `an object with key(s): ${Object.keys(raw as object).slice(0, 8).join(', ')}`
+    : `a ${typeof raw}`;
+  return (
+    `content_json must be a flat ARRAY of blocks — got ${got}. ` +
+    `A page is not { hero, sections }: every section IS a block, in order. ` +
+    `Shape: [{"type":"hero","data":{"title":"…"}},{"type":"features","data":{"features":[…]}}]. ` +
+    `Call describe_blocks for the block types and their exact fields, then resend the whole array.`
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
@@ -1016,19 +1043,6 @@ const FIELD_SYNONYMS: Record<string, string[]> = {
   href: ['buttonUrl', 'url'],
 };
 
-/** lowercase + drop separators, so primary_cta / primaryCta / primary-cta match. */
-function normalizeFieldName(name: string): string {
-  return String(name || '').toLowerCase().replace(/[\s_-]+/g, '');
-}
-
-/** camelCase / snake_case / kebab-case → lowercase word tokens. */
-function fieldWords(name: string): string[] {
-  return String(name || '')
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[\s_-]+/)
-    .map((w) => w.toLowerCase())
-    .filter(Boolean);
-}
 
 /**
  * Suggest the valid FIELD names closest to what the caller sent, for one block
@@ -1041,40 +1055,11 @@ function fieldWords(name: string): string[] {
 export function suggestBlockFields(blockType: string, invented: string): string[] {
   const valid = blockFieldMap().get(blockType);
   if (!valid || valid.size === 0) return [];
-  const n = normalizeFieldName(invented);
-  if (!n) return [];
-  const out: string[] = [];
-  const push = (f: string) => { if (valid.has(f) && !out.includes(f)) out.push(f); };
-
-  // 1. Known synonym (filtered against this block's real fields).
-  for (const s of FIELD_SYNONYMS[n] ?? []) push(s);
-
-  // 2. Same field, other casing: `sub_title` → `subtitle`, `background_image` →
-  //    `backgroundImage`. The single most common miss and always unambiguous —
-  //    so it answers alone; a second guess beside a certainty only adds doubt.
-  for (const f of valid) if (normalizeFieldName(f) === n) return [f];
-
-  // 3. Containment, both ways, on names long enough for it to mean something
-  //    ("buttonlabel" ↔ "buttonText" is caught by the word pass instead).
-  if (n.length >= 5) {
-    for (const f of valid) {
-      const fn = normalizeFieldName(f);
-      if (fn.length >= 4 && (fn.includes(n) || n.includes(fn))) push(f);
-    }
-  }
-
-  // 4. Shared word: `buttonLabel` → `buttonText`, `heroTitle` → `title`.
-  const words = new Set(fieldWords(invented));
-  const scored: Array<{ field: string; shared: number }> = [];
-  for (const f of valid) {
-    if (out.includes(f)) continue;
-    const shared = fieldWords(f).filter((w) => words.has(w)).length;
-    if (shared > 0) scored.push({ field: f, shared });
-  }
-  scored.sort((a, b) => b.shared - a.shared || a.field.length - b.field.length);
-  for (const s of scored) push(s.field);
-
-  return out.slice(0, 2);
+  // The similarity itself is generic and lives in suggest-names.ts, shared with
+  // the skill-PARAMETER bounce in workspace-chat. An unknown block field and an
+  // unknown skill parameter are the same defect twice; a second copy of the
+  // matcher would be the drift class this codebase keeps paying for.
+  return suggestClosestNames(invented, valid, { synonyms: FIELD_SYNONYMS, limit: 2 });
 }
 
 /**
@@ -1313,6 +1298,11 @@ export function preflightBlockArgs(
     // content_json is an alias for blocks — `get` returns the column under that
     // name, so that is the name a caller naturally sends back.
     const raw = args.blocks !== undefined ? args.blocks : (args as Record<string, unknown>).content_json;
+    // A non-array is not "nothing to judge" — it IS the error, and returning
+    // NONE here let a doomed write stage and a human approve it before the
+    // executor crashed on it (observed 2026-08-22).
+    const shapeErr = blocksShapeError(raw);
+    if (shapeErr) return { checked: true, errors: [shapeErr] };
     if (!Array.isArray(raw)) return NONE;
     return { checked: true, errors: normalizeBlocks(copy(raw) as unknown[]) };
   }

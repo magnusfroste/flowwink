@@ -30,6 +30,7 @@ import { ownerModuleOf } from '../_shared/skills/skill-modules.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 import { preflightBlockArgs } from '../_shared/normalize-blocks.ts';
+import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -691,7 +692,7 @@ async function runExecuteSkill(
   if (tier === 'stage') {
     const { data: skillRow } = await service
       .from('agent_skills')
-      .select('tool_definition')
+      .select('tool_definition, instructions')
       .eq('name', name)
       .maybeSingle();
     const props = skillRow?.tool_definition?.function?.parameters?.properties;
@@ -699,16 +700,24 @@ async function runExecuteSkill(
       const valid = new Set(Object.keys(props));
       const unknown = Object.keys(args).filter((k) => !valid.has(k));
       if (unknown.length) {
-        await logGateOutcome('preflight-bounce', `unknown parameter(s) ${unknown.join(', ')}`);
-        return {
-          ok: false,
-          name,
-          body: {
-            error: `Not staged: unknown parameter(s) ${unknown.join(', ')} for skill "${name}".`,
-            valid_parameters: [...valid],
-            hint: 'If these parameters do not fit what you are trying to do, this is probably the wrong skill — call search_skills for the module that owns the entity (e.g. manage_ticket for tickets).',
-          },
-        };
+        // The bounce has to carry its own fix. Naming only the error made the
+        // UNGUARDED path more attractive than the guarded one: manage_page
+        // bounced on `is_published` at 19:40:44 and the model was building a
+        // worse page with landing_page_compose by 19:41:21 — it never tried to
+        // correct the parameter. buildUnknownParameterBounce names the nearest
+        // valid parameter (or the enum value that expresses the same intent),
+        // lists what IS valid, and points at read_skill when the skill has
+        // instructions. Same file for every caller — one contract, one voice.
+        const bounce = buildUnknownParameterBounce({
+          skillName: name,
+          unknown,
+          args,
+          properties: props as Record<string, unknown>,
+          hasInstructions: typeof skillRow?.instructions === 'string'
+            && skillRow.instructions.trim() !== '',
+        });
+        await logGateOutcome('preflight-bounce', bounce.summary);
+        return { ok: false, name, body: bounce.body };
       }
 
       // The other half of the contract. Checking only for UNKNOWN keys reads
@@ -740,7 +749,12 @@ async function runExecuteSkill(
             error: `Not staged: missing required parameter(s) ${missing.join(', ')} for skill "${name}"${chosenAction ? ` (action "${chosenAction}")` : ''}.`,
             required_parameters: [...new Set([...declaredRequired, ...actionRequired])],
             valid_parameters: [...valid],
-            hint: 'Supply every required field explicitly — do NOT rely on a handler default. If you do not know a value yet, read it with a list/get call first, then stage again.',
+            hint: 'Supply every required field explicitly — do NOT rely on a handler default. '
+              + 'If you do not know a value yet, read it with a list/get call first, then stage again.'
+              + (typeof skillRow?.instructions === 'string' && skillRow.instructions.trim() !== ''
+                ? ` This skill has instructions: call read_skill({ name: "${name}" }) for the full contract.`
+                : '')
+              + ' Fix the arguments and call this skill again — do not switch to a different skill because of this bounce.',
           },
         };
       }
@@ -1297,10 +1311,25 @@ Deno.serve(async (req) => {
               content: `${refNote}${clipped}`,
             });
           } else {
+            // The classic 3-tool-surface mistake: the model calls a SKILL name
+            // (manage_page) as if it were a tool, instead of
+            // execute_skill({ name: 'manage_page', arguments: {…} }). Naming
+            // only the error leaves it to guess the same shape again or drop
+            // the write — the same dead-end class as the parameter bounce.
+            // mcp-server already answers this with `available_tools`; same
+            // answer here.
+            const attempted = String(tc.function?.name || '');
             conversation.push({
               role: 'tool',
               tool_call_id: tc.id,
-              content: JSON.stringify({ error: `Unknown tool: ${tc.function?.name}` }),
+              content: JSON.stringify({
+                error: `Unknown tool: ${attempted}. This surface has exactly three tools.`,
+                available_tools: DISPATCH_TOOLS.map((t) => t.function.name),
+                hint: `Skills are not tools here. If "${attempted}" is a skill, call `
+                  + `execute_skill({ name: "${attempted}", arguments: { … } }) — and read_skill({ name: "${attempted}" }) `
+                  + `first if you are unsure of its parameters. If it is not a skill, call search_skills to find the right one. `
+                  + `Do not abandon the task over this.`,
+              }),
             });
           }
         }
