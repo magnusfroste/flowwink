@@ -49,8 +49,10 @@ describe('silent block drops are banned', () => {
   it('manage_page create refuses (does not save) when blocks are dropped', () => {
     const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
     // "if (action === 'create')" appears in ~20 skills — anchor on the one
-    // line unique to manage_page create's write path instead.
-    const create = src.slice(src.indexOf('const pageBlocks = blocks || [];'), src.indexOf("if (action === 'update' && page_id)"));
+    // line unique to manage_page create's write path instead. (It reads
+    // `effectiveBlocks`, not `blocks`, since 2026-08-22: create used to ignore
+    // the content_json alias that update honoured and wrote an EMPTY page.)
+    const create = src.slice(src.indexOf('const pageBlocks = effectiveBlocks || [];'), src.indexOf("if (action === 'update' && page_id)"));
     expect(create).toContain('normalizeBlocks');
     expect(create).toMatch(/dropped.*throw|throw[\s\S]{0,200}dropped/i); // loud refusal, same as update
     expect(create).toContain('nothing was written');
