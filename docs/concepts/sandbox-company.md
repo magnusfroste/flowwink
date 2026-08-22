@@ -176,6 +176,22 @@ be careful about. The question a session should answer is not "did it error" but
 **"did the world change the way the process says it should"** — which is what
 the invariants below are for.
 
+### What the nightly reset cannot show you
+
+The same reset that makes the sandbox safe also caps what it can prove. Every
+process that takes longer than one night to unfold is destroyed before it
+happens: dunning escalation, subscription renewal, reordering rules firing on
+real consumption, aging receivables, SLA breach, contract renewal windows,
+period close — and FlowPilot's own learning loop.
+
+That is what `nordbrygg.flowwink.com` is for: the same company, seeded once and
+then **left standing**, so time can pass and agents can hold a position across
+days. A sandbox answers *"did something break last night?"*; a testbed answers
+*"what happens when an invoice is left to age 60 days and nobody touches it?"*
+
+Setup, the flag that keeps `demo-cycle` away from it, and what to watch for once
+time starts passing: **[`docs/operators/nordbrygg-testbed.md`](../operators/nordbrygg-testbed.md)**.
+
 ---
 
 ## Invariants — the check that survives the next bug
