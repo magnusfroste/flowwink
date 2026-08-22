@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260822120000",
-      "migrations_count": 478,
+      "migration_head": "20260822130000",
+      "migrations_count": 479,
       "migrations": [
         {
           "version": "00000000000000",
@@ -1917,6 +1917,10 @@
         {
           "version": "20260822120000",
           "name": "the-nightly-reset-becomes-a-regression-run"
+        },
+        {
+          "version": "20260822130000",
+          "name": "a-testbed-is-not-a-demo"
         }
       ]
     },
