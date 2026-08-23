@@ -49,6 +49,15 @@ interface Newsletter {
 }
 
 
+/**
+ * Has this newsletter actually reached anyone? A 'partial' send is a real send
+ * for everyone counted in sent_count — their opens and clicks are as legitimate
+ * as any other newsletter's, so the stats columns must not hide behind a status
+ * check for 'sent' alone.
+ */
+const hasDeliveries = (n: Pick<Newsletter, "status" | "sent_count">) =>
+  (n.status === "sent" || n.status === "partial") && n.sent_count > 0;
+
 interface EmailOpen {
   id: string;
   recipient_email: string;
@@ -201,7 +210,25 @@ export default function NewsletterPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["newsletters"] });
-      toast.success(`Newsletter sent to ${data.sent_count} subscribers`);
+      // "Sent to N subscribers" used to be printed no matter what happened —
+      // including when the recipient list was cut short and part of the list was
+      // never mailed at all. A run that left anyone outstanding says so, and
+      // says the send can be resumed without anyone getting it twice.
+      if (data?.status === "partial") {
+        const reason = data.recipients_truncated
+          ? "the subscriber list could not be read to the end"
+          : `${data.failed_now} recipient${data.failed_now === 1 ? "" : "s"} could not be reached`;
+        toast.warning(
+          `Partially sent — ${data.sent_count} delivered so far, but ${reason}. ` +
+          `Resume the send to reach the rest; nobody is mailed twice.`,
+          { duration: 12000 },
+        );
+        return;
+      }
+      const resumed = data?.skipped_already_claimed > 0
+        ? ` (${data.skipped_already_claimed} already had it)`
+        : "";
+      toast.success(`Newsletter sent to ${data?.sent_count ?? 0} subscribers${resumed}`);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -287,17 +314,20 @@ export default function NewsletterPage() {
         return;
       }
 
-      const response = await supabase.functions.invoke("newsletter/export", {
+      // `format` was never sent, so the function always answered CSV — and the
+      // branch below then wrapped that CSV in a .json file. The picker was
+      // decorative.
+      const response = await supabase.functions.invoke(`newsletter/export?format=${format}`, {
         method: "GET",
       });
 
       if (response.error) throw response.error;
 
       // Create and download file
-      const blob = format === "json" 
+      const blob = format === "json"
         ? new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" })
         : new Blob([response.data], { type: "text/csv" });
-      
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -307,7 +337,13 @@ export default function NewsletterPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast.success(`Exported ${subscribers.length} subscribers`);
+      // Count what the FILE contains, never what this page happens to be
+      // showing: the page's own subscriber query is itself capped, so it could
+      // confirm "exported 1000" over a file holding a different number entirely.
+      const exportedCount = format === "json"
+        ? Number((response.data as { total_count?: number } | null)?.total_count ?? 0)
+        : Math.max(0, String(response.data ?? "").trim().split("\n").length - 1);
+      toast.success(`Exported ${exportedCount} subscribers`);
     } catch (error: any) {
       toast.error(error.message || "Export failed");
     }
@@ -331,6 +367,10 @@ export default function NewsletterPage() {
 
       case "sent":
         return <Badge className="bg-green-500">Sent</Badge>;
+      // Recipients are still outstanding. Not green — the list was not reached.
+      // Not "Failed" either: the people counted in sent_count really did get it.
+      case "partial":
+        return <Badge className="bg-amber-500">Partially sent</Badge>;
       case "sending":
         return <Badge className="bg-blue-500">Sending...</Badge>;
       case "failed":
@@ -508,7 +548,7 @@ export default function NewsletterPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {newsletter.status === "sent" && newsletter.sent_count > 0 ? (
+                          {hasDeliveries(newsletter) ? (
                             <div className="flex items-center gap-2 min-w-[100px]">
                               <Progress value={openRate} className="h-2 w-12" />
                               <span className="text-sm text-muted-foreground">
@@ -520,7 +560,7 @@ export default function NewsletterPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {newsletter.status === "sent" && newsletter.sent_count > 0 ? (
+                          {hasDeliveries(newsletter) ? (
                             <div className="flex items-center gap-2 min-w-[100px]">
                               <Progress value={clickRate} className="h-2 w-12" />
                               <span className="text-sm text-muted-foreground">
@@ -536,7 +576,7 @@ export default function NewsletterPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {newsletter.status === "sent" && newsletter.sent_count > 0 && (
+                            {hasDeliveries(newsletter) && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -655,6 +695,23 @@ export default function NewsletterPage() {
                               >
                                 <X className="h-4 w-4 mr-1" />
                                 Cancel schedule
+                              </Button>
+                            )}
+
+                            {/* A partial send has to have a way forward, or the
+                                honest status is just a dead end. Resuming is
+                                safe: every recipient already reached is claimed
+                                in newsletter_deliveries and is skipped. */}
+                            {newsletter.status === "partial" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => sendMutation.mutate(newsletter.id)}
+                                disabled={sendMutation.isPending}
+                                title="Send to the recipients who have not received this yet"
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                {sendMutation.isPending ? "Resuming..." : "Resume send"}
                               </Button>
                             )}
 

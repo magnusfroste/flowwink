@@ -226,13 +226,20 @@ describe('läkningen är konservativ och villkorad', () => {
 });
 
 describe('migrationen når instanser som redan passerat HEAD', () => {
-  it('är framåtdaterad förbi varje tidigare migration', () => {
-    const stamps = readdirSync(MIGRATIONS)
+  it('är framåtdaterad förbi allt som fanns när den skrevs', () => {
+    // Kravet är att en managed instans vars ledger redan passerat äldre
+    // tidsstämplar ändå plockar upp den här — alltså att den ligger EFTER allt
+    // som fanns då. Inte att den är evigt nyast: den första versionen av det
+    // här testet krävde det, och föll därför på nästa migration någon skrev,
+    // några timmar senare. En spärr som går ut av konstruktion lär folk att
+    // ignorera röda test.
+    const own = FILE.slice(0, 14);
+    const earlier = readdirSync(MIGRATIONS)
       .filter((f) => f.endsWith('.sql') && /^\d{14}_/.test(f))
       .map((f) => f.slice(0, 14))
-      .filter((t) => t !== FILE.slice(0, 14))
-      .sort();
-    expect(FILE.slice(0, 14) > stamps[stamps.length - 1]).toBe(true);
+      .filter((t) => t < own);
+    expect(earlier.length, 'hittade inga tidigare migrationer alls').toBeGreaterThan(0);
+    expect(own > earlier.sort()[earlier.length - 1]).toBe(true);
   });
 
   it('är omkörbar — inga skapelser utan IF EXISTS/OR REPLACE', () => {

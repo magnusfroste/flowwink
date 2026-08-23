@@ -102,7 +102,19 @@ DROP POLICY IF EXISTS "trash_sources readable" ON public.trash_sources;
 CREATE POLICY "trash_sources readable" ON public.trash_sources
   FOR SELECT TO authenticated USING (true);
 
-REVOKE ALL ON TABLE public.trash_sources FROM PUBLIC, anon;
+-- REVOKE from `authenticated` TOO, not just PUBLIC and anon. Supabase's
+-- ALTER DEFAULT PRIVILEGES on schema public grants `authenticated`
+-- arwdDxtm on EVERY new table, so this one is born writable and a later
+-- GRANT SELECT does not take the rest away. Revoking PUBLIC leaves the
+-- explicit role entry standing — the same one-word omission that left
+-- functions anon-callable earlier the same day.
+-- It matters here specifically: this registry's strings become SQL
+-- identifiers via format(%I), so a writable row is an injection point.
+-- Verified live on a real instance: the migration's own final check
+-- refused to complete until this line named `authenticated`. It passed
+-- on local Postgres, which has no such default ACL — the verification
+-- environment differed from production in exactly the way that mattered.
+REVOKE ALL ON TABLE public.trash_sources FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON TABLE public.trash_sources TO authenticated;
 GRANT ALL ON TABLE public.trash_sources TO service_role;
 

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,10 +58,25 @@ Deno.serve(async (req) => {
       }
 
       if (action === "fix-broken-automations") {
-        // Disable automations referencing non-existent skills
-        const { data: skills } = await sb.from("agent_skills").select("name").eq("enabled", true);
-        const skillNames = new Set((skills || []).map((s: any) => s.name));
+        // Disable automations referencing non-existent skills.
+        //
+        // Ask about the names in question, never about the whole table. This
+        // read the full enabled skill set and disabled any automation whose
+        // skill was absent from it — but PostgREST caps an unfiltered select
+        // at 1000 rows without saying so, and agent_skills is at ~540 and
+        // grows with every module. Past the cap this "repair" would have
+        // switched off working automations because their skill happened to sit
+        // in the tail the read never received. A destructive decision must
+        // never rest on a silence.
+        //
+        // Inverting the query bounds it by the number of automations (dozens),
+        // so no cap can ever be reached and absence means absence.
         const { data: autos } = await sb.from("agent_automations").select("id, name, skill_name").eq("enabled", true);
+        const referenced = [...new Set((autos || []).map((a: any) => a.skill_name).filter(Boolean))];
+        const { data: skills } = referenced.length
+          ? await sb.from("agent_skills").select("name").eq("enabled", true).in("name", referenced)
+          : { data: [] as { name: string }[] };
+        const skillNames = new Set((skills || []).map((s: any) => s.name));
         for (const a of (autos || [])) {
           if (a.skill_name && !skillNames.has(a.skill_name)) {
             const { error } = await sb.from("agent_automations").update({ enabled: false }).eq("id", a.id);
@@ -78,11 +94,15 @@ Deno.serve(async (req) => {
         // handler, or tool_definition. NOT skills merely missing the OPTIONAL
         // `instructions` field: that used to disable ~92 working skills (a
         // footgun), since description — not instructions — drives skill selection.
-        const { data: skills } = await sb
-          .from("agent_skills")
-          .select("id, name, description, handler, tool_definition")
-          .eq("enabled", true);
-        for (const s of (skills || [])) {
+        // Paginated: a repair that only ever sees the first 1000 rows leaves
+        // the tail broken while reporting a finished job. agent_skills is at
+        // ~540 and climbing.
+        const { rows: skills } = await readAllRows<any>(sb, "agent_skills", {
+          columns: "id, name, description, handler, tool_definition",
+          orderBy: "name",
+          filter: (q: any) => q.eq("enabled", true),
+        });
+        for (const s of skills) {
           const noDesc = !s.description || String(s.description).trim() === "";
           const noHandler = !s.handler || String(s.handler).trim() === "";
           const noToolDef = !s.tool_definition;
@@ -133,11 +153,19 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════
     // 1. SKILL COMPLETENESS
     // ═══════════════════════════════════════════
-    const { data: skills } = await sb
-      .from("agent_skills")
-      .select("id, name, enabled, instructions, tool_definition, handler, requires, category, description");
+    // Paginated. Every count this section publishes — "All N enabled skills
+    // have instructions", "N skills reference unknown tables" — is read as a
+    // fact about the instance. An unbounded select is capped at 1000 rows
+    // without a word, and agent_skills is at ~540 and grows with every module,
+    // so past the cap this report would have gone on printing confident totals
+    // about a prefix of the register. A green tick over an unread tail is the
+    // failure mode this whole page exists to prevent.
+    const { rows: skills } = await readAllRows<any>(sb, "agent_skills", {
+      columns: "id, name, enabled, instructions, tool_definition, handler, requires, category, description",
+      orderBy: "name",
+    });
 
-    const enabledSkills = (skills || []).filter((s: any) => s.enabled);
+    const enabledSkills = skills.filter((s: any) => s.enabled);
 
     // 1a. Skills without instructions — INFORMATIONAL ONLY.
     // `instructions` is an OPTIONAL field; `description` (checked in 1b) is the
