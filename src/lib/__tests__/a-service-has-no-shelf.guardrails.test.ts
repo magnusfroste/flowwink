@@ -226,13 +226,20 @@ describe('läkningen är konservativ och villkorad', () => {
 });
 
 describe('migrationen når instanser som redan passerat HEAD', () => {
-  it('är framåtdaterad förbi varje tidigare migration', () => {
+  it('är framåtdaterad förbi varje migration som fanns när den landade', () => {
+    // Det som ska hålla är att stämpeln låg ÖVER ledgerns HEAD när filen skrevs
+    // — det är det som gör att en managerad instans inte hoppar över den.
+    // "Nyast av alla" vore ett annat påstående, och det bryter varje kommande
+    // migration; scripts/check-migration-forward-dated.ts är den bevakningen.
+    const HEAD_AT_AUTHORING = '20260824120000';
     const stamps = readdirSync(MIGRATIONS)
       .filter((f) => f.endsWith('.sql') && /^\d{14}_/.test(f))
-      .map((f) => f.slice(0, 14))
-      .filter((t) => t !== FILE.slice(0, 14))
-      .sort();
-    expect(FILE.slice(0, 14) > stamps[stamps.length - 1]).toBe(true);
+      .map((f) => f.slice(0, 14));
+    expect(FILE.slice(0, 14) > HEAD_AT_AUTHORING).toBe(true);
+    expect(
+      stamps.filter((t) => t === FILE.slice(0, 14)).length,
+      'två migrationer på samma stämpel ger odefinierad ordning',
+    ).toBe(1);
   });
 
   it('är omkörbar — inga skapelser utan IF EXISTS/OR REPLACE', () => {
