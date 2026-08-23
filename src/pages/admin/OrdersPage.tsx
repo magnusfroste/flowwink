@@ -111,6 +111,13 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
+/**
+ * How many orders this page loads at once. It is PostgREST's own default cap,
+ * written down: unstated, the same truncation happens in silence and the page
+ * simply looks like the whole order book.
+ */
+const ORDER_LIST_LIMIT = 1000;
+
 export default function OrdersPage() {
   const { formatCurrency, formatDateTime } = usePlatformFormat();
   const queryClient = useQueryClient();
@@ -162,6 +169,10 @@ export default function OrdersPage() {
       let query = supabase
         .from('orders')
         .select('*')
+        // Explicit, because PostgREST would impose exactly this cap anyway and
+        // not mention it. Stated in the query, the number can be compared
+        // against the rows we got back — and the banner below can say so.
+        .limit(ORDER_LIST_LIMIT)
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -173,6 +184,11 @@ export default function OrdersPage() {
       return data as Order[];
     },
   });
+
+  // At the cap the list is a window, not the order book: the stat tiles below
+  // count this window, and the "already invoiced" map only knows about orders
+  // in it. Saying so beats a page that looks complete.
+  const ordersAtLimit = (orders?.length ?? 0) >= ORDER_LIST_LIMIT;
 
   // Deep link from SLA Monitor: /admin/orders?order=<id>. The row may be
   // filtered out of the current list, so fall back to fetching it by id.
@@ -255,24 +271,49 @@ export default function OrdersPage() {
   });
 
   // Map: order_id -> { id, invoice_number } for orders that already have invoices.
-  // Linkage is done through the "order:<uuid>" marker in invoice.notes (see
-  // send_invoice_for_order handler).
+  //
+  // This map decides whether a row offers "Create invoice". An order missing
+  // from it is read as "not invoiced yet" — a conclusion drawn from ABSENCE,
+  // which makes how the read is bounded a billing question, not a display one.
+  //
+  // It used to be `.ilike('notes', '%order:%')` with no limit: PostgREST stops
+  // at 1000 rows and says nothing, so on any shop past its thousandth
+  // order-linked invoice the tail was invisible and those orders were offered
+  // an invoice they already had. The read is now bound by the QUESTION — the
+  // orders this page is actually showing — not by the size of the invoice
+  // table, so absence means absence (cure 2).
+  //
+  // Chunked because both filter forms put the order ids in the URL: 1000 uuids
+  // in one request is a header a gateway will refuse, and a refused request
+  // would look exactly like "no invoices exist".
   const orderIds = (orders ?? []).map((o) => o.id);
   const { data: invoiceByOrder } = useQuery({
     queryKey: ['orders-invoice-map', orderIds.join(',')],
     enabled: orderIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('id, invoice_number, notes')
-        .ilike('notes', '%order:%');
-      if (error) throw error;
       const map: Record<string, { id: string; invoice_number: string }> = {};
-      const idSet = new Set(orderIds);
-      for (const inv of data ?? []) {
-        const m = /order:([0-9a-f-]{36})/i.exec(inv.notes ?? '');
-        if (m && idSet.has(m[1])) {
-          map[m[1]] = { id: inv.id, invoice_number: inv.invoice_number };
+      const CHUNK = 40;
+      for (let i = 0; i < orderIds.length; i += CHUNK) {
+        const chunk = orderIds.slice(i, i + CHUNK);
+        // Two linkages, one request. `order_id` is the real FK and the only one
+        // the business cannot edit by accident (migration 20260820220000); the
+        // `order:<uuid>` note is the legacy marker, kept read-only for invoices
+        // issued before that column existed — send_invoice_for_order heals a row
+        // onto the column the first time it resolves one through prose.
+        const filter = [
+          `order_id.in.(${chunk.join(',')})`,
+          ...chunk.map((id) => `notes.ilike.*order:${id}*`),
+        ].join(',');
+        const { data, error } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, notes, order_id')
+          .or(filter);
+        if (error) throw error;
+        for (const inv of (data ?? []) as Array<{
+          id: string; invoice_number: string; notes: string | null; order_id?: string | null;
+        }>) {
+          const linked = inv.order_id ?? /order:([0-9a-f-]{36})/i.exec(inv.notes ?? '')?.[1];
+          if (linked) map[linked] = { id: inv.id, invoice_number: inv.invoice_number };
         }
       }
       return map;
@@ -325,6 +366,14 @@ export default function OrdersPage() {
           title="Orders"
           description="Manage and track customer orders"
         />
+
+        {ordersAtLimit && (
+          <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+            Showing the {ORDER_LIST_LIMIT} most recent orders. The counts below cover
+            only these, and older orders are not checked for existing invoices —
+            narrow with the status filter to reach them.
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">

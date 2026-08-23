@@ -175,18 +175,35 @@ describe('seed parity between the browser path and the CLI', () => {
     // The rule now: ask the question the constraint answers. A constraint change
     // is an API change for everything that writes the table — including the test
     // that pins how it is written.
-    const hook = read('src/hooks/useTenantLocalePack.ts');
-    const chartBlock = hook.slice(hook.indexOf('Chart accounts:'), hook.indexOf('Templates:'));
-    expect(chartBlock, 'the chart lookup must be locale-scoped').toMatch(/\.eq\('locale', pack\.id\)/);
-
+    //
+    // 2026-08-23 — the same rule, taken one step further. The CLI had been
+    // right since 2026-08-10: it lets `on conflict (locale, account_code) do
+    // nothing` decide, and never reads first. The two PostgREST paths still
+    // asked the table which codes it held, and THAT read was capped at 1000
+    // rows in silence while the pack holds 1262 accounts. So the locale scope
+    // was never the remaining problem — the READ was. All three paths now
+    // write through the constraint; the browser and edge paths' upsert shape is
+    // pinned in absence-is-not-a-silence.guardrails.test.ts, and what stays
+    // here is the property this test has always been about: whatever the
+    // conflict target is, it must be the one the index actually has.
     const sync = read('scripts/sync-skills.ts');
     const syncBlock = sync.slice(sync.indexOf('Chart of accounts'));
+    // Raw `pg`, not PostgREST — no row cap applies to this one, and the
+    // ON CONFLICT below makes the lookup an optimisation rather than a decision.
     expect(syncBlock).toMatch(/from chart_of_accounts where locale = \$1/);
     expect(syncBlock, 'the conflict target must match the index').toMatch(
       /on conflict \(locale, account_code\) do nothing/);
 
-    const ae = read('supabase/functions/agent-execute/index.ts');
-    expect(ae).toMatch(/\.select\('account_code'\)\.eq\('locale', pack\.id\)/);
+    // Neither PostgREST path may go back to deciding "missing" from a read.
+    for (const path of ['src/hooks/useTenantLocalePack.ts', 'supabase/functions/agent-execute/index.ts']) {
+      const src = read(path);
+      expect(src, `${path} reads the chart to decide what to seed`).not.toMatch(
+        /\.select\('account_code'\)\s*\.eq\('locale', pack\.id\)/,
+      );
+      expect(src, `${path} must upsert on the real constraint`).toMatch(
+        /onConflict: 'locale,account_code'/,
+      );
+    }
   });
 
   it('and one code still names one account on an instance', () => {

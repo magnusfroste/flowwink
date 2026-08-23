@@ -531,110 +531,153 @@ export async function handler(req: Request): Promise<Response> {
 
 
 
-    // ─── Send email via Resend ──────────────────────────────────────
+    // ─── Mail the briefing — through email-send, like every other send ───
+    //
+    // This used to POST Resend's /emails endpoint directly (the literal URL is
+    // deliberately absent here — a guardrail crawls the tree for it). It
+    // worked, and that was the problem: it was the fourth rail to walk around
+    // the router, and it left no row in `outbound_communications`. The cost stayed hidden
+    // until check_integrations began using that table as its evidence that a
+    // Resend key can send (a sending-only key is refused by GET /domains, so a
+    // delivered mail is the only honest proof). The briefing went out every
+    // morning and logged nothing, the sensor found no evidence, fell through to
+    // /domains, got 401 — and optic's FlowChat reported the mail integration as
+    // broken while it was delivering this very briefing to the owner's inbox.
+    // The warning looked like a false alarm and was a true symptom: the post
+    // leaves no trace.
+    //
+    // Going through email-send buys the whole rail, not just the log: provider
+    // choice and fallback (Resend → SMTP → Composio, so an SMTP-only instance
+    // gets its briefing too — the old Resend-key gate silently skipped those),
+    // the suppression list, RFC 8058 one-click unsubscribe, and exactly one
+    // outbound_communications row per send. The branded shell is a no-op here:
+    // buildBriefingEmail returns a complete document and `isFullDocument`
+    // passes those through untouched, so the mail looks exactly as before.
     let emailed = false;
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (RESEND_API_KEY) {
-      try {
-        // Get admin user IDs, then their emails
-        const { data: adminRoles } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin");
+    try {
+      // Get admin user IDs, then their emails
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
 
-        const adminIds = (adminRoles || []).map((r: any) => r.user_id).filter(Boolean);
-        let adminEmails: string[] = [];
-        if (adminIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("email")
-            .in("id", adminIds);
-          adminEmails = (profiles || []).map((p: any) => p.email).filter(Boolean);
-        }
-
-        if (adminEmails.length > 0) {
-          // Resolve site origin (env → site_settings.general). No Lovable fallback (self-hosted).
-          let siteOrigin = Deno.env.get('PUBLIC_SITE_URL') || '';
-          if (!siteOrigin) {
-            const { data: gs } = await supabase.from('site_settings')
-              .select('value').eq('key', 'general').maybeSingle();
-            const v = (gs?.value as any) || {};
-            siteOrigin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
-          }
-          siteOrigin = (siteOrigin || '').replace(/\/$/, '');
-
-          // Build email HTML
-          const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
-          const emailHtml = buildBriefingEmail({
-            title,
-            summary,
-            healthScore,
-            healthEmoji,
-            sections,
-            actionItems,
-            metrics,
-            productName,
-            dashboardUrl: `${siteOrigin}/admin`,
-          });
-
-
-          // Prefer the sender configured in /admin/integrations (Resend panel);
-          // fall back to the verified flowwink.com domain.
-          let configuredFrom = "";
-          try {
-            const { data: intg } = await supabase
-              .from("site_settings")
-              .select("value")
-              .eq("key", "integrations")
-              .maybeSingle();
-            const cfg = (intg?.value as any)?.resend?.config?.emailConfig ?? {};
-            const name = (cfg.fromName || "").toString().trim();
-            const email = (cfg.fromEmail || "").toString().trim();
-            if (email) configuredFrom = name ? `${name} <${email}>` : email;
-          } catch (_) { /* fall through to default */ }
-
-          const fromAddress = configuredFrom || (fpEnabled
-            ? "FlowPilot <flowpilot@flowwink.com>"
-            : "FlowWink <briefing@flowwink.com>");
-
-          // Direct Resend call — the allowlist has to be applied here as well.
-          const gate = await filterRecipients(supabase, adminEmails);
-          if (gate.allowed.length === 0) {
-            console.warn(`[briefing] all ${adminEmails.length} recipient(s) withheld by the email allowlist — briefing saved, not mailed`);
-            throw new Error(gate.error ?? `Blocked by email allowlist: ${gate.blocked.map((b) => b.address).join(", ")}`);
-          }
-
-          const resendRes = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${RESEND_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: fromAddress,
-              to: gate.allowed,
-              subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
-              html: emailHtml,
-            }),
-          });
-
-          if (resendRes.ok) {
-            emailed = true;
-            await supabase
-              .from("flowpilot_briefings")
-              .update({ emailed_at: new Date().toISOString() })
-              .eq("id", briefing.id);
-            console.log(`[briefing] Email sent to ${adminEmails.join(", ")}`);
-          } else {
-            const err = await resendRes.text();
-            console.error(`[briefing] Resend error: ${err}`);
-          }
-        } else {
-          console.log("[briefing] No admin emails found, skipping email");
-        }
-      } catch (emailErr: any) {
-        console.error("[briefing] Email send failed:", emailErr.message);
+      const adminIds = (adminRoles || []).map((r: any) => r.user_id).filter(Boolean);
+      let adminEmails: string[] = [];
+      if (adminIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("email")
+          .in("id", adminIds);
+        adminEmails = (profiles || []).map((p: any) => p.email).filter(Boolean);
       }
+
+      if (adminEmails.length > 0) {
+        // Resolve site origin (env → site_settings.general). No Lovable fallback (self-hosted).
+        let siteOrigin = Deno.env.get('PUBLIC_SITE_URL') || '';
+        if (!siteOrigin) {
+          const { data: gs } = await supabase.from('site_settings')
+            .select('value').eq('key', 'general').maybeSingle();
+          const v = (gs?.value as any) || {};
+          siteOrigin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || '';
+        }
+        siteOrigin = (siteOrigin || '').replace(/\/$/, '');
+
+        // Build email HTML
+        const healthEmoji = healthScore >= 75 ? "🟢" : healthScore >= 50 ? "🟡" : "🔴";
+        const emailHtml = buildBriefingEmail({
+          title,
+          summary,
+          healthScore,
+          healthEmoji,
+          sections,
+          actionItems,
+          metrics,
+          productName,
+          dashboardUrl: `${siteOrigin}/admin`,
+        });
+
+
+        // Prefer the sender configured in /admin/integrations (Resend panel);
+        // fall back to the verified flowwink.com domain. Passed as
+        // `fromOverride` so the briefing keeps the exact From line it had —
+        // email-send's own resolution would otherwise pick the same address by
+        // a different route, and "the same by accident" is not the same.
+        let configuredFrom = "";
+        try {
+          const { data: intg } = await supabase
+            .from("site_settings")
+            .select("value")
+            .eq("key", "integrations")
+            .maybeSingle();
+          const cfg = (intg?.value as any)?.resend?.config?.emailConfig ?? {};
+          const name = (cfg.fromName || "").toString().trim();
+          const email = (cfg.fromEmail || "").toString().trim();
+          if (email) configuredFrom = name ? `${name} <${email}>` : email;
+        } catch (_) { /* fall through to default */ }
+
+        const fromAddress = configuredFrom || (fpEnabled
+          ? "FlowPilot <flowpilot@flowwink.com>"
+          : "FlowWink <briefing@flowwink.com>");
+
+        // The allowlist is applied HERE and again inside email-send. That is
+        // deliberate, not leftover: this call must never be able to hand the
+        // router a recipient list the guard has not seen, whatever happens to
+        // the hop in between. Both applications read the same setting, so the
+        // second one can only ever narrow what the first one allowed.
+        const gate = await filterRecipients(supabase, adminEmails);
+        if (gate.allowed.length === 0) {
+          console.warn(`[briefing] all ${adminEmails.length} recipient(s) withheld by the email allowlist — briefing saved, not mailed`);
+          throw new Error(gate.error ?? `Blocked by email allowlist: ${gate.blocked.map((b) => b.address).join(", ")}`);
+        }
+
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+        const sendRes = await fetch(`${supabaseUrl}/functions/v1/email-send`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: gate.allowed,
+            subject: `${healthEmoji} ${title} — Health ${healthScore}/100`,
+            html: emailHtml,
+            fromOverride: fromAddress,
+            // A machine-written digest signs itself in its own footer; a
+            // seller's personal signature underneath it would be a lie.
+            skip_signature: true,
+            // These three are what make the row answer "what did we send, to
+            // whom, and why" instead of just "a mail happened".
+            source: "daily_briefing",
+            related_entity_type: "flowpilot_briefing",
+            related_entity_id: briefing.id,
+          }),
+        });
+        const sendJson: any = await sendRes.json().catch(() => ({}));
+
+        if (sendRes.ok && sendJson?.success === true && sendJson?.simulated !== true) {
+          emailed = true;
+          await supabase
+            .from("flowpilot_briefings")
+            .update({ emailed_at: new Date().toISOString() })
+            .eq("id", briefing.id);
+          console.log(`[briefing] Email sent via ${sendJson?.provider ?? "unknown"} to ${gate.allowed.join(", ")}`);
+        } else if (sendJson?.blocked_by_allowlist) {
+          // email-send answers a fully blocked send with 422 — withheld, not broken.
+          console.warn("[briefing] withheld by the email allowlist — briefing saved, not mailed");
+        } else if (sendJson?.simulated === true) {
+          // No provider configured at all. email-send logged what would have
+          // gone out; stamping emailed_at here would tell the operator the
+          // briefing was mailed when nothing left the building.
+          console.warn("[briefing] no email provider configured — send logged as simulated, briefing not mailed");
+        } else {
+          console.error(`[briefing] email-send failed (HTTP ${sendRes.status}): ${sendJson?.error ?? "unknown error"}`);
+        }
+      } else {
+        console.log("[briefing] No admin emails found, skipping email");
+      }
+    } catch (emailErr: any) {
+      console.error("[briefing] Email send failed:", emailErr.message);
     }
 
     return new Response(
