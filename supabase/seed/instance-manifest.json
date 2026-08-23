@@ -2011,7 +2011,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f8f54d388bfbe8b98f1fbb0f5cd4869d215075019e18f66e42407d36e3169a6e",
+      "shared_hash": "sha256:4606c7be12bbb687030a380703ea39c8041a9218f947a5aab08c116364fa2582",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
