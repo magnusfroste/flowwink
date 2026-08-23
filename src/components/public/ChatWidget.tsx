@@ -6,6 +6,7 @@ import { useChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useCookieConsent } from '@/components/public/CookieBanner';
+import { bannerIsEnabled, useCookieConsentSettings } from '@/hooks/useVisitorConsent';
 import { cn } from '@/lib/utils';
 
 const radiusMap: Record<string, { window: string; button: string }> = {
@@ -49,6 +50,12 @@ export function ChatWidget() {
   const { branding } = useBranding();
   const chatModuleEnabled = useIsModuleEnabled('chat');
   const cookieConsent = useCookieConsent();
+  // Same shared setting the banner and the measurement gate read, so this
+  // costs no extra request. Consent stays 'pending' forever on an instance
+  // that never asks — lifting on that alone reserved 260px of mobile screen
+  // for a banner that is never rendered.
+  const { settings: consentSettings } = useCookieConsentSettings();
+  const bannerMayAppear = bannerIsEnabled(consentSettings) && cookieConsent === 'pending';
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -114,8 +121,8 @@ export function ChatWidget() {
       'fixed z-50 transition-[bottom] duration-300',
       positionClasses,
       mobileHideClass,
-      // Lift above the cookie banner on mobile while consent is pending
-      cookieConsent === 'pending'
+      // Lift above the cookie banner on mobile — but only when there is one
+      bannerMayAppear
         ? 'bottom-[260px] sm:bottom-[140px] md:bottom-6'
         : 'bottom-4 sm:bottom-6'
     )}>
