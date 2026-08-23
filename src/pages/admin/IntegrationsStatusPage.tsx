@@ -1326,9 +1326,20 @@ export default function IntegrationsStatusPage() {
   };
 
   // Toggle saves immediately (no pending state needed for switches)
+  // MERGE, never replace. `{ [key]: { enabled } }` overwrote the whole
+  // integration object — measurement id, config, everything — so switching
+  // Google Analytics on erased the very Measurement ID that makes it work,
+  // and the config form erased `enabled` right back. Two writers, each
+  // silently deleting the other's field, and the UI reported success both
+  // times. Observed live 2026-08-22: a saved `G-…` id with NO `enabled` key,
+  // so the tag never loaded and nothing said why.
+  // handleBulkToggle already spreads correctly; this is that same shape.
   const handleToggle = (key: keyof IntegrationsSettings, enabled: boolean) => {
     updateIntegrations.mutate({
-      [key]: { enabled },
+      [key]: {
+        ...(integrationSettings?.[key] || defaultIntegrationsSettings[key]),
+        enabled,
+      } as never,
     });
   };
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useVisitorConsent } from '@/hooks/useVisitorConsent';
 
 interface PublicTrackingConfig {
   google_analytics?: { enabled?: boolean; measurementId?: string | null };
@@ -18,6 +19,22 @@ interface PublicTrackingConfig {
  * justify publishing the instance's key ring, so it now goes through
  * `get_public_tracking_config()`: a SECURITY DEFINER window with a FIXED field
  * list. Adding a new secret to the integrations JSON can never widen it.
+ *
+ * CONSENT (2026-08-22): these scripts used to load for EVERY visitor while the
+ * site's own page-view tracker honoured `hasConsent('analytics')` — so the
+ * banner asked, one tracker obeyed, and the vendor tag ignored the answer. A
+ * banner that does not govern the measurement it is mostly about is
+ * decoration. Both tags now wait for consent, and re-check when the visitor
+ * changes their mind (`cookie-consent-changed`), so accepting later still
+ * loads them without a reload.
+ * Analytics tag → 'analytics'. Meta Pixel is advertising → 'marketing'.
+ *
+ * CONSENT, PART TWO (2026-08-23): that gate was `hasConsent`, which answers
+ * "is a yes stored?" — and on an instance with the banner switched off nothing
+ * ever stores one, so the answer was no forever and the tags never loaded. The
+ * gate is now `useVisitorConsent`, which respects consent where consent is
+ * actually collected and waits for `ready` before deciding either way. Do not
+ * reach for `hasConsent` here again.
  */
 export function TrackingScripts() {
   const { data: tracking } = useQuery({
@@ -33,6 +50,12 @@ export function TrackingScripts() {
     retry: false,
   });
 
+  // Whether each tag may run. The hook listens for `cookie-consent-changed`,
+  // so a later "accept" flips these and the effects below load the tags
+  // without a reload. `ready` is false until the banner setting is known —
+  // until then neither tag is loaded and neither is written off.
+  const consent = useVisitorConsent();
+
   const ga4Loaded = useRef(false);
   const metaPixelLoaded = useRef(false);
 
@@ -44,6 +67,8 @@ export function TrackingScripts() {
 
   // Google Analytics 4
   useEffect(() => {
+    if (!consent.ready) return;
+    if (!consent.analytics) return;
     if (!ga4Config?.enabled || !measurementId || ga4Loaded.current) return;
 
     // Load gtag.js
@@ -63,10 +88,12 @@ export function TrackingScripts() {
     document.head.appendChild(initScript);
 
     ga4Loaded.current = true;
-  }, [ga4Config?.enabled, measurementId]);
+  }, [ga4Config?.enabled, measurementId, consent.ready, consent.analytics]);
 
   // Meta Pixel
   useEffect(() => {
+    if (!consent.ready) return;
+    if (!consent.marketing) return;
     if (!metaConfig?.enabled || !pixelId || metaPixelLoaded.current) return;
 
     // Initialize Meta Pixel
@@ -96,7 +123,7 @@ export function TrackingScripts() {
     document.body.appendChild(noscript);
 
     metaPixelLoaded.current = true;
-  }, [metaConfig?.enabled, pixelId]);
+  }, [metaConfig?.enabled, pixelId, consent.ready, consent.marketing]);
 
   return null;
 }
