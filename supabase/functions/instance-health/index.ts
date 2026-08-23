@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     // and this health check spends the rest of its life reporting drift it
     // caused itself. PostgREST caps an unbounded select at 1000 rows in
     // silence; agent_skills measured 540 (538 enabled) on optic on 2026-08-23.
-    const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+    const skillsRead = await readAllRows(supabase, 'agent_skills', {
       columns: 'name, instructions, enabled',
       orderBy: 'name',
     });

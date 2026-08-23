@@ -459,10 +459,10 @@ export async function loadSkillsRaw(
   // but not the row count, so it is no ceiling at all here. The whole enabled
   // register genuinely IS the question, so pagination is the right remedy.
   const [skillsResult, { data: policyRow }] = await Promise.all([
-    readAllRows<any>(supabase, 'agent_skills', {
+    readAllRows(supabase, 'agent_skills', {
       columns: 'name, tool_definition, scope, requires, category',
       orderBy: 'name',
-      filter: (q: any) => {
+      filter: (q) => {
         let f = q.eq('enabled', true).in('scope', scopes);
         if (categories && categories.length > 0) f = f.in('category', categories);
         return f;

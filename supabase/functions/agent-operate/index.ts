@@ -225,10 +225,10 @@ serve(async (req) => {
         // operator would say nothing at all about a capability that exists and
         // is merely switched off, which is the failure this block was written
         // to prevent. `.in('scope', …)` bounds the values, not the row count.
-        const allEnabledResult = await readAllRows<any>(supabase, 'agent_skills', {
+        const allEnabledResult = await readAllRows(supabase, 'agent_skills', {
           columns: 'name, tool_definition, category',
           orderBy: 'name',
-          filter: (q: any) => q.eq('enabled', true).in('scope', ['internal', 'both']),
+          filter: (q) => q.eq('enabled', true).in('scope', ['internal', 'both']),
         });
         if (allEnabledResult.error || allEnabledResult.truncated) {
           console.error(

@@ -284,7 +284,7 @@ async function loadExposedSkills(
     readAllRows<SkillRow>(sb, "agent_skills", {
       columns: "name, description, category, handler, trust_level, requires_staging, tool_definition",
       orderBy: "name",
-      filter: (q: any) => q.eq("enabled", true).eq("mcp_exposed", true),
+      filter: (q) => q.eq("enabled", true).eq("mcp_exposed", true),
     }),
     loadActiveModules(),
   ]);
@@ -1307,7 +1307,7 @@ app.get("/rest/groups", async (c) => {
     readAllRows<{ name: string; category: string }>(sb, "agent_skills", {
       columns: "name, category",
       orderBy: "name",
-      filter: (q: any) => q.eq("enabled", true).eq("mcp_exposed", true),
+      filter: (q) => q.eq("enabled", true).eq("mcp_exposed", true),
     }),
   ]);
 

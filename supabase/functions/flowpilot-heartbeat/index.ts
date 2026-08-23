@@ -179,10 +179,10 @@ async function runIntegrityGate(supabase: any): Promise<string> {
     // reference missing skills" for automations pointing at skills it simply
     // never read, and write a `failed` activity row on the strength of it. The
     // whole population IS the question here, so pagination is the remedy.
-    const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+    const skillsRead = await readAllRows(supabase, 'agent_skills', {
       columns: 'name, instructions, tool_definition, description',
       orderBy: 'name',
-      filter: (q: any) => q.eq('enabled', true),
+      filter: (q) => q.eq('enabled', true),
     });
 
     const skills = skillsRead.rows;

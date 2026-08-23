@@ -155,7 +155,7 @@ const suite_skills_health: SuiteFn = async (admin) => {
       const { rows, error, truncated } = await readAllRows<{ name: string; description: string | null }>(
         admin,
         "agent_skills",
-        { columns: "name, description", orderBy: "name", filter: (q: any) => q.eq("enabled", true) },
+        { columns: "name, description", orderBy: "name", filter: (q) => q.eq("enabled", true) },
       );
       if (error) throw new Error(error);
       if (truncated) throw new Error("Could not read the whole skill register — result would only cover a prefix.");
@@ -435,7 +435,7 @@ async function suite_skill_manifest_coverage(admin: any): Promise<TestResult[]> 
       const { rows, error, truncated } = await readAllRows<{ name: string }>(
         admin,
         "agent_skills",
-        { columns: "name", orderBy: "name", filter: (q: any) => q.eq("origin", "bundled") },
+        { columns: "name", orderBy: "name", filter: (q) => q.eq("origin", "bundled") },
       );
       if (error) throw new Error(error);
       if (truncated) {

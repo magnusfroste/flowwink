@@ -14581,10 +14581,10 @@ async function executeLintSkill(
   // agent_skills measured 540 rows (538 enabled) on optic on 2026-08-23 and
   // grows with every module. A single-skill lint is bounded by `.eq('name', …)`
   // and needs no paging.
-  const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+  const skillsRead = await readAllRows(supabase, 'agent_skills', {
     columns: 'id,name,handler,category,enabled,mcp_exposed,description,tool_definition',
     orderBy: 'name',
-    filter: (q: any) => (targetName ? q.eq('enabled', true).eq('name', targetName) : q.eq('enabled', true)),
+    filter: (q) => (targetName ? q.eq('enabled', true).eq('name', targetName) : q.eq('enabled', true)),
   });
   if (skillsRead.error) return { error: `Failed to load skills: ${skillsRead.error}` };
   const skills = skillsRead.rows;
