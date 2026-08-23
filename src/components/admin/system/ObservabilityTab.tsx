@@ -526,12 +526,14 @@ function KnowledgeIndexCard() {
   const empty = !isLoading && (data?.totalChunks ?? 0) === 0;
   const backlog = (data?.queueDepth ?? 0) > 0;
 
-  const handleRun = async () => {
+  const handleRun = async (fullReindex = false) => {
     try {
-      const res = await runIndexer.mutateAsync({});
+      const res = await runIndexer.mutateAsync(fullReindex ? { fullReindex: true } : {});
       toast({
-        title: 'Indexer swept',
-        description: `${res.indexed_chunks ?? 0} chunk(s) indexed · ${res.processed ?? 0} item(s) processed`,
+        title: fullReindex ? 'Full reindex queued' : 'Indexer swept',
+        description: fullReindex
+          ? `${res.queued ?? 0} item(s) re-queued · ${res.indexed_chunks ?? 0} chunk(s) rewritten this pass — the 5-minute sweeper drains the rest`
+          : `${res.indexed_chunks ?? 0} chunk(s) indexed · ${res.processed ?? 0} item(s) processed`,
       });
     } catch (e) {
       toast({
@@ -556,10 +558,28 @@ function KnowledgeIndexCard() {
               : `${data?.totalChunks ?? 0} chunk(s) · ${data?.queueDepth ?? 0} queued · updated ${timeAgo(data?.lastIndexedAt ?? null)}`}
           </CardDescription>
         </div>
-        <Button size="sm" variant="outline" onClick={handleRun} disabled={runIndexer.isPending}>
-          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${runIndexer.isPending ? 'animate-spin' : ''}`} />
-          Sweep now
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => handleRun(false)} disabled={runIndexer.isPending}>
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${runIndexer.isPending ? 'animate-spin' : ''}`} />
+            Sweep now
+          </Button>
+          {/* Sweep drains the QUEUE, and only an edited entity is ever queued.
+              When the indexer's own rules change — a widened content hash, a
+              re-enabled module — nothing edits the content, so nothing is
+              queued, and the stale rows are never revisited. This re-queues
+              every entity so the current rules are applied to all of them.
+              Chunks whose text is unchanged keep their embedding, so a full
+              reindex costs no provider spend. */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleRun(true)}
+            disabled={runIndexer.isPending}
+            title="Re-queue every entity and re-apply the current indexing rules. Unchanged text keeps its embedding, so this costs no AI spend."
+          >
+            Reindex all
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
