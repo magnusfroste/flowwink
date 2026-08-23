@@ -320,6 +320,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "manage_recurring_service_order": "fieldService",
   "manage_redirect": "pages",
   "manage_reference_check": "recruitment",
+  "manage_reorder_rule": "inventory",
   "manage_return_item": "returns",
   "manage_routing_operation": "manufacturing",
   "manage_salary_advance": "payroll",

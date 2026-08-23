@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
+import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
@@ -8417,6 +8418,50 @@ async function executeBookingsManagement(
   return { error: `Unknown bookings action: ${action}` };
 }
 
+/**
+ * The parameters create_purchase_order / update_purchase_order actually READ.
+ *
+ * Kept identical to the two skills' tool_definition properties in
+ * src/lib/modules/purchasing-module.ts — the guardrail
+ * purchase-price-provenance.guardrails.test.ts fails if they drift, because a
+ * declared-but-unread parameter is exactly the silence this bounce exists to
+ * end (currency:"EUR" accepted by the schema, dropped by the handler, and an
+ * EUR order booked in SEK).
+ */
+const PURCHASE_ORDER_PARAMETERS: Record<string, { type: string; description?: string; enum?: string[] }> = {
+  action: { type: 'string', enum: ['create', 'update', 'get', 'list'] },
+  purchase_order_id: { type: 'string' },
+  vendor_id: { type: 'string' },
+  currency: { type: 'string', description: "ISO code the order is placed in. Omit to take the vendor's own currency." },
+  exchange_rate: { type: 'number', description: 'Accounting-currency units per unit of `currency`. Omit to stamp the stored rate for the order date.' },
+  order_date: { type: 'string' },
+  expected_delivery: { type: 'string' },
+  status: { type: 'string' },
+  notes: { type: 'string' },
+  lines: { type: 'array' },
+  limit: { type: 'number' },
+};
+
+/** Agent-internal keys that ride along on every call and belong to no skill. */
+function isTransportKey(key: string): boolean {
+  return key.startsWith('_') || key === 'trace_id' || key === 'objective_context' || key === 'skill' || key === 'skill_name';
+}
+
+function bouncePurchaseOrderArgs(
+  skillName: string,
+  args: Record<string, unknown>,
+): { error: string; did_you_mean: Record<string, string[]>; valid_parameters: string[]; hint: string } | null {
+  const unknown = Object.keys(args ?? {}).filter(
+    (k) => !isTransportKey(k) && !(k in PURCHASE_ORDER_PARAMETERS),
+  );
+  if (unknown.length === 0) return null;
+  return buildUnknownParameterBounce({
+    skillName, unknown, args,
+    properties: PURCHASE_ORDER_PARAMETERS,
+    hasInstructions: true,
+  }).body;
+}
+
 async function executeDbAction(
   supabase: any,
   table: string,
@@ -10812,65 +10857,149 @@ async function executeDbAction(
     case 'purchase_orders': {
       const { action = 'list' } = args as any;
 
+      // A parameter the handler does not read must never be dropped in
+      // silence. `currency: "EUR"` was sent, ignored, and the EUR order was
+      // born in SEK — Milano Uno entered stock at 1 696,00 against a standard
+      // cost of 19 500,00. Currency and exchange_rate are READ now; anything
+      // still unknown bounces with the same self-correcting shape the page
+      // writer uses, so the caller fixes the name instead of guessing again.
+      const poBounce = bouncePurchaseOrderArgs(skillName, args as Record<string, unknown>);
+      if (poBounce) return poBounce;
+
       // ── CREATE ──
       if (action === 'create' || skillName === 'create_purchase_order') {
-        const { vendor_id, order_date, expected_delivery, notes, lines: poLines } = args as any;
+        const { vendor_id, order_date, expected_delivery, notes, currency, exchange_rate, lines: poLines } = args as any;
         if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
 
         let subtotalCents = 0;
         let taxCents = 0;
         for (const line of poLines) {
           const lineSubtotal = (line.quantity || 1) * (line.unit_price_cents || 0);
-          const lineTax = Math.round(lineSubtotal * ((line.tax_rate || 25) / 100));
+          // `|| 25` read a deliberate 0 % (EU acquisition, reverse charge) as
+          // "absent" and invented 1 272,00 of VAT on a line the DB stored at
+          // 0.00. Zero is a value.
+          const lineTax = Math.round(lineSubtotal * ((line.tax_rate ?? 25) / 100));
           subtotalCents += lineSubtotal;
           taxCents += lineTax;
         }
 
+        const poInsert: Record<string, unknown> = {
+          vendor_id,
+          order_date: order_date || new Date().toISOString().split('T')[0],
+          expected_delivery: expected_delivery || null,
+          notes: notes || null,
+          subtotal_cents: subtotalCents,
+          tax_cents: taxCents,
+          total_cents: subtotalCents + taxCents,
+          status: 'draft',
+        };
+        // Omit rather than guess: with no currency given, the DB trigger takes
+        // the vendor's own currency (Odoo's property_purchase_currency_id rule)
+        // and stamps the rate for the order date. A client-side `|| 'SEK'` here
+        // is the exact fallback class platform-fallbacks.ts forbids.
+        if (currency) poInsert.currency = String(currency).toUpperCase();
+        if (exchange_rate !== undefined && exchange_rate !== null) poInsert.exchange_rate = Number(exchange_rate);
+
         const { data: po, error: poError } = await supabase.from('purchase_orders')
-          .insert({
-            vendor_id,
-            order_date: order_date || new Date().toISOString().split('T')[0],
-            expected_delivery: expected_delivery || null,
-            notes: notes || null,
-            subtotal_cents: subtotalCents,
-            tax_cents: taxCents,
-            total_cents: subtotalCents + taxCents,
-            status: 'draft',
-          }).select('id, po_number, status, total_cents').single();
+          .insert(poInsert)
+          .select('id, po_number, status, total_cents, currency, exchange_rate').single();
         if (poError) throw new Error(`Create PO failed: ${poError.message}`);
+
+        // A line with no price must trigger a LOOKUP, not a zero. `|| 0` made
+        // "nobody said a price" indistinguishable from "the price is nothing",
+        // and a purchase order at 0,00 receives goods that enter stock at zero
+        // cost — the same silent-cost class as the dropped currency, and it sits
+        // three lines below a comment about omitting rather than guessing.
+        // Order: the vendor's own price for this quantity (tier included), then
+        // the product's cost, then REFUSE. Never zero.
+        for (const l of poLines as any[]) {
+          if (l.unit_price_cents !== undefined && l.unit_price_cents !== null) continue;
+          if (!l.product_id) {
+            throw new Error(
+              `Purchase order line "${l.description ?? '(unnamed)'}" has neither unit_price_cents nor a product_id ` +
+              `to look one up from. Send unit_price_cents, or a product_id that carries a vendor price or a cost price.`,
+            );
+          }
+          const { data: vp } = await supabase.rpc('pick_vendor_price', {
+            p_product_id: l.product_id, p_vendor_id: vendor_id, p_qty: l.quantity || 1,
+          });
+          const picked: any = Array.isArray(vp) ? vp[0] : vp;
+          if (picked?.unit_price_cents != null) { l.unit_price_cents = picked.unit_price_cents; continue; }
+          const { data: prod } = await supabase.from('products')
+            .select('name, cost_cents').eq('id', l.product_id).maybeSingle();
+          if ((prod as any)?.cost_cents != null) { l.unit_price_cents = (prod as any).cost_cents; continue; }
+          throw new Error(
+            `No purchase price known for ${(prod as any)?.name ?? l.product_id}: the vendor has no price for this ` +
+            `product and the product has no cost price. Set one with manage_vendor_price, or send unit_price_cents ` +
+            `explicitly. Booking it at 0 would let the goods enter stock at zero cost and report an infinite margin.`,
+          );
+        }
 
         const lineInserts = poLines.map((l: any, i: number) => ({
           purchase_order_id: po.id,
           product_id: l.product_id || null,
           description: l.description || `Line ${i + 1}`,
           quantity: l.quantity || 1,
-          unit_price_cents: l.unit_price_cents || 0,
+          unit_price_cents: l.unit_price_cents,
           tax_rate: l.tax_rate ?? 25,
           // purchase_order_lines stores the line amount in `total_cents`
           // (not `line_total_cents` — that column belongs to quote_items /
           // pos_sale_lines). Reported by OpenClaw finding 30913d98.
-          total_cents: (l.quantity || 1) * (l.unit_price_cents || 0),
+          total_cents: (l.quantity || 1) * l.unit_price_cents,
         }));
         const { error: linesErr } = await supabase.from('purchase_order_lines').insert(lineInserts);
-        if (linesErr) throw new Error(`Insert PO lines failed: ${linesErr.message}`);
+        if (linesErr) {
+          // Header and lines are two round trips, so a refused line used to
+          // leave an empty numbered order standing (a burnt PO number and a
+          // draft that buys nothing). The order exists only if its lines do.
+          await supabase.from('purchase_orders').delete().eq('id', po.id);
+          throw new Error(`Insert PO lines failed: ${linesErr.message}`);
+        }
 
         try {
           const { data: vendorInfo } = await supabase.from('vendors').select('name').eq('id', vendor_id).single();
-          await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.created', data: { id: po.id, po_number: po.po_number, vendor_name: vendorInfo?.name, total_cents: po.total_cents, currency: 'SEK' } }) });
+          await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.created', data: { id: po.id, po_number: po.po_number, vendor_name: vendorInfo?.name, total_cents: po.total_cents, currency: po.currency } }) });
         } catch {}
 
-        return { purchase_order_id: po.id, po_number: po.po_number, status: po.status, total_cents: po.total_cents, lines_count: poLines.length };
+        const rate = Number(po.exchange_rate ?? 1);
+        return {
+          purchase_order_id: po.id, po_number: po.po_number, status: po.status,
+          total_cents: po.total_cents, lines_count: poLines.length,
+          // The order's own money, and what it is worth in the books. The
+          // second number is the one inventory will be valued at.
+          currency: po.currency,
+          exchange_rate: rate,
+          total_accounting_cents: Math.round(Number(po.total_cents) * rate),
+        };
       }
 
       // ── UPDATE (status, expected_delivery, notes — general purpose) ──
       if (action === 'update') {
-        const { purchase_order_id, status, expected_delivery, notes: poNotes } = args as any;
+        const { purchase_order_id, status, expected_delivery, notes: poNotes,
+                currency: poCurrency, exchange_rate: poRate, order_date: poOrderDate,
+                lines: updateLines } = args as any;
         if (!purchase_order_id) throw new Error('purchase_order_id is required');
+        // `lines` is declared for action:"create" and read by nothing here.
+        // Accepting it and rewriting no line at all is the same silence as the
+        // dropped currency, so it is refused with the action that does work.
+        if (updateLines !== undefined) {
+          return {
+            error: 'action:"update" does not rewrite purchase order lines — the lines you passed would have been ignored. '
+              + 'Use action:"create" for a new order, or edit the lines in the purchase order editor.',
+            valid_parameters: ['purchase_order_id', 'status', 'expected_delivery', 'notes', 'currency', 'exchange_rate', 'order_date'],
+          };
+        }
 
         const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
         if (status) updates.status = status;
         if (expected_delivery !== undefined) updates.expected_delivery = expected_delivery || null;
         if (poNotes !== undefined) updates.notes = poNotes;
+        if (poOrderDate) updates.order_date = poOrderDate;
+        // Re-denominating an order re-stamps its rate (the DB trigger), and
+        // refuses when no rate exists for the new currency rather than leaving
+        // a foreign order standing at rate 1.
+        if (poCurrency) updates.currency = String(poCurrency).toUpperCase();
+        if (poRate !== undefined && poRate !== null) updates.exchange_rate = Number(poRate);
 
         const { error: updErr } = await supabase.from('purchase_orders')
           .update(updates).eq('id', purchase_order_id);
@@ -11049,100 +11178,45 @@ async function executeDbAction(
       if (skillName === 'purchase_reorder_check') {
         const { threshold_override, auto_create = false } = args as any;
 
-        // 1. Fetch products with stock info, and the reordering rules.
+        // 1. Ask the ONE replenishment engine.
         //
-        // The threshold lives in `reorder_rules` (#247) — the Odoo min/max rule
-        // the inventory UI writes and `procurement_run` reads. This handler used
-        // to read COALESCE(product_stock.reorder_point, low_stock_threshold, 5)
-        // and never touched reorder_rules, so a rule set the standard way
-        // changed nothing in the agent's answer, and a product with no threshold
-        // anywhere silently inherited a hardcoded 5. Priority now: explicit
-        // override → active 'buy' rules (summed per product, read exactly as
-        // procurement_run reads them) → product_stock.reorder_point (legacy
-        // override) → products.low_stock_threshold. Nothing anywhere means the
-        // threshold is ABSENT, not 5 — the product is not suggested at all.
-        //
-        // On-hand lives on products.stock_quantity — the number the receipt
-        // writes and the order decrements. This used to read `product_stock`
-        // and `continue` on every product without a row there; that table is
-        // empty on every instance, so the loop skipped everything and the skill
-        // answered "All stock levels are healthy." no matter what. product_stock
-        // stays as an optional override for instances that populated it.
-        const { data: stockRows } = await supabase.from('product_stock')
-          .select('product_id, quantity_on_hand, reorder_point, reorder_quantity, auto_reorder');
+        // This handler used to re-implement the whole calculation in TypeScript:
+        // thresholds out of reorder_rules, on-hand out of
+        // COALESCE(product_stock.quantity_on_hand, products.stock_quantity, 0),
+        // vendor out of vendor_products.is_preferred. That made it the THIRD
+        // engine answering the same question — next to procurement_run (which
+        // counts virtual stock: on hand − reserved + incoming) and
+        // list_reorder_candidates. On Nordbrygg, with four open purchase orders
+        // covering every shortfall, procurement_run answered 0 and this lane
+        // answered 22 — 306 963,75 kr of duplicate orders on top of what was
+        // already coming. There is one engine now, and it lives in SQL:
+        // list_reorder_candidates → stock_virtual_available.
+        const { data: candidates, error: candErr } = await supabase.rpc('list_reorder_candidates', {
+          p_threshold_override: (threshold_override ?? null),
+        });
+        if (candErr) throw new Error(`Reorder candidates failed: ${candErr.message}`);
 
-        const { data: ruleRows } = await supabase.from('reorder_rules')
-          .select('product_id, min_qty, max_qty, reorder_qty, procurement_method')
-          .eq('is_active', true);
+        const lowStock: any[] = (candidates || []).map((c: any) => ({
+          product_id: c.product_id,
+          product_name: c.product_name,
+          current_stock: Number(c.quantity_on_hand ?? 0),
+          // The provenance of the answer travels with it — an agent that sees
+          // "0 on hand" and "60 incoming" does not re-order.
+          reserved: Number(c.reserved_qty ?? 0),
+          incoming: Number(c.incoming_qty ?? 0),
+          virtual_stock: Number(c.virtual_qty ?? 0),
+          reorder_point: c.reorder_point,
+          reorder_quantity: c.reorder_quantity,
+          vendor_id: c.vendor_id,
+          vendor_name: c.vendor_name,
+          vendor_source: c.vendor_source,
+          unit_price_cents: c.unit_price_cents,
+          lead_time_days: c.lead_time_days,
+          // An explicit rule IS the operator's opt-in; the engine already
+          // applied product_stock.auto_reorder for the legacy lane.
+          auto_reorder: true,
+        }));
 
-        const { data: products, error: prodErr } = await supabase.from('products')
-          .select('id, name, price_cents, stock_quantity, low_stock_threshold')
-          .eq('track_inventory', true)
-          .eq('is_active', true);
-        if (prodErr) throw new Error(`Product fetch failed: ${prodErr.message}`);
-
-        const stockMap = new Map((stockRows || []).map((s: any) => [s.product_id, s]));
-
-        // Rules are per (product, location); this answer is per product, so the
-        // active rules are summed — the total minimum the operator asked us to
-        // keep. procurement_method routes: 'buy' is this file, 'manufacture'
-        // belongs to mrp_reorder_run.
-        const ruleMap = new Map<string, any>();
-        for (const r of (ruleRows || [])) {
-          const agg = ruleMap.get(r.product_id)
-            ?? { rules_total: 0, buy_rules: 0, min_qty: 0, max_qty: 0, reorder_qty: 0 };
-          agg.rules_total += 1;
-          if (r.procurement_method === 'buy') {
-            agg.buy_rules += 1;
-            agg.min_qty += Number(r.min_qty ?? 0);
-            agg.max_qty += Number(r.max_qty ?? 0);
-            agg.reorder_qty += Number(r.reorder_qty ?? 0);
-          }
-          ruleMap.set(r.product_id, agg);
-        }
-
-        const hasOverride = threshold_override !== undefined && threshold_override !== null;
-        const lowStock: any[] = [];
-
-        for (const p of (products || [])) {
-          const stock = stockMap.get(p.id);
-          const rule = ruleMap.get(p.id);
-          const onHand = stock?.quantity_on_hand ?? p.stock_quantity ?? 0;
-          const hasRule = !hasOverride && (rule?.buy_rules ?? 0) > 0;
-          // Rules exist but none of them buys: that product is MRP's business.
-          if (!hasOverride && !hasRule && (rule?.rules_total ?? 0) > 0) continue;
-
-          const threshold = hasOverride
-            ? threshold_override
-            : (hasRule ? rule.min_qty : (stock?.reorder_point ?? p.low_stock_threshold));
-          // No rule and no threshold: absent, never 5.
-          if (threshold === null || threshold === undefined) continue;
-
-          // A rule is a MINIMUM — procurement_run acts below min_qty, not at it.
-          // The legacy product threshold keeps its "at or below" meaning.
-          const breached = hasRule ? onHand < threshold : onHand <= threshold;
-          if (!breached) continue;
-
-          let reorderQty: number;
-          if (hasRule) {
-            // Same derivation as procurement_run.
-            reorderQty = rule.reorder_qty || (rule.max_qty - onHand);
-            if (reorderQty <= 0) reorderQty = rule.min_qty - onHand;
-          } else {
-            reorderQty = stock?.reorder_quantity || Math.max(threshold * 3, 10);
-          }
-
-          lowStock.push({
-            product_id: p.id,
-            product_name: p.name,
-            current_stock: onHand,
-            reorder_point: Math.ceil(threshold),
-            reorder_quantity: Math.max(Math.ceil(reorderQty), 1),
-            // An explicit rule IS the operator's opt-in — procurement_run does
-            // not consult auto_reorder either. The flag guards the legacy lane.
-            auto_reorder: hasRule ? true : (stock?.auto_reorder ?? true),
-          });
-        }
 
         if (lowStock.length === 0) {
           return { low_stock_items: [], count: 0, pos_created: 0, message: 'All stock levels are healthy.' };
@@ -11153,25 +11227,19 @@ async function executeDbAction(
         const createdPOs: any[] = [];
 
         if (itemsToOrder.length > 0) {
-          // Find preferred vendors for these products
-          const productIds = itemsToOrder.map((i: any) => i.product_id);
-          const { data: vendorProducts } = await supabase.from('vendor_products')
-            .select('product_id, vendor_id, unit_price_cents, lead_time_days')
-            .in('product_id', productIds)
-            .eq('is_preferred', true);
-
-          const vendorMap = new Map((vendorProducts || []).map((vp: any) => [vp.product_id, vp]));
-
-          // Group items by vendor
+          // The vendor is already resolved by the engine
+          // (reorder_preferred_vendor: the rule's preferred_vendor_id wins,
+          // vendor_products.is_preferred fills in). Looking it up a second time
+          // here is exactly how this lane and procurement_run used to disagree
+          // about who sells the goods when only one of the two was set.
           const byVendor = new Map<string, any[]>();
           const noVendor: any[] = [];
 
           for (const item of itemsToOrder) {
-            const vp = vendorMap.get(item.product_id);
-            if (vp) {
-              const key = vp.vendor_id;
+            if (item.vendor_id) {
+              const key = item.vendor_id;
               if (!byVendor.has(key)) byVendor.set(key, []);
-              byVendor.get(key)!.push({ ...item, unit_price_cents: vp.unit_price_cents, lead_time_days: vp.lead_time_days });
+              byVendor.get(key)!.push({ ...item });
             } else {
               noVendor.push(item);
             }
@@ -11179,22 +11247,41 @@ async function executeDbAction(
 
           // Create one PO per vendor
           for (const [vendorId, items] of byVendor) {
+            // The preferred row above picks the VENDOR; the price still has to
+            // come from the tier that the ordered quantity qualifies for.
+            // Reading the preferred row's price straight off is what made the
+            // 60 kg break (17,50) dead data and billed 18,50 instead.
+            for (const it of items) {
+              const { data: tierRow } = await supabase.rpc('pick_vendor_price', {
+                p_product_id: it.product_id, p_vendor_id: vendorId, p_quantity: it.reorder_quantity,
+              });
+              const tier = Array.isArray(tierRow) ? tierRow[0] : tierRow;
+              if (tier?.unit_price_cents != null) it.unit_price_cents = tier.unit_price_cents;
+            }
             const maxLead = Math.max(...items.map((i: any) => i.lead_time_days || 7));
             const expectedDelivery = new Date();
             expectedDelivery.setDate(expectedDelivery.getDate() + maxLead);
 
+            // purchase_order_lines.tax_rate is a PERCENT (column default
+            // 25.00). This wrote 0.25 — a quarter of one percent — on 25 live
+            // lines while the header charged the full 25 %, so the order's own
+            // rows disagreed with its total. One convention, one number.
+            const PURCHASE_TAX_RATE_PCT = 25;
             const lines = items.map((i: any) => ({
               product_id: i.product_id,
               description: i.product_name,
               quantity: i.reorder_quantity,
               unit_price_cents: i.unit_price_cents,
-              tax_rate: 0.25,
+              tax_rate: PURCHASE_TAX_RATE_PCT,
               total_cents: i.unit_price_cents * i.reorder_quantity,
             }));
 
             const subtotal = lines.reduce((s: number, l: any) => s + l.total_cents, 0);
-            const taxCents = Math.round(subtotal * 0.25);
+            const taxCents = Math.round(subtotal * PURCHASE_TAX_RATE_PCT / 100);
 
+            // No `currency: 'SEK'` here: the vendor's currency is the DB's to
+            // decide (trg_stamp_purchase_order_fx), and a hardcoded SEK on a
+            // EUR vendor is how the 1 696,00 layer was born.
             const { data: po, error: poErr } = await supabase.from('purchase_orders').insert({
               vendor_id: vendorId,
               status: 'draft',
@@ -11203,7 +11290,6 @@ async function executeDbAction(
               subtotal_cents: subtotal,
               tax_cents: taxCents,
               total_cents: subtotal + taxCents,
-              currency: 'SEK',
               notes: 'Auto-generated by FlowPilot reorder check',
             }).select('id, po_number').single();
 

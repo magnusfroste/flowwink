@@ -316,6 +316,7 @@
     "manage_recurring_service_order",
     "manage_redirect",
     "manage_reference_check",
+    "manage_reorder_rule",
     "manage_return_item",
     "manage_routing_operation",
     "manage_salary_advance",

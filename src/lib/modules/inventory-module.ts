@@ -144,9 +144,42 @@ const INVENTORY_SKILLS: SkillSeed[] = [
     },
   },
   {
+    name: 'manage_reorder_rule',
+    description:
+      'Read and write the reordering (min/max) rules that drive every replenishment engine — the first step of procure-to-pay. Actions: list, get, set, deactivate, delete. A rule says "when virtual stock at this location falls BELOW min_qty, replenish up to max_qty". Virtual stock is on hand − reserved + incoming purchase orders, so a product with enough already on order is not re-ordered. Use when: "set a reorder point", "sätt beställningspunkt", "keep 40 kg of X in stock", onboarding a new stocked product, or changing which vendor a replenishment goes to. NOT for: running the engine (use procurement_run), seeing what is currently low (use list_reorder_candidates), or creating the purchase order (use auto_generate_purchase_orders / create_purchase_order). Rules only apply to stock-tracked products; a rule on a service is refused. procurement_method=buy routes to purchasing, manufacture to mrp_reorder_run.',
+    category: 'commerce',
+    handler: 'rpc:manage_reorder_rule',
+    scope: 'both',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_reorder_rule',
+        description: 'List, read, set or remove min/max reordering rules per product and location',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'get', 'set', 'deactivate', 'delete'], description: 'Default list' },
+            p_product: { type: 'string', description: 'Product name, barcode or uuid. Required for set.' },
+            p_location: { type: 'string', description: 'Stock location code (e.g. WH/MAIN), name or uuid. Defaults to the main internal warehouse.' },
+            p_min_qty: { type: 'number', description: 'Replenish when virtual stock falls BELOW this' },
+            p_max_qty: { type: 'number', description: 'Replenish up TO this level. Must be >= min_qty.' },
+            p_reorder_qty: { type: 'number', description: 'Optional fixed order quantity; overrides the max−virtual calculation' },
+            p_lead_time_days: { type: 'number', description: 'Vendor lead time used for the needed-by date (default 7)' },
+            p_procurement_method: { type: 'string', enum: ['buy', 'manufacture'] },
+            p_preferred_vendor: { type: 'string', description: 'Vendor name or uuid. Wins over vendor_products.is_preferred.' },
+            p_is_active: { type: 'boolean' },
+            p_rule_id: { type: 'string', description: 'Address an existing rule directly instead of product+location' },
+          },
+        },
+      },
+    },
+    instructions:
+      'set is an UPSERT on (product, location) — call it again to change a rule, there is no separate create/update. Omitted fields keep their current value on an existing rule; on a new rule min_qty/max_qty default to 0, lead_time_days to 7, procurement_method to buy, is_active to true. p_product accepts a name (case-insensitive exact, then unique prefix), a barcode or a uuid; an ambiguous name errors and lists the candidates, so pass the full name on the retry. p_location accepts the warehouse CODE (WH/MAIN) and defaults to the main internal location when omitted — the same location procurement_run evaluates. Refused: max_qty < min_qty, negative quantities, and a rule on a product with track_inventory=false (enable tracking via manage_product first). The reply always carries the product\'s current availability (on_hand, reserved, incoming, virtual) and will_trigger_now, so you can see the effect of the rule without running procurement_run. deactivate keeps the row and its history; delete removes it.',
+  },
+  {
     name: 'procurement_run',
     description:
-      'Run the MRP scheduler: scans all active reorder rules, computes virtual stock (on_hand − reserved + incoming PO), and creates pending procurement_suggestions for products below min_qty. Skips products with an existing pending suggestion. Use when: nightly cron, after a bulk stock-out, or on demand.',
+      'Run the MRP scheduler: scans all active reorder rules, computes virtual stock (on_hand − reserved + incoming PO), and creates pending procurement_suggestions for products below min_qty. Skips products with an existing pending suggestion. Use when: nightly cron, after a bulk stock-out, or on demand. Set or change the rules it reads with manage_reorder_rule.',
     category: 'commerce',
     handler: 'rpc:procurement_run',
     scope: 'internal',
@@ -429,6 +462,7 @@ export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
     'cancel_reservation',
     'consume_reservation',
     'adjust_quant',
+    'manage_reorder_rule',
     'procurement_run',
     'approve_procurement_suggestion',
     'reject_procurement_suggestion',
