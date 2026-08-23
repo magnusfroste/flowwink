@@ -211,6 +211,7 @@
     "skill_name": "list_reorder_candidates",
     "rpc_name": "list_reorder_candidates",
     "pg_args": [
+      "p_threshold_override",
       "product_id",
       "product_name",
       "quantity_on_hand",
@@ -221,9 +222,15 @@
       "unit_price_cents",
       "lead_time_days",
       "min_order_quantity",
-      "estimated_cost_cents"
+      "estimated_cost_cents",
+      "reserved_qty",
+      "incoming_qty",
+      "virtual_qty",
+      "vendor_source"
     ],
-    "skill_props": []
+    "skill_props": [
+      "p_threshold_override"
+    ]
   },
   {
     "skill_name": "lock_timesheet_period",
@@ -257,6 +264,36 @@
       "quantity_produced",
       "routing_notes",
       "version"
+    ]
+  },
+  {
+    "skill_name": "manage_reorder_rule",
+    "rpc_name": "manage_reorder_rule",
+    "pg_args": [
+      "p_action",
+      "p_product",
+      "p_location",
+      "p_min_qty",
+      "p_max_qty",
+      "p_reorder_qty",
+      "p_lead_time_days",
+      "p_procurement_method",
+      "p_preferred_vendor",
+      "p_is_active",
+      "p_rule_id"
+    ],
+    "skill_props": [
+      "p_action",
+      "p_product",
+      "p_location",
+      "p_min_qty",
+      "p_max_qty",
+      "p_reorder_qty",
+      "p_lead_time_days",
+      "p_procurement_method",
+      "p_preferred_vendor",
+      "p_is_active",
+      "p_rule_id"
     ]
   },
   {
