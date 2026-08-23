@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260824130000",
-      "migrations_count": 500,
+      "migration_head": "20260824150000",
+      "migrations_count": 501,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2005,6 +2005,10 @@
         {
           "version": "20260824130000",
           "name": "a-vendor-term-is-a-word-not-a-number"
+        },
+        {
+          "version": "20260824150000",
+          "name": "b9c0d1e2-a-service-has-no-shelf"
         }
       ]
     },
