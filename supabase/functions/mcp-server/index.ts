@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 import { AsyncLocalStorage } from "node:async_hooks";
 import templateAuditData from "./template-audit.json" with { type: "json" };
 import { flattenSchemaForOpenAI, hasUnsafeTopLevelKeyword } from "../_shared/mcp/schema.ts";
@@ -738,14 +739,24 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
     }
 
     case "accounting_chart": {
-      const { data, error } = await sb
-        .from("chart_of_accounts")
-        .select("account_code, account_name, account_type, account_category, normal_balance, locale, is_active")
-        .order("account_code");
+      // Paginated, and not defensively. This resource hands an external agent
+      // "the chart of accounts", and the agent reasons about what is NOT in it.
+      // PostgREST caps an unfiltered select at 1000 rows in silence; a BAS
+      // instance holds 1263 (measured, 2026-08-23). Ordered by account_code,
+      // the 263 rows that fell off the end were the 8xxx–9xxx block — the
+      // financial and year-end accounts, including the result carrier. The
+      // resource reported `count: 1000` and looked complete.
+      const { rows, error, truncated } = await readAllRows<any>(sb, "chart_of_accounts", {
+        columns: "account_code, account_name, account_type, account_category, normal_balance, locale, is_active",
+        orderBy: "account_code",
+      });
       return {
-        accounts: data ?? [],
-        count: data?.length ?? 0,
-        error: error?.message ?? null,
+        accounts: rows,
+        count: rows.length,
+        // A consumer that reasons from absence has to be able to tell a short
+        // answer from a complete one.
+        complete: !truncated,
+        error: error ?? null,
         timestamp: new Date().toISOString(),
       };
     }
