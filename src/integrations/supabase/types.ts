@@ -8345,6 +8345,7 @@ export type Database = {
           lead_id: string | null
           line_items: Json
           notes: string | null
+          order_id: string | null
           paid_amount_cents: number
           paid_at: string | null
           payment_terms: string | null
@@ -8381,6 +8382,7 @@ export type Database = {
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
+          order_id?: string | null
           paid_amount_cents?: number
           paid_at?: string | null
           payment_terms?: string | null
@@ -8417,6 +8419,7 @@ export type Database = {
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
+          order_id?: string | null
           paid_amount_cents?: number
           paid_at?: string | null
           payment_terms?: string | null
