@@ -137,7 +137,7 @@ const SKILLS: SkillSeed[] = [
   {
     name: 'resolve_vendor_price',
     description:
-      'Returns the best supplier/vendor purchase price for a product+quantity from vendor_products (validity dates + qty tiers, preferred vendor first). Use when: choosing a vendor for a purchase order, checking replenishment cost. NOT for: customer sales prices (use resolve_pricelist_price).',
+      'Returns the best supplier/vendor purchase price for a product+quantity from vendor_products. The DEEPEST qualifying quantity tier wins (60 kg break beats the 1-unit price), within the product\'s preferred vendor when it has one; the price comes back in the vendor\'s own currency. Use when: choosing a vendor for a purchase order, checking replenishment cost, pricing a reorder. NOT for: customer sales prices (use resolve_pricelist_price).',
     category: 'commerce',
     handler: 'rpc:resolve_vendor_price',
     scope: 'internal',
@@ -160,7 +160,7 @@ const SKILLS: SkillSeed[] = [
       },
     },
     instructions:
-      'Picks the deepest qualifying qty tier per vendor; preferred vendors win ties, then lowest price. Returns success:false with reason no_vendor_price when nothing matches — add a vendor price via manage_vendor_price.',
+      'Ordering, in this order: the preferred VENDOR of the product first (its one is_preferred row names it, and its qty tiers are honoured through it), then the deepest qualifying price_tier_min_qty, then the lowest price. Same rule as Odoo\'s supplierinfo (_order = sequence, min_qty DESC, price). tier_min_qty in the answer tells you which break was used — if it says 1 for a large quantity, no deeper tier is on file. `unit_price_cents` is in `currency`, which is the vendor\'s, not necessarily the books\'. Returns success:false with reason no_vendor_price when nothing matches — add a vendor price via manage_vendor_price.',
   },
   {
     name: 'manage_vendor_price',
@@ -183,10 +183,10 @@ const SKILLS: SkillSeed[] = [
             p_vendor_id: { type: 'string', format: 'uuid' },
             p_product_id: { type: 'string', format: 'uuid' },
             p_unit_price_cents: { type: 'integer' },
-            p_currency: { type: 'string', default: 'SEK' },
+            p_currency: { type: 'string', description: "ISO code. Omit to take the vendor's own currency — never assume the instance's." },
             p_lead_time_days: { type: 'integer' },
             p_min_order_quantity: { type: 'integer' },
-            p_price_tier_min_qty: { type: 'integer', description: 'Qty break this price applies from' },
+            p_price_tier_min_qty: { type: 'integer', description: 'Qty break this price applies from (default 1). A second row for the same vendor+product with a higher break IS the qty tier.' },
             p_vendor_sku: { type: 'string' },
             p_is_preferred: { type: 'boolean' },
             p_valid_from: { type: 'string', description: 'YYYY-MM-DD' },
@@ -196,6 +196,8 @@ const SKILLS: SkillSeed[] = [
         },
       },
     },
+    instructions:
+      'A qty tier is simply a SECOND row for the same vendor+product with a higher p_price_tier_min_qty (e.g. 1 → 18.50, 60 → 17.50); resolve_vendor_price then uses the deepest row the ordered quantity qualifies for. Leave p_price_tier_min_qty out for the base row — it defaults to 1. p_is_preferred marks the preferred VENDOR and only ONE row per product may carry it, so tier rows of that same vendor are created with p_is_preferred false; they still win through the vendor preference. create is an upsert on (vendor, product, tier): calling it again with a new price updates that tier instead of failing. Omit p_currency and the row takes the vendor\'s currency.',
   },
   {
     name: 'get_pricelist_history',
