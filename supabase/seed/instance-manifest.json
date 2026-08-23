@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260825130000",
-      "migrations_count": 503,
+      "migration_head": "20260826150000",
+      "migrations_count": 507,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2015,7 +2015,23 @@
           "name": "d1e2f3a4-a-send-with-no-ledger-of-who-got-it"
         },
         {
-          "version": "20260825130000",
+          "version": "20260825140000",
+          "name": "e2f3a4b5-null-is-not-equal-to-null"
+        },
+        {
+          "version": "20260826120000",
+          "name": "f3a4b5c6-en-rad-utan-namn-kunde-aldrig-bli-en-order"
+        },
+        {
+          "version": "20260826130000",
+          "name": "a4b5c6d7-tva-nummerserier-i-samma-liggare"
+        },
+        {
+          "version": "20260826140000",
+          "name": "b5c6d7e8-partiet-som-aldrig-kunde-registreras"
+        },
+        {
+          "version": "20260826150000",
           "name": "the-sweep-is-fixed-now-prove-it-keeps-running"
         }
       ]
@@ -2086,7 +2102,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:e92211aeec2e84bf917ae6dd29dc2730de02763368c03115d29ad62983daa02f",
+        "run-platform-tests": "sha256:8f56b73e94fd28a700ad247a5ccbd4ffc4e944056d3088f0f0ef73cc716ca08c",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

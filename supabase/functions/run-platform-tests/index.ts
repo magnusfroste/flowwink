@@ -412,7 +412,7 @@ const suite_ticket_escalations: SuiteFn = async (admin) => {
         if (/PGRST202|schema cache|does not exist/i.test(error.message)) {
           throw new SkipTest(
             "regression_ticket_escalations() is not on this instance — apply " +
-            "supabase/migrations/20260825130000_the-sweep-is-fixed-now-prove-it-keeps-running.sql.",
+            "supabase/migrations/20260826150000_the-sweep-is-fixed-now-prove-it-keeps-running.sql.",
           );
         }
         throw new Error(error.message);
