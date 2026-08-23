@@ -1,7 +1,7 @@
 import { logger } from '@/lib/logger';
 import { toastSilencer } from '@/lib/toast-silencer';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { StarterTemplate } from '@/data/templates';
 import { TemplateOverwriteOptions } from '@/components/admin/templates/TemplatePreviewDialog';
 import { useCreatePage, usePages, usePermanentDeletePage, useDeletedPages } from '@/hooks/usePages';
@@ -22,6 +22,79 @@ import type { ContentBlock } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
 
 export type InstallStep = 'idle' | 'creating' | 'done';
+
+/**
+ * ── Clearing a table you can only see 1000 rows of ──────────────────────────
+ *
+ * The no-manifest path ("clean install") used to delete exactly what the page's
+ * React Query caches happened to hold — `existingPages`, `existingBlogPosts`,
+ * `existingKbCategories`, `existingProducts`. Every one of those reads is an
+ * unbounded PostgREST select, which stops at 1000 rows without a word. On a
+ * site with 1400 pages the installer removed 1000, left 400 standing, and
+ * reported a clean install. The new template then landed on top of the
+ * survivors, and the leftovers are indistinguishable afterwards from content
+ * someone meant to keep.
+ *
+ * Cure 1 — delete server-side without reading — is not available: each delete
+ * runs through a hook that also writes an audit_logs row, and a bulk
+ * `.delete().neq(id, ...)` would erase the trail of what was removed. Cure 2 is
+ * meaningless here; the question has no key set, it is "everything".
+ *
+ * So: drain. Ask for one bounded page of ids, delete them, ask again, and stop
+ * when the table answers with nothing. Deleting shrinks the population, so the
+ * loop terminates on its own and never needs an offset that rows could slip
+ * past. The two ways it can fail to terminate — a delete that RLS silently
+ * refuses (200 with no rows, no throw), or a table growing faster than we
+ * empty it — are caught by the round ceiling, and then the caller is TOLD
+ * rather than congratulated.
+ */
+const DRAIN_PAGE = 500;
+const DRAIN_MAX_ROUNDS = 40; // 20 000 rows; past that, say so instead of spinning.
+
+interface DrainResult {
+  removed: number;
+  /** True when the table was not empty when we stopped. Never report success. */
+  leftovers: boolean;
+}
+
+async function drainDelete(
+  label: string,
+  /** One bounded page of ids. MUST carry its own `.limit()`. */
+  fetchPage: () => Promise<string[]>,
+  deleteOne: (id: string) => Promise<void>,
+  onRemoved: (removed: number) => void,
+): Promise<DrainResult> {
+  let removed = 0;
+  for (let round = 0; round < DRAIN_MAX_ROUNDS; round++) {
+    let ids: string[];
+    try {
+      ids = await fetchPage();
+    } catch (e) {
+      logger.warn(`[TemplateInstaller] Could not list remaining ${label}:`, e);
+      return { removed, leftovers: true };
+    }
+    if (ids.length === 0) return { removed, leftovers: false };
+
+    let progressed = false;
+    for (const id of ids) {
+      try {
+        await deleteOne(id);
+        removed++;
+        progressed = true;
+        onRemoved(removed);
+      } catch (e) {
+        logger.warn(`[TemplateInstaller] Could not remove ${label} ${id}:`, e);
+      }
+    }
+    // A whole page that refused to go is a permission wall, not a slow table.
+    if (!progressed) {
+      logger.warn(`[TemplateInstaller] ${label}: a full page could not be removed — stopping`);
+      return { removed, leftovers: true };
+    }
+  }
+  logger.warn(`[TemplateInstaller] ${label}: hit the drain ceiling after ${removed} removed`);
+  return { removed, leftovers: true };
+}
 
 export interface InstallProgress {
   currentPage: number;
@@ -96,18 +169,43 @@ export function useTemplateInstaller() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // The numbers the overwrite dialog quotes back ("1000 pages will be permanently
+  // deleted") are the last thing a person reads before an irreversible action, so
+  // they are counted server-side rather than by measuring a list that PostgREST
+  // may have cut at 1000. `head: true` returns the count and no rows at all.
+  const { data: exactCounts } = useQuery({
+    queryKey: ['template-installer-content-counts'],
+    queryFn: async () => {
+      const count = async (table: 'pages' | 'blog_posts' | 'kb_categories' | 'products') => {
+        let q = supabase.from(table).select('id', { count: 'exact', head: true });
+        if (table === 'pages') q = q.is('deleted_at', null);
+        const { count: n, error } = await q;
+        // A count we could not take must not read as zero — that is the same
+        // silence, one table over. Fall back to "unknown" and let the caller
+        // use the cached list length instead.
+        if (error) return null;
+        return n ?? null;
+      };
+      const [pages, blogPosts, kbCategories, products] = await Promise.all([
+        count('pages'), count('blog_posts'), count('kb_categories'), count('products'),
+      ]);
+      return { pages, blogPosts, kbCategories, products };
+    },
+    staleTime: 30_000,
+  });
+
   const existingContent = useMemo(() => ({
-    pagesCount: existingPages?.length || 0,
-    blogPostsCount: existingBlogPosts?.length || 0,
-    kbCategoriesCount: existingKbCategories?.length || 0,
-    productsCount: existingProducts?.length || 0,
+    pagesCount: exactCounts?.pages ?? existingPages?.length ?? 0,
+    blogPostsCount: exactCounts?.blogPosts ?? existingBlogPosts?.length ?? 0,
+    kbCategoriesCount: exactCounts?.kbCategories ?? existingKbCategories?.length ?? 0,
+    productsCount: exactCounts?.products ?? existingProducts?.length ?? 0,
     mediaCount: mediaCount || 0,
     hasBranding: !!(existingBranding?.primaryColor || existingBranding?.logo),
     hasChatSettings: !!existingChatSettings?.enabled,
     hasFooter: !!(existingFooter?.data?.email || existingFooter?.data?.phone),
     hasSeo: !!(existingSeo?.siteTitle || existingSeo?.defaultDescription),
     hasCookieBanner: !!existingCookieBanner?.enabled,
-  }), [existingPages, existingBlogPosts, existingKbCategories, existingProducts, mediaCount, existingBranding, existingChatSettings, existingFooter, existingSeo, existingCookieBanner]);
+  }), [exactCounts, existingPages, existingBlogPosts, existingKbCategories, existingProducts, mediaCount, existingBranding, existingChatSettings, existingFooter, existingSeo, existingCookieBanner]);
 
   const hasExistingContent = useMemo(() => (
     existingContent.pagesCount > 0 ||
@@ -271,6 +369,8 @@ export function useTemplateInstaller() {
 
     setStep('creating');
     const pageIds: string[] = [];
+    /** Content types the clean-install path could not empty. Must reach the user. */
+    let cleanInstallLeftovers: string[] = [];
 
     toastSilencer.silent = true;
     try {
@@ -387,28 +487,78 @@ export function useTemplateInstaller() {
           logger.log(`[TemplateInstaller] Uninstalled previous template "${installedTemplate.template_name}" (${totalCleanup} resources)`);
         }
       } else {
-        // No manifest — fall back to clearing all existing content (first install or legacy)
-        if (opts.pages && existingPages && existingPages.length > 0) {
-          setProgress({ currentPage: 0, totalPages: existingPages.length, currentStep: 'Clearing existing pages...' });
-          for (let i = 0; i < existingPages.length; i++) {
-            setProgress({ currentPage: i + 1, totalPages: existingPages.length, currentStep: `Removing page "${existingPages[i].title}"...` });
-            await permanentDeletePage.mutateAsync(existingPages[i].id);
-          }
+        // No manifest — clear all existing content (first install or legacy).
+        //
+        // Sourced from the database each round, not from the page's caches: the
+        // caches are the unbounded reads that made "clean" mean "the first 1000".
+        // See drainDelete above for why this shape and not a bulk delete.
+        const drains: Array<{ label: string; result: DrainResult }> = [];
+
+        if (opts.pages) {
+          setProgress({ currentPage: 0, totalPages: existingContent.pagesCount, currentStep: 'Clearing existing pages...' });
+          const r = await drainDelete(
+            'pages',
+            async () => {
+              const { data, error } = await supabase
+                .from('pages').select('id').is('deleted_at', null).limit(DRAIN_PAGE);
+              if (error) throw error;
+              return (data ?? []).map((p) => p.id);
+            },
+            (id) => permanentDeletePage.mutateAsync(id),
+            (removed) => setProgress({
+              currentPage: removed,
+              totalPages: Math.max(existingContent.pagesCount, removed),
+              currentStep: `Removing existing pages (${removed})...`,
+            }),
+          );
+          drains.push({ label: 'pages', result: r });
         }
-        if (opts.blogPosts && existingBlogPosts && existingBlogPosts.length > 0) {
-          for (let i = 0; i < existingBlogPosts.length; i++) {
-            await deleteBlogPost.mutateAsync(existingBlogPosts[i].id);
-          }
+        if (opts.blogPosts) {
+          const r = await drainDelete(
+            'blog posts',
+            async () => {
+              const { data, error } = await supabase.from('blog_posts').select('id').limit(DRAIN_PAGE);
+              if (error) throw error;
+              return (data ?? []).map((p) => p.id);
+            },
+            (id) => deleteBlogPost.mutateAsync(id),
+            () => {},
+          );
+          drains.push({ label: 'blog posts', result: r });
         }
-        if (opts.kbContent && existingKbCategories && existingKbCategories.length > 0) {
-          for (let i = 0; i < existingKbCategories.length; i++) {
-            await deleteKbCategory.mutateAsync(existingKbCategories[i].id);
-          }
+        if (opts.kbContent) {
+          const r = await drainDelete(
+            'KB categories',
+            async () => {
+              const { data, error } = await supabase.from('kb_categories').select('id').limit(DRAIN_PAGE);
+              if (error) throw error;
+              return (data ?? []).map((c) => c.id);
+            },
+            (id) => deleteKbCategory.mutateAsync(id),
+            () => {},
+          );
+          drains.push({ label: 'KB categories', result: r });
         }
-        if (opts.products && existingProducts && existingProducts.length > 0) {
-          for (let i = 0; i < existingProducts.length; i++) {
-            await deleteProduct.mutateAsync(existingProducts[i].id);
-          }
+        if (opts.products) {
+          const r = await drainDelete(
+            'products',
+            async () => {
+              const { data, error } = await supabase.from('products').select('id').limit(DRAIN_PAGE);
+              if (error) throw error;
+              return (data ?? []).map((p) => p.id);
+            },
+            (id) => deleteProduct.mutateAsync(id),
+            () => {},
+          );
+          drains.push({ label: 'products', result: r });
+        }
+
+        // What survived has to reach the person who asked for a clean install —
+        // the template is about to be written on top of it, and afterwards there
+        // is no way to tell leftovers from content someone kept on purpose.
+        cleanInstallLeftovers = drains.filter((d) => d.result.leftovers).map((d) => d.label);
+        if (cleanInstallLeftovers.length > 0) {
+          logger.warn('[TemplateInstaller] Clean install did not empty:', cleanInstallLeftovers.join(', '));
         }
       }
 
@@ -726,13 +876,25 @@ export function useTemplateInstaller() {
       await queryClient.invalidateQueries({ queryKey: ['site-settings'] });
 
       toastSilencer.silent = false;
-      toast({ title: 'Template applied!', description });
+      // "Template applied!" over an incomplete wipe is the lie this whole change
+      // is about. If anything survived, the headline says so.
+      if (cleanInstallLeftovers.length > 0) {
+        toast({
+          title: 'Template applied — but the site was not emptied first',
+          description:
+            `${description} Existing ${cleanInstallLeftovers.join(' and ')} could not be fully removed, ` +
+            `so the template is layered on top of them. Check for leftovers before publishing.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Template applied!', description });
+      }
     } catch (error) {
       toastSilencer.silent = false;
       toast({ title: 'Error', description: 'Failed to apply template. Some changes may have been applied.', variant: 'destructive' });
       setStep('idle');
     }
-  }, [existingPages, deletedPages, existingBlogPosts, existingKbCategories, existingProducts, mediaCount, currentModules, installedTemplate]);
+  }, [existingContent, existingPages, deletedPages, existingBlogPosts, existingKbCategories, existingProducts, mediaCount, currentModules, installedTemplate]);
 
   const reset = useCallback(() => {
     setStep('idle');
