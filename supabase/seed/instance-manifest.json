@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260824130000",
-      "migrations_count": 500,
+      "migration_head": "20260824160000",
+      "migrations_count": 501,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2003,7 +2003,11 @@
           "name": "a8b9c0d1-recognition-beats-recall"
         },
         {
-          "version": "20260824130000",
+          "version": "20260824150000",
+          "name": "b9c0d1e2-a-service-has-no-shelf"
+        },
+        {
+          "version": "20260824160000",
           "name": "the-sweep-is-fixed-now-prove-it-keeps-running"
         }
       ]
@@ -2015,7 +2019,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f8f54d388bfbe8b98f1fbb0f5cd4869d215075019e18f66e42407d36e3169a6e",
+      "shared_hash": "sha256:5d61d12deb5bc42c7ab5ec39c3343b9d4f4bbda983015f694a95b9009e4b3af9",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
@@ -2074,7 +2078,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:4382aa79bec5802e260cc9348f713909046b8f820573cd8a783fc2e6cb6cc72f",
+        "run-platform-tests": "sha256:834623fbb90597a430df32f8009f25316cfa4f372f22a0ec38636398ae1e75af",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
@@ -2087,7 +2091,7 @@
         "system-integrity-check": "sha256:f90caeeb5634c18d19e681df91c690b5fbee5122fc5b60f8648c96e5cd9ae3cc",
         "telegram-ingest": "sha256:d1a509622d71db0e42a6902da31ce346c3b57471a1350c240c7c5b37a50c9cbc",
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
-        "track-page-view": "sha256:a45a5f4f4cfbbf91e37e30ed143521085c0ad98a7f33cd7806c3ff329806bb33",
+        "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
         "twilio-ingest": "sha256:2bd8852c0c67cf499c7c61cc97f4b94f79c3c19666cb6eaa195f8e5f9e83be5e",
         "voice-ingest": "sha256:b2f454ebef1846179377d7409780b4b8de014a1b1486dd91f84f2ecc9f1dd6df",
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
