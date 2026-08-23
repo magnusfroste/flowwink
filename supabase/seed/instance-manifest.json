@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260826140000",
-      "migrations_count": 506,
+      "migration_head": "20260827700000",
+      "migrations_count": 515,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2029,21 +2029,57 @@
         {
           "version": "20260826140000",
           "name": "b5c6d7e8-partiet-som-aldrig-kunde-registreras"
+        },
+        {
+          "version": "20260827100000",
+          "name": "f6a7b8c9-leveransen-som-fakturerades-tva-ganger"
+        },
+        {
+          "version": "20260827200000",
+          "name": "c6d7e8f9-verifikationen-som-aldrig-skrevs"
+        },
+        {
+          "version": "20260827300000",
+          "name": "c7d8e9f0-priset-som-foddes-i-fel-valuta"
+        },
+        {
+          "version": "20260827400000",
+          "name": "a1b2c3d4-tva-pafyllningsmotorer-en-sanning"
+        },
+        {
+          "version": "20260827410000",
+          "name": "b2c3d4e5-partiet-tappades-pa-vagen-ut"
+        },
+        {
+          "version": "20260827420000",
+          "name": "c3d4e5f6-pafyllningsregeln-fick-en-agentyta"
+        },
+        {
+          "version": "20260827500000",
+          "name": "a1b2c3d4-en-matning-ar-inget-samtalsdrag"
+        },
+        {
+          "version": "20260827600000",
+          "name": "d4e5f6a7-tva-matchningar-en-jamforde-brutto-mot-netto"
+        },
+        {
+          "version": "20260827700000",
+          "name": "e5f6a7b8-en-rad-utan-pris-blev-en-rad-utan-varde"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:7f68df580142c87ae7b8b97447f7b83dc80a494763f51ab66a80e580b4c3fabe",
-      "skill_count": 539,
+      "seed_hash": "sha256:5b1142511c81a08e69da647d6ce4296a49ee7c43c9b8c695eda0fec2032cc116",
+      "skill_count": 540,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:afdf2011bc1b504ef18cdbcd8f82f60cfd95fca6404896ab1242947fe8ed92a4",
+      "shared_hash": "sha256:9306576ed1842b4ece8adaf29625ebbd920577dcfa22adc30bfbc7f64b4d31c0",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:264c870ba83aff1ceebf3864671b71696c409738a9fd1110858b68d6605d1617",
+        "agent-execute": "sha256:a406579520e50ef3161948f8d9deffcaa1b44f436af903a2597a7258243767bd",
         "agent-operate": "sha256:1765b70f17a5f0e12a43dc6f50c2247cb15f2f4b82f9cf7204efb657cec1fdcf",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2098,7 +2134,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:a7f8ef85728386d845506a2a0596dd9c9aacf93d1fdf21e98c94797f87f01230",
+        "run-platform-tests": "sha256:2f7c11b6890cc05af7396936ae83f252625ada6a1e079230efc5c7373005afee",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

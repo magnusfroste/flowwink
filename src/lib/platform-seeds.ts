@@ -661,7 +661,7 @@ export const PLATFORM_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'Integration Health Check',
     description:
-      'Platform automation. Probes every enabled integration daily at 06:30 UTC (before the briefing) and posts a warning to admin FlowChat when one fails. Born from the 2026-07-22 SearXNG incident: a broken integration must never fail silently behind a fallback.',
+      'Platform automation. Probes every enabled integration daily at 06:30 UTC (before the briefing) and updates the integration health state on System → Observability. Only a CHANGE — healthy→failing, a new failure, or a recovery — raises an acknowledgeable notice in the header bell; "still failing, third day" is silent. Born from the 2026-07-22 SearXNG incident (a broken integration must never fail silently behind a fallback) and reshaped 2026-08-27, when the sweep\'s old habit of posting into admin FlowChat had left nine unresolvable assistant messages and turned the alarm into wallpaper.',
     trigger_type: 'cron',
     trigger_config: { cron: '30 6 * * *', timezone: 'UTC' },
     skill_name: 'check_integrations',

@@ -34,13 +34,13 @@ type PurchasingOutput = z.infer<typeof purchasingOutputSchema>;
 const PURCHASING_SKILLS: SkillSeed[] = [
   {
     name: 'pay_vendor_invoice',
-    description: 'Record the OUTGOING payment of an approved vendor invoice: posts Dt 2440 leverantörsskuld / Cr bank and marks the invoice paid. Use when: a supplier bill is due/approved and being paid — the final P2P step. NOT for: customer/AR payments (record_invoice_payment) or registering the incoming bill (register_vendor_invoice).',
+    description: 'Record the OUTGOING payment of an approved vendor invoice: posts Dt leverantörsskuld / Cr bank and marks the invoice paid. Use when: a supplier bill is due/approved and being paid — the final P2P step. NOT for: customer/AR payments (record_invoice_payment) or registering the incoming bill (register_vendor_invoice). GATED: the database refuses the payment unless the bill carries an approval stamp AND passes a three-way match recomputed at the moment of payment — received → paid is not a legal step. An over-invoiced bill (a second bill for a delivery already billed) cannot be paid at all until it is corrected or a human overrules it with request_entity_approval("vendor_invoice", ...) + advance_approval_step.',
     category: 'commerce',
     handler: 'rpc:pay_vendor_invoice',
     scope: 'internal',
     trust_level: 'notify',
     tool_definition: {"type":"function","function":{"name":"pay_vendor_invoice","description":"Pay an approved vendor invoice: posts Dt 2440 / Cr bank and marks it paid. Rejects an already-paid invoice.","parameters":{"type":"object","required":["p_vendor_invoice_id"],"properties":{"p_vendor_invoice_id":{"type":"string","description":"UUID of the vendor_invoices row"},"p_pay_date":{"type":"string","description":"Payment date YYYY-MM-DD (default today)"},"p_bank_account":{"type":"string","description":"BAS bank account credited, default 1930"}}}}} as SkillSeed['tool_definition'],
-    instructions: 'Pays the full total_cents of the vendor invoice. Find the invoice via manage_record/list on vendor_invoices (status approved, paid_at null). Posts a balanced journal entry (2440 debit, bank credit) and sets status=paid. Already-paid invoices are rejected.',
+    instructions: 'Pays the full total_cents of the vendor invoice. Find the invoice via manage_record/list on vendor_invoices (status approved, paid_at null). Posts a balanced journal entry (payables debit, bank credit) and sets status=paid. Already-paid invoices are rejected. The refusal path is self-correcting: when the gate blocks the payment the error names what is missing and the exact next skill — match_invoice_to_receipt, receive_purchase_order, auto_approve_vendor_invoice, or request_entity_approval + advance_approval_step for a deliberate overrule. Do not try to route around it by writing vendor_invoices.status directly; the guard sits on the table, not in this function.',
   },
   {
     name: 'register_vendor_invoice',
@@ -71,12 +71,12 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'list_reorder_candidates',
-    description: 'List products below their reordering rule with preferred vendor info. The threshold is reorder_rules.min_qty (the Odoo min/max rule the inventory UI writes and procurement_run reads) — only rules with procurement_method=buy; manufactured items go to mrp_reorder_run. A product with no rule falls back to products.low_stock_threshold; a product with no threshold at all is NOT listed (there is no default reorder point). Use when: reviewing what needs reordering, "vad behöver beställas?". NOT for: actually placing orders (use auto_generate_purchase_orders).',
+    description: 'List products below their reordering rule, with the resolved vendor and price. THE replenishment engine: it counts VIRTUAL stock (on hand − reserved + incoming purchase orders), so goods already on order are not ordered twice, and every row carries reserved_qty/incoming_qty/virtual_qty/vendor_source as its own proof. The threshold is reorder_rules.min_qty — only rules with procurement_method=buy; manufactured items go to mrp_reorder_run. A product with no rule falls back to products.low_stock_threshold; a product with no threshold at all is NOT listed (there is no default reorder point). Optional p_threshold_override replaces every threshold for an ad-hoc "what is at or below N" question. Use when: reviewing what needs reordering, "vad behöver beställas?". NOT for: actually placing orders (use auto_generate_purchase_orders). NOT for: changing the thresholds (use manage_reorder_rule).',
     category: 'commerce',
     handler: 'rpc:list_reorder_candidates',
     scope: 'external',
     trust_level: 'notify',
-    tool_definition: {"type":"function","function":{"name":"list_reorder_candidates","parameters":{"type":"object","properties":{}},"description":"List products needing reorder with vendor pricing"}} as SkillSeed['tool_definition'],
+    tool_definition: {"type":"function","function":{"name":"list_reorder_candidates","parameters":{"type":"object","properties":{"p_threshold_override":{"type":"number","description":"Ad-hoc reorder point that replaces every configured threshold"}}},"description":"List products needing reorder (virtual stock) with vendor pricing"}} as SkillSeed['tool_definition'],
   },
   {
     name: 'manage_vendor',
@@ -121,6 +121,8 @@ const PURCHASING_SKILLS: SkillSeed[] = [
           properties: {
             vendor_id: { type: 'string' }, order_date: { type: 'string' },
             expected_delivery: { type: 'string' }, notes: { type: 'string' },
+            currency: { type: 'string', description: "ISO code the order is placed in (e.g. EUR). Omit to take the vendor's own currency." },
+            exchange_rate: { type: 'number', description: 'Accounting-currency units per unit of `currency`. Omit to stamp the stored rate for the order date.' },
             lines: { type: 'array', items: { type: 'object', properties: {
               product_id: { type: 'string' }, description: { type: 'string' },
               quantity: { type: 'number' }, unit_price_cents: { type: 'number' }, tax_rate: { type: 'number' },
@@ -130,7 +132,11 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: `Always create POs in draft status. vendor_id MUST be a vendor UUID — look it up first with manage_vendor (action:list); passing a vendor NAME fails with "vendor_id and lines are required". Each line is {description, quantity, unit_price_cents} (unit_price_cents = integer cents, e.g. 5000 = 50.00 kr; product_id optional). Line total_cents and the PO subtotal/tax/total are computed automatically — do NOT pass them. Locale-specific: ${getActivePack().ai_instructions.purchasing}`,
+    instructions: `Always create POs in draft status. vendor_id MUST be a vendor UUID — look it up first with manage_vendor (action:list); passing a vendor NAME fails with "vendor_id and lines are required". Each line is {description, quantity, unit_price_cents} (unit_price_cents = integer cents, e.g. 5000 = 50.00 kr; product_id optional). Line total_cents and the PO subtotal/tax/total are computed automatically — do NOT pass them.
+CURRENCY: omit \`currency\` and the order takes the vendor's own currency; pass it only to place the order in a different one. \`exchange_rate\` is accounting-currency units per unit of the order currency (EUR→SEK ≈ 11.4) and is stamped from the stored rates for the order date when omitted. A foreign-currency order with no stored rate is REFUSED, not booked at 1 — register the rate first with set_exchange_rate. That rate is what values the goods in stock at receipt, so the order carries it all the way to the books.
+VAT: \`tax_rate\` is a PERCENT per line (25 = 25 %). 0 is a real value (EU acquisition / reverse charge) and is respected — the order total is computed from the line rates.
+PRICE: pass the vendor's purchase price. resolve_vendor_price gives it, including the quantity tier for the quantity you are ordering. A line priced at the product's SALES price while a cheaper purchase price is on file is refused.
+Any parameter this skill does not declare is bounced with the valid list — it is never accepted and ignored. Locale-specific: ${getActivePack().ai_instructions.purchasing}`,
   },
   {
     name: 'send_purchase_order',
@@ -197,7 +203,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'match_invoice_to_receipt',
-    description: 'Three-way match a vendor invoice against PO and physically received goods. Sets match_status = matched | partial | over_invoiced | under_invoiced | no_receipt | no_po. Configurable tolerance (default ±2%). Use when: vendor invoice registered, before approving payment. NOT for: approving (use auto_approve_vendor_invoice for matched).',
+    description: 'Three-way match a vendor invoice against PO and physically received goods. Measures the bill against what is STILL billable — the received (or ordered, per the bill control policy) value on the PO minus what other live invoices already claimed — so a second bill for the same delivery lands as over_invoiced, never matched. Sets match_status = matched | over_invoiced | under_invoiced | no_receipt | no_po. Configurable tolerance (default ±2%). Use when: vendor invoice registered, before approving payment. NOT for: approving (use auto_approve_vendor_invoice for matched).',
     category: 'commerce',
     handler: 'rpc:match_invoice_to_receipt',
     scope: 'internal',
@@ -216,11 +222,11 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Run after register_vendor_invoice. Emits invoice.matched event so automations can auto-approve matched or escalate variance.',
+    instructions: 'Run after register_vendor_invoice. Emits invoice.matched event so automations can auto-approve matched or escalate variance. The response carries already_invoiced_cents, billable_value_cents, control_policy and other_invoices — read those before concluding a variance is a supplier error; "nothing left to invoice" means the delivery has already been billed. The bill control policy comes from site_settings key "purchasing", value.bill_control_policy ∈ received|ordered (default received).',
   },
   {
     name: 'auto_approve_vendor_invoice',
-    description: 'Auto-approve a vendor invoice that already has match_status=matched. Sets status=approved + records approver. Use when: invoice matched within tolerance and policy allows auto-approval. NOT for: invoices with variance (those require human review).',
+    description: 'Auto-approve a vendor invoice, re-running the three-way match first and approving only if it still comes out matched. Sets status=approved + records approver. Use when: a registered bill should be released for payment. NOT for: invoices with variance — it refuses them and returns the reason plus the next step (a stale "matched" label from before a sibling invoice arrived will not get past it).',
     category: 'commerce',
     handler: 'rpc:auto_approve_vendor_invoice',
     scope: 'internal',
@@ -228,7 +234,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'auto_approve_vendor_invoice',
-        description: 'Approve invoice when match_status=matched',
+        description: 'Re-match, then approve the invoice if the three-way match is clean',
         parameters: {
           type: 'object',
           properties: { invoice_id: { type: 'string', description: 'Vendor invoice UUID' } },
@@ -236,10 +242,11 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
+    instructions: 'Idempotent: an already-approved invoice returns already_approved=true. On refusal the response carries match_status, variance_cents, a reason and a next step. There is no force flag — a bill that will not match is either corrected (credit memo / dispute) or overruled by a human through request_entity_approval("vendor_invoice", <invoice_id>, <total_cents>) followed by advance_approval_step.',
   },
   {
     name: 'purchase_reorder_check',
-    description: 'Analyze current stock levels against the reordering rules and suggest (or auto-create draft) purchase orders for low-stock items. The threshold is reorder_rules.min_qty — the same rule procurement_run reads — falling back to products.low_stock_threshold for products with no rule; a product with no threshold anywhere is not suggested. Use when: heartbeat detects low inventory, admin asks for reorder suggestions, or as part of daily automation. NOT for: actual PO creation (use create_purchase_order after review).',
+    description: 'Analyze stock against the reordering rules and suggest (or auto-create draft) purchase orders for low-stock items. Stock means VIRTUAL stock — on hand − reserved + incoming purchase orders — so a product that already has enough on order is NOT suggested again. The threshold is reorder_rules.min_qty (the same rule procurement_run reads), falling back to products.low_stock_threshold; a product with no threshold anywhere is not suggested. Use when: heartbeat detects low inventory, admin asks for reorder suggestions, or as part of daily automation. NOT for: actual PO creation (use create_purchase_order after review). NOT for: changing the thresholds (use manage_reorder_rule).',
     category: 'commerce',
     handler: 'db:products',
     scope: 'internal',
@@ -254,7 +261,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Threshold source, in priority order: threshold_override (if given) → the active reorder_rules with procurement_method=buy, summed per product (min_qty is the trigger, max_qty/reorder_qty the quantity — read exactly as procurement_run reads them) → product_stock.reorder_point (legacy) → products.low_stock_threshold. A rule is a MINIMUM: a rule-backed product is low when on hand is BELOW min_qty, not at it; the legacy product threshold keeps its at-or-below meaning. A product whose only rules are procurement_method=manufacture belongs to mrp_reorder_run and is skipped here. A product with no rule and no threshold is not suggested — there is no default reorder point. Reordering rules are set in the inventory UI (Reorder rules), not by this skill. Groups low-stock items by preferred vendor and, with auto_create, creates one DRAFT PO per vendor for an admin to review.',
+    instructions: 'Delegates to list_reorder_candidates — there is ONE replenishment engine, in SQL, and this skill does not compute anything of its own. Stock is VIRTUAL stock from stock_virtual_available (on hand − reserved + incoming open PO lines): a product with 0 on hand and 120 kg already on order is not low. Every returned item carries current_stock, reserved, incoming and virtual_stock so the answer can be checked without re-running anything. Threshold source, in priority order: threshold_override (if given, it replaces every threshold and asks the plain question "what is at or below N") → the active reorder_rules with procurement_method=buy, summed per product → product_stock.reorder_point (legacy) → products.low_stock_threshold. A rule is a MINIMUM: a rule-backed product is low when virtual stock is BELOW min_qty, not at it; the legacy threshold keeps its at-or-below meaning. A product whose only rules are procurement_method=manufacture belongs to mrp_reorder_run and is skipped. A product with no rule and no threshold is not suggested — there is no default reorder point. Reordering rules are set with manage_reorder_rule (action=set) — no UI needed. The vendor comes from reorder_preferred_vendor (reorder_rules.preferred_vendor_id wins, vendor_products.is_preferred fills in); with auto_create it groups by that vendor and creates one DRAFT PO each for an admin to review.',
   },
   {
     name: 'update_purchase_order',
@@ -274,9 +281,13 @@ const PURCHASING_SKILLS: SkillSeed[] = [
             action: { type: 'string', enum: ['create', 'update', 'get', 'list'] },
             purchase_order_id: { type: 'string' },
             vendor_id: { type: 'string' },
+            currency: { type: 'string', description: "ISO code the order is placed in. Omit to take the vendor's own currency." },
+            exchange_rate: { type: 'number', description: 'Accounting-currency units per unit of `currency`. Omit to stamp the stored rate for the order date.' },
+            order_date: { type: 'string' },
             status: { type: 'string', enum: ['draft', 'sent', 'confirmed', 'partially_received', 'received', 'cancelled'] },
             expected_delivery: { type: 'string' },
             notes: { type: 'string' },
+            limit: { type: 'number' },
             lines: {
               type: 'array',
               items: {
@@ -297,7 +308,7 @@ const PURCHASING_SKILLS: SkillSeed[] = [
   },
   {
     name: 'auto_generate_purchase_orders',
-    description: 'Group reorder candidates by preferred vendor and auto-create one draft PO per vendor. Use when: nightly reorder run, "create purchase orders". Closes procure-to-pay loop. NOT for: single manual POs (use create_purchase_order).',
+    description: 'Group reorder candidates by resolved vendor and auto-create one draft PO per vendor. Every line comes from list_reorder_candidates, so quantities are computed from VIRTUAL stock (on hand − reserved + incoming) and goods already on order are never ordered again. Use when: nightly reorder run, "create purchase orders". Closes the procure-to-pay loop. Run with p_dry_run=true first to preview the orders and their totals. NOT for: single manual POs (use create_purchase_order). NOT for: changing the thresholds (use manage_reorder_rule).',
     category: 'commerce',
     handler: 'rpc:auto_generate_purchase_orders',
     scope: 'external',
