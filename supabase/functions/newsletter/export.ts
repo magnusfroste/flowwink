@@ -1,9 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-chat-session, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  // Without this a browser caller cannot read them at all, and the count would
+  // travel only as far as the network tab.
+  "Access-Control-Expose-Headers": "x-subscriber-count, x-export-complete",
 };
 
 export async function handle(req: Request): Promise<Response> {
@@ -60,11 +64,29 @@ export async function handle(req: Request): Promise<Response> {
 
     console.log(`[newsletter-export] Exporting subscribers as ${format}`);
 
-    // Fetch all subscribers
-    const { data: subscribers, error: subError } = await supabase
-      .from("newsletter_subscribers")
-      .select("id, email, name, status, created_at, confirmed_at, unsubscribed_at")
-      .order("created_at", { ascending: false });
+    // Every subscriber, paginated. An export's entire claim is completeness —
+    // it is downloaded to be imported somewhere else, or kept as the record of
+    // who was on the list — so the whole population genuinely IS the question
+    // and the third cure is the right one here.
+    //
+    // The old read had no `.limit()` and no pagination: PostgREST cut it off at
+    // 1000 rows in silence and the file said `total_count: 1000`, which is a
+    // number, not a warning. A list of 2400 exported as a plausible-looking
+    // 1000-row CSV that nothing downstream could question.
+    //
+    // Ordered by `id` rather than by `created_at`: created_at is not unique, and
+    // an unstable sort key makes rows drift across page boundaries — which in an
+    // export means silently dropped and duplicated subscribers. The display
+    // ordering is restored below, after every row is in hand.
+    const { rows: fetched, error: subError, truncated } = await readAllRows<{
+      id: string; email: string | null; name: string | null; status: string;
+      created_at: string; confirmed_at: string | null; unsubscribed_at: string | null;
+    }>(supabase, "newsletter_subscribers", {
+      columns: "id, email, name, status, created_at, confirmed_at, unsubscribed_at",
+      orderBy: "id",
+      pageSize: 1000,
+      maxPages: 500,
+    });
 
     if (subError) {
       console.error("[newsletter-export] Error fetching subscribers:", subError);
@@ -74,16 +96,42 @@ export async function handle(req: Request): Promise<Response> {
       });
     }
 
+    // A partial export is worse than no export: it is indistinguishable from a
+    // complete one once it has left the building. Refuse rather than hand over a
+    // file that quietly ends early.
+    if (truncated) {
+      console.error("[newsletter-export] subscriber list exceeded the page ceiling — refusing to emit a partial file");
+      return new Response(JSON.stringify({
+        error: "Subscriber list is larger than this export can read in one pass. " +
+          "No file was produced — a truncated export cannot be told apart from a complete one.",
+      }), {
+        status: 507,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const subscribers = fetched.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+
+    // The count travels WITH the file, on both formats. A CSV cannot carry a
+    // footer without stopping being a CSV, so the header is where a caller
+    // (or a script) can check that the rows it parsed are the rows we sent.
+    const countHeaders = {
+      "X-Subscriber-Count": String(subscribers.length),
+      "X-Export-Complete": "true",
+    };
+
     if (format === "json") {
       // Return JSON format
       return new Response(JSON.stringify({
         exported_at: new Date().toISOString(),
-        total_count: subscribers?.length || 0,
-        subscribers: subscribers || [],
+        total_count: subscribers.length,
+        complete: true,
+        subscribers,
       }), {
         status: 200,
         headers: {
           ...corsHeaders,
+          ...countHeaders,
           "Content-Type": "application/json",
           "Content-Disposition": `attachment; filename="subscribers_${new Date().toISOString().split('T')[0]}.json"`,
         },
@@ -94,7 +142,7 @@ export async function handle(req: Request): Promise<Response> {
     const csvHeaders = ["id", "email", "name", "status", "created_at", "confirmed_at", "unsubscribed_at"];
     const csvRows = [csvHeaders.join(",")];
 
-    for (const sub of subscribers || []) {
+    for (const sub of subscribers) {
       const row = [
         sub.id,
         `"${(sub.email || '').replace(/"/g, '""')}"`,
@@ -109,12 +157,13 @@ export async function handle(req: Request): Promise<Response> {
 
     const csvContent = csvRows.join("\n");
 
-    console.log(`[newsletter-export] Exported ${subscribers?.length || 0} subscribers`);
+    console.log(`[newsletter-export] Exported ${subscribers.length} subscribers`);
 
     return new Response(csvContent, {
       status: 200,
       headers: {
         ...corsHeaders,
+        ...countHeaders,
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="subscribers_${new Date().toISOString().split('T')[0]}.csv"`,
       },

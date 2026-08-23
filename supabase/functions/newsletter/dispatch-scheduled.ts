@@ -53,7 +53,14 @@ export async function handle(req: Request): Promise<Response> {
       });
     }
 
-    const results: Array<{ id: string; ok: boolean; sent_count?: number; error?: string }> = [];
+    const results: Array<{
+      id: string; ok: boolean; sent_count?: number; error?: string;
+      // 'partial' means recipients are still outstanding. The cron does not
+      // retry on its own — a scheduled newsletter left in 'partial' has to be
+      // re-sent deliberately — but the outcome has to be legible here, because
+      // this response is the only place a scheduled run reports anything.
+      status?: 'sent' | 'partial'; failed_now?: number; recipients_truncated?: boolean;
+    }> = [];
     for (const row of (due ?? []) as any[]) {
       // Flip to 'sending' immediately to prevent the next cron tick picking it up
       // (sendNewsletterCore also does this, but the eq('status','scheduled') filter
@@ -66,8 +73,18 @@ export async function handle(req: Request): Promise<Response> {
         continue;
       }
       const r = await sendNewsletterCore(supabase as any, row.id);
-      if (r.ok) results.push({ id: row.id, ok: true, sent_count: r.sent_count });
-      else results.push({ id: row.id, ok: false, error: r.error });
+      if (r.ok) {
+        results.push({
+          id: row.id, ok: true, sent_count: r.sent_count, status: r.status,
+          failed_now: r.failed_now, recipients_truncated: r.recipients_truncated,
+        });
+        if (r.status === 'partial') {
+          console.error(
+            `[newsletter/dispatch-scheduled] ${row.id} ended partial — ` +
+            `${r.failed_now} failed this run, truncated=${r.recipients_truncated}`,
+          );
+        }
+      } else results.push({ id: row.id, ok: false, error: r.error });
     }
 
     return new Response(
