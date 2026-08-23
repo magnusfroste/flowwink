@@ -201,7 +201,7 @@ It compares your data against the generated field catalogue (block-reference.ts 
   {
     name: 'check_integrations',
     description:
-      "Probe every enabled integration (SearXNG, Firecrawl, Resend, OpenAI, Gemini, Unsplash, Composio, local LLM) with a cheap live call and report per-integration ok/fail with a diagnostic. Use when: an integration-backed feature behaves oddly (search falls back, mail not sending); after changing integration config or rotating a key; a scheduled health sweep. NOT for: testing AI chat quality (test_ai_connection); full platform test suites (run_platform_tests).",
+      "Probe every enabled integration (SearXNG, Firecrawl, Resend, OpenAI, Gemini, Unsplash, Composio, local LLM) that something in this instance actually consumes, with a cheap live call, and report per-integration ok/fail/unused with a diagnostic. An integration nothing points at is reported 'unused', never as a fault. Use when: an integration-backed feature behaves oddly (search falls back, mail not sending); after changing integration config or rotating a key; a scheduled health sweep. NOT for: testing AI chat quality (test_ai_connection); full platform test suites (run_platform_tests).",
     category: 'system',
     handler: 'internal:check_integrations',
     scope: 'internal',
@@ -211,7 +211,7 @@ It compares your data against the generated field catalogue (block-reference.ts 
       function: {
         name: 'check_integrations',
         description:
-          'Probe every enabled integration with a cheap live call (auth check / trivial read, never a billable write) and report per-integration status with a diagnostic and likely fix. Read-only sensor.',
+          'Probe every enabled integration that something in this instance consumes, with a cheap live call (auth check / trivial read, never a billable write), and report per-integration status (ok/fail/unused/skipped) with a diagnostic and likely fix. Read-only sensor.',
         parameters: {
           type: 'object',
           properties: {
@@ -225,7 +225,7 @@ It compares your data against the generated field catalogue (block-reference.ts 
     },
     instructions: `## check_integrations
 ### What
-Read-only sensor: probes each ENABLED integration from site_settings.integrations with a bounded (6s) live call and returns { healthy, summary, failing[], integrations[] } where every entry has status ok/fail/skipped plus a diagnostic detail.
+Read-only sensor: probes each ENABLED integration from site_settings.integrations that something in this instance actually CONSUMES, with a bounded (6s) live call. Returns { healthy, summary, failing[], unused[], integrations[] } where every entry has status ok/fail/unused/skipped plus a diagnostic detail.
 ### When to use
 - An integration-backed feature misbehaves (web search silently falling back to another provider, mail not arriving, image search empty)
 - After editing integration config or rotating an API key — verify before moving on
@@ -233,6 +233,8 @@ Read-only sensor: probes each ENABLED integration from site_settings.integration
 ### Reading the result
 - Diagnostics name the likely fix when the failure shape is known, e.g. SearXNG "403 on format=json" → enable the json format in the instance's settings.yml; "0 results" → the engines block the server's IP, enable qwant/mojeek.
 - 'skipped' means disabled in settings or nothing server-side to probe (google_analytics is a client-side snippet) — not a failure.
+- 'unused' means nothing in this instance consumes it, so it was not probed at all: an unconfigured local LLM on a site whose system_ai.provider is 'openai' is a normal state, not a fault. The entry says which map was consulted (system_ai.provider, email-send's transport chain, web-search's provider chain). Never report an 'unused' entry as a problem.
+- A 'fail' on a consumed integration names what depends on it ("IN USE BY: …") — that is the one to act on.
 ### Origin
 Built after the 2026-07-22 incident where the fleet's SearXNG was misconfigured for days and web search silently fell back to Firecrawl — the failure was invisible until someone read provider fields in agent_activity.`,
   },
