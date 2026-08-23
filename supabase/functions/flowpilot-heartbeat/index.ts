@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 import { enrichCronHealth, formatCronHealthAlert, type CronHealthReport } from '../_shared/cron/health.ts';
 import {
   resolveAiConfig,
@@ -170,13 +171,29 @@ async function runResumePrePass(supabaseUrl: string, serviceKey: string, traceId
 
 async function runIntegrityGate(supabase: any): Promise<string> {
   try {
-    const { data: enabledSkills } = await supabase
-      .from('agent_skills')
-      .select('name, instructions, tool_definition, description')
-      .eq('enabled', true);
+    // Paginated. Two things downstream depend on this being the WHOLE enabled
+    // register: the counts it publishes, and `skillNames`, which decides which
+    // automations are called broken. PostgREST caps an unbounded select at
+    // 1000 rows in silence (agent_skills: 540 on optic, 2026-08-23, growing
+    // with every module) — so past the cap the gate would invent "N automations
+    // reference missing skills" for automations pointing at skills it simply
+    // never read, and write a `failed` activity row on the strength of it. The
+    // whole population IS the question here, so pagination is the remedy.
+    const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+      columns: 'name, instructions, tool_definition, description',
+      orderBy: 'name',
+      filter: (q: any) => q.eq('enabled', true),
+    });
 
-    const skills = enabledSkills || [];
+    const skills = skillsRead.rows;
     const integrityIssues: string[] = [];
+    const registerComplete = !skillsRead.truncated && !skillsRead.error;
+    if (!registerComplete) {
+      console.warn(
+        `[heartbeat] Skill register read incomplete (${skillsRead.error ?? 'page ceiling reached'}) — ` +
+        'skipping the automation cross-check rather than accusing skills that were never read.',
+      );
+    }
 
     const noInstr = skills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
     if (noInstr.length > 0) integrityIssues.push(`${noInstr.length} skills missing instructions`);
@@ -194,13 +211,18 @@ async function runIntegrityGate(supabase: any): Promise<string> {
     const missing = ['soul', 'identity', 'agents'].filter(k => !(memKeys || []).some((m: any) => m.key === k));
     if (missing.length > 0) integrityIssues.push(`Missing memory keys: ${missing.join(', ')}`);
 
-    const { data: autos } = await supabase
-      .from('agent_automations')
-      .select('name, skill_name')
-      .eq('enabled', true);
-    const skillNames = new Set(skills.map((s: any) => s.name));
-    const broken = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
-    if (broken.length > 0) integrityIssues.push(`${broken.length} automations reference missing skills`);
+    // Only cross-check automations against a register we know we read whole —
+    // "missing skill" is a claim about absence, and absence from a short read
+    // is not absence.
+    if (registerComplete) {
+      const { data: autos } = await supabase
+        .from('agent_automations')
+        .select('name, skill_name')
+        .eq('enabled', true);
+      const skillNames = new Set(skills.map((s: any) => s.name));
+      const broken = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
+      if (broken.length > 0) integrityIssues.push(`${broken.length} automations reference missing skills`);
+    }
 
     if (integrityIssues.length > 0) {
       await supabase.from('agent_activity').insert({

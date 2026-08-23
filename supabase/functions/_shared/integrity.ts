@@ -124,7 +124,12 @@ export interface HealthCheckResult {
   version: {
     skill_count: number;
     enabled_count: number;
-    skill_hash: string;
+    /**
+     * null when the skill register could not be read whole. A hash over a
+     * prefix would never match the baseline again, so it is not computed —
+     * `hash_match: null` means "no comparison possible", not "no drift".
+     */
+    skill_hash: string | null;
     expected_hash: string | null;
     hash_match: boolean | null;
   };

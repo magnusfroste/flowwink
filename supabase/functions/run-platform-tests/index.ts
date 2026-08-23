@@ -6,6 +6,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,28 +130,36 @@ const suite_skills_health: SuiteFn = async (admin) => {
 
   out.push(
     await runCheck("skills_health", "no duplicate skill names", async () => {
-      const { data, error } = await admin.from("agent_skills").select("name");
-      if (error) throw new Error(error.message);
+      // Paginated: a test that reads a prefix and passes is worse than no test.
+      const { rows, error, truncated } = await readAllRows<{ name: string }>(
+        admin,
+        "agent_skills",
+        { columns: "name", orderBy: "name" },
+      );
+      if (error) throw new Error(error);
+      if (truncated) throw new Error("Could not read the whole skill register — result would only cover a prefix.");
       const counts = new Map<string, number>();
-      for (const r of data ?? []) {
+      for (const r of rows) {
         counts.set(r.name, (counts.get(r.name) ?? 0) + 1);
       }
       const dupes = [...counts.entries()].filter(([, n]) => n > 1);
       if (dupes.length > 0) {
         throw new Error(`Duplicates: ${dupes.map(([n]) => n).join(", ")}`);
       }
-      return { details: { total: data?.length ?? 0 } };
+      return { details: { total: rows.length } };
     }),
   );
 
   out.push(
     await runCheck("skills_health", "all enabled skills have descriptions", async () => {
-      const { data, error } = await admin
-        .from("agent_skills")
-        .select("name, description")
-        .eq("enabled", true);
-      if (error) throw new Error(error.message);
-      const empty = (data ?? []).filter(
+      const { rows, error, truncated } = await readAllRows<{ name: string; description: string | null }>(
+        admin,
+        "agent_skills",
+        { columns: "name, description", orderBy: "name", filter: (q: any) => q.eq("enabled", true) },
+      );
+      if (error) throw new Error(error);
+      if (truncated) throw new Error("Could not read the whole skill register — result would only cover a prefix.");
+      const empty = rows.filter(
         (r) => !r.description || r.description.trim().length < 20,
       );
       if (empty.length > 0) {
@@ -158,7 +167,7 @@ const suite_skills_health: SuiteFn = async (admin) => {
           `Missing/thin descriptions: ${empty.map((m) => m.name).slice(0, 10).join(", ")}${empty.length > 10 ? "…" : ""}`,
         );
       }
-      return { details: { checked: data?.length ?? 0 } };
+      return { details: { checked: rows.length } };
     }),
   );
 
@@ -417,12 +426,25 @@ async function suite_skill_manifest_coverage(admin: any): Promise<TestResult[]> 
 
   out.push(
     await runCheck("skill_manifest_coverage", "every DB skill is declared in a module manifest", async () => {
-      const { data, error } = await admin
-        .from("agent_skills")
-        .select("name")
-        .eq("origin", "bundled");
-      if (error) throw new Error(error.message);
-      const dbNames = (data ?? []).map((r: any) => r.name as string);
+      // Paginated. This check exists to find orphans, and an orphan is defined
+      // by ABSENCE from the manifest — so a read that stops at PostgREST's
+      // silent 1000-row cap turns the whole suite green on a prefix. The
+      // register measured 540 rows on optic (2026-08-23) and grows with every
+      // module; the orphans in the unread tail would be exactly the ones
+      // nobody is watching. A truncated read is a FAILURE here, not a caveat.
+      const { rows, error, truncated } = await readAllRows<{ name: string }>(
+        admin,
+        "agent_skills",
+        { columns: "name", orderBy: "name", filter: (q: any) => q.eq("origin", "bundled") },
+      );
+      if (error) throw new Error(error);
+      if (truncated) {
+        throw new Error(
+          "Could not read the whole skill register — orphan detection over a prefix " +
+          "would pass without having looked at the tail.",
+        );
+      }
+      const dbNames = rows.map((r) => r.name);
       const orphans = dbNames.filter((n) => !declared.has(n)).sort();
       if (orphans.length > 0) {
         throw new Error(

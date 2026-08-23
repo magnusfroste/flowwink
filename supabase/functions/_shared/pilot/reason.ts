@@ -17,6 +17,7 @@ import { generateTraceId } from '../trace.ts';
 import { checkpointRun } from '../trace/checkpoint.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
+import { readAllRows } from '../read-all-rows.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
 import {
@@ -449,20 +450,36 @@ export async function loadSkillsRaw(
 ): Promise<SkillCache> {
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
 
-  let query = supabase
-    .from('agent_skills')
-    .select('name, tool_definition, scope, requires, category')
-    .eq('enabled', true)
-    .in('scope', scopes);
-  
-  if (categories && categories.length > 0) {
-    query = query.in('category', categories);
-  }
-
-  const [{ data: skills }, { data: policyRow }] = await Promise.all([
-    query,
+  // Paginated. This is FlowPilot's entire tool surface for the run: a skill
+  // that is not in this array does not exist as far as the ReAct loop is
+  // concerned, and the loop will happily conclude "I have no tool for that"
+  // and substitute a worse one. PostgREST caps an unbounded select at 1000
+  // rows in silence; agent_skills measured 540 rows (538 enabled) on optic on
+  // 2026-08-23 and grows with every module. `.in('scope', …)` bounds the VALUES
+  // but not the row count, so it is no ceiling at all here. The whole enabled
+  // register genuinely IS the question, so pagination is the right remedy.
+  const [skillsResult, { data: policyRow }] = await Promise.all([
+    readAllRows<any>(supabase, 'agent_skills', {
+      columns: 'name, tool_definition, scope, requires, category',
+      orderBy: 'name',
+      filter: (q: any) => {
+        let f = q.eq('enabled', true).in('scope', scopes);
+        if (categories && categories.length > 0) f = f.in('category', categories);
+        return f;
+      },
+    }),
     supabase.from('agent_memory').select('value').eq('key', 'tool_policy').maybeSingle(),
   ]);
+
+  if (skillsResult.error) {
+    console.error('[reason] Could not read the full skill register:', skillsResult.error);
+  } else if (skillsResult.truncated) {
+    console.error(
+      '[reason] Skill register exceeded the read ceiling — this turn reasons over a ' +
+      'prefix of the tool surface.',
+    );
+  }
+  const skills = skillsResult.rows;
 
   const blockedSkills: Set<string> = new Set();
   if (policyRow?.value?.blocked && Array.isArray(policyRow.value.blocked)) {

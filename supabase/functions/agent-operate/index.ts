@@ -6,6 +6,7 @@ import { callAi } from '../_shared/ai-call.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../_shared/skills/intent-scorer.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../_shared/mcp/groups.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -216,11 +217,27 @@ serve(async (req) => {
     try {
       const activeModules = await loadActiveModuleIds(supabase);
       if (!activeModules.has('__all__')) {
-        const { data: allEnabled } = await supabase
-          .from('agent_skills')
-          .select('name, tool_definition, category')
-          .eq('enabled', true)
-          .in('scope', ['internal', 'both']);
+        // Paginated. This read is the honesty mechanism: everything in it that
+        // is NOT in `exposedNames` gets reported to the user as "that skill's
+        // module is off". An unbounded select stops at 1000 rows without a
+        // word (agent_skills: 540 rows on optic, 2026-08-23, and climbing), so
+        // past the cap the tail would simply stop being mentioned — the
+        // operator would say nothing at all about a capability that exists and
+        // is merely switched off, which is the failure this block was written
+        // to prevent. `.in('scope', …)` bounds the values, not the row count.
+        const allEnabledResult = await readAllRows<any>(supabase, 'agent_skills', {
+          columns: 'name, tool_definition, category',
+          orderBy: 'name',
+          filter: (q: any) => q.eq('enabled', true).in('scope', ['internal', 'both']),
+        });
+        if (allEnabledResult.error || allEnabledResult.truncated) {
+          console.error(
+            '[agent-operate] Skill register read incomplete — disabled-module honesty ' +
+            'runs over a prefix:',
+            allEnabledResult.error ?? 'page ceiling reached',
+          );
+        }
+        const allEnabled = allEnabledResult.rows;
 
         const exposedNames = new Set(filteredSkills.map((t: any) => t.function?.name));
         const disabled = (allEnabled || []).filter((s: any) =>

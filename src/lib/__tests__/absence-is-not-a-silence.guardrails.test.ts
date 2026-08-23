@@ -276,3 +276,164 @@ describe('no conclusion is drawn from an unbounded read', () => {
     ).toEqual([]);
   });
 });
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// 4. Skillregistret — de ytor som svarar "den förmågan finns inte"
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * `agent_skills` mätte 540 rader (538 enabled) på optic 2026-08-23 — 54% av
+ * PostgREST:s tysta tak, och det växer med varje modul. Ytorna nedan LÄSER hela
+ * registret och drar sedan en slutsats av vad som inte kom med:
+ *
+ *   • MCP-katalogen — frånvaro ur den ÄR svaret "den förmågan finns inte".
+ *   • FlowPilots verktygsyta per ReAct-varv — ett oläst skill finns inte.
+ *   • agent-operate — allt som inte är exponerat rapporteras som "modulen är av".
+ *   • run-platform-tests — hittar föräldralösa skills genom FRÅNVARO ur manifestet.
+ *   • instance-health — hashar registret mot en baslinje; en prefix-hash kan
+ *     aldrig matcha igen, alltså ett självförvållat drift-larm för alltid.
+ *   • flowpilot-heartbeat — hittar på "N automationer pekar på saknade skills"
+ *     och skriver en `failed`-rad på det.
+ *   • /rest/groups — verktygsantal per grupp; en oläst grupp ser tom ut.
+ *   • lint_skill — friskintyg för HELA registret utfärdat på en prefix.
+ *
+ * Alla åtta läser nu sidvis via readAllRows med `name` som sorteringsnyckel
+ * (agent_skills_name_key — pagineringen kräver en STABIL UNIK kolumn; category,
+ * som katalogen sorterade på förut, är ingendera).
+ */
+const SKILL_REGISTER_READERS: Array<{
+  file: string;
+  /** Textmarkör där ytan börjar. */
+  start: string;
+  /** Slutmarkör, eller antal tecken framåt. */
+  end: string | number;
+  why: string;
+}> = [
+  {
+    file: 'supabase/functions/mcp-server/index.ts',
+    start: 'async function loadExposedSkills(',
+    end: '\n}',
+    why: 'the whole MCP tool catalog — absence from it is how search_skills concludes a capability does not exist',
+  },
+  {
+    file: 'supabase/functions/mcp-server/index.ts',
+    start: 'app.get("/rest/groups"',
+    end: '\n});',
+    why: 'per-group tool counts — an unread group reads as an empty one',
+  },
+  {
+    file: 'supabase/functions/_shared/pilot/reason.ts',
+    start: 'export async function loadSkillsRaw(',
+    end: '\n}',
+    why: "FlowPilot's entire tool surface for the run",
+  },
+  {
+    file: 'supabase/functions/agent-operate/index.ts',
+    start: "if (!activeModules.has('__all__')) {",
+    end: 1800,
+    why: 'produces disabledSkillCount and the "that skill\'s module is off" message from !exposedNames.has(...)',
+  },
+  {
+    file: 'supabase/functions/run-platform-tests/index.ts',
+    start: '"no duplicate skill names"',
+    end: 1400,
+    why: 'a duplicate-name check over a prefix passes without having looked',
+  },
+  {
+    file: 'supabase/functions/run-platform-tests/index.ts',
+    start: '"all enabled skills have descriptions"',
+    end: 1400,
+    why: 'reports "all N enabled skills" as a fact about the instance',
+  },
+  {
+    file: 'supabase/functions/run-platform-tests/index.ts',
+    start: '"every DB skill is declared in a module manifest"',
+    end: 1600,
+    why: 'orphans are defined by absence — orphans in the unread tail are invisible and the suite goes green',
+  },
+  {
+    file: 'supabase/functions/instance-health/index.ts',
+    start: '// ── 1. Skills ──',
+    end: 1400,
+    why: 'computeSkillHash over a truncated read makes hashMatch permanently false — a self-inflicted drift alarm',
+  },
+  {
+    file: 'supabase/functions/flowpilot-heartbeat/index.ts',
+    start: 'async function runIntegrityGate(',
+    end: '\n}',
+    why: 'past the cap it invents "N automations reference missing skills" and writes a failed activity row',
+  },
+  {
+    file: 'supabase/functions/agent-execute/index.ts',
+    start: 'async function executeLintSkill(',
+    end: '\n}',
+    why: 'reports a clean bill of health for the whole register from a prefix',
+  },
+];
+
+function sliceSite(site: (typeof SKILL_REGISTER_READERS)[number]): string {
+  const src = readFileSync(join(ROOT, site.file), 'utf8');
+  const from = src.indexOf(site.start);
+  expect(from, `marker not found in ${site.file}: ${site.start}`).toBeGreaterThan(-1);
+  if (typeof site.end === 'number') return src.slice(from, from + site.end);
+  const to = src.indexOf(site.end, from);
+  expect(to, `end marker not found after ${site.start} in ${site.file}`).toBeGreaterThan(from);
+  return src.slice(from, to);
+}
+
+describe('the skill register is read whole wherever absence is the answer', () => {
+  it.each(SKILL_REGISTER_READERS.map((s) => [`${s.file} — ${s.start.trim()}`, s] as const))(
+    '%s paginates its agent_skills read',
+    (_label, site) => {
+      const body = sliceSite(site);
+      expect(
+        /readAllRows[<(]/.test(body),
+        `${site.file}: this site ${site.why}. Its agent_skills read must go through ` +
+          `readAllRows (supabase/functions/_shared/read-all-rows.ts) — an unbounded ` +
+          `.select() stops at 1000 rows in silence and agent_skills was at 540 and ` +
+          `growing on 2026-08-23.`,
+      ).toBe(true);
+
+      // Ingen kvarlämnad obegränsad läsning i samma yta. OBS: här duger inte
+      // det generella BOUNDING_CALLS — `.in('scope', [...])` och
+      // `.in('category', [...])` binder VÄRDENA men inte antalet rader, och det
+      // var precis vad loadSkillsRaw och agent-operate gjorde. Bara ett taggat
+      // tak eller en `.in()` på en unik kolumn (name/id) räknas.
+      const BOUNDS_ROW_COUNT =
+        /\.limit\(|\.range\(|\.single\(|\.maybeSingle\(|head:\s*true|\.in\(\s*['"](?:name|id)['"]/;
+      for (const m of body.matchAll(/\.from\(\s*['"]agent_skills['"]\s*\)([\s\S]{0,400})/g)) {
+        const tail = m[1];
+        if (!/\.select\(/.test(tail)) continue; // en write, inte en läsning
+        const stmt = tail.split(';')[0];
+        expect(
+          BOUNDS_ROW_COUNT.test(stmt),
+          `${site.file}: an unbounded .from('agent_skills').select() is left in a site that ` +
+            `${site.why}. Paginate it (readAllRows) or bind it to the keys you care about — ` +
+            `.eq('enabled', true) and .in('scope', [...]) are not ceilings.`,
+        ).toBe(true);
+      }
+    },
+  );
+
+  it('every paginated skill read orders by the unique key', () => {
+    // Sidorna glider om sorteringskolumnen inte är unik. `name` bär
+    // agent_skills_name_key; `category` (som katalogen sorterade på förut) gör det inte.
+    const offenders: string[] = [];
+    for (const site of SKILL_REGISTER_READERS) {
+      const body = sliceSite(site);
+      for (const m of body.matchAll(/readAllRows[\s\S]{0,120}?['"]agent_skills['"]([\s\S]{0,400})/g)) {
+        const orderBy = m[1].match(/orderBy:\s*['"]([^'"]+)['"]/)?.[1];
+        if (orderBy !== 'name') {
+          offenders.push(`${site.file} (${site.start.trim()}) orders by ${orderBy ?? '<nothing>'}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      'A paginated read needs a stable UNIQUE sort key or rows can appear on two pages ' +
+        'or fall between them. agent_skills has agent_skills_name_key on `name`:\n  ' +
+        offenders.join('\n  '),
+    ).toEqual([]);
+  });
+});

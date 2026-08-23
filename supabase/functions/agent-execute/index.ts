@@ -4,6 +4,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
 import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -14572,16 +14573,31 @@ async function executeLintSkill(
   const targetName = typeof args.skill_name === 'string' ? args.skill_name.trim() : '';
   const includePassing = args.include_passing === true;
 
-  // 1. Load skill(s)
-  let q = supabase
-    .from('agent_skills')
-    .select('id,name,handler,category,enabled,mcp_exposed,description,tool_definition')
-    .eq('enabled', true);
-  if (targetName) q = q.eq('name', targetName);
-  const { data: skills, error: skillErr } = await q;
-  if (skillErr) return { error: `Failed to load skills: ${skillErr.message}` };
-  if (!skills || skills.length === 0) {
+  // 1. Load skill(s).
+  // Paginated when linting the whole register. The output of this skill is a
+  // clean bill of health — "✓ N skill(s) clean of blocking issues" — and an
+  // unbounded select stops at PostgREST's silent 1000-row cap, so past it the
+  // verdict would cover a prefix while reading as a verdict on everything.
+  // agent_skills measured 540 rows (538 enabled) on optic on 2026-08-23 and
+  // grows with every module. A single-skill lint is bounded by `.eq('name', …)`
+  // and needs no paging.
+  const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+    columns: 'id,name,handler,category,enabled,mcp_exposed,description,tool_definition',
+    orderBy: 'name',
+    filter: (q: any) => (targetName ? q.eq('enabled', true).eq('name', targetName) : q.eq('enabled', true)),
+  });
+  if (skillsRead.error) return { error: `Failed to load skills: ${skillsRead.error}` };
+  const skills = skillsRead.rows;
+  if (skills.length === 0) {
     return { error: targetName ? `Skill "${targetName}" not found or disabled.` : 'No enabled skills.' };
+  }
+  if (skillsRead.truncated) {
+    return {
+      error:
+        'Could not read the whole skill register — a lint report over a prefix would ' +
+        'certify skills it never looked at. Re-run against a single skill (skill_name) ' +
+        'or raise the page ceiling.',
+    };
   }
 
   // 2. Load RPC signatures

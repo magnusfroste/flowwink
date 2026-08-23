@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { computeSkillHash, runIntegrityChecks } from '../_shared/integrity.ts';
+import { readAllRows } from '../_shared/read-all-rows.ts';
 import type { HealthCheckResult } from '../_shared/integrity.ts';
 import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
 import { enrichCronHealth, type CronHealthReport } from '../_shared/cron/health.ts';
@@ -56,13 +57,22 @@ Deno.serve(async (req) => {
     let checksPassed = 0;
 
     // ── 1. Skills ──────────────────────────────────────────────────────
-    const { data: skills } = await supabase
-      .from('agent_skills')
-      .select('name, instructions, enabled');
-    
-    const allSkills = skills || [];
+    // Paginated. The hash is a fingerprint of the WHOLE enabled register, and
+    // it is compared against a baseline computed elsewhere. Read a prefix and
+    // the two hashes can never agree again: `hashMatch` goes permanently false
+    // and this health check spends the rest of its life reporting drift it
+    // caused itself. PostgREST caps an unbounded select at 1000 rows in
+    // silence; agent_skills measured 540 (538 enabled) on optic on 2026-08-23.
+    const skillsRead = await readAllRows<any>(supabase, 'agent_skills', {
+      columns: 'name, instructions, enabled',
+      orderBy: 'name',
+    });
+    const allSkills = skillsRead.rows;
     const enabledSkills = allSkills.filter((s: any) => s.enabled);
-    const skillHash = await computeSkillHash(enabledSkills);
+    // A hash over a read we know is short is a lie with a checksum on it —
+    // better to report "no comparison possible" than a false mismatch.
+    const skillReadComplete = !skillsRead.truncated && !skillsRead.error;
+    const skillHash = skillReadComplete ? await computeSkillHash(enabledSkills) : null;
 
     // Load expected hash from agent_memory
     const { data: hashMem } = await supabase
@@ -72,13 +82,15 @@ Deno.serve(async (req) => {
       .maybeSingle();
     
     const expectedHash = hashMem?.value?.hash ?? null;
-    const hashMatch = expectedHash ? skillHash === expectedHash : null;
+    const hashMatch = expectedHash && skillHash ? skillHash === expectedHash : null;
 
     checksTotal++;
     if (enabledSkills.length >= 10) checksPassed++;
 
     checksTotal++;
-    if (hashMatch !== false) checksPassed++; // pass if match or no baseline
+    // Pass on match or when there is no baseline to compare against; fail on a
+    // read we could not complete, so an unreadable register never looks healthy.
+    if (hashMatch !== false && skillReadComplete) checksPassed++;
 
     // ── 2. Memory keys ────────────────────────────────────────────────
     const { data: memKeys } = await supabase
@@ -151,7 +163,7 @@ Deno.serve(async (req) => {
           category: 'context',
           created_by: 'flowpilot',
         }, { onConflict: 'key' });
-        console.log(`[instance-health] Auto-updated expected_skill_hash: ${skillHash.slice(0, 16)}... (${enabledSkills.length} skills)`);
+        console.log(`[instance-health] Auto-updated expected_skill_hash: ${skillHash?.slice(0, 16)}... (${enabledSkills.length} skills)`);
         // Re-evaluate as match after auto-update
       } catch { /* non-fatal */ }
     } else if (hashMatch === false) {

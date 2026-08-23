@@ -257,24 +257,52 @@ function resolveGroupTokens(tokens: string[]): { categories: Set<string>; module
 }
 
 
-async function loadExposedSkills(filterGroups?: string[]): Promise<SkillRow[]> {
+/**
+ * Every skill this gateway is willing to expose.
+ *
+ * Paginated, and not defensively: absence from this list IS the gateway's
+ * answer to "can FlowWink do X?". `search_skills` ranks what this returns, and
+ * an external agent that does not see a skill concludes the capability does not
+ * exist. PostgREST caps an unbounded select at 1000 rows and says nothing about
+ * it; agent_skills measured 540 rows (538 enabled) on optic on 2026-08-23 — 54%
+ * of the cap, and it grows with every module. Past the cap the catalog would
+ * have gone quiet about its own tail while looking complete.
+ *
+ * Ordered by `name` rather than the old `category`: pagination needs a stable
+ * unique key (agent_skills_name_key), and category is neither. Tool
+ * registration order is cosmetic; a missing tool is not.
+ *
+ * `meta.truncated` lets a caller that reasons from absence tell a short answer
+ * from a complete one — `search_skills` passes it on as `complete`.
+ */
+async function loadExposedSkills(
+  filterGroups?: string[],
+  meta?: { truncated?: boolean },
+): Promise<SkillRow[]> {
   const sb = serviceClient();
   const [skillsResult, activeModules] = await Promise.all([
-    sb
-      .from("agent_skills")
-      .select("name, description, category, handler, trust_level, requires_staging, tool_definition")
-      .eq("enabled", true)
-      .eq("mcp_exposed", true)
-      .order("category"),
+    readAllRows<SkillRow>(sb, "agent_skills", {
+      columns: "name, description, category, handler, trust_level, requires_staging, tool_definition",
+      orderBy: "name",
+      filter: (q: any) => q.eq("enabled", true).eq("mcp_exposed", true),
+    }),
     loadActiveModules(),
   ]);
 
+  if (meta) meta.truncated = skillsResult.truncated;
+
   if (skillsResult.error) {
-    console.error("Failed to load skills:", skillsResult.error.message);
+    console.error("Failed to load skills:", skillsResult.error);
     return [];
   }
+  if (skillsResult.truncated) {
+    console.error(
+      "MCP: the skill register did not fit inside the read ceiling — the catalog " +
+      "below is a prefix, so absence from it proves nothing.",
+    );
+  }
 
-  const all = (skillsResult.data ?? []) as unknown as SkillRow[];
+  const all = skillsResult.rows;
   let filtered = all.filter((s) => isCategoryActive(s.category, activeModules));
 
   // Federation-peer ceiling: a peer's toolset_groups cap what it can DISCOVER,
@@ -894,7 +922,8 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       const limit = Math.min(typeof args.limit === "number" ? args.limit : 15, 40);
 
       const scope = groups && groups.length ? groups : filterGroups;
-      const matchSkills = await loadExposedSkills(scope);
+      const meta: { truncated?: boolean } = {};
+      const matchSkills = await loadExposedSkills(scope, meta);
       const defs = matchSkills.map((s) => s.tool_definition);
 
       const usageBoost = query
@@ -906,7 +935,18 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       await annotateHasInstructions(catalog.skills);
 
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(catalog, null, 2) }],
+        content: [{
+          type: "text" as const,
+          // `searched` is the size of the register this ranking was drawn from,
+          // and `complete` says whether that register was read whole. An agent
+          // about to report "FlowWink cannot do X" needs both: a ranking over
+          // an unread prefix is not evidence of absence.
+          text: JSON.stringify(
+            { ...catalog, searched: defs.length, complete: !meta.truncated },
+            null,
+            2,
+          ),
+        }],
       };
     },
   });
@@ -1257,18 +1297,23 @@ app.use("/*", async (c, next) => {
 // Toolset groups discovery — transparent: shows catalog + live state
 app.get("/rest/groups", async (c) => {
   const sb = serviceClient();
+  // Paginated: these counts are how an agent decides which group is worth
+  // connecting to, and a group whose skills happen to sort past the read
+  // ceiling would show up as empty — i.e. as "nothing here". The whole
+  // register IS the question when you are counting it, so pagination (not an
+  // upsert, not an `.in()`) is the right remedy here.
   const [activeModules, skillsResult] = await Promise.all([
     loadActiveModules(),
-    sb
-      .from("agent_skills")
-      .select("category")
-      .eq("enabled", true)
-      .eq("mcp_exposed", true),
+    readAllRows<{ name: string; category: string }>(sb, "agent_skills", {
+      columns: "name, category",
+      orderBy: "name",
+      filter: (q: any) => q.eq("enabled", true).eq("mcp_exposed", true),
+    }),
   ]);
 
   // Count exposed tools per category, respecting module-active filter
   const toolCountByCategory: Record<string, number> = {};
-  for (const row of (skillsResult.data ?? []) as Array<{ category: string }>) {
+  for (const row of skillsResult.rows) {
     if (!isCategoryActive(row.category, activeModules)) continue;
     toolCountByCategory[row.category] = (toolCountByCategory[row.category] ?? 0) + 1;
   }
@@ -1307,8 +1352,6 @@ app.get("/rest/groups", async (c) => {
   });
 
   // Sub-composites: module-level shortcuts (finance_core, ops_core)
-  // Tool counts approximated by classifying loaded skills.
-  const allSkills = (skillsResult.data ?? []) as Array<{ category: string; name?: string; handler?: string | null }>;
   const sub_composites = Object.entries(SUB_COMPOSITE_GROUPS).map(([id, modules]) => {
     const set = new Set(modules);
     return { id, kind: "sub_composite" as const, expands_to: modules, tool_count: 0, is_active: set.size > 0 };
@@ -1320,6 +1363,9 @@ app.get("/rest/groups", async (c) => {
       composite_groups: composites,
       sub_composite_groups: sub_composites,
       module_tokens: Object.keys(MODULE_TO_CATEGORY),
+      // Whether the counts above were computed over the whole register. A zero
+      // tool_count under `complete: false` means "not read", not "not there".
+      complete: !skillsResult.truncated,
       note: "Filter precision: ?groups=<category> = whole category. ?groups=<module> (e.g. invoicing,accounting) = narrow within parent category. ?groups=finance_core = invoicing+accounting+expenses+contracts+subscriptions. ?groups=ops_core = ecommerce+inventory+purchasing.",
     },
     200,
