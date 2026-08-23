@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260825130000",
-      "migrations_count": 503,
+      "migration_head": "20260825150000",
+      "migrations_count": 504,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2015,7 +2015,11 @@
           "name": "d1e2f3a4-a-send-with-no-ledger-of-who-got-it"
         },
         {
-          "version": "20260825130000",
+          "version": "20260825140000",
+          "name": "e2f3a4b5-null-is-not-equal-to-null"
+        },
+        {
+          "version": "20260825150000",
           "name": "a-vendor-term-is-a-word-not-a-number"
         }
       ]
