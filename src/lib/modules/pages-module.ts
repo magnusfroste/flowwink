@@ -169,8 +169,30 @@ Per-page summary with images_fixed count and the actual alt strings generated.
             },
             meta: {
               type: 'object',
-              description: 'Page meta JSON (for create/update)',
+              description: 'Page meta JSON (for create/update). meta_json is accepted as an alias — send back what get returned.',
               properties: {},
+            },
+            meta_json: {
+              type: 'object',
+              description: 'Alias for meta. get returns the column under this name, so this is the name you naturally send back.',
+              properties: {},
+            },
+            version_id: {
+              type: 'string',
+              description: 'For action rollback: the page_versions UUID to restore. Omit to roll back to the most recent version.',
+            },
+            content_json: {
+              type: 'array',
+              description: 'Alias for blocks — get returns the page body under this name, so this is the name you naturally send back. Same contract and same validation as blocks; send one of the two, not both.',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'UUID — use crypto.randomUUID() or any unique string' },
+                  type: { type: 'string', description: 'Block type (kebab-case; describe_blocks lists them)' },
+                  data: { type: 'object', description: 'Block-specific data — the block\'s EXACT field names', properties: {} },
+                },
+                required: ['type', 'data'],
+              },
             },
             blocks: {
               type: 'array',
@@ -214,12 +236,17 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
 - Page status changes (publish, archive, schedule)
 - Immediately after migrate_url to create the target page before adding blocks
 ### Parameters
-- **action**: Required. One of: list, get, create, update, publish, unpublish, archive, delete, rollback.
+- **action**: Required. One of: list, get, create, update, publish, archive, delete, rollback.
 - **page_id** or **slug**: Required for most actions except list/create.
-- **title**, **content_json**, **meta_json**: For create/update.
+- **title**, **meta** (alias **meta_json**), **blocks** (alias **content_json**): For create/update.
+  Every one of those four names is declared in this skill's schema and honoured by the
+  handler — an instruction that names an argument the schema hides gets the caller bounced
+  for doing exactly as it was told, so the two are kept in lockstep here.
+- **version_id**: For rollback only. Omit to restore the most recent version.
 ### Edge cases
 - Delete is soft-delete (archive). Hard delete requires explicit confirmation.
 - Rollback restores previous version from page_versions table.
+- There is no \`unpublish\` action — use action \`archive\` (or update status via the admin UI).
 ### content_json — the block contract (read before writing a single block)
 content_json is a ContentBlock[]: [{ type, data }]. The types and the field names
 inside data are NOT free-form, and inventing them is the #1 reason a page write fails.
@@ -238,6 +265,10 @@ inside data are NOT free-form, and inventing them is the #1 reason a page write 
   the catalogue of every renderable type, then \`describe_blocks({ block_type })\` for
   each type you are about to write — and use its exact type strings and field names.
   It is free to call; one lookup costs less than one refused write.
+  It also answers WHICH block a piece of content belongs in, not only which fields it
+  has — read that before you compose a page, or you will ship an essay in \`text\`
+  blocks where the hand-built templates use \`features\`, \`stats\`, \`timeline\` and
+  \`accordion\` (\`text\` is 2.9% of all blocks across them, and no page uses two).
 - **Block types are kebab-case**, never snake_case: "two-column" (not two_column),
   "sticky-scroll" (not sticky_story), "bento-grid", "announcement-bar", "social-proof".
   A type nothing renders is an invisible hole in the page, not an error you will see.
@@ -253,9 +284,12 @@ inside data are NOT free-form, and inventing them is the #1 reason a page write 
   { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "…" }] }] }.
   Applies to content, answer, leftColumn, rightColumn.
 - **The write is fail-closed and all-or-nothing.** If ONE block is missing a required
-  field, the entire create/update is refused and NOTHING is written — no partial page,
-  no half-saved draft. The error names the block and the field it needs; fix that field
-  and resend the complete array.`,
+  field, carries a field the type does not have, or names a type that does not exist,
+  the entire create/update is refused and NOTHING is written — no partial page, no
+  half-saved draft. An unknown field is refused for the same reason a missing one is:
+  nothing renders it, so its content would sit in the database invisible while the page
+  looked thin. The error names the block, the field, and the right field name when there
+  is one; fix it and resend the complete array.`,
   },
   {
     name: 'manage_page_blocks',
@@ -388,82 +422,6 @@ for every block live in the platform's block reference; when unsure what a block
 supports, ask for its schema rather than guessing from examples.`,
   },
   {
-    name: 'landing_page_compose',
-    description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
-    category: 'automation',
-    handler: 'module:pages',
-    scope: 'internal',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'landing_page_compose',
-        description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
-        parameters: {
-          type: 'object',
-          properties: {
-            goal: {
-              type: 'string',
-              description: 'Campaign/page goal, e.g. "Generate leads for consulting services" or "Promote summer sale"',
-            },
-            target_audience: {
-              type: 'string',
-              description: 'Target audience description, e.g. "Small business owners aged 30-50 looking for IT consulting"',
-            },
-            campaign_id: {
-              type: 'string',
-              description: 'Optional: Link to an existing ad_campaign UUID for messaging alignment',
-            },
-            page_title: {
-              type: 'string',
-              description: 'Page title (used for slug generation)',
-            },
-            tone: {
-              type: 'string',
-              enum: [
-                'professional',
-                'casual',
-                'urgent',
-                'inspirational',
-                'technical',
-              ],
-              description: 'Desired tone of voice (default: professional)',
-            },
-            include_blocks: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
-              description: 'Optional: specific block types to include (e.g. ["pricing", "testimonials"])',
-            },
-          },
-          required: [
-            'goal',
-            'target_audience',
-            'page_title',
-          ],
-        },
-      },
-    },
-    instructions: `You compose high-converting landing pages by selecting from the platform's block library.
-
-## Available block types (use only these):
-hero, text, cta, features, stats, testimonials, pricing, accordion, form, newsletter, quote, two-column, info-box, logos, comparison, social-proof, countdown, chat-launcher, separator
-
-## Composition rules:
-1. ALWAYS start with a hero block — strong headline + subheadline + CTA
-2. Follow with value proposition blocks (features, stats, two-column)
-3. Add social proof (testimonials, logos, social-proof)
-4. Include at least one conversion block (cta, form, newsletter, chat-launcher)
-5. End with a final CTA or contact section
-6. Use separator blocks between major sections
-7. Keep total blocks between 5-10 for focused landing pages
-8. Match tone and messaging to the target audience
-9. If linked to an ad campaign, align messaging with campaign objective
-
-## Output format:
-Return a valid content_json array of ContentBlock objects with proper data for each block type.`,
-  },
-  {
     name: 'site_branding_get',
     description: 'Read current site branding settings including logo, colors, fonts, and favicon. Use when: retrieving current brand settings; checking active color scheme; verifying logo URL. NOT for: updating branding (site_branding_update); managing site settings (manage_site_settings).',
     category: 'content',
@@ -560,16 +518,23 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
       function: {
         name: 'create_page_block',
         parameters: {
+          // Deliberately empty: neither identifier nor block shape is a single
+          // required name. The handler accepts page_id OR slug, and block_type
+          // + block_data OR blocks[] — either/or shapes JSON Schema cannot
+          // express. Listing page_id + block_type as required bounced two calls
+          // the handler documents and honours (a slug-identified page, and
+          // batch mode). The handler's own errors name both alternatives.
+          required: [],
           type: 'object',
-          required: [
-            'page_id',
-            'block_type',
-          ],
           properties: {
             action: {
               type: 'string',
               const: 'add',
-              description: 'Action to perform',
+              description: 'Optional and ignored — this skill only adds. Present so a caller that sends it is not bounced.',
+            },
+            slug: {
+              type: 'string',
+              description: 'Page slug — an alternative to page_id, resolved automatically. Pass one of the two.',
             },
             blocks: {
               type: 'array',
@@ -594,7 +559,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
             },
             page_id: {
               type: 'string',
-              description: 'UUID of the page to add the block to',
+              description: 'UUID of the page to add the block to (a slug is also accepted, here or in `slug`)',
             },
             position: {
               type: 'integer',
@@ -658,43 +623,6 @@ example. In batch mode each block is judged on its own: the refused ones come ba
 \`errors\` while the valid ones are added, so ALWAYS compare \`blocks_added\` with the
 number you sent and re-send the rejected ones corrected. Never report a section as
 created without checking \`errors\`.`,
-  },
-  {
-    name: 'generate_site_from_identity',
-    description: 'Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says "build my website", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url).',
-    category: 'content',
-    handler: 'module:pages',
-    scope: 'both',
-    tool_definition: {
-      type: 'function',
-      function: {
-        name: 'generate_site_from_identity',
-        parameters: {
-          type: 'object',
-          properties: {
-            page_title: {
-              type: 'string',
-              description: 'Optional override for page title. Defaults to company name.',
-            },
-            include_footer: {
-              type: 'boolean',
-              description: 'Generate global footer. Default true.',
-            },
-            include_header: {
-              type: 'boolean',
-              description: 'Generate global header. Default true.',
-            },
-            include_landing_page: {
-              type: 'boolean',
-              description: 'Generate landing page. Default true.',
-            },
-          },
-          additionalProperties: false,
-        },
-        description: 'Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says "build my website", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url).',
-      },
-    },
-    instructions: 'Use when a client has filled in their Business Identity and wants a website generated. AI analyzes available data fields and composes appropriate blocks. Requires approval. Page created as draft.',
   },
   {
     // Exposes the admin Copilot site-builder reasoning loop as a first-class
@@ -885,8 +813,6 @@ export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
     'manage_page_blocks',
     'create_page_block',
     'manage_global_blocks',
-    'generate_site_from_identity',
-    'landing_page_compose',
     'build_site_step',
   ],
   data: {

@@ -118,7 +118,6 @@ export const companyInsightsModule = defineModule<Input, Output>({
     'enrich_company',
     'manage_company',
     'weekly_business_digest',
-    'generate_site_from_identity',
   ],
 
   skillSeeds: COMPANY_INSIGHTS_SKILLS,

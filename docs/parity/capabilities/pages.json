@@ -90,10 +90,10 @@
       "id": "ai_site_generation",
       "name": "AI full-site generation from identity",
       "odoo": false,
-      "status": "done",
+      "status": "partial",
       "weight": 1,
-      "verify": "generate_site_from_identity + build_site_step + landing_page_compose skills in pages-module skillSeeds",
-      "notes": "Added: FlowWink differentiator."
+      "verify": "build_site_step in pages-module skillSeeds drives the iterative site-builder loop; manage_page + manage_global_blocks write the pages/header/footer",
+      "notes": "One-shot generation is gone: generate_site_from_identity and landing_page_compose were retired 2026-08-22 (Law 3) — they ran their own prompt into a fixed hero+text+cta skeleton, past block validation. What remains is the block-by-block build_site_step loop; a single-call full-site generator does not exist."
     }
   ]
 }

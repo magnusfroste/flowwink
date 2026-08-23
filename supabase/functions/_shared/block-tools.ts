@@ -47,12 +47,13 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "backgroundType": {
-            "description": "Background style",
+            "description": "Background style; \"none\" leaves the section transparent",
             "type": "string",
             "enum": [
               "color",
               "image",
-              "video"
+              "video",
+              "none"
             ]
           },
           "backgroundImage": {
@@ -106,7 +107,9 @@ export const BLOCK_CREATION_TOOLS = [
             "enum": [
               "viewport",
               "80vh",
+              "70vh",
               "60vh",
+              "50vh",
               "auto"
             ]
           },
@@ -604,6 +607,10 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Section title",
             "type": "string"
           },
+          "subtitle": {
+            "description": "Supporting text under the title",
+            "type": "string"
+          },
           "members": {
             "description": "Array of members [{ id, name, role, bio, image, linkedin, twitter }]",
             "type": "array",
@@ -614,6 +621,14 @@ export const BLOCK_CREATION_TOOLS = [
           "columns": {
             "description": "Number of columns",
             "type": "number"
+          },
+          "layout": {
+            "description": "Grid of cards or a swipeable carousel",
+            "type": "string",
+            "enum": [
+              "grid",
+              "carousel"
+            ]
           },
           "variant": {
             "description": "Visual style",
@@ -629,6 +644,14 @@ export const BLOCK_CREATION_TOOLS = [
           },
           "showBio": {
             "description": "Show member bios",
+            "type": "boolean"
+          },
+          "showSocial": {
+            "description": "Show each member's social links",
+            "type": "boolean"
+          },
+          "staggeredReveal": {
+            "description": "Animate the members in one by one as they enter the viewport",
             "type": "boolean"
           }
         },
@@ -650,6 +673,10 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Section title",
             "type": "string"
           },
+          "subtitle": {
+            "description": "Supporting text under the title",
+            "type": "string"
+          },
           "logos": {
             "description": "Array of logos [{ id, name, logo }]",
             "type": "array",
@@ -666,7 +693,8 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string",
             "enum": [
               "grid",
-              "carousel"
+              "carousel",
+              "scroll"
             ]
           },
           "variant": {
@@ -674,7 +702,8 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string",
             "enum": [
               "grayscale",
-              "color"
+              "color",
+              "default"
             ]
           },
           "logoSize": {
@@ -685,6 +714,14 @@ export const BLOCK_CREATION_TOOLS = [
               "md",
               "lg"
             ]
+          },
+          "autoplay": {
+            "description": "Auto-advance the carousel layout",
+            "type": "boolean"
+          },
+          "autoplaySpeed": {
+            "description": "Seconds between carousel slides",
+            "type": "number"
           }
         },
         "required": [
@@ -1057,6 +1094,7 @@ export const BLOCK_CREATION_TOOLS = [
               "sm",
               "md",
               "lg",
+              "xl",
               "full"
             ]
           },
@@ -1082,15 +1120,29 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "layout": {
-            "description": "Legacy: two-text-column mode instead of text+image",
-            "type": "string"
+            "description": "Column split, or two-text-column mode instead of text+image",
+            "type": "string",
+            "enum": [
+              "50-50",
+              "60-40",
+              "40-60",
+              "text-text"
+            ]
           },
           "leftColumn": {
-            "description": "Legacy two-text mode: left column content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "description": "Two-text mode: left column content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
             "type": "object"
           },
           "rightColumn": {
-            "description": "Legacy two-text mode: right column content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "description": "Two-text mode: right column content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
+          },
+          "secondaryContent": {
+            "description": "Two-text mode (layout 'text-text'): right column content, paired with content as the left column (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
+          },
+          "primaryButton": {
+            "description": "CTA as an object ({ text, url }) — alternative to ctaText/ctaUrl",
             "type": "object"
           }
         },
@@ -1651,6 +1703,10 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Section title",
             "type": "string"
           },
+          "subtitle": {
+            "description": "Supporting text under the title",
+            "type": "string"
+          },
           "products": {
             "description": "Products to compare [{ id, name, highlighted }]",
             "type": "array",
@@ -1679,6 +1735,10 @@ export const BLOCK_CREATION_TOOLS = [
           },
           "showButtons": {
             "description": "Show CTA buttons",
+            "type": "boolean"
+          },
+          "stickyHeader": {
+            "description": "Keep the product header row pinned while the table scrolls",
             "type": "boolean"
           }
         },
@@ -2350,6 +2410,10 @@ export const BLOCK_CREATION_TOOLS = [
               "md",
               "lg"
             ]
+          },
+          "labels": {
+            "description": "Unit labels, for translating the timer: { days, hours, minutes, seconds }. Any omitted key falls back to English.",
+            "type": "object"
           }
         },
         "required": [
@@ -2400,8 +2464,8 @@ export const BLOCK_CREATION_TOOLS = [
               "lg"
             ]
           },
-          "showLabel": {
-            "description": "Show labels",
+          "showLabels": {
+            "description": "Show item labels",
             "type": "boolean"
           },
           "showPercentage": {
@@ -2411,6 +2475,10 @@ export const BLOCK_CREATION_TOOLS = [
           "animated": {
             "description": "Animate on scroll",
             "type": "boolean"
+          },
+          "animationDuration": {
+            "description": "Animation length in ms",
+            "type": "number"
           }
         },
         "required": [
@@ -2447,8 +2515,9 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string",
             "enum": [
               "default",
-              "outlined",
-              "filled"
+              "cards",
+              "minimal",
+              "bordered"
             ]
           },
           "columns": {
@@ -2464,7 +2533,7 @@ export const BLOCK_CREATION_TOOLS = [
               "lg"
             ]
           },
-          "showTitle": {
+          "showTitles": {
             "description": "Show badge titles",
             "type": "boolean"
           },
@@ -2531,13 +2600,29 @@ export const BLOCK_CREATION_TOOLS = [
               "lg"
             ]
           },
+          "columns": {
+            "description": "Number of columns in the grid layout",
+            "type": "number"
+          },
           "animated": {
             "description": "Animate counters",
+            "type": "boolean"
+          },
+          "animationDuration": {
+            "description": "Counter animation length in ms",
+            "type": "number"
+          },
+          "showIcons": {
+            "description": "Show each item's icon",
             "type": "boolean"
           },
           "showLiveIndicator": {
             "description": "Show live indicator",
             "type": "boolean"
+          },
+          "liveText": {
+            "description": "Label shown next to the live indicator",
+            "type": "string"
           }
         },
         "required": [
@@ -2567,7 +2652,8 @@ export const BLOCK_CREATION_TOOLS = [
             "enum": [
               "default",
               "minimal",
-              "rounded"
+              "card",
+              "bubble"
             ]
           },
           "position": {
@@ -2581,15 +2667,15 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "displayDuration": {
-            "description": "Display time in ms",
+            "description": "How long each notification stays on screen, in seconds",
             "type": "number"
           },
           "delayBetween": {
-            "description": "Delay between notifications in ms",
+            "description": "Pause between notifications, in seconds",
             "type": "number"
           },
           "initialDelay": {
-            "description": "Initial delay in ms",
+            "description": "Delay before the first notification, in seconds",
             "type": "number"
           },
           "maxWidth": {
@@ -2607,8 +2693,24 @@ export const BLOCK_CREATION_TOOLS = [
             "enum": [
               "slide",
               "fade",
-              "bounce"
+              "pop"
             ]
+          },
+          "showCloseButton": {
+            "description": "Show the dismiss button; dismissing stops the whole sequence",
+            "type": "boolean"
+          },
+          "showImage": {
+            "description": "Show each notification's image (falls back to its icon)",
+            "type": "boolean"
+          },
+          "showTimestamp": {
+            "description": "Show each notification's timestamp line",
+            "type": "boolean"
+          },
+          "loop": {
+            "description": "Start over after the last notification instead of stopping",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2625,8 +2727,12 @@ export const BLOCK_CREATION_TOOLS = [
       "parameters": {
         "type": "object",
         "properties": {
-          "text": {
-            "description": "CTA text",
+          "title": {
+            "description": "Headline — the CTA message. Rendered by the bar, card and minimal variants; the pill variant shows only the button.",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Supporting line under the title. Rendered by the bar and card variants only.",
             "type": "string"
           },
           "buttonText": {
@@ -2637,16 +2743,24 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Button URL",
             "type": "string"
           },
-          "secondaryText": {
-            "description": "Secondary text",
+          "secondaryButtonText": {
+            "description": "Optional second button label; renders only together with secondaryButtonUrl (bar and card variants)",
             "type": "string"
           },
-          "scrollThreshold": {
-            "description": "Show after scroll percentage",
+          "secondaryButtonUrl": {
+            "description": "Optional second button URL; renders only together with secondaryButtonText",
+            "type": "string"
+          },
+          "showAfterScroll": {
+            "description": "Reveal once this PERCENTAGE of the page has been scrolled, 0-100 (not pixels)",
             "type": "number"
           },
+          "hideOnScrollUp": {
+            "description": "Hide again while the visitor scrolls back up",
+            "type": "boolean"
+          },
           "variant": {
-            "description": "Display style",
+            "description": "Display style. \"pill\" is button-only — do not put copy in title for it",
             "type": "string",
             "enum": [
               "bar",
@@ -2656,11 +2770,12 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           },
           "position": {
-            "description": "Screen position",
+            "description": "Screen position; ignored by the \"bar\" variant, which always spans the bottom",
             "type": "string",
             "enum": [
               "bottom",
-              "top"
+              "bottom-left",
+              "bottom-right"
             ]
           },
           "size": {
@@ -2672,21 +2787,30 @@ export const BLOCK_CREATION_TOOLS = [
               "lg"
             ]
           },
-          "hideOnScrollUp": {
-            "description": "Hide when scrolling up",
-            "type": "boolean"
-          },
-          "closeable": {
-            "description": "Allow closing",
+          "showCloseButton": {
+            "description": "Show the dismiss (X) control",
             "type": "boolean"
           },
           "closePersistent": {
-            "description": "Remember closed state",
+            "description": "Remember the dismissal for the rest of the session",
             "type": "boolean"
+          },
+          "showScrollTop": {
+            "description": "Add a back-to-top button beside the CTA (pill variant only)",
+            "type": "boolean"
+          },
+          "animationType": {
+            "description": "Entrance animation",
+            "type": "string",
+            "enum": [
+              "slide",
+              "fade",
+              "scale"
+            ]
           }
         },
         "required": [
-          "text",
+          "title",
           "buttonText",
           "buttonUrl"
         ]
@@ -2750,6 +2874,10 @@ export const BLOCK_CREATION_TOOLS = [
             "description": "Small label displayed above the title",
             "type": "string"
           },
+          "eyebrowColor": {
+            "description": "Eyebrow color as a CSS/hex value; defaults to brand primary",
+            "type": "string"
+          },
           "items": {
             "description": "Grid items [{ id, title, description?, icon?, span?, accentColor?, linkUrl?, linkLabel? }]. span: \"normal\" | \"wide\" | \"tall\" | \"large\"",
             "type": "array",
@@ -2778,6 +2906,10 @@ export const BLOCK_CREATION_TOOLS = [
               "glass",
               "bordered"
             ]
+          },
+          "staggeredReveal": {
+            "description": "Animate the cards in one by one as they enter the viewport",
+            "type": "boolean"
           }
         },
         "required": [

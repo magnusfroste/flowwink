@@ -87,6 +87,35 @@ Searches and retrieves chapters from the synced GitHub handbook repository.
       },
     },
   },
+  {
+    name: 'handbook_chapter_history',
+    description:
+      'Version history for handbook chapters: list revisions, read an old revision, restore one. Every content/title/frontmatter change and every delete is captured automatically, and the revision survives the chapter being deleted — so a chapter dropped from the GitHub repo is still recoverable. Use when: recovering a chapter that a sync removed or overwrote, reviewing what a sync changed. NOT for: reading current chapters (handbook_search); pulling fresh content from GitHub (sync_handbook_from_github).',
+    category: 'content',
+    handler: 'rpc:handbook_chapter_history',
+    scope: 'internal',
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'handbook_chapter_history',
+        description: 'list (per slug or chapter_id, newest first) / get (full revision body) / restore (write a revision back — recreates deleted chapters).',
+        parameters: {
+          type: 'object',
+          required: ['p_action'],
+          properties: {
+            p_action: { type: 'string', enum: ['list', 'get', 'restore'] },
+            p_slug: { type: 'string', description: 'Chapter slug (list)' },
+            p_chapter_id: { type: 'string', format: 'uuid', description: 'Chapter id (list) — wins over p_slug' },
+            p_revision_id: { type: 'string', format: 'uuid', description: 'Revision id (get/restore)' },
+            p_limit: { type: 'integer', default: 20, description: 'list: max revisions (max 100)' },
+          },
+        },
+      },
+    },
+    instructions:
+      'Each revision stores the chapter state BEFORE the change that produced it, so the newest revision of a deleted chapter (action="delete") holds it exactly as it was. action values: "update", "delete", and "baseline" (seeded once for chapters that already existed when history was switched on). The body is in content_md; repo_owner, repo_name and file_path travel with the revision because they are the chapter\'s identity in the source repo. Workflow: list by p_slug (or p_chapter_id) → get to inspect → restore. restore recreates a deleted chapter with its original id and file_path, and fails with a clear error if another chapter has since taken that (repo_owner, repo_name, file_path). IMPORTANT: handbook_chapters mirrors a GitHub repo — a chapter restored here is a LOCAL copy, and the next sync_handbook_from_github will delete it again if the file is still missing from the repo. Restore to read or copy the content out; put the file back in the repo to make it stick. A sync that only rewrites the blob sha creates no revision.',
+  },
 ];
 
 export const handbookModule = defineModule<HandbookInput, HandbookOutput>({
@@ -103,9 +132,13 @@ export const handbookModule = defineModule<HandbookInput, HandbookOutput>({
 
   skills: [
     'handbook_search',
+    'handbook_chapter_history',
   ],
   data: {
-    tables: ['handbook_chapters'],
+    // handbook_chapter_revisions is deliberately NOT FK-bound to
+    // handbook_chapters (that is the only reason a deleted chapter is
+    // recoverable), so a site reset must name it explicitly.
+    tables: ['handbook_chapter_revisions', 'handbook_chapters'],
   },
   skillSeeds: HANDBOOK_SKILLS,
 

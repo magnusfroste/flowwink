@@ -52,8 +52,6 @@ const securehealthPages: StarterTemplate['pages'] = [
           columns: 3,
           showRating: true,
           showAvatar: false,
-          buttonUrl: '/book',
-          gradient: false,
         },
       },
       {

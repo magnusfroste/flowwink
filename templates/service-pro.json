@@ -263,9 +263,7 @@
             "backgroundImage": "/templates/hero/professional-handshake.jpg",
             "title": "Your Time Is Valuable. We Treat It That Way.",
             "subtitle": "No waiting rooms. No back-and-forth scheduling. Just expert service when you need it, exactly how you want it.",
-            "overlayOpacity": 65,
-            "buttonText": "Book in 60 Seconds",
-            "buttonUrl": "/book"
+            "overlayOpacity": 65
           }
         },
         {
@@ -484,15 +482,14 @@
           }
         },
         {
-          "id": "article-grid-blog",
-          "type": "article-grid",
+          "id": "latest-posts-blog",
+          "type": "latest-posts",
           "data": {
             "title": "Tips & Insights",
             "subtitle": "Expert advice to help you get the most from our services",
             "columns": 3,
-            "limit": 3,
-            "showExcerpt": true,
-            "showImage": true
+            "count": 3,
+            "showExcerpt": true
           }
         },
         {
@@ -616,10 +613,10 @@
           "id": "floating-cta-home",
           "type": "floating-cta",
           "data": {
-            "text": "Same-day appointments available — spots fill fast",
+            "title": "Same-day appointments available — spots fill fast",
             "buttonText": "Book Now",
             "buttonUrl": "/book",
-            "variant": "pill"
+            "variant": "minimal"
           }
         }
       ]
@@ -667,7 +664,7 @@
           "id": "separator-1",
           "type": "separator",
           "data": {
-            "variant": "line",
+            "style": "line",
             "spacing": "lg"
           }
         },

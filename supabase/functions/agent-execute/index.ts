@@ -1,8 +1,9 @@
 // agent-execute v2026-04-20-stale-deals-with-contact (lead/company in deal_stale_check)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
+import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 import { normalizeSkillArgs } from '../_shared/skill-aliases.ts';
+import { retiredSkillResult } from '../_shared/skills/retired-skills.ts';
 import { applyIdentityPolicy } from '../_shared/site-identity.ts';
 import { filterRecipients, blockedResponse } from '../_shared/email-allowlist.ts';
 import { resolveSiteUrl } from '../_shared/site-url.ts';
@@ -58,6 +59,8 @@ import { handler as hTestAiConnection } from '../_shared/handlers/test-ai-connec
 import { handler as hUpdateAutonomyCron } from '../_shared/handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../_shared/handlers/check-integrations.ts';
 import { executeDescribeBlocks } from '../_shared/handlers/describe-blocks.ts';
+// describe_blocks' other half: "what can I build" ↔ "what did I build".
+import { executeInspectRenderedPage } from '../_shared/handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 
 // Former standalone functions whose serve() bodies moved verbatim. They still
@@ -512,6 +515,20 @@ serve(async (req) => {
       });
     }
 
+    // 0. Retired names answer with a direction, not a wall. Checked BEFORE the
+    //    lookup so the answer is the same on an instance that has synced (row
+    //    disabled → "Skill not found") and one that has not (row still enabled
+    //    → module executor's "Unknown skill" default).
+    //    Deliberately HTTP 200: reason.ts discards the body of any non-2xx
+    //    response from agent-execute and reports only "HTTP <status>", so a
+    //    410 would throw away the very pointer this exists to deliver.
+    const retired = skill_name ? retiredSkillResult(String(skill_name)) : null;
+    if (retired) {
+      return new Response(JSON.stringify(retired), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // 1. Look up the skill
     let query = supabase.from('agent_skills').select('*').eq('enabled', true);
     if (skill_id) query = query.eq('id', skill_id);
@@ -901,6 +918,8 @@ serve(async (req) => {
 
       } else if (handler === 'internal:describe_blocks') {
         result = executeDescribeBlocks(args as Record<string, unknown>);
+      } else if (handler === 'internal:inspect_rendered_page') {
+        result = await executeInspectRenderedPage(supabase, args as Record<string, unknown>);
       } else if (handler === 'internal:check_integrations') {
         result = await executeCheckIntegrations(supabase, args as Record<string, unknown>);
 
@@ -2197,18 +2216,33 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           (p: any) => p.id === localeToActivate,
         );
         if (pack) {
-          // Locale-scoped — UNIQUE (locale, account_code).
-          const { data: haveAcc } = await supabase.from('chart_of_accounts')
-            .select('account_code').eq('locale', pack.id);
-          const have = new Set((haveAcc ?? []).map((r: any) => r.account_code));
-          const missing = (pack.accounts as any[])
-            .filter((acc) => !have.has(acc.account_code))
+          // Let the CONSTRAINT decide what already exists — never a read.
+          //
+          // This used to select every account_code for the locale, build a Set
+          // and insert the difference. PostgREST caps an unfiltered select at
+          // 1000 rows and says nothing about it; se-bas2024 ships 1262
+          // accounts, so the read could never see the last 262. They were
+          // counted as missing on every single install, the insert hit
+          // chart_of_accounts_locale_code_key, and the loop `break`ed with a
+          // duplicate-key error pushed into the install report. The unique
+          // constraint kept the data honest — it was the only thing that did.
+          //
+          // The read is gone rather than paginated: upsert/DO NOTHING removes
+          // the whole class, including the read→write window where a
+          // concurrent seed inserts a code between the two statements, and it
+          // is idempotent for free. Target is the real constraint
+          // UNIQUE (locale, account_code), not a guess.
+          const rows = (pack.accounts as any[])
             // is_active comes from the pack — the whole standard is seeded, but
             // only the accounts a company plausibly uses start visible.
             .map((acc) => ({ ...acc, is_active: acc.is_active !== false, locale: pack.id }));
-          for (let i = 0; i < missing.length; i += 100) {
+          for (let i = 0; i < rows.length; i += 100) {
             const { error: coaErr } = await supabase
-              .from('chart_of_accounts').insert(missing.slice(i, i + 100));
+              .from('chart_of_accounts')
+              .upsert(rows.slice(i, i + 100), {
+                onConflict: 'locale,account_code',
+                ignoreDuplicates: true,
+              });
             if (coaErr) { errors.push(`chart seed: ${coaErr.message}`); break; }
           }
         }
@@ -3911,8 +3945,20 @@ async function executePagesAction(
   switch (skillName) {
     case 'manage_page':
     case 'manage_pages': {
-      const { action = 'list', slug, title, status, meta, blocks } = args as any;
+      const { action = 'list', slug, title, status, blocks } = args as any;
       let { page_id } = args as any;
+
+      // `get` returns the columns as content_json / meta_json, so those are the
+      // names a caller naturally sends back — and this skill's own instructions
+      // told the model to use them. Both are honoured here AND declared in the
+      // tool schema; a name the handler reads but the schema hides gets bounced
+      // by the preflight before it ever arrives, which is the platform
+      // disagreeing with itself (the model did as it was told and was refused).
+      const effectiveBlocks = blocks !== undefined ? blocks : (args as any).content_json;
+      const meta = (args as any).meta !== undefined ? (args as any).meta : (args as any).meta_json;
+
+      const blocksShapeErr = blocksShapeError(effectiveBlocks);
+      if (blocksShapeErr) throw new Error(`${blocksShapeErr} Nothing was written.`);
 
       // Accept a slug wherever an id is wanted, same contract as manage_wiki_page
       // and manage_page_blocks (which already routes through resolvePageId).
@@ -3968,7 +4014,11 @@ async function executePagesAction(
         const { count: existingPages } = await supabase
           .from('pages').select('id', { count: 'exact', head: true }).is('deleted_at', null);
 
-        const pageBlocks = blocks || [];
+        // create used to read `blocks` ONLY, while update folded content_json.
+        // A create carrying content_json — the exact form the instructions ask
+        // for — therefore produced an EMPTY page and answered "created": the
+        // silent-noop class, on the very first call of a page build.
+        const pageBlocks = effectiveBlocks || [];
         // Same refusal contract as the update branch below: a create that
         // quietly loses blocks answers "created" for a page thinner than what
         // the caller sent — the silent-drop class the guardrail test bans.
@@ -4010,8 +4060,9 @@ async function executePagesAction(
         // 2026-08-17): `get` returns the column as content_json, so that is
         // the name a caller naturally sends back. The old code dropped the
         // unknown arg SILENTLY and answered success while writing nothing —
-        // the exact silent-noop class the read-back rule exists for.
-        const effectiveBlocks = blocks !== undefined ? blocks : (args as any).content_json;
+        // the exact silent-noop class the read-back rule exists for. Resolved
+        // once at the top of the case so create and update cannot drift apart
+        // again (they had: only update folded it).
         if (effectiveBlocks !== undefined) {
           const dropped = normalizeBlocks(effectiveBlocks as unknown[]);
           if (dropped.length > 0) {
@@ -4395,103 +4446,6 @@ async function executePagesAction(
 
     case 'generate_alt_text': {
       return await executeGenerateAltText(supabase, args);
-    }
-
-    case 'landing_page_compose':
-    case 'generate_site_from_identity': {
-      // Compose a draft page from inputs. Generates a hero + content sections
-      // using AI text generation (Gemini → OpenAI fallback) and saves as draft.
-      const {
-        title,
-        slug,
-        goal,
-        audience,
-        topic,
-        campaign_id,
-        identity,
-      } = args as any;
-
-      const pageTitle = title || topic || goal || 'New page';
-      const baseSlug = (slug || pageTitle).toString()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 80) || `page-${Date.now()}`;
-
-      // Build a context prompt from whatever we got
-      const contextParts: string[] = [];
-      if (goal) contextParts.push(`Goal: ${goal}`);
-      if (audience) contextParts.push(`Audience: ${audience}`);
-      if (topic) contextParts.push(`Topic: ${topic}`);
-      if (identity && typeof identity === 'object') {
-        contextParts.push(`Brand identity: ${JSON.stringify(identity).slice(0, 800)}`);
-      }
-      if (campaign_id) contextParts.push(`Campaign reference: ${campaign_id}`);
-
-      const prompt = `Compose a landing page in JSON for a website. ${contextParts.join('. ')}.
-Return ONLY valid JSON with this shape:
-{"hero_headline":"...","hero_sub":"...","cta":"...","sections":[{"heading":"...","body":"..."}]}
-3-4 sections, concise, conversion-oriented.`;
-
-      let composed: any = null;
-      try {
-        const text = await generateShortText(prompt, 700);
-        if (text) {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) composed = JSON.parse(jsonMatch[0]);
-        }
-      } catch (e) {
-        console.warn('[landing_page_compose] AI compose failed, using stub:', e);
-      }
-
-      const c = composed || {
-        hero_headline: pageTitle,
-        hero_sub: goal || 'Welcome',
-        cta: 'Get started',
-        sections: [{ heading: 'About', body: 'Add your content here.' }],
-      };
-
-      const blocks: any[] = [
-        {
-          id: crypto.randomUUID(),
-          type: 'hero',
-          data: { title: c.hero_headline, subtitle: c.hero_sub, cta_label: c.cta },
-        },
-      ];
-      for (const s of (c.sections || []).slice(0, 6)) {
-        blocks.push({
-          id: crypto.randomUUID(),
-          type: 'text',
-          data: { heading: s.heading, body: s.body },
-        });
-      }
-      blocks.push({
-        id: crypto.randomUUID(),
-        type: 'cta',
-        data: { title: c.cta || 'Ready?', cta_label: c.cta || 'Contact us' },
-      });
-
-      // Ensure unique slug
-      const { data: existing } = await supabase.from('pages')
-        .select('id').eq('slug', baseSlug).is('deleted_at', null).maybeSingle();
-      const finalSlug = existing ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug;
-
-      const { data: page, error } = await supabase.from('pages').insert({
-        title: pageTitle,
-        slug: finalSlug,
-        status: 'draft',
-        content_json: blocks,
-        meta_json: { description: c.hero_sub || pageTitle, generated_by: skillName },
-      }).select('id, title, slug, status').single();
-
-      if (error) throw new Error(`Compose page failed: ${error.message}`);
-      return {
-        composed: true,
-        page,
-        block_count: blocks.length,
-        ai_used: !!composed,
-        message: `Draft page created at /${finalSlug}. Edit in admin to refine before publishing.`,
-      };
     }
 
     default:
@@ -9907,7 +9861,42 @@ async function executeDbAction(
           .insert({ account_code, account_name, account_type, account_category: account_category || account_type, normal_balance, locale, is_active: true })
           .select('id, account_code, account_name')
           .single();
-        if (error) throw new Error(`Add account failed: ${error.message}`);
+        if (error) {
+          // An occupied account code is a MEANING collision, not a retry
+          // nuisance — so `add` refuses rather than quietly returning the
+          // sitting row as `created`. 4010 named "Inköp material" and 4010
+          // named "Försäljning" are two different books; a success envelope
+          // over the wrong one lets every later posting land on an account
+          // that means something else, and nothing downstream ever says so.
+          // This house has already shipped a chart nobody compared once (166
+          // wrong names under the label "BAS 2024"). `add` is not `ensure`.
+          //
+          // It fails self-correctingly, per the rule in
+          // _shared/suggest-names.ts: an error that names the mistake without
+          // naming the exit sends the model looking for another door. So it
+          // names the occupant, says whether it is identical to what was asked
+          // (an idempotent replay — safe to treat as done), and names the
+          // action that changes a name.
+          if (error.code === '23505') {
+            const { data: occupant } = await supabase.from('chart_of_accounts')
+              .select('account_code, account_name, account_type, is_active')
+              .eq('locale', locale)
+              .eq('account_code', account_code)
+              .maybeSingle();
+            const occupantName = occupant?.account_name ?? '(existing account)';
+            const detail = occupant?.account_type
+              ? ` (${occupant.account_type}${occupant.is_active === false ? ', inactive' : ''})`
+              : '';
+            const head = `Account code ${account_code} is already taken in locale "${locale}" by "${occupantName}"${detail}.`;
+            const body = occupant?.account_name === account_name
+              ? ` That is the same account_name you sent, so this account already exists and nothing needed adding — treat the add as done.`
+              : ` That is NOT the account you described, so nothing was written.`
+                + ` To rename the existing one: manage_chart_of_accounts action="update", account_code="${account_code}", locale="${locale}", account_name="${account_name}".`
+                + ` To add yours alongside it, pick a free code — action="list" with search="${String(account_code).slice(0, 2)}" shows which are taken.`;
+            throw new Error(head + body);
+          }
+          throw new Error(`Add account failed: ${error.message}`);
+        }
         return { created: true, ...data };
       }
 
