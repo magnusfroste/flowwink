@@ -149,7 +149,7 @@ END;
 $function$;
 
 COMMENT ON FUNCTION public._upsert_quant(uuid, uuid, uuid, numeric) IS
-  'Legacy-signaturskal över upsert_stock_quant, som är den enda plats ett lagersaldo ändras. Egen ON CONFLICT här är förbjuden (se 20260825140000). NULL produkt eller plats kastar i stället för att tiga — annars skriver transfer_stock en rörelse för ett saldo som aldrig rörde sig (se 20260826180000).';
+  'Legacy-signaturskal över upsert_stock_quant, som är den enda plats ett lagersaldo ändras. Egen ON CONFLICT här är förbjuden (se 20260825140000). NULL produkt eller plats kastar i stället för att tiga — annars skriver transfer_stock en rörelse för ett saldo som aldrig rörde sig (se 20260827800000).';
 
 -- Samma efterkontroll som 20260825140000 bär: kroppen får aldrig få tillbaka en
 -- egen konfliktmålsklausul, oavsett vem som skriver om den härnäst.
