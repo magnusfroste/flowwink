@@ -151,7 +151,10 @@ describe('overselling is refused, backorders are honest', () => {
 });
 
 describe('the reorder loop reads the table that has the numbers', () => {
-  it('candidates come from products, not the empty product_stock', () => {
+  it('the 2026-08-20 fix moved candidates off the empty product_stock', () => {
+    // Historical: this is what that migration did. Superseded by
+    // 20260827400000, where on-hand stops being the whole answer — see
+    // replenishment-one-engine.guardrails.test.ts.
     expect(reorder).toMatch(/FROM public\.products p\s+LEFT JOIN public\.product_stock ps/);
     expect(reorder).toMatch(/COALESCE\(ps\.quantity_on_hand, p\.stock_quantity, 0\)/);
   });
@@ -160,8 +163,10 @@ describe('the reorder loop reads the table that has the numbers', () => {
     const handler = agentExecute.slice(agentExecute.indexOf("if (skillName === 'purchase_reorder_check')"));
     const body = handler.slice(0, handler.indexOf('low_stock_items: []'));
     expect(body).not.toMatch(/if \(!stock\) continue;/);
-    expect(body).toMatch(/stock\?\.quantity_on_hand \?\? p\.stock_quantity/);
-    expect(body).toMatch(/select\('id, name, price_cents, stock_quantity, low_stock_threshold'\)/);
+    // It no longer reads any stock table itself — it asks the one engine,
+    // which reads the quants and counts what is already on order.
+    expect(body).toMatch(/supabase\.rpc\('list_reorder_candidates'/);
+    expect(body).not.toMatch(/from\('product_stock'\)/);
   });
 });
 

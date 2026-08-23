@@ -48,6 +48,13 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   // pekar på en ANNAN instans. Samma dimension som register_flowpilot_cron
   // ovan: den som får schemalägga jobb får läsa schemat.
   cron_health_report: 'Läser instansens cron-schema och HTTP-fel. Plattformsyta, inte modul.',
+  // Kvitterar integrationshälsa-notiser i site_settings.integration_health.
+  // Integrationer är plattformskonfiguration — det finns ingen modulratt att
+  // grinda på, och tillståndet spänner över varje modul som skickar mail,
+  // söker på webben eller ringer en AI-provider. Samma dimension som
+  // instance_sync_status och cron_health_report ovan: System-ytan är admin.
+  acknowledge_integration_health:
+    'Kvitterar integrationshälsa-notiser (System → Observability). Plattformsyta, inte modul.',
 
   // ── Matrisen kan inte grinda sig själv ───────────────────────────────────
   // En roll som fick sin modul via matrisen får inte kunna skriva om matrisen.
