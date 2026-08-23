@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260824150000",
+      "migration_head": "20260824160000",
       "migrations_count": 501,
       "migrations": [
         {
@@ -2003,12 +2003,12 @@
           "name": "a8b9c0d1-recognition-beats-recall"
         },
         {
-          "version": "20260824130000",
-          "name": "a-vendor-term-is-a-word-not-a-number"
-        },
-        {
           "version": "20260824150000",
           "name": "b9c0d1e2-a-service-has-no-shelf"
+        },
+        {
+          "version": "20260824160000",
+          "name": "a-vendor-term-is-a-word-not-a-number"
         }
       ]
     },

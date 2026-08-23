@@ -25,6 +25,10 @@ import { join } from 'node:path';
 
 const TRACKING = readFileSync(
   join(__dirname, '../../components/public/TrackingScripts.tsx'), 'utf8');
+// 2026-08-23: lyssnaren flyttade in i den delade kroken när sidvisnings-
+// räknaren och taggarna slutade ha två uppfattningar om samtycket.
+const CONSENT_HOOK = readFileSync(
+  join(__dirname, '../../hooks/useVisitorConsent.ts'), 'utf8');
 const INTEGRATIONS = readFileSync(
   join(__dirname, '../../pages/admin/IntegrationsStatusPage.tsx'), 'utf8');
 
@@ -50,7 +54,11 @@ describe('mätningen lyder samtycket', () => {
   });
 
   it('den lyssnar på att besökaren ändrar sig', () => {
-    expect(src, 'inget lyssnar på cookie-consent-changed').toContain('cookie-consent-changed');
+    // Egenskapen ligger kvar, men i kroken båda konsumenterna delar.
+    expect(src, 'taggarna läser inte det delade samtyckesbeslutet')
+      .toContain('useVisitorConsent()');
+    expect(code(CONSENT_HOOK), 'inget lyssnar på cookie-consent-changed')
+      .toContain('cookie-consent-changed');
   });
 });
 
