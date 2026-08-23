@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260825180000",
-      "migrations_count": 504,
+      "migration_head": "20260826180000",
+      "migrations_count": 507,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2019,8 +2019,20 @@
           "name": "e2f3a4b5-null-is-not-equal-to-null"
         },
         {
-          "version": "20260825180000",
-          "name": "f3a4b5c6-en-halv-flytt-utan-ett-ord"
+          "version": "20260826120000",
+          "name": "f3a4b5c6-en-rad-utan-namn-kunde-aldrig-bli-en-order"
+        },
+        {
+          "version": "20260826130000",
+          "name": "a4b5c6d7-tva-nummerserier-i-samma-liggare"
+        },
+        {
+          "version": "20260826140000",
+          "name": "b5c6d7e8-partiet-som-aldrig-kunde-registreras"
+        },
+        {
+          "version": "20260826180000",
+          "name": "c6d7e8f9-en-halv-flytt-utan-ett-ord"
         }
       ]
     },

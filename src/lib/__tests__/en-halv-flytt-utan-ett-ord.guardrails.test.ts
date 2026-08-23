@@ -34,7 +34,7 @@ import { join } from 'path';
 
 const ROOT = join(__dirname, '../../..');
 const MIGRATIONS = join(ROOT, 'supabase/migrations');
-const FILE = '20260825180000_f3a4b5c6-en-halv-flytt-utan-ett-ord.sql';
+const FILE = '20260826180000_c6d7e8f9-en-halv-flytt-utan-ett-ord.sql';
 const sql = readFileSync(join(MIGRATIONS, FILE), 'utf8');
 
 const UPSTREAM = '20260825140000_e2f3a4b5-null-is-not-equal-to-null.sql';
