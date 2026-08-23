@@ -16,6 +16,7 @@
 //     (e.g. SearXNG 403 on format=json → "enable json in settings.yml")
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { recordIntegrationHealth } from './integration-health-state.ts';
 
 export interface IntegrationProbeResult {
   name: string;
@@ -300,57 +301,6 @@ const UNPROBEABLE: Record<string, string> = {
   email: 'umbrella config — delivery is probed via the resend integration',
 };
 
-/**
- * When the scheduled sweep finds failures, surface them where the operator
- * already looks: a system message in admin FlowChat (same channel as the
- * daily briefing). On-demand runs skip this — the caller sees the result.
- */
-async function notifyFailures(
-  supabase: SupabaseClient,
-  failing: IntegrationProbeResult[],
-): Promise<void> {
-  try {
-    const { data: admin } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'admin')
-      .limit(1)
-      .maybeSingle();
-    if (!admin?.user_id) return;
-
-    const today = new Date().toISOString().slice(0, 10);
-    const title = `Integration health — ${today}`;
-    const { data: existing } = await supabase
-      .from('chat_conversations')
-      .select('id')
-      .eq('scope', 'internal')
-      .eq('user_id', admin.user_id)
-      .eq('title', title)
-      .limit(1)
-      .maybeSingle();
-    let conversationId = existing?.id ?? null;
-    if (!conversationId) {
-      const { data: conv } = await supabase
-        .from('chat_conversations')
-        .insert({ scope: 'internal', user_id: admin.user_id, title })
-        .select('id')
-        .single();
-      conversationId = conv?.id ?? null;
-    }
-    if (!conversationId) return;
-
-    const lines = failing.map((f) => `• **${f.name}**: ${f.detail}`);
-    await supabase.from('chat_messages').insert({
-      conversation_id: conversationId,
-      role: 'assistant',
-      content: `⚠️ ${failing.length} integration${failing.length > 1 ? 's' : ''} failing:\n${lines.join('\n')}\n\nRun check_integrations again after fixing to verify.`,
-      source: 'system',
-    });
-  } catch {
-    // Notification is best-effort — the probe result itself is the product.
-  }
-}
-
 export async function executeCheckIntegrations(
   supabase: SupabaseClient,
   args?: Record<string, unknown>,
@@ -445,11 +395,9 @@ export async function executeCheckIntegrations(
 
   results.sort((a, b) => a.name.localeCompare(b.name));
   const failing = results.filter((r) => r.status === 'fail');
-  if (failing.length > 0 && args?.source === 'automation') {
-    await notifyFailures(supabase, failing);
-  }
   const unused = results.filter((r) => r.status === 'unused');
-  return {
+
+  const report = {
     healthy: failing.length === 0,
     summary: `${results.filter((r) => r.status === 'ok').length} ok, ${failing.length} failing, ` +
       `${unused.length} unused, ${results.filter((r) => r.status === 'skipped').length} skipped`,
@@ -459,4 +407,24 @@ export async function executeCheckIntegrations(
     unused: unused.map((r) => r.name),
     integrations: results,
   };
+
+  // The measurement updates the STATE and — only on a transition — files an
+  // acknowledgeable notice. It used to write a `role: 'assistant'` row into
+  // admin FlowChat instead, which put something moving inside something
+  // permanent: nine such messages piled up on optic, four of them word for
+  // word identical, none of them resolvable, and the alarm became wallpaper.
+  // See integration-health-state.ts for the full account.
+  //
+  // Deliberately unconditional (the old chat write only fired for
+  // `source: 'automation'`): the state is "true as of the last probe", and who
+  // ordered the probe does not change what is true. Best-effort — the report
+  // below is returned either way, and the skill's RETURN SHAPE is untouched.
+  // It is agent surface: an agent that asks gets the whole answer.
+  await recordIntegrationHealth(
+    supabase,
+    report,
+    typeof args?.source === 'string' ? args.source : 'manual',
+  );
+
+  return report;
 }

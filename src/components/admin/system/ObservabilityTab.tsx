@@ -14,6 +14,7 @@ import { useAutomationHealth } from '@/hooks/useAutomationHealth';
 import { useKnowledgeIndexHealth, useRunKnowledgeIndexer, KNOWLEDGE_SOURCES } from '@/hooks/useKnowledgeIndex';
 import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 import { InstanceReadinessChecklist } from '@/components/admin/InstanceReadinessChecklist';
+import { IntegrationHealthCard } from '@/components/admin/system/IntegrationHealthCard';
 import { PLATFORM_SKILL_NAMES } from '@/lib/platform-seeds';
 
 function timeAgo(iso: string | null) {
@@ -665,6 +666,7 @@ export function ObservabilityTab() {
         <SkillAuditCard />
         <LoginActivityCard />
         <KnowledgeIndexCard />
+        <IntegrationHealthCard />
       </div>
       {/*
         The provisioning checklist keeps a home here after it has vanished from
