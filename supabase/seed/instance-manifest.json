@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260824120000",
-      "migrations_count": 499,
+      "migration_head": "20260824150000",
+      "migrations_count": 500,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2001,6 +2001,10 @@
         {
           "version": "20260824120000",
           "name": "a8b9c0d1-recognition-beats-recall"
+        },
+        {
+          "version": "20260824150000",
+          "name": "b9c0d1e2-a-service-has-no-shelf"
         }
       ]
     },
@@ -2083,7 +2087,7 @@
         "system-integrity-check": "sha256:f90caeeb5634c18d19e681df91c690b5fbee5122fc5b60f8648c96e5cd9ae3cc",
         "telegram-ingest": "sha256:d1a509622d71db0e42a6902da31ce346c3b57471a1350c240c7c5b37a50c9cbc",
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
-        "track-page-view": "sha256:a45a5f4f4cfbbf91e37e30ed143521085c0ad98a7f33cd7806c3ff329806bb33",
+        "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
         "twilio-ingest": "sha256:2bd8852c0c67cf499c7c61cc97f4b94f79c3c19666cb6eaa195f8e5f9e83be5e",
         "voice-ingest": "sha256:b2f454ebef1846179377d7409780b4b8de014a1b1486dd91f84f2ecc9f1dd6df",
         "voice-recording": "sha256:41391de110f7f3e138df5c50b1901dd6c7928d2be18ad82fa5e166d48f66cca2",
