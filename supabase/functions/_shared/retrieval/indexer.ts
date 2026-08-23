@@ -3,15 +3,17 @@
  *
  * Drains knowledge_index_queue: loads each queued source row, derives its
  * visibility class from the row's own publication state, chunks it, and
- * diffs against the stored chunks by content hash. Runs with the SERVICE
- * client (it must read unpublished rows to know they should be REMOVED from
- * the index) — the caller's-eyes rule applies to the QUERY path, never here.
+ * diffs against the stored chunks by row hash (chunkRowHash — the ONE
+ * definition of "unchanged", covering every descriptive field the row stores).
+ * Runs with the SERVICE client (it must read unpublished rows to know they
+ * should be REMOVED from the index) — the caller's-eyes rule applies to the
+ * QUERY path, never here.
  *
  * Structured/transactional tables (Flowtable, orders, …) are deliberately
  * absent: they are live-query sources behind skills, not chunk sources.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- Deno edge module over dynamic Supabase rows */
-import { chunkMarkdown, chunkText, contentHash, type Chunk } from './chunker.ts';
+import { chunkMarkdown, chunkText, chunkRowHash, type Chunk } from './chunker.ts';
 import { extractTextFromBlock } from '../chat-context.ts';
 
 export const CHUNK_SOURCES = ['pages', 'kb_articles', 'wiki_pages', 'docs_pages', 'documents', 'handbook_chapters'] as const;
@@ -258,20 +260,29 @@ async function reindexEntity(
   }
 
   // Hash-diff against stored chunks: unchanged chunks are skipped entirely
-  // (preserves their embeddings); changed/new chunks get embedding wiped so
-  // the embed sweep (embedder.ts) re-vectorizes them.
+  // (preserves their embeddings); changed/new chunks are rewritten.
+  //
+  // `content` is selected too, because the row hash and the EMBEDDING answer
+  // two different questions. The hash asks "does this row still say what it
+  // should" across every descriptive field (chunkRowHash — title, content,
+  // visibility, metadata). The vector is derived from `content` alone
+  // (embedder.ts embeds chunk.content), so it goes stale only when the text
+  // does. Nulling the embedding on every hash mismatch would make a pure
+  // rename — the very case this hash was widened to catch — re-vectorize the
+  // whole index at provider prices for a label no vector can see.
   const { data: existing } = await service
     .from('knowledge_chunks')
-    .select('chunk_index, content_hash')
+    .select('chunk_index, content_hash, content')
     .eq('source_table', sourceTable)
     .eq('entity_id', entityId);
-  const existingHashes = new Map<number, string>(
-    (existing ?? []).map((r: any) => [r.chunk_index, r.content_hash]),
+  const existingRows = new Map<number, { content_hash: string; content: string }>(
+    (existing ?? []).map((r: any) => [
+      r.chunk_index,
+      { content_hash: r.content_hash, content: r.content },
+    ]),
   );
 
-  // Hash covers content + metadata: a metadata-only change (e.g. flipping
-  // include_in_chat) must also propagate through the hash-skip.
-  const metaJson = JSON.stringify(extracted.metadata);
+  const stamp = new Date().toISOString();
   const allRows = await Promise.all(
     extracted.chunks.map(async (c, i) => ({
       source_table: sourceTable,
@@ -281,19 +292,41 @@ async function reindexEntity(
       content: c.content,
       visibility: extracted.visibility,
       metadata: extracted.metadata,
-      content_hash: await contentHash(c.content + ' ' + metaJson),
-      embedding: null,
-      embedding_model: null,
-      updated_at: new Date().toISOString(),
+      // ONE hash, over the whole row (chunker.ts). Never recompute it here.
+      content_hash: await chunkRowHash({
+        title: c.title,
+        content: c.content,
+        visibility: extracted.visibility,
+        metadata: extracted.metadata,
+      }),
+      updated_at: stamp,
     })),
   );
-  const rows = allRows.filter((r) => existingHashes.get(r.chunk_index) !== r.content_hash);
+  const changed = allRows.filter(
+    (r) => existingRows.get(r.chunk_index)?.content_hash !== r.content_hash,
+  );
 
-  if (rows.length > 0) {
+  // Two upserts rather than one: PostgREST requires every object in a batch to
+  // carry the same keys, and the whole point of the second batch is that it
+  // does NOT carry `embedding` — a column absent from the payload is left
+  // untouched by ON CONFLICT DO UPDATE, so the existing vector survives a
+  // rename intact.
+  const textChanged = changed.filter((r) => existingRows.get(r.chunk_index)?.content !== r.content);
+  const labelOnly = changed.filter((r) => existingRows.get(r.chunk_index)?.content === r.content);
+
+  if (textChanged.length > 0) {
+    const { error } = await service.from('knowledge_chunks').upsert(
+      // New or rewritten text: drop the vector so the embed sweep redoes it.
+      textChanged.map((r) => ({ ...r, embedding: null, embedding_model: null })),
+      { onConflict: 'source_table,entity_id,chunk_index' },
+    );
+    if (error) throw new Error(`chunk upsert failed: ${error.message}`);
+  }
+  if (labelOnly.length > 0) {
     const { error } = await service
       .from('knowledge_chunks')
-      .upsert(rows, { onConflict: 'source_table,entity_id,chunk_index' });
-    if (error) throw new Error(`chunk upsert failed: ${error.message}`);
+      .upsert(labelOnly, { onConflict: 'source_table,entity_id,chunk_index' });
+    if (error) throw new Error(`chunk relabel failed: ${error.message}`);
   }
   // Trim the stale tail beyond the CURRENT total chunk count (not just the
   // changed subset).
