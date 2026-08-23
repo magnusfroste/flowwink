@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useEffect, useRef } from 'react';
-import { hasConsent } from '@/lib/visitor-consent';
+import { useVisitorConsent } from '@/hooks/useVisitorConsent';
 import { captureUtmOnLanding } from '@/lib/utm';
 
 interface PageViewData {
@@ -50,8 +50,20 @@ function getBrowser(): string {
   return 'Other';
 }
 
+/**
+ * Records one page view per mount — when it is allowed to.
+ *
+ * The gate used to be `hasConsent('analytics')`: "did the visitor store a
+ * yes?". On an instance that switched the cookie banner off, nothing ever
+ * stores one, so the answer was no for every visitor forever and the instance
+ * measured nothing while reporting no error at all. The gate is now
+ * `useVisitorConsent`, which knows whether consent is even being collected —
+ * and answers `ready: false` until it knows, so the first page view is neither
+ * lost nor leaked. Do not put `hasConsent` back here.
+ */
 export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData) {
   const tracked = useRef(false);
+  const consent = useVisitorConsent();
 
   useEffect(() => {
     // Only track once per component mount
@@ -63,8 +75,11 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
 
     if (isAdmin || isPreview) return;
 
-    // Respect analytics consent — no tracking if the visitor hasn't opted in.
-    if (!hasConsent('analytics')) return;
+    // Decide nothing until we know whether consent is collected here. This
+    // effect re-runs when it becomes known, so the view is only deferred.
+    if (!consent.ready) return;
+    // Respect analytics consent where analytics consent is actually collected.
+    if (!consent.analytics) return;
 
     const trackPageView = async () => {
       try {
@@ -99,5 +114,5 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
     };
 
     trackPageView();
-  }, [pageId, pageSlug, pageTitle]);
+  }, [pageId, pageSlug, pageTitle, consent.ready, consent.analytics]);
 }

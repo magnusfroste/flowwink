@@ -1,46 +1,29 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { X, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getConsent, setConsent, acceptAll, rejectAll } from '@/lib/visitor-consent';
+import {
+  bannerIsEnabled,
+  useCookieConsentSettings,
+  type CookieConsentBannerText,
+  type CookieConsentV2Settings,
+} from '@/hooks/useVisitorConsent';
 
-interface ConsentCategoryConfig {
-  label: string;
-  description: string;
-  required?: boolean;
-}
-
-interface CookieConsentV2Settings {
-  enabled: boolean;
-  categories: {
-    essential: ConsentCategoryConfig;
-    analytics: ConsentCategoryConfig;
-    marketing: ConsentCategoryConfig;
-  };
-  /**
-   * Banner copy. The category labels were configurable from the start while the
-   * title, body and buttons were hardcoded English — so a Swedish site whose
-   * whole pitch is GDPR greeted visitors with "We use cookies". Text is data:
-   * an operator (or an agent over the gateway) can translate the banner without
-   * a code change. Every field is optional and falls back to the English below.
-   */
-  text?: Partial<BannerText>;
-}
-
-interface BannerText {
-  title: string;
-  description: string;
-  customize: string;
-  acceptAll: string;
-  essentialOnly: string;
-  preferencesTitle: string;
-  back: string;
-  saveSelection: string;
-}
+/**
+ * Banner copy. The category labels were configurable from the start while the
+ * title, body and buttons were hardcoded English — so a Swedish site whose
+ * whole pitch is GDPR greeted visitors with "We use cookies". Text is data: an
+ * operator (or an agent over the gateway) can translate the banner without a
+ * code change. Every field is optional and falls back to the English below.
+ *
+ * The settings shape and the query itself live in `useVisitorConsent` — the
+ * banner and the measurement gate read the same row through the same key, so
+ * "is the banner on?" has exactly one answer and costs one request.
+ */
+type BannerText = CookieConsentBannerText;
 
 const defaultText: BannerText = {
   title: 'We use cookies',
@@ -70,17 +53,9 @@ export function CookieBanner() {
   const [analytics, setAnalytics] = useState(true);
   const [marketing, setMarketing] = useState(false);
 
-  const { data } = useQuery({
-    queryKey: ['site-settings', 'cookie_consent_v2'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('site_settings').select('value').eq('key', 'cookie_consent_v2').maybeSingle();
-      return (data?.value as unknown as CookieConsentV2Settings) || defaults;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { settings: stored } = useCookieConsentSettings();
 
-  const settings = data ?? defaults;
+  const settings = stored ?? defaults;
   const text: BannerText = { ...defaultText, ...(settings.text ?? {}) };
 
   useEffect(() => {
@@ -89,7 +64,9 @@ export function CookieBanner() {
     return () => clearTimeout(t);
   }, []);
 
-  if (!settings.enabled || !isVisible) return null;
+  // The same predicate the measurement gate uses. If this renders nothing,
+  // nothing can ever be collected — and then measurement must not wait for it.
+  if (!bannerIsEnabled(stored) || !isVisible) return null;
 
   const handleAcceptAll = () => { acceptAll(); setIsVisible(false); };
   const handleReject = () => { rejectAll(); setIsVisible(false); };

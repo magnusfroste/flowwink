@@ -31,7 +31,7 @@ import { join } from 'node:path';
  * filename would certify a body nobody executes.
  *
  * The live half of the check is `public.regression_ticket_escalations()`
- * (20260824160000), which builds a ticket and three rules, runs the sweep,
+ * (20260824180000), which builds a ticket and three rules, runs the sweep,
  * asserts, and rolls it all back. This file is the half that runs in CI, where
  * there is no database.
  */

@@ -45,7 +45,7 @@
 -- database is byte-identical afterwards. PL/pgSQL variables survive the
 -- rollback (they are not transactional), which is how the verdict gets out.
 --
--- Forward-dated above main's migration head (20260824150000 at the time of
+-- Forward-dated above main's migration head (20260824170000 at the time of
 -- writing) and idempotent. A CREATE OR REPLACE below a managed ledger's HEAD is
 -- silently skipped, and this has to reach instances that are already past it —
 -- which is exactly the instances that have main's fix and no check on it. If
