@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260825140000",
-      "migrations_count": 503,
+      "migration_head": "20260826140000",
+      "migrations_count": 506,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2017,6 +2017,18 @@
         {
           "version": "20260825140000",
           "name": "e2f3a4b5-null-is-not-equal-to-null"
+        },
+        {
+          "version": "20260826120000",
+          "name": "f3a4b5c6-en-rad-utan-namn-kunde-aldrig-bli-en-order"
+        },
+        {
+          "version": "20260826130000",
+          "name": "a4b5c6d7-tva-nummerserier-i-samma-liggare"
+        },
+        {
+          "version": "20260826140000",
+          "name": "b5c6d7e8-partiet-som-aldrig-kunde-registreras"
         }
       ]
     },
