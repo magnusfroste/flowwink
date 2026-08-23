@@ -93,11 +93,72 @@ export function chunkText(entityTitle: string, text: string): Chunk[] {
   return packParagraphs(entityTitle, text);
 }
 
-/** Stable content hash to skip unchanged chunks (and later, re-embeds). */
+/** SHA-256 of a string, hex. The primitive under `chunkRowHash`. */
 export async function contentHash(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/** Key-sorted JSON so an object literal's field ORDER can't re-hash the fleet. */
+function stableJson(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`).join(',')}}`;
+}
+
+/**
+ * The descriptive payload of one stored chunk row — every field the indexer
+ * writes that says something about the content. `chunk_index` and the entity
+ * key are the row's IDENTITY (they select the row, they can't drift within it);
+ * `embedding`/`updated_at` are derived. These four are the content.
+ */
+export interface ChunkRow {
+  title: string;
+  content: string;
+  visibility: string;
+  metadata: Record<string, unknown>;
+}
+
+/**
+ * THE one truth about whether a stored chunk row is unchanged.
+ *
+ * The indexer skips rows whose stored `content_hash` still matches, which
+ * preserves embeddings and avoids pointless writes. That skip is only honest
+ * if the hash covers everything the row STORES — otherwise an uncovered field
+ * can drift forever behind a hash that keeps saying "unchanged", with no error,
+ * no queue backlog and no failed sweep to notice.
+ *
+ * It did. Until 2026-08-23 the hash was `content + ' ' + JSON(metadata)`, so
+ * `title` and `visibility` were written but never measured:
+ *
+ *  - TITLE. A wiki page renamed on optic 2026-08-21 ("Produkt - Skyddad
+ *    internetanslutning" → "Produkt - Internettjänster") left all ten of its
+ *    chunks labelled with the old name — twice each, since chunkMarkdown puts
+ *    the entity title in both the row title and the heading trail. The rename
+ *    changed no body text, so the hash matched, so every chunk was skipped.
+ *    Agents went on citing a service that no longer exists by that name. The
+ *    queue was empty, nothing was logged, and the neighbouring page indexed
+ *    fine ninety seconds later: the mechanism worked, it just measured the
+ *    wrong thing.
+ *  - VISIBILITY. The same defect with teeth. Flipping a KB article from public
+ *    to internal changes neither body nor metadata, so its chunks kept
+ *    `visibility='public'` — and `knowledge_chunks` grants anon SELECT on
+ *    public rows. An article withdrawn from the customer-facing tier stayed
+ *    readable there.
+ *
+ * So: one function, hashing the whole row, called from exactly one place. Add
+ * a stored descriptive column and you add it HERE — never a second hash beside
+ * this one, which is how the two drift apart again.
+ */
+export async function chunkRowHash(row: ChunkRow): Promise<string> {
+  // Array-of-fields, not concatenation: no separator a title could contain.
+  return contentHash(
+    JSON.stringify([row.title, row.content, row.visibility]) + stableJson(row.metadata),
+  );
 }
