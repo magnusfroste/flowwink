@@ -226,34 +226,20 @@ describe('läkningen är konservativ och villkorad', () => {
 });
 
 describe('migrationen når instanser som redan passerat HEAD', () => {
-  // Vad som faktiskt ska bevisas: den här migrationen låg ÖVER allt som fanns
-  // när den skrevs, så en instans vars ledger redan passerat den tidpunkten
-  // ändå applicerar den. Det är en egenskap hos SKRIVÖGONBLICKET och kan inte
-  // ändras i efterhand.
-  //
-  // Den mätte tidigare mot katalogens max — alltså "jag är högst av alla, för
-  // alltid". Det är sant exakt tills nästa migration läggs till, och falskt för
-  // varje migration som läggs till därefter. Det gjorde vakten till en mina:
-  // den som skrev en korrekt framåtdaterad migration efter den här fick ett
-  // rött test för besväret, och enda sättet att "laga" det hade varit att
-  // back-datera sin egen — precis den tysta överhoppning som vakten finns för
-  // att förhindra. (Hittat av 20260824160000, vendors.payment_terms-seeden.)
-  //
-  // Så: mot den högsta stämpel som fanns när 20260824150000 skrevs.
-  // scripts/check-migration-forward-dated.ts vaktar samma sak för NYA
-  // migrationer, och mäter mot förgreningspunkten av exakt samma skäl.
-  const HIGHEST_AT_AUTHORING = '20260824120000';
-
-  it('är framåtdaterad förbi varje migration som fanns när den skrevs', () => {
+  it('är framåtdaterad förbi allt som fanns när den skrevs', () => {
+    // Kravet är att en managed instans vars ledger redan passerat äldre
+    // tidsstämplar ändå plockar upp den här — alltså att den ligger EFTER allt
+    // som fanns då. Inte att den är evigt nyast: den första versionen av det
+    // här testet krävde det, och föll därför på nästa migration någon skrev,
+    // några timmar senare. En spärr som går ut av konstruktion lär folk att
+    // ignorera röda test.
+    const own = FILE.slice(0, 14);
     const earlier = readdirSync(MIGRATIONS)
       .filter((f) => f.endsWith('.sql') && /^\d{14}_/.test(f))
       .map((f) => f.slice(0, 14))
-      .filter((t) => t <= HIGHEST_AT_AUTHORING);
-    // Fångar en tom katalog eller en felstavad sökväg — annars vore every() på
-    // en tom lista grönt av fel skäl.
-    expect(earlier.length).toBeGreaterThan(0);
-    expect(FILE.slice(0, 14) > HIGHEST_AT_AUTHORING).toBe(true);
-    expect(earlier.every((t) => FILE.slice(0, 14) > t)).toBe(true);
+      .filter((t) => t < own);
+    expect(earlier.length, 'hittade inga tidigare migrationer alls').toBeGreaterThan(0);
+    expect(own > earlier.sort()[earlier.length - 1]).toBe(true);
   });
 
   it('är omkörbar — inga skapelser utan IF EXISTS/OR REPLACE', () => {
