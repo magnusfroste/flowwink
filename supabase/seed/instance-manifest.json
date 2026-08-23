@@ -4,7 +4,7 @@
   "layers": {
     "schema": {
       "migration_head": "20260825090000",
-      "migrations_count": 501,
+      "migrations_count": 502,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2005,6 +2005,10 @@
         {
           "version": "20260824150000",
           "name": "b9c0d1e2-a-service-has-no-shelf"
+        },
+        {
+          "version": "20260824170000",
+          "name": "c0d1e2f3-the-seam-nobody-owned"
         },
         {
           "version": "20260825090000",

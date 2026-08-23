@@ -226,20 +226,20 @@ describe('läkningen är konservativ och villkorad', () => {
 });
 
 describe('migrationen når instanser som redan passerat HEAD', () => {
-  it('är framåtdaterad förbi varje migration som fanns när den landade', () => {
-    // Det som ska hålla är att stämpeln låg ÖVER ledgerns HEAD när filen skrevs
-    // — det är det som gör att en managerad instans inte hoppar över den.
-    // "Nyast av alla" vore ett annat påstående, och det bryter varje kommande
-    // migration; scripts/check-migration-forward-dated.ts är den bevakningen.
-    const HEAD_AT_AUTHORING = '20260824120000';
-    const stamps = readdirSync(MIGRATIONS)
+  it('är framåtdaterad förbi allt som fanns när den skrevs', () => {
+    // Kravet är att en managed instans vars ledger redan passerat äldre
+    // tidsstämplar ändå plockar upp den här — alltså att den ligger EFTER allt
+    // som fanns då. Inte att den är evigt nyast: den första versionen av det
+    // här testet krävde det, och föll därför på nästa migration någon skrev,
+    // några timmar senare. En spärr som går ut av konstruktion lär folk att
+    // ignorera röda test.
+    const own = FILE.slice(0, 14);
+    const earlier = readdirSync(MIGRATIONS)
       .filter((f) => f.endsWith('.sql') && /^\d{14}_/.test(f))
-      .map((f) => f.slice(0, 14));
-    expect(FILE.slice(0, 14) > HEAD_AT_AUTHORING).toBe(true);
-    expect(
-      stamps.filter((t) => t === FILE.slice(0, 14)).length,
-      'två migrationer på samma stämpel ger odefinierad ordning',
-    ).toBe(1);
+      .map((f) => f.slice(0, 14))
+      .filter((t) => t < own);
+    expect(earlier.length, 'hittade inga tidigare migrationer alls').toBeGreaterThan(0);
+    expect(own > earlier.sort()[earlier.length - 1]).toBe(true);
   });
 
   it('är omkörbar — inga skapelser utan IF EXISTS/OR REPLACE', () => {

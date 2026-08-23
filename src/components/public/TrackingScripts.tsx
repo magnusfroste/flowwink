@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { hasConsent } from '@/lib/visitor-consent';
+import { useVisitorConsent } from '@/hooks/useVisitorConsent';
 
 interface PublicTrackingConfig {
   google_analytics?: { enabled?: boolean; measurementId?: string | null };
@@ -28,6 +28,13 @@ interface PublicTrackingConfig {
  * changes their mind (`cookie-consent-changed`), so accepting later still
  * loads them without a reload.
  * Analytics tag → 'analytics'. Meta Pixel is advertising → 'marketing'.
+ *
+ * CONSENT, PART TWO (2026-08-23): that gate was `hasConsent`, which answers
+ * "is a yes stored?" — and on an instance with the banner switched off nothing
+ * ever stores one, so the answer was no forever and the tags never loaded. The
+ * gate is now `useVisitorConsent`, which respects consent where consent is
+ * actually collected and waits for `ready` before deciding either way. Do not
+ * reach for `hasConsent` here again.
  */
 export function TrackingScripts() {
   const { data: tracking } = useQuery({
@@ -43,18 +50,11 @@ export function TrackingScripts() {
     retry: false,
   });
 
-  // Re-render when the visitor answers the banner, so a later "accept" loads
-  // the tags without a reload. Starts as whatever is already stored.
-  const [consent, setConsent] = useState(() => ({
-    analytics: hasConsent('analytics'),
-    marketing: hasConsent('marketing'),
-  }));
-  useEffect(() => {
-    const onChange = () =>
-      setConsent({ analytics: hasConsent('analytics'), marketing: hasConsent('marketing') });
-    window.addEventListener('cookie-consent-changed', onChange);
-    return () => window.removeEventListener('cookie-consent-changed', onChange);
-  }, []);
+  // Whether each tag may run. The hook listens for `cookie-consent-changed`,
+  // so a later "accept" flips these and the effects below load the tags
+  // without a reload. `ready` is false until the banner setting is known —
+  // until then neither tag is loaded and neither is written off.
+  const consent = useVisitorConsent();
 
   const ga4Loaded = useRef(false);
   const metaPixelLoaded = useRef(false);
@@ -67,6 +67,7 @@ export function TrackingScripts() {
 
   // Google Analytics 4
   useEffect(() => {
+    if (!consent.ready) return;
     if (!consent.analytics) return;
     if (!ga4Config?.enabled || !measurementId || ga4Loaded.current) return;
 
@@ -87,10 +88,11 @@ export function TrackingScripts() {
     document.head.appendChild(initScript);
 
     ga4Loaded.current = true;
-  }, [ga4Config?.enabled, measurementId, consent.analytics]);
+  }, [ga4Config?.enabled, measurementId, consent.ready, consent.analytics]);
 
   // Meta Pixel
   useEffect(() => {
+    if (!consent.ready) return;
     if (!consent.marketing) return;
     if (!metaConfig?.enabled || !pixelId || metaPixelLoaded.current) return;
 
@@ -121,7 +123,7 @@ export function TrackingScripts() {
     document.body.appendChild(noscript);
 
     metaPixelLoaded.current = true;
-  }, [metaConfig?.enabled, pixelId, consent.marketing]);
+  }, [metaConfig?.enabled, pixelId, consent.ready, consent.marketing]);
 
   return null;
 }

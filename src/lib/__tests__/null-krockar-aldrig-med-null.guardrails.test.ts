@@ -157,17 +157,21 @@ describe('skiljedomarens index måste finnas för att kunna pekas på', () => {
 });
 
 describe('migrationen når instanser som redan passerat HEAD', () => {
-  it('är framåtdaterad förbi varje migration som fanns när den landade', () => {
-    // Ledgern hoppar tyst över allt under sin HEAD. Att påstå "nyast av alla"
-    // vore ett annat test — ett som varje kommande migration bryter; den
-    // bevakningen gör scripts/check-migration-forward-dated.ts mot merge-basen.
-    const HEAD_AT_AUTHORING = '20260824150000';
+  it('är framåtdaterad förbi allt som fanns när den skrevs', () => {
+    // Samma form som a-service-has-no-shelf: kravet är att en managed instans
+    // vars ledger passerat äldre stämplar ändå plockar upp den här — inte att
+    // den är evigt nyast. Ett test som kräver det går ut av konstruktion nästa
+    // gång någon skriver en migration. Merge-basbevakningen är
+    // scripts/check-migration-forward-dated.ts.
+    const own = FILE.slice(0, 14);
     const stamps = readdirSync(MIGRATIONS)
       .filter((f) => f.endsWith('.sql') && /^\d{14}_/.test(f))
       .map((f) => f.slice(0, 14));
-    expect(FILE.slice(0, 14) > HEAD_AT_AUTHORING).toBe(true);
+    const earlier = stamps.filter((t) => t < own).sort();
+    expect(earlier.length, 'hittade inga tidigare migrationer alls').toBeGreaterThan(0);
+    expect(own > earlier[earlier.length - 1]).toBe(true);
     expect(
-      stamps.filter((t) => t === FILE.slice(0, 14)).length,
+      stamps.filter((t) => t === own).length,
       'två migrationer på samma stämpel ger odefinierad ordning',
     ).toBe(1);
   });
