@@ -88,6 +88,15 @@ function getClientIp(req: Request): string {
   return '';
 }
 
+/**
+ * User-agents we refuse to count as visitors. Deliberately conservative: a
+ * false positive silently deletes a real visitor from the numbers, which is a
+ * worse error than counting a machine. Headless/automation markers and the
+ * declared AI crawlers only — no heuristics on "unusual" browsers.
+ */
+const BOT_UA =
+  /(bot\b|bots\b|crawler|spider|slurp|headless|puppeteer|playwright|selenium|phantomjs|lighthouse|chrome-lighthouse|pagespeed|curl\/|wget\/|python-requests|scrapy|axios\/|go-http-client|java\/|okhttp|libwww|httpclient|facebookexternalhit|gptbot|claudebot|claude-web|ccbot|perplexitybot|anthropic-ai|google-extended|bingpreview|semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|dataforseo)/i;
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -98,6 +107,22 @@ Deno.serve(async (req) => {
     const body: PageViewRequest = await req.json();
     
     console.log('[track-page-view] Received request for page:', body.pageSlug);
+
+    // Automated clients are not visitors. Our tracking is client-side JS, so a
+    // plain crawler never reaches this function at all — measured 2026-08-22 on
+    // a live instance: 628 page views, ZERO matching a bot user-agent. What can
+    // still get in is a HEADLESS browser that does execute JS: Lighthouse, a
+    // Puppeteer script, an AI crawler that renders. Those inflate the count and,
+    // worse, feed visitor intelligence and lead scoring with a machine.
+    // Refused here rather than in the client: the client's own JS is exactly
+    // what an automated agent may choose not to honour.
+    const ua = String(body.userAgent ?? '');
+    if (ua && BOT_UA.test(ua)) {
+      console.log('[track-page-view] Refused — automated client:', ua.slice(0, 80));
+      return new Response(JSON.stringify({ ok: true, skipped: 'automated_client' }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Get client IP
     const clientIp = getClientIp(req);
