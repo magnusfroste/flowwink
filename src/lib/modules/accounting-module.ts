@@ -606,7 +606,7 @@ done while rejected is non-empty.`,
   },
   {
     name: 'manage_chart_of_accounts',
-    description: 'List, add, update, or deactivate accounts in the chart of accounts. Supports multiple locales (se-bas2024, ifrs, us-gaap). Use when: admin asks about available accounts, needs to add a custom account, or deactivate unused accounts. NOT for: journal entries (use manage_journal_entry), opening balances (use manage_opening_balances).',
+    description: 'List, add, update, or deactivate accounts in the chart of accounts. Supports multiple locales (se-bas2024, ifrs, us-gaap). `add` is NOT an upsert: a code that is already taken in that locale is refused, and the refusal names the account sitting there — because 4010 meaning "Inköp material" and 4010 meaning "Försäljning" are two different sets of books, and a silent success over the wrong one sends every later posting to an account that means something else. Rename the existing account with action="update" instead, or pick a free code. Use when: admin asks about available accounts, needs to add a custom account, or deactivate unused accounts. NOT for: journal entries (use manage_journal_entry), opening balances (use manage_opening_balances).',
     category: 'commerce',
     handler: 'db:chart_of_accounts',
     scope: 'internal',

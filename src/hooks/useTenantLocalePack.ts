@@ -25,30 +25,32 @@ let topUpDoneFor: string | null = null;
 export async function topUpLocalePackSeeds(packId: string): Promise<void> {
   const pack = getPack(packId);
 
-  // Chart accounts: insert missing codes only.
+  // Chart accounts: top up against the CONSTRAINT, never against a read.
   //
-  // Presence is checked by account_code ALONE, deliberately. The table has
-  // UNIQUE (account_code) — uniqueness is per code, not per (code, locale) —
-  // so filtering this lookup by locale asks a different question than the
-  // constraint enforces. liteit carries five accounts still tagged with the
-  // legacy locale `sv-SE`; scoping the check to the pack id made them look
-  // missing, the insert then hit the unique constraint, and the throw below
-  // aborted the whole top-up — including every batch after it. That instance
-  // sat at 261 of 263 accounts with nothing reporting why.
+  // This asked the table which codes it already had, then inserted the
+  // difference. PostgREST caps an unfiltered select at 1000 rows and reports
+  // nothing; se-bas2024 ships 1262 accounts, so the read could not see the
+  // last 262 — they looked missing on every top-up, the insert hit
+  // chart_of_accounts_locale_code_key, and `throw error` aborted the rest of
+  // the function, taking the template top-up below with it. The unique
+  // constraint protected the data; nothing protected the run.
+  //
+  // Read-and-filter is removed rather than paginated. ON CONFLICT DO NOTHING
+  // against the real constraint UNIQUE (locale, account_code) cannot be
+  // truncated, has no read→write window, leaves existing rows (and any
+  // operator edits to their names) untouched, and is idempotent by
+  // construction — which is what "top up" was always trying to be.
   if (pack.chart.length > 0) {
-    // Locale-scoped: the table is UNIQUE (locale, account_code), so an account
-    // code present under another locale does not block this one.
-    const { data: existingAcc } = await supabase.from('chart_of_accounts')
-      .select('account_code').eq('locale', pack.id);
-    const haveCodes = new Set((existingAcc ?? []).map((r) => r.account_code));
-    const missingAcc = pack.chart
-      .filter((a: any) => !haveCodes.has(a.account_code))
-      .map((a: any) => ({ ...a, locale: pack.id }));
-    for (let i = 0; i < missingAcc.length; i += 50) {
-      const { error } = await supabase.from('chart_of_accounts').insert(missingAcc.slice(i, i + 50));
+    const rows = pack.chart.map((a: any) => ({ ...a, locale: pack.id }));
+    for (let i = 0; i < rows.length; i += 50) {
+      const { error } = await supabase.from('chart_of_accounts')
+        .upsert(rows.slice(i, i + 50), {
+          onConflict: 'locale,account_code',
+          ignoreDuplicates: true,
+        });
       if (error) throw error;
     }
-    if (missingAcc.length > 0) logger.log(`[locale-pack] seeded ${missingAcc.length} new accounts for ${pack.id}`);
+    logger.log(`[locale-pack] topped up ${rows.length} pack accounts for ${pack.id}`);
   }
 
   // Templates: insert missing system templates only.

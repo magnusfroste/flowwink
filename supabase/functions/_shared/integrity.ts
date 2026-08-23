@@ -5,6 +5,7 @@
  * - setup-flowpilot (post-bootstrap integrity gate + store expected hash)
  * - instance-health (drift detection endpoint)
  */
+import { readAllRows } from './read-all-rows.ts';
 
 /**
  * Compute a deterministic hash of all skill names + instruction snippets.
@@ -35,13 +36,26 @@ export async function runIntegrityChecks(supabase: any): Promise<{
   totalChecks: number;
   passedChecks: number;
 }> {
-  const { data: allSkills } = await supabase
-    .from('agent_skills')
-    .select('name, enabled, instructions, tool_definition, handler, description')
-    .eq('enabled', true);
-
-  const enabledSkills = allSkills || [];
+  // Paginated: every number below (`noDesc.length`, `badTd.length`) is
+  // published as a fact, and `skillNames` decides which automations are called
+  // broken. An unbounded select is capped at 1000 rows in silence, and
+  // agent_skills sits at ~540 and grows with every module — so the health
+  // check would have started under-reporting its own counts and inventing
+  // "automation references a missing skill" the moment the register crossed
+  // the cap. A sensor that quietly reads a prefix of reality is worse than no
+  // sensor. The whole population IS the question here, so this is the one
+  // place pagination is the right answer rather than upsert or an `.in()`.
+  const { rows: enabledSkills, error: skillsErr } = await readAllRows<any>(
+    supabase,
+    'agent_skills',
+    {
+      columns: 'name, enabled, instructions, tool_definition, handler, description',
+      orderBy: 'name',
+      filter: (q: any) => q.eq('enabled', true),
+    },
+  );
   const issues: string[] = [];
+  if (skillsErr) issues.push(`Could not read the full skill register: ${skillsErr}`);
 
   // Note: `instructions` is an optional per-skill field; `description` is the
   // required one and is checked separately below. We do not report on missing

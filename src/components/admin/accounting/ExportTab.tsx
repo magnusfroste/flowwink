@@ -42,12 +42,35 @@ export function ExportTab() {
   };
 
   async function buildPayload(): Promise<AccountingExportPayload> {
-    // Chart of accounts
-    const { data: chart, error: chartErr } = await supabase
-      .from('chart_of_accounts')
-      .select('account_code, account_name, account_type, account_category, normal_balance')
-      .order('account_code');
-    if (chartErr) throw chartErr;
+    // Chart of accounts — read in pages.
+    //
+    // This is an export: its whole claim is completeness. An unfiltered
+    // PostgREST select stops at 1000 rows and says nothing, and a BAS instance
+    // holds 1263 accounts (measured 2026-08-23). Sorted by account_code the
+    // silently dropped tail was the 8xxx–9xxx block, so every export shipped a
+    // chart with its financial and year-end accounts missing and no error
+    // anywhere. Paginate rather than upsert/`.in()` here because the entire
+    // population genuinely is the subject.
+    const CHART_PAGE = 500;
+    type ChartRow = {
+      account_code: string;
+      account_name: string;
+      account_type: string;
+      account_category: string | null;
+      normal_balance: string;
+    };
+    const chart: ChartRow[] = [];
+    for (let from = 0; ; from += CHART_PAGE) {
+      const { data: page, error: chartErr } = await supabase
+        .from('chart_of_accounts')
+        .select('account_code, account_name, account_type, account_category, normal_balance')
+        .order('account_code')
+        .range(from, from + CHART_PAGE - 1);
+      if (chartErr) throw chartErr;
+      const rows = (page ?? []) as ChartRow[];
+      chart.push(...rows);
+      if (rows.length < CHART_PAGE) break;
+    }
 
     // Journal entries within range (posted only)
     const { data: entries, error: entryErr } = await supabase

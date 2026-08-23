@@ -222,10 +222,17 @@ export async function handler(req: Request): Promise<Response> {
         rationale: `Sequence "${s.sequence.join(" → ")}" observed ${s.count}× across ${s.groups.size} sessions (${s.groups.size - s.automation_only_groups} human-driven) in last ${WINDOW_DAYS}d. Candidate for a chained skill.`,
       }));
 
-    // 5. De-duplicate against existing skills (don't propose what already exists)
-    const { data: existingSkills } = await supabase
-      .from("agent_skills")
-      .select("name");
+    // 5. De-duplicate against existing skills (don't propose what already
+    //    exists) — by asking about the candidate names, not by loading the
+    //    register. PostgREST caps an unfiltered select at 1000 rows silently;
+    //    agent_skills is at ~540 and grows with every module, so a full read
+    //    is a dedupe that quietly stops deduping once the platform gets big
+    //    enough. Bounding the read by the handful of candidates makes the cap
+    //    unreachable and keeps "absent" meaning absent.
+    const candidateNames = [...new Set(proposals.map((p) => p.suggested_name))];
+    const { data: existingSkills } = candidateNames.length
+      ? await supabase.from("agent_skills").select("name").in("name", candidateNames)
+      : { data: [] as { name: string }[] };
     const existingNames = new Set((existingSkills || []).map((s: any) => s.name));
     const filtered = proposals.filter((p) => !existingNames.has(p.suggested_name));
 

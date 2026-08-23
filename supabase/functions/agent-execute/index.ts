@@ -2216,18 +2216,33 @@ async function tplInstall(supabase: any, args: Record<string, unknown>): Promise
           (p: any) => p.id === localeToActivate,
         );
         if (pack) {
-          // Locale-scoped — UNIQUE (locale, account_code).
-          const { data: haveAcc } = await supabase.from('chart_of_accounts')
-            .select('account_code').eq('locale', pack.id);
-          const have = new Set((haveAcc ?? []).map((r: any) => r.account_code));
-          const missing = (pack.accounts as any[])
-            .filter((acc) => !have.has(acc.account_code))
+          // Let the CONSTRAINT decide what already exists — never a read.
+          //
+          // This used to select every account_code for the locale, build a Set
+          // and insert the difference. PostgREST caps an unfiltered select at
+          // 1000 rows and says nothing about it; se-bas2024 ships 1262
+          // accounts, so the read could never see the last 262. They were
+          // counted as missing on every single install, the insert hit
+          // chart_of_accounts_locale_code_key, and the loop `break`ed with a
+          // duplicate-key error pushed into the install report. The unique
+          // constraint kept the data honest — it was the only thing that did.
+          //
+          // The read is gone rather than paginated: upsert/DO NOTHING removes
+          // the whole class, including the read→write window where a
+          // concurrent seed inserts a code between the two statements, and it
+          // is idempotent for free. Target is the real constraint
+          // UNIQUE (locale, account_code), not a guess.
+          const rows = (pack.accounts as any[])
             // is_active comes from the pack — the whole standard is seeded, but
             // only the accounts a company plausibly uses start visible.
             .map((acc) => ({ ...acc, is_active: acc.is_active !== false, locale: pack.id }));
-          for (let i = 0; i < missing.length; i += 100) {
+          for (let i = 0; i < rows.length; i += 100) {
             const { error: coaErr } = await supabase
-              .from('chart_of_accounts').insert(missing.slice(i, i + 100));
+              .from('chart_of_accounts')
+              .upsert(rows.slice(i, i + 100), {
+                onConflict: 'locale,account_code',
+                ignoreDuplicates: true,
+              });
             if (coaErr) { errors.push(`chart seed: ${coaErr.message}`); break; }
           }
         }
@@ -9846,7 +9861,42 @@ async function executeDbAction(
           .insert({ account_code, account_name, account_type, account_category: account_category || account_type, normal_balance, locale, is_active: true })
           .select('id, account_code, account_name')
           .single();
-        if (error) throw new Error(`Add account failed: ${error.message}`);
+        if (error) {
+          // An occupied account code is a MEANING collision, not a retry
+          // nuisance — so `add` refuses rather than quietly returning the
+          // sitting row as `created`. 4010 named "Inköp material" and 4010
+          // named "Försäljning" are two different books; a success envelope
+          // over the wrong one lets every later posting land on an account
+          // that means something else, and nothing downstream ever says so.
+          // This house has already shipped a chart nobody compared once (166
+          // wrong names under the label "BAS 2024"). `add` is not `ensure`.
+          //
+          // It fails self-correctingly, per the rule in
+          // _shared/suggest-names.ts: an error that names the mistake without
+          // naming the exit sends the model looking for another door. So it
+          // names the occupant, says whether it is identical to what was asked
+          // (an idempotent replay — safe to treat as done), and names the
+          // action that changes a name.
+          if (error.code === '23505') {
+            const { data: occupant } = await supabase.from('chart_of_accounts')
+              .select('account_code, account_name, account_type, is_active')
+              .eq('locale', locale)
+              .eq('account_code', account_code)
+              .maybeSingle();
+            const occupantName = occupant?.account_name ?? '(existing account)';
+            const detail = occupant?.account_type
+              ? ` (${occupant.account_type}${occupant.is_active === false ? ', inactive' : ''})`
+              : '';
+            const head = `Account code ${account_code} is already taken in locale "${locale}" by "${occupantName}"${detail}.`;
+            const body = occupant?.account_name === account_name
+              ? ` That is the same account_name you sent, so this account already exists and nothing needed adding — treat the add as done.`
+              : ` That is NOT the account you described, so nothing was written.`
+                + ` To rename the existing one: manage_chart_of_accounts action="update", account_code="${account_code}", locale="${locale}", account_name="${account_name}".`
+                + ` To add yours alongside it, pick a free code — action="list" with search="${String(account_code).slice(0, 2)}" shows which are taken.`;
+            throw new Error(head + body);
+          }
+          throw new Error(`Add account failed: ${error.message}`);
+        }
         return { created: true, ...data };
       }
 
