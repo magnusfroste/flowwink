@@ -22,6 +22,29 @@
  * that legitimately landed on main in parallel does not falsely flag this
  * branch's own (already-forward-dated-at-authoring-time) migrations.
  *
+ * SECOND FAILURE MODE: VERSION COLLISION BETWEEN SIBLINGS
+ * -------------------------------------------------------
+ * Forward-dating alone is not enough. Two branches cut from the SAME fork point
+ * can each pick the same 14-digit timestamp, and each passes the check above —
+ * because each is compared only against its own merge-base, where the other
+ * sibling does not yet exist. (Observed 2026-08-24: PR #261 and PR #265 both
+ * added `20260828120000_*.sql`; both went green.)
+ *
+ * A shared timestamp is not a cosmetic clash. The ledger's identity IS the
+ * version — `supabase_migrations.schema_migrations.version` — so the second file
+ * to be applied looks already-applied and is SILENTLY SKIPPED. Exactly the same
+ * outcome as back-dating, arrived at from the other direction.
+ *
+ * Worse, it is invisible downstream: `instance-readiness.ts` matches an expected
+ * migration when `versions.has(m.version) || names.has(m.name)`, so ONE applied
+ * file satisfies BOTH expected entries and the instance reports "all migrations
+ * applied" while one of them never ran.
+ *
+ * So we additionally reject any version shared by two different filenames in the
+ * post-merge state (origin/main ∪ this branch), and only when this branch is the
+ * one introducing the clash — a pre-existing clash on main must not block every
+ * unrelated PR.
+ *
  * Fails closed only on a real offender; if the base ref / history is unavailable
  * (e.g. a shallow checkout with no common ancestor) it exits 0 with a warning
  * rather than blocking spuriously.
@@ -109,4 +132,66 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
-console.log(`✓ migration-forward-dated: ${addedFiles.length} new migration(s) all forward-dated (> ${baseMax}).`);
+// ---------------------------------------------------------------------------
+// Version-collision guard (see SECOND FAILURE MODE above).
+//
+// Post-merge state = every migration basename on origin/main plus every one on
+// this branch. Deduping by BASENAME first is what makes self-comparison
+// impossible: a file already merged to main appears once, not twice.
+// ---------------------------------------------------------------------------
+const baseName = (f: string) => f.split('/').pop() ?? '';
+
+let postMerge: Set<string>;
+try {
+  const onMain = sh(`git ls-tree -r --name-only ${baseRef} -- ${MIGRATIONS_DIR}`)
+    .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'));
+  const onBranch = sh(`git ls-tree -r --name-only HEAD -- ${MIGRATIONS_DIR}`)
+    .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'));
+  const untrackedNow = sh(`git ls-files --others --exclude-standard -- ${MIGRATIONS_DIR}`)
+    .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'));
+  postMerge = new Set([...onMain, ...onBranch, ...untrackedNow].map(baseName));
+} catch (e) {
+  console.warn(`⚠ migration-version-collision: git inspection failed — skipping (not blocking). ${(e as Error).message}`);
+  process.exit(0);
+}
+
+const byVersion = new Map<number, string[]>();
+for (const name of postMerge) {
+  const ts = tsOf(name);
+  if (ts === undefined) continue;
+  const bucket = byVersion.get(ts);
+  if (bucket) bucket.push(name);
+  else byVersion.set(ts, [name]);
+}
+
+// Only clashes this branch is responsible for. A clash already sitting on main
+// is main's problem, not this PR's — blocking here would stop every unrelated
+// branch and teach everyone to ignore the gate.
+const addedNames = new Set(addedFiles.map(baseName));
+const clashes = [...byVersion.entries()]
+  .filter(([, names]) => names.length > 1 && names.some((n) => addedNames.has(n)))
+  .map(([ts, names]) => ({ ts, names: names.sort() }));
+
+if (clashes.length > 0) {
+  console.error(
+    '✖ Migration version collision. Two files share one 14-digit timestamp, and\n' +
+    '  that timestamp IS the ledger\'s primary key — whichever applies second looks\n' +
+    '  already-applied and is SILENTLY SKIPPED. The readiness check cannot see it\n' +
+    '  either: one applied file satisfies both expected entries, so the instance\n' +
+    '  reports "all migrations applied" while one of them never ran.\n'
+  );
+  for (const { ts, names } of clashes) {
+    console.error(`   version ${ts} claimed by ${names.length} files:`);
+    for (const n of names) console.error(`      ${n}`);
+  }
+  console.error(
+    '\n  Fix: re-timestamp the file(s) added on THIS branch to a fresh, unique value\n' +
+    '  (date -u +%Y%m%d%H%M%S), keeping it strictly greater than the base HEAD.'
+  );
+  process.exit(1);
+}
+
+console.log(
+  `✓ migration-forward-dated: ${addedFiles.length} new migration(s) all forward-dated (> ${baseMax}), ` +
+  `no version collisions across ${postMerge.size} post-merge migration(s).`,
+);
