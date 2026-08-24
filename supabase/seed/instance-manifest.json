@@ -2079,7 +2079,7 @@
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:a406579520e50ef3161948f8d9deffcaa1b44f436af903a2597a7258243767bd",
+        "agent-execute": "sha256:f5dd95bc2e89988de6096b7688b8b18b5ed7425151df7c12f9b1760fa420db72",
         "agent-operate": "sha256:1765b70f17a5f0e12a43dc6f50c2247cb15f2f4b82f9cf7204efb657cec1fdcf",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2095,7 +2095,7 @@
         "content-api": "sha256:64c03bcaa94f7e17575c9e36611830c049cdcf372747ed2af264eb03c70bce42",
         "contract-billing-cron": "sha256:bd4af2f1f3c05253ae5635af48686f9f662f40a55b1b3097001c1828b35f898a",
         "contract-sign": "sha256:d4e4fb98e51109c626110dfeff57199cd006a62ed39501e0b171f32aec579bd7",
-        "create-checkout": "sha256:d80324e0c7c80c3959f5d4f79512b03d8db9b3b9c2f7255b008c55338b3e094b",
+        "create-checkout": "sha256:fb45289a720d39122d1924cb2b8f79a238f52e61cc5bad1286c2dd996ef8f067",
         "create-invoice-payment": "sha256:917c78b89d0131f426ed5c6109eea67d8020604def81f1179eba2e5bb0c8bea6",
         "create-user": "sha256:bed454b8a235c1a99baead4133a74618ac2761b221592c346f4fb8f1c6bffc34",
         "customer-signup": "sha256:8f29b9defed8bb8227767e2c0a748739d80d1e182f87e6b19f4b46e485be52d6",
