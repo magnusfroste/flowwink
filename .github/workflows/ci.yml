@@ -34,9 +34,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
+      - name: Run ESLint (advisory — ~3350 findings, 97% no-explicit-any)
         run: npm run lint
         continue-on-error: true
+
+      # BLOCKING, and narrow on purpose. The step above can never fail a build,
+      # which is the same shape as the decorative typecheck described below. This
+      # one holds a two-rule allowlist at zero: rules-of-hooks (a runtime crash,
+      # never correct) and no-empty (a swallowed error must say why). Rules that
+      # are sometimes violated on purpose are deliberately NOT here — see the
+      # exclusion notes in scripts/lint-correctness-gate.ts.
+      - name: Correctness lint gate (BLOCKING)
+        run: npx -y bun run scripts/lint-correctness-gate.ts
 
       # BLOCKING, and against the app's own config.
       #

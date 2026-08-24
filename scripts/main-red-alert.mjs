@@ -107,13 +107,41 @@ export function waitStepMs(verdict, graceMinutes = 30, maxStepMs = 60_000) {
 }
 
 /** Issue body. Rebuilt on every check so the issue always shows current state. */
-export function issueBody({ minutesRed, sha, url, streak, redSince }) {
+/**
+ * @param greenPrs Open PRs whose own CI is passing — candidate fixes.
+ *
+ * WHY THIS SECTION EXISTS
+ * -----------------------
+ * 2026-08-24: main sat red for 43 hours. This alert did its job perfectly —
+ * 28 comments, each one accurate. And the fix was already open, already green,
+ * already mergeable, the whole time (PR #267). Nobody connected the two, because
+ * the alert only ever reported the SYMPTOM.
+ *
+ * An alert that names a problem repeatedly and never names an available action
+ * becomes furniture. So the body now lists open PRs that are themselves green.
+ * They are CANDIDATES, not a diagnosis — a green PR need not be the fix — but
+ * "here are three things that would make this go away" is an action, and
+ * "main is still red" on its 28th repetition is not.
+ */
+export function issueBody({ minutesRed, sha, url, streak, redSince, greenPrs = [] }) {
+  const candidates = greenPrs.length
+    ? [
+        '',
+        `**${greenPrs.length} open PR${greenPrs.length === 1 ? ' is' : 's are'} green right now** — one may already fix this:`,
+        ...greenPrs.map((p) => `- #${p.number} — ${p.title}`),
+        '',
+        '<sub>Green here means that PR\'s own CI passed. It is a candidate, not a',
+        'diagnosis — check that it addresses the failure above before merging.</sub>',
+      ]
+    : [];
+
   return [
     `**main has been red for ~${minutesRed} minutes.**`,
     '',
     `- Failing since: \`${redSince}\` (${streak} consecutive failing run${streak === 1 ? '' : 's'})`,
     `- Latest failing commit: \`${sha}\``,
     `- Run: ${url}`,
+    ...candidates,
     '',
     'This issue closes itself as soon as a CI run on main succeeds.',
     '',
