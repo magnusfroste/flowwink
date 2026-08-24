@@ -471,7 +471,7 @@ serve(async (req: Request) => {
             }).catch(() => {});
           }
         }
-      } catch (_) {}
+      } catch (_) { /* Best-effort post-checkout side effect. A failure here must not fail a paid checkout. */ }
 
       return new Response(
         JSON.stringify({

@@ -519,24 +519,28 @@ describe("validateBlockData — agentic self-correction feedback", () => {
     expect(result.hint).toContain("describe_blocks");
   });
 
-  it("cta requires buttonText — and the OR-group's other names are unwritable", () => {
+  it("cta requires buttonText — the one name the renderer reads", () => {
     const withButtonText = validateBlockData("cta", { buttonText: "Start" });
     const missingAll = validateBlockData("cta", { title: "No button at all" });
     expect(withButtonText.valid).toBe(true);
     expect(missingAll.valid).toBe(false);
     expect(missingAll.errors[0]).toContain('"buttonText"');
 
-    // Contract self-contradiction, surfaced the moment this suite started
-    // testing the real module: BLOCK_CONTRACTS.cta lists the OR-group
-    // ['buttonText','primaryButtonText','buttons'], but block-reference gives
-    // cta only `buttonText`. So the last two satisfy the required-field gate
-    // and are then refused by the unknown-field gate — the error text
-    // recommends field names that cannot be written. Pinned as-is (not fixed
-    // here: trimming the group would newly refuse legacy stored blocks on
-    // update). If someone repairs the contract, this expectation flips.
-    const withPrimary = validateBlockData("cta", { primaryButtonText: "Start" });
-    expect(withPrimary.valid).toBe(false);
-    expect(withPrimary.errors.join(' ')).toContain("unknown field");
+    // This expectation flipped when the contract was repaired (2026-08-22).
+    // BLOCK_CONTRACTS.cta used to list the OR-group
+    // ['buttonText','primaryButtonText','buttons'] while block-reference gives
+    // cta only `buttonText` — so the last two satisfied the required-field gate
+    // and were then refused by the unknown-field gate, and the required error
+    // text recommended names that could not be written. The group is trimmed to
+    // the renderer's name, and the other two are aliases in normalizeBlockData,
+    // which is what keeps a legacy stored block editable on update. The error
+    // must no longer offer a name the next gate refuses.
+    expect(missingAll.errors.join(' ')).not.toContain("primaryButtonText");
+
+    const block = { id: 'c1', type: 'cta', data: { primaryButtonText: "Start" } };
+    normalizeBlockData(block);
+    expect((block.data as Record<string, unknown>).buttonText).toBe("Start");
+    expect(validateBlockData("cta", block.data as Record<string, unknown>).valid).toBe(true);
   });
 
   it("two-column accepts imageSrc OR content as satisfying required", () => {
@@ -558,7 +562,7 @@ describe("validateBlockData — agentic self-correction feedback", () => {
     // features block: forbidden backgroundType AND missing features array
     const result = validateBlockData("features", {
       backgroundType: "image",   // forbidden
-      title: "Only a title",     // missing features/items
+      title: "Only a title",     // missing features array
     });
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThanOrEqual(2);

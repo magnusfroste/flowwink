@@ -15,14 +15,25 @@ import { usePlatformFormat } from "@/hooks/usePlatformFormat";
 import { useState } from "react";
 
 export default function PerformancePage() {
+  // EVERY hook runs on every render, before any early return.
+  //
+  // `useEmployeeSelf` is a query: on first render `employee` is undefined, so
+  // `isEmployee` is false. Returning here — as this component used to — meant
+  // two hooks on render 1 and eleven on render 2, once the query resolved.
+  // React counts hooks per render and throws "Rendered more hooks than during
+  // the previous render", so the page crashed for exactly the people it is for,
+  // and never for anyone else. That is why it could sit here unnoticed.
+  //
+  // The admin twin (`admin/hr/PerformancePanel.tsx`) expresses the same intent
+  // legally, by gating at the component boundary — `{empId && <GoalsTab …/>}`
+  // mounts and unmounts a child rather than skipping hooks inside one.
   const { formatDate, formatDateTime } = usePlatformFormat();
-  const { employee, isEmployee } = useEmployeeSelf();
+  const { employee, isEmployee, loading } = useEmployeeSelf();
 
-  if (!isEmployee || !employee) {
-    return <div className="text-sm text-muted-foreground">Performance is available for employees only.</div>;
-  }
+  // Undefined until the query resolves. The read hooks below are `enabled` on
+  // this id, so they stay idle rather than firing without an employee filter.
+  const empId = employee?.id;
 
-  const empId = employee.id;
   const { data: goals = [] } = useGoals(empId);
   const { data: meetings = [] } = useOneOnOnes(empId);
   const { data: reviews = [] } = useReviews(empId);
@@ -34,6 +45,15 @@ export default function PerformancePage() {
 
   const [updateOpen, setUpdateOpen] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+
+  // Below the hooks, so the render path may branch freely from here.
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">Loading…</div>;
+  }
+
+  if (!isEmployee || !employee) {
+    return <div className="text-sm text-muted-foreground">Performance is available for employees only.</div>;
+  }
 
   return (
     <div className="space-y-6">

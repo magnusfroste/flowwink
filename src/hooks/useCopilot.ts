@@ -385,7 +385,7 @@ export function useCopilot(): UseCopilotReturn {
       let baseDomain = null;
       try {
         baseDomain = new URL(url).origin;
-      } catch {}
+      } catch { /* Not a parseable absolute URL — leave baseDomain null; callers treat that as "unknown origin". */ }
 
       // Get slug from discovered page if available, otherwise generate from URL path
       const discoveredPage = migrationState.siteStructure?.pages.find(p => p.url === url);

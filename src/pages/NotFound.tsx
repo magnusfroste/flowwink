@@ -7,16 +7,20 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowLeft, Home } from 'lucide-react';
 
-const NotFound = () => {
+/**
+ * The page body. Takes the route error as a PROP rather than reading it, so the
+ * component is safe to render anywhere.
+ *
+ * It used to read it itself, with `useRouteError()` wrapped in try/catch —
+ * because this component is used two ways: as the router's `errorElement`
+ * (App.tsx) and as a plain 404 body by four content pages. Calling a hook inside
+ * a try block is a hook whose invocation the compiler cannot guarantee, and
+ * react-hooks/rules-of-hooks flagged it correctly. Splitting the two uses apart
+ * removes the need for the trick: `RouteErrorPage` reads the error, `NotFound`
+ * never does.
+ */
+const NotFoundBody = ({ routeError }: { routeError?: unknown }) => {
   const location = useLocation();
-  // useRouteError is safe to call — returns undefined when not rendered as errorElement
-  let routeError: unknown;
-  try {
-    routeError = useRouteError();
-  } catch {
-    routeError = undefined;
-  }
-
   const isError = !!routeError;
   const status = isRouteErrorResponse(routeError) ? routeError.status : 404;
   const title = isError && status !== 404 ? 'Something went wrong' : 'Page not found';
@@ -69,5 +73,14 @@ const NotFound = () => {
     </>
   );
 };
+
+/** Plain 404 — no router error context required. */
+const NotFound = () => <NotFoundBody />;
+
+/**
+ * The router's `errorElement`. This is the ONLY place `useRouteError` is called,
+ * and here it is unconditional — which is what the rule asks for.
+ */
+export const RouteErrorPage = () => <NotFoundBody routeError={useRouteError()} />;
 
 export default NotFound;

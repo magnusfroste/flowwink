@@ -199,6 +199,58 @@ export function normalizeBlockData(block: Record<string, unknown>): void {
       data.buttonUrl = data.buttonLink;
     }
     delete data.buttonLink;
+
+    // `buttons: [{ text, url }, ...]` — the shape a multi-button CTA suggests.
+    // CTABlock has exactly two fixed slots, so the first entry becomes the
+    // primary pair and the second the secondary one; anything beyond that has
+    // nowhere to render. Every mapping below only fills an empty slot, so a
+    // flat field the caller also sent explicitly wins over the array.
+    if (Array.isArray(data.buttons)) {
+      const slots = [
+        ['buttonText', 'buttonUrl'],
+        ['secondaryButtonText', 'secondaryButtonUrl'],
+      ] as const;
+      (data.buttons as unknown[]).slice(0, slots.length).forEach((btn, i) => {
+        if (!btn || typeof btn !== 'object') return;
+        const b = btn as Record<string, unknown>;
+        const [textKey, urlKey] = slots[i];
+        const text = b.text ?? b.label ?? b.title;
+        const url = b.url ?? b.link ?? b.href;
+        if (typeof text === 'string' && text.trim() !== ''
+            && (data[textKey] === undefined || data[textKey] === null || String(data[textKey]).trim() === '')) {
+          data[textKey] = text;
+        }
+        if (typeof url === 'string' && url.trim() !== ''
+            && (data[urlKey] === undefined || data[urlKey] === null || String(data[urlKey]).trim() === '')) {
+          data[urlKey] = url;
+        }
+      });
+    }
+    delete data.buttons;
+
+    // `primaryButtonText`/`primaryButtonUrl` — the hero's naming reached for on
+    // the cta. Nothing renders them; the cta calls the same pair buttonText/
+    // buttonUrl. This alias is what makes trimming the required OR-group to
+    // ["buttonText"] safe: a legacy row carrying only the old name is rewritten
+    // to the renderer's name before the gate judges it, so it stays editable.
+    for (const [from, to] of [['primaryButtonText', 'buttonText'], ['primaryButtonUrl', 'buttonUrl']] as const) {
+      if (typeof data[from] === 'string' && data[from].trim() !== ''
+          && (data[to] === undefined || data[to] === null || String(data[to]).trim() === '')) {
+        data[to] = data[from];
+      }
+      delete data[from];
+    }
+  }
+
+  if (block.type === 'features') {
+    // FeaturesBlock renders data.features only. `items` is what the other
+    // card-shaped blocks (bento-grid, accordion, marquee) call the same array,
+    // so it is the obvious wrong guess here — and it used to be named in the
+    // required OR-group while being refused by the unknown-field gate.
+    if (Array.isArray(data.items) && !Array.isArray(data.features)) {
+      data.features = data.items;
+    }
+    delete data.items;
   }
 
   applyRendererFallbacks(block);
@@ -417,6 +469,17 @@ export function applyIconFallbacks(blocks: Record<string, unknown>[]): void {
  * Required field contracts per block type.
  * Each inner array is an OR-group: at least one field in the group must be
  * present and non-empty for the block to be considered valid.
+ *
+ * INVARIANT: every name in a group must be a valid field for that block type
+ * (i.e. present in block-reference.ts, and so in the generated
+ * BLOCK_CREATION_TOOLS the unknown-FIELD gate reads). A name that only exists
+ * here is a trap: it satisfies this gate and is then refused by the unknown-
+ * field gate, while the "must have at least one of: …" error text hands the
+ * agent that unusable name to retry with. `cta` carried
+ * primaryButtonText|buttons and `features` carried items that way until
+ * 2026-08-22 — both are now aliased to the renderer's name in
+ * normalizeBlockData instead. Pinned by the contract/field-parity test in
+ * src/lib/__tests__/block-write-safety.guardrails.test.ts.
  */
 export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string[] }> = {
   hero:               { required: [['title']] },
@@ -428,8 +491,8 @@ export const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?:
   // OR-group refused two of our own templates while a block carrying only
   // `quote` — which renders blank — would have been waved through.
   quote:              { required: [['text', 'quote']] },
-  cta:                { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
-  features:           { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
+  cta:                { required: [['buttonText']], forbidden: ['videoUrl', 'videoType'] },
+  features:           { required: [['features']], forbidden: ['backgroundType', 'videoUrl'] },
   stats:              { required: [['stats']] },
   testimonials:       { required: [['testimonials']] },
   team:               { required: [['members']] },
