@@ -40,8 +40,8 @@ flowchart TD
     E --> F["Stock updated (Inventory) — receive→QC→putaway<br/>inventory_receipts"]
     F --> G["Vendor invoice in → 3-way match against PO + GR<br/>match_invoice_to_receipt"]
     G --> G2["Mismatch → dispute + supplier credit memo<br/>vendor_invoice_disputes · vendor_credit_memos"]
-    G --> H["Booking (Accounting)"]
-    H --> I["Payment"]
+    G --> H["Vendor invoice booked<br/>Dt GRNI + Dt input VAT / Cr accounts payable<br/>book_vendor_invoice"]
+    H --> I["Payment — refused unless matched AND approved<br/>pay_vendor_invoice"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
     class B,C,D,D2,E,F,G,G2 agent
@@ -128,7 +128,26 @@ paid require admin trust.
 
 ## Known gaps
 
-> ✅ **The reordering rule had three homes — settled 2026-08-22 (#247).**
+> ⚠️ **The reordering rule had FOUR homes — the 2026-08-22 note below was premature.**
+>
+> Measured end-to-end on the Nordbrygg testbed 2026-08-23: `procurement_run`
+> answered **0** new suggestions while `list_reorder_candidates` answered **22**,
+> worth **306 963,75 kr** of duplicate orders. They read the same rules but not the
+> same availability — one counted incoming POs and reserved stock, the other read
+> `products.stock_quantity` alone. A fourth, `purchase_reorder_check`, had
+> reimplemented the whole calculation in TypeScript. They also resolved the vendor
+> from different columns, silently.
+>
+> Settled for real 2026-08-23: the arithmetic left all four for
+> `stock_virtual_available()` and `reorder_preferred_vendor()`. The verbs stayed.
+> Proof: with all incoming marked received both engines flag the same 22 products,
+> `qty_mismatch = 0`, `vendor_mismatch = 0`.
+>
+> The lesson is about the note, not the code: *reading the same rules is not the
+> same as computing the same answer.* The earlier fix aligned the inputs and
+> called it settled without measuring the outputs.
+>
+> ✅ **The reordering rule had three homes — 2026-08-22 (#247).**
 > `reorder_rules` is canonical: the Odoo min/max rule the UI writes and
 > `procurement_run` reads. `list_reorder_candidates`, `purchase_reorder_check`
 > and `mrp_reorder_run` now read the same rules with the same interpretation,
@@ -139,11 +158,88 @@ paid require admin trust.
 
 ### Other gaps (missing for L5)
 
-- ✅ **3-way match auto-approve** — `match_invoice_to_receipt` + `auto_approve_vendor_invoice` live; tolerance config still manual
+- ✅ **3-way match is a LOCK, not a label** — corrected 2026-08-23. It used to compare
+  each bill against the PO's whole received value without subtracting what earlier
+  bills had already claimed, so the same delivery invoiced twice read as
+  `matched, 0 % variance` and auto-approved: **30 105,60 kr against a 13 440,00 kr
+  delivery**. And `pay_vendor_invoice` paid a bill flagged `over_invoiced` with
+  `approved_at = NULL`, skipping `approved` entirely. Now: the claim is derived
+  per PO net of sibling bills, the match is recomputed at payment time, and the
+  gate sits on the status transition — `received → paid` is impossible. Overruling
+  it goes through the house approvals chain and is recorded.
+- ✅ **Multi-currency vendor invoices** — the order carries the vendor's currency and
+  a stamped rate, and the valuation converts once, at receipt. A missing rate
+  **refuses the order** rather than booking it at 1. Before: a EUR machine entered
+  stock at 1 696 kr instead of 19 334 and reported a 94,8 % margin against a real 41,2 %.
 - ❌ Multi-step approval based on amount thresholds
 - ❌ Vendor portal (vendor self-service login)
 - ❌ EDI integration for large suppliers
-- ❌ Multi-currency vendor invoices
+- ❌ **Backorder as its own document** — a short delivery is only
+  `quantity − received_quantity`. Nothing carries "9 units, week 38"; Odoo creates a
+  second picking.
+- ❌ **Bill Control Policy per product** (Odoo: invoice on ordered vs received
+  quantities). The instance-wide default lives in `site_settings.purchasing`.
+- ❌ **RFQ → confirmed as two states.** `rfqs`/`rfq_lines`/`rfq_bids` exist as tables
+  with no skills; `sent` is not `confirmed` and there is no verb for the vendor's
+  acknowledgement.
+- ❌ **Landed costs in the chain.** `allocate_landed_cost` exists but sits outside it,
+  so freight and duty from an overseas vendor never reach the goods cost.
+
+---
+
+## Measured against Odoo (2026-08-23, live on the Nordbrygg testbed)
+
+Odoo is the process reference — fifteen years of supporting these flows — so
+divergence is measured against it rather than argued from first principles. The
+chain was run end to end with real money, then run again after each fix.
+
+**The conclusion the measurement kept returning:** the difference is not the
+steps. We have nearly all of them. It is that **Odoo's steps are locked to each
+other** — bill control policy → three-way match → "Should Be Paid" → payment —
+while ours were parallel labels nothing read. Every single function answered
+correctly on its own. It broke when the next step asked the previous one what it
+had produced.
+
+| Odoo concept | FlowWink |
+|---|---|
+| `supplierinfo` price with quantity tiers and vendor currency | ✅ `vendor_products` + `pick_vendor_price` — one ordering rule, tier included |
+| Receipt posts to **Stock Interim (Received)**, the bill clears it | ✅ `goods_received_not_invoiced` role, closed by `book_vendor_invoice` |
+| `qty_invoiced` per order line | ⚠️ derived per PO, net of sibling bills — value, not per-line quantity. `vendor_invoices` has no line table; storing an allocation of a header amount would mean inventing one and then trusting the invention |
+| **"Should Be Paid"** blocks payment until the match is clean | ✅ on the status transition, with the house approvals chain as the only override |
+| Order in the vendor's currency, rate on the order | ✅ stamped by the database, so all six PO writers are covered |
+| Virtual stock = on hand − reserved + incoming | ✅ `stock_virtual_available()`, one calculation, four readers |
+| Lot selection forced on the outgoing move | ⚠️ FEFO automatically — the deduction happens in a trigger where no human can choose; requiring one would stop checkout |
+| **Backorder** as its own document | ❌ |
+| **Bill Control Policy** per product | ❌ instance-wide only |
+| **RFQ → confirmed** as two states | ❌ tables exist, no skills |
+| **Landed costs** inside the chain | ❌ |
+
+### The seam that matters most
+
+Goods receipt is where **cost enters the system** — `stock_valuation_layers.unit_cost_cents`,
+per the product category's costing method — and that exact figure is booked as COGS
+when the goods leave. A wrong price on the way in is a wrong gross margin on the
+way out, and **it is invisible in either process alone**. Measure them together:
+receive at a known price, sell, and check that the cost booked is the cost paid.
+
+Verified after the fixes, 60 kg of coffee at a tier price of 175,00 kr/kg:
+
+```
+receipt   Dt 1460 Inventory      10 500,00   Cr 2441 GRNI            10 500,00
+invoice   Dt 2441 GRNI           10 500,00   Cr 2440 Accounts payable 11 760,00
+          Dt 2641 Input VAT       1 260,00
+payment   Dt 2440 Accounts payable 11 760,00 Cr 1930 Bank            11 760,00
+
+net: inventory +10 500 · input VAT +1 260 · bank −11 760 · GRNI 0 · payable 0
+```
+
+Before the fixes the middle entry did not exist: GRNI stood at −60 736 kr and
+growing, the payable had become an asset, and **8 044,80 kr of deductible VAT was
+absent from the VAT return**. Every entry balanced on its own, so nothing raised
+an alarm — which is why the platform's own `inventory_gl_reconciliation` never
+saw it either. That sensor measures inventory against valuation layers and cannot
+see a clearing account; `grni_reconciliation()` was added for what it could not
+look at.
 
 ---
 
