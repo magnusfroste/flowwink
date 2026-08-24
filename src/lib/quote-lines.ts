@@ -107,9 +107,17 @@ export interface QuoteSaveGuardInput {
   currentTotalCents: number;
 }
 
+// `reason?: never` on the all-clear arm is a compiler affordance, not a field.
+// tsconfig.app.json sets "strict": false, and without strictNullChecks
+// TypeScript will not narrow a discriminated union by truthiness — so inside
+// `if (!decision.allowed)` the union is still all three arms and `.reason`
+// cannot be read. Declaring the absent property as optional-never keeps the
+// call sites written the way the guardrail pins them
+// (quote-lines-two-stores.guardrails.test.ts), says out loud that this arm
+// carries no reason, and emits nothing at runtime.
 export type QuoteSaveDecision =
   /** Save everything, lines and totals included. */
-  | { allowed: true; writeLines: true }
+  | { allowed: true; writeLines: true; reason?: never }
   /** Save the other fields; leave lines and totals to whoever owns them. */
   | { allowed: true; writeLines: false; reason: string }
   /** Refuse — saving would destroy money the panel never loaded. */
@@ -163,7 +171,7 @@ export function canConvertQuoteToInvoice(input: {
   origin: QuoteLineOrigin;
   resolvedLineCount: number;
   totalCents: number;
-}): { ok: true } | { ok: false; reason: string } {
+}): { ok: true; reason?: never } | { ok: false; reason: string } {
   if (input.origin === 'unknown') {
     return {
       ok: false,
