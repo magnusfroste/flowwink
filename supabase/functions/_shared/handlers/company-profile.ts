@@ -62,10 +62,15 @@ export async function executeCompanyProfile(
         return json({ success: false, error: "data object is required for update" }, 400);
       }
 
-      // Defensive normalization: services MUST be [{id, name, description}].
-      // Agents often guess (strings, {description} only, etc.) — coerce or drop
-      // so the UI never renders empty placeholder cards.
-      const normalized = normalizeServicesField(incomingData as Record<string, unknown>);
+      // Defensive normalization: the structured Business Identity fields have
+      // shapes the page-authoring surfaces depend on (services and
+      // differentiators are [{id, name, description}], proof_points are
+      // {value, label, context}, testimonials are {quote, author, role,
+      // company}, primary_cta is {label, destination, intent}). Agents guess —
+      // strings, {description} with no name, a number where a labelled figure
+      // belongs — so coerce or drop here rather than letting a half-shape reach
+      // the editor and the prompts.
+      const normalized = normalizeProfileShapes(incomingData as Record<string, unknown>);
 
       let next: Record<string, unknown> = normalized;
       if (body.merge !== false) {
@@ -113,49 +118,175 @@ function json(body: unknown, _status = 200): Record<string, unknown> {
 }
 
 /**
- * Coerce common malformed shapes for `services` into the canonical
- * [{id, name, description}] form expected by the UI.
+ * Coerce the structured Business Identity fields into the shapes the editor and
+ * the prompt projection expect. Mirrors src/lib/company-profile-shapes.ts —
+ * two runtimes (Deno edge / Vite frontend), one contract, pinned by
+ * src/lib/__tests__/business-identity-projection.guardrails.test.ts.
+ *
+ * Only keys PRESENT in the payload are touched: update_company_profile is a
+ * shallow merge, so an absent key must stay absent rather than be written empty.
+ */
+function normalizeProfileShapes(data: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...data };
+  if ("services" in next) next.services = normalizeNamedItems(next.services);
+  if ("differentiators" in next) next.differentiators = normalizeNamedItems(next.differentiators);
+  if ("proof_points" in next) next.proof_points = normalizeProofPoints(next.proof_points);
+  if ("client_testimonials" in next) next.client_testimonials = normalizeTestimonials(next.client_testimonials);
+  if ("primary_cta" in next) next.primary_cta = normalizePrimaryCta(next.primary_cta);
+  return next;
+}
+
+const asText = (v: unknown): string =>
+  typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "";
+
+const firstText = (o: Record<string, unknown>, keys: string[]): string => {
+  for (const k of keys) {
+    const v = asText(o[k]);
+    if (v) return v;
+  }
+  return "";
+};
+
+/**
+ * `[{id, name, description}]` — used by BOTH services and differentiators.
  *
  * Accepted inputs:
  *   - "Foo"                          → {id, name: "Foo", description: ""}
  *   - {name, description}            → {id, name, description}
  *   - {service, desc}                → {id, name: service, description: desc}
  *   - {title, summary}               → {id, name: title, description: summary}
- *   - {description: "..."} (no name) → DROPPED (would render as empty card)
+ *   - {description: "..."} (no name) → DROPPED (would render as an empty card)
  *   - Record<string, string>         → [{name, description}, ...] (legacy object form)
+ *
+ * A missing description stays EMPTY. The page generator can omit a description;
+ * it cannot un-invent one.
  */
-function normalizeServicesField(data: Record<string, unknown>): Record<string, unknown> {
-  if (!("services" in data)) return data;
-  const raw = data.services;
+function normalizeNamedItems(raw: unknown): Array<{ id: string; name: string; description: string }> {
   const out: Array<{ id: string; name: string; description: string }> = [];
-
-  const pushItem = (name: unknown, description: unknown, id?: unknown) => {
-    const n = typeof name === "string" ? name.trim() : "";
+  const push = (name: unknown, description: unknown, id?: unknown) => {
+    const n = asText(name);
     if (!n) return; // drop nameless entries — they become empty placeholders in the UI
-    out.push({
-      id: typeof id === "string" && id ? id : crypto.randomUUID(),
-      name: n,
-      description: typeof description === "string" ? description.trim() : "",
-    });
+    out.push({ id: asText(id) || crypto.randomUUID(), name: n, description: asText(description) });
   };
 
   if (Array.isArray(raw)) {
     for (const item of raw) {
       if (typeof item === "string") {
-        pushItem(item, "");
+        push(item, "");
       } else if (item && typeof item === "object") {
         const o = item as Record<string, unknown>;
-        const name = o.name ?? o.service ?? o.title ?? o.label;
-        const description = o.description ?? o.desc ?? o.summary ?? o.details ?? "";
-        pushItem(name, description, o.id);
+        push(
+          firstText(o, ["name", "service", "title", "label"]),
+          firstText(o, ["description", "desc", "summary", "details"]),
+          o.id,
+        );
       }
     }
+  } else if (typeof raw === "string") {
+    push(raw, "");
   } else if (raw && typeof raw === "object") {
     // Legacy object form: { "Service A": "desc A", "Service B": "desc B" }
     for (const [name, description] of Object.entries(raw as Record<string, unknown>)) {
-      pushItem(name, description);
+      push(name, description);
     }
   }
 
-  return { ...data, services: out };
+  return out;
+}
+
+/**
+ * `[{id, value, label, context}]` — a figure held AS a figure.
+ *
+ * A bare string is split only on a LEADING number ("412 km kanalisation" →
+ * value "412 km", label "kanalisation"); anything that does not start with a
+ * digit keeps its whole text as the label and an empty value. Prose is never
+ * mined for metrics here — that is the fabrication this field exists to stop.
+ */
+function normalizeProofPoints(raw: unknown): Array<{ id: string; value: string; label: string; context: string }> {
+  const out: Array<{ id: string; value: string; label: string; context: string }> = [];
+  const push = (value: unknown, label: unknown, context: unknown, id?: unknown) => {
+    const v = asText(value);
+    const l = asText(label);
+    if (!v && !l) return;
+    out.push({ id: asText(id) || crypto.randomUUID(), value: v, label: l, context: asText(context) });
+  };
+
+  const items = Array.isArray(raw) ? raw : raw === null || raw === undefined || raw === "" ? [] : [raw];
+  for (const item of items) {
+    if (typeof item === "string" || typeof item === "number") {
+      const text = asText(item);
+      const m = text.match(/^([+-]?\d[\d\s.,]*)\s*(%|[^\s\d]{1,12})?\s*(.*)$/u);
+      if (m) {
+        const unit = (m[2] ?? "").trim();
+        push(`${m[1].trim()}${unit ? ` ${unit}` : ""}`, (m[3] ?? "").trim(), "");
+      } else {
+        push("", text, "");
+      }
+    } else if (item && typeof item === "object") {
+      const o = item as Record<string, unknown>;
+      push(
+        firstText(o, ["value", "number", "metric", "stat", "figure"]),
+        firstText(o, ["label", "title", "name", "caption", "unit_label"]),
+        firstText(o, ["context", "description", "note", "period", "source"]),
+        o.id,
+      );
+    }
+  }
+  return out;
+}
+
+/**
+ * `[{id, quote, author, role, company}]`. The legacy single blob becomes ONE
+ * unattributed testimonial — a missing name renders as no name, never as a
+ * guessed one, and a blob is never split into quotes it did not declare.
+ */
+function normalizeTestimonials(raw: unknown): Array<{ id: string; quote: string; author: string; role: string; company: string }> {
+  const out: Array<{ id: string; quote: string; author: string; role: string; company: string }> = [];
+  const pushObj = (o: Record<string, unknown>) => {
+    const quote = firstText(o, ["quote", "text", "body", "testimonial", "content"]);
+    if (!quote) return;
+    out.push({
+      id: asText(o.id) || crypto.randomUUID(),
+      quote,
+      author: firstText(o, ["author", "name", "by", "person"]),
+      role: firstText(o, ["role", "title", "position"]),
+      company: firstText(o, ["company", "organization", "org", "company_name"]),
+    });
+  };
+  const pushText = (v: unknown) => {
+    const quote = asText(v);
+    if (!quote) return;
+    out.push({ id: crypto.randomUUID(), quote, author: "", role: "", company: "" });
+  };
+
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (typeof item === "string") pushText(item);
+      else if (item && typeof item === "object") pushObj(item as Record<string, unknown>);
+    }
+  } else if (typeof raw === "string") {
+    pushText(raw);
+  } else if (raw && typeof raw === "object") {
+    pushObj(raw as Record<string, unknown>);
+  }
+  return out;
+}
+
+/** `{label, destination, intent}` — or null. A CTA with no label is not a button. */
+function normalizePrimaryCta(raw: unknown): { label: string; destination: string; intent: string } | null {
+  if (typeof raw === "string") {
+    const label = raw.trim();
+    return label ? { label, destination: "", intent: "" } : null;
+  }
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const o = raw as Record<string, unknown>;
+    const label = firstText(o, ["label", "text", "title", "cta", "cta_label"]);
+    if (!label) return null;
+    return {
+      label,
+      destination: firstText(o, ["destination", "url", "href", "link", "target", "path"]),
+      intent: firstText(o, ["intent", "goal", "action", "description"]),
+    };
+  }
+  return null;
 }

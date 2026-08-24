@@ -117,6 +117,55 @@ describe('decide — no signal is not an alert', () => {
   });
 });
 
+describe('issueBody — candidate fixes', () => {
+  /**
+   * 2026-08-24: main was red 43 hours. The alert commented 28 times, every
+   * comment accurate, and never once mentioned that PR #267 was open, green and
+   * mergeable. Reporting a symptom repeatedly is not the same as reporting an
+   * action, and the difference is what made 28 correct notices ignorable.
+   */
+  it('names open green PRs as candidates when there are any', () => {
+    const body = issueBody({
+      minutesRed: 2580, sha: 'abc1234', url: 'https://example.test/run/1',
+      streak: 12, redSince: '2026-08-22T13:18:00Z',
+      greenPrs: [
+        { number: 267, title: "fix(types): get main's blocking typecheck green again" },
+        { number: 270, title: 'fix(inventory): the two holes delegation left' },
+      ],
+    });
+
+    expect(body).toContain('2 open PRs are green right now');
+    expect(body).toContain('#267');
+    expect(body).toContain('#270');
+    // Stated as a candidate, never as a diagnosis — a green PR need not be the fix.
+    expect(body).toContain('candidate, not a');
+  });
+
+  it('says nothing about candidates when none are green', () => {
+    const body = issueBody({
+      minutesRed: 31, sha: 'a', url: 'u', streak: 1, redSince: 'x', greenPrs: [],
+    });
+    expect(body).not.toContain('green right now');
+    expect(body).not.toContain('candidate');
+  });
+
+  it('omits the section entirely when the caller passes no greenPrs at all', () => {
+    // The workflow falls back to `[]` when the PR listing throws, but a caller
+    // that never sets the field must not crash or render an empty header.
+    const body = issueBody({ minutesRed: 31, sha: 'a', url: 'u', streak: 1, redSince: 'x' });
+    expect(body).toContain('main has been red');
+    expect(body).not.toContain('green right now');
+  });
+
+  it('uses singular wording for exactly one candidate', () => {
+    const body = issueBody({
+      minutesRed: 31, sha: 'a', url: 'u', streak: 1, redSince: 'x',
+      greenPrs: [{ number: 267, title: 'the fix' }],
+    });
+    expect(body).toContain('1 open PR is green right now');
+  });
+});
+
 describe('issueBody', () => {
   it('carries everything needed to act without opening the run', () => {
     const body = issueBody({

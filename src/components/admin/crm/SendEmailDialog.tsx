@@ -130,8 +130,14 @@ export function SendEmailDialog({ open, onOpenChange, recipientEmail, recipientN
         `Company: ${companyName}`,
         companyProfile.about_us && `About us: ${companyProfile.about_us}`,
         companyProfile.industry && `Industry: ${companyProfile.industry}`,
+        // differentiators is [{name, description}] like services — the same
+        // "[object Object]" trap the services line below already documents.
         Array.isArray(companyProfile.differentiators) && companyProfile.differentiators.length
-          ? `Differentiators / USPs:\n- ${companyProfile.differentiators.join('\n- ')}`
+          ? `Differentiators / USPs:\n- ${companyProfile.differentiators
+              .map((d: { name?: string; description?: string } | string) =>
+                typeof d === 'string' ? d : `${d?.name ?? ''}${d?.description ? ` (${d.description})` : ''}`)
+              .filter(Boolean)
+              .join('\n- ')}`
           : null,
         // services is ServiceItem[] ({name, description}), not string[] — a raw
         // join fed the AI draft literal "[object Object]" lines.
@@ -144,6 +150,13 @@ export function SendEmailDialog({ open, onOpenChange, recipientEmail, recipientN
           : null,
         companyProfile.icp && `Ideal customer: ${companyProfile.icp}`,
         companyProfile.delivered_value && `Delivered value: ${companyProfile.delivered_value}`,
+        Array.isArray(companyProfile.proof_points) && companyProfile.proof_points.length
+          ? `Proof points (the only figures you may state — quote them verbatim):\n- ${companyProfile.proof_points
+              .map((pp: { value?: string; label?: string; context?: string }) =>
+                [pp?.value, pp?.label].filter(Boolean).join(' ') + (pp?.context ? ` (${pp.context})` : ''))
+              .filter((row: string) => row.trim())
+              .join('\n- ')}`
+          : null,
       ].filter(Boolean).join('\n');
 
       const recipient = leadContext || { name: recipientName, email: recipientEmail };

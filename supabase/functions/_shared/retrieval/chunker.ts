@@ -53,13 +53,32 @@ function packParagraphs(title: string, text: string): Chunk[] {
   return chunks;
 }
 
+const HEADING_RE = /^(#{1,3})\s+(.*)/;
+
 /**
  * Markdown-aware chunking: split on #/##/### headings, keep the heading trail
  * in the chunk title, then size-pack each section.
+ *
+ * The trail depth comes from the levels a document ACTUALLY uses, not from the
+ * absolute `#` count. Body markdown very often opens at `##` — the H1 lives in
+ * the entity title, not in the text — and reading the level as the depth
+ * (`depth = level - 1`) gave every `##` depth 1, so `trail.slice(0, 1)` kept the
+ * PREVIOUS sibling and filed each section under the one before it: three sibling
+ * `##`s indexed as "Servicenivå", "Servicenivå › Vad tjänsten gör",
+ * "Servicenivå › Pris". `knowledge_chunks.title` is the citation label an agent
+ * reads back to a customer, so that asserted a hierarchy the document does not
+ * have. H1-led documents were unaffected (H1 → depth 0 resets the trail), which
+ * is why it went unseen.
+ *
+ * Depth is now the size of the open-heading stack: a heading closes every
+ * heading at its own level or deeper, then sits on what remains. The shallowest
+ * level present is therefore depth 0 whatever it is, siblings stay siblings, and
+ * a well-formed H1-led document comes out exactly as before.
  */
 export function chunkMarkdown(entityTitle: string, markdown: string): Chunk[] {
   const lines = markdown.split('\n');
   const sections: Array<{ trail: string[]; body: string[] }> = [];
+  const openLevels: number[] = []; // heading levels currently on the trail
   let trail: string[] = [];
   let body: string[] = [];
 
@@ -69,10 +88,15 @@ export function chunkMarkdown(entityTitle: string, markdown: string): Chunk[] {
   };
 
   for (const line of lines) {
-    const m = line.match(/^(#{1,3})\s+(.*)/);
+    const m = line.match(HEADING_RE);
     if (m) {
       flush();
-      const depth = m[1].length - 1;
+      const level = m[1].length;
+      while (openLevels.length > 0 && openLevels[openLevels.length - 1] >= level) {
+        openLevels.pop();
+      }
+      const depth = openLevels.length;
+      openLevels.push(level);
       trail = [...trail.slice(0, depth), m[2].trim()];
     } else {
       body.push(line);

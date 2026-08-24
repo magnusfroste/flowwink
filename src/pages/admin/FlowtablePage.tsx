@@ -611,7 +611,7 @@ export default function FlowtablePage() {
                   const next = !v;
                   try {
                     localStorage.setItem('flowtable-bases-minimized', String(next));
-                  } catch {}
+                  } catch { /* localStorage unavailable — the panel still toggles, it just does not remember. */ }
                   return next;
                 });
               }}

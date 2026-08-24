@@ -49,6 +49,25 @@
 // three call sites wrapped that in `.catch(() => '')` on top — two layers of
 // silence over the project's dominant bug class.
 
+// ─── The shapes the material is held in (2026-08-22, same day) ─────────────
+//
+// Widening the projection surfaced the other half of the problem: several
+// fields held only HALF of what a block needs, so a page-authoring agent had
+// to write the other half itself. `differentiators` were labels with no
+// explanation (a features block needs both); no field held a number AS a
+// number, so metrics had to be mined out of `delivered_value` prose — the
+// exact spot where a model fabricates; nothing said what the visitor should
+// DO; and testimonials were one blob, which renders as a paragraph.
+//
+// So `differentiators` now carries {name, description} like services,
+// `proof_points` holds {value, label, context}, `client_testimonials` holds
+// {quote, author, role, company}, and `primary_cta` holds {label, destination,
+// intent}. Every renderer below still reads the LEGACY shape (a string list, a
+// testimonial blob) — profiles are written by agents and by the editor, and a
+// profile nobody has re-saved must not go dark. Shapes are coerced on the write
+// path (_shared/handlers/company-profile.ts) and on frontend read
+// (src/lib/company-profile-shapes.ts); this file only projects.
+
 /** Which projection of the identity a caller needs. Set statically per surface. */
 export type IdentityDepth = 'core' | 'narrative';
 
@@ -117,14 +136,30 @@ export const IDENTITY_FIELDS: FieldSpec[] = [
   { key: 'value_proposition', label: 'Value proposition', depth: 'core' },
   { key: 'delivered_value', label: 'Value actually delivered to customers', depth: 'narrative' },
   { key: 'icp', label: 'Ideal customer profile', depth: 'core' },
-  { key: 'differentiators', label: 'Differentiators', depth: 'core' },
-  { key: 'services', label: 'Services', depth: 'core', render: renderServices },
+  { key: 'differentiators', label: 'Differentiators', depth: 'core', render: renderNamedItems },
+  { key: 'services', label: 'Services', depth: 'core', render: renderNamedItems },
   { key: 'target_industries', label: 'Target industries', depth: 'core' },
 
   // Proof. Empty on the instance that surfaced this, but a landing page written
   // without it when it EXISTS is the same omission over again.
   { key: 'clients', label: 'Notable customers', depth: 'narrative' },
-  { key: 'client_testimonials', label: 'Customer testimonials', depth: 'narrative' },
+  // The figures, held as figures. Narrative and not core for the same reason
+  // delivered_value is: a support answer states no metrics, a page does. The
+  // label says verbatim because that is the whole point of the field — a number
+  // re-derived from prose is a number one step from being wrong.
+  {
+    key: 'proof_points',
+    label: 'Proof points (verbatim figures — quote these; derive no others)',
+    depth: 'narrative',
+    render: renderProofPoints,
+  },
+  { key: 'client_testimonials', label: 'Customer testimonials', depth: 'narrative', render: renderTestimonials },
+  // What the reader should DO. Narrative only: the always-on surfaces route
+  // through `boundaries` and the channel they already sit in, while a page or a
+  // campaign that ends without an ask is not a page or a campaign. Unlike
+  // contact_email/phone above, this is curated FOR publication — that is the
+  // difference between routing data and the company's own ask.
+  { key: 'primary_cta', label: 'Primary call to action', depth: 'narrative', render: renderPrimaryCta },
 ];
 
 /**
@@ -149,12 +184,15 @@ function text(value: unknown): string {
 }
 
 /**
- * services is [{id, name, description}] (legacy: a Record<name, description>).
- * The description is the concrete part — WHAT the service actually does — so
- * the narrow projection lists names (enough not to contradict the identity) and
- * the wide one carries the descriptions (the material a writer needs).
+ * services AND differentiators are [{id, name, description}] (legacy: a
+ * Record<name, description> for services, a plain string list for
+ * differentiators). The description is the concrete part — WHAT the service
+ * does, WHAT the differentiator means — so the narrow projection lists names
+ * (enough not to contradict the identity) and the wide one carries the
+ * descriptions (the material a writer needs, and the half it would otherwise
+ * invent).
  */
-function renderServices(value: unknown, depth: IdentityDepth): string {
+function renderNamedItems(value: unknown, depth: IdentityDepth): string {
   const items: unknown[] = Array.isArray(value)
     ? value
     : value && typeof value === 'object'
@@ -180,6 +218,70 @@ function renderServices(value: unknown, depth: IdentityDepth): string {
 }
 
 /**
+ * proof_points is [{id, value, label, context}] (an agent may still send a bare
+ * string, which the write path splits on a LEADING figure only). Rendered one
+ * per line: a stats block reads pairs, and a comma-joined run of figures is
+ * where two numbers become one wrong one.
+ */
+function renderProofPoints(value: unknown, _depth: IdentityDepth): string {
+  if (!Array.isArray(value)) return text(value);
+  const rows = value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (!item || typeof item !== 'object') return '';
+      const o = item as { value?: unknown; label?: unknown; context?: unknown };
+      const figure = text(o.value);
+      const label = text(o.label);
+      if (!figure && !label) return '';
+      const context = text(o.context);
+      return `${[figure, label].filter(Boolean).join(' ')}${context ? ` (${context})` : ''}`;
+    })
+    .filter(Boolean);
+  return rows.length ? `\n  - ${rows.join('\n  - ')}` : '';
+}
+
+/**
+ * client_testimonials is [{id, quote, author, role, company}]; the legacy shape
+ * is one prose blob, which passes through untouched (it often carries its own
+ * attribution and must not be re-labelled by us).
+ *
+ * A quote whose author is empty is emitted as the quote alone — never with a
+ * borrowed name from `clients`. The narrative directive carries that rule for
+ * the whole block rather than repeating a marker per row.
+ */
+function renderTestimonials(value: unknown, _depth: IdentityDepth): string {
+  if (!Array.isArray(value)) return text(value);
+  const rows = value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (!item || typeof item !== 'object') return '';
+      const o = item as { quote?: unknown; author?: unknown; role?: unknown; company?: unknown };
+      const quote = text(o.quote);
+      if (!quote) return '';
+      const who = [text(o.author), text(o.role), text(o.company)].filter(Boolean).join(', ');
+      return who ? `"${quote}" — ${who}` : `"${quote}"`;
+    })
+    .filter(Boolean);
+  return rows.length ? `\n  - ${rows.join('\n  - ')}` : '';
+}
+
+/**
+ * primary_cta is {label, destination, intent} — or a bare string on a profile
+ * an agent wrote before the field had a shape. A CTA with no label is not a
+ * button and is omitted rather than rendered as an empty ask.
+ */
+function renderPrimaryCta(value: unknown, _depth: IdentityDepth): string {
+  if (typeof value === 'string') return value.trim();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  const o = value as { label?: unknown; destination?: unknown; intent?: unknown };
+  const label = text(o.label);
+  if (!label) return '';
+  const destination = text(o.destination);
+  const intent = text(o.intent);
+  return `${label}${destination ? ` → ${destination}` : ''}${intent ? ` (${intent})` : ''}`;
+}
+
+/**
  * The whole input, when everything else is off.
  *
  * Appended only in the wide projection, because that is the one a page/campaign
@@ -192,7 +294,10 @@ const NARRATIVE_DIRECTIVE =
   '\nWriting from this identity: the material above is the company\'s own — its story, its numbers, ' +
   'its named outcomes and customers. Use those specifics; a sentence that would read the same for any ' +
   'company in this industry is a sentence to rewrite. Where a specific is missing, write around it — ' +
-  'never invent a customer, a number, a date or a result that is not stated here.';
+  'never invent a customer, a number, a date or a result that is not stated here. ' +
+  'Numbers and quotes are the sharp edges: state no figure that is not written above — do not derive, ' +
+  'round or convert one out of prose — and attribute no quote to a person the identity does not name; ' +
+  'an unattributed quote stays unattributed.';
 
 /**
  * The failure path, made visible.

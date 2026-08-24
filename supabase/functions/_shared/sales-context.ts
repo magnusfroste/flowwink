@@ -153,8 +153,15 @@ export async function loadSalesContext(supabase: any, options?: {
     if (cp.value_proposition) profileParts.push(`Value Proposition: ${cp.value_proposition}`);
     if (cp.icp) profileParts.push(`Ideal Customer Profile: ${cp.icp}`);
     if (cp.differentiators) {
-      const diffs = Array.isArray(cp.differentiators) ? cp.differentiators.join(', ') : cp.differentiators;
-      profileParts.push(`Key Differentiators: ${diffs}`);
+      // differentiators moved from string[] to [{name, description}] (same
+      // migration as services) — a raw join printed "[object Object]" into the
+      // prompt, so read both shapes here too.
+      const diffs = Array.isArray(cp.differentiators)
+        ? (cp.differentiators as Array<{ name?: string; description?: string } | string>)
+            .map((it) => typeof it === 'string' ? it : `${it?.name ?? ''}${it?.description ? ` (${it.description})` : ''}`)
+            .filter(Boolean).join('; ')
+        : cp.differentiators;
+      if (diffs) profileParts.push(`Key Differentiators: ${diffs}`);
     }
     if (cp.competitors) profileParts.push(`Competitors: ${cp.competitors}`);
     if (cp.pricing_notes) profileParts.push(`Pricing: ${cp.pricing_notes}`);
@@ -176,12 +183,34 @@ export async function loadSalesContext(supabase: any, options?: {
       }
     }
     if (cp.clients) profileParts.push(`Notable Clients: ${cp.clients}`);
-    if (cp.client_testimonials) profileParts.push(`Testimonials: ${cp.client_testimonials}`);
+    if (cp.client_testimonials) {
+      // Now [{quote, author, role, company}]; the legacy single blob still
+      // arrives as a string from profiles nobody has re-saved.
+      const quotes = Array.isArray(cp.client_testimonials)
+        ? (cp.client_testimonials as Array<{ quote?: string; author?: string; role?: string; company?: string } | string>)
+            .map((t) => {
+              if (typeof t === 'string') return t;
+              if (!t?.quote) return '';
+              const who = [t.author, t.role, t.company].filter(Boolean).join(', ');
+              return who ? `"${t.quote}" — ${who}` : `"${t.quote}"`;
+            })
+            .filter(Boolean).join(' | ')
+        : cp.client_testimonials;
+      if (quotes) profileParts.push(`Testimonials: ${quotes}`);
+    }
     if (cp.target_industries) {
       const inds = Array.isArray(cp.target_industries) ? cp.target_industries.join(', ') : cp.target_industries;
       profileParts.push(`Target Industries: ${inds}`);
     }
     if (cp.delivered_value) profileParts.push(`Delivered Value: ${cp.delivered_value}`);
+    if (Array.isArray(cp.proof_points) && cp.proof_points.length) {
+      const rows = (cp.proof_points as Array<{ value?: string; label?: string; context?: string }>)
+        .map((pp) => pp?.value || pp?.label
+          ? `${[pp.value, pp.label].filter(Boolean).join(' ')}${pp.context ? ` (${pp.context})` : ''}`
+          : '')
+        .filter(Boolean);
+      if (rows.length) profileParts.push(`Proof Points (verbatim figures — quote these, derive no others): ${rows.join('; ')}`);
+    }
 
     if (profileParts.length > 0) {
       sections.push(`## Company Profile\n${profileParts.join('\n')}`);

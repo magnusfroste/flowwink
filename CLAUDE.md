@@ -231,6 +231,20 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.
 
+**`update_company_profile`** — Business Identity is what a page-authoring agent
+reads before it emits blocks, so its structured fields carry BOTH halves a block
+needs: `services` and `differentiators` are `[{name, description}]` (a features
+block needs the description; a bare label means the generator writes one
+itself), `proof_points` are `[{value, label, context}]` with the figure printed
+verbatim in `value` ("412 km", "99,98 %"), `client_testimonials` are
+`[{quote, author, role, company}]` one entry per quote, and `primary_cta` is
+`{label, destination, intent}` — without a label there is no CTA and a generated
+page ends with no ask. Legacy shapes (`differentiators: string[]`, a single
+testimonial blob) are migrated on read and coerced on write, never rejected.
+Keep metrics OUT of `delivered_value` prose alone: parsing a number back out of
+a sentence is where a model invents one. Leave an attribution or a description
+empty rather than guessing it — an omission is correctable, an invention is not.
+
 ### Template System
 
 Templates live in `src/data/templates/` as TypeScript, registered in `index.ts → ALL_TEMPLATES`.

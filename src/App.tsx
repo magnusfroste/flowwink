@@ -104,7 +104,7 @@ const DocsCategoryPage = lazy(() => import("./pages/DocsCategoryPage"));
 const DocsArticlePage = lazy(() => import("./pages/DocsArticlePage"));
 const NewsletterManagePage = lazy(() => import("./pages/NewsletterManagePage"));
 const NewsletterConfirmedPage = lazy(() => import("./pages/NewsletterConfirmedPage"));
-import NotFound from "./pages/NotFound";
+import NotFound, { RouteErrorPage } from "./pages/NotFound";
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const CheckoutSuccessPage = lazy(() => import("./pages/CheckoutSuccessPage"));
 const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
@@ -253,7 +253,7 @@ function AppLayout() {
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
-    errorElement: <NotFound />,
+    errorElement: <RouteErrorPage />,
     children: [
 
       { path: "/", element: <PublicPage /> },
