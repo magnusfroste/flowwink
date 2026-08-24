@@ -88,6 +88,40 @@ describe('platform self-heal condition', () => {
   });
 });
 
+describe('heals wait for an admin session', () => {
+  /**
+   * 2026-08-24, www.flowwink.com: a destructive toast on the LOGIN SCREEN read
+   * "Module settings not stored — 67 module(s) are missing". Nothing was
+   * missing. AdminLayout mounts this hook before its auth redirect runs, so the
+   * first ensureModulesRow() went out as anon; ensure_modules_settings
+   * correctly refused (42501); and the catch path counted a refusal as
+   * "all 67 modules absent". A guard's refusal is not absence.
+   *
+   * The RPCs these heals end in are admin-gated, so the gate is
+   * user + rolesReady + isAdmin — rolesReady because roles resolve a beat after
+   * the session, and gating on isAdmin before they land would skip the heal for
+   * real admins on every login.
+   */
+  const hook = readFileSync(join(__dirname, '../../hooks/useFlowPilotBootstrap.ts'), 'utf-8');
+
+  it('derives canHeal from an authenticated admin with roles resolved', () => {
+    expect(hook).toMatch(/const\s+canHeal\s*=\s*!!user\s*&&\s*rolesReady\s*&&\s*isAdmin/);
+  });
+
+  it('every heal effect returns early without canHeal', () => {
+    const gates = hook.match(/if \(!canHeal\) return;/g) ?? [];
+    // Three heal effects: modules-row + skill coverage, platform heal, soul repair.
+    expect(gates.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the gated effects re-run when the admin session lands', () => {
+    // The gate must not strand the heal: canHeal flips true AFTER mount, so it
+    // has to sit in the dependency arrays or login never triggers the heal.
+    expect(hook.match(/\[canHeal\]/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(hook).toContain('[canHeal, isFlowPilotEnabled, modules]');
+  });
+});
+
 describe('useFlowPilotBootstrap wiring', () => {
   it('uses the completeness condition, not a single-skill absence probe', () => {
     expect(HOOK_SOURCE).toContain('missingPlatformSkills');

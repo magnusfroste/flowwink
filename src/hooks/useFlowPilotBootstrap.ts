@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 import { useModules, defaultModulesSettings } from '@/hooks/useModules';
+import { useAuth } from '@/hooks/useAuth';
 import { bootstrapModule, ensureModulesRow, ensurePlatformCron, ensureSkillRegistry } from '@/lib/module-bootstrap';
 import { bootstrapPlatform, missingPlatformSkills, PLATFORM_SKILL_NAMES } from '@/lib/platform-seeds';
 
@@ -42,6 +43,18 @@ export function useFlowPilotBootstrap() {
   const { toast } = useToast();
   const { data: modules } = useModules();
   const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? false;
+  // Every heal below ends in an admin-gated RPC (ensure_modules_settings,
+  // sync_skills_from_code, the cron registrar). AdminLayout mounts this hook
+  // BEFORE its auth redirect runs, so without this gate the first call went out
+  // as anon, the RPC correctly refused — and the catch path read that refusal
+  // as "all 67 modules missing" and raised a destructive toast on the login
+  // screen. A guard's refusal is not absence. Verified live on www 2026-08-24:
+  // the RPC denies anon (42501) while the row itself is complete and healthy.
+  //
+  // `rolesReady`, not just `user`: roles resolve a beat after the session, and
+  // gating on isAdmin before they land would skip the heal for real admins.
+  const { user, rolesReady, isAdmin } = useAuth();
+  const canHeal = !!user && rolesReady && isAdmin;
 
   const repair = useMutation({
     mutationFn: async () => {
@@ -130,6 +143,7 @@ export function useFlowPilotBootstrap() {
   // Cost on a healthy instance: one settings read plus one name-only read of
   // agent_skills, once per page load, and it writes nothing.
   useEffect(() => {
+    if (!canHeal) return; // wait for an admin session — see canHeal above
     let cancelled = false;
     (async () => {
       const result = await ensureModulesRow(defaultModulesSettings);
@@ -165,9 +179,10 @@ export function useFlowPilotBootstrap() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [canHeal]); // re-runs when the admin session lands — the heal must still happen AFTER login
 
   useEffect(() => {
+    if (!canHeal) return; // wait for an admin session — see canHeal above
     if (platformHealStarted) return;
     platformHealStarted = true;
 
@@ -281,9 +296,10 @@ export function useFlowPilotBootstrap() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [canHeal]); // re-runs when the admin session lands — the heal must still happen AFTER login
 
   useEffect(() => {
+    if (!canHeal) return; // wait for an admin session — see canHeal above
     if (!isFlowPilotEnabled || !modules || hasTriggered.current) return;
 
     let cancelled = false;
@@ -303,5 +319,5 @@ export function useFlowPilotBootstrap() {
     return () => {
       cancelled = true;
     };
-  }, [isFlowPilotEnabled, modules]);
+  }, [canHeal, isFlowPilotEnabled, modules]);
 }
