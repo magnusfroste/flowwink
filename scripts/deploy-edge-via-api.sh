@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #
+# REQUIRES bash 4+. macOS ships bash 3.2 as /bin/bash, which cannot PARSE this
+# file (the failure is a cryptic "unexpected EOF while looking for matching )",
+# raised before a single line runs, so no in-script version check can catch it).
+# On macOS run it as:  /opt/homebrew/bin/bash scripts/deploy-edge-via-api.sh ...
+#
 # deploy-edge-via-api.sh — deploy a Supabase edge function via the Management API
 # (HTTPS), with NO supabase CLI and NO direct Postgres access required.
 #
@@ -38,7 +43,20 @@ VERIFY_JWT=false
 cd "$(dirname "$0")/../supabase/functions"
 
 # Compute the local dependency closure (entry + transitively-imported relative files).
-mapfile -t FILES < <(python3 - "$FN" <<'PY'
+#
+# Captured with `$(...)` rather than read from `< <(...)` so the python exit
+# code is VISIBLE. Inside `< <(...)` a failing generator is invisible to
+# `set -e`: python exits 1, the loop reads nothing, and the script sails on with
+# an EMPTY closure — which is how "MISSING local imports" once turned into a
+# silent 0-file deploy. With command substitution the failure propagates.
+#
+# This does NOT make the file bash 3.2-parseable, and pretending otherwise would
+# be its own small lie: 3.2's `$()` scanner trips over the quote soup in the
+# python body below (`['\"]`), exactly as it did over the process substitution
+# before. Getting there means moving the python into its own .py file. Not worth
+# it for a legacy manual-deploy path — the fleet syncs via scripts/sync-forks.sh
+# now. See the REQUIRES note at the top of this file.
+_CLOSURE=$(python3 - "$FN" <<'PY'
 import re, os, sys
 fn = sys.argv[1]
 def imports_of(p):
@@ -68,6 +86,11 @@ if missing:
 for f in sorted(seen): print(f)
 PY
 )
+
+FILES=()
+while IFS= read -r _line; do
+  [ -n "$_line" ] && FILES+=("$_line")
+done <<< "$_CLOSURE"
 
 # A function may carry its own import map (deno.json) for BARE specifiers —
 # `from "hono"`, `from "mcp-lite"`. Those are not paths, so the closure walker
