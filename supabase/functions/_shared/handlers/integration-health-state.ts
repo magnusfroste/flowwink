@@ -80,7 +80,15 @@ export interface IntegrationProbeSummary {
   summary: string;
   failing: string[];
   unused: string[];
-  integrations: Array<Record<string, unknown>>;
+  /**
+   * `object[]`, inte `Record<string, unknown>[]`. Raderna bärs bara vidare och
+   * serialiseras — ingenting slår upp dem på godtycklig nyckel — och
+   * `Record<string, unknown>` avvisar just den typ som PRODUCERAR dem:
+   * IntegrationProbeResult är ett `interface`, och TypeScript ger implicita
+   * indexsignaturer till objekt-typALIAS men aldrig till interface. Den lösa
+   * typen var alltså inte lös; den var stängd för sin egen avsändare.
+   */
+  integrations: object[];
 }
 
 export interface IntegrationHealthState {
@@ -97,7 +105,7 @@ export interface IntegrationHealthState {
    * behöver minnas utöver "vad är sant nu".
    */
   failing_since: Record<string, string>;
-  integrations: Array<Record<string, unknown>>;
+  integrations: object[];
   notices: IntegrationHealthNotice[];
 }
 
