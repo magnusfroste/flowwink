@@ -3,8 +3,23 @@
 # staged — the CI guardrail (instance-manifest.guardrails.test.ts) fails the
 # build if the committed manifest lags the tree, and humans forget (three
 # times on 2026-08-18 alone). Machines don't.
+#
+# Failure handling, deliberately split in two (the old line was
+# `... >/dev/null 2>&1 || exit 0`, which swallowed BOTH cases — including the
+# generator's duplicate-version REFUSAL, whose whole point is to be loud):
+#   * tooling missing (no bun) → warn and let the commit through; CI's
+#     freshness test still catches a stale manifest.
+#   * generator FAILS with tooling present → show its output and BLOCK. A
+#     refusal converted to a silent pass is how a guard stops guarding.
 if git diff --cached --name-only | grep -qE '^supabase/(migrations|seed)/'; then
   echo "[pre-commit] migrations/seeds staged — regenerating instance manifest"
-  npm run --silent manifest:json >/dev/null 2>&1 || exit 0
-  git add supabase/seed/instance-manifest.json
+  if ! command -v bun >/dev/null 2>&1; then
+    echo "[pre-commit] bun not installed — skipping manifest regen (CI will verify freshness)"
+  elif ! npm run --silent manifest:json; then
+    echo "[pre-commit] manifest generation FAILED (output above) — commit blocked."
+    echo "             Fix the cause (e.g. a migration version collision), then retry."
+    exit 1
+  else
+    git add supabase/seed/instance-manifest.json
+  fi
 fi

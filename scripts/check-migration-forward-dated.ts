@@ -143,8 +143,19 @@ const baseName = (f: string) => f.split('/').pop() ?? '';
 
 let postMerge: Set<string>;
 try {
+  // Files DELETED on this branch are not part of the post-merge state. Without
+  // this, a legitimate in-place rename (delete old name + add new name, SAME
+  // version) reads as two files claiming one version — main still holds the
+  // old name until the merge lands. Found by this guard's own audit on
+  // 2026-08-24, one day after it shipped; the forward-dating check above has
+  // handled the identical case via --diff-filter=D since the sentinel rename.
+  const deletedOnBranch = new Set(
+    sh(`git diff --no-renames --name-only --diff-filter=D ${mergeBase} -- ${MIGRATIONS_DIR}`)
+      .split('\n').map((s) => s.trim()).filter(Boolean).map((f) => f.split('/').pop() ?? ''),
+  );
   const onMain = sh(`git ls-tree -r --name-only ${baseRef} -- ${MIGRATIONS_DIR}`)
-    .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'));
+    .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'))
+    .filter((f) => !deletedOnBranch.has(f.split('/').pop() ?? ''));
   const onBranch = sh(`git ls-tree -r --name-only HEAD -- ${MIGRATIONS_DIR}`)
     .split('\n').map((s) => s.trim()).filter((f) => f.endsWith('.sql'));
   const untrackedNow = sh(`git ls-files --others --exclude-standard -- ${MIGRATIONS_DIR}`)
