@@ -33,9 +33,27 @@ cd "$(dirname "$0")/.."
 FORKS="WWW OPTIC LITEIT AUTOVERSIO"
 ONLY="${1:-}"
 
+# Portable uppercase. `${ONLY^^}` is bash 4+, and macOS ships bash 3.2 as
+# /bin/bash — so `#!/usr/bin/env bash` resolves to a shell that fails this line
+# with "bad substitution" and, under `set -e`, kills the whole run. Observed
+# 2026-08-23: a full fleet sync aborted before touching a single fork.
+if [ -n "$ONLY" ]; then
+  ONLY_UC=$(printf '%s' "$ONLY" | tr '[:lower:]' '[:upper:]')
+  case " $FORKS " in
+    *" $ONLY_UC "*) ;;
+    *)
+      printf 'Okänd fork: %s\nGiltiga: %s\n' "$ONLY" "$FORKS" >&2
+      exit 2
+      ;;
+  esac
+fi
+
 fail=0
 for NAME in $FORKS; do
-  [ -n "$ONLY" ] && [ "${ONLY^^}" != "$NAME" ] && continue
+  # An unmatched filter used to fall through here silently and exit 0 having
+  # synced nothing — a no-op that reads exactly like a successful sync. The
+  # validation above turns that into a refusal.
+  [ -n "$ONLY" ] && [ "$ONLY_UC" != "$NAME" ] && continue
   TOKEN=$(grep -E "^GITHUB_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
   REPO=$(grep -E "GITHUB_REPO_${NAME}=" .env.local | grep -oE "GITHUB_REPO_${NAME}=[^ ]+" | cut -d= -f2 || true)
   if [ -z "$TOKEN" ] || [ -z "$REPO" ]; then
