@@ -3,7 +3,7 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260828120000",
+      "migration_head": "20260828130000",
       "migrations_count": 516,
       "migrations": [
         {
@@ -2067,7 +2067,7 @@
           "name": "e5f6a7b8-en-rad-utan-pris-blev-en-rad-utan-varde"
         },
         {
-          "version": "20260828120000",
+          "version": "20260828130000",
           "name": "the-sweep-is-fixed-now-prove-it-keeps-running"
         }
       ]
@@ -2138,7 +2138,7 @@
         "quote-pay": "sha256:f42a8accc1489304c32b0e3a2c5f30188faa898e48e9323698ed624ca9aea296",
         "quote-sign": "sha256:6f0e0aabc65a4d5375753109a8cc94992b3c56785bd341db925d446891e45d46",
         "run-autonomy-tests": "sha256:c01a22c4a9851de86317f233dce04e24f1c11014df9f3810bed75a6d2c32122a",
-        "run-platform-tests": "sha256:b856108e32a7ab898fb7fdcd2c00333bd1df4efb57d59bf1807ad7193c4de6f7",
+        "run-platform-tests": "sha256:fc3c04497f824353c56bf51e1ab1e4517cdb5ba69b572a616eed8f5547f1ff02",
         "score-visitor-intent": "sha256:c45442de0d34a5f9660a75a15c269aa5988ca7dbc2631e476418c66e58e6f79e",
         "send-webhook": "sha256:a8748b5e344f2dee419bb739707e938d093a3cc5ed0a43f3b69cb9de7dc76741",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

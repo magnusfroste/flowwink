@@ -95,7 +95,7 @@ export const PLATFORM_SUITES: TestSuite[] = [
     category: 'behavior',
     module: 'tickets',
     run: { mode: 'edge', function: 'run-platform-tests', payload: { suiteIds: ['ticket_escalations'] } },
-    docs: 'supabase/migrations/20260828120000_the-sweep-is-fixed-now-prove-it-keeps-running.sql',
+    docs: 'supabase/migrations/20260828130000_the-sweep-is-fixed-now-prove-it-keeps-running.sql',
   },
   {
     id: 'skill_manifest_coverage',
