@@ -392,6 +392,42 @@ const suite_demo_cycle: SuiteFn = async (admin) => {
   return out;
 };
 
+/**
+ * Suite: ticket escalations — the sweep must actually RUN, not just exist.
+ *
+ * run_ticket_escalations() aborted on `ticket_priority = text` for every active
+ * rule from 20260708124322 until 20260823040000, so the Escalation tab was dead
+ * fleet-wide while pg_proc happily reported the function present. Existence
+ * checks could not see it; only a call can. regression_ticket_escalations()
+ * builds its own ticket + rules, sweeps, asserts and rolls everything back, so
+ * this is safe to run against a live instance.
+ */
+const suite_ticket_escalations: SuiteFn = async (admin) => {
+  const out: TestResult[] = [];
+
+  out.push(
+    await runCheck("ticket_escalations", "run_ticket_escalations completes with active rules present", async () => {
+      const { data, error } = await admin.rpc("regression_ticket_escalations");
+      if (error) {
+        if (/PGRST202|schema cache|does not exist/i.test(error.message)) {
+          throw new SkipTest(
+            "regression_ticket_escalations() is not on this instance — apply " +
+            "supabase/migrations/20260828130000_the-sweep-is-fixed-now-prove-it-keeps-running.sql.",
+          );
+        }
+        throw new Error(error.message);
+      }
+      const verdict = data as { skipped?: boolean; reason?: string } | null;
+      if (verdict?.skipped) {
+        throw new SkipTest(verdict.reason ?? "the regression could not build its fixture on this instance");
+      }
+      return { details: verdict };
+    }),
+  );
+
+  return out;
+};
+
 const SUITES: Record<string, SuiteFn> = {
   instance_health: suite_instance_health,
   mcp_invariants: suite_mcp_invariants,
@@ -402,6 +438,7 @@ const SUITES: Record<string, SuiteFn> = {
   ai_usage_logging: suite_ai_usage_logging,
   skill_manifest_coverage: suite_skill_manifest_coverage,
   demo_cycle: suite_demo_cycle,
+  ticket_escalations: suite_ticket_escalations,
 };
 
 // ─── Suite: Skill Manifest Coverage ──────────────────────────────────────────

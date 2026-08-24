@@ -10825,7 +10825,7 @@ async function executeDbAction(
           .select('id, name').single();
         if (error) throw new Error(`Create vendor failed: ${error.message}`);
         // Fire webhook
-        try { await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'vendor.created', data: { id: data.id, name: data.name, email } }) }); } catch {}
+        try { await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'vendor.created', data: { id: data.id, name: data.name, email } }) }); } catch { /* Fire-and-forget webhook. A webhook failure must not fail the business operation that triggered it. */ }
         return { vendor_id: data.id, name: data.name, created: true };
       }
 
@@ -10959,7 +10959,7 @@ async function executeDbAction(
         try {
           const { data: vendorInfo } = await supabase.from('vendors').select('name').eq('id', vendor_id).single();
           await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.created', data: { id: po.id, po_number: po.po_number, vendor_name: vendorInfo?.name, total_cents: po.total_cents, currency: po.currency } }) });
-        } catch {}
+        } catch { /* Fire-and-forget webhook. A webhook failure must not fail the business operation that triggered it. */ }
 
         const rate = Number(po.exchange_rate ?? 1);
         return {
@@ -11050,7 +11050,7 @@ async function executeDbAction(
 
           try {
             await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.sent', data: { id: purchase_order_id, po_number: po?.po_number, vendor_name: vendorName, email_sent: emailSent } }) });
-          } catch {}
+          } catch { /* Fire-and-forget webhook. A webhook failure must not fail the business operation that triggered it. */ }
         }
 
         const { data: updated } = await supabase.from('purchase_orders')
@@ -11162,7 +11162,7 @@ async function executeDbAction(
         if (allReceived) {
           await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.received', data: { id: purchase_order_id, po_number: poInfo?.po_number, fully_received: true } }) });
         }
-      } catch {}
+      } catch { /* Fire-and-forget webhook. A webhook failure must not fail the business operation that triggered it. */ }
 
       return {
         goods_receipt_id: gr.id,

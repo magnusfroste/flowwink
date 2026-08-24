@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  BLOCK_CONTRACTS,
   KNOWN_BLOCK_TYPES,
   DATA_DRIVEN_BLOCK_TYPES,
-  BLOCK_CONTRACTS,
   normalizeBlockData,
   normalizeBlocks,
   preflightBlockArgs,
@@ -612,6 +612,112 @@ describe('block write safety — normalize runs BEFORE validate', () => {
       if (call === 'normalizeBlockData') normalized++;
       else expect(normalized, 'validateBlockData ran before any normalizeBlockData').toBeGreaterThan(0);
     }
+  });
+});
+
+describe('block write safety — required names must be writable names', () => {
+  /**
+   * The trap this pins (found 2026-08-22): BLOCK_CONTRACTS.cta required
+   * ['buttonText', 'primaryButtonText', 'buttons'], but block-reference gives
+   * the cta only buttonText/buttonUrl. So `primaryButtonText` satisfied the
+   * required gate and was then refused by the unknown-FIELD gate — and the
+   * required error text handed that unusable name straight to the agent:
+   *   '"cta" block must have at least one of: "buttonText" | "primaryButtonText" | "buttons"'
+   * An agent that reads the error picks a name that fails again on the retry.
+   * `features` carried the same defect with `items`.
+   */
+  it('every name in every required OR-group is a field the gate accepts', () => {
+    for (const [blockType, contract] of Object.entries(BLOCK_CONTRACTS)) {
+      for (const group of contract.required) {
+        for (const field of group) {
+          const result = validateBlockData(blockType, { [field]: 'x' });
+          const unknown = result.errors.filter((e) => e.includes('unknown field'));
+          expect(
+            unknown.join(' '),
+            `"${blockType}" requires "${field}", which the unknown-field gate refuses — `
+            + 'a caller following the required-field error would fail again on the retry. '
+            + 'Either alias it in normalizeBlockData or drop it from the OR-group.',
+          ).not.toContain(field);
+        }
+      }
+    }
+  });
+
+  it('cta requires buttonText, and says so in one unambiguous name', () => {
+    expect(validateBlockData('cta', { buttonText: 'Start' }).valid).toBe(true);
+
+    const missing = validateBlockData('cta', { title: 'No button at all' });
+    expect(missing.valid).toBe(false);
+    expect(missing.errors[0]).toContain('"buttonText"');
+    // The old OR-group leaked names no cta can carry.
+    expect(missing.errors.join(' ')).not.toContain('primaryButtonText');
+  });
+
+  it('normalizeBlockData maps the cta button aliases to the renderer names', () => {
+    const block = {
+      id: 'c1',
+      type: 'cta',
+      data: { title: 'Ready?', primaryButtonText: 'Start', primaryButtonUrl: '/signup' },
+    };
+    normalizeBlockData(block);
+    const data = block.data as Record<string, unknown>;
+    expect(data.buttonText).toBe('Start');
+    expect(data.buttonUrl).toBe('/signup');
+    expect(data.primaryButtonText).toBeUndefined();
+    expect(data.primaryButtonUrl).toBeUndefined();
+    expect(validateBlockData('cta', data).valid).toBe(true);
+  });
+
+  it('a cta buttons[] array fills the two slots CTABlock actually renders', () => {
+    const block = {
+      id: 'c2',
+      type: 'cta',
+      data: {
+        title: 'Ready?',
+        buttons: [
+          { text: 'Start', url: '/signup' },
+          { label: 'Talk to us', href: '/contact' },
+          { text: 'Nowhere to render this', url: '/x' },
+        ],
+      },
+    };
+    normalizeBlockData(block);
+    const data = block.data as Record<string, unknown>;
+    expect(data.buttonText).toBe('Start');
+    expect(data.buttonUrl).toBe('/signup');
+    expect(data.secondaryButtonText).toBe('Talk to us');
+    expect(data.secondaryButtonUrl).toBe('/contact');
+    expect(data.buttons).toBeUndefined();
+    expect(validateBlockData('cta', data).valid).toBe(true);
+  });
+
+  it('a features block written with items keeps its cards', () => {
+    const block = {
+      id: 'f1',
+      type: 'features',
+      data: { title: 'What we do', items: [{ id: 'a', title: 'Fast', description: 'Very' }] },
+    };
+    normalizeBlockData(block);
+    const data = block.data as Record<string, unknown>;
+    expect((data.features as unknown[])?.length).toBe(1);
+    expect(data.items).toBeUndefined();
+    expect(validateBlockData('features', data).valid).toBe(true);
+  });
+
+  it('a legacy row holding only the old name stays editable after the trim', () => {
+    // The update path validates the MERGE of incoming fields into stored data,
+    // so trimming the OR-group would strand a pre-gate row that has only
+    // primaryButtonText — unless the alias runs first, which is the order
+    // agent-execute uses (pinned by the ordering test above).
+    const stored = { title: 'Ready?', primaryButtonText: 'Start', primaryButtonUrl: '/signup' };
+    const incoming = { title: 'Ready to begin?' };
+    const merged = { id: 'c3', type: 'cta', data: { ...stored, ...incoming } };
+    normalizeBlockData(merged);
+    const result = validateBlockData('cta', merged.data as Record<string, unknown>, {
+      unknownFieldScope: incoming,
+    });
+    expect(result.valid, result.errors.join('; ')).toBe(true);
+    expect((merged.data as Record<string, unknown>).buttonText).toBe('Start');
   });
 });
 
