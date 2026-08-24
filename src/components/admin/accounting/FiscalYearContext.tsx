@@ -20,12 +20,12 @@ export function FiscalYearProvider({ children }: { children: ReactNode }) {
         const n = parseInt(raw, 10);
         if (Number.isFinite(n) && n > 1900 && n < 3000) return n;
       }
-    } catch {}
+    } catch { /* localStorage unavailable (private mode / SSR) — fall back to the current year. */ }
     return currentYear;
   });
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, String(year)); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, String(year)); } catch { /* localStorage unavailable — the year simply does not persist across reloads. */ }
   }, [year]);
 
   const value: FiscalYearContextValue = {

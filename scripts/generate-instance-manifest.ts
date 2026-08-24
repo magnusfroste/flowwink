@@ -84,6 +84,28 @@ export function buildManifest(root: string): InstanceManifest {
     const base = f.replace(/\.sql$/, '');
     return { version: base.slice(0, 14), name: base.slice(15) }; // <ts>_<name>
   });
+
+  // A version is an IDENTITY, not a sort key. `schema_migrations.version` is the
+  // ledger's primary key, so two files sharing one timestamp are one migration
+  // to every instance — the second silently never runs. And the readiness check
+  // (instance-readiness.ts) matches on `version` OR `name`, so the one applied
+  // file satisfies BOTH expected entries and the instance reports itself fully
+  // migrated. Refusing to EMIT a duplicate stops the lie at the source; CI's
+  // check-migration-forward-dated.ts is the same lock one step earlier.
+  const seenVersions = new Map<string, string>();
+  for (const m of migrations) {
+    const prior = seenVersions.get(m.version);
+    if (prior !== undefined) {
+      throw new Error(
+        `Migration version collision: ${m.version} is claimed by two files\n` +
+        `  ${m.version}_${prior}.sql\n` +
+        `  ${m.version}_${m.name}.sql\n` +
+        `The version is the ledger's primary key — whichever applies second looks\n` +
+        `already-applied and is silently skipped. Re-timestamp one of them.`,
+      );
+    }
+    seenVersions.set(m.version, m.name);
+  }
   const migration_head = migrations.length ? migrations[migrations.length - 1].version : '';
 
   // Layer 2: skills — hash of the seed bundle minus volatile fields.

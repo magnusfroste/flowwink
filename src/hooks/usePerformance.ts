@@ -69,6 +69,7 @@ export interface PerformanceReview {
 export function useGoals(employeeId?: string) {
   return useQuery({
     queryKey: ["performance_goals", employeeId],
+    enabled: !!employeeId,
     queryFn: async () => {
       let q = supabase.from("performance_goals" as any).select("*").order("created_at", { ascending: false });
       if (employeeId) q = q.eq("employee_id", employeeId);
@@ -115,6 +116,7 @@ export function useDeleteGoal() {
 export function useOneOnOnes(employeeId?: string) {
   return useQuery({
     queryKey: ["one_on_ones", employeeId],
+    enabled: !!employeeId,
     queryFn: async () => {
       let q = supabase.from("one_on_ones" as any).select("*").order("scheduled_at", { ascending: false });
       if (employeeId) q = q.or(`employee_id.eq.${employeeId},manager_id.eq.${employeeId}`);
@@ -148,6 +150,7 @@ export function useUpsertOneOnOne() {
 export function useFeedback(receiverId?: string) {
   return useQuery({
     queryKey: ["feedback", receiverId],
+    enabled: !!receiverId,
     queryFn: async () => {
       let q = supabase.from("feedback" as any).select("*").order("created_at", { ascending: false });
       if (receiverId) q = q.eq("receiver_id", receiverId);
@@ -180,6 +183,7 @@ export function useGiveFeedback() {
 export function useReviews(employeeId?: string) {
   return useQuery({
     queryKey: ["performance_reviews", employeeId],
+    enabled: !!employeeId,
     queryFn: async () => {
       let q = supabase.from("performance_reviews" as any).select("*").order("period_end", { ascending: false });
       if (employeeId) q = q.eq("employee_id", employeeId);

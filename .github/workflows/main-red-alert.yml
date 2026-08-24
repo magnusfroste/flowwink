@@ -144,7 +144,35 @@ jobs:
             }
 
             // state === 'red'
-            const body = issueBody(verdict);
+            //
+            // Collect open PRs whose own CI is green. The alert used to report
+            // only that main was red; on 2026-08-24 it did that 28 times over
+            // 43 hours while the fix sat open, green and mergeable the whole
+            // time. Naming an available action is what turns a repeated notice
+            // back into a signal. Best-effort: a failure here must never stop
+            // the alert itself from being raised.
+            let greenPrs = [];
+            try {
+              const { data: openPrs } = await github.rest.pulls.list({
+                owner: context.repo.owner, repo: context.repo.repo,
+                state: 'open', base: 'main', per_page: 20,
+              });
+              for (const pr of openPrs) {
+                const { data: checks } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  ref: pr.head.sha, per_page: 30,
+                });
+                const runs = checks.check_runs.filter((c) => c.status === 'completed');
+                if (runs.length > 0 && runs.every((c) => ['success', 'neutral', 'skipped'].includes(c.conclusion))) {
+                  greenPrs.push({ number: pr.number, title: pr.title });
+                }
+              }
+            } catch (e) {
+              core.info(`Could not list candidate fixes (${e.message}) — alerting without them.`);
+              greenPrs = [];
+            }
+
+            const body = issueBody({ ...verdict, greenPrs });
 
             if (!existing) {
               // Create the label if it is missing. issues.create is documented
