@@ -258,7 +258,43 @@ export const handler = async (req: Request): Promise<Response> => {
     }
 
     // Build email HTML
-    const emailHtml = `
+    // ── Mallen är sajtinnehåll ────────────────────────────────────────────
+    // Rendera ur email_templates ('booking_confirmation', seedad återhävdbart i
+    // 20260828170000) så admin och agent äger texten via manage_email_template.
+    // Renderingen sker HÄR (inte i email-send) så Gmail-transporten får samma
+    // mall som routern. Saknas mallen faller vi till legacy-HTML:en nedan —
+    // Law 4: mailet uteblir aldrig för att en mall fattas. Defaulten är
+    // TJÄNST-GENERISK med flit: plattformen antar aldrig samtal, möte eller
+    // klipptid — instansens röst är en mallredigering, aldrig kod.
+    let templateSubject: string | null = null;
+    let templateHtml: string | null = null;
+    try {
+      const { data: tpl } = await supabase
+        .from('email_templates')
+        .select('subject, html, active')
+        .eq('name', 'booking_confirmation')
+        .maybeSingle();
+      if (tpl?.active && tpl.html) {
+        const vars: Record<string, string> = {
+          customer_name: booking.customer_name ?? '',
+          service_name: booking.service?.name ?? '',
+          date: formattedDate,
+          start_time: formattedStartTime,
+          end_time: formattedEndTime,
+          notes_block: booking.notes
+            ? `<div style="background:#f3f4f6;border-radius:8px;padding:12px 16px;margin:16px 0;"><p style="margin:0;"><strong>Your note:</strong> ${booking.notes}</p></div>`
+            : '',
+          site_name: siteName,
+        };
+        const render = (t: string) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+        templateHtml = render(tpl.html);
+        templateSubject = tpl.subject ? render(tpl.subject) : null;
+      }
+    } catch (tplErr) {
+      console.warn('[send-booking-confirmation] template read failed — using built-in fallback:', (tplErr as Error).message);
+    }
+
+    const emailHtml = templateHtml ?? `
       <!DOCTYPE html>
       <html>
       <head>
@@ -316,7 +352,7 @@ export const handler = async (req: Request): Promise<Response> => {
           action: 'GMAIL_SEND_EMAIL',
           arguments: {
             recipient_email: booking.customer_email,
-            subject: `Booking Confirmation - ${formattedDate}`,
+            subject: templateSubject ?? `Booking Confirmation - ${formattedDate}`,
             body: emailHtml,
             content_type: 'text/html',
           },
@@ -335,7 +371,7 @@ export const handler = async (req: Request): Promise<Response> => {
       const { data: emailResponse, error: emailError } = await supabase.functions.invoke('email-send', {
         body: {
           to: booking.customer_email,
-          subject: `Booking Confirmation - ${formattedDate}`,
+          subject: templateSubject ?? `Booking Confirmation - ${formattedDate}`,
           html: emailHtml,
           fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           tags: { source: 'send-booking-confirmation', booking_id: bookingId },

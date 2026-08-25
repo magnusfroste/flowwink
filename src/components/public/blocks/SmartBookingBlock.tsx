@@ -27,6 +27,9 @@ type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockProps) {
   const { formatCurrency, formatDate } = usePlatformFormat();
   const [step, setStep] = useState<BookingStep>('service');
+  // Sant först när comms-send SVARAT att mailet gick (inte skipped/blocked) —
+  // skärmen lovar bara det inkorgen faktiskt håller.
+  const [confirmationEmailed, setConfirmationEmailed] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -214,7 +217,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       // No payment needed — standard flow
       // Trigger confirmation email
       try {
-        await fetch(
+        const emailResp = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/comms-send?kind=booking_confirmation`,
           {
             method: 'POST',
@@ -225,6 +228,9 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
             body: JSON.stringify({ bookingId: bookingData.id }),
           }
         );
+        const emailResult = await emailResp.json().catch(() => null);
+        // Lova bara det som hände: success utan skipped = mailet är på väg.
+        setConfirmationEmailed(Boolean(emailResult?.success && !emailResult?.skipped));
       } catch (emailErr) {
         logger.warn('Could not trigger confirmation email:', emailErr);
       }
@@ -301,6 +307,11 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           <p className="text-muted-foreground mb-4">
             {data.successMessage || "Thank you! We'll contact you to confirm your appointment."}
           </p>
+          {confirmationEmailed && (
+            <p className="text-sm text-muted-foreground mt-2">
+              A confirmation email is on its way to {formData.email}.
+            </p>
+          )}
           {selectedService && selectedDate && selectedSlot && (
             <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
               <p><span className="font-medium">Service:</span> {selectedService.name}</p>
