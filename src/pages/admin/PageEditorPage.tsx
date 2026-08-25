@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { format } from 'date-fns';
@@ -71,17 +71,33 @@ export default function PageEditorPage() {
       resetBlocks(hydratedBlocks);
       setMeta(JSON.parse(JSON.stringify(page.meta_json || {})));
       setHasChanges(false);
+      userInteracted.current = false; // fresh page: absorb init-normalisation anew
     }
   }, [page?.id, page?.updated_at, resetBlocks]);
 
+  // Everything that happens before the FIRST user gesture is, by definition,
+  // not an edit. Tiptap normalises stored content on initialisation (schema
+  // fixes, trailing paragraphs — especially on agent-written pages that came
+  // through markdownToTiptap), and that normalisation fires the same onUpdate →
+  // onChange path a keystroke does. Latching hasChanges on it meant: open a
+  // page, touch nothing, get the "unsaved changes" prompt on the way out. The
+  // gate absorbs those mount-time writes into state WITHOUT marking dirty; the
+  // first pointer/keyboard gesture inside the editor arms the latch. A user
+  // action triggered by that gesture (including AI-toolbar generation) still
+  // marks dirty, because the gesture came first.
+  const userInteracted = useRef(false);
+  const armDirtyTracking = useCallback(() => {
+    userInteracted.current = true;
+  }, []);
+
   const handleBlocksChange = useCallback((newBlocks: ContentBlock[]) => {
     setBlocks(newBlocks);
-    setHasChanges(true);
+    if (userInteracted.current) setHasChanges(true);
   }, []);
 
   const handleMetaChange = useCallback((newMeta: PageMeta) => {
     setMeta(newMeta);
-    setHasChanges(true);
+    if (userInteracted.current) setHasChanges(true);
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -214,7 +230,7 @@ export default function PageEditorPage() {
               <div>
                 <Input
                   value={title}
-                  onChange={(e) => { setTitle(e.target.value); setHasChanges(true); }}
+                  onChange={(e) => { userInteracted.current = true; setTitle(e.target.value); setHasChanges(true); }}
                   className="text-xl font-serif font-bold border-none p-0 h-auto focus-visible:ring-0"
                   disabled={!canEdit}
                 />
@@ -290,7 +306,11 @@ export default function PageEditorPage() {
         </div>
 
         {/* Block Editor - scrollable area */}
-        <div className="flex-1 min-h-0 overflow-auto p-8 bg-background">
+        <div
+          className="flex-1 min-h-0 overflow-auto p-8 bg-background"
+          onPointerDownCapture={armDirtyTracking}
+          onKeyDownCapture={armDirtyTracking}
+        >
           <div 
             className={`mx-auto pb-4 transition-all duration-300 ${
               previewMode === 'mobile' 
