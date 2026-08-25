@@ -154,7 +154,12 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'config-required',
     adminUI: true,
     optionalIntegrations: ['resend', 'stripe'],
-    confirmationEmailEnabled: false,
+    // Law 4 (Fail Forward, Don't Gate): fungerande mailcredentials ska inte
+    // gateas av en manuell flagga — och modulbeskrivningen LOVAR "email
+    // confirmations". Var false till 2026-08-25; uppmätt följd på optic: kund
+    // bokar, hör ingenting, admin ser inget om det. Utflödesallowlisten är
+    // fortfarande spärren som skyddar pilotinstanser.
+    confirmationEmailEnabled: true,
     bookingEmailProvider: 'resend',
   },
   pages: {

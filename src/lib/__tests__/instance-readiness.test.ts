@@ -329,6 +329,7 @@ describe('the platform cron floor is derived from what the registrars actually s
     expect([...PLATFORM_CRON_JOBS].sort()).toEqual(
       [
         'automation-dispatcher-every-minute',
+        'booking-reminders',
         'flowpilot-daily-briefing',
         'flowpilot-heartbeat',
         'flowpilot-learn',

@@ -95,6 +95,7 @@ export const PLATFORM_CRON_JOBS: readonly string[] = [
   'instance-health-check',
   'knowledge-indexer',
   'newsletter-dispatch-scheduled',
+  'booking-reminders',
 ];
 
 export interface CronJobState {

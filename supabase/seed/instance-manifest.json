@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260828140000",
-      "migrations_count": 519,
+      "migration_head": "20260828150000",
+      "migrations_count": 520,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2081,6 +2081,10 @@
         {
           "version": "20260828140000",
           "name": "kostnaden-foljer-varan-genom-dorren"
+        },
+        {
+          "version": "20260828150000",
+          "name": "paminnaren-som-aldrig-kunde-fodas"
         }
       ]
     },

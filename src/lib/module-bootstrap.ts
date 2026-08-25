@@ -135,6 +135,15 @@ export async function ensurePlatformCron(): Promise<{ registered: boolean; error
     if (rErr && !/could not find|does not exist/i.test(rErr.message)) {
       logger.warn('[module-bootstrap] retrieval cron registration failed:', rErr.message);
     }
+    // Booking reminders — samma tolerans: en äldre instans utan registrarn är
+    // inte ett fel, den får jobbet vid nästa bootstrap efter sin migration.
+    const { error: bErr } = await (supabase.rpc as any)('register_booking_cron', {
+      p_supabase_url: url,
+      p_anon_key: key,
+    });
+    if (bErr && !/could not find|does not exist/i.test(bErr.message)) {
+      logger.warn('[module-bootstrap] booking cron registration failed:', bErr.message);
+    }
     logger.log('[module-bootstrap] platform cron ensured');
     return { registered: true };
   } catch (err) {

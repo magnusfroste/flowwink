@@ -567,7 +567,7 @@ export function ModuleDetailSheet({
                       </div>
                       <Switch
                         id="booking-email-toggle"
-                        checked={moduleConfig.confirmationEmailEnabled ?? false}
+                        checked={moduleConfig.confirmationEmailEnabled ?? true}
                         onCheckedChange={(checked) => {
                           if (!modules) return;
                           updateModules.mutate({

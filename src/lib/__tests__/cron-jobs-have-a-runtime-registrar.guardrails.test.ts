@@ -47,6 +47,7 @@ const REGISTRARS = [
   'register_flowpilot_cron',
   'register_knowledge_indexer_cron',
   'register_retrieval_cron',
+  'register_booking_cron',
 ];
 
 const migrationFiles = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort();
@@ -149,8 +150,16 @@ describe('a registrar never forgets a job it already knew', () => {
     const dropped = [...historical].filter((name) => !newest.includes(`'${name}'`));
 
     // A job may only be dropped once its target edge function is gone from the
-    // repo — otherwise the removal is amnesia, not a decision.
+    // repo — otherwise the removal is amnesia, not a decision. A job that MOVED
+    // to another registrar is also a decision, not amnesia: booking-reminders
+    // lived in an early register_flowpilot_cron, died with the standalone
+    // send-booking-reminders function, and was reborn 2026-08-25 in its own
+    // register_booking_cron targeting comms-send. Without this arm, reviving a
+    // once-dropped jobname anywhere would retroactively indict the registrar
+    // that legitimately dropped it.
     const unexplained = dropped.filter((name) => {
+      if (registrarText.includes(`'${name}'`)) return false; // carried by another registrar
+
       for (const sql of allSql) {
         for (const job of scheduledJobs(sql)) {
           if (job.name !== name) continue;
