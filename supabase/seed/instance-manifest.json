@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260828130000",
-      "migrations_count": 518,
+      "migration_head": "20260828140000",
+      "migrations_count": 519,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2077,6 +2077,10 @@
         {
           "version": "20260828130000",
           "name": "the-sweep-is-fixed-now-prove-it-keeps-running"
+        },
+        {
+          "version": "20260828140000",
+          "name": "kostnaden-foljer-varan-genom-dorren"
         }
       ]
     },

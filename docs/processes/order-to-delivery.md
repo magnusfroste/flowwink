@@ -38,6 +38,7 @@ flowchart TD
     D --> E["confirm_pick — per line, with qty and optional lot"]
     E --> F["ship_picking — consumes reservations,<br/>stamps carrier + tracking"]
     F --> G["Delivered — manage_orders"]
+    F -.->|"shipped_at stamped →<br/>consume_order_stock:<br/>FEFO out + COGS booked<br/>(Dt cogs / Cr inventory)"| F2["LEDGER EVENT<br/>cost leaves WITH the goods"]
     G --> H["SLA monitor warns if a step gets stuck"]
 
     classDef agent fill:#eef2ff,stroke:#6366f1,color:#312e81;
@@ -45,6 +46,19 @@ flowchart TD
 ```
 
 *🟦 = agent-runnable step (see Agent coverage below)*
+
+**The cost follows the goods through the door (2026-08-25).** Measured on the
+clean Nordbrygg ledger: order placement used to consume valuation layers and
+book COGS in the order-insert transaction — 62 936 kr of cost stood booked for
+goods still on the shelf, 29 500 of it for a CANCELLED order. As of
+`20260828140000` the order commits (`products.stock_quantity`, availability
+unchanged) and reserves; the first physical exit signal (`shipped_at` /
+`delivered_at`) consumes FEFO and books COGS via the account roles
+(`account_for('cogs')` / `account_for('inventory')`), and cancellation before
+exit is a ledger non-event. The dry-run also caught that `20260827200000` had
+redefined `process_stock_move_valuation` from a stale copy and DROPPED the COGS
+block entirely — restored against the live body, pinned by
+`kostnaden-foljer-varan-genom-dorren.guardrails.test.ts`.
 
 **The picking is a document, not a status.** An earlier version of this diagram
 drew picked/packed/shipped as states on the order. The platform actually has
