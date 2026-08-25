@@ -51,9 +51,6 @@ export default function PublicPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [renderError, setRenderError] = useState<Error | null>(null);
 
-  // Handle smooth scrolling to anchors
-  useAnchorScroll();
-
   // Check for ?setup=true to force setup wizard (dev mode)
   const forceSetup = searchParams.get('setup') === 'true';
 
@@ -208,6 +205,11 @@ export default function PublicPage() {
     // Wait for generalSettings to load before fetching homepage (when no explicit slug)
     enabled: slug !== undefined || generalSettings !== undefined,
   });
+
+  // Smooth-scroll till #ankare — EFTER att sidan laddats: en tvärsideslänk
+  // (/products#internet) landar innan get-page-hämtningen renderat blocken,
+  // och en scroll mot ett id som inte finns än är en tyst no-op.
+  useAnchorScroll(!!page);
 
   // Check for connection error first
   const isConnectionError = page === CONNECTION_ERROR;
