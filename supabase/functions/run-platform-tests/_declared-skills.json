@@ -111,6 +111,7 @@
     "dispose_fixed_asset",
     "docs_search",
     "draft_candidate_outreach",
+    "email_admins",
     "email_to_ticket",
     "end_qa_session",
     "end_webmeet_room",
