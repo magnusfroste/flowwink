@@ -58,9 +58,11 @@ const strengthLabel: Record<Strength, string> = {
 };
 
 const strengthClass: Record<Strength, string> = {
-  strong:
-    'text-green-700 bg-green-50 border-green-200 dark:text-green-300 dark:bg-green-950/40 dark:border-green-900',
-  good: 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-900',
+  // Statusfärgerna bor i tokens (--success/--warning, index.css) — de bär sina
+  // egna dark-värden, så inga dark:-varianter behövs här. Revisionen 2026-08-25
+  // trodde först att tokens saknades; de fanns, adoptionen saknades.
+  strong: 'text-success bg-success/10 border-success/20',
+  good: 'text-warning bg-warning/10 border-warning/20',
   fair: 'text-muted-foreground bg-muted border-border',
 };
 
@@ -108,7 +110,7 @@ const MatchCard = memo(function MatchCard({
         <div className="flex items-start justify-between mb-2 gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              {index === 0 && <Star className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />}
+              {index === 0 && <Star className="w-4 h-4 text-warning fill-warning shrink-0" />}
               <span className="text-xs text-muted-foreground">#{index + 1}</span>
               <span className="font-semibold text-foreground truncate">{match.name}</span>
             </div>

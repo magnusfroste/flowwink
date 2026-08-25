@@ -190,7 +190,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                             className={cn(
                               'absolute bottom-3 right-3 rounded-full shadow-lg',
                               'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200',
-                              inCart && 'bg-green-600 hover:bg-green-700'
+                              inCart && 'bg-success text-success-foreground hover:bg-success/90'
                             )}
                             onClick={() => handleAddToCart(product)}
                           >

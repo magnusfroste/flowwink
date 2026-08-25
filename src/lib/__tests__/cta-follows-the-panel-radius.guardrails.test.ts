@@ -87,3 +87,23 @@ describe('inga hårdkodade panelradier i publika block', () => {
     expect(offenders, offenders.join(', ')).toEqual([]);
   });
 });
+
+describe('statusfärger bär tokens, inte palett', () => {
+  /**
+   * Revisionen 2026-08-25 trodde att success/warning-tokens saknades — de
+   * fanns (index.css ljus+mörk, tailwind-mappning, brett använda i admin).
+   * Det som saknades var ADOPTION i fyra publika block. Migrerade; pinnen
+   * håller populationen på noll. Vitt/svart över foton berörs inte (ankrat i
+   * bilden), och grays är layouttoner, inte status — bara statuspaletten fälls.
+   */
+  it('green/amber/yellow/emerald/lime-klasser förekommer inte i publika block', () => {
+    const dir = join(__dirname, '../../components/public/blocks');
+    const raw = /\b(?:bg|text|border|fill|stroke|from|to|via)-(?:green|amber|yellow|emerald|lime)-\d{2,3}\b/g;
+    const offenders: string[] = [];
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('Block.tsx'))) {
+      const hits = readFileSync(join(dir, f), 'utf-8').match(raw) ?? [];
+      if (hits.length > 0) offenders.push(`${f}: ${[...new Set(hits)].join(' ')}`);
+    }
+    expect(offenders, offenders.join('; ')).toEqual([]);
+  });
+});

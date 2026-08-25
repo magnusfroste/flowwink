@@ -239,7 +239,7 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
                 'mt-6 flex items-center gap-1 text-xs text-muted-foreground',
                 !isSplit && 'justify-center',
               )}>
-                <Star className="h-3 w-3 fill-current text-yellow-500" />
+                <Star className="h-3 w-3 fill-current text-warning" />
                 <span>Powered by AI • Knows our entire product catalog</span>
               </div>
             </>
