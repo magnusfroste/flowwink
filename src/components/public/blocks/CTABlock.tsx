@@ -15,7 +15,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // Split variant - image on one side, content on the other
   if (variant === 'split') {
     return (
-      <section>
+      <section className="rounded-[var(--radius-block,1rem)] overflow-hidden">
         <div className="grid md:grid-cols-2 min-h-[400px]">
           {/* Image side */}
           <div className="relative bg-muted">
@@ -102,7 +102,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // With-image variant - full background image with overlay
   if (variant === 'with-image' && data.backgroundImage) {
     return (
-      <section className="relative px-6 py-12 md:py-16">
+      <section className="relative px-6 py-12 md:py-16 rounded-[var(--radius-block,1rem)] overflow-hidden">
         {/* Background image */}
         <div className="absolute inset-0">
           <img
@@ -155,7 +155,11 @@ export function CTABlock({ data }: CTABlockProps) {
   return (
     <section
       className={cn(
-      'px-6 py-12 md:py-16',
+      // cta är INTE full-bleed (BlockRenderer.FULL_BLEED_TYPES) — den ritar en
+      // färgad panel INUTI innehållscontainern, och varje annan indragen panel
+      // i systemet (Newsletter, PricingCalculator, AiFaq) bär --radius-block.
+      // Raka hörn här var Lovable-arvet Magnus såg på optic 2026-08-25.
+      'px-6 py-12 md:py-16 rounded-[var(--radius-block,1rem)] overflow-hidden',
         useGradient
           ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
           : 'bg-primary text-primary-foreground'
