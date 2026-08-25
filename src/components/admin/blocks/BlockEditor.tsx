@@ -717,6 +717,16 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
     [blocks, onChange]
   );
 
+  const handleMoveBlock = useCallback(
+    (blockId: string, direction: -1 | 1) => {
+      const oldIndex = blocks.findIndex((block) => block.id === blockId);
+      const newIndex = oldIndex + direction;
+      if (oldIndex === -1 || newIndex < 0 || newIndex >= blocks.length) return;
+      onChange(arrayMove(blocks, oldIndex, newIndex));
+    },
+    [blocks, onChange]
+  );
+
   const handleDeleteBlock = (blockId: string) => {
     onChange(blocks.filter((block) => block.id !== blockId));
     if (editingBlockId === blockId) {
@@ -1270,7 +1280,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           items={blocks.map((b) => b.id)}
           strategy={verticalListSortingStrategy}
         >
-          {blocks.map((block) => (
+          {blocks.map((block, index) => (
             <BlockWrapper
               key={block.id}
               block={block}
@@ -1280,6 +1290,10 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
               }
               onDelete={() => handleDeleteBlock(block.id)}
               onCopy={() => handleCopyBlock(block)}
+              onMoveUp={() => handleMoveBlock(block.id, -1)}
+              onMoveDown={() => handleMoveBlock(block.id, 1)}
+              canMoveUp={index > 0}
+              canMoveDown={index < blocks.length - 1}
               onSpacingChange={(spacing) => handleUpdateBlockSpacing(block.id, spacing)}
               onAnimationChange={(animation) => handleUpdateBlockAnimation(block.id, animation)}
               onAnchorChange={(anchorId) => handleUpdateBlockAnchor(block.id, anchorId)}

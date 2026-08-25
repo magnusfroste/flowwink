@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Settings, Copy, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, Trash2, Settings, Copy, Eye, EyeOff, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentBlock, ContentBlockType, BlockSpacing, BlockAnimation, SectionBackground } from '@/types/cms';
 import { cn } from '@/lib/utils';
@@ -88,6 +88,10 @@ interface BlockWrapperProps {
   onEdit: () => void;
   onDelete: () => void;
   onCopy?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
   onSpacingChange?: (spacing: BlockSpacing) => void;
   onAnimationChange?: (animation: BlockAnimation) => void;
   onAnchorChange?: (anchorId: string | undefined) => void;
@@ -103,6 +107,10 @@ export function BlockWrapper({
   onEdit,
   onDelete,
   onCopy,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp = false,
+  canMoveDown = false,
   onSpacingChange,
   onAnimationChange,
   onAnchorChange,
@@ -157,6 +165,38 @@ export function BlockWrapper({
               {BLOCK_LABELS[block.type]}
             </span>
           </div>
+          {onMoveUp && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 bg-card"
+                  onClick={onMoveUp}
+                  disabled={!canMoveUp}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Move up</TooltipContent>
+            </Tooltip>
+          )}
+          {onMoveDown && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 bg-card"
+                  onClick={onMoveDown}
+                  disabled={!canMoveDown}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Move down</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
