@@ -9,7 +9,7 @@
  * kantiga hörn mot övriga designelement".
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const CTA = readFileSync(
@@ -28,8 +28,6 @@ describe('cta följer panelradien', () => {
   });
 
   it('bakgrundsbilder klipps till hörnen — radie utan overflow-hidden är en radie som inte syns', () => {
-    // Varje sektion som bär radien måste också klippa: with-image/split har
-    // absolutpositionerade bilder som annars målar över hörnen.
     const sections = CTA.match(/rounded-\[var\(--radius-block[^"']*/g) ?? [];
     for (const cls of sections) {
       expect(cls, `radie utan clip: ${cls}`).toContain('overflow-hidden');
@@ -66,5 +64,26 @@ describe('panelradien följer branding-ratten', () => {
 
   it('admin-nollställningen släpper båda — annars läcker en sajts panelradie in i adminytan', () => {
     expect(PROVIDER).toMatch(/removeProperty\('--radius-block'\)/);
+  });
+});
+
+describe('inga hårdkodade panelradier i publika block', () => {
+  /**
+   * Revisionen 2026-08-25 fann 13 rounded-2xl i 9 block — paneler som inte
+   * lydde branding-ratten som --radius-block just kopplats till. Alla
+   * konverterade. Den här pinnen håller populationen på noll: en ny
+   * rounded-2xl/3xl i ett publikt block är en panel som ignorerar kundens
+   * rundhetsval. Legitima undantag (overlay-text över foton, fristående
+   * dokument som TermsBlock) rör inte radier och träffas inte.
+   */
+  it('rounded-2xl/3xl förekommer inte i publika blockrenderare', () => {
+    const dir = join(__dirname, '../../components/public/blocks');
+    const offenders: string[] = [];
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('Block.tsx'))) {
+      const src = readFileSync(join(dir, f), 'utf-8');
+      const hits = src.match(/rounded-(?:2xl|3xl)/g) ?? [];
+      if (hits.length > 0) offenders.push(`${f}: ${hits.length}`);
+    }
+    expect(offenders, offenders.join(', ')).toEqual([]);
   });
 });

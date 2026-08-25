@@ -156,7 +156,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
 
   // Default variant
   return (
-    <div className="px-6 py-10 md:py-14 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl">
+    <div className="px-6 py-10 md:py-14 bg-gradient-to-br from-primary/5 to-primary/10 rounded-[var(--radius-block,1rem)]">
       <div className="max-w-xl mx-auto text-center">
         <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-7 w-7 text-accent-foreground" />

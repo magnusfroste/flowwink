@@ -398,7 +398,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
 
         {/* Contact CTA */}
         {showContactCta && (
-          <div className="bg-muted/50 rounded-2xl p-8 md:p-12 mt-16 text-center">
+          <div className="bg-muted/50 rounded-[var(--radius-block,1rem)] p-8 md:p-12 mt-16 text-center">
             <h3 className="text-2xl font-bold mb-4">{contactTitle}</h3>
             <p className="text-muted-foreground mb-6">{contactSubtitle}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

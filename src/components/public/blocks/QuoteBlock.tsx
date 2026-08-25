@@ -15,7 +15,7 @@ export function QuoteBlock({ data }: QuoteBlockProps) {
         <blockquote
           className={cn(
             'relative',
-            isStyled && 'bg-primary/5 rounded-2xl p-8 md:p-12'
+            isStyled && 'bg-primary/5 rounded-[var(--radius-block,1rem)] p-8 md:p-12'
           )}
         >
           {isStyled && (

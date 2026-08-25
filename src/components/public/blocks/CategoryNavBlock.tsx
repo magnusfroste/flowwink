@@ -32,7 +32,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
         <div className="max-w-6xl mx-auto px-4">
           <div className={cn('grid grid-cols-2 gap-4', colClasses[columns] ?? colClasses[3])}>
             {Array.from({ length: columns }).map((_, i) => (
-              <div key={i} className="aspect-[4/3] bg-muted rounded-2xl animate-pulse" />
+              <div key={i} className="aspect-[4/3] bg-muted rounded-[var(--radius-block,1rem)] animate-pulse" />
             ))}
           </div>
         </div>
@@ -68,7 +68,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
               className="group block"
             >
               {variant === 'overlay' && cat.image_url ? (
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+                <div className="relative aspect-[4/3] rounded-[var(--radius-block,1rem)] overflow-hidden">
                   <img
                     src={cat.image_url}
                     alt={cat.name}
@@ -98,7 +98,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
                 </div>
               ) : (
                 /* cards variant */
-                <div className="rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 bg-card">
+                <div className="rounded-[var(--radius-block,1rem)] overflow-hidden border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 bg-card">
                   {cat.image_url ? (
                     <div className="aspect-[4/3] overflow-hidden bg-muted">
                       <img

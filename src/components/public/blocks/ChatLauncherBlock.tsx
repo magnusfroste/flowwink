@@ -74,7 +74,7 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
 
   const containerClasses = cn(
     'w-full max-w-3xl mx-auto',
-    variant === 'card' && 'bg-card rounded-2xl border shadow-lg p-6 md:p-8',
+    variant === 'card' && 'bg-card rounded-[var(--radius-block,1rem)] border shadow-lg p-6 md:p-8',
     variant === 'hero-integrated' && 'py-8 md:py-12',
     variant === 'minimal' && 'py-6 md:py-8'
   );

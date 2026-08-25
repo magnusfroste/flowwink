@@ -93,7 +93,7 @@ export function BentoGridBlock({ data }: BentoGridBlockProps) {
   }, [items.length, staggeredReveal]);
 
   const cardBaseClasses = cn(
-    'relative overflow-hidden rounded-2xl p-6 transition-all duration-500 group',
+    'relative overflow-hidden rounded-[var(--radius-block,1rem)] p-6 transition-all duration-500 group',
     variant === 'default' && 'bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5',
     variant === 'glass' && 'bg-card/40 backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] hover:bg-card/60 hover:border-white/20 hover:shadow-xl hover:shadow-primary/10',
     variant === 'bordered' && 'bg-transparent border-2 border-border hover:border-primary/40 hover:bg-card/30',

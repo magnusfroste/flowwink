@@ -46,7 +46,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
       <section>
         <div className="max-w-6xl mx-auto px-4">
           <div className="animate-pulse grid md:grid-cols-2 gap-12">
-            <div className="aspect-square bg-muted rounded-2xl" />
+            <div className="aspect-square bg-muted rounded-[var(--radius-block,1rem)]" />
             <div className="space-y-4 py-8">
               <div className="h-8 bg-muted rounded w-3/4" />
               <div className="h-4 bg-muted rounded w-1/2" />
@@ -89,7 +89,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
                 {data.badge}
               </Badge>
             )}
-            <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
+            <div className="aspect-square rounded-[var(--radius-block,1rem)] overflow-hidden bg-muted">
               {product.image_url ? (
                 <Link to={`/products/${product.id}`}>
                   <img
