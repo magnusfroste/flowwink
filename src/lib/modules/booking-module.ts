@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { triggerWebhook } from '@/lib/webhook-utils';
 import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
+import type { AutomationSeed } from '@/lib/module-bootstrap';
 import {
   BookingModuleInput,
   BookingModuleOutput,
@@ -335,6 +336,22 @@ There is no move action — do: (1) find the booking (list + customer filter), (
   },
 ];
 
+const BOOKING_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Notify admins on new booking',
+    description:
+      'When a booking is created (any writer — block, gateway, admin), email every instance admin with who, when and which service, linking the bookings page. Delivery is the email_admins platform skill; the outbound allowlist still guards pilot instances.',
+    trigger_type: 'event',
+    trigger_config: { event: 'booking.created' },
+    skill_name: 'email_admins',
+    skill_arguments: {
+      subject: 'New booking: {{event.payload.data.customer_name}} — {{event.payload.data.start_time}}',
+      html: '<p><strong>{{event.payload.data.customer_name}}</strong> ({{event.payload.data.customer_email}}) booked <strong>{{event.payload.data.start_time}}</strong>–{{event.payload.data.end_time}}.</p><p>Status: {{event.payload.data.status}}</p><p><a href="/admin/bookings">Open bookings</a></p>',
+      source: 'booking.created',
+    },
+  },
+];
+
 export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutput>({
   id: 'bookings',
   name: 'Booking',
@@ -359,6 +376,7 @@ export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutpu
     tables: ['booking_availability', 'booking_blocked_dates', 'bookings', 'booking_services'],
   },
   skillSeeds: BOOKING_SKILLS,
+  automations: BOOKING_AUTOMATIONS,
 
   webhookEvents: [
     { event: 'booking.submitted', description: 'A booking was submitted' },

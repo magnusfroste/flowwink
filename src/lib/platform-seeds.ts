@@ -306,6 +306,38 @@ The artifact's sha256 is stored in site_settings.skills_artifact_sha on success.
 "inserted"/"updated" counts plus the first 40 names of each. modules_skipped_disabled counts modules whose skills were left alone because the module is off — enable the module and re-run to pick them up.`,
   },
   {
+    name: 'email_admins',
+    description:
+      "Email every instance admin (resolved from user_roles at send time) through the provider-agnostic email gateway. Use when: an automation or agent needs to alert the humans running this instance (new booking, failed sweep, threshold crossed). NOT for: customer-facing mail (send_email); lead outreach (send_email_to_lead); newsletters (send_newsletter).",
+    category: 'communication',
+    handler: 'internal:email_admins',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'email_admins',
+        description:
+          'Deliver one finished message to all instance admins. Recipients come from user_roles at send time — never pass addresses. Outcomes are kept apart: sent / simulated (no provider) / blocked_by_allowlist (pilot guard, logged) / failed.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subject: { type: 'string', description: 'Email subject line.' },
+            html: { type: 'string', description: 'HTML body — compose the full message before calling.' },
+            source: { type: 'string', description: 'Originating label for outbound_communications (default "email_admins").' },
+          },
+          required: ['subject', 'html'],
+        },
+      },
+    },
+    instructions: `## email_admins
+### What
+One message → every admin (user_roles role='admin', emails via auth at send time). Routed through email-send: provider-agnostic, allowlist-guarded, every outcome logged to outbound_communications.
+### When
+Automations reacting to platform events (booking.created and friends) and agents that must reach the instance operators. Not a customer channel.
+### Read the result honestly
+{sent, blocked, failed, detail[]} — 'blocked' is the outbound allowlist doing its job on pilot instances and is neither success nor failure; report it as withheld. Born from the booking incident where a skipped confirmation left zero trace.`,
+  },
+  {
     name: 'search_web',
     description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     category: 'search',

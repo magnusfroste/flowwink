@@ -50,6 +50,7 @@ import { executeCompanyProfile } from '../_shared/handlers/company-profile.ts';
 import { executeReconciliation } from '../_shared/handlers/reconciliation.ts';
 // B1b admin-tool handlers — kept VERBATIM as Request→Response functions and
 // adapted through callResponseHandler below (zero body changes on the move).
+import { handleEmailAdmins as hEmailAdmins } from '../_shared/handlers/email-admins.ts';
 import { handler as hEnrichCompanyProfile } from '../_shared/handlers/enrich-company-profile.ts';
 import { handler as hExtractReceipt } from '../_shared/handlers/extract-receipt.ts';
 import { handler as hAnalyzeBrand } from '../_shared/handlers/analyze-brand.ts';
@@ -70,6 +71,7 @@ import { executeAgentTrace } from '../_shared/handlers/agent-trace.ts';
 // bodies needed zero changes. The edge: dispatch always parsed the JSON body
 // regardless of HTTP status, so parsing here preserves exactly what callers saw.
 const RESPONSE_HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
+  'internal:email_admins': hEmailAdmins,
   'internal:enrich_company_profile': hEnrichCompanyProfile,
   'internal:extract_receipt': hExtractReceipt,
   'internal:analyze_brand': hAnalyzeBrand,
