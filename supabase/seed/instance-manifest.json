@@ -2112,7 +2112,7 @@
         "chat-completion": "sha256:b2bfe35ae9e8f896e717776d33dfa9ec8ce39e37a788413a14351b8c4b866b3a",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:e3b8a4da10f01358def2a012f7f5ed417c3896beefcdcd5f1e8bb2463aaa320a",
-        "comms-send": "sha256:831b17d08500f424390b4bc0fa5c6d0398271cc9fa60bbeca574483318ddccae",
+        "comms-send": "sha256:dc520a70402923c53a93d04716fee838ee5667bc7902f27ab7783695cba4a820",
         "composio-proxy": "sha256:08477e4658cee04b6a09458a5e8dc45fbf9737c2188f7b972ae954782a4bdc95",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:1419717affb3711a2d7f13d44c9a228e1557a3d927e3aa05ee5e179584131e1b",

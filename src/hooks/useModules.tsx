@@ -56,7 +56,14 @@ export interface ModuleConfig {
   pricesIncludeVat?: boolean; // true (default) = B2C "inkl. moms"; false = "exkl. moms"
   // Booking-specific settings
   confirmationEmailEnabled?: boolean; // Send confirmation email on new booking
-  bookingEmailProvider?: BookingEmailProvider; // Which provider to use for booking emails
+  /**
+   * @deprecated 2026-08-25 — providervalet hör hemma i e-postroutern
+   * (Communications → Router). Fältet läses bara som legacy-HINT av
+   * comms-send/booking_confirmation (composio_gmail → provider: composio) så
+   * att instanser som valt Gmail behåller beteendet — nu genom routerns
+   * allowlist och logg i stället för förbi dem. Ingen UI skriver det längre.
+   */
+  bookingEmailProvider?: BookingEmailProvider;
   // Consultants module — GDPR setting for public-facing match results
   publicAnonymization?: ConsultantAnonymization;
 }

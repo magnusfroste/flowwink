@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { 
   Sheet, 
@@ -37,7 +38,7 @@ import { moduleRegistry } from "@/lib/module-registry";
 import { getModuleWebhookEvents } from "@/lib/module-webhook-events";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
-import type { ModuleAutonomy, ModuleConfig, ModulesSettings, BookingEmailProvider, ConsultantAnonymization } from "@/hooks/useModules";
+import type { ModuleAutonomy, ModuleConfig, ModulesSettings, ConsultantAnonymization } from "@/hooks/useModules";
 import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
@@ -584,45 +585,27 @@ export function ModuleDetailSheet({
                     {moduleConfig.confirmationEmailEnabled && (
                       <>
                         <Separator />
-                        <div className="space-y-2">
-                          <Label htmlFor="booking-email-provider" className="text-sm">
-                            Email Provider
-                          </Label>
-                          <Select
-                            value={moduleConfig.bookingEmailProvider ?? 'resend'}
-                            onValueChange={(value: BookingEmailProvider) => {
-                              if (!modules) return;
-                              updateModules.mutate({
-                                ...modules,
-                                bookings: {
-                                  ...modules.bookings,
-                                  bookingEmailProvider: value,
-                                },
-                              });
-                            }}
-                          >
-                            <SelectTrigger id="booking-email-provider">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="resend">
-                                <span className="flex items-center gap-2">
-                                  Resend
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">API</Badge>
-                                </span>
-                              </SelectItem>
-                              <SelectItem value="composio_gmail">
-                                <span className="flex items-center gap-2">
-                                  Gmail (Composio)
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">OAuth</Badge>
-                                </span>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-[11px] text-muted-foreground">
-                            {(moduleConfig.bookingEmailProvider ?? 'resend') === 'resend'
-                              ? 'Uses Resend API — emails sent from your configured domain.'
-                              : 'Uses Composio Gmail OAuth — emails sent from your connected Gmail account.'}
+                        {/* Lagerkartan (2026-08-25): modulen säger OM flödet
+                            mailar. VAD som skickas bor i mallbiblioteket, HUR
+                            det transporteras i routern. Providerratten som
+                            stod här duplicerade routerns ansvar per modul —
+                            fröet till nästa två-kopior-drift — och dess
+                            composio-gren gick förbi allowlist och logg.
+                            Proveniensrader + länkar, inga duplicerade rattar. */}
+                        <div className="space-y-1.5 text-xs text-muted-foreground">
+                          <p>
+                            Content comes from the <span className="font-medium text-foreground">booking_confirmation</span> template
+                            {' '}·{' '}
+                            <Link to="/admin/email?tab=templates" className="text-primary hover:underline">
+                              Edit email content →
+                            </Link>
+                          </p>
+                          <p>
+                            Delivery follows the platform email router
+                            {' '}·{' '}
+                            <Link to="/admin/communications?tab=router" className="text-primary hover:underline">
+                              Router settings →
+                            </Link>
                           </p>
                         </div>
                       </>

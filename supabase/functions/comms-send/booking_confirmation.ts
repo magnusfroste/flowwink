@@ -213,7 +213,6 @@ export const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const emailProvider = bookingsConfig?.bookingEmailProvider || 'resend';
     const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Website";
     
     // Get email configuration from integrations
@@ -223,7 +222,7 @@ export const handler = async (req: Request): Promise<Response> => {
       fromName: siteName,
     };
 
-    console.log(`[send-booking-confirmation] Provider: ${emailProvider}, Sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
+    console.log(`[send-booking-confirmation] Sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     // Format date and time
     const startDate = new Date(booking.start_time);
@@ -341,38 +340,25 @@ export const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Send email via selected provider
+    // ── EN väg: routern äger transporten ─────────────────────────────────────
+    // Tidigare valde bokningsMODULEN provider (bookingsConfig.bookingEmailProvider)
+    // och composio_gmail gick i en EGEN gren direkt mot composio-proxy — förbi
+    // routerns allowlist, suppressions och outbound-logg. Ett lagerbrott med
+    // en blind fläck: gmail-vägen lämnade inget spår i outbound_communications.
+    // email-send stödjer composio som provider (explicit/enabledMap) sedan
+    // edge-surface-arbetet, så grenen är legacy. Varsamt borttagen: ett lagrat
+    // legacy-värde 'composio_gmail' följer med som provider-HINT till routern —
+    // ingen instans tappar sitt gmail-beteende, men varje mail går nu genom
+    // vakterna och loggen. Providervalet hör hemma i Communications → Router.
     let emailId: string | undefined;
-
-    if (emailProvider === 'composio_gmail') {
-      // Send via Composio Gmail
-      console.log("[send-booking-confirmation] Sending via Composio Gmail");
-      const composioResponse = await supabase.functions.invoke('composio-proxy', {
-        body: {
-          action: 'GMAIL_SEND_EMAIL',
-          arguments: {
-            recipient_email: booking.customer_email,
-            subject: templateSubject ?? `Booking Confirmation - ${formattedDate}`,
-            body: emailHtml,
-            content_type: 'text/html',
-          },
-        },
-      });
-
-      if (composioResponse.error) {
-        console.error("[send-booking-confirmation] Composio Gmail error:", composioResponse.error);
-        throw new Error(`Composio Gmail failed: ${composioResponse.error.message || 'Unknown error'}`);
-      }
-
-      emailId = composioResponse.data?.id || 'composio-sent';
-      console.log("[send-booking-confirmation] Gmail sent successfully");
-    } else {
-      // Send via central email-send router (provider-agnostic SMTP/Resend)
+    {
+      const legacyHint = bookingsConfig?.bookingEmailProvider === 'composio_gmail' ? 'composio' : undefined;
       const { data: emailResponse, error: emailError } = await supabase.functions.invoke('email-send', {
         body: {
           to: booking.customer_email,
           subject: templateSubject ?? `Booking Confirmation - ${formattedDate}`,
           html: emailHtml,
+          ...(legacyHint ? { provider: legacyHint } : {}),
           fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           tags: { source: 'send-booking-confirmation', booking_id: bookingId },
         },
@@ -390,7 +376,7 @@ export const handler = async (req: Request): Promise<Response> => {
       .eq("id", bookingId);
 
     return new Response(
-      JSON.stringify({ success: true, emailId, provider: emailProvider }),
+      JSON.stringify({ success: true, emailId, provider: "router" }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 

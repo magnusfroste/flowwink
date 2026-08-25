@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -25,6 +26,11 @@ import {
 } from '@/hooks/useEmailModule';
 
 export default function EmailPage() {
+  const [searchParams] = useSearchParams();
+  // Djuplänkar (?tab=…) från proveniensrader ska landa rätt — en länk som
+  // öppnar fel flik är en ratt som inte gör vad etiketten säger.
+  const requestedTab = searchParams.get('tab');
+  const initialTab = requestedTab && ['templates', 'threads', 'signatures', 'suppressions'].includes(requestedTab) ? requestedTab : 'templates';
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -32,7 +38,7 @@ export default function EmailPage() {
           <h1 className="font-serif text-2xl font-bold text-foreground flex items-center gap-2"><Mail className="h-7 w-7" /> Email</h1>
           <p className="text-muted-foreground mt-1">Templates, threads, signatures and deliverability controls.</p>
         </div>
-        <Tabs defaultValue="templates" className="space-y-4">
+        <Tabs defaultValue={initialTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="templates"><FileText className="h-4 w-4 mr-1" /> Templates</TabsTrigger>
             <TabsTrigger value="threads"><MessagesSquare className="h-4 w-4 mr-1" /> Threads</TabsTrigger>

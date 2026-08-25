@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,11 @@ const STATUS_META: Record<string, { label: string; variant: any; icon: any }> = 
 };
 
 export default function CommunicationsPage() {
+  const [searchParams] = useSearchParams();
+  // Djuplänkar (?tab=…) från proveniensrader ska landa rätt — en länk som
+  // öppnar fel flik är en ratt som inte gör vad etiketten säger.
+  const requestedTab = searchParams.get('tab');
+  const initialTab = requestedTab && ['log', 'router'].includes(requestedTab) ? requestedTab : 'log';
   const [channel, setChannel] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [direction, setDirection] = useState<string>("all");
@@ -89,7 +95,7 @@ export default function CommunicationsPage() {
         >
           <Button variant="outline" onClick={() => refetch()}>Refresh log</Button>
         </AdminPageHeader>
-        <Tabs defaultValue="log" className="space-y-6">
+        <Tabs defaultValue={initialTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="log">Log</TabsTrigger>
             <TabsTrigger value="router">Router settings</TabsTrigger>
