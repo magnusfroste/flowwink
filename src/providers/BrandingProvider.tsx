@@ -89,15 +89,31 @@ function applyBrandingToDocument(branding: BrandingSettings) {
     root.style.setProperty('--font-sans', `'${branding.bodyFont}', system-ui, sans-serif`);
   }
   
-  // Apply border radius
+  // Apply border radius — BOTH scales from the same dial.
+  //
+  // --radius is the control-level radius (buttons, inputs); --radius-block is
+  // the PANEL radius the self-styled blocks draw with (cta, newsletter,
+  // pricing-calculator, ai-faq — rounded-[var(--radius-block,1rem)]). Until
+  // 2026-08-25 only --radius followed branding, so a customer who chose sharp
+  // corners still got 1rem-rounded panels: half the page obeyed the dial.
+  // The block scale is deliberately ~2× the control scale — a panel is a
+  // bigger shape than a button and reads flat at button radii — and 'none'
+  // means none everywhere: sharp is a design choice, not a control-only one.
   const radiusMap: Record<string, string> = {
     none: '0',
     sm: '0.25rem',
     md: '0.5rem',
     lg: '0.75rem',
   };
+  const blockRadiusMap: Record<string, string> = {
+    none: '0',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+  };
   if (branding.borderRadius) {
     root.style.setProperty('--radius', radiusMap[branding.borderRadius] || '0.5rem');
+    root.style.setProperty('--radius-block', blockRadiusMap[branding.borderRadius] || '1rem');
   }
   
   // Apply scroll animation mode (on | eager | off). Read by useScrollAnimation
@@ -133,6 +149,7 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--font-serif');
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--radius');
+  root.style.removeProperty('--radius-block');
 }
 
 interface BrandingProviderProps {

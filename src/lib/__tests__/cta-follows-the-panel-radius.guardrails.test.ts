@@ -41,3 +41,30 @@ describe('cta följer panelradien', () => {
     expect(fullBleed).not.toContain("'cta'");
   });
 });
+
+describe('panelradien följer branding-ratten', () => {
+  /**
+   * 2026-08-25, Magnus beslut: --radius-block var statisk (1rem) medan
+   * branding styrde --radius — en kund som valde skarpa hörn fick rundade
+   * paneler ändå. Halva sidan lydde ratten. Nu sätter BrandingProvider båda
+   * skalorna från samma val, och nollställningen släpper båda.
+   */
+  const PROVIDER = readFileSync(
+    join(__dirname, '../../providers/BrandingProvider.tsx'),
+    'utf-8',
+  );
+
+  it('borderRadius-valet sätter BÅDA skalorna', () => {
+    expect(PROVIDER).toMatch(/setProperty\('--radius',/);
+    expect(PROVIDER).toMatch(/setProperty\('--radius-block',/);
+  });
+
+  it("'none' betyder none överallt — skarpt är ett designval, inte bara för knappar", () => {
+    const block = PROVIDER.match(/blockRadiusMap[\s\S]{0,200}?\}/)?.[0] ?? '';
+    expect(block).toMatch(/none:\s*'0'/);
+  });
+
+  it('admin-nollställningen släpper båda — annars läcker en sajts panelradie in i adminytan', () => {
+    expect(PROVIDER).toMatch(/removeProperty\('--radius-block'\)/);
+  });
+});
