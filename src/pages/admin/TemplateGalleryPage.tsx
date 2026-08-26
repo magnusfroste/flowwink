@@ -125,7 +125,11 @@ export default function TemplateGalleryPage() {
                   Can't find what you're looking for?
                 </p>
                 <Button variant="outline" asChild>
-                  <Link to="/admin/flowpilot">
+                  <Link
+                    to="/admin/flowchat"
+                    /* Bygg-intentionen är en konversation → FlowChat;
+                       /admin/flowpilot är statuscockpiten utan chatt. */
+                  >
                     <Bot className="h-4 w-4 mr-2" />
                     Let FlowPilot build it for you
                     <ArrowRight className="h-4 w-4 ml-2" />

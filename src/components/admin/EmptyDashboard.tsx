@@ -44,7 +44,12 @@ export function EmptyDashboard() {
                 Describe your vision — or paste a URL to clone your current website.
               </p>
               <Button asChild className="w-full gap-2">
-                <Link to="/admin/flowpilot">
+                <Link
+                  to="/admin/flowchat"
+                  /* Bygg-intentionen är en KONVERSATION — den hör hemma i
+                     FlowChat. /admin/flowpilot är numera statuscockpiten
+                     (briefings, autonomy loop) utan chattyta. */
+                >
                   Start with FlowPilot
                   <ArrowRight className="h-4 w-4" />
                 </Link>
