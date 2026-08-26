@@ -9,6 +9,10 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
+import { PreviewFrame } from '@/components/admin/PreviewFrame';
+import { PageBlocks } from '@/components/public/PageBlocks';
+import { useBranding } from '@/providers/BrandingProvider';
+import { useDebounce } from '@/hooks/useDebounce';
 import { PageSettingsDialog } from '@/components/admin/PageSettingsDialog';
 import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog';
 import { AeoAnalyzer } from '@/components/admin/AeoAnalyzer';
@@ -32,6 +36,7 @@ export default function PageEditorPage() {
   const { toast } = useToast();
   const { isApprover } = useAuth();
   const { data: generalSettings } = useGeneralSettings();
+  const { branding } = useBranding();
   const reviewEnabled = generalSettings?.contentReviewEnabled === true;
   
   const { data: page, isLoading, refetch } = usePage(id);
@@ -43,6 +48,7 @@ export default function PageEditorPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
+  const isDevicePreview = previewMode !== 'desktop';
   // Undo/Redo for blocks
   const {
     present: blocks,
@@ -56,6 +62,11 @@ export default function PageEditorPage() {
 
   // Keyboard shortcuts for undo/redo
   useUndoRedoKeyboard({ undo, redo, canUndo, canRedo });
+
+  // The device preview re-renders the full public renderer on every blocks
+  // change (e.g. undo/redo while a preview is open) — debounce so bursts
+  // collapse into one iframe re-render.
+  const previewBlocks = useDebounce(blocks, 300);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
@@ -305,28 +316,49 @@ export default function PageEditorPage() {
           </div>
         </div>
 
-        {/* Block Editor - scrollable area */}
-        <div
-          className="flex-1 min-h-0 overflow-auto p-8 bg-background"
-          onPointerDownCapture={armDirtyTracking}
-          onKeyDownCapture={armDirtyTracking}
-        >
-          <div 
-            className={`mx-auto pb-4 transition-all duration-300 ${
-              previewMode === 'mobile' 
-                ? 'max-w-[375px] border-x border-dashed border-border' 
-                : previewMode === 'tablet' 
-                  ? 'max-w-[768px] border-x border-dashed border-border' 
-                  : 'max-w-3xl'
-            }`}
-          >
-            <BlockEditor
-              blocks={blocks}
-              onChange={handleBlocksChange}
-              canEdit={canEdit}
-            />
+        {/* Editing surface (desktop) / device preview (mobile & tablet).
+            A narrowed container can't change which md:/lg: media queries
+            match, so mobile/tablet render the PUBLIC renderer inside a real
+            iframe whose viewport IS 375/768 px. Editing stays a desktop-mode
+            activity — the frame is read-only. */}
+        {isDevicePreview ? (
+          <div className="flex-1 min-h-0 p-8 bg-muted/40 flex justify-center">
+            <PreviewFrame
+              width={previewMode === 'mobile' ? 375 : 768}
+              title={`${previewMode === 'mobile' ? 'Mobile' : 'Tablet'} preview`}
+              branding={branding}
+            >
+              <main className="min-h-screen bg-background">
+                {meta?.showTitle !== false && (
+                  <div className="max-w-4xl mx-auto px-6 pt-12">
+                    <h1
+                      className={`text-4xl md:text-5xl font-serif font-bold text-foreground ${
+                        (meta?.titleAlignment || 'left') === 'center' ? 'text-center' : 'text-left'
+                      }`}
+                    >
+                      {title}
+                    </h1>
+                  </div>
+                )}
+                <PageBlocks blocks={previewBlocks} pageId={id} />
+              </main>
+            </PreviewFrame>
           </div>
-        </div>
+        ) : (
+          <div
+            className="flex-1 min-h-0 overflow-auto p-8 bg-background"
+            onPointerDownCapture={armDirtyTracking}
+            onKeyDownCapture={armDirtyTracking}
+          >
+            <div className="mx-auto pb-4 max-w-3xl">
+              <BlockEditor
+                blocks={blocks}
+                onChange={handleBlocksChange}
+                canEdit={canEdit}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Sticky Save Bar */}
         <div className="sticky-save-bar">

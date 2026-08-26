@@ -43,22 +43,25 @@ const GOOGLE_FONTS_MAP: Record<string, string> = {
   'Plus Jakarta Sans': 'Plus+Jakarta+Sans:wght@400;500;600;700',
 };
 
-function loadGoogleFont(fontName: string) {
+function loadGoogleFont(fontName: string, doc: Document = document) {
   const fontParam = GOOGLE_FONTS_MAP[fontName];
   if (!fontParam) return;
-  
-  const existingLink = document.querySelector(`link[data-font="${fontName}"]`);
+
+  const existingLink = doc.querySelector(`link[data-font="${fontName}"]`);
   if (existingLink) return;
-  
-  const link = document.createElement('link');
+
+  const link = doc.createElement('link');
   link.rel = 'stylesheet';
   link.href = `https://fonts.googleapis.com/css2?family=${fontParam}&display=swap`;
   link.setAttribute('data-font', fontName);
-  document.head.appendChild(link);
+  doc.head.appendChild(link);
 }
 
-function applyBrandingToDocument(branding: BrandingSettings) {
-  const root = document.documentElement;
+// Exported so preview surfaces that render into their own document (the page
+// editor's device-preview iframe) can brand that document's root — the admin
+// parent has these variables deliberately reset.
+export function applyBrandingToDocument(branding: BrandingSettings, doc: Document = document) {
+  const root = doc.documentElement;
   
   // Apply colors
   if (branding.primaryColor) {
@@ -81,11 +84,11 @@ function applyBrandingToDocument(branding: BrandingSettings) {
   
   // Apply fonts
   if (branding.headingFont) {
-    loadGoogleFont(branding.headingFont);
+    loadGoogleFont(branding.headingFont, doc);
     root.style.setProperty('--font-serif', `'${branding.headingFont}', Georgia, serif`);
   }
   if (branding.bodyFont) {
-    loadGoogleFont(branding.bodyFont);
+    loadGoogleFont(branding.bodyFont, doc);
     root.style.setProperty('--font-sans', `'${branding.bodyFont}', system-ui, sans-serif`);
   }
   
@@ -121,16 +124,17 @@ function applyBrandingToDocument(branding: BrandingSettings) {
   const scrollMode = branding.scrollAnimations || 'on';
   root.dataset.scrollAnimations = scrollMode;
 
-  // Apply favicon
-  if (branding.favicon) {
-    const existingFavicon = document.querySelector('link[rel="icon"]');
+  // Apply favicon — only meaningful on the top-level document; a preview
+  // iframe has no tab of its own.
+  if (branding.favicon && doc === document) {
+    const existingFavicon = doc.querySelector('link[rel="icon"]');
     if (existingFavicon) {
       existingFavicon.setAttribute('href', branding.favicon);
     } else {
-      const favicon = document.createElement('link');
+      const favicon = doc.createElement('link');
       favicon.rel = 'icon';
       favicon.href = branding.favicon;
-      document.head.appendChild(favicon);
+      doc.head.appendChild(favicon);
     }
   }
 }

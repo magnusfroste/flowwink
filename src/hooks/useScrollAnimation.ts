@@ -28,14 +28,16 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>(
     const element = ref.current;
     if (!element) return;
 
+    // Resolve globals from the element's OWN document/window: inside the page
+    // editor's device-preview iframe the relevant viewport (and the branding
+    // data attribute) belong to the frame, not the top window. In the normal
+    // case ownerDocument IS the top document, so this changes nothing.
+    const doc = element.ownerDocument;
+    const win = doc.defaultView ?? window;
+
     // Honor reduced motion + global off switch — render immediately.
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const mode =
-      typeof document !== 'undefined'
-        ? document.documentElement.dataset.scrollAnimations
-        : undefined;
+    const reduced = win.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const mode = doc.documentElement.dataset.scrollAnimations;
 
     if (reduced || mode === 'off') {
       setIsVisible(true);
@@ -46,7 +48,7 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>(
       rootMargin ??
       (mode === 'eager' ? '0px 0px 200px 0px' : '0px 0px -50px 0px');
 
-    const observer = new IntersectionObserver(
+    const observer = new win.IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
