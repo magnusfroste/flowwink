@@ -437,7 +437,7 @@ function BookedList({ data }: { data: { rows: any[]; entries: Record<string, any
               <div className="min-w-0 flex-1">
                 <div className="text-sm text-foreground truncate">{r.counterparty || '—'}</div>
                 <div className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1.5">
-                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  <Check className="h-3 w-3 text-success" />
                   {voucher || 'Booked'}
                   {entry?.description ? ` · ${entry.description}` : ''}
                 </div>

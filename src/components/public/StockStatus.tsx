@@ -24,18 +24,18 @@ export function StockStatusBadge({ product, className }: StockStatusBadgeProps) 
     in_stock: {
       label: 'In stock',
       icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-      variant: 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50',
+      variant: 'text-success bg-success/10',
     },
     low_stock: {
       label: product.stock_quantity !== null ? `Only ${product.stock_quantity} left` : 'Low stock',
       icon: <AlertTriangle className="h-3.5 w-3.5" />,
-      variant: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50',
+      variant: 'text-warning bg-warning/10',
     },
     out_of_stock: {
       label: product.allow_backorder ? 'Pre-order' : 'Out of stock',
       icon: <XCircle className="h-3.5 w-3.5" />,
       variant: product.allow_backorder
-        ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50'
+        ? 'text-info bg-info/10'
         : 'text-destructive bg-destructive/10',
     },
     untracked: { label: '', icon: null, variant: '' },

@@ -154,15 +154,15 @@ export function AeoDashboardWidget() {
   }, [pages, aeoSettings]);
   
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 dark:text-green-400';
-    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    if (score >= 80) return 'text-success';
+    if (score >= 60) return 'text-warning';
     if (score >= 40) return 'text-orange-600 dark:text-orange-400';
     return 'text-red-600 dark:text-red-400';
   };
   
   const getScoreIcon = (score: number) => {
-    if (score >= 80) return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
-    if (score >= 60) return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+    if (score >= 80) return <CheckCircle2 className="h-4 w-4 text-success" />;
+    if (score >= 60) return <AlertCircle className="h-4 w-4 text-warning" />;
     return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
   };
   
@@ -255,11 +255,11 @@ export function AeoDashboardWidget() {
             {/* Score Distribution */}
             <div className="grid grid-cols-4 gap-2 text-center">
               <div className="p-2 rounded-lg bg-green-500/10">
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">{analysis.excellent}</p>
+                <p className="text-lg font-bold text-success">{analysis.excellent}</p>
                 <p className="text-xs text-muted-foreground">Excellent</p>
               </div>
               <div className="p-2 rounded-lg bg-yellow-500/10">
-                <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{analysis.good}</p>
+                <p className="text-lg font-bold text-warning">{analysis.good}</p>
                 <p className="text-xs text-muted-foreground">Good</p>
               </div>
               <div className="p-2 rounded-lg bg-orange-500/10">

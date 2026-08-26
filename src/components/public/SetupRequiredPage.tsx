@@ -45,8 +45,8 @@ export function SetupRequiredPage() {
         </p>
         
         {/* Prerequisites Warning */}
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-left mb-4">
-          <h2 className="font-medium mb-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 text-left mb-4">
+          <h2 className="font-medium mb-2 flex items-center gap-2 text-warning">
             <Terminal className="h-4 w-4" />
             Edge Functions Required
           </h2>

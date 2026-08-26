@@ -24,11 +24,11 @@ interface AuthEvent {
 }
 
 const EVENT_META: Record<string, { label: string; icon: any; color: string }> = {
-  sign_in:        { label: 'Sign in',        icon: LogIn,       color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' },
+  sign_in:        { label: 'Sign in',        icon: LogIn,       color: 'text-success bg-emerald-500/10' },
   sign_out:       { label: 'Sign out',       icon: LogOut,      color: 'text-slate-600 dark:text-slate-400 bg-slate-500/10' },
   sign_up:        { label: 'Sign up',        icon: UserPlus,    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10' },
   failed_login:   { label: 'Failed login',   icon: ShieldAlert, color: 'text-rose-600 dark:text-rose-400 bg-rose-500/10' },
-  password_reset: { label: 'Password reset', icon: KeyRound,    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' },
+  password_reset: { label: 'Password reset', icon: KeyRound,    color: 'text-warning bg-amber-500/10' },
   token_refreshed:{ label: 'Token refresh',  icon: Activity,    color: 'text-muted-foreground bg-muted' },
 };
 

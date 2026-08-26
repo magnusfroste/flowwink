@@ -171,14 +171,14 @@ export default function BlogPostPage() {
           {/* Reviewer badge */}
           {blogSettings?.showReviewer && post.reviewer && (
             <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-8 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
+              <CheckCircle className="h-5 w-5 text-success shrink-0" />
               <div className="text-sm">
                 <span className="text-green-800 dark:text-green-200">
                   Reviewed by {post.reviewer.full_name || post.reviewer.email}
                   {post.reviewer.title && `, ${post.reviewer.title}`}
                 </span>
                 {post.reviewed_at && (
-                  <span className="text-green-600 dark:text-green-400 ml-2">
+                  <span className="text-success ml-2">
                     ({formatDateTime(post.reviewed_at, { year: "numeric", month: "short", day: "numeric" })})
                   </span>
                 )}

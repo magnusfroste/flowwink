@@ -80,7 +80,7 @@ export function RoleAccessAuditPanel() {
                 <div
                   className={`mt-0.5 rounded-md p-1.5 ${
                     granted
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      ? 'bg-emerald-500/10 text-success'
                       : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                   }`}
                 >

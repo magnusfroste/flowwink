@@ -17,7 +17,7 @@ const DIRECTION_ICON: Record<ConnectionDirection, typeof ArrowLeftRight> = {
 
 const DIRECTION_TONE: Record<ConnectionDirection, string> = {
   bidirectional: 'border-primary/40 text-primary bg-primary/5',
-  outbound: 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5',
+  outbound: 'border-emerald-500/40 text-success bg-emerald-500/5',
   inbound: 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5',
 };
 

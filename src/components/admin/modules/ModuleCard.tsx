@@ -353,7 +353,7 @@ export function ModuleCard({
             <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
               <button
                 onClick={() => navigate('/admin/integrations')}
-                className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:opacity-70 transition-opacity cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-warning hover:opacity-70 transition-opacity cursor-pointer"
               >
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>No AI provider configured</span>
@@ -368,7 +368,7 @@ export function ModuleCard({
               {!readiness.ready ? (
                 <button
                   onClick={() => navigate('/admin/integrations')}
-                  className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:opacity-70 transition-opacity cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-warning hover:opacity-70 transition-opacity cursor-pointer"
                 >
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                   <span>Missing: {readiness.missingRequired.join(', ')}</span>

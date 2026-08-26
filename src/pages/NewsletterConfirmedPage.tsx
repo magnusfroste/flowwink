@@ -7,7 +7,7 @@ export default function NewsletterConfirmedPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center max-w-md">
         <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <CheckCircle className="h-8 w-8 text-success" />
         </div>
         <h1 className="text-2xl font-bold mb-2">Subscription Confirmed!</h1>
         <p className="text-muted-foreground mb-6">

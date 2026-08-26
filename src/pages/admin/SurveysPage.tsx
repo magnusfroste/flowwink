@@ -378,8 +378,8 @@ function KpiCard({ label, value, hint, icon }: { label: string; value: string; h
 function CategoryBadge({ category, score }: { category: string | null; score: number | null }) {
   if (score === null) return <span className="text-muted-foreground">—</span>;
   const map: Record<string, string> = {
-    promoter: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    passive: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    promoter: 'bg-emerald-500/10 text-success',
+    passive: 'bg-amber-500/10 text-warning',
     detractor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
   };
   return <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold', map[category ?? ''] ?? 'bg-muted')}>{score}</span>;

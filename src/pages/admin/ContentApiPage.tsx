@@ -363,7 +363,7 @@ export default async function Home() {
                       </Button>
                     </div>
                     <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                      <span className="text-green-600 dark:text-green-400">{selectedEndpoint.method}</span>{" "}
+                      <span className="text-success">{selectedEndpoint.method}</span>{" "}
                       {buildRestUrl()}
                     </div>
                   </div>

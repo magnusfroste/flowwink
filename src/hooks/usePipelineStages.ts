@@ -51,13 +51,13 @@ const STAGE_COLOR_CYCLE = [
   'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
   'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-  'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
+  'bg-warning/10 text-warning',
   'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
+  'bg-success/10 text-success',
 ];
 
 export function getStageColor(stage: PipelineStage, index: number): string {
-  if (stage.is_won) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+  if (stage.is_won) return 'bg-success/10 text-success';
   if (stage.is_lost) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
   return STAGE_COLOR_CYCLE[index % STAGE_COLOR_CYCLE.length];
 }

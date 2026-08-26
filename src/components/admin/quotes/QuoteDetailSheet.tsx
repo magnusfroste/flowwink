@@ -445,7 +445,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
                   <span className="font-mono">{rollup.termMissing ? '—' : formatAmount(rollup.tcvCents)}</span>
                 </div>
                 {rollup.termMissing && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-warning">
                     Set a binding term to see the total contract value.
                   </p>
                 )}

@@ -1208,7 +1208,7 @@ export default function SiteSettingsPage() {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           {isActive ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <CheckCircle2 className="h-4 w-4 text-success" />
                           ) : (
                             <Circle className="h-4 w-4 text-muted-foreground" />
                           )}

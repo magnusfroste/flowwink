@@ -87,7 +87,7 @@ function KanbanColumn({ stage, index, deals, totalValue, startCollapsed }: Kanba
             <p className="text-[11px] text-destructive font-medium">Over WIP limit</p>
           )}
           {!collapsed && atLimit && !overLimit && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400">At WIP limit</p>
+            <p className="text-[11px] text-warning">At WIP limit</p>
           )}
         </CardHeader>
         {!collapsed && (

@@ -142,8 +142,8 @@ function Stat({
   tone: 'ok' | 'warn' | 'bad' | 'muted';
 }) {
   const toneCls = {
-    ok: 'text-emerald-600 dark:text-emerald-400',
-    warn: 'text-amber-600 dark:text-amber-400',
+    ok: 'text-success',
+    warn: 'text-warning',
     bad: 'text-rose-600 dark:text-rose-400',
     muted: 'text-muted-foreground',
   }[tone];
@@ -210,7 +210,7 @@ function SkillAuditCard() {
               <Badge variant="secondary">{(data?.total ?? 0) - (data?.enabled ?? 0)} disabled</Badge>
             </div>
             {(data?.recentFailures.length ?? 0) === 0 ? (
-              <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <p className="text-sm text-success flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" /> No recent skill failures
               </p>
             ) : (

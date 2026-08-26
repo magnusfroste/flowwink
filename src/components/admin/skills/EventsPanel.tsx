@@ -72,12 +72,12 @@ export function EventsPanel() {
                     )}
                     <div className="flex-1" />
                     {ev.processed_at ? (
-                      <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1 text-[11px] text-success">
                         <CheckCircle2 className="h-3 w-3" />
                         processed
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
+                      <span className="flex items-center gap-1 text-[11px] text-warning">
                         <Clock className="h-3 w-3" />
                         pending
                       </span>

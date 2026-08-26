@@ -9,7 +9,7 @@ import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const platformColors: Record<string, string> = {
   meta: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  google: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  google: 'bg-emerald-500/10 text-success',
   linkedin: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
 };
 

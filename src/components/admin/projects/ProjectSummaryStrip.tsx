@@ -21,8 +21,8 @@ function Metric({
         className={cn(
           "mt-0.5 truncate text-xl font-semibold tabular-nums",
           tone === "danger" && "text-destructive",
-          tone === "warning" && "text-amber-600 dark:text-amber-400",
-          tone === "success" && "text-emerald-600 dark:text-emerald-400",
+          tone === "warning" && "text-warning",
+          tone === "success" && "text-success",
         )}
       >
         {value}

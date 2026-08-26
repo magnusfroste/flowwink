@@ -92,7 +92,7 @@ export function IntegrationHealthCard() {
         ) : (
           <div className="space-y-3">
             {data.healthy ? (
-              <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <p className="text-sm text-success flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" /> Every integration in use is responding.
               </p>
             ) : (
@@ -153,8 +153,8 @@ export function IntegrationHealthCard() {
                       <span
                         className={
                           n.kind === 'recovered'
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-amber-600 dark:text-amber-400'
+                            ? 'text-success'
+                            : 'text-warning'
                         }
                       >
                         {n.headline}

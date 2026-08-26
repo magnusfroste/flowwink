@@ -125,7 +125,7 @@ export function ReconciliationSignoffPanel() {
                     <TableCell className="text-right font-mono">{fmt(s.statement_balance_cents, s.currency)}</TableCell>
                     <TableCell className="text-right font-mono">{fmt(s.book_balance_cents, s.currency)}</TableCell>
                     <TableCell className="text-right font-mono">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                      <Badge variant="secondary" className="bg-success/10 text-success">
                         {fmt(s.difference_cents, s.currency)}
                       </Badge>
                     </TableCell>

@@ -219,8 +219,8 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
   }, [aeoSettings, blocks, meta, slug]);
   
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 dark:text-green-400';
-    if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    if (score >= 80) return 'text-success';
+    if (score >= 50) return 'text-warning';
     return 'text-red-600 dark:text-red-400';
   };
   
@@ -234,9 +234,9 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
   const getStatusIcon = (status: 'pass' | 'warn' | 'fail') => {
     switch (status) {
       case 'pass':
-        return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'warn':
-        return <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+        return <AlertCircle className="h-4 w-4 text-warning" />;
       case 'fail':
         return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
     }

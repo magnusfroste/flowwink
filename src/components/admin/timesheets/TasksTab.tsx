@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
   low: 'bg-muted text-muted-foreground',
   medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  high: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  high: 'bg-warning/10 text-warning',
   urgent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 

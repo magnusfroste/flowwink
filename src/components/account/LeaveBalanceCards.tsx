@@ -85,12 +85,12 @@ export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
                     <span className="text-sm font-normal text-muted-foreground"> / {total} days</span>
                   </p>
                 </div>
-                <Wallet className={`h-5 w-5 ${lowBalance ? "text-orange-500" : "text-muted-foreground"}`} />
+                <Wallet className={`h-5 w-5 ${lowBalance ? "text-warning" : "text-muted-foreground"}`} />
               </div>
 
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className={`h-full ${lowBalance ? "bg-orange-500" : "bg-primary"}`}
+                  className={`h-full ${lowBalance ? "bg-warning" : "bg-primary"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>

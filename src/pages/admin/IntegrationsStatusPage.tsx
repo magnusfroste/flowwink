@@ -1217,7 +1217,7 @@ export function IntegrationConfigPanel({
                 <li>Click <strong>Save configuration</strong></li>
               </ol>
             </div>
-            <p className="pt-1 text-amber-600 dark:text-amber-400">
+            <p className="pt-1 text-warning">
               Enable <strong>SMS Pumping Protection</strong> and <strong>Geo Permissions</strong> before going live.
             </p>
           </div>

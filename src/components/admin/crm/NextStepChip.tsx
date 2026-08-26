@@ -44,7 +44,7 @@ export function NextStepChip({ leadId, dealId }: NextStepChipProps) {
   }[state];
   const text = {
     overdue: 'text-destructive font-medium',
-    today: 'text-amber-600 dark:text-amber-400',
+    today: 'text-warning',
     planned: 'text-muted-foreground',
   }[state];
 

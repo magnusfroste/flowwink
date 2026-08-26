@@ -407,7 +407,7 @@ function GatedSkillsPanel() {
     <>
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardContent className="py-4 flex gap-3 text-sm">
-          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <AlertCircle className="h-5 w-5 shrink-0 text-warning" />
           <div className="space-y-1">
             <p className="font-medium text-amber-700 dark:text-amber-300">Runtime override</p>
             <p className="text-muted-foreground">
@@ -441,7 +441,7 @@ function GatedSkillsPanel() {
             </div>
 
             {orphanCount > 0 && (
-              <div className="ml-auto flex items-center gap-2 text-amber-600 dark:text-amber-400 max-w-md">
+              <div className="ml-auto flex items-center gap-2 text-warning max-w-md">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span className="text-xs">
                   {orphanCount} gated skill(s) exist in <code className="font-mono">agent_skills</code> but no module declares them via <code className="font-mono">defineModule()</code>. They still work, but won't be enabled/disabled with any module — see "Core / unowned" below.

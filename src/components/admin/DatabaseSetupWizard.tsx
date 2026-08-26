@@ -342,7 +342,7 @@ export function DatabaseSetupWizard() {
                 <div className="flex gap-2">
                   <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-600 dark:text-amber-400">
+                    <p className="font-medium text-warning">
                       Keep this key secret!
                     </p>
                     <p className="text-muted-foreground mt-1">
@@ -436,7 +436,7 @@ export function DatabaseSetupWizard() {
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm">
                 <div className="flex gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <p className="text-emerald-600 dark:text-emerald-400">
+                  <p className="text-success">
                     Database setup complete! Now create your admin account.
                   </p>
                 </div>

@@ -107,7 +107,7 @@ export function PettyCashPanel() {
                     <TableCell className="font-mono text-xs">{c.cash_account_code}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(c.book_balance_cents, c.currency)}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(c.counted_cents, c.currency)}</TableCell>
-                    <TableCell className={`text-right font-mono ${c.difference_cents === 0 ? 'text-muted-foreground' : c.difference_cents > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    <TableCell className={`text-right font-mono ${c.difference_cents === 0 ? 'text-muted-foreground' : c.difference_cents > 0 ? 'text-success' : 'text-red-600 dark:text-red-400'}`}>
                       {formatCurrency(c.difference_cents, c.currency)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{c.notes || '—'}</TableCell>

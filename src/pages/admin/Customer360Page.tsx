@@ -219,13 +219,13 @@ export default function Customer360Page() {
                 icon={TrendingUp}
                 label="Lifetime value"
                 value={formatMoney(data.kpis.lifetime_value)}
-                tone="text-emerald-600 dark:text-emerald-400"
+                tone="text-success"
               />
               <KpiCard
                 icon={Briefcase}
                 label="Open deals"
                 value={formatMoney(data.kpis.open_deals_value)}
-                tone="text-amber-600 dark:text-amber-400"
+                tone="text-warning"
               />
               <KpiCard
                 icon={Wallet}

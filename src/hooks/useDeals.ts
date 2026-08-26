@@ -402,8 +402,8 @@ export function getDealStageInfo(stage: DealStage): { label: string; color: stri
     prospecting: { label: 'Prospecting', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
     qualified: { label: 'Qualified', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
     proposal: { label: 'Proposal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    negotiation: { label: 'Negotiation', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    closed_won: { label: 'Won', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
+    negotiation: { label: 'Negotiation', color: 'bg-warning/10 text-warning' },
+    closed_won: { label: 'Won', color: 'bg-success/10 text-success' },
     closed_lost: { label: 'Lost', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
   };
   return stages[stage];

@@ -38,8 +38,8 @@ export function LiveSupportDashboardWidget() {
     : 0;
 
   const getSentimentColor = (score: number) => {
-    if (score <= 3) return 'text-green-600 dark:text-green-400';
-    if (score <= 6) return 'text-yellow-600 dark:text-yellow-400';
+    if (score <= 3) return 'text-success';
+    if (score <= 6) return 'text-warning';
     return 'text-red-600 dark:text-red-400';
   };
 
@@ -117,7 +117,7 @@ export function LiveSupportDashboardWidget() {
                 "h-3 w-3",
                 isOnline ? "text-green-500 animate-pulse" : "text-muted-foreground"
               )} />
-              <span className={isOnline ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+              <span className={isOnline ? "text-success" : "text-muted-foreground"}>
                 {isOnline ? 'Teammates available' : 'No teammates online'}
               </span>
             </div>

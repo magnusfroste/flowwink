@@ -50,8 +50,8 @@ import { ReconciliationSignoffPanel } from '@/components/admin/reconciliation/Re
 import { BankFeedsPanel } from '@/components/admin/reconciliation/BankFeedsPanel';
 
 const STATUS_COLORS: Record<BankTxStatus, string> = {
-  unmatched: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  matched: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  unmatched: 'bg-warning/10 text-warning',
+  matched: 'bg-success/10 text-success',
   partial: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   ignored: 'bg-muted text-muted-foreground',
 };
@@ -478,7 +478,7 @@ export default function ReconciliationPage() {
                           </TableCell>
                           <TableCell
                             className={`text-right font-mono ${
-                              reconciled ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+                              reconciled ? 'text-success' : 'text-warning'
                             }`}
                           >
                             {formatCurrency(s.diff_cents, s.currency)}
@@ -767,7 +767,7 @@ export default function ReconciliationPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount</span>
                   <span
-                    className={`font-mono ${bookTx.amount_cents < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
+                    className={`font-mono ${bookTx.amount_cents < 0 ? 'text-red-600 dark:text-red-400' : 'text-success'}`}
                   >
                     {formatCurrency(bookTx.amount_cents, bookTx.currency)}
                   </span>

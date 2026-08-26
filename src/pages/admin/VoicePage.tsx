@@ -443,12 +443,12 @@ function AiReceptionistSection({
             Falls back to voicemail if Gemini is unavailable.
           </div>
           {geminiReady ? (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-1.5 text-xs text-success">
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Gemini API key configured</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <div className="flex items-center gap-1.5 text-xs text-warning">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>Gemini not configured —</span>
               <Link to="/admin/integrations" className="underline hover:no-underline">

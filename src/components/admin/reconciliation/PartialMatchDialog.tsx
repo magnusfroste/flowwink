@@ -79,7 +79,7 @@ export function PartialMatchDialog({ open, onOpenChange, transaction, bankGlAcco
             </div>
             <div className="flex justify-between border-t pt-1">
               <span className="text-muted-foreground">Variance</span>
-              <span className={`font-mono ${varianceCents === 0 ? 'text-muted-foreground' : varianceCents > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`}>
+              <span className={`font-mono ${varianceCents === 0 ? 'text-muted-foreground' : varianceCents > 0 ? 'text-warning' : 'text-blue-600 dark:text-blue-400'}`}>
                 {expectedCents ? fmt(varianceCents) : '—'}
               </span>
             </div>

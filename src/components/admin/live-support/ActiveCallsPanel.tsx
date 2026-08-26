@@ -93,7 +93,7 @@ function CallCard({
       <CardContent className="p-3 space-y-3">
         <div className="flex items-start gap-3">
           <div className="rounded-full bg-green-500/15 p-2.5">
-            <PhoneCall className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <PhoneCall className="h-5 w-5 text-success" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-base truncate">{call.from_number}</p>

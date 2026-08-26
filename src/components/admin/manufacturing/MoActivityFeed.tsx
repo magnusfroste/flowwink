@@ -44,7 +44,7 @@ const ACTION_META: Record<MoEventAction, {
   'mo.completed': {
     label: 'Completed',
     icon: CheckCircle2,
-    iconClass: 'text-emerald-600 dark:text-emerald-400',
+    iconClass: 'text-success',
     rowAccent: 'border-l-emerald-500/60',
   },
 };

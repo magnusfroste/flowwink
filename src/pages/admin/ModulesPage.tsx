@@ -463,7 +463,7 @@ export default function ModulesPage() {
             const usage = edgeFunctionUsage(enabledModuleIds);
             const accent = usage.withinFree
               ? 'bg-muted text-muted-foreground'
-              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+              : 'bg-amber-500/10 text-warning';
             return (
               <a
                 href="#edge-functions-usage"

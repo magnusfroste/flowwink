@@ -40,8 +40,8 @@ const RESOLVED_META: Record<
   StagedResolution,
   { Icon: typeof CheckCircle2; cls: string; label: string }
 > = {
-  executed: { Icon: CheckCircle2, cls: 'text-emerald-600 dark:text-emerald-400', label: 'Utförd' },
-  approved: { Icon: Clock, cls: 'text-amber-600 dark:text-amber-400', label: 'Godkänd – utförande obekräftat' },
+  executed: { Icon: CheckCircle2, cls: 'text-success', label: 'Utförd' },
+  approved: { Icon: Clock, cls: 'text-warning', label: 'Godkänd – utförande obekräftat' },
   rejected: { Icon: XCircle, cls: 'text-muted-foreground', label: 'Avvisad' },
   failed: { Icon: ShieldAlert, cls: 'text-destructive', label: 'Misslyckades' },
   expired: { Icon: Clock, cls: 'text-muted-foreground', label: 'Utgången' },
