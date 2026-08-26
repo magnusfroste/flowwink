@@ -157,8 +157,7 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
     );
 
     const renderIcon = (iconName: string) => {
-      const LucideIcon = icons[iconName as keyof typeof icons];
-      if (!LucideIcon) return null;
+      const LucideIcon = icons[iconName as keyof typeof icons] ?? icons.Sparkles;
       if (iconStyle === 'none') return <LucideIcon className="h-7 w-7 text-accent-foreground" />;
       return (
         <div className={cn(

@@ -22,11 +22,7 @@ interface TimelineBlockProps {
 }
 
 function StepIcon({ iconName, className }: { iconName: string; className?: string }) {
-  const IconComponent = icons[iconName as keyof typeof icons];
-  if (!IconComponent) {
-    const FallbackIcon = icons['Circle'];
-    return <FallbackIcon className={className} />;
-  }
+  const IconComponent = icons[iconName as keyof typeof icons] ?? icons.Circle;
   return <IconComponent className={className} />;
 }
 

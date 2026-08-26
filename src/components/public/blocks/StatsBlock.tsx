@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { StatsBlockData, StatsAnimationStyle } from '@/types/cms';
-import { icons, LucideIcon } from 'lucide-react';
+import { icons } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
@@ -244,8 +244,8 @@ export function StatsBlock({ data }: StatsBlockProps) {
 
   const getIcon = (iconName?: string) => {
     if (!iconName) return null;
-    const Icon = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
-    return Icon ? <Icon className="h-6 w-6" /> : null;
+    const Icon = icons[iconName as keyof typeof icons] ?? icons.Sparkles;
+    return <Icon className="h-6 w-6" />;
   };
 
   const gridCols = {

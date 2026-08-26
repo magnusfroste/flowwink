@@ -153,7 +153,7 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
           stats.length <= 2 ? 'grid-cols-2' : stats.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
         )}>
           {stats.map((stat, index) => {
-            const StatIcon = stat.icon ? icons[stat.icon as keyof typeof icons] : null;
+            const StatIcon = stat.icon ? icons[stat.icon as keyof typeof icons] ?? icons.Sparkles : null;
             return (
               <div key={index} className="text-center p-4 bg-card rounded-xl border">
                 {StatIcon && (

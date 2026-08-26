@@ -54,8 +54,7 @@ function getGapClass(gap?: string): string {
 }
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
-  const IconComponent = icons[name as keyof typeof icons];
-  if (!IconComponent) return null;
+  const IconComponent = icons[name as keyof typeof icons] ?? icons.Sparkles;
   return <IconComponent className={className} />;
 }
 

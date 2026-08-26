@@ -15,9 +15,10 @@ function FeatureIcon({
   iconName: string; 
   iconStyle: 'circle' | 'square' | 'none';
 }) {
-  const LucideIcon = icons[iconName as keyof typeof icons];
-  
-  if (!LucideIcon) return null;
+  // AI-composers hittar på ikonnamn som inte finns i lucides register
+  // ("Sheep", "Cow" — Restagård 2026-08-27); ett okänt namn ska ge
+  // fallback-glyfen på accent-plattan, aldrig ett hål i kortet.
+  const LucideIcon = icons[iconName as keyof typeof icons] ?? icons.Sparkles;
 
   const baseClasses = "h-6 w-6 text-accent-foreground";
   

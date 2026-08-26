@@ -49,6 +49,31 @@ describe('template icon names', () => {
     expect('FileSignature' in icons, 'the alias is now a registry key too').toBe(false);
   });
 
+  it('every dynamic registry lookup in a public block coalesces to a fallback icon', () => {
+    // The other half of the trap: even with the template test above, icon
+    // names arrive from AI composers at runtime (migrate_url compose invented
+    // "Sheep"/"Sausage"/"Cow" on Restagård, 2026-08-27) — no static check can
+    // catch those. So the lookup itself must never render nothing: a bare
+    // `icons[name]` that resolves to undefined leaves a hole where the icon
+    // should be. Convention: every bracket lookup on the lucide registry in a
+    // public block coalesces (`?? icons.Sparkles`, `?? ArrowRight`, …) in the
+    // same statement. Write fallbacks as dot access (`icons.Sparkles`), which
+    // this scan deliberately ignores.
+    const blockDir = join(root, 'src/components/public/blocks');
+    const bad: string[] = [];
+    for (const file of readdirSync(blockDir).filter((f) => f.endsWith('.tsx'))) {
+      const src = readFileSync(join(blockDir, file), 'utf8');
+      for (const m of src.matchAll(/icons\[[^\]]+\][^;]*/g)) {
+        if (!m[0].includes('??')) bad.push(`${file}: ${m[0].trim().split('\n')[0]}`);
+      }
+    }
+    expect(
+      bad,
+      'these lucide registry lookups have no `??` fallback in the same statement — ' +
+        `an AI-invented icon name renders a hole instead of a glyph:\n${bad.join('\n')}`,
+    ).toEqual([]);
+  });
+
   it('blocks with their own icon map only receive names that map exists for', () => {
     // BadgeBlock and SocialProofBlock keep small curated maps keyed by
     // lowercase names, so a lucide-valid name is not automatically safe there.
