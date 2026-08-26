@@ -1491,7 +1491,41 @@ async function executeModuleAction(
     }
 
     case 'media': {
-      const { action = 'list', folder, search, file_path } = args as any;
+      const { action = 'list', folder, search, file_path, url, filename } = args as any;
+
+      if (action === 'import_from_url') {
+        if (!url || !/^https?:\/\//i.test(url)) {
+          throw new Error(`import_from_url requires a http(s) "url" — got: ${url}`);
+        }
+        const resp = await fetch(url, { redirect: 'follow' });
+        if (!resp.ok) throw new Error(`Source fetch failed: HTTP ${resp.status} for ${url}`);
+        const contentType = resp.headers.get('content-type')?.split(';')[0]?.trim() || '';
+        if (!contentType.startsWith('image/')) {
+          throw new Error(`Source is not an image (content-type: ${contentType || 'unknown'}) — import_from_url only sideloads images`);
+        }
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const MAX_BYTES = 15 * 1024 * 1024;
+        if (bytes.byteLength > MAX_BYTES) {
+          throw new Error(`Image is ${(bytes.byteLength / 1024 / 1024).toFixed(1)} MB — the 15 MB import cap protects storage and page weight`);
+        }
+        const targetFolder = (folder || 'imports').replace(/[^a-z0-9_-]/gi, '');
+        const urlBase = new URL(url).pathname.split('/').pop() || 'image';
+        const safeName = (filename || urlBase)
+          .replace(/[^a-zA-Z0-9._-]/g, '-')
+          .replace(/-{2,}/g, '-')
+          .toLowerCase();
+        const path = `${targetFolder}/${safeName}`;
+        // upsert: same source name lands on the same path — re-imports overwrite
+        // instead of accreting copies, so the returned URL is stable.
+        const { error: upErr } = await supabase.storage
+          .from('cms-images')
+          .upload(path, bytes, { contentType, upsert: true });
+        if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
+        const { data: { publicUrl } } = supabase.storage
+          .from('cms-images')
+          .getPublicUrl(path);
+        return { imported: true, path, url: publicUrl, bytes: bytes.byteLength, content_type: contentType, source_url: url };
+      }
 
       if (action === 'list') {
         const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];

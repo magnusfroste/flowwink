@@ -13,7 +13,7 @@ import {
 const MEDIA_SKILLS: SkillSeed[] = [
   {
     name: 'media_browse',
-    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, and clearing library. Use when: finding an uploaded image; managing media assets; cleaning up unused files. NOT for: uploading new files (N/A); updating site branding logo (site_branding_update).',
+    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, and importing an image from an external URL into storage (action=import_from_url). Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
     category: 'content',
     handler: 'module:media',
     scope: 'internal',
@@ -21,7 +21,7 @@ const MEDIA_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'media_browse',
-        description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, and clearing library. Use when: finding an uploaded image; managing media assets; cleaning up unused files. NOT for: uploading new files (N/A); updating site branding logo (site_branding_update).',
+        description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, clearing library, and importing an image from an external URL into storage (action=import_from_url). Use when: finding an uploaded image; managing media assets; cleaning up unused files; sideloading an externally hosted image so the site stops hotlinking it. NOT for: uploading local file bytes (no base64 lane); updating site branding logo (site_branding_update).',
         parameters: {
           type: 'object',
           properties: {
@@ -32,6 +32,7 @@ const MEDIA_SKILLS: SkillSeed[] = [
                 'get_url',
                 'delete',
                 'clear_all',
+                'import_from_url',
               ],
             },
             folder: {
@@ -45,6 +46,14 @@ const MEDIA_SKILLS: SkillSeed[] = [
             file_path: {
               type: 'string',
               description: 'File path for delete/get_url',
+            },
+            url: {
+              type: 'string',
+              description: 'For import_from_url: http(s) URL of the image to sideload (fetched server-side, max 15 MB, must be image/*)',
+            },
+            filename: {
+              type: 'string',
+              description: 'For import_from_url: target filename (defaults to the URL basename, sanitized). Same name overwrites — stable URLs on re-import.',
             },
           },
           required: [
@@ -61,13 +70,15 @@ Browse, search, and manage files in the media library.
 - Need to find a specific media file URL
 - Cleanup: delete unused media
 ### Parameters
-- **action**: Required. list, get_url, delete, clear_all.
-- **folder**: Folder filter: pages, imports, templates, uploads, blog.
+- **action**: Required. list, get_url, delete, clear_all, import_from_url.
+- **folder**: Folder filter: pages, imports, templates, uploads, blog. For import_from_url it is the TARGET folder (default imports).
 - **search**: Search by filename.
 - **file_path**: For delete/get_url.
+- **url** + optional **filename**: For import_from_url. The image is fetched server-side and stored in cms-images; the result carries the permanent public url — rewrite page blocks/branding to it so nothing keeps hotlinking the source.
 ### Edge cases
 - clear_all is DESTRUCTIVE. Requires confirmation.
-- get_url returns a signed URL for temporary access.`,
+- get_url returns a signed URL for temporary access.
+- import_from_url refuses non-image content-types and files over 15 MB; same filename overwrites (idempotent re-import).`,
   },
   {
     name: 'media_set_alt_text',
