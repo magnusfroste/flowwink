@@ -533,7 +533,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="solid">Solid background</SelectItem>
-                  <SelectItem value="transparent">Transparent</SelectItem>
+                  <SelectItem value="transparent">Transparent (overlays the hero)</SelectItem>
                   <SelectItem value="blur">Blur (glass effect)</SelectItem>
                 </SelectContent>
               </Select>

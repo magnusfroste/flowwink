@@ -73,3 +73,18 @@ describe('renderaren äger skalet', () => {
     }
   });
 });
+
+describe('transparent header är ett överlägg', () => {
+  /**
+   * bg-transparent i dokumentflödet tar bort färgen men inte PLATSEN —
+   * headern blev ett band ovanför heron (optic 2026-08-26). Kontraktet:
+   * transparent = absolut över innehållet, scrollar bort med sidan;
+   * följ-med-vid-scroll är blur/solid + sticky.
+   */
+  it('transparent positionerar absolut och ärver aldrig sticky-flödet', () => {
+    const src = readFileSync(
+      join(__dirname, '../../components/public/PublicNavigation.tsx'), 'utf-8');
+    expect(src).toMatch(/isOverlay\s*=\s*style === 'transparent'/);
+    expect(src).toMatch(/isOverlay[\s\S]{0,80}absolute top-0 left-0 right-0/);
+  });
+});

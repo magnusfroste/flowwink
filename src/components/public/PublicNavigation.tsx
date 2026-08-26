@@ -101,13 +101,24 @@ export function PublicNavigation() {
       lg: 'shadow-lg',
     };
     
+    // Transparent är ett ÖVERLÄGG, inte en färg. bg-transparent i normalt
+    // dokumentflöde tar bara bort färgen men behåller PLATSEN — headern blev
+    // ett sidbakgrundsfärgat band OVANFÖR heron i stället för att sväva över
+    // den (uppmätt på optic 2026-08-26; redigeraren lovar 'Minimalist
+    // transparent header'). Kontraktet nu: transparent = absolut positionerad
+    // över innehållet — heron fortsätter upp bakom den — och scrollar bort
+    // med sidan (parad med en hero, som mönstret alltid används). Vill man ha
+    // följ-med-vid-scroll är det blur/solid + sticky som är valet.
+    const isOverlay = style === 'transparent';
     const baseClasses = cn(
       "z-50",
-      headerSettings.stickyHeader !== false && "sticky top-0",
+      isOverlay
+        ? "absolute top-0 left-0 right-0"
+        : headerSettings.stickyHeader !== false && "sticky top-0",
       showBorder && "border-b",
       shadowClasses[shadow]
     );
-    
+
     switch (style) {
       case 'transparent':
         return cn(baseClasses, "bg-transparent");
