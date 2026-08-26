@@ -140,7 +140,7 @@ export function BadgeBlock({ data }: BadgeBlockProps) {
   };
 
   return (
-    <section className="py-12">
+    <section>
       <div className="container mx-auto px-4">
         {/* Header */}
         {(title || subtitle) && (

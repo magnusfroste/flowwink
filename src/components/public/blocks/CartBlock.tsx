@@ -35,7 +35,7 @@ export function CartBlock({ data }: CartBlockProps) {
 
   if (items.length === 0) {
     return (
-      <section className="py-12 md:py-16">
+      <section>
         <div className="max-w-2xl mx-auto px-4">
           <Card className="p-8 text-center">
             <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
@@ -54,7 +54,7 @@ export function CartBlock({ data }: CartBlockProps) {
   }
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="max-w-3xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

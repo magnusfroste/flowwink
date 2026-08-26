@@ -66,7 +66,7 @@ export function TabsBlock({ data }: TabsBlockProps) {
   const vs = variantStyles[variant] ?? variantStyles.underline;
 
   return (
-    <section className="py-16 px-6">
+    <section>
       <div className="container mx-auto max-w-6xl">
         {(data.title || data.subtitle) && (
           <div className="text-center mb-8">

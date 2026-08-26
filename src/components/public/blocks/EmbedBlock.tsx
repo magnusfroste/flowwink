@@ -123,7 +123,7 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
   // If custom embed code is provided, use it
   if (data.customEmbed) {
     return (
-      <section className="py-8 px-6">
+      <section>
         <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
           <div className={cn(variantStyles[variant] ?? variantStyles.default)}>
             <div 
@@ -143,7 +143,7 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
 
   if (!embedUrl && !data.url) {
     return (
-      <section className="py-8 px-6">
+      <section>
         <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
           <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
             Paste an embed URL to display content
@@ -154,7 +154,7 @@ export function EmbedBlock({ data }: EmbedBlockProps) {
   }
 
   return (
-    <section className="py-8 px-6">
+    <section>
       <div className={cn('container mx-auto', maxWidthStyles[maxWidth] ?? maxWidthStyles.lg)}>
         <div className={cn(variantStyles[variant] ?? variantStyles.default)}>
           <div className={cn(aspectRatioStyles[data.aspectRatio || 'auto'] ?? aspectRatioStyles.auto, 'w-full')}>

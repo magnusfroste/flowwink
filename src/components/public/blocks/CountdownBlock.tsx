@@ -116,7 +116,7 @@ export function CountdownBlock({ data }: CountdownBlockProps) {
 
   if (!targetDate) {
     return (
-      <section className="py-12">
+      <section>
         <div className="max-w-4xl mx-auto px-4 text-center text-muted-foreground">
           Please set a target date for the countdown
         </div>

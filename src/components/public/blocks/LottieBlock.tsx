@@ -135,7 +135,7 @@ export function LottieBlock({ data }: LottieBlockProps) {
 
   if (!data.src) {
     return (
-      <section className="py-8 px-6">
+      <section>
         <div className="container mx-auto">
           <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground max-w-md mx-auto">
             Add a Lottie animation URL to display
@@ -147,7 +147,7 @@ export function LottieBlock({ data }: LottieBlockProps) {
 
   if (!Player) {
     return (
-      <section className="py-8 px-6">
+      <section>
         <div className="container mx-auto">
           <div 
             className={cn(
@@ -170,7 +170,7 @@ export function LottieBlock({ data }: LottieBlockProps) {
   };
 
   return (
-    <section className="py-8 px-6">
+    <section>
       <div className="container mx-auto">
         <div
           ref={containerRef}

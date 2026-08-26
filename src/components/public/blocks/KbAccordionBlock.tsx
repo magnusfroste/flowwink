@@ -88,7 +88,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
 
   if (isLoading) {
     return (
-      <section className="py-16 px-4">
+      <section>
         <div className="container mx-auto max-w-3xl">
           {title && <Skeleton className="h-8 w-64 mx-auto mb-4" />}
           {subtitle && <Skeleton className="h-5 w-96 mx-auto mb-8" />}
@@ -107,7 +107,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
   }
 
   return (
-    <section className="py-16 px-4">
+    <section>
       <div className="container mx-auto max-w-3xl">
         {(title || subtitle) && (
           <div className="text-center mb-10">

@@ -37,7 +37,7 @@ export function ShippingInfoBlock({ data }: ShippingInfoBlockProps) {
   const variant = data.variant || 'list';
 
   return (
-    <section className="py-10 md:py-14">
+    <section>
       <div className="max-w-4xl mx-auto px-4">
         {data.title && (
           <h2 className="font-serif text-2xl font-semibold mb-6">{data.title}</h2>

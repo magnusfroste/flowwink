@@ -347,7 +347,7 @@ export function ConsultantMatcherBlock({ data }: ConsultantMatcherBlockProps) {
   }, [jobDescription, toast]);
 
   return (
-    <section className="w-full py-16 md:py-24">
+    <section className="w-full">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">

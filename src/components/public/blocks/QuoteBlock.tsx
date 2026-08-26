@@ -10,7 +10,7 @@ export function QuoteBlock({ data }: QuoteBlockProps) {
   const isStyled = data.variant === 'styled';
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="container mx-auto px-4 max-w-4xl">
         <blockquote
           className={cn(

@@ -439,7 +439,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   // Success state
   if (isSubmitted) {
     return (
-      <section className="py-12 md:py-16">
+      <section>
         <div className="container max-w-2xl mx-auto px-4">
           <Card className="text-center py-12">
             <CardContent>
@@ -499,7 +499,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
   // Render based on variant
   if (data.variant === 'card') {
     return (
-      <section className="py-12 md:py-16">
+      <section>
         <div className="container max-w-2xl mx-auto px-4">
           <Card>
             {(data.title || data.description) && (
@@ -519,7 +519,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
   if (data.variant === 'minimal') {
     return (
-      <section className="py-12 md:py-16">
+      <section>
         <div className="container max-w-2xl mx-auto px-4">
           {data.title && (
             <h2 className="text-2xl font-serif font-semibold mb-2">{data.title}</h2>
@@ -535,7 +535,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
   // Default variant
   return (
-    <section className="py-12 md:py-16 bg-muted/30">
+    <section className="bg-muted/30">
       <div className="container max-w-2xl mx-auto px-4">
         {data.title && (
           <h2 className="text-3xl font-serif font-semibold text-center mb-3">{data.title}</h2>

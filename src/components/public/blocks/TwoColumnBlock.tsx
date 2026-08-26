@@ -141,7 +141,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   // Text-Text layout mode
   if (isTextTextLayout) {
     return (
-      <section className="px-6" style={{ backgroundColor: data.backgroundColor }}>
+      <section className="" style={{ backgroundColor: data.backgroundColor }}>
         <div className="container mx-auto max-w-6xl">
           {/* Header */}
           {hasHeader && (

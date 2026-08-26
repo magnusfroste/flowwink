@@ -67,7 +67,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
 
   if (isLoading) {
     return (
-      <section className="py-12 md:py-16">
+      <section>
         <div className="max-w-6xl mx-auto px-4">
           <div className="animate-pulse grid gap-6 md:grid-cols-3">
             {[1, 2, 3].map(i => (
@@ -84,7 +84,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   }
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         {(data.title || data.subtitle) && (

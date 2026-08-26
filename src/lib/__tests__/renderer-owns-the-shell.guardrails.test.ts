@@ -27,16 +27,11 @@ const FULL_BLEED = new Set([
   'SectionDividerBlock', 'FeaturedCarouselBlock',
 ]);
 
-/** Kända dubbelskal (Lovable-arv) i väntan på normaliseringssvepet. */
-const KNOWN_DOUBLE_SHELLS = new Set([
-  'AccordionBlock', 'ArticleGridBlock', 'BadgeBlock', 'BentoGridBlock',
-  'CTABlock', 'CartBlock', 'ConsultantMatcherBlock', 'ContactBlock',
-  'CountdownBlock', 'EmbedBlock', 'FormBlock', 'InfoBoxBlock',
-  'KbAccordionBlock', 'KbFeaturedBlock', 'KbHubBlock', 'LatestPostsBlock',
-  'LinkGridBlock', 'LottieBlock', 'ProductsBlock', 'ProgressBlock',
-  'QuoteBlock', 'ShippingInfoBlock', 'SocialProofBlock', 'TableBlock',
-  'TabsBlock', 'TestimonialsBlock', 'TwoColumnBlock', 'YouTubeBlock',
-]);
+/** Målade sektioner = PANELER: egen padding är INVÄNDIG och legitim, men då
+ * MÅSTE sektionen bära färg + systemets panelradie (cta-doktrinen #278).
+ * Svepet 2026-08-26 tömde dubbelskalslistan: 26 lagerskal strippade (endast
+ * padding, struktur orörd), Contact omklassad till panel, CTA var redan panel. */
+const PANEL_SECTIONS = new Set(['CTABlock', 'ContactBlock']);
 
 const OWN_SHELL = /<section className="[^"]*\bp[xy]-/;
 
@@ -47,24 +42,28 @@ describe('renderaren äger skalet', () => {
     expect(src).not.toContain('container mx-auto');
   });
 
-  it('populationen växer aldrig — nya block ärver inte dubbelskalet, normaliserade återfaller inte', () => {
+  it('populationen är NOLL — inget icke-panel-block bär eget sektionsskal', () => {
     const offenders: string[] = [];
     for (const f of readdirSync(DIR).filter((x) => x.endsWith('Block.tsx'))) {
       const name = f.replace('.tsx', '');
-      if (FULL_BLEED.has(name) || KNOWN_DOUBLE_SHELLS.has(name)) continue;
+      if (FULL_BLEED.has(name) || PANEL_SECTIONS.has(name)) continue;
       if (OWN_SHELL.test(readFileSync(join(DIR, f), 'utf-8'))) offenders.push(name);
     }
-    expect(offenders, `dubbelskal utanför den kända listan: ${offenders.join(', ')}`).toEqual([]);
+    expect(offenders, `dubbelskal: ${offenders.join(', ')}`).toEqual([]);
   });
 
-  it('den kända listan krymper bara — ett normaliserat block plockas ur listan, aldrig tvärtom', () => {
-    // Ett namn i listan vars fil INTE längre har eget skal = normaliserat men
-    // kvarglömt i listan → påminnelsen att krympa den.
-    const stale: string[] = [];
-    for (const name of KNOWN_DOUBLE_SHELLS) {
+  it('en panel med egen padding MÅSTE bära färg och panelradie — annars är den ett lagerskal', () => {
+    for (const name of PANEL_SECTIONS) {
       const src = readFileSync(join(DIR, `${name}.tsx`), 'utf-8');
-      if (!OWN_SHELL.test(src)) stale.push(name);
+      const sections = src.match(/<section[\s\S]{0,400}?className="[^"]*\bp[xy]-[^"]*"/g) ?? [];
+      expect(sections.length, `${name}: panelstatus utan padded sektion`).toBeGreaterThan(0);
+      for (const sec of sections) {
+        // Panelens strukturella kontrakt är RADIEN. Färgen kan komma från en
+        // bg-klass ELLER en absolut bild (cta with-image) — den pinnas inte
+        // textuellt; en padded sektion utan radie är däremot alltid ett
+        // lagerskal i förklädnad.
+        expect(sec, `${name}: padded sektion utan panelradie`).toContain('rounded-[var(--radius-block');
+      }
     }
-    expect(stale, `normaliserade men kvar i listan: ${stale.join(', ')}`).toEqual([]);
   });
 });

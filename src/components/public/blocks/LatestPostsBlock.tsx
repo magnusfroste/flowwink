@@ -44,7 +44,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
   });
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="container mx-auto px-4">
         {(data.title || data.subtitle) && (
           <div className="mb-10 text-center">

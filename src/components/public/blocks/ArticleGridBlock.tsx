@@ -16,7 +16,7 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
   };
 
   return (
-    <section className="py-16 px-6">
+    <section>
       <div className="container mx-auto">
         {data.title && (
           <h2 className="font-serif text-3xl font-bold mb-8">{data.title}</h2>

@@ -28,7 +28,7 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
   };
 
   return (
-    <section className="py-16 px-6">
+    <section>
       <div className="container mx-auto">
         <div className={`grid gap-6 ${gridCols[data.columns] ?? gridCols[3]}`}>
           {data.links.map((link, index) => {

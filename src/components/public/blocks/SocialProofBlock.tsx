@@ -409,7 +409,7 @@ export function SocialProofBlock({ data }: SocialProofBlockProps) {
   }
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="container mx-auto px-4">
         {/* Header */}
         {(title || subtitle || showLiveIndicator) && (

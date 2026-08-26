@@ -39,7 +39,7 @@ export function YouTubeBlock({ data }: YouTubeBlockProps) {
   }
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
           <iframe
