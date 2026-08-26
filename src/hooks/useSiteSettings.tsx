@@ -85,6 +85,17 @@ export interface BrandingSettings {
   
   // Colors (HSL format)
   primaryColor?: string;
+  /**
+   * Optional dark-theme override for primary. The design system was born with
+   * TWO primaries (index.css: deep 220 100% 26% light / lifted 210 60% 60%
+   * dark) but branding used to flatten both to one value — the unsatisfiable
+   * contrast loop Magnus hit when locking optic to dark (2026-08-26): links on
+   * dark want a light primary, which then fails as a surface under the theme's
+   * near-black foreground. Unset = primaryColor is used in both themes, with
+   * the foreground auto-derived per theme (see applyBrandingToDocument).
+   * Naming follows the logoDark convention.
+   */
+  primaryColorDark?: string;
   secondaryColor?: string;
   accentColor?: string;
   

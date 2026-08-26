@@ -63,20 +63,29 @@ function loadGoogleFont(fontName: string, doc: Document = document) {
 export function applyBrandingToDocument(branding: BrandingSettings, doc: Document = document) {
   const root = doc.documentElement;
   
+  // The document CARRIES its theme (next-themes stamps `dark` on <html>, and
+  // PreviewFrame mirrors it into its own root) — so per-theme brand values
+  // resolve from the doc we are painting, never from module state. Same rule
+  // as useScrollAnimation's ownerDocument resolution.
+  const isDark = root.classList.contains('dark');
+
+  // House pattern promoted from secondary (it had this since birth; primary
+  // never got it — the adoption class again): a brand surface derives its own
+  // text color from its lightness, so black-on-dark-blue cannot be authored.
+  const contrastForeground = (hsl: string): string => {
+    const lightness = parseFloat(hsl.split(/\s+/)[2] || '50');
+    return lightness < 40 ? '0 0% 98%' : '0 0% 9%';
+  };
+
   // Apply colors
-  if (branding.primaryColor) {
-    root.style.setProperty('--primary', branding.primaryColor);
+  const effectivePrimary = (isDark && branding.primaryColorDark) || branding.primaryColor;
+  if (effectivePrimary) {
+    root.style.setProperty('--primary', effectivePrimary);
+    root.style.setProperty('--primary-foreground', contrastForeground(effectivePrimary));
   }
   if (branding.secondaryColor) {
     root.style.setProperty('--secondary', branding.secondaryColor);
-    // Auto-derive contrasting foreground for secondary
-    const parts = branding.secondaryColor.split(/\s+/);
-    const lightness = parseFloat(parts[2] || '50');
-    if (lightness < 40) {
-      root.style.setProperty('--secondary-foreground', '0 0% 98%');
-    } else {
-      root.style.setProperty('--secondary-foreground', '0 0% 9%');
-    }
+    root.style.setProperty('--secondary-foreground', contrastForeground(branding.secondaryColor));
   }
   if (branding.accentColor) {
     root.style.setProperty('--accent', branding.accentColor);
@@ -152,6 +161,7 @@ function resetBrandingToDefaults() {
   root.style.removeProperty('--accent');
   root.style.removeProperty('--font-serif');
   root.style.removeProperty('--font-sans');
+  root.style.removeProperty('--primary-foreground');
   root.style.removeProperty('--radius');
   root.style.removeProperty('--radius-block');
 }
@@ -161,7 +171,7 @@ interface BrandingProviderProps {
 }
 
 export function BrandingProvider({ children }: BrandingProviderProps) {
-  const { setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [pathname, setPathname] = useState(window.location.pathname);
   const themeSetRef = useRef(false);
   
@@ -211,6 +221,8 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
 
   useEffect(() => {
     if (branding && !isAdminRoute) {
+      // resolvedTheme i deps: per-tema-primären måste appliceras OM när temat
+      // flippar — dokumentklassen är sanningen appliceringen läser.
       applyBrandingToDocument(branding);
       themeSetRef.current = false;
       
@@ -244,7 +256,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       resetBrandingToDefaults();
       themeSetRef.current = true;
     }
-  }, [branding, setTheme, isAdminRoute]);
+  }, [branding, setTheme, isAdminRoute, resolvedTheme]);
 
   return (
     <BrandingContext.Provider value={{ branding: branding || null, isLoading }}>

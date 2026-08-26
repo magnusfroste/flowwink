@@ -56,6 +56,9 @@ export function PreviewFrame({ width, title, branding, children }: PreviewFrameP
 
     const syncRootClass = () => {
       doc.documentElement.className = document.documentElement.className;
+      // Per-tema-primären läses ur dokumentklassen — när temat flippar måste
+      // ramen brandas om, inte bara byta klass.
+      if (branding) applyBrandingToDocument(branding, doc);
     };
     syncRootClass();
     const themeObserver = new MutationObserver(syncRootClass);
