@@ -97,7 +97,11 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
 
         {/* Lightbox */}
         <Dialog open={lightboxIndex !== null} onOpenChange={closeLightbox}>
-          <DialogContent className="max-w-5xl p-0 bg-black/95 border-none">
+          {/* [&>button]:hidden gömmer DialogContents INBYGGDA kryss (sidebar-
+              prejudikatet): mot bg-black/95 är det temafärgade krysset nära
+              osynligt — därför finns blockets egna vita — och två kryss i
+              samma hörn var dubbelstängningen Magnus såg 2026-08-26. */}
+          <DialogContent className="max-w-5xl p-0 bg-black/95 border-none [&>button]:hidden">
             <div className="relative">
               <Button
                 variant="ghost"
