@@ -109,11 +109,18 @@ export function PublicNavigation() {
     // över innehållet — heron fortsätter upp bakom den — och scrollar bort
     // med sidan (parad med en hero, som mönstret alltid används). Vill man ha
     // följ-med-vid-scroll är det blur/solid + sticky som är valet.
+    // Båda rattarna talar sanning: transparent är alltid ett ÖVERLÄGG (heron
+    // fortsätter upp bakom), och sticky-ratten avgör om överlägget FÖLJER MED
+    // (fixed) eller scrollar bort (absolute). Preset-matrisen valde detta
+    // långt före oss: clean = transparent + sticky:false, sticky-varianten =
+    // blur + sticky:true. En manuell kombination transparent+sticky är
+    // författarens uttryckliga val av två rattar — den ignoreras inte tyst.
     const isOverlay = style === 'transparent';
+    const overlayFollows = headerSettings.stickyHeader !== false;
     const baseClasses = cn(
       "z-50",
       isOverlay
-        ? "absolute top-0 left-0 right-0"
+        ? (overlayFollows ? "fixed top-0 left-0 right-0" : "absolute top-0 left-0 right-0")
         : headerSettings.stickyHeader !== false && "sticky top-0",
       showBorder && "border-b",
       shadowClasses[shadow]

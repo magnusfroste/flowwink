@@ -81,10 +81,21 @@ describe('transparent header är ett överlägg', () => {
    * transparent = absolut över innehållet, scrollar bort med sidan;
    * följ-med-vid-scroll är blur/solid + sticky.
    */
-  it('transparent positionerar absolut och ärver aldrig sticky-flödet', () => {
+  it('transparent är alltid överlägg — och sticky-ratten väljer fixed/absolute, aldrig ignorerad', () => {
     const src = readFileSync(
       join(__dirname, '../../components/public/PublicNavigation.tsx'), 'utf-8');
     expect(src).toMatch(/isOverlay\s*=\s*style === 'transparent'/);
-    expect(src).toMatch(/isOverlay[\s\S]{0,80}absolute top-0 left-0 right-0/);
+    expect(src).toMatch(/overlayFollows \? "fixed top-0 left-0 right-0" : "absolute top-0 left-0 right-0"/);
+  });
+
+  it('preset-matrisen förblir koherent: clean=transparent+ej sticky, sticky=blur+sticky', () => {
+    const presets = readFileSync(
+      join(__dirname, '../../hooks/useGlobalBlocks.ts'), 'utf-8');
+    const clean = presets.match(/clean: \{[\s\S]*?\}/)?.[0] ?? '';
+    const sticky = presets.match(/sticky: \{[\s\S]*?\}/)?.[0] ?? '';
+    expect(clean).toContain('stickyHeader: false');
+    expect(clean).toContain("backgroundStyle: 'transparent'");
+    expect(sticky).toContain('stickyHeader: true');
+    expect(sticky).toContain("backgroundStyle: 'blur'");
   });
 });
