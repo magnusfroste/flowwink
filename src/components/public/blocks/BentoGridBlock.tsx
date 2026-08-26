@@ -180,10 +180,16 @@ export function BentoGridBlock({ data }: BentoGridBlockProps) {
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors duration-300"
                       style={{
+                        // Fallbacken följer systemets ikonkanon: accent-plattan
+                        // (bg-accent/50 + accent-foreground) som 14 block kör —
+                        // features på /product bland dem. Primary-fallbacken här
+                        // var avvikaren teamet såg som "olika ikonfärger mellan
+                        // landing och /product" (2026-08-26). item.accentColor
+                        // är ett PER-CELL-innehållsval och rör vi aldrig.
                         backgroundColor: item.accentColor
                           ? `${item.accentColor}15`
-                          : 'hsl(var(--primary) / 0.1)',
-                        color: item.accentColor || 'hsl(var(--primary))',
+                          : 'hsl(var(--accent) / 0.5)',
+                        color: item.accentColor || 'hsl(var(--accent-foreground))',
                       }}
                     >
                       <LucideIcon name={item.icon} className="h-6 w-6" />

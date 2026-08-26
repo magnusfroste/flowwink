@@ -107,3 +107,18 @@ describe('statusfärger bär tokens, inte palett', () => {
     expect(offenders, offenders.join('; ')).toEqual([]);
   });
 });
+
+describe('ikonplattornas fallback följer accentkanon', () => {
+  /**
+   * 14 block kör accent-plattan (bg-accent/50 + text-accent-foreground) för
+   * fristående ikoner; bentos primary-fallback var avvikaren teamet såg som
+   * "olika ikonfärger mellan landing och /product" (2026-08-26). Per-cell-
+   * accentColor är innehållsval och pinnas inte — bara FALLBACKEN.
+   */
+  it('BentoGrid-fallbacken är accentfamiljen, inte primary', () => {
+    const src = readFileSync(join(__dirname, '../../components/public/blocks/BentoGridBlock.tsx'), 'utf-8');
+    expect(src).toContain("'hsl(var(--accent) / 0.5)'");
+    expect(src).toContain("'hsl(var(--accent-foreground))'");
+    expect(src).not.toContain("'hsl(var(--primary) / 0.1)'");
+  });
+});

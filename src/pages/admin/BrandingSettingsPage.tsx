@@ -741,7 +741,7 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                       />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Highlights</p>
-                        <p className="text-xs text-muted-foreground">Hover, focus states</p>
+                        <p className="text-xs text-muted-foreground">Icon tiles, hover, focus states</p>
                       </div>
                     </div>
                     {/* Contrast: white text on accent background */}
