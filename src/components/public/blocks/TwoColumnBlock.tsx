@@ -201,8 +201,13 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
 
   // Image+Text layout (original)
   return (
-    <section 
-      className="px-6"
+    <section
+      /* px-6 här var dubbelskalet som ÖVERLEVDE #287-svepet: skannern läste
+         bara enradiga <section className="…"> och det här attributet bor på
+         egen rad. Uppmätt på /why (mobil): 16+24 = 40 px per sida mot
+         grannarnas 16. backgroundColor får panelbehandling (samma linje som
+         TextBlock) — målad yta bär radie + invändig padding, omålad bär inget. */
+      className={data.backgroundColor ? 'rounded-[var(--radius-block,1rem)] p-6 md:p-8' : undefined}
       style={{ backgroundColor: data.backgroundColor }}
     >
       <div className="container mx-auto max-w-6xl">

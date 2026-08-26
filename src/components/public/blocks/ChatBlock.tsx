@@ -47,7 +47,7 @@ export function ChatBlock({ data }: ChatBlockProps) {
   if (data.variant === 'card') {
     return (
       <section
-        className="py-12 px-4"
+       
         {...(hasTitle ? { 'aria-labelledby': headingId } : { 'aria-label': 'Chat' })}
       >
         <div className="container max-w-4xl mx-auto">
@@ -69,7 +69,7 @@ export function ChatBlock({ data }: ChatBlockProps) {
 
   return (
     <section
-      className="py-8"
+     
       {...(hasTitle ? { 'aria-labelledby': headingId } : { 'aria-label': 'Chat' })}
     >
       <div className="container max-w-4xl mx-auto">

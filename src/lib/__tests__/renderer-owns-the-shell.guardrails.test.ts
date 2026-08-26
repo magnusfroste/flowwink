@@ -33,12 +33,18 @@ const FULL_BLEED = new Set([
  * padding, struktur orörd), Contact omklassad till panel, CTA var redan panel. */
 const PANEL_SECTIONS = new Set(['CTABlock', 'ContactBlock']);
 
-const OWN_SHELL = /<section className="[^"]*\bp[xy]-/;
+// Multiline-medveten: #287-svepets skanner läste bara enradiga
+// <section className="…"> — TwoColumn (attribut på egen rad) och ChatBlock
+// slank igenom, upptäckta av Magnus på /why (mobil) 2026-08-26. Vakten
+// läser nu HELA öppningstaggen, radbrytningar inräknade.
+const SECTION_TAG = /<section\b[^>]*?>/gs;
+const ownShell = (src: string): boolean =>
+  [...src.matchAll(SECTION_TAG)].some((m) => /className="[^"]*\bp[xy]-/.test(m[0]));
 
 describe('renderaren äger skalet', () => {
   it('TextBlock bär inget eget sektionsskal — det rapporterade blocket är normaliserat', () => {
     const src = readFileSync(join(DIR, 'TextBlock.tsx'), 'utf-8');
-    expect(src).not.toMatch(OWN_SHELL);
+    expect(ownShell(src)).toBe(false);
     expect(src).not.toContain('container mx-auto');
   });
 
@@ -47,7 +53,7 @@ describe('renderaren äger skalet', () => {
     for (const f of readdirSync(DIR).filter((x) => x.endsWith('Block.tsx'))) {
       const name = f.replace('.tsx', '');
       if (FULL_BLEED.has(name) || PANEL_SECTIONS.has(name)) continue;
-      if (OWN_SHELL.test(readFileSync(join(DIR, f), 'utf-8'))) offenders.push(name);
+      if (ownShell(readFileSync(join(DIR, f), 'utf-8'))) offenders.push(name);
     }
     expect(offenders, `dubbelskal: ${offenders.join(', ')}`).toEqual([]);
   });
