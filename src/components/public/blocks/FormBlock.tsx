@@ -535,7 +535,15 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
   // Default variant
   return (
-    <section className="bg-muted/30">
+    {/* Kortet ÄGER sin yta (bg-card) — det tonade sektionsbandet bakom var
+        1104 px brett kring ett 640 px kort och lästes som "bakgrund som går
+        utanför formuläret" (Magnus, optic /contact 2026-08-27, verifierat i
+        levande computed-kedja). #287-svepet strippade padding men lämnade
+        färg medvetet; det här är färgens tur: en målad sektion utan radie
+        runt ett kort med egen yta är ingen panel — den är ett band utan
+        ägare. Sektionsbakgrund väljs i så fall via sectionBackground-ratten,
+        inte hårdkodas här. */}
+    <section>
       <div className="container max-w-2xl mx-auto px-4">
         {data.title && (
           <h2 className="text-3xl font-serif font-semibold text-center mb-3">{data.title}</h2>

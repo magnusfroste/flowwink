@@ -102,3 +102,19 @@ describe('transparent header är ett överlägg', () => {
     expect(sticky).toContain("backgroundStyle: 'blur'");
   });
 });
+
+describe('formulärets kort äger sin yta', () => {
+  /**
+   * FormBlock bar en hårdkodad bg-muted/30 på sin innersektion — ett 1104px
+   * tonat band bakom 640px-kortet, läst som "bakgrund utanför formuläret"
+   * (optic 2026-08-27, verifierad computed-kedja). Kortet (bg-card) är
+   * formulärets yta; sektionsbakgrund är sectionBackground-rattens jobb.
+   */
+  it('FormBlock målar aldrig sina egna sektioner', () => {
+    const src = readFileSync(
+      join(__dirname, '../../components/public/blocks/FormBlock.tsx'), 'utf-8');
+    for (const m of src.matchAll(SECTION_TAG)) {
+      expect(m[0], `målad sektion i FormBlock: ${m[0].slice(0, 80)}`).not.toMatch(/className="[^"]*bg-/);
+    }
+  });
+});
