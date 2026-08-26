@@ -73,9 +73,18 @@ export function TextBlock({ data }: TextBlockProps) {
     }
   };
   
-  return (
-    <section className="py-16 px-6" style={{ backgroundColor: data.backgroundColor }}>
-      <div className="container mx-auto max-w-6xl">
+  // Inget eget sektionsskal: BlockRenderer äger section/container/padding för
+  // icke-full-bleed-block (CLAUDE.md-konventionen). Det gamla dubbelskalet
+  // (py-16 px-6 + egen container OVANPÅ wrapperns px-4 + py-8..16) gav 40 px
+  // sidopadding mot grannarnas 16 på mobil och tredubbel vertikal rytm —
+  // uppmätt på iPhone 13 via optic 2026-08-26. 28 systerblock bär samma arv;
+  // de normaliseras i ett eget svep (fleet-synligt designbeslut).
+  //
+  // data.backgroundColor (oanvänd i mallar och på optic, bevarad för
+  // bakåtkompatibilitet): renderas som PANEL med systemets panelradie — en
+  // färgad yta inuti containern är samma form som cta/newsletter.
+  const inner = (
+    <>
         {/* Design System 2026: Premium Header */}
         {hasHeader && (
           <div className="mb-8 md:mb-12">
@@ -108,7 +117,18 @@ export function TextBlock({ data }: TextBlockProps) {
             prose-p:text-lg prose-p:leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
-      </div>
-    </section>
+    </>
   );
+
+  if (data.backgroundColor) {
+    return (
+      <div
+        className="rounded-[var(--radius-block,1rem)] p-6 md:p-8"
+        style={{ backgroundColor: data.backgroundColor }}
+      >
+        {inner}
+      </div>
+    );
+  }
+  return inner;
 }
