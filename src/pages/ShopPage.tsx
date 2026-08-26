@@ -13,6 +13,7 @@ import { useVariantProductIds } from '@/hooks/useProductVariants';
 import { useCart } from '@/contexts/CartContext';
 import { useSeoSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
+import { useUiText } from '@/lib/ui-text';
 
 export default function ShopPage() {
   const { data: products = [], isLoading } = useProducts({ activeOnly: true });
@@ -20,6 +21,7 @@ export default function ShopPage() {
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
+  const t = useUiText();
 
   const siteTitle = seoSettings?.siteTitle || 'Shop';
 
@@ -51,7 +53,7 @@ export default function ShopPage() {
   return (
     <>
       <Helmet>
-        <title>Shop | {siteTitle}</title>
+        <title>{t('shop.title', 'Shop')} | {siteTitle}</title>
         <meta name="description" content={`Browse products from ${siteTitle}`} />
       </Helmet>
 
@@ -62,10 +64,10 @@ export default function ShopPage() {
         <section className="border-b bg-muted/30">
           <div className="container mx-auto px-6 py-16 text-center">
             <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-4">
-              Shop
+              {t('shop.title', 'Shop')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Browse our products and add what you need to your cart.
+              {t('shop.subtitle', 'Browse our products and add what you need to your cart.')}
             </p>
           </div>
         </section>
@@ -76,7 +78,7 @@ export default function ShopPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search products…"
+                placeholder={t('shop.searchPlaceholder', 'Search products…')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -105,10 +107,10 @@ export default function ShopPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-40" />
-              <p className="text-lg font-medium">No products found</p>
+              <p className="text-lg font-medium">{t('shop.empty', 'No products found')}</p>
               {search && (
                 <Button variant="ghost" className="mt-2" onClick={() => setSearch('')}>
-                  Clear search
+                  {t('shop.clearSearch', 'Clear search')}
                 </Button>
               )}
             </div>
@@ -170,7 +172,7 @@ export default function ShopPage() {
                           disabled={isInCart(product.id)}
                         >
                           <ShoppingCart className="h-4 w-4 mr-1.5" />
-                          {isInCart(product.id) ? 'In cart' : 'Add'}
+                          {isInCart(product.id) ? t('shop.inCart', 'In cart') : t('shop.add', 'Add')}
                         </Button>
                       )}
                     </div>
