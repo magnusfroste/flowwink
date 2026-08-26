@@ -1,6 +1,7 @@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { EmailTemplatePreview } from '@/components/admin/email/EmailTemplatePreview';
 
 export type CommMetadata = {
   tags?: Record<string, string | undefined>;
@@ -63,8 +64,18 @@ export function CommunicationDetailDialog({
             {comm.body_html && (
               <div>
                 <div className="text-xs uppercase text-muted-foreground mb-1">Preview</div>
-                <div className="border rounded-md p-4 bg-card max-h-96 overflow-y-auto"
-                     dangerouslySetInnerHTML={{ __html: comm.body_html }} />
+                {/* Ett mail är ett LJUST dokument — inline-färger som #333 är
+                    författade mot vit botten, och bg-card i mörkt tema gjorde
+                    texten oläslig (Magnus, dark theme på optic 2026-08-26).
+                    EmailTemplatePreview finns för EXAKT detta: iframe srcDoc,
+                    isolerad från adminens tema och CSS. En renderare för
+                    mail-HTML, inte två. */}
+                <EmailTemplatePreview
+                  subject={comm.subject ?? ''}
+                  html={comm.body_html}
+                  values={{}}
+                  className="w-full h-96 bg-white"
+                />
               </div>
             )}
             {!comm.body_html && comm.body_text && (
