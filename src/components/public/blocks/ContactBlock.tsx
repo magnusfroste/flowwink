@@ -7,17 +7,19 @@ interface ContactBlockProps {
 
 export function ContactBlock({ data }: ContactBlockProps) {
   return (
-    <section
-      /* Målad sektion = PANEL (cta-doktrinen #278): paddingen är INVÄNDIG och
-         står kvar; radien är systemets panelradie. Renderarens wrapper ger
-         layoutrytmen utanför. */
-      className="py-16 px-6 bg-muted/30 rounded-[var(--radius-block,1rem)]">
+    <section>
+      {/* Korten är KOLUMNERNAS, inte sektionens. Den breda tonade panelen
+          (#287 gav den radie, ursprunget var ett kantlöst band) lästes på
+          optic som 'formulärets bakgrund som går utanför formuläret' — på
+          /contact ligger blocket direkt under ett FormBlock. Gles tvåkolumns-
+          info i ett ~1150px-kort är fel form; två innehållsnära kort är rätt.
+          Sektionen är ren — renderaren äger skalet. */}
       <div className="container mx-auto max-w-6xl">
         {data.title && (
           <h2 className="font-serif text-3xl font-bold mb-8 text-center">{data.title}</h2>
         )}
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div className="space-y-4 rounded-[var(--radius-block,1rem)] bg-muted/30 p-6 md:p-8">
             {data.phone && (
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-accent-foreground" />
@@ -42,7 +44,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             )}
           </div>
           {data.hours && data.hours.length > 0 && (
-            <div>
+            <div className="rounded-[var(--radius-block,1rem)] bg-muted/30 p-6 md:p-8">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="h-5 w-5 text-accent-foreground" />
                 <span className="font-medium">Opening Hours</span>
