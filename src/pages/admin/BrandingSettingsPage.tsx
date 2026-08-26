@@ -696,7 +696,14 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
                       />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Main color</p>
-                        <p className="text-xs text-muted-foreground">Buttons, links, header</p>
+                        {/* Säger vad koden GÖR: headern är avsiktligt neutralt glas
+                            (bg-background/80 + blur) som innehållet scrollar under;
+                            FOOTERN är ytan som bär primärfärgen (PublicFooter:
+                            bg-primary). Copyn sa 'header' — och födde exakt frågan
+                            'varför har footern en annan färg än headern?' (teamet,
+                            2026-08-26). En beskrivning som pekar fel yta är samma
+                            klass som en ratt som inte gör vad etiketten säger. */}
+                        <p className="text-xs text-muted-foreground">Buttons, links, footer</p>
                       </div>
                     </div>
                     {/* Contrast: white text on primary background */}
