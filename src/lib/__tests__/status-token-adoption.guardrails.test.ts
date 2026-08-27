@@ -70,7 +70,7 @@ describe('status-tokens: populationen krymper', () => {
   // Mätt 2026-08-27 efter svepet (85 mönsterersättningar + besökarytan till
   // noll). FÖREKOMSTER, inte rader — flera klasser per rad räknas var för sig.
   // Får SÄNKAS när fler konverteras — aldrig höjas.
-  const BASELINE = 1118;
+  const BASELINE = 1117;
 
   it(`ratchet: max ${BASELINE} råa statusfärger i src`, () => {
     const { count } = countRaw(SRC);
