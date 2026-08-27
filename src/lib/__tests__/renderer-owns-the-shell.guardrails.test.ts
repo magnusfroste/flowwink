@@ -128,3 +128,14 @@ describe('skyddsnätet får inte döda stickyn', () => {
     expect(base, 'overflow-x: hidden på html/body dödar position:sticky — använd clip').not.toContain('overflow-x: hidden');
   });
 });
+
+describe('heron krockar inte med overlay-headern', () => {
+  // Centrerat innehåll i viewport-höjd utan egen kantpadding svämmar över mot
+  // y=0 när det är högre än sektionen — och ligger då ovanpå en transparent
+  // overlay-header (optic mobil 2026-08-27). Innehållscontainern MÅSTE bära
+  // säkerhetspadding (> headerns 4 rem) i centrerat icke-auto-läge.
+  it('innehållscontainern bär py-24 i centrerat viewport-läge', () => {
+    const src = readFileSync(join(__dirname, '../../components/public/blocks/HeroBlock.tsx'), 'utf-8');
+    expect(src).toMatch(/heightMode !== 'auto' && contentAlignment === 'center' && "py-2[4-9]"/);
+  });
+});

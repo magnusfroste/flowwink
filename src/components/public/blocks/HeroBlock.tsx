@@ -477,7 +477,13 @@ export function HeroBlock({ data }: HeroBlockProps) {
       <div className={cn(
         "relative container mx-auto max-w-3xl z-10 flex flex-col",
         textAlignmentClasses[textAlignment] ?? textAlignmentClasses.center,
-        heightMode === 'auto' && "py-0"
+        heightMode === 'auto' && "py-0",
+        /* Centrerat innehåll i viewport-höjd har ingen egen kant: är innehållet
+           högre än sektionen svämmar det över mot y=0 och krockar med en
+           overlay-header (optic mobil, 2026-08-27). 6 rem > headerns 4 rem;
+           när innehållet får plats ändrar paddingen inget — centreringen
+           består. top/bottom-lägena bär redan 8 rem sektionspadding. */
+        heightMode !== 'auto' && contentAlignment === 'center' && "py-24"
       )}>
         {data.eyebrow && (
           <p className={cn(
