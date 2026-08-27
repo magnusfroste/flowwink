@@ -102,6 +102,10 @@ export function ChatConversation({
 
       {showLeadCapture && <ChatLeadCapture conversationId={activeConversationId} />}
 
+      {/* UnifiedChat är h-full = 100 % av FÖRÄLDERN — med bannern som syskon
+          ovanför blir det 100 % + bannerhöjd och inputraden trycks under
+          widgetkanten. flex-1 min-h-0 ger den resterande höjd i stället. */}
+      <div className="flex-1 min-h-0">
       <UnifiedChat
         scope="visitor"
         skills={visitorSkills}
@@ -136,6 +140,7 @@ export function ChatConversation({
         conversationId={conversationId}
         compact={compact}
       />
+      </div>
     </div>
   );
 }
