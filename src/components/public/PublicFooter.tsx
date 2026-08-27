@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
@@ -38,6 +39,14 @@ export function PublicFooter() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const t = useUiText();
+  /* Footerrubrikerna är besökartext → ui_text-rälsen. TOM sträng är en
+     medveten AV-ratt: rubriken och dess rad renderas inte alls — adressen
+     kan stå för sig själv. (t() returnerar '' eftersom ?? bara hoppar
+     null/undefined; det är avsiktligt och dokumenterat här.) */
+  const quickLinksHeading = t('footer.quickLinks', 'Quick Links');
+  const contactHeading = t('footer.contact', 'Contact');
+  const hoursHeading = t('footer.hours', 'Opening Hours');
   const phoneLink = settings?.phone?.replace(/[^+\d]/g, '') || '';
   const brandName = branding?.organizationName || 'Organization';
   const brandTagline = branding?.brandTagline || '';
@@ -114,7 +123,7 @@ export function PublicFooter() {
       case 'quickLinks':
         return (
           <div key="quickLinks">
-            <h3 className="font-serif font-bold text-lg mb-4">Quick Links</h3>
+            {quickLinksHeading && <h3 className="font-serif font-bold text-lg mb-4">{quickLinksHeading}</h3>}
             <nav className="flex flex-col gap-2">
               {pages.slice(0, 6).map((page) => (
                 <Link
@@ -132,7 +141,7 @@ export function PublicFooter() {
       case 'contact':
         return (
           <div key="contact">
-            <h3 className="font-serif font-bold text-lg mb-4">Contact</h3>
+            {contactHeading && <h3 className="font-serif font-bold text-lg mb-4">{contactHeading}</h3>}
             <div className="flex flex-col gap-3">
               {settings?.phone && (
                 <a
@@ -168,7 +177,7 @@ export function PublicFooter() {
       case 'hours':
         return (
           <div key="hours">
-            <h3 className="font-serif font-bold text-lg mb-4">Opening Hours</h3>
+            {hoursHeading && <h3 className="font-serif font-bold text-lg mb-4">{hoursHeading}</h3>}
             <div className="flex flex-col gap-2 text-sm text-primary-foreground/80">
               <div className="flex items-center gap-3">
                 <Clock className="h-4 w-4 flex-shrink-0" />
