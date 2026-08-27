@@ -2,6 +2,11 @@ import { defineModule } from '@/lib/module-def';
 import type { SkillSeed } from '@/lib/module-bootstrap';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import {
+  hasCoreBusinessIdentity,
+  IDENTITY_HOLD_REASON,
+  REQUIRES_BUSINESS_IDENTITY,
+} from '@/lib/business-identity-gate';
 import { z } from 'zod';
 
 const inputSchema = z.object({
@@ -93,11 +98,17 @@ const FLOWPILOT_AGENTS_RULES = {
 - Respect rate limits: max 5 fetches per heartbeat cycle`,
 };
 
-const FLOWPILOT_STARTER_OBJECTIVES = [
+export const FLOWPILOT_STARTER_OBJECTIVES = [
   {
     goal: 'Establish content presence — publish 3 blog posts within the first week',
     success_criteria: { published_posts: 3 },
-    constraints: { no_destructive_actions: true },
+    // requires_business_identity: outward-facing content grounds in Business
+    // Identity, so this objective holds (born 'paused') until company_profile
+    // carries company_name + services, and wakes automatically when they are
+    // written (wake_identity_gated_objectives trigger). Seeded 'active' it ran
+    // before any identity existed and published three generic English posts on
+    // a fresh install (Restagård 2026-08-27).
+    constraints: { no_destructive_actions: true, requires_business_identity: true },
   },
   {
     goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
@@ -145,27 +156,78 @@ async function seedFlowPilotSoul(): Promise<void> {
     }
   }
 
-  // Seed starter objectives (skip duplicates by goal text)
+  // Seed starter objectives (skip duplicates by goal text).
+  //
+  // Identity-gated objectives (constraints.requires_business_identity) are born
+  // 'paused' on an instance whose Business Identity is still empty — a fresh
+  // install by definition — and the site_settings trigger wakes them when the
+  // profile's core lands. The read below decides between the two birth states;
+  // if it FAILS we seed paused rather than active: an objective that stays
+  // asleep is correctable from the UI, ungrounded published content is not.
   const { data: existingObjectives } = await supabase
     .from('agent_objectives')
     .select('goal');
   const existingGoals = new Set((existingObjectives || []).map((o: { goal: string }) => o.goal));
 
+  let identityReady = false;
+  try {
+    const { data: profileRow, error } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'company_profile')
+      .maybeSingle();
+    if (error) throw error;
+    identityReady = hasCoreBusinessIdentity(profileRow?.value ?? null);
+  } catch (err) {
+    logger.warn('[flowpilot-module] Could not read company_profile — seeding identity-gated objectives paused:', err);
+  }
+
   for (const obj of FLOWPILOT_STARTER_OBJECTIVES) {
     if (existingGoals.has(obj.goal)) continue;
-    const { error } = await supabase.from('agent_objectives').insert({
-      goal: obj.goal,
-      success_criteria: obj.success_criteria,
-      constraints: obj.constraints,
-      status: 'active',
-      progress: {},
-    });
+    const { error } = await supabase.from('agent_objectives').insert(
+      starterObjectiveRow(obj, identityReady) as never,
+    );
     if (error) {
       logger.warn(`[flowpilot-module] Failed to seed objective "${obj.goal}":`, error);
     } else {
       logger.log(`[flowpilot-module] Seeded objective: ${obj.goal}`);
     }
   }
+}
+
+/**
+ * The row a starter objective is born as. Pure and exported so the fresh-install
+ * negative test (objective-identity-gate.guardrails.test.ts) executes the
+ * behaviour: no identity → the content objective is 'paused', never 'active'.
+ */
+export function starterObjectiveRow(
+  obj: (typeof FLOWPILOT_STARTER_OBJECTIVES)[number],
+  identityReady: boolean,
+): {
+  goal: string;
+  success_criteria: Record<string, unknown>;
+  constraints: Record<string, unknown>;
+  status: 'active' | 'paused';
+  progress: Record<string, unknown>;
+} {
+  const held =
+    (obj.constraints as Record<string, unknown>)[REQUIRES_BUSINESS_IDENTITY] === true && !identityReady;
+  return {
+    goal: obj.goal,
+    success_criteria: obj.success_criteria,
+    constraints: obj.constraints,
+    status: held ? 'paused' : 'active',
+    progress: held
+      ? {
+          hold: {
+            reason: IDENTITY_HOLD_REASON,
+            note:
+              'Waiting for Business Identity — outward-facing content grounds in who the company is. ' +
+              'Fill in company name and services under Company Insights; FlowPilot resumes this objective automatically.',
+          },
+        }
+      : {},
+  };
 }
 
 const outputSchema = z.object({
@@ -199,7 +261,7 @@ const FLOWPILOT_SKILLS: SkillSeed[] = [
             },
             constraints: {
               type: 'object',
-              description: 'Guardrails for the objective. If the goal recurs on a rhythm ("daily", "every day", "varje dag", "per week"), you MUST include a structured cadence or the objective runs on EVERY heartbeat and floods — e.g. constraints.cadence = { "counts": "write_blog_post", "max": 1, "per": "day" }. counts is the skill whose successful runs are counted; per is "day" or "week". Without it a "daily" goal produces ~8 items a day.',
+              description: 'Guardrails for the objective. If the goal recurs on a rhythm ("daily", "every day", "varje dag", "per week"), you MUST include a structured cadence or the objective runs on EVERY heartbeat and floods — e.g. constraints.cadence = { "counts": "write_blog_post", "max": 1, "per": "day" }. counts is the skill whose successful runs are counted; per is "day" or "week". Without it a "daily" goal produces ~8 items a day. If the goal produces OUTWARD-FACING content (blog posts, social, newsletters, public pages), you MUST set constraints.requires_business_identity = true — the objective then holds until the company profile carries company_name + services, because content written before the identity exists is generic by construction.',
             },
             success_criteria: {
               type: 'object',
@@ -227,6 +289,10 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
 If the goal delivers on a rhythm (a blog post "every day", a digest "each week", "varje dag", "per vecka"), the rhythm MUST live in structured data, not just the goal text. Set:
   constraints.cadence = { "counts": "<skill_name>", "max": <n>, "per": "day" | "week" }
 where **counts** is the skill whose successful runs are counted (e.g. write_blog_post) and **max** is how many per period. The heartbeat runs every few hours; a recurring goal WITHOUT cadence fires on every heartbeat and over-produces (a real incident: a "daily" blog objective published ~8 posts/day on a live customer instance). The goal text alone is invisible to the cadence guard.
+### Identity gate — REQUIRED for outward-facing content goals
+If the goal produces public-facing content (blog posts, social media, newsletters, pages), set:
+  constraints.requires_business_identity = true
+Outward-facing generation grounds in Business Identity; the objective is then held out of the working set until the company profile carries company_name + at least one service, and wakes automatically when they are written (a real incident: a fresh install ran "publish 3 blog posts" before any identity existed and published three generic English posts). Never work around the hold by inventing an identity.
 ### Edge cases
 - Check existing objectives first to avoid duplicates (query agent_objectives table).
 - Objectives drive heartbeat behavior — be specific in goal text.

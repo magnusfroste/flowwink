@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260828190000",
-      "migrations_count": 522,
+      "migration_head": "20260829120000",
+      "migrations_count": 523,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2093,21 +2093,25 @@
         {
           "version": "20260828190000",
           "name": "f5f20801-public-blog-anon-read"
+        },
+        {
+          "version": "20260829120000",
+          "name": "content-holds-until-the-company-knows-itself"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:3706446eb2d892f31cc5eb431123678dff0db0d999b8623aad6090c088983457",
+      "seed_hash": "sha256:3fc66045d7108489ef3fcebf15f0e7836ece0d79d7210c96e71ba78974557a49",
       "skill_count": 541,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:90cc8d04f1638cd5ee4da52f124907a4bea438a94955f2e85352a6943fc4924b",
+      "shared_hash": "sha256:80687e50b9c37ba48da44c725e847b91ac779e4a1d24d378dd0efd7a8047cc70",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:dfa6494b08bb31a3be122347104317d391595a29c2f725b4e710da502571aab7",
+        "agent-execute": "sha256:7cb37929e15a1a3f6a18a71f7a7cdd296ea585da9f63972e321e5088fafe47f3",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",

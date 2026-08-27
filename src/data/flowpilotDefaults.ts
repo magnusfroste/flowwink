@@ -14,7 +14,12 @@ export const DEFAULT_FLOWPILOT_BOOTSTRAP = {
     {
       goal: 'Establish content presence — publish 3 blog posts within the first week',
       success_criteria: { published_posts: 3 },
-      constraints: { no_destructive_actions: true },
+      // requires_business_identity: outward-facing content grounds in Business
+      // Identity — this objective holds until company_profile carries
+      // company_name + services. The LIVE seeder is flowpilot-module.ts
+      // (starterObjectiveRow births it 'paused' on an identity-less install);
+      // this copy stays in sync so a rewire cannot resurrect the ungated seed.
+      constraints: { no_destructive_actions: true, requires_business_identity: true },
     },
     {
       goal: 'Research our top 3 competitors — document their positioning, pricing, and content gaps we can exploit',

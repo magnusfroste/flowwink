@@ -17,6 +17,7 @@ import { generateTraceId } from '../trace.ts';
 import { checkpointRun } from '../trace/checkpoint.ts';
 import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts } from '../skills/intent-scorer.ts';
+import { hasCoreBusinessIdentity } from '../domains/business-identity-block.ts';
 import { readAllRows } from '../read-all-rows.ts';
 import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
@@ -240,6 +241,54 @@ export async function partitionByCadence(
   return { actionable, satisfied };
 }
 
+/**
+ * Grounding gate for outward-facing objectives.
+ *
+ * An objective that declares `constraints.requires_business_identity: true`
+ * (the content-producing starter class: blog/social/newsletter) steps aside
+ * while site_settings.company_profile lacks its core — company_name plus at
+ * least one service. Generation before that exists is ungrounded by
+ * construction: a fresh install ran "publish 3 blog posts" before any identity
+ * was written and produced three generic English posts (Restagård 2026-08-27).
+ *
+ * Normally such objectives are seeded 'paused' and never reach this function;
+ * this is the belt for the ones that arrive 'active' anyway (seeded by old
+ * code, activated by hand, proposed at runtime). A held objective is DROPPED
+ * FROM THE WORKING SET for the turn — not failed, not completed — with a note
+ * telling the model why, so it neither works on it nor works around it.
+ *
+ * A FAILED profile read fails OPEN (like the cadence guard on malformed
+ * config): we cannot distinguish "no identity" from "read broke", and the
+ * DEGRADED_MARKER from loadBusinessIdentity already tells the model not to
+ * invent company facts on such a turn.
+ */
+export async function partitionByIdentityGate(
+  supabase: any,
+  objectives: any[],
+): Promise<{ actionable: any[]; held: Array<{ goal: string }> }> {
+  const gated = objectives.filter((o) => o.constraints?.requires_business_identity === true);
+  if (!gated.length) return { actionable: objectives, held: [] };
+
+  let profile: unknown;
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'company_profile')
+      .maybeSingle();
+    if (error) throw error;
+    profile = data?.value ?? null;
+  } catch {
+    return { actionable: objectives, held: [] };
+  }
+
+  if (hasCoreBusinessIdentity(profile)) return { actionable: objectives, held: [] };
+  return {
+    actionable: objectives.filter((o) => o.constraints?.requires_business_identity !== true),
+    held: gated.map((o) => ({ goal: String(o.goal).split('\n')[0].slice(0, 60) })),
+  };
+}
+
 export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: boolean }): Promise<string> {
   let query = supabase
     .from('agent_objectives')
@@ -257,9 +306,22 @@ export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: bool
 
   if (!data || data.length === 0) return '\nNo active objectives.';
 
+  // Outward-facing objectives ground in Business Identity: without it they are
+  // held out of the working set entirely — see partitionByIdentityGate.
+  const { actionable: grounded, held } = await partitionByIdentityGate(supabase, data);
+  const heldNote = held.length
+    ? `\n\nHolding for Business Identity (do NOT work on these, and do NOT write outward-facing content for them):\n${held
+        .map((h) => `- "${h.goal}"`)
+        .join('\n')}\nThe company profile lacks its core (company name + services), so any content produced now would be generic by construction. These objectives wake automatically once the operator fills in Business Identity — surface the gap in your report instead of generating without it, and never invent an identity to unblock yourself.`
+    : '';
+
+  if (grounded.length === 0) {
+    return `\nNo objectives are actionable right now — every active objective is holding for Business Identity.${heldNote}`;
+  }
+
   // Objectives that already met their delivery quota this period step aside so
   // the turn goes to other work (they are neither failed nor completed).
-  const { actionable, satisfied } = await partitionByCadence(supabase, data);
+  const { actionable, satisfied } = await partitionByCadence(supabase, grounded);
   const cadenceNote = satisfied.length
     ? `\n\nCadence-satisfied this period (do NOT re-deliver these):\n${satisfied
         .map((s) => `- "${s.goal}" — ${s.note}`)
@@ -267,7 +329,7 @@ export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: bool
     : '';
 
   if (actionable.length === 0) {
-    return `\nNo objectives need delivery right now — every active objective has met its cadence for this period.${cadenceNote}\n` +
+    return `\nNo objectives need delivery right now — every active objective has met its cadence for this period.${cadenceNote}${heldNote}\n` +
       `\nThis is NOT a reason to idle: spend the turn on standing value instead — review recent outcomes, follow up staged/blocked work, improve a skill's instructions from what you learned, or surface something the operator should know.`;
   }
 
@@ -321,7 +383,7 @@ export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: bool
     const nextInfo = nextStep ? ` | next: "${nextStep.description || nextStep.action}"` : '';
     const cadence = o._cadence_left != null ? ` | cadence: ${o._cadence_left} left this period` : '';
     return `- #${i + 1} [score:${o._priority_score}] [${o.id}] "${o.goal}"${planInfo}${nextInfo}${deadline}${priority}${cadence}`;
-  }).join('\n') + cadenceNote;
+  }).join('\n') + cadenceNote + heldNote;
 }
 
 // ─── Heartbeat State ──────────────────────────────────────────────────────────
