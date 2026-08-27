@@ -121,6 +121,12 @@ function extractVideoId(url: string, type: 'youtube' | 'vimeo'): string | null {
 }
 
 export function HeroBlock({ data }: HeroBlockProps) {
+  /* Schemat vitlistar BÅDE backgroundImage och imageSrc — men bara det
+     förra lästes, så imageSrc var ett spökfält: validerat, lagrat, aldrig
+     renderat (Restagård 2026-08-27: alla heroes visade gradient-fallback).
+     Aliaset gör fältet sant i stället för att avlista det — sidor skrivna
+     av äldre composer-utfall fortsätter fungera (Law 4). */
+  const heroImage = data.backgroundImage || (data as { imageSrc?: string }).imageSrc;
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(data.videoMuted !== false);
   const [videoError, setVideoError] = useState(false);
@@ -260,7 +266,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
   const renderVideoFallback = () => {
     if (!videoError || data.backgroundType !== 'video') return null;
     // Prefer poster image as fallback, then background image, then gradient
-    const fallbackImage = data.videoPosterUrl || data.backgroundImage;
+    const fallbackImage = data.videoPosterUrl || heroImage;
     if (fallbackImage) {
       return (
         <div
@@ -305,7 +311,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
   // Split layout rendering
   if (layout === 'split-left' || layout === 'split-right') {
     const imageOnLeft = layout === 'split-left';
-    const hasImage = data.backgroundImage;
+    const hasImage = heroImage;
     const hasVideo = data.backgroundType === 'video' && data.videoUrl;
     
     return (
@@ -356,7 +362,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
               )
             ) : hasImage ? (
               <img
-                src={data.backgroundImage}
+                src={heroImage}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -425,7 +431,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
   // Centered layout (original behavior with enhancements)
   const backgroundType = data.backgroundType || 'image';
   const hasVideoBackground = backgroundType === 'video' && data.videoUrl;
-  const hasImageBackground = backgroundType === 'image' && data.backgroundImage;
+  const hasImageBackground = backgroundType === 'image' && heroImage;
   const heightMode = data.heightMode || 'auto';
   const contentAlignment = data.contentAlignment || 'center';
   const overlayOpacity = data.overlayOpacity ?? 60;
@@ -459,7 +465,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
             "absolute inset-0 bg-cover bg-center",
             data.parallaxEffect && "bg-fixed"
           )}
-          style={{ backgroundImage: `url(${data.backgroundImage})` }}
+          style={{ backgroundImage: `url(${heroImage})` }}
         />
       )}
       

@@ -139,3 +139,16 @@ describe('heron krockar inte med overlay-headern', () => {
     expect(src).toMatch(/heightMode !== 'auto' && contentAlignment === 'center' && "py-2[4-9]"/);
   });
 });
+
+describe('heroens bildfält ljuger inte', () => {
+  // Schemat vitlistar backgroundImage OCH imageSrc men renderaren läste bara
+  // det förra — imageSrc blev ett spökfält: validerat, lagrat, aldrig visat
+  // (Restagård 2026-08-27, alla heroes föll till gradient). Aliaset ska bestå
+  // och vara ENDA läsplatsen för data.backgroundImage.
+  it('imageSrc-aliaset finns och data.backgroundImage läses bara där', () => {
+    const src = readFileSync(join(__dirname, '../../components/public/blocks/HeroBlock.tsx'), 'utf-8');
+    expect(src).toContain("data.backgroundImage || (data as { imageSrc?: string }).imageSrc");
+    expect((src.match(/data\.backgroundImage/g) ?? []).length,
+      'nya nakna data.backgroundImage-läsningar — gå via heroImage-aliaset').toBe(1);
+  });
+});
