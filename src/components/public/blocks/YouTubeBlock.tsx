@@ -32,7 +32,12 @@ function buildEmbedUrl(videoId: string, data: YouTubeBlockData): string {
 }
 
 export function YouTubeBlock({ data }: YouTubeBlockProps) {
-  const videoId = extractYouTubeId(data.url || '');
+  /* Schemat vitlistar BÅDE url och videoId — men bara url lästes, så ett block
+     skrivet med enbart videoId renderade ingenting (hero/imageSrc-klassen).
+     extractYouTubeId klarar ett naket 11-teckens-id, så aliaset räcker. */
+  const videoId = extractYouTubeId(data.url || (data as { videoId?: string }).videoId || '');
+  // aspectRatio var också vitlistat men oläst — allt blev 16:9.
+  const aspectClass = data.aspectRatio === '4:3' ? 'aspect-[4/3]' : 'aspect-video';
 
   if (!videoId) {
     return null;
@@ -41,7 +46,7 @@ export function YouTubeBlock({ data }: YouTubeBlockProps) {
   return (
     <section>
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
+        <div className={`${aspectClass} rounded-xl overflow-hidden shadow-lg`}>
           <iframe
             src={buildEmbedUrl(videoId, data)}
             title={data.title || 'YouTube video'}

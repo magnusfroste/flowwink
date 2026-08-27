@@ -12,6 +12,7 @@ export interface ImageBlockData {
   overlayPosition?: 'center' | 'bottom-left' | 'bottom-center';
   rounded?: boolean;
   shadow?: 'none' | 'sm' | 'md' | 'lg';
+  size?: 'small' | 'medium' | 'large' | 'full';
 }
 
 interface ImageBlockProps {
@@ -26,6 +27,16 @@ export function ImageBlock({ data }: ImageBlockProps) {
   const hoverEffect = data.hoverEffect || 'none';
   const rounded = data.rounded ?? true;
   const shadow = data.shadow || 'md';
+  // size var ett spökfält (vitlistat, aldrig läst — alla bilder blev max-w-6xl).
+  // Odefinierat = 'large' = dagens bredd.
+  const size = data.size || 'large';
+
+  const sizeMap = {
+    small: 'max-w-md',
+    medium: 'max-w-3xl',
+    large: 'max-w-6xl',
+    full: 'max-w-none',
+  };
 
   const aspectRatioMap = {
     'auto': '',
@@ -62,7 +73,8 @@ export function ImageBlock({ data }: ImageBlockProps) {
       <figure 
         className={cn(
           'relative overflow-hidden group',
-          !fullBleed && 'container mx-auto max-w-6xl',
+          !fullBleed && 'container mx-auto',
+          !fullBleed && (sizeMap[size] ?? sizeMap.large),
           rounded && !fullBleed && 'rounded-xl',
           shadowMap[shadow] ?? shadowMap.md,
           hoverEffect === 'lift' && 'hover:-translate-y-1 hover:shadow-xl transition-all duration-300',

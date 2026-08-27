@@ -92,8 +92,11 @@ export function MapBlock({ data }: MapBlockProps) {
       location.lon + delta,
       location.lat + delta,
     ].join(',');
-    
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${location.lat},${location.lon}`;
+
+    // showMarker var ett spökfält (vitlistat, aldrig läst — markören ritades
+    // alltid). Odefinierat = true = dagens beteende.
+    const marker = data.showMarker === false ? '' : `&marker=${location.lat},${location.lon}`;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik${marker}`;
   };
 
   const containerClasses = `

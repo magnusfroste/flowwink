@@ -25,6 +25,10 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
   return (
     <section>
       <div className="container mx-auto">
+        {/* title var ett spökfält: vitlistat i block-reference, aldrig läst. */}
+        {data.title && (
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-12">{data.title}</h2>
+        )}
         <div className={`grid gap-6 ${gridCols[data.columns] ?? gridCols[3]}`}>
           {data.links.map((link, index) => {
             return (

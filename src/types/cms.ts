@@ -534,6 +534,8 @@ export interface TextBlockData {
   titleSize?: TextTitleSize;  // Title size variant
   accentText?: string;        // Part of title in accent/script font
   accentPosition?: 'start' | 'end' | 'inline'; // Where accent appears
+  alignment?: 'left' | 'center' | 'right';
+  maxWidth?: 'prose' | 'full';
 }
 
 export interface ImageBlockData {
@@ -570,6 +572,7 @@ export interface ContactBlockData {
 }
 
 export interface LinkGridBlockData {
+  title?: string;
   links: { icon: string; title: string; description?: string; url: string }[];
   columns: 2 | 3 | 4;
 }
@@ -673,6 +676,7 @@ export interface YouTubeBlockData {
   loop?: boolean;
   mute?: boolean;
   controls?: boolean;
+  aspectRatio?: '16:9' | '4:3';
 }
 
 export interface QuoteBlockData {
@@ -688,9 +692,11 @@ export interface SeparatorBlockData {
 }
 
 export interface GalleryBlockData {
+  title?: string;
   images: { src: string; alt: string; caption?: string }[];
   layout: 'grid' | 'carousel' | 'masonry';
   columns: 2 | 3 | 4;
+  gap?: 'sm' | 'md' | 'lg';
 }
 
 export type StatsAnimationStyle = 'count-up' | 'fade-in' | 'slide-up' | 'typewriter';
@@ -706,8 +712,6 @@ export interface StatsBlockData {
 export interface ChatBlockData {
   title?: string;
   height: 'sm' | 'md' | 'lg' | 'full';
-  showSidebar: boolean;
-  initialPrompt?: string;
   variant: 'embedded' | 'card';
 }
 
@@ -720,8 +724,8 @@ export interface MapBlockData {
   description?: string;
   // Map settings
   zoom: number;
-  mapType: 'roadmap' | 'satellite';
   height: 'sm' | 'md' | 'lg' | 'xl';
+  showMarker?: boolean;
   // Styling
   showBorder: boolean;
   rounded: boolean;
@@ -864,6 +868,7 @@ export interface TeamBlockData {
   columns?: 2 | 3 | 4;
   layout?: 'grid' | 'carousel';
   variant?: 'default' | 'cards' | 'compact';
+  showRole?: boolean;
   showBio?: boolean;
   showSocial?: boolean;
   staggeredReveal?: boolean;

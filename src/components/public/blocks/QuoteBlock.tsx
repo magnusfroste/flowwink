@@ -8,6 +8,10 @@ interface QuoteBlockProps {
 
 export function QuoteBlock({ data }: QuoteBlockProps) {
   const isStyled = data.variant === 'styled';
+  /* Schemat vitlistar BÅDE text och quote — men bara text lästes, så quote var
+     ett spökfält: validerat, lagrat, aldrig visat (hero/imageSrc-klassen). */
+  const text = data.text || (data as { quote?: string }).quote;
+  const role = (data as { role?: string }).role;
 
   return (
     <section>
@@ -29,14 +33,17 @@ export function QuoteBlock({ data }: QuoteBlockProps) {
                 isStyled ? 'text-foreground' : 'text-foreground/90 border-l-4 border-accent-foreground pl-6'
               )}
             >
-              {data.text}
+              {text}
             </p>
-            
+
             {(data.author || data.source) && (
               <footer className="mt-6">
                 <cite className="not-italic text-muted-foreground">
                   {data.author && (
                     <span className="font-medium text-foreground">{data.author}</span>
+                  )}
+                  {data.author && role && (
+                    <span className="text-muted-foreground">, {role}</span>
                   )}
                   {data.author && data.source && <span className="mx-2">•</span>}
                   {data.source && (

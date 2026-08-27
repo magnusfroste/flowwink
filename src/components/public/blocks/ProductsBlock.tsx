@@ -20,7 +20,6 @@ export interface ProductsBlockData {
   showImages?: boolean;
   buttonText?: string;
   buttonStyle?: 'default' | 'outline' | 'icon-only';
-  layout?: 'grid' | 'list';
   linkToDetail?: boolean;
 }
 

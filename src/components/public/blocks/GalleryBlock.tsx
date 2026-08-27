@@ -14,6 +14,10 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   const images = data.images || [];
   const columns = data.columns || 3;
   const layout = data.layout || 'grid';
+  // title/gap var spökfält (vitlistade, aldrig lästa). Odefinierat gap = 'md'
+  // = dagens gap-4.
+  const gapClass = { sm: 'gap-2', md: 'gap-4', lg: 'gap-6' }[data.gap || 'md'] ?? 'gap-4';
+  const masonryItemGap = { sm: 'mb-2', md: 'mb-4', lg: 'mb-6' }[data.gap || 'md'] ?? 'mb-4';
 
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
@@ -39,7 +43,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   if (images.length === 0) return null;
 
   const renderGrid = () => (
-    <div className={cn('grid gap-4', gridCols)}>
+    <div className={cn('grid', gapClass, gridCols)}>
       {images.map((image, index) => (
         <button
           key={index}
@@ -63,7 +67,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   );
 
   const renderMasonry = () => (
-    <div className={cn('columns-1 gap-4', {
+    <div className={cn('columns-1', gapClass, {
       'sm:columns-2': columns >= 2,
       'lg:columns-3': columns >= 3,
       'xl:columns-4': columns >= 4,
@@ -72,7 +76,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
         <button
           key={index}
           onClick={() => openLightbox(index)}
-          className="group relative w-full mb-4 overflow-hidden rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className={cn('group relative w-full overflow-hidden rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2', masonryItemGap)}
         >
           <img
             src={image.src}
@@ -93,6 +97,9 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   return (
     <section>
       <div className="container mx-auto px-4 max-w-6xl">
+        {data.title && (
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-12">{data.title}</h2>
+        )}
         {layout === 'masonry' ? renderMasonry() : renderGrid()}
 
         {/* Lightbox */}
