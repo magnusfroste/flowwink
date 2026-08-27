@@ -24,7 +24,7 @@ export function AuthorCard({ author, variant = "card", showBio = true }: AuthorC
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-medium">{author.full_name || author.email}</p>
+          <p className="font-medium">{author.full_name || author.title || "Author"}</p>
           {author.title && (
             <p className="text-sm text-muted-foreground">{author.title}</p>
           )}
@@ -42,7 +42,7 @@ export function AuthorCard({ author, variant = "card", showBio = true }: AuthorC
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-lg">{author.full_name || author.email}</p>
+            <p className="font-semibold text-lg">{author.full_name || author.title || "Author"}</p>
             {author.title && (
               <p className="text-sm text-muted-foreground mb-2">{author.title}</p>
             )}

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260828170000",
-      "migrations_count": 521,
+      "migration_head": "20260828190000",
+      "migrations_count": 522,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2089,6 +2089,10 @@
         {
           "version": "20260828170000",
           "name": "mailet-ar-sajtinnehall"
+        },
+        {
+          "version": "20260828190000",
+          "name": "f5f20801-public-blog-anon-read"
         }
       ]
     },

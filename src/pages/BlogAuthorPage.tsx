@@ -31,7 +31,7 @@ function useAuthorBySlug(slug: string | undefined) {
       if (slug && uuidRe.test(slug)) {
         const { data } = await supabase
           .from('profiles')
-          .select('id, full_name, email, avatar_url, bio, title, show_as_author')
+          .select('id, full_name, avatar_url, bio, title, show_as_author')
           .eq('id', slug)
           .maybeSingle();
         if (data) return data as AuthorProfile;
@@ -39,7 +39,7 @@ function useAuthorBySlug(slug: string | undefined) {
       // Otherwise fetch candidates and match slugified full_name
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, avatar_url, bio, title, show_as_author')
+        .select('id, full_name, avatar_url, bio, title, show_as_author')
         .not('full_name', 'is', null);
       if (error) throw error;
       const match = (data ?? []).find(
@@ -74,7 +74,7 @@ export default function BlogAuthorPage() {
 
   const initials = useMemo(
     () =>
-      (author?.full_name || author?.email || '?')
+      (author?.full_name || '?')
         .split(' ')
         .map((s) => s[0])
         .join('')
@@ -99,7 +99,7 @@ export default function BlogAuthorPage() {
 
   if (!author) return <NotFound />;
 
-  const displayName = author.full_name || author.email;
+  const displayName = author.full_name || author.title || 'Author';
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const canonicalUrl = `${baseUrl}/blog/author/${slug}`;
 

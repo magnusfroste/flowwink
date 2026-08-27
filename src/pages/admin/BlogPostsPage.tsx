@@ -182,7 +182,7 @@ export default function BlogPostsPage() {
                       {post.author && (
                         <>
                           <span>•</span>
-                          <span>{post.author.full_name || post.author.email}</span>
+                          <span>{post.author.full_name || "Unnamed"}</span>
                         </>
                       )}
                       

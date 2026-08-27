@@ -87,7 +87,7 @@ export function useBlogPosts(options: UseBlogPostsOptions = {}) {
         .from('blog_posts')
         .select(`
           *,
-          author:profiles!blog_posts_author_id_fkey(id, email, full_name, avatar_url, bio, title),
+          author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title),
           categories:blog_post_categories(category:blog_categories(*)),
           tags:blog_post_tags(tag:blog_tags(*))
         `, { count: 'exact' })
@@ -176,8 +176,8 @@ export function useBlogPost(slugOrId: string | undefined) {
         .from('blog_posts')
         .select(`
           *,
-          author:profiles!blog_posts_author_id_fkey(id, email, full_name, avatar_url, bio, title),
-          reviewer:profiles!blog_posts_reviewer_id_fkey(id, email, full_name, avatar_url, bio, title),
+          author:profiles!blog_posts_author_id_fkey(id, full_name, avatar_url, bio, title),
+          reviewer:profiles!blog_posts_reviewer_id_fkey(id, full_name, avatar_url, bio, title),
           categories:blog_post_categories(category:blog_categories(*)),
           tags:blog_post_tags(tag:blog_tags(*))
         `);
@@ -587,17 +587,19 @@ export function useAuthors(publicOnly = false) {
   return useQuery({
     queryKey: ['authors', { publicOnly }],
     queryFn: async () => {
-      let query = supabase
-        .from('profiles')
-        .select('*')
-        .order('full_name');
-      
-      // Only filter by show_as_author for public-facing contexts
-      if (publicOnly) {
-        query = query.eq('show_as_author', true);
-      }
-      
-      const { data, error } = await query;
+      /* Anon har kolumnbegränsad SELECT på profiles (aldrig e-post) —
+         publika vägen får bara be om det den får läsa, annars 401:ar
+         PostgREST hela frågan (fresh-install-klassen, Restagård 2026-08-27). */
+      const { data, error } = publicOnly
+        ? await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, bio, title, show_as_author')
+            .eq('show_as_author', true)
+            .order('full_name')
+        : await supabase
+            .from('profiles')
+            .select('*')
+            .order('full_name');
       
       if (error) throw error;
       return data;

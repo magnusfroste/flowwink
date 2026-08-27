@@ -140,7 +140,7 @@ export default function BlogPostPage() {
             {post.author && (
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span>{post.author.full_name || post.author.email}</span>
+                <span>{post.author.full_name || "Author"}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function BlogPostPage() {
                   }`}
                   className="text-sm text-primary hover:underline"
                 >
-                  View all posts by {post.author.full_name || post.author.email} →
+                  View all posts by {post.author.full_name || "Author"} →
                 </Link>
               </div>
             </div>

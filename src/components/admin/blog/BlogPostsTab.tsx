@@ -114,7 +114,7 @@ export default function BlogPostsTab() {
                       <><span>•</span><span>{post.categories.map(c => c.name).join(", ")}</span></>
                     )}
                     {post.author && (
-                      <><span>•</span><span>{post.author.full_name || post.author.email}</span></>
+                      <><span>•</span><span>{post.author.full_name || "Unnamed"}</span></>
                     )}
                     <span>•</span>
                     <span>{formatDistanceToNow(new Date(post.updated_at), { addSuffix: true })}</span>

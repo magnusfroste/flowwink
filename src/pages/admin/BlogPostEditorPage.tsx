@@ -336,7 +336,7 @@ export default function BlogPostEditorPage() {
                         <SelectContent>
                           {authors?.map((author) => (
                             <SelectItem key={author.id} value={author.id}>
-                              {author.full_name || author.email}
+                              {author.full_name || "Unnamed"}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -359,7 +359,7 @@ export default function BlogPostEditorPage() {
                             <SelectItem value="none">None</SelectItem>
                             {authors?.map((author) => (
                               <SelectItem key={author.id} value={author.id}>
-                                {author.full_name || author.email}
+                                {author.full_name || "Unnamed"}
                               </SelectItem>
                             ))}
                           </SelectContent>
