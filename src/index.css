@@ -155,14 +155,18 @@
   html {
     scroll-behavior: smooth;
     /* Mobile safety net: prevent rogue blocks (wide tables, marquees, full-bleed images)
-       from creating horizontal page scroll. Internal overflow-x:auto containers still scroll. */
-    overflow-x: hidden;
+       from creating horizontal page scroll. Internal overflow-x:auto containers still scroll.
+       MUST be `clip`, not `hidden`: overflow-x:hidden turns body into a scroll
+       container, which silently kills every position:sticky descendant — the
+       public header scrolled away on mobile and hero text rode up over it
+       (Restagård 2026-08-27). `clip` clips without creating a scroll container. */
+    overflow-x: clip;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: var(--font-sans);
-    overflow-x: hidden;
+    overflow-x: clip;
     /* Avoid layout shift caused by horizontal scrollbar on desktop */
     max-width: 100vw;
   }

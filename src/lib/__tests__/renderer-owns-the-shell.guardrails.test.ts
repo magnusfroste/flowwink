@@ -115,3 +115,16 @@ describe('formulärets kort äger sin yta', () => {
     }
   });
 });
+
+describe('skyddsnätet får inte döda stickyn', () => {
+  // overflow-x: hidden på html/body gör body till scroll-container och bryter
+  // varje position:sticky-ättling — headern scrollade bort på mobil och
+  // herotexten red upp över den (Restagård 2026-08-27). `clip` klipper
+  // utan scroll-container; skyddsnätet mot horisontellt spill består.
+  it('html/body klipper med clip, aldrig hidden', () => {
+    const css = readFileSync(join(__dirname, '../../index.css'), 'utf-8');
+    const base = css.slice(css.indexOf('html {'), css.indexOf('h1, h2'));
+    expect(base).toContain('overflow-x: clip');
+    expect(base, 'overflow-x: hidden på html/body dödar position:sticky — använd clip').not.toContain('overflow-x: hidden');
+  });
+});
