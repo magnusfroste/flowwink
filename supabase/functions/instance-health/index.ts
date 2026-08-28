@@ -20,10 +20,13 @@ Deno.serve(async (req) => {
 
   // ── check=cron — the scheduled-job health report ──────────────────────────
   // Folded in from the standalone cron-health function (edge-surface B5, the
-  // freeze principle applied retroactively). Body VERBATIM: calls the
-  // cron_health_report() RPC and enriches it with staleness via the SHARED
-  // calculateNextRun, so the admin card and the heartbeat gate read the exact
-  // same brain. Keeps cron-health's own gate: admin-JWT or service-role only.
+  // freeze principle applied retroactively). Calls the cron_health_report()
+  // RPC and enriches it via the SHARED cron-health brain — which judges
+  // pg_cron jobs on pg_cron's own job_run_details evidence only (never the
+  // agent-automation cron parser; see the River-incident note in
+  // _shared/cron/health.ts) — so the admin card and the heartbeat gate read
+  // the exact same brain. Keeps cron-health's own gate: admin-JWT or
+  // service-role only.
   {
     let check = new URL(req.url).searchParams.get('check') ?? '';
     if (!check && req.method === 'POST') {

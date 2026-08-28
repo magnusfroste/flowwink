@@ -28,6 +28,7 @@ import { retrieve } from '../_shared/retrieval/index.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 // Edge-surface refactor B1a: former standalone edge functions re-homed as
 // internal skill handlers — see docs/architecture/edge-surface-classification.md
+import { isSameRiverPost, DEDUP_WINDOW_DAYS } from '../_shared/river/fingerprint.ts';
 import { executeContactFinder } from '../_shared/handlers/contact-finder.ts';
 import { executeVerifyEmail } from '../_shared/handlers/verify-email.ts';
 import { executeManageServiceOrder } from '../_shared/handlers/field-service.ts';
@@ -5457,6 +5458,43 @@ async function executeRiverAction(
     const media_urls = Array.isArray(mediaInput)
       ? mediaInput.filter((u: unknown) => typeof u === 'string')
       : [];
+
+    // System-post dedup (River incident 2026-08-23→28: four near-identical ⚠️
+    // posts in five days, same alert with fresher numbers each time). This
+    // handler is the agent path — human posts hit river_posts directly via the
+    // UI/RLS — so every top-level create here is a system post: if its
+    // fingerprint (normalized body, digits ignored) matches a post from the
+    // last DEDUP_WINDOW_DAYS days, UPDATE that post instead of creating a new
+    // one. Replies are conversation, never deduped.
+    if (action === 'create') {
+      const windowStart = new Date(Date.now() - DEDUP_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentPosts } = await supabase
+        .from('river_posts')
+        .select('id, body, created_at')
+        .is('parent_id', null)
+        .gte('created_at', windowStart)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      const duplicate = (recentPosts || []).find((p: any) => isSameRiverPost(p.body, body));
+      if (duplicate) {
+        const patch: Record<string, unknown> = { body };
+        if (media_urls.length > 0) patch.media_urls = media_urls;
+        const { data: updated, error: updErr } = await supabase
+          .from('river_posts')
+          .update(patch)
+          .eq('id', duplicate.id)
+          .select('id, body, author_id, parent_id, created_at')
+          .single();
+        if (updErr) throw new Error(`update deduped river post failed: ${updErr.message}`);
+        return {
+          ...updated,
+          status: 'updated_existing',
+          deduped: true,
+          note: `An equivalent post from ${duplicate.created_at} already existed (same fingerprint within ${DEDUP_WINDOW_DAYS} days) — it was updated in place instead of creating a duplicate.`,
+        };
+      }
+    }
+
     const insert: Record<string, unknown> = { body, media_urls };
     if (parent_id) insert.parent_id = parent_id;
 

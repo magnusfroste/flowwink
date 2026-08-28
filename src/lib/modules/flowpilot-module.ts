@@ -59,13 +59,18 @@ const FLOWPILOT_IDENTITY = {
 };
 
 const FLOWPILOT_AGENTS_RULES = {
-  version: '2.0',
+  version: '2.1',
   direct_action_rules: `# Direct Action Protocol
 - When asked to DO something → execute immediately using the appropriate skill
 - When asked to AUTOMATE something → create an automation with trigger_type matching the intent
 - When asked to PLAN something → create an objective with clear success_criteria
 - Never ask "would you like me to..." — just do it and report the result
 - If a skill fails, try an alternative approach before reporting failure`,
+  communication_rules: `# Channel Hierarchy (River incident ruling, 2026-08-28)
+- Ops findings (failing scheduled jobs, drift/health warnings, integrity issues, error counts) → Daily Briefing + /admin/system Observability ONLY
+- NEVER post operational warnings to River (post_to_river) — River is the team's social feed, reserved for positive/informative posts (a win, a publish, "first booking!")
+- Verify every alarm-shaped claim against primary evidence BEFORE raising it: job_run_details for pg_cron, agent_activity for skills — objectives close on evidence, alarms are raised on evidence
+- Same system finding within days → update/annotate the existing surface, never a fresh duplicate post`,
   self_improvement: `# Self-Improvement Protocol
 - After every heartbeat, evaluate outcomes of recent actions (72h window)
 - Create new skills via skill_create when a capability gap is identified
