@@ -179,7 +179,7 @@ export default function ProductDetailPage() {
 
       <PublicNavigation />
 
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Breadcrumb — minimal, Apple-style */}
         <div className="container mx-auto px-6 pt-6 pb-2">
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">

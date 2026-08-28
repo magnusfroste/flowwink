@@ -85,6 +85,23 @@ export function PublicNavigation() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Overlay-headern tar ingen plats i flödet — sidor UTAN hero börjar annars
+  // på y=0 under den (chatten på /chat låg under nav-länkarna, autoversio
+  // 2026-08-28). Headern annonserar sin uppmätta höjd som CSS-variabel;
+  // hero-lösa sidor konsumerar den som padding-top. Icke-overlay: variabeln
+  // tas bort → 0 → ingen effekt.
+  const overlayStyle = headerSettings.backgroundStyle || 'solid';
+  const headerIsOverlay = overlayStyle === 'transparent';
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!headerIsOverlay) { root.style.removeProperty('--overlay-header-offset'); return; }
+    const set = () => root.style.setProperty('--overlay-header-offset', `${headerRef.current?.offsetHeight ?? 64}px`);
+    set();
+    window.addEventListener('resize', set);
+    return () => { window.removeEventListener('resize', set); root.style.removeProperty('--overlay-header-offset'); };
+  }, [headerIsOverlay]);
+
   // Custom nav items from header settings
   const customNavItems = (headerSettings.customNavItems || []).filter(item => item.enabled);
 
@@ -289,7 +306,7 @@ export function PublicNavigation() {
   return (
     <>
     <SandboxBanner />
-    <header className={getBackgroundClasses()}>
+    <header ref={headerRef} className={getBackgroundClasses()}>
       {/* Mega Menu Dropdowns - Rendered at header level for full width */}
       {isMegaMenuVariant && customNavItems.map((item) => (
         item.children && item.children.length > 0 && (

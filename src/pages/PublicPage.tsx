@@ -455,7 +455,16 @@ export default function PublicPage() {
         )}
 
         {/* Content Blocks */}
-        <main>
+        {/* Overlay-headern tar ingen flödeshöjd. En sida vars FÖRSTA block är
+            full-bleed (hero/parallax/karusell) ska fortsätta upp bakom den —
+            det är overlay-designens poäng. Alla andra förstablock börjar
+            annars på y=0 under headern; de får headerns annonserade offset. */}
+        <main className={
+          ['hero', 'parallax-section', 'featured-carousel', 'marquee', 'announcement-bar']
+            .includes(pageData.content_json?.[0]?.type as string)
+            ? undefined
+            : 'pt-[var(--overlay-header-offset,0px)]'
+        }>
           {renderError ? (
             <div className="py-16 px-6">
               <div className="container mx-auto max-w-3xl text-center">

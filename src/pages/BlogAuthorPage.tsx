@@ -87,7 +87,7 @@ export default function BlogAuthorPage() {
     return (
       <>
         <PublicNavigation />
-        <main className="min-h-screen bg-background">
+        <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
             <p className="text-center text-muted-foreground">Loading author…</p>
           </div>
@@ -112,7 +112,7 @@ export default function BlogAuthorPage() {
         ogImage={author.avatar_url || undefined}
       />
       <PublicNavigation />
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <section className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="flex items-start gap-6 mb-10">
             <Avatar className="h-24 w-24">

@@ -5,6 +5,8 @@
   "routes": [
     { "src": "/robots\\.txt", "dest": "/api/robots" },
     { "src": "/sitemap\\.xml", "dest": "/api/sitemap" },
+    { "src": "/llms\\.txt", "dest": "/api/llms" },
+    { "src": "/llms-full\\.txt", "dest": "/api/llms?variant=full" },
     {
       "src": "^/(?!api/)(?!assets/)(?!.*\\.[a-zA-Z0-9]{2,5}$)(.*)$",
       "has": [

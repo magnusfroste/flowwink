@@ -119,7 +119,7 @@ export default function PreviewPage() {
 
       <PublicNavigation />
       
-      <main className="min-h-screen">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen">
         {showTitle && (
           <div className="max-w-4xl mx-auto px-6 pt-12">
             <h1 

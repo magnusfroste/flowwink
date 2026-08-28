@@ -152,3 +152,32 @@ describe('heroens bildfält ljuger inte', () => {
       'nya nakna data.backgroundImage-läsningar — gå via heroImage-aliaset').toBe(1);
   });
 });
+
+describe('overlay-headern annonserar sin höjd — hero-lösa sidor konsumerar den', () => {
+  // Overlay tar ingen flödeshöjd: /chat låg under nav-länkarna (autoversio
+  // 2026-08-28). Headern sätter --overlay-header-offset (uppmätt, tas bort i
+  // icke-overlay); varje PublicNavigation-sida utan hero-garanti bär
+  // pt-[var(--overlay-header-offset,0px)] på sin main. Population: ALLA
+  // src/pages-filer som importerar PublicNavigation, utom PublicPage som
+  // villkorar på förstablockets typ.
+  const PAD = 'pt-[var(--overlay-header-offset,0px)]';
+  it('headern sätter variabeln i overlay-läge', () => {
+    const nav = readFileSync(join(__dirname, '../../components/public/PublicNavigation.tsx'), 'utf-8');
+    expect(nav).toContain("setProperty('--overlay-header-offset'");
+    expect(nav).toContain("removeProperty('--overlay-header-offset')");
+  });
+  it('varje PublicNavigation-sida konsumerar offset', () => {
+    const dir = join(__dirname, '../../pages');
+    const offenders: string[] = [];
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.tsx'))) {
+      const src = readFileSync(join(dir, f), 'utf-8');
+      if (!src.includes('PublicNavigation')) continue;
+      if (f === 'PublicPage.tsx') {
+        if (!src.includes(PAD)) offenders.push(f + ' (villkorade offseten saknas)');
+        continue;
+      }
+      if (src.includes('<main className="') && !src.includes(PAD)) offenders.push(f);
+    }
+    expect(offenders, `sidor utan overlay-offset: ${offenders.join(', ')}`).toEqual([]);
+  });
+});

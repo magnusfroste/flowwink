@@ -461,6 +461,33 @@ export default function WorkspaceChatPage() {
                 {(lastContextMeta.tokens_used / 1000).toFixed(1)}k tok
               </Badge>
             )}
+            {lastContextMeta?.window_tokens && lastContextMeta.prompt_tokens_est != null && (() => {
+              const meta = lastContextMeta;
+              const pct = meta.prompt_tokens_est! / meta.window_tokens!;
+              const level: 'green' | 'amber' | 'red' = pct >= 0.85 ? 'red' : pct >= 0.7 ? 'amber' : 'green';
+              const approx = meta.window_known === false ? '~' : '';
+              const label = `${approx}${Math.round(pct * 100)}% window`;
+              const title =
+                level === 'green'
+                  ? `Estimated prompt ${approx}${Math.round(meta.prompt_tokens_est! / 1000)}k of ${Math.round(meta.window_tokens! / 1000)}k token window`
+                  : level === 'amber'
+                    ? 'Long session — a new session keeps answers sharp'
+                    : `Near the model's context window — older turns are ${meta.history_distilled ? 'being summarized' : 'trimmed'} to keep the session alive. A new session keeps answers sharp.`;
+              return (
+                <Badge
+                  variant={level === 'red' ? 'destructive' : 'outline'}
+                  className={
+                    level === 'amber'
+                      ? 'text-[10px] border-warning/50 text-warning'
+                      : 'text-[10px]'
+                  }
+                  title={title}
+                >
+                  {label}
+                  {meta.history_distilled ? ' · distilled' : ''}
+                </Badge>
+              );
+            })()}
             <CoworkSettingsPanel />
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>

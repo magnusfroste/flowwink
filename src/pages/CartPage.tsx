@@ -20,7 +20,7 @@ export default function CartPage() {
       <>
         <Helmet><title>{'Cart'}</title></Helmet>
         <PublicNavigation />
-        <main className="min-h-screen bg-background flex items-center justify-center p-4">
+        <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background flex items-center justify-center p-4">
           <div className="text-center space-y-4">
             <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/30" />
             <h1 className="text-2xl font-bold">Your cart is empty</h1>
@@ -43,7 +43,7 @@ export default function CartPage() {
       <Helmet><title>{`Cart (${totalItems})`}</title></Helmet>
       <PublicNavigation />
 
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-6 py-8 max-w-5xl">
           <h1 className="text-3xl font-serif font-bold tracking-tight mb-8">Your Cart</h1>
 

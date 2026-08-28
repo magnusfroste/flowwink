@@ -80,6 +80,18 @@ export interface ContextMeta {
   sources_active: number;
   sources_truncated: string[];
   per_source: Record<string, number>;
+  // ── History-window half (Model Context Window Guard) — optional so old
+  // edge deploys that don't send them keep parsing. ──
+  /** Estimated total prompt: system + soul + retrieval + history (~chars/4). */
+  prompt_tokens_est?: number;
+  /** The resolved model's context window (conservative when unknown). */
+  window_tokens?: number;
+  /** False when the window is a conservative guess — indicator shows "~". */
+  window_known?: boolean;
+  /** True when older turns were compressed into a session distillate. */
+  history_distilled?: boolean;
+  /** Raw messages dropped (oldest first) by the hard cap. */
+  history_dropped?: number;
 }
 
 interface UseWorkspaceChatOpts {

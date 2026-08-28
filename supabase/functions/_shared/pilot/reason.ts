@@ -879,11 +879,56 @@ export async function executeBuiltInTool(
   // Wrap with timeout (long-running skills get explicit overrides)
   try {
     const timeoutMs = getSkillTimeoutMs(fnName);
-    return await withTimeout(execute(), timeoutMs, fnName);
+    const result: any = await withTimeout(execute(), timeoutMs, fnName);
+    // Fel kan komma som returnerad data i två kuvert (direkt eller nästlat) —
+    // båda ska bli lärdomar, inte bara kastade undantag.
+    const returnedError = result && typeof result === 'object'
+      ? (result.error ?? result.result?.error ?? (result.status === 'failed' ? 'status: failed' : null))
+      : null;
+    if (returnedError) void recordSkillLesson(supabase, fnName, String(returnedError));
+    return result;
   } catch (err: any) {
     console.error(`[reason] trace=${traceId} ${fnName} error:`, err.message);
+    void recordSkillLesson(supabase, fnName, err.message);
     return { error: err.message, status: 'failed' };
   }
+}
+
+
+// ─── Skill Lessons: fel som återkommer blir minnen ───────────────────────────
+//
+// Observerat (autoversio, jul–aug 2026): heartbeaten anropade write_blog_post
+// utan content och fick EXAKT samma fel varje körning i fem veckor — ett
+// självförklarande felmeddelande som aldrig överlevde körningen. Loopen är
+// per-körning-statslös; lärdomen måste bo i agent_memory för att nå nästa
+// körnings systemprompt (loadMemories läser topp-20, kategori + 150 tecken).
+//
+// Tröskeln ≥2: engångsfel är brus, upprepning är ett mönster. Fire-and-forget:
+// en trasig lektionsskrivning får aldrig fälla skill-anropet den lär av.
+export async function recordSkillLesson(supabase: any, skillName: string, errorMsg: string): Promise<void> {
+  try {
+    const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+    const { count } = await supabase
+      .from('agent_activity')
+      .select('id', { count: 'exact', head: true })
+      .eq('skill_name', skillName)
+      .eq('status', 'failed')
+      .gte('created_at', since);
+    const total = (count ?? 0) + 1; // + det pågående felet, som loggas efter oss
+    if (total < 2) return;
+    const key = `skill_lesson:${skillName}`;
+    const value = `${skillName} has failed ${total}x in 30d, latest: "${errorMsg.slice(0, 90)}". Do NOT repeat the same call shape — change arguments/approach or skip with a reason.`;
+    const { data: existing } = await supabase
+      .from('agent_memory').select('id').eq('key', key).maybeSingle();
+    if (existing) {
+      await supabase.from('agent_memory')
+        .update({ value, category: 'skill_lessons', updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('agent_memory')
+        .insert({ key, value, category: 'skill_lessons' });
+    }
+  } catch { /* aldrig fälla anropet vi lär av */ }
 }
 
 export function isBuiltInTool(name: string): boolean {

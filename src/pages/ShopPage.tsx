@@ -59,7 +59,7 @@ export default function ShopPage() {
 
       <PublicNavigation />
 
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Hero */}
         <section className="border-b bg-muted/30">
           <div className="container mx-auto px-6 py-16 text-center">

@@ -43,7 +43,7 @@ const NotFoundBody = ({ routeError }: { routeError?: unknown }) => {
         <meta name="robots" content="noindex" />
       </Helmet>
       <PublicNavigation />
-      <main className="min-h-[60vh] bg-background flex items-center justify-center px-4 py-16">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-[60vh] bg-background flex items-center justify-center px-4 py-16">
         <div className="text-center max-w-lg space-y-6">
           <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
             <AlertTriangle className="h-8 w-8 text-muted-foreground" />
