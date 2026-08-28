@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Search, AlertTriangle, Plus } from "lucide-react";
+import { Search, AlertTriangle, Plus , Lock } from "lucide-react";
 import type { Project, ProjectTaskStats } from "@/hooks/useProjects";
 
 type Filter = "active" | "all" | "attention";
@@ -105,6 +105,7 @@ export function ProjectRail({
                     style={{ background: p.color || "hsl(var(--primary))" }}
                   />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{p.name}</span>
+                  {p.visibility === "private" && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="Private project" />}
                   {!!s?.overdue && (
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />
                   )}

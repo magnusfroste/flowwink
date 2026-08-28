@@ -1,10 +1,18 @@
 // Cron-health enrichment — the shared brain behind layer 2 (admin card via the
-// cron-health edge function) and layer 3 (heartbeat → River). Takes the raw
-// cron_health_report() RPC result and adds the one signal the SQL function
-// deliberately left out (staleness needs a cron parser), computed with the SAME
-// calculateNextRun the dispatcher schedules from — one parser, no drift.
-
-import { calculateNextRun, isSupportedCron } from './next-run.ts';
+// instance-health edge function) and layer 3 (heartbeat gate → Daily Briefing /
+// Observability). Takes the raw cron_health_report() RPC result and derives the
+// red/green verdict per job.
+//
+// DOMAIN RULE (River incident, 2026-08-23→28): pg_cron jobs are judged by
+// pg_cron's OWN semantics only — the evidence in cron.job_run_details that the
+// RPC already carries (last_status, last_run, never_ran). The agent-automation
+// cron parser (_shared/cron/next-run.ts) exists to SCHEDULE agent_automations;
+// it understands a narrower cron dialect than pg_cron and must NEVER be used to
+// second-guess pg_cron's scheduling. Doing exactly that produced four false
+// ⚠️ alarms on River ("schedule not understood", "overdue") for jobs pg_cron
+// was running flawlessly — 0 of 5508 runs failed in the window the alarm
+// covered. Every claim this module makes is backed by job_run_details;
+// judgments requiring a parser (staleness prediction) are out of scope here.
 
 export interface CronJobRaw {
   jobname: string;
@@ -28,77 +36,66 @@ export interface CronHealthReport {
 }
 
 export interface CronJobEnriched extends CronJobRaw {
-  stale: boolean;         // active job that should have run by now but hasn't
-  unparsed_schedule: boolean; // parser has no branch → dispatcher would +1h-drift it
-  red: boolean;           // any actionable problem
+  last_failed: boolean;   // pg_cron's own verdict: latest run in job_run_details ended 'failed'
+  red: boolean;           // any actionable problem, evidence-backed
   reasons: string[];
 }
 
 export interface CronHealthEnriched extends Omit<CronHealthReport, 'jobs'> {
   jobs: CronJobEnriched[];
-  flags: CronHealthReport['flags'] & { jobs_stale: number; jobs_red: number };
+  flags: CronHealthReport['flags'] & { jobs_failed: number; jobs_red: number };
   red_count: number;
 }
 
-// A run is "stale" when: the job is active, it has run before, and the next run
-// AFTER its last run is already comfortably in the past (grace = one extra
-// interval, floored at 10 min) — i.e. it missed at least one scheduled slot.
-function isStale(job: CronJobRaw, now: Date): boolean {
-  if (!job.active || job.never_ran || !job.schedule || !job.last_run) return false;
-  if (!isSupportedCron(job.schedule)) return false; // don't guess on unparsed exprs
-  const last = new Date(job.last_run);
-  const expectedNext = new Date(calculateNextRun(job.schedule, last));
-  const interval = expectedNext.getTime() - last.getTime();
-  const grace = Math.max(interval, 10 * 60 * 1000);
-  return now.getTime() > expectedNext.getTime() + grace;
-}
-
-export function enrichCronHealth(report: CronHealthReport, now: Date = new Date()): CronHealthEnriched {
+export function enrichCronHealth(report: CronHealthReport): CronHealthEnriched {
   const jobs: CronJobEnriched[] = (report.jobs || []).map((j) => {
     const reasons: string[] = [];
     if (j.foreign_host) reasons.push(`targets a foreign host (${j.target_host})`);
-    if (j.never_ran) reasons.push('never ran');
+    if (j.never_ran && j.active) reasons.push('never ran (no run recorded in job_run_details)');
     if (!j.active) reasons.push('disabled');
-    const stale = isStale(j, now);
-    if (stale) reasons.push('overdue (missed a scheduled slot)');
-    const unparsed = !!j.schedule && !isSupportedCron(j.schedule);
-    if (unparsed) reasons.push(`schedule not understood by the parser ("${j.schedule}") — would drift to +1h`);
-    // `disabled` alone is a config state, not necessarily a fault; only flag it
-    // red alongside another signal or leave it informational. foreign_host,
-    // never_ran, stale, unparsed are always red.
-    const red = j.foreign_host || j.never_ran || stale || unparsed;
-    return { ...j, stale, unparsed_schedule: unparsed, red, reasons };
+    const last_failed = j.last_status === 'failed';
+    if (last_failed) {
+      reasons.push(`latest run FAILED per job_run_details${j.last_run ? ` (at ${j.last_run})` : ''}`);
+    }
+    // Red only on evidence pg_cron itself provides: a foreign target in the
+    // command, an active job with no run on record, or a run pg_cron marked
+    // failed. `disabled` alone is a config state, not a fault.
+    const red = j.foreign_host || (j.never_ran && j.active) || last_failed;
+    return { ...j, last_failed, red, reasons };
   });
 
-  const jobs_stale = jobs.filter((j) => j.stale).length;
+  const jobs_failed = jobs.filter((j) => j.last_failed).length;
   const jobs_red = jobs.filter((j) => j.red).length;
-  const httpErr = report.http_errors_recent?.length || 0;
   return {
     ...report,
     jobs,
-    flags: { ...report.flags, jobs_stale, jobs_red },
-    red_count: jobs_red + (httpErr > 0 ? 1 : 0),
+    flags: { ...report.flags, jobs_failed, jobs_red },
+    // HTTP errors from net._http_response are pg_net-wide and not attributable
+    // to a specific job — informational context, never an alarm on their own.
+    red_count: jobs_red,
   };
 }
 
-// Format a concise River alert — or null when everything is healthy (silence by
-// default: the Fas 0 discipline — only speak when a human colleague would).
-export function formatCronHealthAlert(r: CronHealthEnriched): string | null {
+// Format a concise ops summary for the Daily Briefing / Observability — or null
+// when everything is healthy (silence by default: the Fas 0 discipline).
+//
+// CHANNEL RULE (Magnus, 2026-08-28): this text is OPS telemetry. It goes to the
+// Daily Briefing and /admin/system → Observability — NEVER to River
+// (post_to_river). River is the team's social feed, reserved for positive and
+// informative posts.
+export function formatCronHealthSummary(r: CronHealthEnriched): string | null {
   if (!r.cron_available) return null;
   const redJobs = r.jobs.filter((j) => j.red);
-  const httpErr = r.http_errors_recent || [];
-  if (redJobs.length === 0 && httpErr.length === 0) return null;
+  if (redJobs.length === 0) return null;
 
-  const lines: string[] = ['⚠️ **Scheduled-job health** — issues found:'];
+  const lines: string[] = ['⚠️ **Scheduled-job health** — issues found (evidence: cron.job_run_details):'];
   for (const j of redJobs.slice(0, 8)) {
     lines.push(`• \`${j.jobname}\` — ${j.reasons.join('; ')}`);
   }
   if (redJobs.length > 8) lines.push(`• …and ${redJobs.length - 8} more`);
+  const httpErr = r.http_errors_recent || [];
   if (httpErr.length > 0) {
-    const sample = httpErr.slice(0, 3)
-      .map((e) => `${e.status_code ?? 'ERR'}${e.url ? ' ' + e.url : ''}`)
-      .join(', ');
-    lines.push(`• ${httpErr.length} HTTP error(s) from cron calls in 24h (${sample})`);
+    lines.push(`• Context: ${httpErr.length} recent HTTP error(s) across ALL pg_net calls (not attributable to a specific job).`);
   }
   lines.push('\nJob status "succeeded" only means pg_cron dispatched the command — check /admin/system → Observability.');
   return lines.join('\n');

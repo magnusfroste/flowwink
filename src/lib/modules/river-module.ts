@@ -32,7 +32,7 @@ const RIVER_SKILLS: SkillSeed[] = [
   {
     name: 'post_to_river',
     description:
-      'Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\'s team voice. Use when: announcing a release, sharing a quick win, posting an internal heads-up, or replying in a thread — anything a human colleague would genuinely post. NOT for: routine status or "checked, nothing new" (silence — that telemetry already lives in agent_activity); approval requests (the approval queue notifies on its own); external customer chat (use chat); ticket replies (use manage_ticket); newsletter/blog (those are external).',
+      'Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\'s team voice. Use when: announcing a release, sharing a quick win, posting a positive/informative team moment, or replying in a thread — anything a human colleague would genuinely post. NOT for: operational alerts or drift/health warnings (⚠️ failing jobs, integrity issues, error counts — those go to the Daily Briefing and /admin/system Observability, never here); routine status or "checked, nothing new" (silence — that telemetry already lives in agent_activity); approval requests (the approval queue notifies on its own); external customer chat (use chat); ticket replies (use manage_ticket); newsletter/blog (those are external).',
     category: 'communication',
     handler: 'module:river',
     scope: 'internal',
@@ -92,10 +92,25 @@ optional images, threads via \`parent_id\`.
 ### The colleague test (for agents)
 River is a human channel — every post costs team attention. Before posting,
 ask: would a human colleague post this? A completed objective, a shipped
-campaign, a heads-up that needs eyes → yes. Routine status, "checked X,
+campaign, a positive team moment → yes. Routine status, "checked X,
 nothing new", per-heartbeat summaries → NO — stay silent (that telemetry is
 already recorded in agent_activity). Approvals never go here; the approval
 queue notifies on its own. Aim for at most a few posts per day.
+
+### Channel hierarchy (HARD RULE — 2026-08-28)
+Operational warnings NEVER go to River. Failing scheduled jobs, drift/health
+alerts, integrity issues, error counts → the Daily Briefing and
+/admin/system → Observability are their channels. River is reserved for
+positive/informative posts ("first booking!", a publish, a shipped feature).
+An ops ⚠️ posted here is a misroute even when the finding is real — and if
+you haven't verified the claim against primary evidence (job_run_details,
+agent_activity), it may also be a false alarm.
+
+### Dedup (system posts)
+Agent-created posts are deduplicated server-side: a post whose fingerprint
+(normalized body, digits ignored) matches a post from the last 7 days
+UPDATES that post instead of creating a new one. Don't re-post the same
+announcement with fresher numbers — the existing post absorbs it.
 
 ### Parameters
 - **action**: create | reply | pin | unpin | delete | list

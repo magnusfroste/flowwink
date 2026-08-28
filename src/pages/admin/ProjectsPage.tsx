@@ -22,7 +22,9 @@ import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryS
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X } from "lucide-react";
+import { ActivitiesView } from "@/components/admin/projects/ActivitiesView";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -42,14 +44,14 @@ function NewProjectDialog({ open: controlledOpen, onOpenChange }: { open?: boole
   const open = controlledOpen ?? internalOpen;
   const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); if (controlledOpen === undefined) setInternalOpen(v); };
   const create = useCreateProject();
-  const [form, setForm] = useState({ name: "", description: "", client_name: "", deadline: "" });
+  const [form, setForm] = useState({ name: "", description: "", client_name: "", deadline: "", visibility: "shared" as "shared" | "private" });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     create.mutate(
-      { name: form.name, description: form.description || null, client_name: form.client_name || null, deadline: form.deadline || null },
-      { onSuccess: () => { setOpen(false); setForm({ name: "", description: "", client_name: "", deadline: "" }); } }
+      { name: form.name, description: form.description || null, client_name: form.client_name || null, deadline: form.deadline || null, visibility: form.visibility },
+      { onSuccess: () => { setOpen(false); setForm({ name: "", description: "", client_name: "", deadline: "", visibility: "shared" }); } }
     );
   };
 
@@ -62,6 +64,26 @@ function NewProjectDialog({ open: controlledOpen, onOpenChange }: { open?: boole
           <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
           <div><Label>Client</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
           <div><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} /></div>
+          <div>
+            <Label>Visibility</Label>
+            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="shared">Shared — visible to the whole team (default)</SelectItem>
+                <SelectItem value="private">Private — only you and admins</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Visibility</Label>
+            <Select value={form.visibility} onValueChange={(v) => setForm(f => ({ ...f, visibility: v as "shared" | "private" }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="shared">Shared — visible to the whole team</SelectItem>
+                <SelectItem value="private">Private — only you and admins</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -81,6 +103,7 @@ function EditProjectDialog({ project, open, onOpenChange }: { project: Project; 
     client_name: project.client_name ?? "",
     deadline: project.deadline ?? "",
     is_active: project.is_active ?? true,
+    visibility: project.visibility ?? "shared",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,6 +117,7 @@ function EditProjectDialog({ project, open, onOpenChange }: { project: Project; 
         client_name: form.client_name || null,
         deadline: form.deadline || null,
         is_active: form.is_active,
+        visibility: form.visibility,
       },
       { onSuccess: () => onOpenChange(false) }
     );
@@ -446,6 +470,7 @@ export default function ProjectsPage() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [tab, setTab] = useTabParam("board", "view");
+  const [mode, setMode] = useTabParam("projects", "mode");
   const del = useDeleteProject();
   // `?new=1` and `?new=task` both open the project create dialog — there is no
   // standalone "new task" flow at this level (tasks are created inside a project).
@@ -479,6 +504,25 @@ export default function ProjectsPage() {
             action={<Button onClick={() => setNewProjectOpen(true)}><Plus className="h-4 w-4 mr-2" /> New project</Button>}
           />
         ) : (
+          <>
+          {/* Två INGÅNGAR, inte två flikar i ett projekt: kör man flera projekt
+              vill man ibland utgå från projekten, ibland från aktiviteterna
+              (Magnus/Peter 2026-08-28). Aktiviteter = tvärprojektlistan. */}
+          <div className="flex rounded-md border p-0.5 w-fit">
+            <Button size="sm" variant={mode === "projects" ? "secondary" : "ghost"} onClick={() => setMode("projects")}>
+              <FolderKanban className="mr-2 h-3.5 w-3.5" /> Projects
+            </Button>
+            <Button size="sm" variant={mode === "activities" ? "secondary" : "ghost"} onClick={() => setMode("activities")}>
+              <ListTodo className="mr-2 h-3.5 w-3.5" /> Activities
+            </Button>
+          </div>
+
+          {mode === "activities" ? (
+            <ActivitiesView
+              projects={projects}
+              onOpenProject={(pid) => { setSelectedId(pid); setMode("projects"); setTab("board"); }}
+            />
+          ) : (
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <aside className="lg:sticky lg:top-20 w-full shrink-0 lg:w-64 lg:max-h-[calc(100vh-7rem)]">
               <ProjectRail
@@ -561,6 +605,8 @@ export default function ProjectsPage() {
               )}
             </div>
           </div>
+          )}
+          </>
         )}
       </div>
     </AdminLayout>

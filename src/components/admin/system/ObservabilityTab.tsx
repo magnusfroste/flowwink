@@ -294,10 +294,12 @@ function LoginActivityCard() {
   );
 }
 
-// Scheduled-job health (hardening #1, layer 2). Calls the cron-health edge
-// function (cron_health_report enriched with staleness via the shared parser)
-// and surfaces the failure classes pg_cron's own "succeeded" status hides —
-// foreign_host being the headline signal that caught the July fleet incidents.
+// Scheduled-job health (hardening #1, layer 2). Calls the instance-health edge
+// function (cron_health_report enriched with pg_cron's OWN run evidence from
+// job_run_details — never the agent-automation cron parser, whose narrower
+// dialect false-alarmed on healthy pg_cron jobs in the River incident) and
+// surfaces failed runs, never-ran jobs, and foreign_host — the headline signal
+// that caught the July fleet incidents.
 function CronHealthCard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['cron-health'],
@@ -307,9 +309,9 @@ function CronHealthCard() {
       return data as {
         cron_available: boolean;
         self_host: string | null;
-        jobs: Array<{ jobname: string; schedule: string | null; active: boolean; target_host: string | null; foreign_host: boolean; never_ran: boolean; stale: boolean; unparsed_schedule: boolean; red: boolean; last_status: string | null; last_run: string | null; reasons: string[] }>;
+        jobs: Array<{ jobname: string; schedule: string | null; active: boolean; target_host: string | null; foreign_host: boolean; never_ran: boolean; last_failed: boolean; red: boolean; last_status: string | null; last_run: string | null; reasons: string[] }>;
         http_errors_recent: Array<{ status_code: number | null; url: string | null; created: string; error: string | null }>;
-        flags: { jobs_total: number; jobs_red: number; jobs_stale: number; jobs_foreign_host: number; http_errors_24h: number };
+        flags: { jobs_total: number; jobs_red: number; jobs_failed: number; jobs_foreign_host: number; http_errors_24h: number };
       };
     },
     staleTime: 60_000,

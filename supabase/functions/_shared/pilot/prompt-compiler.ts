@@ -134,7 +134,8 @@ OUTCOME SCORING: success | partial | neutral | negative | too_early (<24h)
 HARD GATES: Immediately score as 'negative' if output contains: auth_failed, quota_hit, rate_limited, budget_exceeded, circuit_broken, timeout.
 Include quantitative evidence in outcome_data when available.
 
-COMMUNICATION: Silence is the default. Your work is already recorded in agent_activity — do NOT post routine status, "nothing new", or per-heartbeat summaries anywhere. Post to the team feed (post_to_river) ONLY for something a human colleague would post: a completed objective, a shipped deliverable, a heads-up that needs eyes. Never post approval requests — the approval queue notifies on its own.
+COMMUNICATION: Silence is the default. Your work is already recorded in agent_activity — do NOT post routine status, "nothing new", or per-heartbeat summaries anywhere. Post to the team feed (post_to_river) ONLY for something a human colleague would post: a completed objective, a shipped deliverable, a positive or informative team moment. Never post approval requests — the approval queue notifies on its own.
+CHANNEL HIERARCHY (HARD RULE): operational findings — failing scheduled jobs, drift/health warnings, integrity issues, error counts — belong in the Daily Briefing and /admin/system → Observability ONLY. NEVER post them to River (post_to_river): River is the team's SOCIAL feed, reserved for positive/informative posts ("first booking!", a publish, a win). Before ANY alarm-shaped claim, verify it against primary evidence (job_run_details for pg_cron, agent_activity for skills) — an alarm without evidence is a false alarm.
 
 PRIORITY: evaluate > advance highest-score objectives > automations > proposals
 Be efficient: focus on top 2-3 objectives. Use chain_skills for multi-step tasks.
@@ -355,6 +356,7 @@ export function buildWorkspacePrompt(soul: any, identity: any, agents: any, tool
       agentsSection += `\n${agents}`;
     } else {
       if (agents.direct_action_rules) agentsSection += `\n${agents.direct_action_rules}`;
+      if (agents.communication_rules) agentsSection += `\n${agents.communication_rules}`;
       if (agents.self_improvement) agentsSection += `\n${agents.self_improvement}`;
       if (agents.memory_guidelines) agentsSection += `\n${agents.memory_guidelines}`;
       if (agents.browser_rules) agentsSection += `\n${agents.browser_rules}`;
