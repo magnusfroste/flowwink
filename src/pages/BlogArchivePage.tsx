@@ -77,7 +77,7 @@ export default function BlogArchivePage() {
       
       <PublicNavigation />
       
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className={archiveTitle

@@ -37,7 +37,7 @@ export default function KbArticlePage() {
     return (
       <>
         <PublicNavigation />
-        <main className="min-h-screen bg-background">
+        <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
             <p className="text-center text-muted-foreground">Loading article…</p>
           </div>
@@ -63,7 +63,7 @@ export default function KbArticlePage() {
         canonicalUrl={`${baseUrl}/kb/${article.slug}`}
       />
       <PublicNavigation />
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <article className="container mx-auto max-w-3xl px-4 py-12 md:py-16">
           <Link
             to="/kb"
