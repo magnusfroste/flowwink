@@ -57,6 +57,23 @@ export interface CompanyProfile {
   financial_health: string;
   founded_year: string;
   legal_name: string;
+  // The register fields agents and enrichment write via update_company_profile's
+  // shallow merge. Stored and read by prompts long before they had an editor —
+  // load-bearing, invisible, uncorrectable (the tagline class). Now editable.
+  ceo: string;
+  website: string;
+  linkedin: string;
+  tagline_en: string;
+  city: string;
+  postal_code: string;
+  country: string;
+  legal_form: string;
+  vat_number: string;
+  share_capital: string;
+  /** Registration date at the companies office (YYYY-MM-DD). */
+  registered: string;
+  /** When the current company name was adopted (YYYY-MM-DD). */
+  name_adopted: string;
   // Enrichment metadata
   enrichment_log: EnrichmentEntry[];
 }
@@ -98,6 +115,18 @@ export const defaultProfile: CompanyProfile = {
   financial_health: "",
   founded_year: "",
   legal_name: "",
+  ceo: "",
+  website: "",
+  linkedin: "",
+  tagline_en: "",
+  city: "",
+  postal_code: "",
+  country: "",
+  legal_form: "",
+  vat_number: "",
+  share_capital: "",
+  registered: "",
+  name_adopted: "",
   enrichment_log: [],
 };
 
