@@ -50,10 +50,15 @@ export default function BlogArchivePage() {
     ? posts.filter(p => !featuredPosts.some(fp => fp.id === p.id))
     : posts;
   
-  const archiveTitle = blogSettings?.archiveTitle || 'Blog';
-  const pageTitle = currentPage > 1 
-    ? `${archiveTitle} - Page ${currentPage}` 
-    : archiveTitle;
+  /* Tom sträng är AV-ratten (samma semantik som footerrubrikerna, #309):
+     ?? behåller defaulten när inget satts, '' döljer synliga rubriken helt —
+     arkivet har inget hero-block, så titeln är enda sättet den syns.
+     <title>-taggen behåller alltid ett namn för SEO:ns skull. */
+  const archiveTitle = blogSettings?.archiveTitle ?? 'Blog';
+  const seoName = archiveTitle || 'Blog';
+  const pageTitle = currentPage > 1
+    ? `${seoName} - Page ${currentPage}`
+    : seoName;
 
   return (
     <>
@@ -75,8 +80,10 @@ export default function BlogArchivePage() {
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold">{archiveTitle}</h1>
+          <div className={archiveTitle
+            ? "flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+            : "flex justify-end gap-4 mb-8"}>
+            {archiveTitle && <h1 className="text-3xl md:text-4xl font-serif font-bold">{archiveTitle}</h1>}
             {blogSettings?.rssEnabled && (
               <Button variant="outline" size="sm" asChild>
                 <a href="/api/blog-rss" target="_blank" rel="noopener noreferrer">
