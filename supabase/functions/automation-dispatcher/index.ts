@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
-import { calculateNextRun } from '../_shared/cron/next-run.ts';
+import { calculateNextRun, isSupportedCron, readCronExpression } from '../_shared/cron/next-run.ts';
 
 /**
  * Automation Dispatcher
@@ -68,9 +68,33 @@ serve(async (req) => {
 
     // 2. Execute each automation (skip NULL next_run_at — just initialize them)
     for (const auto of (dueAutomations || [])) {
+      // Gate BEFORE anything schedules: a cron automation whose expression is
+      // missing (all of expression/cron/schedule blank) or one this parser has
+      // no branch for must never inherit calculateNextRun's +1h fallback — that
+      // silent degrade ran a schedule-keyed WEEKLY digest every HOUR for 15
+      // days (2026-08-28 audit). The skip is ANNOUNCED: disable the automation,
+      // write the reason where the admin UI shows it (last_error), and log.
+      const cronExpr = readCronExpression(auto.trigger_config);
+      if (!cronExpr || !isSupportedCron(cronExpr)) {
+        const reason = !cronExpr
+          ? "no readable cron expression in trigger_config (looked for keys: expression, cron, schedule)"
+          : `cron expression "${cronExpr}" is not understood by the dispatcher's parser`;
+        console.error(`[dispatcher] disabling automation "${auto.name}" (${auto.id}): ${reason}`);
+        await supabase
+          .from("agent_automations")
+          .update({
+            enabled: false,
+            next_run_at: null,
+            last_error: `Disabled by dispatcher: ${reason}. Fix trigger_config and re-enable — running it on the silent +1h fallback is exactly the incident this guard exists for.`,
+            updated_at: now,
+          })
+          .eq("id", auto.id);
+        results.push({ id: auto.id, name: auto.name, status: "disabled_unreadable_cron", type: "automation", error: reason });
+        continue;
+      }
+
       // If next_run_at was NULL, just initialize it and skip execution
       if (!auto.next_run_at) {
-        const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
         const nextRun = calculateNextRun(cronExpr);
         await supabase
           .from("agent_automations")
@@ -100,7 +124,6 @@ serve(async (req) => {
         if (!flowpilotOn) {
           results.push({ id: auto.id, name: auto.name, status: "skipped_module_off", type: "automation" });
           // Still advance the schedule so it doesn't fire continuously when re-enabled
-          const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
           await supabase
             .from("agent_automations")
             .update({ next_run_at: calculateNextRun(cronExpr) })
@@ -148,8 +171,7 @@ serve(async (req) => {
         lastError = (err as Error).message || "Execution error";
       }
 
-      // 3. Calculate next_run_at from cron expression (support both field names)
-      const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
+      // 3. Calculate next_run_at from the cron expression validated by the gate above
       const nextRun = calculateNextRun(cronExpr);
 
       // 4. Update automation metadata
@@ -174,8 +196,25 @@ serve(async (req) => {
       .eq("trigger_type", "cron");
 
     for (const wf of (dueWorkflows || [])) {
-      const cronExpr = (wf.trigger_config as any)?.expression || (wf.trigger_config as any)?.cron;
-      if (!cronExpr) continue;
+      // Same gate as the automations lane: an unreadable or unparsable cron
+      // must be an ANNOUNCED disable, never a silent `continue` (dead config
+      // nobody sees) or the +1h fallback (a weekly job firing hourly).
+      const cronExpr = readCronExpression(wf.trigger_config);
+      if (!cronExpr || !isSupportedCron(cronExpr)) {
+        const reason = !cronExpr
+          ? "no readable cron expression in trigger_config (looked for keys: expression, cron, schedule)"
+          : `cron expression "${cronExpr}" is not understood by the dispatcher's parser`;
+        console.error(`[dispatcher] disabling workflow "${wf.name}" (${wf.id}): ${reason}`);
+        await supabase
+          .from("agent_workflows")
+          .update({
+            enabled: false,
+            last_error: `Disabled by dispatcher: ${reason}. Fix trigger_config and re-enable.`,
+          })
+          .eq("id", wf.id);
+        results.push({ id: wf.id, name: wf.name, status: "disabled_unreadable_cron", type: "workflow", error: reason });
+        continue;
+      }
 
       // Check if workflow is due based on last_run_at + cron interval
       const nextRun = wf.last_run_at

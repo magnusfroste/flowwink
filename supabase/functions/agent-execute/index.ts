@@ -1475,7 +1475,22 @@ async function executeModuleAction(
         }
       }
 
-      const { data, error } = await supabase.from('agent_automations').insert({
+      // Upsert on (name, skill_name): this create path was a bare INSERT, so
+      // every agent that re-ran its setup added another row — autoversio had
+      // SIX enabled 'Daily Briefing' automations by the 2026-08-28 audit.
+      // Re-creating now re-asserts the definition on the OLDEST existing row
+      // (re-assertable-seed doctrine); a partial unique index on
+      // (name, skill_name) WHERE enabled backstops races at the DB level.
+      const { data: existingAuto, error: lookupError } = await supabase.from('agent_automations')
+        .select('id')
+        .eq('name', name)
+        .eq('skill_name', targetSkill)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (lookupError) throw new Error(`Automation lookup failed: ${lookupError.message}`);
+
+      const autoRow = {
         name,
         description: description || null,
         trigger_type, // honor the actual trigger_type, no longer silently forced to cron
@@ -1485,7 +1500,23 @@ async function executeModuleAction(
         skill_arguments,
         enabled,
         executor,
-      }).select('id, name, trigger_type, enabled').single();
+      };
+
+      if (existingAuto?.id) {
+        const { data, error } = await supabase.from('agent_automations')
+          .update({ ...autoRow, updated_at: new Date().toISOString() })
+          .eq('id', existingAuto.id)
+          .select('id, name, trigger_type, enabled').single();
+        if (error) throw new Error(`Automation upsert failed: ${error.message}`);
+        return {
+          automation_id: data.id, name: data.name, trigger_type: data.trigger_type, enabled: data.enabled,
+          updated: true,
+          note: 'An automation with this name + skill already existed — its definition was re-asserted in place (no duplicate created). Use action=update with automation_id for partial edits.',
+        };
+      }
+
+      const { data, error } = await supabase.from('agent_automations').insert(autoRow)
+        .select('id, name, trigger_type, enabled').single();
       if (error) throw new Error(`Automation insert failed: ${error.message}`);
       return { automation_id: data.id, name: data.name, trigger_type: data.trigger_type, enabled: data.enabled };
     }
