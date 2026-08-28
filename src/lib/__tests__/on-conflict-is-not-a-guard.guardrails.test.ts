@@ -158,8 +158,12 @@ describe('ON CONFLICT måste ha en riktig nyckel att kollidera med', () => {
     // Om nyckelutvinningen tystnar blir spärren värdelös på motsatt sätt:
     // allt ser ut som en överträdelse, eller inget gör det.
     expect(keys.size).toBeGreaterThan(100);
-    expect(keys.get('agent_automations')).toEqual(expect.arrayContaining([['id']]));
-    expect(keys.get('agent_automations')?.some((k) => k.includes('name'))).toBe(false);
+    // 20260828200000 gav agent_automations en riktig identitetsnyckel:
+    // partiellt unikt index (name, skill_name) WHERE enabled. Extraktorn ska
+    // se den — och 'id'-PK:n från baseline ska finnas kvar.
+    expect(keys.get('agent_automations')).toEqual(
+      expect.arrayContaining([['id'], ['name', 'skill_name']]),
+    );
     expect(keys.get('role_module_access')).toEqual(
       expect.arrayContaining([['role', 'module_id']]),
     );
@@ -185,10 +189,11 @@ describe('seedade automationer delar idempotensmönster med sina syskon', () => 
    * Datadriven syskonspärr: agent_automations är tabellen där klassen slog
    * till, och `name` är dess de facto identitetsnyckel överallt i koden
    * (module-bootstrap och platform-seeds slår upp med
-   * `.eq('name', …).maybeSingle()`, teardown med `.in('name', …)`). Varje
-   * seedande INSERT i en migration måste därför vakta på name via NOT EXISTS
-   * — precis som Quote Expiry Reminders, Webinar Reminders och Notify
-   * approvers in cowork chat gör.
+   * `.eq('name', …)`, teardown med `.in('name', …)`). Sedan 20260828200000
+   * finns ett partiellt unikt index (name, skill_name) WHERE enabled — men det
+   * täcker bara ENABLADE rader, så varje seedande INSERT i en migration måste
+   * fortfarande vakta på name via NOT EXISTS — precis som Quote Expiry
+   * Reminders, Webinar Reminders och Notify approvers in cowork chat gör.
    */
   it('varje INSERT INTO agent_automations i migrationer vaktas med NOT EXISTS', () => {
     const bad: string[] = [];

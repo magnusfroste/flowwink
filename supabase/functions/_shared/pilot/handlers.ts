@@ -9,6 +9,7 @@
 
 import { resolveAiConfig } from '../ai-config.ts';
 import { isOpenAiReasoningModel } from '../ai-providers.ts';
+import { calculateNextRun, isSupportedCron, readCronExpression } from '../cron/next-run.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -530,32 +531,10 @@ export async function handleProposeObjective(supabase: any, args: { goal: string
 }
 
 // ─── Cron helpers ─────────────────────────────────────────────────────────────
-
-function calculateNextRun(cronExpr: string): string | null {
-  try {
-    const parts = cronExpr.trim().split(/\s+/);
-    if (parts.length < 5) return null;
-    const now = new Date();
-    const [min, hour, dayOfMonth] = parts;
-
-    if (min === '*' && hour === '*') return new Date(now.getTime() + 60_000).toISOString();
-    if (min.startsWith('*/')) return new Date(now.getTime() + parseInt(min.slice(2), 10) * 60_000).toISOString();
-    if (hour.startsWith('*/')) return new Date(now.getTime() + parseInt(hour.slice(2), 10) * 3600_000).toISOString();
-    if (hour !== '*' && min !== '*') {
-      const next = new Date(now);
-      next.setHours(parseInt(hour, 10), parseInt(min, 10), 0, 0);
-      if (next <= now) next.setDate(next.getDate() + 1);
-      if (dayOfMonth !== '*') {
-        next.setDate(parseInt(dayOfMonth, 10));
-        if (next <= now) next.setMonth(next.getMonth() + 1);
-      }
-      return next.toISOString();
-    }
-    return new Date(now.getTime() + 12 * 3600_000).toISOString();
-  } catch {
-    return new Date(Date.now() + 12 * 3600_000).toISOString();
-  }
-}
+// (This file used to carry its OWN cron parser — a second, drifting copy of the
+// exact class next-run.ts exists to prevent. It parsed in local time, guessed
+// +12h on anything it didn't understand, and knew nothing about day-of-week.
+// Removed 2026-08-28: _shared/cron/next-run.ts is the single parser.)
 
 export async function handleExecuteAutomation(supabase: any, supabaseUrl: string, serviceKey: string, args: { automation_id: string }) {
   const { data: auto, error: fetchErr } = await supabase.from('agent_automations')
@@ -595,8 +574,11 @@ export async function handleExecuteAutomation(supabase: any, supabaseUrl: string
 
   let nextRun: string | null = null;
   if (auto.trigger_type === 'cron') {
-    const cronExpr = auto.trigger_config?.cron || auto.trigger_config?.expression;
-    if (cronExpr) nextRun = calculateNextRun(cronExpr);
+    // Advance the schedule only when the expression is actually parseable —
+    // an unreadable one is the dispatcher's job to disable loudly, not ours
+    // to reschedule onto the +1h fallback.
+    const cronExpr = readCronExpression(auto.trigger_config);
+    if (cronExpr && isSupportedCron(cronExpr)) nextRun = calculateNextRun(cronExpr);
   }
 
   const updatePayload: Record<string, any> = {
@@ -1156,7 +1138,22 @@ export async function handleAutomationCreate(supabase: any, args: any) {
     return { status: 'error', error: `Skill '${args.skill_name}' has invalid UUID format` };
   }
 
-  const { data, error } = await supabase.from('agent_automations').insert({
+  // Upsert on (name, skill_name): re-creating an automation re-asserts its
+  // definition on the OLDEST existing row instead of adding another. An agent
+  // that re-ran its setup left autoversio with SIX enabled 'Daily Briefing'
+  // rows (2026-08-28 audit) — create must be idempotent on identity, per the
+  // re-assertable-seed doctrine. A partial unique index (name, skill_name)
+  // WHERE enabled backstops this at the DB level.
+  const { data: existing } = await supabase
+    .from('agent_automations')
+    .select('id')
+    .eq('name', args.name)
+    .eq('skill_name', args.skill_name)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const row = {
     name: args.name,
     description: args.description || null,
     trigger_type: args.trigger_type || 'cron',
@@ -1165,7 +1162,19 @@ export async function handleAutomationCreate(supabase: any, args: any) {
     skill_name: args.skill_name,
     skill_arguments: args.skill_arguments || {},
     enabled: args.enabled ?? false,
-  }).select('id, name, trigger_type, enabled').single();
+  };
+
+  if (existing?.id) {
+    const { data, error } = await supabase.from('agent_automations')
+      .update({ ...row, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select('id, name, trigger_type, enabled').single();
+    if (error) return { status: 'error', error: error.message };
+    return { status: 'updated', automation: data, note: 'An automation with this name + skill already existed — its definition was re-asserted in place (no duplicate created).' };
+  }
+
+  const { data, error } = await supabase.from('agent_automations').insert(row)
+    .select('id, name, trigger_type, enabled').single();
 
   if (error) return { status: 'error', error: error.message };
   return { status: 'created', automation: data };
