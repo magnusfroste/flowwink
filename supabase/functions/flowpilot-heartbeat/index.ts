@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
-import { enrichCronHealth, formatCronHealthAlert, type CronHealthReport } from '../_shared/cron/health.ts';
+import { enrichCronHealth, formatCronHealthSummary, type CronHealthReport } from '../_shared/cron/health.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -244,31 +244,26 @@ async function runIntegrityGate(supabase: any): Promise<string> {
 }
 
 // Scheduled-job health gate (hardening #1, layer 3). Deterministically detects
-// unhealthy cron jobs (foreign_host / never_ran / stale / unparsed schedule /
-// recent HTTP errors) via the SHARED cron-health brain, and — only when there
-// IS a problem — injects a context block instructing the operator to surface it
-// on River (its Fas 0 voice; post_to_river resolves author_id correctly). Silent
-// when healthy. Deduped: suppressed if a health alert already hit River in the
-// last 6h, so a persistent red state is flagged once, not every heartbeat.
+// unhealthy pg_cron jobs via the SHARED cron-health brain — which judges them
+// on pg_cron's OWN evidence (job_run_details: failed runs, never ran,
+// foreign_host), never on the agent-automation cron parser. Silent when
+// healthy.
+//
+// CHANNEL RULE (River incident, Magnus 2026-08-28): ops findings are ROUTED to
+// the Daily Briefing (which carries the same evidence-backed section) and to
+// /admin/system → Observability. They must NEVER be posted to River — River is
+// the team's social feed, reserved for positive/informative posts. This gate
+// therefore injects context for root-cause work only, and explicitly forbids
+// broadcasting it.
 async function runCronHealthGate(supabase: any): Promise<string> {
   try {
     const { data, error } = await supabase.rpc('cron_health_report');
     if (error || !data) return '';
     const enriched = enrichCronHealth(data as CronHealthReport);
-    const alert = formatCronHealthAlert(enriched);
-    if (!alert) return '';
+    const summary = formatCronHealthSummary(enriched);
+    if (!summary) return '';
 
-    // Dedup: already surfaced on River recently? Then stay quiet this tick.
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
-    const { data: recent } = await supabase
-      .from('river_posts')
-      .select('id')
-      .ilike('body', '%Scheduled-job health%')
-      .gte('created_at', sixHoursAgo)
-      .limit(1);
-    if (recent && recent.length > 0) return '';
-
-    return `\n\nSCHEDULED-JOB HEALTH (deterministic check — ${enriched.red_count} issue area(s)):\n${alert}\nACTION: this is a material operational issue a colleague would flag — post the alert above to the team via post_to_river now (a single post; do not repeat if already there).`;
+    return `\n\nSCHEDULED-JOB HEALTH (deterministic check — ${enriched.red_count} unhealthy job(s), evidence from cron.job_run_details):\n${summary}\nROUTING: this is OPS telemetry. It is already surfaced in the Daily Briefing and /admin/system → Observability. Do NOT post it to River (post_to_river) — River is for positive/informative team posts only. If a root-cause fix is within your skills, work it as an objective; otherwise leave it for the admin surfaces.`;
   } catch (chErr) {
     console.warn('[heartbeat] Cron-health gate failed (non-fatal):', chErr);
     return '';

@@ -2101,17 +2101,17 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:3706446eb2d892f31cc5eb431123678dff0db0d999b8623aad6090c088983457",
+      "seed_hash": "sha256:b96339c486d02e4071424f21aba24d1ae020ecbb36de4994cdcd8efe59c09763",
       "skill_count": 541,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:f2dcb599f88ddac82765d3827525fdfb0f3a3b602db02bd74a85a3b919d31d01",
+      "shared_hash": "sha256:a412d8a0fa8beb8326e4d8eb92030745ba7333de6bd32b12d7b8c85655e0ac81",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:dfa6494b08bb31a3be122347104317d391595a29c2f725b4e710da502571aab7",
+        "agent-execute": "sha256:e4f79f0ffd28f10ceeaeb7ad7433e4fb2f0db1aee21bdc430861fa3a92a22af2",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
@@ -2143,13 +2143,13 @@
         "event-dispatcher": "sha256:1226b1ce317cb70cfdae46441f59499f8559b159fd08ee5063105ebfd98e5aa0",
         "extract-pdf-text": "sha256:80474c20ca8c39ba6bbf8bcb7e2be777632b312915a4c48a13a92fb2dcc0cdfe",
         "federation-invite-peer": "sha256:f75a07661700e2c926b972336df93b67f6d4d4180ff9f1d05e3ee26bedf5a4e1",
-        "flowpilot-heartbeat": "sha256:3e84efb7ac7461af93959b37bab115dd5aa5a34d8767c52177c2186785d89f39",
-        "flowpilot-lifecycle": "sha256:0e1d4b6664cb6494fbd00449ef6cdd17b6b5cf7379aef093d36e011e7d2fb959",
+        "flowpilot-heartbeat": "sha256:cb2ade84ccfe36234b655c36fcffa45ae85e7a1c65fd8822cd89b8f13ed48dde",
+        "flowpilot-lifecycle": "sha256:7f58c27f32b17fbff5ea14dfc673ee414d58ea7e5303a751052b9bdaa285dd25",
         "gatewayapi-ingest": "sha256:ae5a2baedfe97730bbb80a1416e1db30730bee6c1e762a38376143d1b0549713",
         "generate-invoice-pdf": "sha256:4bd3a97682d1002144638f741e9b2f296513c5815c5b970f38ab3d50eba79fad",
         "get-page": "sha256:29eb67b2b03b57f65c68c681124330c7ef65371108422c6013beaa59cd1b8216",
         "gmail-oauth-callback": "sha256:b851b5a37da669b8dc506d399417619361317d008a2ac17a3b3cfda4dfff0dea",
-        "instance-health": "sha256:adcc60867def2e66197d5328789e1eb16d15d7b138b006d5de796749e508750a",
+        "instance-health": "sha256:15fac01005e503ee8f7c4226890bea28ecdcd0b43ada818f8fc7697e9fbecc99",
         "integrations-account": "sha256:97349b1f66e6a4e628de49bd36473af4f5c19726174c30e3b47ff4c594d68e29",
         "invite-colleague": "sha256:cad6246a2988ca3c780cb3497707a4d818e311f3b1bf704957b3754b9d86b5b3",
         "invite-employee": "sha256:354d9ecbcc20ff402597a0e4c10875807c1a140ace0c5c06505ff8fc9fe13eb5",
