@@ -124,6 +124,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "end_webmeet_room": "webmeet",
   "enrich_company": "leads",
   "enrich_company_profile": "companyInsights",
+  "ensure_lead_partner": "leads",
   "escalate_dunning": "subscriptions",
   "estimate_delivery_date": "shipping",
   "evaluate_expense_policy": "expenses",
