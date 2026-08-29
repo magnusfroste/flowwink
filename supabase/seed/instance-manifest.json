@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260829170000",
-      "migrations_count": 525,
+      "migration_head": "20260829190000",
+      "migrations_count": 526,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2105,6 +2105,10 @@
         {
           "version": "20260829170000",
           "name": "prospect-ar-inte-lead"
+        },
+        {
+          "version": "20260829190000",
+          "name": "posten-orubblig-texten-rattningsbar"
         }
       ]
     },

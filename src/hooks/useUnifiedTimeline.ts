@@ -15,6 +15,17 @@ export interface TimelineEvent {
   direction?: 'inbound' | 'outbound';
   actor?: string;
   status?: string;
+  /**
+   * Set for rows in `lead_activities` — the ledger. Carries what the UI needs
+   * to correct the TEXT of an entry it may correct: the row id, who wrote it
+   * (null = written by the system, nobody may rewrite it), and whether it has
+   * already been corrected. The entry itself is immutable; see the
+   * lead_activity_ledger_guard trigger.
+   */
+  activityId?: string;
+  activityType?: string;
+  authorId?: string | null;
+  editedAt?: string | null;
 }
 
 
@@ -102,6 +113,10 @@ export function useUnifiedTimeline(leadId: string | undefined, email: string | u
               icon: getActivityIcon(a.type),
               color: getActivityColor(a.type),
               points: a.points || undefined,
+              activityId: a.id,
+              activityType: a.type,
+              authorId: (a as { created_by?: string | null }).created_by ?? null,
+              editedAt: (a as { edited_at?: string | null }).edited_at ?? null,
             });
           }
         }
