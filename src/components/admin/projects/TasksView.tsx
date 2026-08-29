@@ -29,7 +29,7 @@ type Row = {
 
 const DONE = new Set(["done", "completed", "cancelled"]);
 
-export function ActivitiesView({
+export function TasksView({
   projects,
   onOpenProject,
 }: {
@@ -104,10 +104,10 @@ export function ActivitiesView({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Loading activities…</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">Loading tasks…</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">
-          No activities match — switch filters or create tasks inside a project.
+          No tasks match — switch filters or create tasks inside a project.
         </p>
       ) : (
         <div className="divide-y rounded-lg border">

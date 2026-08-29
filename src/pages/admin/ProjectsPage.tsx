@@ -25,7 +25,7 @@ import { ProjectSummaryStrip } from "@/components/admin/projects/ProjectSummaryS
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTabParam } from "@/hooks/useTabParam";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ActivitiesView } from "@/components/admin/projects/ActivitiesView";
+import { TasksView } from "@/components/admin/projects/TasksView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FolderKanban, CheckCircle2, Clock, Circle, Pencil, Trash2, X , Lock, ListTodo } from "lucide-react";
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
@@ -482,7 +482,10 @@ export default function ProjectsPage() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [tab, setTab] = useTabParam("board", "view");
-  const [mode, setMode] = useTabParam("projects", "mode");
+  const [rawMode, setMode] = useTabParam("projects", "mode");
+  // ?mode=activities levde i två dagar innan vyn döptes om till Tasks. En
+  // sparad länk ska visa vyn den pekade på, inte tyst landa på projektlistan.
+  const mode = rawMode === "activities" ? "tasks" : rawMode;
   const del = useDeleteProject();
   // `?new=1` and `?new=task` both open the project create dialog — there is no
   // standalone "new task" flow at this level (tasks are created inside a project).
@@ -522,21 +525,21 @@ export default function ProjectsPage() {
           <>
           {/* Två INGÅNGAR, inte två flikar i ett projekt: kör man flera projekt
               vill man ibland utgå från projekten, ibland från aktiviteterna
-              (Magnus/Peter 2026-08-28). Aktiviteter = tvärprojektlistan. */}
+              (Magnus/Peter 2026-08-28). Tasks = tvärprojektlistan. */}
           <div className="flex rounded-md border p-0.5 w-fit">
             <Button size="sm" variant={mode === "projects" ? "secondary" : "ghost"} onClick={() => setMode("projects")}>
               <FolderKanban className="mr-2 h-3.5 w-3.5" /> Projects
             </Button>
-            <Button size="sm" variant={mode === "activities" ? "secondary" : "ghost"} onClick={() => setMode("activities")}>
-              <ListTodo className="mr-2 h-3.5 w-3.5" /> Activities
+            <Button size="sm" variant={mode === "tasks" ? "secondary" : "ghost"} onClick={() => setMode("tasks")}>
+              <ListTodo className="mr-2 h-3.5 w-3.5" /> Tasks
             </Button>
           </div>
 
-          {mode === "activities" ? (
+          {mode === "tasks" ? (
             // Hela listan, inte den linsade: en uppgift tilldelad mig i NÅGON
             // annans projekt är fortfarande min, så vyn gör sin egen
             // sammansatta filtrering i stället för att ärva urvalet.
-            <ActivitiesView
+            <TasksView
               projects={rawProjects ?? []}
               onOpenProject={(pid) => { setSelectedId(pid); setMode("projects"); setTab("board"); }}
             />

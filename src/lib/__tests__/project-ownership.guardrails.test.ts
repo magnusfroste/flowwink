@@ -5,7 +5,7 @@
  * visade "Mine" i aktivitetsvyn ingenting. Filtret fungerade; det fanns ingen
  * data att filtrera på. Kontakterna räddades av ownership-on-create sedan
  * 2026-08-08; projekt och uppgifter hade aldrig fått motsvarande, och
- * ActivitiesView bar dessutom en EGEN All/Mine-växel vid sidan av CRM-linsen —
+ * Vyn (då ActivitiesView, nu TasksView) bar dessutom en EGEN All/Mine-växel —
  * en tredje sanning om vad "mitt" betyder.
  *
  * Magnus definition (hans beslut, inte en teknisk bekvämlighet): tilldelade mig
@@ -19,7 +19,7 @@ import { OWNERSHIP } from '@/lib/ownership';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf-8');
 const sql = read('supabase/migrations/20260829230000_projekt-far-agare-och-handavtryck.sql');
-const view = read('src/components/admin/projects/ActivitiesView.tsx');
+const view = read('src/components/admin/projects/TasksView.tsx');
 const page = read('src/pages/admin/ProjectsPage.tsx');
 const crud = read('supabase/functions/agent-execute/index.ts');
 
@@ -73,7 +73,7 @@ describe('"Mina" betyder en sak, på alla tre ytorna', () => {
   });
 
   it('vyn får HELA projektlistan — en uppgift åt mig i någon annans projekt är min', () => {
-    expect(page).toMatch(/<ActivitiesView\s*\n\s*projects=\{rawProjects \?\? \[\]\}/);
+    expect(page).toMatch(/<TasksView\s*\n\s*projects=\{rawProjects \?\? \[\]\}/);
     // Projektlistan i rälsen ÄR däremot linsad — där betyder ägarskap urval.
     expect(page).toMatch(/<ProjectRail\s*\n\s*projects=\{projects\}/);
   });
