@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { useUiText } from '@/lib/ui-text';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ interface SmartBookingBlockProps {
 type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
 export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockProps) {
+  const t = useUiText();
   const { formatCurrency, formatDate } = usePlatformFormat();
   const [step, setStep] = useState<BookingStep>('service');
   // Sant först när comms-send SVARAT att mailet gick (inte skipped/blocked) —
@@ -303,9 +305,9 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       <section className={containerClasses}>
         <div className="max-w-md mx-auto text-center py-12">
           <CheckCircle2 className="h-16 w-16 text-success mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Booking Request Submitted!</h3>
+          <h3 className="text-xl font-semibold mb-2">{t('booking.submitted', 'Booking Request Submitted!')}</h3>
           <p className="text-muted-foreground mb-4">
-            {data.successMessage || "Thank you! We'll contact you to confirm your appointment."}
+            {data.successMessage || t('booking.successDefault', "Thank you! We'll contact you to confirm your appointment.")}
           </p>
           {confirmationEmailed && (
             <p className="text-sm text-muted-foreground mt-2">
@@ -363,7 +365,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
         {/* Step 1: Service Selection */}
         {step === 'service' && (
           <div className="space-y-4">
-            <h3 className="font-medium text-lg">Select a Service</h3>
+            <h3 className="font-medium text-lg">{t('booking.selectService', 'Select a Service')}</h3>
             <div className="grid gap-3">
               {activeServices.map((service) => (
                 <button
@@ -386,7 +388,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                         <Clock className="h-4 w-4" />
                         {service.duration_minutes} min
                       </div>
-                      {service.price_cents && service.price_cents > 0 && (
+                      {(service.price_cents ?? 0) > 0 && (
                         <p className="font-medium mt-1">
                           {formatCurrency(service.price_cents, service.currency)}
                         </p>
@@ -408,9 +410,9 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Back
+                {t('booking.back', 'Back')}
               </button>
-              <h3 className="font-medium text-lg">Select Date & Time</h3>
+              <h3 className="font-medium text-lg">{t('booking.selectDateTime', 'Select Date & Time')}</h3>
               <div className="w-12" />
             </div>
 
@@ -506,7 +508,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Back
+                {t('booking.back', 'Back')}
               </button>
               <h3 className="font-medium text-lg">Your Details</h3>
               <div className="w-12" />
@@ -530,18 +532,18 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="smart-booking-name">Name *</Label>
+                  <Label htmlFor="smart-booking-name">{t('booking.name', 'Name')} *</Label>
                   <Input
                     id="smart-booking-name"
                     type="text"
-                    placeholder="Your name"
+                    placeholder={t('booking.namePlaceholder', 'Your name')}
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="smart-booking-email">Email *</Label>
+                  <Label htmlFor="smart-booking-email">{t('booking.email', 'Email')} *</Label>
                   <Input
                     id="smart-booking-email"
                     type="email"
@@ -555,11 +557,11 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
 
               {data.showPhoneField !== false && (
                 <div className="space-y-2">
-                  <Label htmlFor="smart-booking-phone">Phone</Label>
+                  <Label htmlFor="smart-booking-phone">{t('booking.phone', 'Phone')}</Label>
                   <Input
                     id="smart-booking-phone"
                     type="tel"
-                    placeholder="Your phone number"
+                    placeholder={t('booking.phonePlaceholder', 'Your phone number')}
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                   />
@@ -567,10 +569,10 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="smart-booking-notes">Notes</Label>
+                <Label htmlFor="smart-booking-notes">{t('booking.notes', 'Notes')}</Label>
                 <Textarea
                   id="smart-booking-notes"
-                  placeholder="Any additional information..."
+                  placeholder={t('booking.notesPlaceholder', 'Any additional information...')}
                   value={formData.notes}
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                   rows={3}

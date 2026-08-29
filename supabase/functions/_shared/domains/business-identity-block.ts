@@ -338,6 +338,20 @@ export async function loadBusinessIdentity(
 
   const map: Record<string, unknown> = {};
   for (const row of raw) map[row.key] = row.value;
+  return composeIdentityBlock(map, depth);
+}
+
+/**
+ * The pure half of loadBusinessIdentity: settings values in, prompt block out.
+ * No I/O, no Deno — importable by the admin editor, whose "what the agent
+ * sees" preview must be THIS function, not a client-side re-implementation
+ * that drifts. `map` holds the raw site_settings values keyed by settings key
+ * (`company_profile`, `brand_tone`).
+ */
+export function composeIdentityBlock(
+  map: Record<string, unknown>,
+  depth: IdentityDepth = 'core',
+): BusinessIdentity {
   const cp = (map.company_profile && typeof map.company_profile === 'object' && !Array.isArray(map.company_profile)
     ? map.company_profile
     : {}) as Record<string, unknown>;

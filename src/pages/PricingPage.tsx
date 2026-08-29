@@ -72,7 +72,7 @@ export default function PricingPage() {
       
       <PublicNavigation />
       
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Hero Section */}
         <section className="container mx-auto px-6 pt-20 pb-16 text-center">
           <Badge variant="secondary" className="mb-4">

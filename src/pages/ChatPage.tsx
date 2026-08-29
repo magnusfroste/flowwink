@@ -113,7 +113,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      <main className="flex-1 flex min-h-0">
+      <main className="pt-[var(--overlay-header-offset,0px)] flex-1 flex min-h-0">
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           <ChatConversation

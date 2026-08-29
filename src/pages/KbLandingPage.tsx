@@ -20,7 +20,7 @@ export default function KbLandingPage() {
     <>
       <SeoHead title="Knowledge Base" description="Browse questions and answers." />
       <PublicNavigation />
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <KbHubBlock data={{}} />
       </main>
       <PublicFooter />

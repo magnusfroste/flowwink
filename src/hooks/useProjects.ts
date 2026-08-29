@@ -14,6 +14,8 @@ export type Project = {
   currency: string | null;
   color: string | null;
   deadline: string | null;
+  visibility: 'shared' | 'private';
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +43,7 @@ export function useProjects() {
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Project[];
+      return data as unknown as Project[];
     },
   });
 }

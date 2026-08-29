@@ -37,7 +37,7 @@ export default function BlogTagPage() {
     return (
       <>
         <PublicNavigation />
-        <main className="min-h-screen bg-background">
+        <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
             <p className="text-center text-muted-foreground">Loading...</p>
           </div>
@@ -64,7 +64,7 @@ export default function BlogTagPage() {
       
       <PublicNavigation />
       
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12">
           {/* Breadcrumb */}
           <nav className="mb-6">

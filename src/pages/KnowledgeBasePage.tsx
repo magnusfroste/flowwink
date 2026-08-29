@@ -93,7 +93,7 @@ export default function KnowledgeBasePage() {
       />
       <PublicNavigation />
       
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-primary/5 to-background py-16 md:py-24">
           <div className="container max-w-4xl mx-auto px-4 text-center">

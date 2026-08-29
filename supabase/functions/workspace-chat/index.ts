@@ -31,6 +31,16 @@ import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
 import { preflightBlockArgs } from '../_shared/normalize-blocks.ts';
 import { buildUnknownParameterBounce } from '../_shared/skills/parameter-contract.ts';
+import {
+  resolveContextWindow,
+  planHistoryWindow,
+  enforceHardCap,
+  estimateMessagesTokens,
+  estimateTokens as estimatePromptTokens,
+  CHAR_PER_TOKEN as WINDOW_CHAR_PER_TOKEN,
+  RESPONSE_RESERVE_TOKENS,
+  type ChatMsg,
+} from '../_shared/context-window.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,6 +110,17 @@ interface ContextMeta {
   sources_active: number;
   sources_truncated: string[];
   per_source: Record<string, number>;
+  // ── History-window half (Model Context Window Guard) ──
+  /** Estimated total prompt: system + soul + retrieval + history (~chars/4). */
+  prompt_tokens_est?: number;
+  /** The resolved model's context window (conservative when unknown). */
+  window_tokens?: number;
+  /** False when the window is the conservative default guess — UI shows "~". */
+  window_known?: boolean;
+  /** True when older turns were compressed into a session distillate. */
+  history_distilled?: boolean;
+  /** Raw messages dropped (oldest first) by the hard cap. */
+  history_dropped?: number;
 }
 
 function estimateTokens(text: string): number {
@@ -967,6 +988,89 @@ async function runExecuteSkill(
 }
 
 /* ------------------------------------------------------------------ */
+/* Rolling history distillate                                          */
+/* ------------------------------------------------------------------ */
+/**
+ * Compress older turns into one dense session summary (the same
+ * distill-to-survive pattern the flowpilot-lifecycle uses for its own
+ * memory). Called only when the estimated prompt crosses ~85% of the model
+ * window. Returns null on any failure — the hard cap then trims raw turns
+ * instead (Law 4: fail forward, the session must never die on a provider
+ * context overflow because a summarizer hiccuped).
+ */
+async function distillHistory(opts: {
+  apiUrl: string;
+  apiKey: string;
+  model: string;
+  provider: string;
+  reasoningParams: Record<string, unknown>;
+  toDistill: ChatMsg[];
+  windowTokens: number;
+  supabaseAdmin: any;
+  userId: string;
+  mode: string;
+}): Promise<string | null> {
+  const t0 = Date.now();
+  try {
+    let transcript = opts.toDistill
+      .map((m) => `${m.role === 'assistant' ? 'ASSISTANT' : 'USER'}: ${m.content}`)
+      .join('\n\n');
+    // The distiller runs on the same model — its own input must fit the same
+    // window. Clip the transcript head-first: the tail is closest to the raw
+    // turns we keep, so the oldest content is what a clip should cost.
+    const maxChars = Math.max(8_000, (opts.windowTokens - RESPONSE_RESERVE_TOKENS - 2_000) * WINDOW_CHAR_PER_TOKEN);
+    if (transcript.length > maxChars) {
+      transcript = `…[oldest turns omitted]\n\n${transcript.slice(transcript.length - maxChars)}`;
+    }
+    const resp = await fetch(opts.apiUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${opts.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: opts.model,
+        // OpenAI reasoning models 400 on `max_tokens` — they take
+        // `max_completion_tokens`; every other OpenAI-compatible endpoint
+        // (incl. Gemini's compat layer and local LLMs) takes `max_tokens`.
+        ...(opts.provider === 'openai' && isOpenAiReasoningModel(opts.model)
+          ? { max_completion_tokens: 900 }
+          : { max_tokens: 900 }),
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You compress chat history. Summarize the conversation below into ONE dense session summary that a colleague model will use as its only memory of these turns.',
+              'KEEP: decisions made, facts and figures established, entity names and ids (customers, orders, invoices, tickets), links/slugs, actions staged or approved, and open questions still unanswered.',
+              'DROP: greetings, repetition, and anything restated later in the conversation.',
+              'Write in the conversation\'s own language. Plain prose or tight bullets, max ~400 words. Output ONLY the summary.',
+            ].join('\n'),
+          },
+          { role: 'user', content: transcript },
+        ],
+        ...opts.reasoningParams,
+      }),
+    });
+    if (!resp.ok) {
+      console.error('[cowork-chat] distill call failed', resp.status, (await resp.text()).slice(0, 300));
+      return null;
+    }
+    const json = await resp.json();
+    const usage = json?.usage || {};
+    await logAiUsage({
+      supabase: opts.supabaseAdmin, source: 'workspace-chat', provider: opts.provider, model: opts.model,
+      promptTokens: usage.prompt_tokens || 0,
+      completionTokens: usage.completion_tokens || 0,
+      totalTokens: usage.total_tokens || (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
+      latencyMs: Date.now() - t0, status: 'success', userId: opts.userId,
+      metadata: { mode: opts.mode, phase: 'history-distill', distilled_messages: opts.toDistill.length },
+    });
+    const summary = String(json.choices?.[0]?.message?.content || '').trim();
+    return summary || null;
+  } catch (e) {
+    console.error('[cowork-chat] distill failed', e);
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Settings loader                                                     */
 /* ------------------------------------------------------------------ */
 async function loadSettings(supabaseAdmin: any): Promise<CoworkSettings> {
@@ -1181,10 +1285,62 @@ Deno.serve(async (req) => {
       rankedToolsBlock,
     ].join('\n');
 
+    /* -------- History window (Model Context Window Guard) ----------- */
+    // The source half of the prompt is budgeted above (TOTAL_TOKEN_BUDGET);
+    // this is the HISTORY half. The client sends the full session every turn,
+    // so without a window a long session grows until the provider rejects the
+    // request outright. Resolve the model's window (stingy default for
+    // unknown models; per-instance override via system_ai.contextWindows),
+    // distill older turns at ~85%, and hard-cap what we send to
+    // window − response reserve — trimming oldest raw turns first, never the
+    // system prompt (soul/identity/retrieval).
+    const { data: sysAiRow } = await supabaseAdmin
+      .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
+    const windowOverrides = (sysAiRow?.value as any)?.contextWindows ?? null;
+    const win = resolveContextWindow(provider, model, windowOverrides);
+
+    const systemTokens = estimatePromptTokens(systemPrompt);
+    let history: ChatMsg[] = messages.map((m) => ({ role: m.role, content: String(m.content ?? '') }));
+    let historyDistilled = false;
+
+    const plan = planHistoryWindow({ history, systemTokens, windowTokens: win.tokens });
+    if (plan.needsDistillation) {
+      const summary = await distillHistory({
+        apiUrl, apiKey, model, provider, reasoningParams,
+        toDistill: plan.toDistill, windowTokens: win.tokens,
+        supabaseAdmin, userId: user.id, mode,
+      });
+      if (summary) {
+        history = [
+          {
+            role: 'system',
+            content: `SESSION SUMMARY — the older turns of this conversation were compressed to fit the model's context window. Treat this as established conversation history:\n\n${summary}`,
+          },
+          ...plan.keepRaw,
+        ];
+        historyDistilled = true;
+      }
+      // summary === null → fail forward: the hard cap below trims raw turns.
+    }
+
+    const capped = enforceHardCap({
+      history, systemTokens, windowTokens: win.tokens,
+      protectedHead: historyDistilled ? 1 : 0,
+    });
+    history = capped.history;
+
+    const promptTokensEst = systemTokens + estimateMessagesTokens(history);
+    contextMeta.prompt_tokens_est = promptTokensEst;
+    contextMeta.window_tokens = win.tokens;
+    contextMeta.window_known = win.known;
+    contextMeta.history_distilled = historyDistilled;
+    contextMeta.history_dropped = capped.droppedCount;
+    console.log(`[cowork-chat] prompt window: ~${promptTokensEst}/${win.tokens} tokens (known=${win.known}), distilled=${historyDistilled}, dropped=${capped.droppedCount}`);
+
     /* -------- Tool loop (only when web_search is on) -------- */
     const conversation: any[] = [
       { role: 'system', content: systemPrompt },
-      ...messages,
+      ...history,
     ];
 
     // Dispatch tools are ALWAYS mounted — they fetch workspace data, which both

@@ -140,7 +140,7 @@ export default function OrderTrackingPage() {
 
       <PublicNavigation />
 
-      <main className="min-h-screen bg-background py-12 px-4">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background py-12 px-4">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <h1 className="text-3xl md:text-4xl font-serif font-bold">Track your order</h1>

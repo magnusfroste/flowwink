@@ -39,7 +39,7 @@ export default function JobsPage() {
         <meta name="description" content="Browse our open positions and apply to join the team." />
       </Helmet>
       <PublicNavigation />
-      <main className="min-h-screen bg-background">
+      <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <section className="border-b border-border bg-muted/30">
           <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
 
