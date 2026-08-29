@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLeads, useLeadStats } from '@/hooks/useLeads';
 import { useDealStats } from '@/hooks/useDeals';
@@ -18,7 +19,7 @@ import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,8 @@ export default function LeadsPage() {
   const [showBulkEmailDialog, setShowBulkEmailDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: stats, isLoading: statsLoading } = useLeadStats();
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: rawLeads, isLoading: leadsLoading } = useLeads();
@@ -50,6 +53,16 @@ export default function LeadsPage() {
   // The lens narrows the lists only — stat cards keep showing everything.
   const leads = applyLens(rawLeads, 'leads', lens, uid, coveredUids);
   const reviewLeads = applyLens(rawReviewLeads, 'leads', lens, uid, coveredUids);
+  // Free-text + status filtering for the All Contacts tab. Client-side over the
+  // already-loaded list — same bounds as the rest of the page.
+  const q = searchQuery.trim().toLowerCase();
+  const filteredLeads = (leads ?? []).filter((l) => {
+    if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+    if (!q) return true;
+    return [l.name, l.email, l.company, l.companies?.name]
+      .some((f) => (f || '').toLowerCase().includes(q));
+  });
+  const isFiltering = q !== '' || statusFilter !== 'all';
   const navigate = useNavigate();
   const exportLeads = useExportLeads();
   const importLeads = useImportLeads();
@@ -126,11 +139,12 @@ export default function LeadsPage() {
     return await importLeads.mutateAsync(file);
   };
 
+  // Each card is also a filter: click jumps to All Contacts scoped to that status.
   const statCards = [
-    { label: 'Total', value: stats?.total || 0, icon: Users, color: 'text-foreground' },
-    { label: 'New', value: stats?.leads || 0, icon: TrendingUp, color: 'text-primary' },
-    { label: 'Opportunities', value: stats?.opportunities || 0, icon: Sparkles, color: 'text-warning' },
-    { label: 'Customers', value: stats?.customers || 0, icon: UserCheck, color: 'text-success' },
+    { label: 'Total', value: stats?.total || 0, icon: Users, color: 'text-foreground', filter: 'all' },
+    { label: 'New', value: stats?.leads || 0, icon: TrendingUp, color: 'text-primary', filter: 'lead' },
+    { label: 'Opportunities', value: stats?.opportunities || 0, icon: Sparkles, color: 'text-warning', filter: 'opportunity' },
+    { label: 'Customers', value: stats?.customers || 0, icon: UserCheck, color: 'text-success', filter: 'customer' },
   ];
 
   // pipeline column rendering now lives inside <LeadKanban /> (dynamic stages).
@@ -187,7 +201,11 @@ export default function LeadsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {statCards.map((stat) => (
-          <Card key={stat.label}>
+          <Card
+            key={stat.label}
+            className="cursor-pointer transition-colors hover:bg-muted/50"
+            onClick={() => { setActiveTab('all'); setStatusFilter(stat.filter); }}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -317,11 +335,13 @@ export default function LeadsPage() {
           </TabsList>
           <SavedViewsMenu
             scope="leads"
-            currentConfig={{ activeTab }}
+            currentConfig={{ activeTab, searchQuery, statusFilter }}
             activeViewId={activeViewId}
             onActiveViewChange={setActiveViewId}
             onApply={(cfg) => {
               if (typeof cfg.activeTab === 'string') setActiveTab(cfg.activeTab);
+              setSearchQuery(typeof cfg.searchQuery === 'string' ? cfg.searchQuery : '');
+              setStatusFilter(typeof cfg.statusFilter === 'string' ? cfg.statusFilter : 'all');
             }}
           />
         </div>
@@ -335,6 +355,34 @@ export default function LeadsPage() {
         </TabsContent>
 
         <TabsContent value="all" className="mt-6 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search name, email or company…"
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="opportunity">Opportunity</SelectItem>
+                <SelectItem value="customer">Customer</SelectItem>
+                <SelectItem value="lost">Lost</SelectItem>
+              </SelectContent>
+            </Select>
+            {isFiltering && (
+              <Button variant="ghost" onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}>
+                <X className="h-4 w-4 mr-1" /> Clear
+              </Button>
+            )}
+          </div>
           {selectedIds.size > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
               <div className="flex items-center gap-3">
@@ -376,16 +424,20 @@ export default function LeadsPage() {
           <Card>
             <CardHeader>
               <CardTitle>All Contacts</CardTitle>
-              <CardDescription>Sorted by score</CardDescription>
+              <CardDescription>
+                {isFiltering ? `${filteredLeads.length} of ${leads?.length ?? 0} contacts` : 'Sorted by score'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {leadsLoading ? (
                 <p>Loading...</p>
               ) : !leads?.length ? (
                 <p className="text-muted-foreground">No contacts yet</p>
+              ) : !filteredLeads.length ? (
+                <p className="text-muted-foreground">No contacts match the current filter</p>
               ) : (
                 <div className="space-y-2">
-                  {leads.map((lead) => (
+                  {filteredLeads.map((lead) => (
                     <LeadCard
                       key={lead.id}
                       lead={lead}
