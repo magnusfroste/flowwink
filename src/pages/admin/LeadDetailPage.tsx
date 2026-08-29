@@ -17,6 +17,7 @@ import { useLead, useLeadActivities, useUpdateLead, useQualifyLead, useDeleteLea
 import { useCompanies, useCreateCompany } from '@/hooks/useCompanies';
 import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
+import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { DealSection } from '@/components/admin/DealSection';
 import { RecordDiscussPanel } from '@/components/admin/crm/RecordDiscussPanel';
 import { LeadProcessFlow } from '@/components/admin/crm/LeadProcessFlow';
@@ -75,6 +76,9 @@ export default function LeadDetailPage() {
   const [showEnrichedFields, setShowEnrichedFields] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showLostDialog, setShowLostDialog] = useState(false);
+  // Above the loading/not-found returns: hooks must run in the same order every
+  // render, and the early returns below are exactly the trap.
+  const statusOptions = useLeadStatusOptions();
 
   if (isLoading) {
     return (
@@ -230,10 +234,13 @@ export default function LeadDetailPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lead">Contact</SelectItem>
-                      <SelectItem value="opportunity">Opportunity</SelectItem>
-                      <SelectItem value="customer">Customer</SelectItem>
-                      <SelectItem value="lost">Lost</SelectItem>
+                      {/* The whole funnel, from the configured pipeline —
+                          prospect first (triage, outside the pipeline). A
+                          record whose status is missing here renders a blank
+                          trigger, which is exactly what a prospect did. */}
+                      {statusOptions.map((o) => (
+                        <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

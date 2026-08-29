@@ -28,6 +28,7 @@ import { LeadKanban } from '@/components/admin/leads/LeadKanban';
 import { BulkLeadEmailDialog } from '@/components/admin/crm/BulkLeadEmailDialog';
 import { SavedViewsMenu } from '@/components/admin/SavedViewsMenu';
 import { useOverdueActivityIndex } from '@/hooks/useOverdueActivityIndex';
+import { useLeadStatusOptions } from '@/hooks/usePipelineStages';
 import { OwnerChip } from '@/components/admin/OwnerChip';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +74,7 @@ export default function LeadsPage() {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteLead = useDeleteLead();
+  const statusOptions = useLeadStatusOptions();
 
   const promoteProspect = useMutation({
     mutationFn: async (id: string) => {
@@ -418,11 +420,9 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
-                <SelectItem value="lead">Lead</SelectItem>
-                <SelectItem value="opportunity">Opportunity</SelectItem>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
+                {statusOptions.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {isFiltering && (
@@ -459,10 +459,9 @@ export default function LeadsPage() {
                     <SelectValue placeholder="Set status…" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="opportunity">Opportunity</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
+                    {statusOptions.map((o) => (
+                      <SelectItem key={o.key} value={o.key}>{o.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button
