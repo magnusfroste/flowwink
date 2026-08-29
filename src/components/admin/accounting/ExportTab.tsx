@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { resolveExportIdentity } from '@/lib/export-identity';
 import { AccountingTabHeader } from './AccountingTabHeader';
 import { useFiscalYear } from './FiscalYearContext';
 import { Button } from '@/components/ui/button';
@@ -85,16 +86,27 @@ export function ExportTab() {
       .order('entry_date');
     if (entryErr) throw entryErr;
 
-    // Site identity (best-effort)
-    const { data: settings } = await supabase
+    // The legal entity this export claims to be. site_settings is a key/value
+    // store — the old code read `site_name`/`org_number` as columns, got a
+    // swallowed 400, and shipped every customer's bookkeeping under the
+    // platform's own name. The identity lives in the company_profile row
+    // (Business Identity).
+    const { data: settingsRow, error: identityErr } = await supabase
       .from('site_settings')
-      .select('site_name, org_number')
+      .select('value')
+      .eq('key', 'company_profile')
       .maybeSingle();
+    if (identityErr) console.error('[export] company identity read failed:', identityErr.message);
+    const identity = resolveExportIdentity(settingsRow?.value);
+    if (!identity.complete) {
+      // Empty is honest and gets caught on import; a wrong name gets imported.
+      console.warn('[export] no legal entity in Business Identity — exporting without a company name');
+    }
 
     return {
       company: {
-        name: (settings as any)?.site_name ?? 'FlowWink',
-        org_number: (settings as any)?.org_number ?? null,
+        name: identity.name,
+        org_number: identity.org_number,
         currency: pack.currency.code,
       },
       fiscal_year: { start: from, end: to },
