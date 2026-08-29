@@ -224,7 +224,7 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
           </TabsList>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6">
             {ALL_CHANNELS.map((channel) => {
               const isPublished = proposal.published_channels?.includes(channel);

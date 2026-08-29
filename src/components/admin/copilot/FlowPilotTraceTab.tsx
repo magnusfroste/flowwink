@@ -377,7 +377,7 @@ function RunDetailPanel({ traceId }: { traceId: string | null }) {
         )}
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-3">
           {run.steps.map((s, i) => (
             <StepRow key={s.id} step={s} index={i} />

@@ -193,7 +193,7 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           <div className="space-y-4">
             {/* ZIP Import Progress */}
             {isZipImporting && (

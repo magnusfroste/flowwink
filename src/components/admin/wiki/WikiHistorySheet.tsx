@@ -105,7 +105,7 @@ export function WikiHistorySheet({ slug }: { slug: string }) {
           <SheetDescription>Every edit is captured automatically — restore any version.</SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 -mx-2 mt-4 px-2">
+        <ScrollArea className="flex-1 min-h-0 -mx-2 mt-4 px-2">
           {isLoading ? (
             <div className="flex justify-center py-10">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
