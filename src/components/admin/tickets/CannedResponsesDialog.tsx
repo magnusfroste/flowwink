@@ -93,7 +93,7 @@ export function CannedResponsesDialog() {
           Canned responses
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[720px] p-0 max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[720px] p-0 max-h-[85vh] !flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>Canned responses</DialogTitle>
         </DialogHeader>

@@ -223,7 +223,7 @@ export function VisitorSessionsTab() {
       </CardContent>
 
       <Dialog open={!!activeId} onOpenChange={(o) => !o && setActiveId(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[80vh] !flex flex-col">
           <DialogHeader>
             <DialogTitle className="truncate">
               {activeSession?.title || 'Session'}

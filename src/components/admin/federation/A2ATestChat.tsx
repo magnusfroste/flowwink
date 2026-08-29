@@ -156,7 +156,7 @@ export function A2ATestChat({ peer }: A2ATestChatProps) {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-lg max-h-[80vh] !flex flex-col p-0">
           <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <MessageCircle className="h-4 w-4 text-primary" />
