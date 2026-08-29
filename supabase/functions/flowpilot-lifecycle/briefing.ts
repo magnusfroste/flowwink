@@ -337,6 +337,45 @@ export async function handler(req: Request): Promise<Response> {
       console.warn("[briefing] cron-health section skipped (non-fatal):", cronCatch?.message);
     }
 
+    // 7. Knowledge gaps — questions the public chat could not ground (top
+    // semantic match below threshold, logged by chat-completion). This is the
+    // briefing acting as a documentation order-book: each listed question is a
+    // wiki/KB candidate someone on the team can actually answer. Non-fatal —
+    // the table may not exist on an instance that hasn't migrated yet.
+    try {
+      const { data: gaps } = await supabase
+        .from("knowledge_gap_log")
+        .select("question, top_semantic, asked_at")
+        .gte("asked_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("asked_at", { ascending: false })
+        .limit(30);
+      if (gaps && gaps.length > 0) {
+        // Rough dedup: identical opening 60 chars = the same question asked again.
+        const seen = new Set<string>();
+        const distinct: any[] = [];
+        for (const g of gaps) {
+          const key = String(g.question).toLowerCase().slice(0, 60);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          distinct.push(g);
+          if (distinct.length >= 5) break;
+        }
+        sections.push({
+          title: "📚 Knowledge Gaps (7d)",
+          type: "knowledge_gaps",
+          items: [
+            { label: "Ungrounded chat questions", value: gaps.length },
+            ...distinct.map((g: any) => ({
+              label: `"${String(g.question).slice(0, 90)}"`,
+              value: "no close match in KB/pages — documentation candidate",
+            })),
+          ],
+        });
+      }
+    } catch (gapCatch: any) {
+      console.warn("[briefing] knowledge-gap section skipped (non-fatal):", gapCatch?.message);
+    }
+
     const actionItems: any[] = [];
 
     if (cronRedJobs.length > 0) {

@@ -160,6 +160,39 @@ ILIKE search over \`river_posts.body\`. Returns most recent matches.
 - **query**: required.
 - **limit**: optional, default 10.`,
   },
+  {
+    name: 'share_weekly_knowledge',
+    description:
+      "Post the weekly knowledge digest to River: new and updated wiki pages plus new KB articles from the last 7 days, as one positive team post. Runs automatically every Monday (cron weekly-knowledge-river); call it to post now instead of waiting. Skips silently when the week is empty or a digest was already posted. Use when: an admin asks to share this week's new knowledge in River. NOT for: ad-hoc posts (post_to_river); operational alerts (Daily Briefing).",
+    category: 'communication',
+    handler: 'rpc:post_weekly_knowledge_to_river',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'share_weekly_knowledge',
+        description:
+          'Post the last 7 days of new/updated wiki pages and new KB articles to River as one digest post. No parameters.',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+      },
+    },
+    instructions: `## share_weekly_knowledge
+### What
+One deterministic SQL function composes and posts "📚 Veckans kunskap" to
+River: new wiki pages, updated wiki pages, new published KB articles from
+the last 7 days, each with an /admin/wiki link where applicable.
+
+### When to use
+- An admin asks to post this week's knowledge summary now.
+- Verifying the Monday cron output manually.
+
+### Behaviour
+- Empty week → returns {skipped: "no new knowledge this week"}, posts nothing.
+- Already posted within 6 days → {skipped: "already posted this week"}.
+- River module disabled → {skipped}, never an error.
+- The post is positive/informative by construction — it never carries
+  operational warnings, so it cannot violate the channel hierarchy.`,
+  },
 ];
 
 export const riverModule = defineModule<Input, Output>({
