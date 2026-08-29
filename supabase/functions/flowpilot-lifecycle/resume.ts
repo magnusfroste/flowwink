@@ -57,12 +57,15 @@ export async function handler(req: Request): Promise<Response> {
   const staleBefore = new Date(nowMs - staleMs).toISOString();
 
   // 1. Reconcile interrupted runs: running + stale → paused/interrupted.
-  const { data: reconciled } = await supabase
+  const { data: reconciled, error: reconcileErr } = await supabase
     .from("agent_runs")
     .update({ status: "paused", paused_reason: "interrupted", resume_after: new Date(nowMs).toISOString(), updated_at: new Date(nowMs).toISOString() })
     .eq("status", "running")
     .lt("updated_at", staleBefore)
     .select("trace_id, objective_id");
+  // Ett fel här får inte rapporteras som "inget att avstämma" — då ligger
+  // avbrutna körningar kvar som running för alltid och ingen ser varför.
+  if (reconcileErr) throw new Error(`resume: reconcile failed: ${reconcileErr.message}`);
   const reconciledCount = (reconciled ?? []).length;
 
   // 2. Build resume directives — governed by the HARD no-repeat guard (Phase

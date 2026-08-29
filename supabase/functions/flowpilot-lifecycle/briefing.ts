@@ -546,7 +546,7 @@ export async function handler(req: Request): Promise<Response> {
       }
 
       if (!conversationId) {
-        const { data: newConv } = await supabase
+        const { data: newConv, error: convErr } = await supabase
           .from("chat_conversations")
           .insert({
             title: `Daily Briefing — ${todayLabel}`,
@@ -558,6 +558,7 @@ export async function handler(req: Request): Promise<Response> {
           })
           .select("id")
           .single();
+        if (convErr) throw new Error(`briefing: conversation insert failed: ${convErr.message}`);
         conversationId = newConv?.id ?? null;
       }
 

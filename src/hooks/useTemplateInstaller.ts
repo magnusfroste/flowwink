@@ -745,7 +745,7 @@ export function useTemplateInstaller() {
         for (let i = 0; i < consultants.length; i++) {
           const c = consultants[i];
           setProgress({ currentPage: i + 1, totalPages: consultants.length, currentStep: `Adding consultant "${c.name}"...` });
-          const { data } = await supabase.from('consultant_profiles').insert({
+          const { data, error: consErr } = await supabase.from('consultant_profiles').insert({
             name: c.name, title: c.title, summary: c.summary, bio: c.bio || null,
             skills: c.skills, experience_years: c.experience_years,
             certifications: c.certifications || [], languages: c.languages || ['English'],
@@ -753,6 +753,7 @@ export function useTemplateInstaller() {
             currency: c.currency || undefined, avatar_url: c.avatar_url || null,
             linkedin_url: c.linkedin_url || null, is_active: c.is_active ?? true,
           }).select('id').single();
+          if (consErr) logger.error(`[template-install] consultant "${c.name}" was not created`, consErr);
           if (data?.id) createdConsultantIds.push(data.id);
         }
       }
@@ -766,12 +767,13 @@ export function useTemplateInstaller() {
         for (let i = 0; i < services.length; i++) {
           const s = services[i];
           setProgress({ currentPage: i + 1, totalPages: services.length, currentStep: `Adding booking service "${s.name}"...` });
-          const { data } = await supabase.from('booking_services').insert({
+          const { data, error: svcErr } = await supabase.from('booking_services').insert({
             name: s.name, description: s.description || null,
             duration_minutes: s.duration_minutes, price_cents: s.price_cents,
             currency: s.currency, color: s.color || '#3b82f6',
             is_active: s.is_active ?? true, sort_order: i,
           }).select('id').single();
+          if (svcErr) logger.error(`[template-install] booking service "${s.name}" was not created`, svcErr);
           if (data?.id) createdBookingServiceIds.push(data.id);
         }
       }
@@ -781,12 +783,13 @@ export function useTemplateInstaller() {
         for (let i = 0; i < slots.length; i++) {
           const slot = slots[i];
           setProgress({ currentPage: i + 1, totalPages: slots.length, currentStep: `Adding availability slot ${i + 1}...` });
-          const { data } = await supabase.from('booking_availability').insert({
+          const { data, error: availErr } = await supabase.from('booking_availability').insert({
             day_of_week: slot.day_of_week,
             start_time: slot.start_time,
             end_time: slot.end_time,
             is_active: slot.is_active ?? true,
           }).select('id').single();
+          if (availErr) logger.error('[template-install] availability slot was not created', availErr);
           if (data?.id) createdBookingAvailabilityIds.push(data.id);
         }
       }

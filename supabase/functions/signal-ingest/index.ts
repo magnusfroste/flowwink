@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
-      const { data: post } = await supabase
+      const { data: post, error: postErr } = await supabase
         .from("blog_posts")
         .insert({
           title,
@@ -156,6 +156,7 @@ Deno.serve(async (req) => {
         })
         .select("id")
         .single();
+      if (postErr) throw new Error(`signal draft insert failed: ${postErr.message}`);
       results.draft_id = post?.id;
     }
 

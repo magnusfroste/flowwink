@@ -175,7 +175,7 @@ Valid severities: low, medium, high
     }
 
     // Log activity as pending
-    const { data: activityRow } = await supabase
+    const { data: activityRow, error: actErr } = await supabase
       .from('a2a_activity')
       .insert({
         peer_id: peer.id,
@@ -186,6 +186,7 @@ Valid severities: low, medium, high
       })
       .select('id')
       .single();
+    if (actErr) console.error(`[openclaw-responses] activity log insert failed: ${actErr.message}`);
 
     // Build OpenResponses request body
     const peerUrl = peer.url.replace(/\/$/, '');

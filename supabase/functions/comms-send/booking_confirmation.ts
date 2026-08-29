@@ -128,11 +128,12 @@ export const handler = async (req: Request): Promise<Response> => {
             } else {
               // Create new company from domain
               const companyName = domain.split(".")[0].charAt(0).toUpperCase() + domain.split(".")[0].slice(1);
-              const { data: newCompany } = await supabase
+              const { data: newCompany, error: coErr } = await supabase
                 .from("companies")
                 .insert({ name: companyName, domain })
                 .select("id")
                 .single();
+              if (coErr) console.error(`[booking] company insert failed: ${coErr.message}`);
 
               if (newCompany) {
                 companyId = newCompany.id;
@@ -143,7 +144,7 @@ export const handler = async (req: Request): Promise<Response> => {
         }
 
         // Create new lead
-        const { data: newLead } = await supabase
+        const { data: newLead, error: bookingLeadErr } = await supabase
           .from("leads")
           .insert({
             email: booking.customer_email,
@@ -158,6 +159,7 @@ export const handler = async (req: Request): Promise<Response> => {
           })
           .select()
           .single();
+        if (bookingLeadErr) throw new Error(`booking lead insert failed: ${bookingLeadErr.message}`);
 
         if (newLead) {
           // Add initial booking activity

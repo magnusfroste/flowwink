@@ -155,19 +155,21 @@ async function createDeal(supabase: any, args: any) {
       const baseName = lead_name || resolvedCompanyName || 'Auto-generated lead';
       const safeSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lead';
       const fallbackEmail = lead_email || `deal-${safeSlug}-${Date.now()}@auto.flowwink.local`;
-      const { data: newLead } = await supabase
+      const { data: newLead, error: leadErr } = await supabase
         .from('leads').insert({
           name: baseName, email: fallbackEmail, company_id: resolvedCompanyId,
           source: 'agent_deal', status: 'opportunity',
         }).select('id').single();
+      if (leadErr) throw new Error(`lead insert failed: ${leadErr.message}`);
       lead_id = newLead.id;
       auto_created_lead = true;
     }
   }
 
-  const { data } = await supabase.from('deals').insert({
+  const { data, error: dealErr } = await supabase.from('deals').insert({
     value_cents, currency, stage, lead_id, product_id, expected_close, notes,
   }).select('id, stage, value_cents, lead_id').single();
+  if (dealErr) throw new Error(`deal insert failed: ${dealErr.message}`);
   return { deal_id: data.id, stage: data.stage, value_cents: data.value_cents, lead_id: data.lead_id, auto_created_lead };
 }
 

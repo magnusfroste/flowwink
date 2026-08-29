@@ -45,7 +45,7 @@ Deno.test({
     };
 
     // Save state
-    const { data: existing } = await supabase
+    const { data: existing, error: existingErr } = await supabase
       .from("agent_memory").select("id").eq("key", "heartbeat_state").maybeSingle();
 
     if (existing) {
@@ -62,10 +62,10 @@ Deno.test({
     }
 
     // Load state and verify
-    const { data: loaded } = await supabase
+    const { data: loaded, error: loadedErr } = await supabase
       .from("agent_memory").select("value").eq("key", "heartbeat_state").maybeSingle();
 
-    assertExists(loaded);
+    assertExists(loaded, `should exist` + (loadedErr ? ` — ${loadedErr.message}` : ''));
     assertEquals(loaded.value.iteration_count, 5);
     assertEquals(loaded.value.objectives_advanced.length, 2);
     assertEquals(loaded.value.token_usage.total_tokens, 1500);
@@ -86,7 +86,7 @@ Deno.test({
     const supabase = getSupabase();
 
     // Seed a test objective
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: "TEST_CHECKOUT_SCENARIO — safe to delete",
       status: "active",
       constraints: {},
@@ -94,13 +94,13 @@ Deno.test({
       progress: {},
     }).select("id").single();
 
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
     const objectiveId = obj.id;
 
     try {
       // First checkout should succeed
       const staleThreshold = new Date(Date.now() - 30 * 60_000).toISOString();
-      const { data: lock1 } = await supabase
+      const { data: lock1, error: lock1Err } = await supabase
         .from("agent_objectives")
         .update({ locked_by: "heartbeat-1", locked_at: new Date().toISOString() })
         .eq("id", objectiveId)
@@ -108,10 +108,10 @@ Deno.test({
         .select("id")
         .maybeSingle();
 
-      assertExists(lock1, "First checkout should succeed");
+      assertExists(lock1, "First checkout should succeed" + (lock1Err ? ` — ${lock1Err.message}` : ''));
 
       // Second checkout should FAIL (already locked)
-      const { data: lock2 } = await supabase
+      const { data: lock2, error: lock2Err } = await supabase
         .from("agent_objectives")
         .update({ locked_by: "heartbeat-2", locked_at: new Date().toISOString() })
         .eq("id", objectiveId)
@@ -119,10 +119,11 @@ Deno.test({
         .select("id")
         .maybeSingle();
 
+      assertEquals(lock2Err, null, `Second checkout errored instead of losing the race: ${lock2Err?.message ?? ""}`);
       assertEquals(lock2, null, "Second checkout should fail — objective already locked");
 
       // Verify the lock owner didn't change
-      const { data: check } = await supabase
+      const { data: check, error: checkErr } = await supabase
         .from("agent_objectives")
         .select("locked_by")
         .eq("id", objectiveId)
@@ -138,7 +139,7 @@ Deno.test({
         .eq("locked_by", "heartbeat-1");
 
       // After release, checkout should work again
-      const { data: lock3 } = await supabase
+      const { data: lock3, error: lock3Err } = await supabase
         .from("agent_objectives")
         .update({ locked_by: "heartbeat-3", locked_at: new Date().toISOString() })
         .eq("id", objectiveId)
@@ -146,7 +147,7 @@ Deno.test({
         .select("id")
         .maybeSingle();
 
-      assertExists(lock3, "Checkout should succeed after release");
+      assertExists(lock3, "Checkout should succeed after release" + (lock3Err ? ` — ${lock3Err.message}` : ''));
     } finally {
       // Cleanup
       await supabase.from("agent_objectives").delete().eq("id", objectiveId);
@@ -166,7 +167,7 @@ Deno.test({
 
     // Seed objective with a stale lock (35 minutes ago)
     const staleLockTime = new Date(Date.now() - 35 * 60_000).toISOString();
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: "TEST_STALE_LOCK — safe to delete",
       status: "active",
       constraints: {},
@@ -176,12 +177,12 @@ Deno.test({
       locked_at: staleLockTime,
     }).select("id").single();
 
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       // Checkout should succeed despite existing lock (it's stale)
       const staleThreshold = new Date(Date.now() - 30 * 60_000).toISOString();
-      const { data: lock } = await supabase
+      const { data: lock, error: lockErr } = await supabase
         .from("agent_objectives")
         .update({ locked_by: "recovery-heartbeat", locked_at: new Date().toISOString() })
         .eq("id", obj.id)
@@ -189,7 +190,7 @@ Deno.test({
         .select("id")
         .maybeSingle();
 
-      assertExists(lock, "Should recover stale lock");
+      assertExists(lock, "Should recover stale lock" + (lockErr ? ` — ${lockErr.message}` : ''));
     } finally {
       await supabase.from("agent_objectives").delete().eq("id", obj.id);
     }
@@ -207,7 +208,7 @@ Deno.test({
     const supabase = getSupabase();
 
     // Ensure heartbeat_state exists
-    const { data: existing } = await supabase
+    const { data: existing, error: existingErr } = await supabase
       .from("agent_memory").select("id").eq("key", "heartbeat_state").maybeSingle();
 
     if (!existing) {
@@ -220,7 +221,7 @@ Deno.test({
     }
 
     // Load general memories (same query as loadMemories)
-    const { data: memories } = await supabase
+    const { data: memories, error: memoriesErr } = await supabase
       .from("agent_memory")
       .select("key, value, category")
       .not("key", "in", '("soul","identity","heartbeat_state")')

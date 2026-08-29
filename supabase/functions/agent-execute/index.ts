@@ -3447,7 +3447,7 @@ async function executeOpenClawAction(
               : normalizedType === 'performance'
                 ? 'Optimize'
                 : 'Address';
-        const { data: obj } = await supabase
+        const { data: obj, error: objErr } = await supabase
           .from('agent_objectives')
           .insert({
             goal: `${goalPrefix}: ${title}`,
@@ -3457,6 +3457,7 @@ async function executeOpenClawAction(
           })
           .select('id, goal')
           .single();
+        if (objErr) throw new Error(`objective insert failed: ${objErr.message}`);
         objective = obj;
       }
 
@@ -9541,10 +9542,13 @@ async function executeDbAction(
         // release the link so the event returns to the queue and can be
         // re-booked correctly (otherwise the idempotency guard blocks the
         // correction path — found via the GEN3/25 correction, 2026-07-07).
-        const { data: linkedTx } = await supabase.from('bank_transactions')
+        const { data: linkedTx, error: linkErr } = await supabase.from('bank_transactions')
           .update({ journal_entry_id: null, status: 'unmatched' })
           .eq('journal_entry_id', entry_id)
           .select('id');
+        // bank_events_released rapporteras till användaren. Ett svalt fel hade
+        // sagt "0 frisläppta" om händelser som fortfarande sitter fast.
+        if (linkErr) throw new Error(`releasing bank events failed: ${linkErr.message}`);
 
         return {
           voided: true, original_id: entry_id, reversal_id: reversal.id,
@@ -15275,11 +15279,14 @@ async function executeAdCreativeGenerate(
   // Persist as a draft creative (best-effort)
   let creativeId: string | undefined;
   try {
-    const { data: ins } = await supabase.from('ad_creatives').insert({
+    const { data: ins, error: insErr } = await supabase.from('ad_creatives').insert({
       campaign_id: campaignId, type: a.type || 'text',
       headline: creative.headline, body: creative.body, cta_text: creative.cta_text,
       status: 'draft',
     }).select('id').single();
+    // Avsikten var att spara vad som gick — men PostgREST kastar inte, så
+    // catchen nedan var död kod och orsaken syntes ingenstans.
+    if (insErr) console.warn(`[ad_create] creative not saved: ${insErr.message}`);
     creativeId = ins?.id;
   } catch { /* table/columns may vary — return the generated copy regardless */ }
 
