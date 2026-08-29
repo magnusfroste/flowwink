@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,16 +49,26 @@ export default function AuthPage() {
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { data: branding } = useBrandingSettings();
-  
+
   // Get admin name from branding settings, fallback to generic
   const adminName = branding?.adminName || 'CMS';
   const logoInitial = adminName.charAt(0).toUpperCase();
 
+  // Where to land after sign-in: the page that sent us here (a shared deep
+  // link kept alive by AdminLayout), or the dashboard. Internal paths only —
+  // a state value that doesn't start with a single '/' is ignored.
+  const rawFrom = (location.state as { from?: unknown } | null)?.from;
+  const returnTo =
+    typeof rawFrom === 'string' && rawFrom.startsWith('/') && !rawFrom.startsWith('//')
+      ? rawFrom
+      : '/admin';
+
   // Redirect if already logged in
   if (user) {
-    navigate('/admin');
+    navigate(returnTo);
     return null;
   }
 
@@ -88,7 +98,7 @@ export default function AuthPage() {
         variant: 'destructive',
       });
     } else {
-      navigate('/admin');
+      navigate(returnTo);
     }
   };
 
@@ -127,7 +137,7 @@ export default function AuthPage() {
         title: 'Account created!',
         description: 'You can now log in with your credentials.',
       });
-      navigate('/admin');
+      navigate(returnTo);
     }
   };
 
