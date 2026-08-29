@@ -142,6 +142,16 @@ describe('kontaktens statusväljare följer den konfigurerade tratten', () => {
     expect(stagesHook).toMatch(/LEAD_STAGE_FALLBACK[\s\S]{0,200}'opportunity'[\s\S]{0,120}'customer'/);
   });
 
+  it('promote skickar till trattens första steg och SÄGER vilket', () => {
+    // "Promote to contact" på en post som redan ÄR en kontakt sa ingenting.
+    // Målet läses ur konfigurationen: byter admin namn på första steget byter
+    // knappen namn med den (Magnus 2026-08-29).
+    expect(leadsPage).toMatch(/promoteTarget = statusOptions\.find\(\(o\) => o\.key !== 'prospect'\)/);
+    expect(leadsPage).toMatch(/status: promoteTarget\.key as LeadStatus/);
+    expect(leadsPage).toMatch(/Promote to \{promoteLabel\}/);
+    expect(leadsPage).not.toMatch(/Promote to contact/);
+  });
+
   it("badge-etiketten säger 'Lead', inte 'Contact' — samma ord som tratten", () => {
     expect(leadUtils).toMatch(/prospect: \{ label: 'Prospect'/);
     expect(leadUtils).toMatch(/lead: \{ label: 'Lead'/);

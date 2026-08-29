@@ -81,16 +81,20 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteLead = useDeleteLead();
   const statusOptions = useLeadStatusOptions();
+  // Promoting means "move into the funnel" — and the funnel's first step is
+  // whatever the pipeline is configured with, not a hardcoded 'lead'. Rename
+  // the stage and the button renames itself.
+  const promoteTarget = statusOptions.find((o) => o.key !== 'prospect') ?? { key: 'lead', name: 'Lead' };
 
   const promoteProspect = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
-        .from('leads').update({ status: 'lead' }).eq('id', id).select('id');
+        .from('leads').update({ status: promoteTarget.key as LeadStatus }).eq('id', id).select('id');
       if (error) throw error;
       if (!data?.length) throw new Error('Nothing was updated — you may not have permission.');
     },
     onSuccess: () => {
-      toast.success('Promoted to contact');
+      toast.success(`Promoted to ${promoteTarget.name}`);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
     },
@@ -529,7 +533,7 @@ export default function LeadsPage() {
                 <div>
                   <CardTitle>Prospects</CardTitle>
                   <CardDescription>
-                    Found by prospecting — promote the ones you'll pursue, delete the rest. They become contacts only when promoted.
+                    Found by prospecting — promote the ones you'll pursue, delete the rest. They enter the funnel only when promoted.
                   </CardDescription>
                 </div>
                 {prospects.length > 0 && (
@@ -560,6 +564,7 @@ export default function LeadsPage() {
                       lead={lead}
                       onClick={() => navigate(`/admin/contacts/${lead.id}`)}
                       onPromote={() => promoteProspect.mutate(lead.id)}
+                      promoteLabel={promoteTarget.name}
                       onDelete={() => {
                         if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
                           deleteLead.mutate(lead.id);
@@ -629,9 +634,11 @@ interface LeadCardProps {
   onToggleSelect?: () => void;
   onDelete?: () => void;
   onPromote?: () => void;
+  /** Where promoting sends it — the funnel's first configured step. */
+  promoteLabel?: string;
 }
 
-function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote }: LeadCardProps) {
+function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote, promoteLabel = 'Lead' }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
   const companyName = lead.companies?.name || lead.company;
@@ -716,10 +723,10 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelet
                     e.stopPropagation();
                     onPromote();
                   }}
-                  title="Promote to contact"
+                  title={`Promote to ${promoteLabel}`}
                 >
                   <UserCheck className="h-3.5 w-3.5 mr-1" />
-                  Promote
+                  Promote to {promoteLabel}
                 </Button>
               )}
               {onDelete && (
