@@ -117,6 +117,7 @@
     "end_webmeet_room",
     "enrich_company",
     "enrich_company_profile",
+    "ensure_lead_partner",
     "escalate_dunning",
     "estimate_delivery_date",
     "evaluate_expense_policy",

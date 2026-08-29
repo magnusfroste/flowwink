@@ -274,6 +274,51 @@ Full lead management: list, get, update status/score, delete.
 - Re-opening a lost lead (setting any non-lost status) automatically clears lost_reason and lost_note.`,
   },
   {
+    name: 'ensure_lead_partner',
+    description: 'Create (or re-use) the PARTY behind a lead — the customer record that invoices, subscriptions and projects will point at — and link the lead to it. A lead is a pipeline record; a party is who you actually do business with, and the two are separate on purpose. Use when: a lead becomes a real counterparty you will quote, invoice or deliver to; before creating an invoice or subscription for someone who only exists as a lead. NOT for: creating leads (add_lead); changing lead status (manage_leads); company master data (manage_company). Idempotent — calling it twice returns the same party and writes nothing. Refuses a lead that has neither a name nor an email, because a party with no identity gets duplicated on the next call. If the lead has a company, that company gets its party first so the person lands under its organisation.',
+    category: 'crm',
+    handler: 'rpc:ensure_lead_partner',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ensure_lead_partner',
+        description: 'Create or re-use the party (customer record) behind a lead and link the lead to it. Idempotent.',
+        parameters: {
+          type: 'object',
+          required: ['lead_id'],
+          properties: {
+            lead_id: { type: 'string', description: "The lead's uuid" },
+          },
+        },
+      },
+    },
+    instructions: `## ensure_lead_partner
+### Why a lead is not a customer
+A lead is the PIPELINE record: status, score, stage, why it was lost. A party is
+WHO you do business with: name, org number, VAT, billing address. The same
+person can be several leads over the years and is still one party — which is why
+they are separate records and why this skill exists to join them.
+
+### What it does
+- Returns the existing party if the lead already has one (\`created: false\`).
+- Otherwise creates a person-party from the lead's name (or email if unnamed).
+- If the lead has a company, that company's party is created first and the
+  person is hung underneath it via parent_id.
+- Sets leads.partner_id.
+
+### Read the response
+\`partner_id\` is the id to use downstream. \`created\` tells you whether this call
+made it or found it — report that honestly rather than claiming you created a
+party that already existed. \`parent_created: true\` means the company got its
+party in the same call, which is worth mentioning.
+
+### It will refuse
+A lead with neither a name nor an email gets no party. Do not work around this
+by inventing a name — fill in the lead's real name or email first, then call
+again. An invented identity is duplicated forever; a missing one is fixable.`,
+  },
+  {
     name: 'assign_lead',
     description: 'Assign a lead to a person — set who the seller/owner is. Takes the lead\'s email or id and the assignee\'s EMAIL (resolved to a user id server-side), so a shared agent can act on "magnus@froste.eu is the seller on this one". Use when: someone says who owns/handles/sells a lead; distributing inbound leads among colleagues. NOT for: assigning companies (assign_company); changing lead status (manage_leads).',
     category: 'crm',
