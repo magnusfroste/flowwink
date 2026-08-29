@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260830090000",
-      "migrations_count": 529,
+      "migration_head": "20260830110000",
+      "migrations_count": 530,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2121,6 +2121,10 @@
         {
           "version": "20260830090000",
           "name": "prospektets-proveniens"
+        },
+        {
+          "version": "20260830110000",
+          "name": "gallring-av-prospekt-som-aldrig-blev-kund"
         }
       ]
     },
