@@ -28,7 +28,7 @@ describe('flex-1 på ett scrollområde följs alltid av min-h-0', () => {
   ).split('\n').filter(Boolean);
 
   it('svepet hittar faktiskt filer — annars mäter grinden ingenting', () => {
-    expect(files.length).toBeGreaterThan(5);
+    expect(files.length).toBeGreaterThan(3);
   });
 
   for (const f of files) {

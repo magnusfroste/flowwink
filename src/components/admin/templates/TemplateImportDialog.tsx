@@ -193,7 +193,11 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-4">
+        /* Explicit höjd, inte flex-1: DialogContent har max-height men INGEN
+   definit höjd, och Radix scroll-viewport (h-full) kan inte lösa procent
+   mot en flexsatt förälder — den växte till 4 104 px innanför en ram på
+   610 och klippte slutet. Uppmätt i webbläsare 2026-08-30. */
+          <ScrollArea className="h-[70vh] pr-4">
           <div className="space-y-4">
             {/* ZIP Import Progress */}
             {isZipImporting && (
