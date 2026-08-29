@@ -217,20 +217,29 @@ export function useDeleteDealActivity() {
   });
 }
 
-// Activity type helpers
+// Activity type helpers — the ONE map. The unified timeline defers to this one
+// (it used to carry a second, drifted copy that said "Note added" where the
+// button that creates the entry says "Note" — Magnus 2026-08-29).
+//
+// Naming rule: a manually logged type is a NOUN. Every row in the ledger is an
+// added entry, so "added" is noise on exactly one of them — and the log should
+// echo the button that created it (Note / Call / Email / Meeting in
+// RecordDiscussPanel). System observations keep their verb, because there the
+// verb IS the content: an email being OPENED is the whole event.
 export function getActivityTypeInfo(type: string): { label: string; icon: string; color: string } {
   const types: Record<string, { label: string; icon: string; color: string }> = {
     call: { label: 'Call', icon: 'Phone', color: 'text-green-500' },
     email: { label: 'Email', icon: 'Mail', color: 'text-blue-500' },
     meeting: { label: 'Meeting', icon: 'Users', color: 'text-purple-500' },
     note: { label: 'Note', icon: 'MessageSquare', color: 'text-muted-foreground' },
-    form_submit: { label: 'Form Submitted', icon: 'FileText', color: 'text-orange-500' },
-    email_open: { label: 'Email Opened', icon: 'MailOpen', color: 'text-blue-400' },
-    link_click: { label: 'Link Clicked', icon: 'MousePointer', color: 'text-cyan-500' },
-    status_change: { label: 'Status Changed', icon: 'RefreshCw', color: 'text-yellow-500' },
+    form_submit: { label: 'Form submitted', icon: 'FileText', color: 'text-orange-500' },
+    email_open: { label: 'Email opened', icon: 'MailOpen', color: 'text-blue-400' },
+    link_click: { label: 'Link clicked', icon: 'MousePointer', color: 'text-cyan-500' },
+    status_change: { label: 'Status changed', icon: 'RefreshCw', color: 'text-yellow-500' },
     deal_closed_won: { label: 'Deal Won', icon: 'Trophy', color: 'text-green-500' },
     deal_closed_lost: { label: 'Deal Lost', icon: 'XCircle', color: 'text-red-500' },
-    webinar_register: { label: 'Webinar Registration', icon: 'Users', color: 'text-indigo-500' },
+    webinar_register: { label: 'Webinar registration', icon: 'Video', color: 'text-indigo-500' },
+    task_completed: { label: 'Task completed', icon: 'CheckCircle2', color: 'text-green-500' },
   };
   return types[type] || { label: type, icon: 'Activity', color: 'text-muted-foreground' };
 }
