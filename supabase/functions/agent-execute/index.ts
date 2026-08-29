@@ -13069,12 +13069,23 @@ async function executeGenericCrud(
         if ((insertData as any)._caller_user_id && !cleanInsert.created_by) {
           cleanInsert.created_by = (insertData as any)._caller_user_id;
         }
+        // Agent attribution, wiki_pages' convention (2026-08-29): when an agent
+        // writes, say WHICH agent. A NULL created_by already means "no logged-in
+        // human", but that conflates "FlowPilot did it" with "we don't know" —
+        // and to a colleague deciding whether to trust a row, those are
+        // different facts. Tables without the column fall through below.
+        if (auditCtx?.agent_type && !cleanInsert.created_by_agent) {
+          cleanInsert.created_by_agent = auditCtx.agent_type;
+        }
         let createdItem: any;
         try {
           const { data, error } = await supabase.from(table).insert(cleanInsert).select().single();
           if (error) {
-            if (error.message?.includes('created_by')) {
-              delete cleanInsert.created_by;
+            // Optional stamp columns: strip whichever this table lacks and retry
+            // once. Attribution is a bonus, never a reason a write fails.
+            const missing = ['created_by_agent', 'created_by'].filter((c) => error.message?.includes(c));
+            if (missing.length) {
+              for (const c of missing) delete cleanInsert[c];
               const { data: d2, error: e2 } = await supabase.from(table).insert(cleanInsert).select().single();
               if (e2) throw new Error(`Create ${table} failed: ${e2.message}`);
               createdItem = d2;
@@ -13109,12 +13120,15 @@ async function executeGenericCrud(
         const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...updateData } = fields;
         const cleanUpdate = stripInternalFields(updateData);
         cleanUpdate.updated_at = new Date().toISOString();
+        // Same reasoning as create: an agent's correction says whose it was.
+        if (auditCtx?.agent_type) cleanUpdate.updated_by_agent = auditCtx.agent_type;
         let updatedItem: any;
         try {
           const { data, error } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
           if (error) {
-            if (error.message?.includes('updated_at')) {
-              delete cleanUpdate.updated_at;
+            const missing = ['updated_by_agent', 'updated_at'].filter((c) => error.message?.includes(c));
+            if (missing.length) {
+              for (const c of missing) delete cleanUpdate[c];
               const { data: d2, error: e2 } = await supabase.from(table).update(cleanUpdate).eq('id', id).select().single();
               if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
               updatedItem = d2;

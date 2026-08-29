@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useOwnershipLens } from "@/hooks/useOwnershipLens";
+import { LensToggle } from "@/components/admin/LensToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,9 +36,12 @@ export function ActivitiesView({
   projects: Project[];
   onOpenProject: (projectId: string) => void;
 }) {
-  const { user } = useAuth();
-  const [scope, setScope] = useState<"all" | "mine">("all");
+  // The shared CRM lens, not a toggle of its own: narrowing contacts and
+  // narrowing activities is the same act of focus, and two toggles that mean
+  // the same thing are two truths waiting to disagree.
+  const { lens, uid, coveredUids } = useOwnershipLens();
   const [showDone, setShowDone] = useState(false);
+  const mineUids = useMemo(() => new Set([uid, ...coveredUids].filter(Boolean) as string[]), [uid, coveredUids]);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["project_tasks", "cross-project"],
@@ -57,12 +61,23 @@ export function ActivitiesView({
   );
   const today = new Date().toISOString().slice(0, 10);
 
+  // "Mine" means what Magnus decided it should mean (2026-08-29): assigned to
+  // me, PLUS unassigned work in projects I own. The strict reading — only what
+  // is assigned — hides exactly the tasks nobody has picked up, which is the
+  // work most likely to be dropped. An owner sees their project's loose ends.
+  const isMine = (t: Row) => {
+    if (t.assigned_to) return mineUids.has(t.assigned_to);
+    const owner = byProject.get(t.project_id)?.owner_id;
+    return !!owner && mineUids.has(owner);
+  };
+
   const rows = useMemo(() => {
     return (tasks ?? [])
       .filter((t) => (showDone ? true : !DONE.has(t.status)))
-      .filter((t) => (scope === "mine" ? t.assigned_to === user?.id : true))
+      .filter((t) => (lens === "mine" ? isMine(t) : true))
       .filter((t) => byProject.has(t.project_id));
-  }, [tasks, showDone, scope, user?.id, byProject]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, showDone, lens, mineUids, byProject]);
 
   const overdueCount = rows.filter(
     (t) => t.due_date && t.due_date < today && !DONE.has(t.status)
@@ -71,22 +86,9 @@ export function ActivitiesView({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-md border p-0.5">
-          <Button
-            size="sm"
-            variant={scope === "all" ? "secondary" : "ghost"}
-            onClick={() => setScope("all")}
-          >
-            All
-          </Button>
-          <Button
-            size="sm"
-            variant={scope === "mine" ? "secondary" : "ghost"}
-            onClick={() => setScope("mine")}
-          >
-            Mine
-          </Button>
-        </div>
+        {/* The CRM's own lens — the same switch as on Contacts and Projects,
+            so "Mine" means one thing across the product. */}
+        <LensToggle />
         <Button
           size="sm"
           variant={showDone ? "secondary" : "outline"}

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useOpenOnQueryParam } from "@/hooks/useOpenOnQueryParam";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LensToggle } from "@/components/admin/LensToggle";
+import { useOwnershipLens } from "@/hooks/useOwnershipLens";
+import { applyLens } from "@/lib/ownership";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -464,7 +467,12 @@ function ProjectCard({ project, selected, onSelect }: { project: Project; select
 }
 
 export default function ProjectsPage() {
-  const { data: projects, isLoading } = useProjects();
+  const { data: rawProjects, isLoading } = useProjects();
+  // ONE lens across the CRM: narrowing contacts and narrowing projects is the
+  // same act of focus, so Projects reads the shared preference rather than
+  // carrying a toggle of its own (ActivitiesView used to — a third truth).
+  const { lens, uid, coveredUids } = useOwnershipLens();
+  const projects = applyLens(rawProjects, 'projects', lens, uid, coveredUids);
   const { data: stats } = useProjectTaskStats();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -491,7 +499,10 @@ export default function ProjectsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader title="Projects" description="Manage projects, tasks, and track progress">
-          <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
+          <div className="flex items-center gap-2">
+            <LensToggle />
+            <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} />
+          </div>
         </AdminPageHeader>
 
         {isLoading ? (
@@ -518,8 +529,11 @@ export default function ProjectsPage() {
           </div>
 
           {mode === "activities" ? (
+            // Hela listan, inte den linsade: en uppgift tilldelad mig i NÅGON
+            // annans projekt är fortfarande min, så vyn gör sin egen
+            // sammansatta filtrering i stället för att ärva urvalet.
             <ActivitiesView
-              projects={projects}
+              projects={rawProjects ?? []}
               onOpenProject={(pid) => { setSelectedId(pid); setMode("projects"); setTab("board"); }}
             />
           ) : (
