@@ -88,13 +88,25 @@ export default function LeadsPage() {
 
   const promoteProspect = useMutation({
     mutationFn: async (id: string) => {
+      // Ownership begins on promotion. A prospecting find is deliberately
+      // nobody's while it sits in triage — the agent must not guess an owner —
+      // but the person who decides to pursue it is the obvious owner, and
+      // saying so here means "how do I put this contact on me" is one click
+      // (Magnus 2026-08-29). An already-assigned prospect keeps its owner:
+      // claiming someone else's contact by promoting it would be a surprise.
+      const { data: current } = await supabase
+        .from('leads').select('assigned_to').eq('id', id).maybeSingle();
+      const patch: Record<string, unknown> = { status: promoteTarget.key as LeadStatus };
+      if (!current?.assigned_to && uid) patch.assigned_to = uid;
+
       const { data, error } = await supabase
-        .from('leads').update({ status: promoteTarget.key as LeadStatus }).eq('id', id).select('id');
+        .from('leads').update(patch).eq('id', id).select('id, assigned_to');
       if (error) throw error;
       if (!data?.length) throw new Error('Nothing was updated — you may not have permission.');
+      return { claimed: data[0].assigned_to === uid && !current?.assigned_to };
     },
-    onSuccess: () => {
-      toast.success(`Promoted to ${promoteTarget.name}`);
+    onSuccess: ({ claimed }) => {
+      toast.success(`Promoted to ${promoteTarget.name}${claimed ? ' — assigned to you' : ''}`);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
     },

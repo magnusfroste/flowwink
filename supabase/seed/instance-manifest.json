@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260829230000",
-      "migrations_count": 528,
+      "migration_head": "20260830090000",
+      "migrations_count": 529,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2117,6 +2117,10 @@
         {
           "version": "20260829230000",
           "name": "projekt-far-agare-och-handavtryck"
+        },
+        {
+          "version": "20260830090000",
+          "name": "prospektets-proveniens"
         }
       ]
     },
@@ -2127,7 +2131,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:edcb2c054fc1c5b8fd3f4603b7f13ccb090071160ead90269eb49509cb97c4a2",
+      "shared_hash": "sha256:44c82b78fa54ce9a7d62a5664f81d2b2ec2dc667c14101d3da90e23df374600c",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
