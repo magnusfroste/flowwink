@@ -13,13 +13,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLeads, useLeadStats } from '@/hooks/useLeads';
+import { useLeads, useLeadStats, useDeleteLead } from '@/hooks/useLeads';
 import { useDealStats } from '@/hooks/useDeals';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail, Search } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical, UserSearch, X, Mail, Search, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -68,6 +68,7 @@ export default function LeadsPage() {
   const importLeads = useImportLeads();
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const deleteLead = useDeleteLead();
 
   const toggleId = (id: string) => {
     setSelectedIds((prev) => {
@@ -100,7 +101,7 @@ export default function LeadsPage() {
       );
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['leadStats'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
     },
     onError: (e: Error) => toast.error(`Bulk update failed: ${e.message}`),
   });
@@ -122,7 +123,7 @@ export default function LeadsPage() {
       );
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['leadStats'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
     },
     onError: (e: Error) => toast.error(`Bulk delete failed: ${e.message}`),
   });
@@ -387,6 +388,17 @@ export default function LeadsPage() {
             <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">{selectedIds.size} selected</span>
+                {/* One click grabs everything the filter shows — filter down to
+                    yesterday's prospecting batch, select all, delete. */}
+                {selectedIds.size < filteredLeads.length && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedIds(new Set(filteredLeads.map((l) => l.id)))}
+                  >
+                    Select all {filteredLeads.length}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" onClick={clearSelection}>
                   <X className="h-4 w-4 mr-1" /> Clear
                 </Button>
@@ -445,6 +457,11 @@ export default function LeadsPage() {
                       selected={selectedIds.has(lead.id)}
                       onToggleSelect={() => toggleId(lead.id)}
                       onClick={() => navigate(`/admin/contacts/${lead.id}`)}
+                      onDelete={() => {
+                        if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
+                          deleteLead.mutate(lead.id);
+                        }
+                      }}
                     />
                   ))}
                 </div>
@@ -507,9 +524,10 @@ interface LeadCardProps {
   onClick?: () => void;
   selected?: boolean;
   onToggleSelect?: () => void;
+  onDelete?: () => void;
 }
 
-function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect }: LeadCardProps) {
+function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
   const companyName = lead.companies?.name || lead.company;
@@ -571,19 +589,35 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect }: LeadC
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/admin/customer/${lead.id}`);
-              }}
-              title="Open Customer 360°"
-            >
-              <UserSearch className="h-3.5 w-3.5 mr-1" />
-              360°
-            </Button>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/customer/${lead.id}`);
+                }}
+                title="Open Customer 360°"
+              >
+                <UserSearch className="h-3.5 w-3.5 mr-1" />
+                360°
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete contact"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
