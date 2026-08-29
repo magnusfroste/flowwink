@@ -39,7 +39,20 @@ describe('bredden är läsarens', () => {
   it('handtaget erbjuds aldrig när det inte finns något att dra', () => {
     // Trädet är dolt i redigeringsläge och staplat på mobil.
     expect(page).toMatch(/\{!\(editing && page\) && \(/);
-    expect(page).toMatch(/hidden lg:flex w-1\.5/);
+    expect(page).toMatch(/hidden lg:flex w-3/);
+  });
+});
+
+describe('rännan är handtaget, inte död yta', () => {
+  it('inget gap mellan kolumnerna på desktop — bara när layouten staplar', () => {
+    // gap-6 på båda sidor gav ~54 px tomrum mitt i läsytan.
+    expect(page).toMatch(/flex flex-col gap-6 lg:flex-row lg:gap-0/);
+    expect(page).not.toMatch(/flex flex-col lg:flex-row gap-6/);
+  });
+
+  it('12 px att träffa, 1 px att se', () => {
+    expect(page).toMatch(/w-3 shrink-0 cursor-col-resize/);
+    expect(page).toMatch(/<div className="w-px bg-border/);
   });
 });
 

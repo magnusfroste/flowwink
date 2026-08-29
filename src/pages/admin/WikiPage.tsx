@@ -294,7 +294,10 @@ function WikiPageInner() {
     <AdminLayout>
       <AdminPageContainer>
         <div
-          className="flex flex-col lg:flex-row gap-6"
+          // gap-6 mellan kolumnerna gav ~54 px död yta på lg (24 + handtaget +
+          // 24). På desktop ÄR handtaget rännan; gapet behövs bara när layouten
+          // staplar (Magnus 2026-08-29).
+          className="flex flex-col gap-6 lg:flex-row lg:gap-0"
           style={{ ['--wiki-sidebar' as string]: `${sidebarWidth}px` }}
         >
           {/* Sidebar — steps aside while WRITING an existing page: the moment
@@ -400,10 +403,11 @@ function WikiPageInner() {
                 if (e.key === 'ArrowLeft') { e.preventDefault(); nudge(-16); }
                 if (e.key === 'ArrowRight') { e.preventDefault(); nudge(16); }
               }}
-              className="hidden lg:flex w-1.5 shrink-0 cursor-col-resize items-center justify-center rounded-full bg-transparent transition-colors hover:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              // 12 px att träffa, 1 px att se: greppytan får inte kosta läsyta.
+              className="group hidden lg:flex w-3 shrink-0 cursor-col-resize items-stretch justify-center bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title="Drag to resize · double-click to reset"
             >
-              <div className="h-8 w-0.5 rounded-full bg-border" />
+              <div className="w-px bg-border transition-colors group-hover:bg-primary/50 group-focus-visible:bg-primary/50" />
             </div>
           )}
 
