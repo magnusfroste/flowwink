@@ -59,7 +59,13 @@ export default function LeadsPage() {
   const q = searchQuery.trim().toLowerCase();
   // Prospects (pre-leads from prospecting) live in their own tab; the default
   // views leave them out so a Hunter batch can't drown the contact list.
-  const prospects = (leads ?? []).filter((l) => l.status === 'prospect');
+  //
+  // Read from rawLeads, NOT the lens-filtered list: prospecting finds carry no
+  // owner (the agent inserts them as service_role and must never guess who owns
+  // a contact), so under the "Mine" lens a lens-filtered triage queue is empty
+  // FOREVER — a shared inbox that looks like a working filter. Triage is a queue
+  // the team empties together; ownership starts when someone promotes.
+  const prospects = (rawLeads ?? []).filter((l) => l.status === 'prospect');
   const contactLeads = (leads ?? []).filter((l) => l.status !== 'prospect');
   const filteredLeads = (statusFilter === 'prospect' ? prospects : contactLeads).filter((l) => {
     if (statusFilter !== 'all' && statusFilter !== 'prospect' && l.status !== statusFilter) return false;
