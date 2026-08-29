@@ -35,7 +35,12 @@ describe('agent-execute authorizes per the skill’s owning module', () => {
   });
 
   it('the 403 names the module and the dial, so a denial self-corrects', () => {
-    expect(src).toContain('Role Permissions');
+    // Motiveringen bor numera i beslutet, inte i anroparen — och prövas på
+    // riktigt i "en nekan säger vad operatören ska göra åt saken" nedan.
+    const decisionSrc = readFileSync(
+      join(process.cwd(), 'supabase/functions/_shared/skill-access.ts'), 'utf-8',
+    );
+    expect(decisionSrc).toContain('Role Permissions');
   });
 
   /**
@@ -157,5 +162,59 @@ describe('manage_page_blocks update never nests a full block into data', () => {
     // stayed stale (optic, 2026-08-17). The unwrap must stay.
     expect(src).toContain('_isFullBlock');
     expect(src).toMatch(/_incoming = _isFullBlock \? \(block_data as any\)\.data : block_data/);
+  });
+});
+
+// ─── Beslutet, körd — inte bara omnämnt ─────────────────────────────────────
+//
+// Mutationsrevisionen 2026-08-30 satte `allowed = true` i den inbyggda
+// versionen och samtliga 15 påståenden nedan förblev gröna: de bevisade att
+// strängen `can_access_module` fanns i filen, inte att någon nekades. En
+// auktorisationsgrind som inte ser fail-open intygar det den aldrig prövade.
+// Därför ligger beslutet numera i _shared/skill-access.ts och anropas här.
+describe('matrisen nekar på riktigt — beslutet körs', () => {
+  const load = async () => (await import('../../../supabase/functions/_shared/skill-access.ts')).decideSkillAccess;
+
+  it('service-rollen och admin släpps igenom', async () => {
+    const decide = await load();
+    expect(decide({ isServiceCaller: true, isAdmin: false, ownerModule: undefined, moduleGranted: false }).allowed).toBe(true);
+    expect(decide({ isServiceCaller: false, isAdmin: true, ownerModule: 'platform', moduleGranted: false }).allowed).toBe(true);
+  });
+
+  it('en beviljad modul släpps igenom — men bara på ett strikt true', async () => {
+    const decide = await load();
+    const base = { isServiceCaller: false, isAdmin: false, ownerModule: 'crm' };
+    expect(decide({ ...base, moduleGranted: true }).allowed).toBe(true);
+    // Allt annat är en nekan. Ett misslyckat rpc ger null, och en null som
+    // läses som "ingen invändning" är hur behörighet tyst vänds.
+    for (const granted of [false, null, undefined, 'true', 1, {}, []]) {
+      expect(decide({ ...base, moduleGranted: granted }).allowed).toBe(false);
+    }
+  });
+
+  it('plattformsägda och omappade skills är admin-only — fail closed', async () => {
+    const decide = await load();
+    const base = { isServiceCaller: false, isAdmin: false, moduleGranted: true };
+    expect(decide({ ...base, ownerModule: 'platform' }).allowed).toBe(false);
+    expect(decide({ ...base, ownerModule: undefined }).allowed).toBe(false);
+    expect(decide({ ...base, ownerModule: '' }).allowed).toBe(false);
+    expect(decide({ ...base, ownerModule: null }).allowed).toBe(false);
+  });
+
+  it('en nekan säger vad operatören ska göra åt saken', async () => {
+    const decide = await load();
+    const d = decide({ isServiceCaller: false, isAdmin: false, ownerModule: 'crm', moduleGranted: false });
+    expect(d.reason).toMatch(/not granted the "crm" module/);
+    expect(d.reason).toMatch(/Role Permissions/);
+  });
+
+  it('och anroparen använder beslutet i stället för en egen flagga', async () => {
+    const src = readFileSync(
+      join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8',
+    );
+    expect(src).toMatch(/const decision = decideSkillAccess\(\{/);
+    expect(src).toMatch(/if \(!decision\.allowed\) \{/);
+    // Den lokala flaggan som gick att sätta till true är borta.
+    expect(src).not.toMatch(/let allowed = false;/);
   });
 });
