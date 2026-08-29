@@ -84,7 +84,7 @@ export async function handle(req: Request): Promise<Response> {
           }
         } else {
           // Create new lead
-          const { data: newLead } = await supabase
+          const { data: newLead, error: leadErr } = await supabase
             .from("leads")
             .insert({
               email: data.email,
@@ -96,6 +96,7 @@ export async function handle(req: Request): Promise<Response> {
             })
             .select()
             .single();
+          if (leadErr) throw new Error(`newsletter lead insert failed: ${leadErr.message}`);
 
           if (newLead) {
             await supabase.from("lead_activities").insert({

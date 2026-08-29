@@ -312,11 +312,11 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
 
   // Atomic Checkout
   results.push(await runTest("Atomic checkout prevents double-lock", 3, async () => {
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: "TEST_CHECKOUT — safe to delete",
       status: "active", constraints: {}, success_criteria: {}, progress: {},
     }).select("id").single();
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       const lock1 = await checkoutObjective(supabase, obj.id);
@@ -336,12 +336,12 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
   // Stale Lock Recovery
   results.push(await runTest("Stale locks (>30min) are recovered", 3, async () => {
     const staleLockTime = new Date(Date.now() - 35 * 60_000).toISOString();
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: "TEST_STALE — safe to delete",
       status: "active", constraints: {}, success_criteria: {}, progress: {},
       locked_by: "crashed", locked_at: staleLockTime,
     }).select("id").single();
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       const lock = await checkoutObjective(supabase, obj.id);
@@ -422,7 +422,7 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
   results.push(await runTest("loadObjectives(unlockedOnly): includes stale-locked objectives", 3, async () => {
     const staleLockTime = new Date(Date.now() - 35 * 60_000).toISOString();
     const testGoal = `TEST_STALE_VISIBLE_${Date.now()}`;
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: testGoal,
       status: "active",
       constraints: {},
@@ -431,7 +431,7 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
       locked_by: "crashed-heartbeat",
       locked_at: staleLockTime,
     }).select("id").single();
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       const objectiveCtx = await loadObjectives(supabase, { unlockedOnly: true });
@@ -444,14 +444,14 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
   // Regression: advance_plan must always release objective lock on early return (no plan / all done / errors)
   results.push(await runTest("advance_plan: releases objective lock on no_plan early return", 3, async () => {
     const testGoal = `TEST_ADVANCE_UNLOCK_${Date.now()}`;
-    const { data: obj } = await supabase.from("agent_objectives").insert({
+    const { data: obj, error: objErr } = await supabase.from("agent_objectives").insert({
       goal: testGoal,
       status: "active",
       constraints: {},
       success_criteria: {},
       progress: {},
     }).select("id, locked_by, locked_at").single();
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       const firstRun = await checkoutObjective(supabase, obj.id);
@@ -470,7 +470,7 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
       })();
       assertEqual(result.status, 'no_plan');
 
-      const { data: reloaded } = await supabase.from("agent_objectives").select("locked_by, locked_at").eq("id", obj.id).single();
+      const { data: reloaded, error: reloadedErr } = await supabase.from("agent_objectives").select("locked_by, locked_at").eq("id", obj.id).single();
       assertEqual(reloaded?.locked_by, null, "Objective lock should be released after no_plan return path");
     } finally {
       await supabase.from("agent_objectives").delete().eq("id", obj.id);
@@ -696,14 +696,14 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   // 3. Objective → Prompt Pipeline: Active objective appears in compiled prompt
   results.push(await runTest("WIRE: Objective → Prompt pipeline", 5 as any, async () => {
     const testGoal = `TEST_WIRE_OBJ_${Date.now()}`;
-    const { data: obj } = await supabase.from('agent_objectives').insert({
+    const { data: obj, error: objErr } = await supabase.from('agent_objectives').insert({
       goal: testGoal,
       status: 'active',
       constraints: { priority: 'medium' },
       success_criteria: { test: true },
       progress: {},
     }).select('id').single();
-    assertExists(obj);
+    assertExists(obj, `should exist` + (objErr ? ` — ${objErr.message}` : ''));
 
     try {
       const objCtx = await loadObjectives(supabase);
@@ -894,7 +894,7 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
 
   // ─── 13. Skill description ↔ tool_definition.function.description sync ────
   results.push(await runTest("WIRE: Skill description synced to tool_definition", 5 as any, async () => {
-    const { data: skills } = await supabase
+    const { data: skills, error: skillsErr } = await supabase
       .from('agent_skills')
       .select('name, description, tool_definition')
       .eq('enabled', true)
@@ -915,7 +915,7 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
 
   // ─── 14. All skill descriptions follow OpenClaw routing pattern ────────────
   results.push(await runTest("WIRE: Skills follow 'Use when / NOT for' pattern", 5 as any, async () => {
-    const { data: skills } = await supabase
+    const { data: skills, error: skillsErr } = await supabase
       .from('agent_skills')
       .select('name, description')
       .eq('enabled', true)
@@ -1034,7 +1034,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   // Test: outcome_status enum validation
   results.push(await runTest('ROBUST: outcome_status only uses valid enum values', 7 as any, async () => {
     // Insert an activity and verify NULL outcome_status (not 'pending')
-    const { data: act } = await supabase.from('agent_activity').insert({
+    const { data: act, error: actErr } = await supabase.from('agent_activity').insert({
       agent: 'flowpilot',
       skill_name: '_test_outcome_enum',
       input: { test: true },
@@ -1042,7 +1042,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       status: 'success',
     }).select('id, outcome_status').single();
 
-    assertExists(act, 'Activity should be created');
+    assertExists(act, 'Activity should be created' + (actErr ? ` — ${actErr.message}` : ''));
     assertEqual(act.outcome_status, null, 'outcome_status should be NULL (not pending)');
 
     // Cleanup
@@ -1069,7 +1069,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   // Test: evaluate_outcomes finds NULL outcome_status activities
   results.push(await runTest('ROBUST: evaluate_outcomes picks up NULL outcome activities', 7 as any, async () => {
     // Insert a test activity with NULL outcome_status
-    const { data: act } = await supabase.from('agent_activity').insert({
+    const { data: act, error: actErr } = await supabase.from('agent_activity').insert({
       agent: 'flowpilot',
       skill_name: '_test_eval_pickup',
       input: { test: true },
@@ -1077,9 +1077,10 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       status: 'success',
       // outcome_status deliberately omitted → NULL
     }).select('id').single();
+    if (actErr) throw new Error(`activity insert failed: ${actErr.message}`);
 
     // Query the same way evaluate_outcomes does
-    const { data: found } = await supabase
+    const { data: found, error: foundErr } = await supabase
       .from('agent_activity')
       .select('id')
       .eq('status', 'success')
@@ -1087,7 +1088,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       .eq('id', act.id)
       .maybeSingle();
 
-    assertExists(found, 'Activity with NULL outcome_status should be queryable');
+    assertExists(found, 'Activity with NULL outcome_status should be queryable' + (foundErr ? ` — ${foundErr.message}` : ''));
 
     // Cleanup
     await supabase.from('agent_activity').delete().eq('id', act.id);
@@ -1119,7 +1120,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     await resp.json();
 
     // Verify trace_id was stored in activity input
-    const { data: acts } = await supabase
+    const { data: acts, error: actsErr } = await supabase
       .from('agent_activity')
       .select('input')
       .eq('skill_name', 'analyze_analytics')
@@ -1160,7 +1161,7 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     // Check that the activity was logged with correct status
     if (result.status === 'success' && result.result?.error) {
       // Verify activity was logged as 'failed'
-      const { data: act } = await supabase
+      const { data: act, error: actErr } = await supabase
         .from('agent_activity')
         .select('status, error_message')
         .eq('skill_name', 'manage_blog_posts')

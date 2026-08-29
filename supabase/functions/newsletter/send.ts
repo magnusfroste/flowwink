@@ -207,10 +207,13 @@ export async function sendNewsletterCore(
     try {
       let trackingPixel = "";
       if (trackingConfig.enableOpenTracking) {
-        const { data: trackingRecord } = await supabase
+        const { data: trackingRecord, error: trackErr } = await supabase
           .from("newsletter_email_opens")
           .insert({ newsletter_id, recipient_email: subscriber.email })
           .select("tracking_id").single();
+        // Öppningsspårning är inte utskicket: logga och skicka ändå. Ett
+        // medvetet beslut som SYNS är inte ett svalt fel.
+        if (trackErr) console.error(`[newsletter] open tracking insert failed: ${trackErr.message}`);
         if (trackingRecord) {
           trackingPixel = `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`;
         }

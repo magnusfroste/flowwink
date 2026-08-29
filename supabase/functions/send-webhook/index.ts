@@ -255,7 +255,8 @@ Deno.serve(async (req) => {
                 agent_type: 'flowpilot',
               }),
             })
-            const { data: current } = await supabase.from('agent_automations').select('run_count').eq('id', auto.id).single()
+            const { data: current, error: countErr } = await supabase.from('agent_automations').select('run_count').eq('id', auto.id).single()
+            if (countErr) throw new Error(`run_count read failed: ${countErr.message}`) // annars skrivs 0+1 över ett riktigt värde
             await supabase.from('agent_automations').update({ 
               last_triggered_at: new Date().toISOString(), 
               run_count: (current?.run_count || 0) + 1 
@@ -342,11 +343,12 @@ Deno.serve(async (req) => {
               .eq('id', auto.id)
 
             // Increment run_count
-            const { data: current } = await supabase
+            const { data: current, error: countErr } = await supabase
               .from('agent_automations')
               .select('run_count')
               .eq('id', auto.id)
               .single()
+            if (countErr) throw new Error(`run_count read failed: ${countErr.message}`)
             
             await supabase
               .from('agent_automations')

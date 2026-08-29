@@ -57,7 +57,7 @@ export async function handler(req: Request): Promise<Response> {
   // re-execution; this makes the aged-out ones a terminal, visible 'expired'
   // instead of an invisible pile. (resumption Phase 0, agent-resumption.md §0.A)
   const expiredBefore = new Date(Date.now() - windowHours * 3_600_000).toISOString();
-  const { data: expiredRows } = await supabase
+  const { data: expiredRows, error: expireErr } = await supabase
     .from("agent_activity")
     .update({
       status: "expired",
@@ -66,6 +66,7 @@ export async function handler(req: Request): Promise<Response> {
     .eq("status", "approved")
     .lt("created_at", expiredBefore)
     .select("id");
+  if (expireErr) throw new Error(`followthrough: expiry sweep failed: ${expireErr.message}`);
   const expiredCount = (expiredRows ?? []).length;
 
   const { data: pending, error: selErr } = await supabase.rpc("flowpilot_approved_pending", { p_window_hours: windowHours });
