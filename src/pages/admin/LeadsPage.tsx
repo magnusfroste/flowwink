@@ -70,7 +70,7 @@ export default function LeadsPage() {
   const filteredLeads = (statusFilter === 'prospect' ? prospects : contactLeads).filter((l) => {
     if (statusFilter !== 'all' && statusFilter !== 'prospect' && l.status !== statusFilter) return false;
     if (!q) return true;
-    return [l.name, l.email, l.company, l.companies?.name]
+    return [l.name, l.email, l.companies?.name]
       .some((f) => (f || '').toLowerCase().includes(q));
   });
   const isFiltering = q !== '' || statusFilter !== 'all';
@@ -614,7 +614,6 @@ interface LeadCardProps {
     id: string;
     email: string;
     name: string | null;
-    company: string | null;
     company_id: string | null;
     companies: {
       id: string;
@@ -641,7 +640,8 @@ interface LeadCardProps {
 function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote, promoteLabel = 'Lead' }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
-  const companyName = lead.companies?.name || lead.company;
+  // No `lead.company` fallback: that column exists in no instance's schema.
+  const companyName = lead.companies?.name;
   const navigate = useNavigate();
   const { data: overdue } = useOverdueActivityIndex();
   const hasOverdue = overdue?.leadIds.has(lead.id) ?? false;

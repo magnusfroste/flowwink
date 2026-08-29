@@ -47,7 +47,10 @@ export async function distillContactState(
 ): Promise<{ success: boolean; summary?: string; entries?: number; skipped?: string }> {
   const { data: lead, error: leadErr } = await supabase
     .from('leads')
-    .select('id, name, email, status, score, company, company_id, companies(name, notes)')
+    // `company` finns INTE i schemat — B2B-namnet bor på companies via
+    // company_id. Frontend-typen påstod motsatsen och den lögnen kostade den
+    // här funktionen sitt första skarpa anrop (2026-08-29).
+    .select('id, name, email, status, score, company_id, companies(name, notes)')
     .eq('id', leadId)
     .maybeSingle();
   if (leadErr) throw new Error(`contact-state: lead read failed: ${leadErr.message}`);
@@ -77,7 +80,7 @@ export async function distillContactState(
   // importing our marketing claims into a factual status note.
   const identity = await loadBusinessIdentityBlock(supabase, 'core');
 
-  const companyName = lead.companies?.name || lead.company || null;
+  const companyName = lead.companies?.name || null;
   const companyNotes = (lead.companies?.notes ?? '').toString().trim();
 
   const ledgerText = entries

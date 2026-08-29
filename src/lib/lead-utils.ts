@@ -12,7 +12,6 @@ export interface Lead {
   id: string;
   email: string;
   name: string | null;
-  company: string | null;
   company_id: string | null;
   phone: string | null;
   source: string;
