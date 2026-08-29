@@ -1,10 +1,16 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/useAuth';
+import { useEditActivityNote } from '@/hooks/useEditActivityNote';
+import { LinkifiedText } from '@/components/ui/linkified-text';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Phone, Mail, Users, MessageSquare, FileText, MailOpen,
   MousePointer, RefreshCw, Trophy, XCircle, Calendar,
-  ShoppingCart, Video, Activity, CheckCircle2, ArrowDownLeft, ArrowUpRight
+  ShoppingCart, Video, Activity, CheckCircle2, ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronRight, Pencil
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -82,7 +88,51 @@ export function UnifiedTimeline({ leadId, email }: UnifiedTimelineProps) {
   );
 }
 
+/**
+ * A meeting summary can be 2 600 characters with 38 line breaks (measured on a
+ * live contact, 2026-08-29). Clamped to two lines with no way out, it is stored
+ * but unreadable: the log looked like it had lost the text. The clamp stays —
+ * a timeline must survive twenty contacts' worth of scanning — but anything
+ * long enough to be cut off now says so and opens in place, keeping its own
+ * line breaks. Long-form belongs in the record, not in the scan line.
+ */
+function isExpandable(text: string): boolean {
+  return text.length > 160 || text.includes('\n');
+}
+
+/**
+ * Which entries carry text a human wrote — the only text anyone may correct.
+ * A system observation ("email opened", "deal created") has no authored
+ * sentence in it, so it needs no edit affordance at all.
+ */
+const HUMAN_LOGGED = new Set(['note', 'call', 'meeting', 'email', 'task_completed']);
+
 function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoading: boolean }) {
+  const { user, isAdmin } = useAuth();
+  const editNote = useEditActivityNote();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // The entry is immutable; its text is correctable — by the person who wrote
+  // it, or an admin. Rows from before authorship was recorded have no author,
+  // so only an admin may touch them: we do not know whose words they are.
+  const mayCorrect = (e: TimelineEvent) =>
+    !!e.activityId &&
+    HUMAN_LOGGED.has(e.activityType ?? '') &&
+    (isAdmin || (!!e.authorId && e.authorId === user?.id));
+
+  const startEdit = (e: TimelineEvent) => {
+    setEditing(e.id);
+    setDraft(e.description ?? '');
+  };
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
   if (isLoading) {
     return <p className="text-sm text-muted-foreground py-4">Loading timeline...</p>;
   }
@@ -119,10 +169,85 @@ function TimelineList({ events, isLoading }: { events: TimelineEvent[]; isLoadin
                 )}
                 <TypeBadge type={event.type} />
               </div>
-              {event.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                  {event.description}
-                </p>
+              {editing === event.id ? (
+                <div className="mt-1 space-y-2">
+                  <Textarea
+                    value={draft}
+                    onChange={(ev) => setDraft(ev.target.value)}
+                    rows={4}
+                    className="[field-sizing:content] max-h-96 resize-y text-xs leading-relaxed"
+                    placeholder="Correct the wording. Emptying it redacts the text and leaves the entry standing."
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={editNote.isPending}
+                      onClick={() =>
+                        editNote.mutate(
+                          { activityId: event.activityId!, note: draft },
+                          { onSuccess: () => setEditing(null) },
+                        )
+                      }
+                    >
+                      Save correction
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditing(null)}>
+                      Cancel
+                    </Button>
+                    <span className="text-[10px] text-muted-foreground">
+                      The entry, its time and its points stay as they are.
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {event.description ? (
+                    <p
+                      className={cn(
+                        'text-xs text-muted-foreground mt-0.5',
+                        expanded.has(event.id) ? 'whitespace-pre-wrap' : 'line-clamp-2',
+                      )}
+                    >
+                      {/* A ledger entry that points at the wiki instead of
+                          repeating it is the right shape — so the pointer has
+                          to be a link, not text to select and copy. */}
+                      <LinkifiedText text={event.description} />
+                    </p>
+                  ) : (
+                    // A corrected-away note: the row stands, the words are gone.
+                    event.editedAt && HUMAN_LOGGED.has(event.activityType ?? '') && (
+                      <p className="text-xs text-muted-foreground/70 italic mt-0.5">Note redacted</p>
+                    )
+                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {event.description && isExpandable(event.description) && (
+                      <button
+                        type="button"
+                        onClick={() => toggle(event.id)}
+                        className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+                      >
+                        {expanded.has(event.id)
+                          ? <><ChevronDown className="h-3 w-3" /> Show less</>
+                          : <><ChevronRight className="h-3 w-3" /> Show more</>}
+                      </button>
+                    )}
+                    {mayCorrect(event) && (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(event)}
+                        className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-3 w-3" /> Correct
+                      </button>
+                    )}
+                    {event.editedAt && (
+                      <span className="text-[10px] text-muted-foreground/70" title={new Date(event.editedAt).toLocaleString()}>
+                        edited
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
               <p className="text-xs text-muted-foreground mt-1">
                 {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}

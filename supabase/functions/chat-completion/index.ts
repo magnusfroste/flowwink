@@ -692,6 +692,30 @@ serve(async (req) => {
       // invented seven process pages. Fall through to the full-text builder:
       // slower and token-hungrier, but grounded. Degrade, never gate (Law 4).
       if (!chunks.length) throw new EmptyIndexError();
+      // Knowledge-gap telemetry: retrieval ran with a real embedding and the
+      // best chunk still wasn't semantically close — the index probably cannot
+      // answer this question. Logged fire-and-forget for the Daily Briefing's
+      // "documentation candidates" section; a telemetry failure must never
+      // slow or break the answer. Text-only instances (no embedding key) are
+      // skipped — every semantic score is 0 there and would flag everything.
+      if (queryEmbedding?.length) {
+        const topSemantic = chunks.reduce((m, c) => Math.max(m, c.semanticScore ?? 0), 0);
+        if (topSemantic < 0.35) {
+          void supabase
+            .from('knowledge_gap_log')
+            .insert({
+              question: retrievalQueryText.slice(0, 500),
+              surface: 'public_chat',
+              chunk_count: chunks.length,
+              top_semantic: topSemantic,
+              conversation_id: conversationId ? String(conversationId) : null,
+            })
+            .then(
+              () => {},
+              () => {},
+            );
+        }
+      }
       return `\n\n=== WEBSITE CONTENT (retrieved by relevance to the question) ===\n${renderContext(chunks)}`;
     };
 

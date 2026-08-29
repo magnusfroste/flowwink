@@ -40,7 +40,7 @@ export type SalesIntelligenceOutput = z.infer<typeof salesIntelligenceOutputSche
 const SALESINTELLIGENCE_SKILLS: SkillSeed[] = [
   {
     name: 'prospect_research',
-    description: 'Research a company — search web, scrape website, find contacts via Hunter.io. Returns raw data for FlowPilot to analyze. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
+    description: 'Research a company — search web, scrape website, find contacts via Hunter.io. Found contacts are saved as PROSPECTS (pre-leads in the Contacts → Prospects triage tab), never directly as leads: a human promotes the ones worth pursuing. Returns raw data for FlowPilot to analyze. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
     category: 'crm',
     handler: 'internal:prospect_research',
     scope: 'internal',
@@ -79,7 +79,10 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
 - **company_url**: Optional but strongly recommended for better results.
 ### Edge cases
 - Hunter.io API key required for contact discovery. Without it, only website analysis is returned.
-- Chain: prospect_research → qualify_lead → manage_deal (create).`,
+- Found contacts land as status 'prospect' — a triage state OUTSIDE the pipeline. They become
+  leads only when promoted in Contacts → Prospects (or via manage_lead status update). Do not
+  treat the whole batch as leads; the human picks who to pursue.
+- Chain: prospect_research → (human promotes) → qualify_lead → manage_deal (create).`,
   },
     {
       name: 'verify_email',

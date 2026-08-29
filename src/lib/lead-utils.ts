@@ -5,13 +5,13 @@ import type { Json } from '@/integrations/supabase/types';
 import { notifyNewLead } from '@/lib/slack-notify';
 import { buildAttributionFields, logUtmConversion } from '@/lib/utm';
 
-export type LeadStatus = 'lead' | 'opportunity' | 'customer' | 'lost';
+/** 'prospect' is the pre-lead: found by prospecting, not yet pursued. */
+export type LeadStatus = 'prospect' | 'lead' | 'opportunity' | 'customer' | 'lost';
 
 export interface Lead {
   id: string;
   email: string;
   name: string | null;
-  company: string | null;
   company_id: string | null;
   phone: string | null;
   source: string;
@@ -20,6 +20,10 @@ export interface Lead {
   score: number;
   ai_summary: string | null;
   ai_qualified_at: string | null;
+  /** When the standing summary was last rewritten from the ledger. */
+  ai_summary_at: string | null;
+  /** What that summary rests on: {entries, through, model}. A summary without its basis is an assertion. */
+  ai_summary_basis: { entries?: number; through?: string; model?: string } | null;
   needs_review: boolean;
   assigned_to: string | null;
   converted_at: string | null;
@@ -701,7 +705,8 @@ export async function qualifyLead(leadId: string): Promise<void> {
  */
 export function getLeadStatusInfo(status: LeadStatus): { label: string; color: string } {
   const statusMap: Record<LeadStatus, { label: string; color: string }> = {
-    lead: { label: 'Contact', color: 'bg-blue-500' },
+    prospect: { label: 'Prospect', color: 'bg-slate-500' },
+    lead: { label: 'Lead', color: 'bg-blue-500' },
     opportunity: { label: 'Opportunity', color: 'bg-amber-500' },
     customer: { label: 'Customer', color: 'bg-green-500' },
     lost: { label: 'Lost', color: 'bg-gray-500' },

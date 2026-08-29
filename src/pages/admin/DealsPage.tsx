@@ -570,7 +570,7 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
                 <SelectContent>
                   {availableLeads.map(lead => (
                     <SelectItem key={lead.id} value={lead.id}>
-                      {lead.name || lead.email} {lead.company ? `(${lead.company})` : ''}
+                      {lead.name || lead.email} {lead.companies?.name ? `(${lead.companies.name})` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

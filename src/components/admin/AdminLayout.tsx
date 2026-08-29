@@ -55,9 +55,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      // Carry the intended destination through the sign-in detour, so a shared
+      // deep link (a wiki page, a KB article draft, a specific record) lands on
+      // the page that was shared — not on the dashboard. Links people share in
+      // chat only build a habit if they survive the login wall.
+      navigate('/auth', {
+        state: { from: location.pathname + location.search + location.hash },
+      });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, location]);
 
   if (loading) {
     return (

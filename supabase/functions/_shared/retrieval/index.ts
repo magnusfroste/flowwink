@@ -36,6 +36,8 @@ export interface RetrievedChunk {
   content: string;
   metadata: Record<string, unknown>;
   score: number;
+  /** Raw cosine similarity of the semantic leg (0 when the leg was absent). */
+  semanticScore: number;
 }
 
 const CHARS_PER_TOKEN = 4;
@@ -69,6 +71,7 @@ export async function retrieve(
       content: row.content,
       metadata: row.metadata ?? {},
       score: row.hybrid_score,
+      semanticScore: typeof row.semantic_score === 'number' ? row.semantic_score : 0,
     });
   }
   return out;

@@ -144,3 +144,42 @@ export function useDeleteEntityActivity() {
     },
   });
 }
+
+/**
+ * Research and fit-analysis rows for one company.
+ *
+ * Lives here rather than in the companies component that renders it: this
+ * module owns reads of `activities`, and the table-ownership guardrail is
+ * right to insist — a domain reaching into another domain's table is how two
+ * readers of the same rows drift apart. (It caught exactly that on the first
+ * attempt, 2026-08-29.)
+ */
+export interface CompanyResearchRow {
+  id: string;
+  activity_type: string;
+  subject: string | null;
+  body: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export const COMPANY_RESEARCH_TYPES = ['research', 'fit_analysis'];
+
+export function useCompanyResearch(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['company-research', companyId],
+    enabled: !!companyId,
+    queryFn: async (): Promise<CompanyResearchRow[]> => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('id, activity_type, subject, body, metadata, created_at')
+        .eq('entity_type', 'company')
+        .eq('entity_id', companyId!)
+        .in('activity_type', COMPANY_RESEARCH_TYPES)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as unknown as CompanyResearchRow[];
+    },
+  });
+}

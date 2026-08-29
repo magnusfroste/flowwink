@@ -46,6 +46,39 @@ import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
+
+/**
+ * The tree's width, dragged by the reader.
+ *
+ * Wikin är på väg att bli navet — ett Enterprise Context System — och på en
+ * mindre desktop äter en fast tredjedel av läsytan (Magnus 2026-08-29).
+ *
+ * Varför inte ResizablePanelGroup, som redan finns i projektet: den kräver båda
+ * panelerna som direkta barn och delar alltid horisontellt. Den här sidan
+ * STAPLAR på mobil och DÖLJER trädet helt i redigeringsläge, så biblioteket
+ * hade tvingat fram två parallella JSX-träd med samma barn. En dragbar kant på
+ * en flexrad behåller ett träd.
+ *
+ * Bredden sparas i localStorage och INTE i profiles.preferences, till skillnad
+ * från ägarlinsen. Skillnaden är avsiktlig: linsen är ett sätt att arbeta och
+ * följer människan mellan enheter, medan en kolumnbredd hör till skärmen man
+ * sitter vid. En bredd som följde med från 34 tum till en laptop vore fel.
+ */
+const SIDEBAR_KEY = 'wiki-sidebar-width';
+const SIDEBAR_DEFAULT = 288;
+const SIDEBAR_MIN = 180;
+const SIDEBAR_MAX = 560;
+
+function readStoredWidth(): number {
+  try {
+    const raw = Number(localStorage.getItem(SIDEBAR_KEY));
+    if (Number.isFinite(raw) && raw >= SIDEBAR_MIN && raw <= SIDEBAR_MAX) return raw;
+  } catch {
+    // Private mode / blocked storage: the default is a perfectly good answer.
+  }
+  return SIDEBAR_DEFAULT;
+}
+
 export default function WikiPage() {
   const enabled = useIsModuleEnabled('wiki');
   if (!enabled) {
@@ -228,28 +261,75 @@ function WikiPageInner() {
 
   const searching2 = search.trim().length >= 2;
 
+  // Sidebar width: dragged, clamped, remembered per device.
+  const [sidebarWidth, setSidebarWidth] = useState<number>(readStoredWidth);
+  const widthRef = useRef(sidebarWidth);
+  widthRef.current = sidebarWidth;
+
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = widthRef.current;
+    const onMove = (ev: PointerEvent) => {
+      const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startW + ev.clientX - startX));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try { localStorage.setItem(SIDEBAR_KEY, String(widthRef.current)); } catch { /* ignore */ }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
+  // Keyboard: a drag handle nobody can reach without a mouse is half a feature.
+  const nudge = (delta: number) => {
+    const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, widthRef.current + delta));
+    setSidebarWidth(next);
+    try { localStorage.setItem(SIDEBAR_KEY, String(next)); } catch { /* ignore */ }
+  };
+
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <div className="grid grid-cols-12 gap-6">
+        <div
+          // gap-6 mellan kolumnerna gav ~54 px död yta på lg (24 + handtaget +
+          // 24). På desktop ÄR handtaget rännan; gapet behövs bara när layouten
+          // staplar (Magnus 2026-08-29).
+          className="flex flex-col gap-6 lg:flex-row lg:gap-0"
+          style={{ ['--wiki-sidebar' as string]: `${sidebarWidth}px` }}
+        >
           {/* Sidebar — steps aside while WRITING an existing page: the moment
               full width is needed is known (edit mode), so no show/hide buttons.
               A NEW page auto-opens in edit mode — hiding the tree there made the
               whole wiki look empty (/admin/wiki lands on a not-yet-created
               HomePage, live 2026-08-20), so new-page editing keeps navigation. */}
-          <aside className={editing && page ? 'hidden' : 'col-span-12 lg:col-span-3 min-w-0 space-y-3'}>
+          <aside className={editing && page ? 'hidden' : 'w-full lg:w-[var(--wiki-sidebar)] lg:shrink-0 min-w-0 space-y-3'}>
+            {/* A reading surface, not a dashboard. A full-width filled button
+                is the loudest thing a page can contain, and it was pointed at
+                the rarest action here: most visits read, some edit, few create
+                (Magnus 2026-08-29 — "fokus ska vara på content och läsbarhet").
+                Creation moves to a quiet + beside the title, the Notion/Docs
+                placement; search keeps the weight, because finding is what
+                people actually came to do. */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <h1 className="font-serif text-lg font-bold text-foreground">Wiki</h1>
+              <div className="flex items-center gap-2 min-w-0">
+                <BookOpen className="h-5 w-5 text-primary shrink-0" />
+                <h1 className="font-serif text-lg font-bold text-foreground truncate">Wiki</h1>
+                <span className="text-xs text-muted-foreground shrink-0">{pages.length}</span>
               </div>
-              <Badge variant="secondary" className="text-[10px]">
-                {pages.length} pages
-              </Badge>
+              <Button
+                onClick={handleNew}
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                title="New page"
+                aria-label="New page"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
-            <Button onClick={handleNew} size="sm" className="w-full">
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> New page
-            </Button>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -304,8 +384,35 @@ function WikiPageInner() {
             </ScrollArea>
           </aside>
 
+          {/* The drag handle. Hidden on small screens (the layout stacks) and in
+              edit mode (the tree is gone), so it never offers a grip on nothing.
+              Double-click restores the default — a reader who drags too far
+              should not have to guess the original number. */}
+          {!(editing && page) && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize the page list"
+              aria-valuenow={sidebarWidth}
+              aria-valuemin={SIDEBAR_MIN}
+              aria-valuemax={SIDEBAR_MAX}
+              tabIndex={0}
+              onPointerDown={startResize}
+              onDoubleClick={() => nudge(SIDEBAR_DEFAULT - sidebarWidth)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') { e.preventDefault(); nudge(-16); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); nudge(16); }
+              }}
+              // 12 px att träffa, 1 px att se: greppytan får inte kosta läsyta.
+              className="group hidden lg:flex w-3 shrink-0 cursor-col-resize items-stretch justify-center bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title="Drag to resize · double-click to reset"
+            >
+              <div className="w-px bg-border transition-colors group-hover:bg-primary/50 group-focus-visible:bg-primary/50" />
+            </div>
+          )}
+
           {/* Main */}
-          <main className={editing && page ? 'col-span-12 space-y-4' : 'col-span-12 lg:col-span-9 space-y-4'}>
+          <main className={editing && page ? 'w-full space-y-4' : 'flex-1 min-w-0 space-y-4'}>
             {trail.length > 0 && (
               <nav className="flex items-center gap-1 text-xs text-muted-foreground">
                 {trail.map((t) => (

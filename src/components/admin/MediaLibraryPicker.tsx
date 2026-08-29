@@ -282,7 +282,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
   return (
     <>
       <Dialog open={open && !showCropper} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden z-[100]">
+        <DialogContent className="max-w-4xl max-h-[85vh] !flex flex-col overflow-hidden z-[100]">
           <DialogHeader>
             <DialogTitle>Select image</DialogTitle>
           </DialogHeader>

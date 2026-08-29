@@ -232,7 +232,20 @@ export async function executeProspectResearch(
         name,
         company_id: companyId,
         source: 'prospect-research',
-        status: 'lead',
+        // A prospecting find is NOT a lead yet — the whole Hunter batch used
+        // to land as status 'lead' and drown the Contacts view. 'prospect' is
+        // the pre-lead: it sits in the Prospects triage tab until a human
+        // promotes it (or deletes it). Existing leads matched by email keep
+        // their status — an already-working contact is never demoted.
+        status: 'prospect',
+        // Who asked, and who did the work — two facts, two columns. A human
+        // triggered this research; the agent carried it out. Ownership is
+        // deliberately NOT set: the whole point of the triage tab is that a
+        // find is nobody's until someone promotes it (#330). But "who asked
+        // for this" must never be unknown — an empty created_by used to say
+        // both "the system" and "we have no idea" (Magnus 2026-08-29).
+        created_by: (args as any)._caller_user_id ?? null,
+        created_by_agent: (args as any)._effective_agent ?? null,
         // Trust fields: what Hunter's domain search already told us, kept
         // instead of dropped. Status stays 'unverified' until an explicit
         // verify_email (that one costs a credit). Provenance doubles as the
@@ -274,11 +287,26 @@ export async function executeProspectResearch(
           .insert(leadPayload)
           .select('id')
           .single();
+        let row = inserted;
         if (error) {
-          console.error('lead insert failed:', error.message);
-          continue;
+          // An instance that has not run the provenance migration yet must not
+          // lose every contact the research found. Strip the columns it lacks
+          // and insert again — attribution is a bonus, never a gate (Law 4).
+          const missing = ['created_by_agent', 'created_by'].filter((c) => error.message?.includes(c));
+          if (missing.length) {
+            for (const c of missing) delete leadPayload[c];
+            const retry = await supabase.from('leads').insert(leadPayload).select('id').single();
+            if (retry.error) {
+              console.error('lead insert failed after stripping provenance:', retry.error.message);
+              continue;
+            }
+            row = retry.data;
+          } else {
+            console.error('lead insert failed:', error.message);
+            continue;
+          }
         }
-        if (inserted?.id) savedContacts.push({ id: inserted.id, email, name, ...contactMeta });
+        if (row?.id) savedContacts.push({ id: row.id, email, name, ...contactMeta });
       }
     }
 
