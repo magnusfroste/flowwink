@@ -24318,7 +24318,7 @@ export type Database = {
         | "booked"
         | "posted"
       job_posting_status: "draft" | "published" | "closed" | "archived"
-      lead_status: "lead" | "opportunity" | "customer" | "lost"
+      lead_status: "prospect" | "lead" | "opportunity" | "customer" | "lost"
       mo_status:
         | "draft"
         | "planned"
@@ -24687,7 +24687,7 @@ export const Constants = {
         "posted",
       ],
       job_posting_status: ["draft", "published", "closed", "archived"],
-      lead_status: ["lead", "opportunity", "customer", "lost"],
+      lead_status: ["prospect", "lead", "opportunity", "customer", "lost"],
       mo_status: [
         "draft",
         "planned",

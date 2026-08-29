@@ -56,8 +56,12 @@ export default function LeadsPage() {
   // Free-text + status filtering for the All Contacts tab. Client-side over the
   // already-loaded list — same bounds as the rest of the page.
   const q = searchQuery.trim().toLowerCase();
-  const filteredLeads = (leads ?? []).filter((l) => {
-    if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+  // Prospects (pre-leads from prospecting) live in their own tab; the default
+  // views leave them out so a Hunter batch can't drown the contact list.
+  const prospects = (leads ?? []).filter((l) => l.status === 'prospect');
+  const contactLeads = (leads ?? []).filter((l) => l.status !== 'prospect');
+  const filteredLeads = (statusFilter === 'prospect' ? prospects : contactLeads).filter((l) => {
+    if (statusFilter !== 'all' && statusFilter !== 'prospect' && l.status !== statusFilter) return false;
     if (!q) return true;
     return [l.name, l.email, l.company, l.companies?.name]
       .some((f) => (f || '').toLowerCase().includes(q));
@@ -69,6 +73,40 @@ export default function LeadsPage() {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteLead = useDeleteLead();
+
+  const promoteProspect = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('leads').update({ status: 'lead' }).eq('id', id).select('id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was updated — you may not have permission.');
+    },
+    onSuccess: () => {
+      toast.success('Promoted to contact');
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
+    },
+    onError: (e: Error) => toast.error(`Promote failed: ${e.message}`),
+  });
+
+  const deleteAllProspects = useMutation({
+    mutationFn: async () => {
+      const ids = prospects.map((p) => p.id);
+      // Activities first (same order as single delete), then the rows — and
+      // report what the database touched, not what we asked about.
+      await supabase.from('lead_activities').delete().in('lead_id', ids);
+      const { data, error } = await supabase.from('leads').delete().in('id', ids).select('id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('Nothing was deleted — you may not have permission.');
+      return data.length;
+    },
+    onSuccess: (deleted) => {
+      toast.success(`Deleted ${deleted} prospect${deleted === 1 ? '' : 's'}`);
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
+    },
+    onError: (e: Error) => toast.error(`Delete failed: ${e.message}`),
+  });
 
   const toggleId = (id: string) => {
     setSelectedIds((prev) => {
@@ -325,6 +363,14 @@ export default function LeadsPage() {
           <TabsList>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="all">All Contacts</TabsTrigger>
+            <TabsTrigger value="prospects" className="relative">
+              Prospects
+              {prospects.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  {prospects.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="review" className="relative">
               Needs Review
               {(reviewLeads?.length || 0) > 0 && (
@@ -349,7 +395,7 @@ export default function LeadsPage() {
 
         <TabsContent value="pipeline" className="mt-6">
           <LeadKanban
-            leads={leads ?? []}
+            leads={contactLeads}
             isLoading={leadsLoading}
             onLeadClick={(id) => navigate(`/admin/contacts/${id}`)}
           />
@@ -372,6 +418,7 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
                 <SelectItem value="lead">Lead</SelectItem>
                 <SelectItem value="opportunity">Opportunity</SelectItem>
                 <SelectItem value="customer">Customer</SelectItem>
@@ -470,6 +517,57 @@ export default function LeadsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="prospects" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Prospects</CardTitle>
+                  <CardDescription>
+                    Found by prospecting — promote the ones you'll pursue, delete the rest. They become contacts only when promoted.
+                  </CardDescription>
+                </div>
+                {prospects.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={deleteAllProspects.isPending}
+                    onClick={() => {
+                      if (confirm(`Delete all ${prospects.length} prospects? This cannot be undone.`)) {
+                        deleteAllProspects.mutate();
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete all {prospects.length}
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!prospects.length ? (
+                <p className="text-muted-foreground">No prospects awaiting triage</p>
+              ) : (
+                <div className="space-y-2">
+                  {prospects.map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      onClick={() => navigate(`/admin/contacts/${lead.id}`)}
+                      onPromote={() => promoteProspect.mutate(lead.id)}
+                      onDelete={() => {
+                        if (confirm(`Delete ${lead.name || lead.email}? This cannot be undone.`)) {
+                          deleteLead.mutate(lead.id);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="review" className="mt-6">
           <Card>
             <CardHeader>
@@ -525,9 +623,10 @@ interface LeadCardProps {
   selected?: boolean;
   onToggleSelect?: () => void;
   onDelete?: () => void;
+  onPromote?: () => void;
 }
 
-function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete }: LeadCardProps) {
+function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelete, onPromote }: LeadCardProps) {
   const statusInfo = getLeadStatusInfo(lead.status);
   // Display company name from linked company, fallback to text field for legacy data
   const companyName = lead.companies?.name || lead.company;
@@ -603,6 +702,21 @@ function LeadCard({ lead, showStatus, onClick, selected, onToggleSelect, onDelet
                 <UserSearch className="h-3.5 w-3.5 mr-1" />
                 360°
               </Button>
+              {onPromote && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-success hover:text-success"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPromote();
+                  }}
+                  title="Promote to contact"
+                >
+                  <UserCheck className="h-3.5 w-3.5 mr-1" />
+                  Promote
+                </Button>
+              )}
               {onDelete && (
                 <Button
                   variant="ghost"

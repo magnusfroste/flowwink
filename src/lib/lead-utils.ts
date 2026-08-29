@@ -5,7 +5,8 @@ import type { Json } from '@/integrations/supabase/types';
 import { notifyNewLead } from '@/lib/slack-notify';
 import { buildAttributionFields, logUtmConversion } from '@/lib/utm';
 
-export type LeadStatus = 'lead' | 'opportunity' | 'customer' | 'lost';
+/** 'prospect' is the pre-lead: found by prospecting, not yet pursued. */
+export type LeadStatus = 'prospect' | 'lead' | 'opportunity' | 'customer' | 'lost';
 
 export interface Lead {
   id: string;
@@ -701,6 +702,7 @@ export async function qualifyLead(leadId: string): Promise<void> {
  */
 export function getLeadStatusInfo(status: LeadStatus): { label: string; color: string } {
   const statusMap: Record<LeadStatus, { label: string; color: string }> = {
+    prospect: { label: 'Prospect', color: 'bg-slate-500' },
     lead: { label: 'Contact', color: 'bg-blue-500' },
     opportunity: { label: 'Opportunity', color: 'bg-amber-500' },
     customer: { label: 'Customer', color: 'bg-green-500' },

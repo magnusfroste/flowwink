@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260829150000",
-      "migrations_count": 524,
+      "migration_head": "20260829170000",
+      "migrations_count": 525,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2101,21 +2101,25 @@
         {
           "version": "20260829150000",
           "name": "veckans-kunskap-och-luckorna"
+        },
+        {
+          "version": "20260829170000",
+          "name": "prospect-ar-inte-lead"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:9da7dd2fb5b9ee448f5c1e4623459a068f1d7aa26de8bbe25b5566e7a4bf3356",
+      "seed_hash": "sha256:25d956e7b14690737ea963e73c8413f19c9cf114d5e559faff094685a25c6865",
       "skill_count": 542,
       "module_count": 68
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:49534bd2c11e4ee4f5304bf7c4777dba3cf89e860f1f725adc57dc0fa3a2b336",
+      "shared_hash": "sha256:3ee7b14c9db2feee56fc59882d8593853a56cbdc5e8f304c77bfaac3c576ae65",
       "functions": {
         "a2a": "sha256:33f9aa45f5a82d23f357aff397403b5b12a94dc3421984a1c883f23509c50f71",
         "agent-card": "sha256:9486e3f1a5360c2d0fcfb032e24760eb337757878c51f4eeac4adf786432cddb",
-        "agent-execute": "sha256:7091506b4e1fcbacb4800f80f0fd263fc33d27c400d76decf8042c65f938c5da",
+        "agent-execute": "sha256:34cd4ab4cdef168e00a7e7c905facea427f5ce38c66311e016659fa9f67da37c",
         "agent-operate": "sha256:9edc79c928f9920a74d8cfbba484aeabe7b21fba0018ae2ec813031593a74798",
         "ai-task": "sha256:35ae34d3748467b51f716cfef3d80af31b08e92e801905277b8460765b017169",
         "automation-dispatcher": "sha256:3cb8681d7acce65624bd7957a432b143a2d959d769845dc71696b95c2ea2012b",
