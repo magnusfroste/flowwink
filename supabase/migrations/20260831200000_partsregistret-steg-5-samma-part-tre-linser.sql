@@ -27,8 +27,20 @@ ALTER TABLE public.partners
   ADD COLUMN IF NOT EXISTS payment_terms  text,
   ADD COLUMN IF NOT EXISTS currency       text,
   ADD COLUMN IF NOT EXISTS notes          text,
-  ADD COLUMN IF NOT EXISTS website        text,
-  ADD COLUMN IF NOT EXISTS source_vendor_id uuid REFERENCES public.vendors(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS website        text;
+
+-- Vakten är inte pedanteri: varje annan tabellreferens i steg 4 och 5 går via
+-- to_regclass. Att just den här antog att vendors finns var den enda platsen
+-- filen litade på tur.
+DO $$
+BEGIN
+  IF to_regclass('public.vendors') IS NOT NULL THEN
+    ALTER TABLE public.partners
+      ADD COLUMN IF NOT EXISTS source_vendor_id uuid REFERENCES public.vendors(id) ON DELETE SET NULL;
+  ELSE
+    ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS source_vendor_id uuid;
+  END IF;
+END $$;
 
 COMMENT ON COLUMN public.partners.active IS
   'Arkiverad i stället för raderad (Odoo active). En part med historik försvinner aldrig.';
@@ -94,6 +106,7 @@ DECLARE
   v_pending int;
   v_made    int := 0;
   v_merged  int := 0;
+  v_dupes   int;
 BEGIN
   IF NOT (auth.role() = 'service_role' OR has_role(auth.uid(), 'admin'::app_role)) THEN
     RAISE EXCEPTION 'Forbidden: backfilling vendor partners requires the admin role';
@@ -102,6 +115,15 @@ BEGIN
   SELECT count(*) INTO v_pending
   FROM vendors v
   WHERE NOT EXISTS (SELECT 1 FROM partners p WHERE p.source_vendor_id = v.id);
+
+  -- Två leverantörsrader med samma adress kan inte båda bli SAMMA part
+  -- (source_vendor_id är unik). Den ena viker in, den andra blir en egen part
+  -- med samma e-post. Inget korrumperas, men utfallet är ett omdöme någon
+  -- måste fatta — så det redovisas i stället för att ske tyst.
+  SELECT coalesce(sum(c) - count(*), 0) INTO v_dupes FROM (
+    SELECT count(*) AS c FROM vendors
+    WHERE email IS NOT NULL AND trim(email) <> ''
+    GROUP BY lower(trim(email)) HAVING count(*) > 1) x;
 
   IF NOT p_dry_run THEN
     -- 1. En leverantör vars e-post redan tillhör en part ÄR den parten. Det är
@@ -114,7 +136,11 @@ BEGIN
              payment_terms    = coalesce(p.payment_terms, v.payment_terms),
              currency         = coalesce(p.currency, v.currency),
              website          = coalesce(p.website, v.website)
-        FROM vendors v
+        -- Äldsta leverantörsraden per adress vinner. Utan DISTINCT ON valde
+        -- Postgres godtyckligt vilken som vek in.
+        FROM (SELECT DISTINCT ON (lower(trim(email))) * FROM vendors
+              WHERE email IS NOT NULL AND trim(email) <> ''
+              ORDER BY lower(trim(email)), created_at ASC) v
        WHERE lower(p.email) = lower(trim(v.email))
          AND v.email IS NOT NULL AND trim(v.email) <> ''
          AND p.source_vendor_id IS NULL
@@ -143,6 +169,7 @@ BEGIN
     'merged_into_existing_party', v_merged,
     'created', v_made,
     'both_customer_and_vendor', (SELECT count(*) FROM partners WHERE customer_rank > 0 AND supplier_rank > 0),
+    'vendors_sharing_an_email', v_dupes,
     'vendors_total', (SELECT count(*) FROM vendors)
   );
 END $$;
@@ -208,3 +235,16 @@ END $$;
 
 REVOKE ALL ON FUNCTION public.backfill_purchase_partners(boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.backfill_purchase_partners(boolean) TO authenticated, service_role;
+
+COMMENT ON FUNCTION public.backfill_purchase_partners(boolean) IS
+  'Länkar inköpsdokumenten till partsregistret via vendors → partners.source_vendor_id. '
+  'Kör backfill_vendor_partners först; utan parter finns inget att länka till.';
+
+-- ── En synlighetsändring värd att säga högt ─────────────────────────────────
+-- Att vika in leverantörerna i partners betyder att policyn ovan ger en
+-- purchasing-roll läsrätt till ALLA parter — även kunderna — och en crm-roll
+-- läsrätt till leverantörerna. Det är samma sak som hos Odoo, där kontakter är
+-- ett gemensamt register och linsen är ett filter, inte en behörighet. Men det
+-- är en behörighetsändring som kommer som SIDOEFFEKT av en modelländring, och
+-- sådana ska stå utskrivna. Vill vi ha smalare läsrätt är rätt plats en policy
+-- per lins, inte en andra tabell.

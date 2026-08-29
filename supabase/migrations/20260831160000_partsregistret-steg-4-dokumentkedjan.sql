@@ -132,6 +132,8 @@ DECLARE
   v_report   jsonb := '{}'::jsonb;
   v_by_fk    int;
   v_by_email int;
+  v_can_fk   int;
+  v_can_email int;
   v_left     int;
   r          record;
   -- tabell, e-postkolumn (NULL = ingen), har lead_id, har company_id
@@ -157,7 +159,30 @@ BEGIN
            FROM generate_subscripts(v_specs, 1) AS i
   LOOP
     IF to_regclass('public.' || r.tbl) IS NULL THEN CONTINUE; END IF;
-    v_by_fk := 0; v_by_email := 0;
+    v_by_fk := 0; v_by_email := 0; v_can_fk := 0; v_can_email := 0;
+
+    -- Räkna vad som GÅR att länka innan något skrivs. Utan det här visar en
+    -- torrkörning noll överallt, och den som läser "linked_by_email: 0" drar
+    -- den rimliga slutsatsen att e-postmatchningen inte hittade något. Ett tal
+    -- som betyder "vi räknade inte" får inte se ut som ett tal som betyder noll.
+    IF r.has_lead THEN
+      EXECUTE format($q$
+        SELECT count(*) FROM public.%I d JOIN public.leads l ON d.lead_id = l.id
+        WHERE l.partner_id IS NOT NULL AND d.partner_id IS NULL$q$, r.tbl) INTO v_left;
+      v_can_fk := v_can_fk + v_left;
+    END IF;
+    IF r.has_company THEN
+      EXECUTE format($q$
+        SELECT count(*) FROM public.%I d JOIN public.partners p ON p.source_company_id = d.company_id
+        WHERE d.partner_id IS NULL$q$, r.tbl) INTO v_left;
+      v_can_fk := v_can_fk + v_left;
+    END IF;
+    IF p_match_by_email AND r.mail IS NOT NULL THEN
+      EXECUTE format($q$
+        SELECT count(*) FROM public.%I d JOIN public.partners p ON lower(p.email) = lower(trim(d.%I))
+        WHERE d.%I IS NOT NULL AND trim(d.%I) <> '' AND d.partner_id IS NULL$q$,
+        r.tbl, r.mail, r.mail, r.mail) INTO v_can_email;
+    END IF;
 
     IF NOT p_dry_run THEN
       IF r.has_lead THEN
@@ -190,6 +215,8 @@ BEGIN
 
     EXECUTE format('SELECT count(*) FROM public.%I WHERE partner_id IS NULL', r.tbl) INTO v_left;
     v_report := v_report || jsonb_build_object(r.tbl, jsonb_build_object(
+      'resolvable_by_reference', v_can_fk,
+      'resolvable_by_email', v_can_email,
       'linked_by_reference', v_by_fk,
       'linked_by_email', v_by_email,
       'still_without_partner', v_left
