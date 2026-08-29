@@ -29,6 +29,7 @@ import { useCompany, useCompanyLeads, useUpdateCompany, useDeleteCompany } from 
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
+import { CompanyResearchHistory } from '@/components/admin/companies/CompanyResearchHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { callSkill } from '@/lib/call-skill';
 import { CompanyContactsSection } from '@/components/admin/CompanyContactsSection';
@@ -447,6 +448,14 @@ export default function CompanyDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* What prospecting found — stored in `activities` since the research
+              handler was written, rendered nowhere until now (Magnus 2026-08-29:
+              "det finns är jag säker på men det presenteras förmodligen inte").
+              Renders nothing when the company has never been researched. */}
+          <div className="lg:col-span-2">
+            <CompanyResearchHistory companyId={company.id} />
+          </div>
 
           {/* Contacts/Leads */}
           <Card className="lg:col-span-2">
