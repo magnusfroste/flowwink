@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260831180000",
-      "migrations_count": 536,
+      "migration_head": "20260831200000",
+      "migrations_count": 537,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2149,6 +2149,10 @@
         {
           "version": "20260831180000",
           "name": "prenumerationskedjan-som-regressionstest"
+        },
+        {
+          "version": "20260831200000",
+          "name": "partsregistret-steg-5-samma-part-tre-linser"
         }
       ]
     },

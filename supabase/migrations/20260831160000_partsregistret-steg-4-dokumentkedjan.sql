@@ -68,6 +68,14 @@ BEGIN
     RETURN NULL;  -- ingen nyckel, ingen part. Se kommentaren ovan.
   END IF;
 
+  -- Serialisera på adressen. Stripe skickar customer.subscription.created och
+  -- checkout.session.completed utan garanterad ordning och de kan landa
+  -- samtidigt — utan lås hinner båda läsa "finns inte" och kortkunden får två
+  -- parter. En UNIK e-post vore fel modell: hos Odoo delar ett bolag och dess
+  -- kontaktperson ofta adress, och den friheten vill vi behålla. Låset gäller
+  -- transaktionen och släpps automatiskt.
+  PERFORM pg_advisory_xact_lock(hashtext('partner_by_email:' || v_email));
+
   -- Finns den redan? Personen före bolaget: en faktura till info@bolaget.se
   -- ska hitta bolaget, men en till anna@bolaget.se ska hitta Anna.
   SELECT id INTO v_id FROM partners
