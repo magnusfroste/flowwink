@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20260831140000",
-      "migrations_count": 534,
+      "migration_head": "20260831180000",
+      "migrations_count": 536,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2141,6 +2141,14 @@
         {
           "version": "20260831140000",
           "name": "partsregistret-steg-3-den-kommersiella-parten"
+        },
+        {
+          "version": "20260831160000",
+          "name": "partsregistret-steg-4-dokumentkedjan"
+        },
+        {
+          "version": "20260831180000",
+          "name": "prenumerationskedjan-som-regressionstest"
         }
       ]
     },
